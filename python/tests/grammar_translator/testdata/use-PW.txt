@@ -1,0 +1,2005 @@
+USE a2F, ONLY : la2F, a2Fsave
+USE a2F, ONLY : la2F_ => la2F
+USE atom, ONLY : g => rgrid
+USE atom, ONLY: msh
+USE atom, ONLY : msh, rgrid
+USE atom, ONLY : rgrid
+USE atom, ONLY: rgrid
+USE atom, ONLY : rgrid, msh
+USE basic_algebra_routines
+USE basic_algebra_routines, ONLY : norm
+USE basis, only: natomwfc
+USE basis, ONLY : natomwfc
+USE basis, ONLY : natomwfc, starting_wfc
+USE basis, only : natomwfc, swfcatom
+USE basis, ONLY : natomwfc, swfcatom
+USE basis, ONLY : startingconfig
+USE basis, ONLY : startingconfig, starting_wfc, starting_pot
+USE basis, ONLY : starting_pot
+USE basis, ONLY : starting_pot, natomwfc
+USE basis, ONLY : starting_wfc
+USE basis, ONLY : starting_wfc, starting_pot
+USE basis, ONLY : swfcatom
+USE becmod_gpum, ONLY : becp_d
+USE becmod_gpum, ONLY: becp_d
+USE becmod_gpum,ONLY : becp_d
+USE becmod_gpum, ONLY : becp_d, bec_type_d
+USE becmod_gpum, ONLY: becp_d, using_becp_r
+USE becmod_gpum, ONLY : bec_type_d
+USE becmod_gpum, ONLY : bec_type_d, becp_d, using_becp_r_d, using_becp_k_d, using_becp_nc_d
+USE becmod_gpum, ONLY : using_becp_k
+USE becmod_gpum, ONLY : using_becp_nc
+USE becmod_gpum, ONLY : using_becp_r
+USE becmod_gpum, ONLY: using_becp_r
+USE becmod_gpum, ONLY : using_becp_r_d, using_becp_k_d, using_becp_nc_d
+USE becmod, ONLY : allocate_bec_type, deallocate_bec_type, &
+USE becmod, ONLY : allocate_bec_type, is_allocated_bec_type
+USE becmod, ONLY : becp
+USE becmod, ONLY: becp
+USE becmod, ONLY : becp, calbec
+USE becmod, ONLY : becp, calbec, allocate_bec_type
+USE becmod, ONLY: becp, calbec, allocate_bec_type, deallocate_bec_type
+USE becmod, ONLY : bec_type
+USE becmod, ONLY: bec_type
+USE becmod, ONLY : bec_type, allocate_bec_type, &
+USE becmod, ONLY : bec_type, allocate_bec_type, beccopy
+USE becmod, ONLY : bec_type, allocate_bec_type, deallocate_bec_type
+USE becmod, ONLY : bec_type, becp
+USE becmod, ONLY: bec_type, becp
+USE becmod, ONLY : bec_type, becp, calbec
+USE becmod, ONLY : bec_type, becp, calbec, &
+USE becmod, ONLY: bec_type, becp, calbec
+USE becmod, ONLY : bec_type, becp, calbec, allocate_bec_type, &
+USE becmod, ONLY : bec_type, becp, calbec,ALLOCATE_bec_type, &
+USE becmod, ONLY: bec_type, becp, calbec,ALLOCATE_bec_type, &
+USE becmod, ONLY : bec_type, becp, calbec, allocate_bec_type, deallocate_bec_type
+USE becmod, ONLY : bec_type, calbec, &
+USE becmod, ONLY : bec_type, calbec, allocate_bec_type, &
+USE becmod, ONLY : bec_type, calbec, ALLOCATE_bec_type, DEALLOCATE_bec_type
+USE becmod, ONLY : calbec
+USE becmod, ONLY : calbec, allocate_bec_type, &
+USE becmod, ONLY : calbec, becp, bec_type, allocate_bec_type, &
+USE becmod, ONLY : calbec, bec_type, allocate_bec_type, &
+USE becmod, ONLY: calbec,bec_type,allocate_bec_type,deallocate_bec_type
+USE becmod, ONLY : deallocate_bec_type, is_allocated_bec_type, bec_type
+USE becmod_subs_gpum, ONLY : allocate_bec_type_gpu, deallocate_bec_type_gpu, &
+USE becmod_subs_gpum, ONLY : calbec_gpu
+USE becmod_subs_gpum, ONLY : calbec_gpu, using_becp_auto, using_becp_d_auto
+USE becmod_subs_gpum, ONLY : using_becp_auto
+USE becmod_subs_gpum, ONLY: using_becp_auto
+USE becmod_subs_gpum, ONLY : using_becp_auto, allocate_bec_type_gpu, &
+USE becmod_subs_gpum, ONLY : using_becp_auto, using_becp_d_auto
+USE becmod_subs_gpum, ONLY : using_becp_auto, using_becp_d_auto, &
+USE becmod_subs_gpum, ONLY : using_becp_d_auto, calbec_gpu
+USE becmod_subs_gpum, ONLY: using_becp_d_auto, calbec_gpu
+USE beef, ONLY : beef_energies
+USE beef, ONLY : beef_energies, beefxc, energies
+USE bfgs_module, ONLY : bfgs_get_n_iter
+USE bfgs_module, ONLY : bfgs_ndim_ => bfgs_ndim, &
+USE bfgs_module, ONLY : bfgs, terminate_bfgs
+USE bp
+USE bp, ONLY : allocate_bp_efield, bp_global_map
+USE bp, ONLY : deallocate_bp_efield
+USE bp, ONLY : efield_cart, el_pol, fc_pol, l3dstring
+USE bp, ONLY : efield_cart, ion_pol,l3dstring
+USE bp, ONLY : gdir, lberry, nppstr, lelfield, lorbm, nx_el,&
+USE bp, ONLY : gdir, nppstr, mapgm_global, pdl_tot
+USE bp, ONLY : lelfield
+USE bp, ONLY: lelfield
+USE bp, ONLY : lelfield, evcel, evcelp, evcelm, bec_evcel, &
+USE bp, ONLY : lelfield, gdir, l3dstring, efield_cart, &
+USE bp, ONLY : lelfield, gdir, nppstr_3d, efield, nberrycyc, &
+USE bp, ONLY : lelfield, ion_pol, el_pol, fc_pol, l_el_pol_old, &
+USE bp, ONLY: lelfield, l3dstring, gdir, efield, efield_cry
+USE bp, ONLY : lelfield, lberry, el_pol, ion_pol
+USE bp, ONLY : lelfield, lberry, lorbm
+USE bp, ONLY : lelfield, mapgp_global, mapgm_global, nx_el
+USE bp, ONLY : nberrycyc, fact_hepsi, &
+USE bp, ONLY: nppstr_3d, fact_hepsi, evcel, evcp=>evcelp, &
+USE bp, ONLY : nppstr_3d, mapgm_global, nx_el, mapg_owner
+USE bp, ONLY: nppstr_3d, mapgm_global, nx_el,phase_control
+USE bp, ONLY : nppstr_3d, nx_el, l3dstring, &
+USE bp, ONLY : nppstr_ => nppstr, &
+USE buffers
+USE buffers, ONLY: close_buffer
+USE buffers, ONLY : get_buffer
+USE buffers, ONLY: get_buffer
+USE buffers, ONLY : get_buffer, save_buffer
+USE buffers, ONLY: get_buffer, save_buffer
+USE buffers, ONLY : get_buffer, save_buffer, close_buffer
+USE buffers, ONLY : open_buffer
+USE buffers, ONLY : open_buffer, close_buffer, get_buffer, save_buffer
+USE buffers, ONLY : open_buffer, close_buffer, save_buffer
+USE buffers, ONLY : open_buffer, get_buffer, save_buffer
+USE buffers, ONLY : save_buffer
+USE buiol, ONLY: init_buiol, buiol_open_unit, buiol_close_unit, &
+Use carefully and utilize either a layer of fixed atoms or a
+USE cell_base, ONLY : alat
+USE cell_base, ONLY: alat
+USE cell_base, ONLY : alat, at
+USE cell_base, ONLY: alat, at
+USE cell_base, ONLY : alat, at, bg
+USE cell_base, ONLY : alat, at, bg, ibrav, celldm, omega
+USE cell_base, ONLY : alat, at, bg, omega
+USE cell_base, ONLY : alat, at, bg, omega, cell_force, &
+USE cell_base, ONLY : alat, at, bg, omega, cell_units
+USE cell_base, ONLY : alat, at, bg, omega, tpiba
+USE cell_base, ONLY : alat, at, omega, bg
+USE cell_base, ONLY: alat, at, omega, bg
+USE cell_base, ONLY : alat, celldm, at
+USE cell_base, ONLY : alat, ibrav, omega, at, bg, celldm, wmass
+USE cell_base, ONLY : alat, omega
+USE cell_base, ONLY : alat, omega, at, bg
+USE cell_base, ONLY : alat, omega, bg, at, tpiba
+USE cell_base, ONLY : alat, omega, tpiba, tpiba2
+USE cell_base, ONLY : alat, tpiba2, at, bg
+USE cell_base, ONLY : alat, tpiba, tpiba2
+USE cell_base, ONLY : at
+USE cell_base, ONLY : at, alat
+USE cell_base, ONLY: at,alat
+USE cell_base, ONLY : at, alat, omega
+USE cell_base, ONLY : at, alat, omega, bg
+USE cell_base, ONLY : at, alat, omega, cell_base_init, init_dofree, &
+USE cell_base, ONLY : at, alat, tpiba2, omega
+USE cell_base, ONLY : at, alat, tpiba2, omega, ibrav, celldm
+USE cell_base, ONLY : at, alat, tpiba, omega
+USE cell_base, ONLY: at, alat, tpiba, omega
+USE cell_base, ONLY: at, alat, tpiba, omega, bg
+USE cell_base, ONLY : at, alat, tpiba, omega, tpiba2
+USE cell_base, ONLY : at, alat, tpiba, tpiba2
+use cell_base, only: at, bg
+USE cell_base, ONLY : at, bg
+USE cell_base, ONLY : at, bg, alat
+USE cell_base, ONLY : at, bg, alat, ibrav
+USE cell_base, ONLY : at, bg, alat, omega 
+USE cell_base, ONLY : at, bg, alat, omega, tpiba2
+USE cell_base, ONLY : at, bg, alat, tpiba2, omega
+USE cell_base, ONLY : at, bg, alat, tpiba, tpiba2, ibrav
+USE cell_base, ONLY : at, bg, omega, alat
+USE cell_base, ONLY : at, bg, omega, alat, ibrav
+USE cell_base, ONLY : at, bg, omega, tpiba
+USE cell_base, ONLY : at, bg, omega, tpiba2
+USE cell_base, ONLY : at, bg, set_h_ainv
+USE cell_base, ONLY : at, bg, tpiba
+USE cell_base, ONLY : at, bg, tpiba2
+USE cell_base, ONLY : at, ibrav
+USE cell_base, ONLY : at, tpiba
+USE cell_base, ONLY : bg
+USE cell_base, ONLY : bg, at, alat, omega
+USE cell_base, ONLY : bg, at, tpiba
+USE cell_base, ONLY : bg, omega, set_h_ainv, tpiba
+USE cell_base, ONLY : bg, tpiba
+USE cell_base, ONLY: bg, tpiba
+USE cell_base, ONLY: cb_at => at, cb_alat => alat, cb_iforceh => iforceh
+USE cell_base, ONLY : fix_volume, fix_area
+USE cell_base, ONLY : omega
+USE cell_base, ONLY : omega 
+USE cell_base, ONLY: omega
+USE cell_base, ONLY : omega, alat
+USE cell_base, ONLY : omega, alat, at, bg
+USE cell_base, ONLY: omega, alat, at, bg, tpiba
+USE cell_base, ONLY : omega, alat, at, tpiba, bg
+USE cell_base, ONLY : omega, alat, tpiba2, at, bg
+USE cell_base, ONLY: omega, alat, tpiba2, at, bg
+USE cell_base, ONLY : omega, at, alat
+USE cell_base, ONLY : omega, at, bg
+USE cell_base, ONLY: omega, at, bg, tpiba
+USE cell_base, ONLY : omega, bg
+USE cell_base, ONLY : omega, bg, alat
+USE cell_base, ONLY : omega, tpiba
+USE cell_base, ONLY: omega, tpiba
+USE cell_base, ONLY : omega, tpiba2
+USE cell_base, ONLY: omega, tpiba2
+USE cell_base, ONLY : tpiba
+USE cell_base, ONLY: tpiba
+USE cell_base, ONLY : tpiba2
+USE cell_base, ONLY : tpiba2 
+USE cell_base, ONLY : tpiba2, alat
+USE cell_base, ONLY : tpiba2, alat, omega
+USE cell_base, ONLY : tpiba2, alat, omega, tpiba
+USE cell_base, ONLY : tpiba2, alat, tpiba
+USE cell_base, ONLY: tpiba2, alat, tpiba
+USE cell_base, ONLY: tpiba2, omega, alat, at, bg
+USE cell_base, ONLY : tpiba, alat, bg
+USE cell_base, ONLY : tpiba, at, tpiba2
+USE cell_base, ONLY : tpiba, gpar=>bg, at, alat, omega
+USE cell_base, ONLY : tpiba, omega
+USE cell_base, ONLY: tpiba, omega
+USE cell_base, ONLY : tpiba, tpiba2, alat, omega
+USE cell_base, ONLY : wmass, omega, alat, at, bg, iforceh, &
+USE cellmd
+USE cellmd, ONLY : at_old, lmovecell
+USE cellmd, ONLY : at_old, omega_old
+USE cellmd, ONLY : calc
+USE cellmd, ONLY : cell_factor
+USE cellmd, ONLY : cell_factor, lmovecell
+USE cellmd, ONLY : lmovecell
+USE cellmd, ONLY : lmovecell, omega_old
+USE cellmd, ONLY : ntcheck, calc, lmovecell, &
+USE cellmd, ONLY : nzero, ntimes, calc, at_old, omega_old, &
+USE cellmd, ONLY : omega_old, at_old, calc, lmovecell
+USE cellmd, ONLY : omega_old, at_old, lmovecell
+USE cellmd, ONLY : omega_old, at_old, lmovecell, calc
+USE check_stop, ONLY : check_stop_init
+USE check_stop, ONLY : check_stop_init, check_stop_now
+USE check_stop, ONLY : check_stop_now
+USE check_stop, ONLY : check_stop_now, stopped_by_user
+USE check_stop, ONLY : max_seconds_ => max_seconds
+USE check_stop, ONLY : stopped_by_user
+USE command_line_options, ONLY : command_line
+USE command_line_options, ONLY : input_file_
+USE command_line_options, ONLY : input_file_, command_line, ndiag_, nimage_
+USE command_line_options, ONLY : my_iargc, my_getarg
+USE command_line_options, ONLY : nmany_
+USE command_line_options, ONLY: pencil_decomposition_
+USE compute_drhocg_gpu_m
+USE compute_dvloc_gpu_m
+use compute_rhocg_gpu_m
+USE constants, ONLY : amu_ry, rytoev
+USE constants, ONLY : amu_ry, ry_to_kelvin, au_ps, bohr_radius_cm, &
+USE constants, ONLY: amu_ry, ry_to_kelvin, au_ps, rytoev, e2, fpi
+USE constants, ONLY : au_gpa
+USE constants, ONLY : AUTOEV, BOHR_RADIUS_ANGS
+USE constants, ONLY : autoev, eV_to_kelvin, pi, rytoev, &
+USE constants, ONLY : bohr_radius_angs
+USE constants, ONLY : bohr_radius_angs 
+USE constants, ONLY : bohr_radius_angs, AVOGADRO
+USE constants, ONLY : bohr_radius_angs, pi, fpi
+USE constants, ONLY: bohr_radius_angs, ry_kbar
+USE constants, ONLY : e2
+USE constants, ONLY: e2
+USE constants, ONLY: e2,bohr_radius_angs
+USE constants, ONLY : e2, eps12
+USE constants, ONLY : e2, eps6, ry_kbar
+USE constants, ONLY : e2, eps8
+USE constants, ONLY : e2, fpi
+USE constants, ONLY: e2, fpi
+USE constants, ONLY : e2, pi
+USE constants, ONLY : e2, pi, fpi
+USE constants, ONLY : e2, pi, rytoev, au_debye
+USE constants, ONLY : e2, pi, tpi, fpi
+USE constants, ONLY: e2, pi, tpi, fpi
+USE constants, ONLY : e2, pi, tpi, fpi, eps8, eps32
+USE constants, ONLY : e2, pi, tpi, fpi, rytoev, eps32
+USE constants, ONLY : e2, ry_kbar, amu_ry, au_ps
+USE constants, ONLY : e2, tpi, fpi
+USE constants, ONLY : eps12
+USE constants, ONLY : eps16
+USE constants, ONLY : eps16, eps6
+USE constants, ONLY: eps32
+USE constants, ONLY : eps6
+USE constants, ONLY : eps8
+USE constants, ONLY: eps8
+USE constants, ONLY : eps8, e2, fpi, pi, degspin
+USE constants, ONLY : eps8, eps16
+USE constants, ONLY : eps8, eps6
+USE constants, ONLY : fpi
+USE constants, ONLY: fpi
+USE constants, ONLY : fpi, e2
+USE constants , ONLY : fpi, e2, eps8
+USE constants, ONLY : fpi, e2, eps8
+USE constants, ONLY : fpi, e2, eps8, tpi
+USE constants, ONLY : fpi, e2, pi
+USE constants, ONLY : fpi, e2, pi, tpi
+USE constants, ONLY: fpi, eps8, e2, au_debye
+USE constants, ONLY : fpi, eps8, e2, au_debye, tpi
+USE constants, ONLY : fpi ! REMOVE
+USE constants, ONLY : fpi, sqrt2
+USE constants, ONLY: fpi, sqrt2, eps8, eps6
+USE constants, ONLY : k_boltzmann_ry
+use constants, ONLY: pi
+USE constants, ONLY : pi
+USE constants, ONLY: pi
+USE constants, ONLY : pi, bohr_radius_angs 
+USE constants, ONLY : pi, e2
+USE constants, ONLY: pi, e2
+USE constants, ONLY : pi,e2, eps => eps12, eps2 => eps24
+USE constants, ONLY : pi, eps12
+USE constants, ONLY : pi, eps16, k_boltzmann_ry
+USE constants, ONLY : pi, eps8
+USE constants, ONLY : pi, eps => eps12
+USE constants, ONLY : pi, fpi
+USE constants, ONLY: pi, fpi
+USE constants , ONLY : pi, fpi, e2, eps8
+USE constants, ONLY : pi, fpi, e2, eps8
+USE constants, ONLY : pi, fpi, eps14
+USE constants, ONLY: pi, fpi, eps14
+USE constants, ONLY: pi, fpi, eps14 
+USE constants, ONLY : pi, fpi, eps16, eps6
+USE constants, ONLY : pi, fpi, eps8
+USE constants, ONLY : pi, sqrtpm1, tpi, fpi, e2
+USE constants, ONLY : pi, tpi
+USE constants, ONLY: pi, tpi
+USE constants, ONLY : pi, tpi, fpi
+USE constants, ONLY : pi, tpi, fpi, e2
+USE constants, ONLY : pi, tpi, rytoev
+USE constants, ONLY : ry_kbar
+USE constants, ONLY : ry_kbar, bohr_radius_angs
+USE constants, only: rytoev
+USE constants, ONLY : rytoev
+USE constants, ONLY: rytoev
+USE constants, ONLY : rytoev, BOHR_RADIUS_ANGS
+USE constants, ONLY : rytoev, BOHR_RADIUS_ANGS 
+USE constants, ONLY : rytoev, fpi 
+USE constants, ONLY : sqrtpi, fpi, e2
+USE constants, ONLY : sqrtpi, fpi,pi,e2
+USE constants, ONLY : sqrtpm1 ! 1/SQRT(pi)
+USE constants, ONLY : tpi
+USE constants, ONLY: tpi
+USE constants, ONLY : tpi, e2
+USE constants, ONLY : tpi, e2, eps6
+USE constants, ONLY: tpi, e2, eps6
+USE constants, ONLY: tpi, e2, fpi, pi
+USE constants, ONLY : tpi, fpi
+USE constants, ONLY: tpi, fpi
+USE constants, ONLY : tpi, fpi, e2
+USE constants, ONLY : tpi, fpi, pi
+USE constants, ONLY : tpi, fpi, pi, eps16
+USE constants, ONLY : tpi, pi
+USE constraints_module, ONLY : deallocate_constraint
+USE constraints_module, ONLY : init_constraint
+USE constraints_module, ONLY : nconstr
+USE constraints_module, ONLY : nconstr, check_constraint
+USE constraints_module, ONLY : pbc
+USE constraints_module, ONLY : remove_constr_force, check_constraint
+USE constraints_module, ONLY : remove_constr_force, check_constraint 
+USE constraints_module, ONLY : remove_constr_force, remove_constr_vec
+USE control_flags, ONLY : adapt_thr, tr2_init, tr2_multi 
+USE control_flags, ONLY : adapt_thr, tr2_init, tr2_multi, gamma_only
+USE control_flags, ONLY: cf_nstep => nstep 
+USE control_flags, ONLY : conv_elec, conv_ions, ldftd3, do_makov_payne 
+USE control_flags, ONLY : conv_elec, gamma_only, ethr, lscf, treinit_gvecs
+USE control_flags, ONLY : conv_elec, lbands, iverbosity
+USE control_flags, ONLY : conv_ions, istep, nstep, restart, lmd, lbfgs, lensemb
+USE control_flags, ONLY : dfpt_hub
+USE control_flags, ONLY : diago_full_acc, gamma_only, lxdm, tqr
+USE control_flags, ONLY : ethr, isolve, restart, use_gpu
+USE control_flags, ONLY : ethr, lscf, max_cg_iter, max_ppcg_iter, isolve, &
+USE control_flags, ONLY : ethr, restart, isolve, io_level, iverbosity
+USE control_flags, ONLY : gamma_only
+USE control_flags, ONLY: gamma_only
+USE control_flags, ONLY: gamma_only 
+USE control_flags,ONLY: gamma_only
+USE control_flags, ONLY : gamma_only, conv_elec, istep, ethr, lscf, lmd, &
+USE control_flags, ONLY : gamma_only_ => gamma_only
+USE control_flags, ONLY : gamma_only, iverbosity
+USE control_flags, ONLY : gamma_only, remove_rigid_rot, textfor, &
+USE control_flags, ONLY : gamma_only, smallmem
+USE control_flags, ONLY : gamma_only, tqr
+USE control_flags, ONLY : gamma_only, tqr, use_gpu, many_fft
+USE control_flags, ONLY : gamma_only, use_gpu
+USE control_flags, ONLY: gamma_only, use_gpu
+USE control_flags, ONLY : imix, ngm0, tr2, io_level
+USE control_flags, ONLY : imix, nmix, mixing_beta, nstep, lscf, &
+USE control_flags, ONLY : io_level
+USE control_flags, ONLY: io_level
+USE control_flags, ONLY : io_level, conv_elec, lbands
+USE control_flags, ONLY : io_level, lscf
+USE control_flags, ONLY : io_level, lscf, lxdm
+USE control_flags, ONLY : isolve, iverbosity, gamma_only, lxdm
+USE control_flags, ONLY : isolve, max_cg_iter, max_ppcg_iter, david, &
+USE control_flags, ONLY: isolve, nmix, imix, gamma_only, lscf, io_level, &
+USE control_flags, ONLY : istep
+USE control_flags, ONLY: istep
+USE control_flags, ONLY : istep, conv_ions, &
+USE control_flags, ONLY : istep, lconstrain
+USE control_flags, ONLY : istep, lconstrain, tv0rd
+USE control_flags, ONLY : istep, nstep, upscale, lbfgs, &
+USE control_flags, ONLY : iverbosity
+USE control_flags, ONLY: iverbosity
+USE control_flags, ONLY : iverbosity, dfpt_hub
+USE control_flags, ONLY : iverbosity, gamma_only, llondon, ldftd3, lxdm, ts_vdw, use_gpu
+USE control_flags, ONLY : lbands
+USE control_flags, ONLY : lbfgs, lmd
+USE control_flags, ONLY : lmd
+USE control_flags, ONLY : lmd, gamma_only, smallmem, ts_vdw
+USE control_flags, ONLY : lscf, gamma_only
+USE control_flags, ONLY : lxdm
+USE control_flags, ONLY : many_fft
+USE control_flags,ONLY: max_xml_steps 
+USE control_flags, ONLY : mixing_beta
+USE control_flags, ONLY: mixing_beta
+USE control_flags, ONLY : mixing_beta, tr2, ethr, niter, nmix, &
+USE control_flags, ONLY : ngm0
+USE control_flags, ONLY : ngm0, gamma_only
+USE control_flags, ONLY : noinv, gamma_only, tqr, llondon, ldftd3, &
+USE control_flags, ONLY : n_scf_steps, scf_error
+USE control_flags, ONLY: n_scf_steps, scf_error 
+USE control_flags, ONLY : nstep
+USE control_flags, ONLY : nstep, istep, tolp, lconstrain
+USE control_flags,ONLY: nstep, n_scf_steps, scf_error, conv_elec
+USE control_flags, ONLY : textfor, tv0rd
+USE control_flags, ONLY : tolp
+USE control_flags, ONLY: tolp
+USE control_flags, ONLY : tqr
+USE control_flags, ONLY : tqr, tq_smoothing, tbeta_smoothing, restart
+USE control_flags, ONLY : tr2, ethr, lscf, lbfgs, lmd, david, lecrpa, &
+USE control_flags, ONLY : tr2, niter, conv_elec, restart, lmd, &
+USE control_flags, ONLY : ts_vdw
+USE control_flags, ONLY : ts_vdw, tqr, tq_smoothing, tbeta_smoothing
+USE control_flags, ONLY : use_gpu
+USE control_flags, ONLY : use_gpu, iverbosity
+USE control_flags, ONLY : use_para_diag, gamma_only
+USE control_flags, ONLY: use_para_diag, gamma_only
+USE Coul_cut_2D, ONLY : cutoff_2D, lr_Vloc 
+USE Coul_cut_2D, ONLY : do_cutoff_2D
+USE Coul_cut_2D, ONLY : do_cutoff_2D 
+USE Coul_cut_2D, ONLY: do_cutoff_2D
+USE Coul_cut_2D, ONLY : do_cutoff_2D, cutoff_2D, cutoff_hartree 
+USE Coul_cut_2D, ONLY : do_cutoff_2D, cutoff_ewald
+USE Coul_cut_2D, ONLY : do_cutoff_2D, cutoff_fact 
+USE Coul_cut_2D, ONLY : do_cutoff_2D, cutoff_force_ew 
+USE Coul_cut_2D, ONLY : do_cutoff_2D, cutoff_force_lc
+USE Coul_cut_2D, ONLY : do_cutoff_2D, cutoff_local 
+USE Coul_cut_2D, ONLY : do_cutoff_2D, cutoff_lr_Vloc
+USE Coul_cut_2D, ONLY : do_cutoff_2D, cutoff_stres_evloc, cutoff_stres_sigmaloc 
+USE Coul_cut_2D, ONLY : do_cutoff_2D, cutoff_stres_evloc_gpu, &
+USE Coul_cut_2D, ONLY : do_cutoff_2D, cutoff_stres_sigmaewa
+USE Coul_cut_2D, ONLY : do_cutoff_2D, cutoff_stres_sigmaewa_gpu
+USE Coul_cut_2D, ONLY: do_cutoff_2D, cutoff_stres_sigmahar
+USE Coul_cut_2D, ONLY: do_cutoff_2D, cutoff_stres_sigmahar_gpu
+USE Coul_cut_2D, ONLY : do_cutoff_2D, lz
+USE coulomb_vcut_module, ONLY : vcut_get, vcut_spheric_get
+USE coulomb_vcut_module, ONLY : vcut_init, vcut_type, vcut_info, &
+use cublas
+USE cublas
+use cudafor
+USE cudafor
+USE cudafor 
+use damped (Beeman) dynamics for
+use damped (quick-min Verlet)
+USE device_util_m, ONLY : dev_memcpy
+USE device_util_m, ONLY : dev_memcpy 
+USE device_util_m, ONLY: dev_memcpy
+USE device_util_m, ONLY : dev_memcpy, dev_memset
+USE device_util_m, ONLY: dev_memcpy, dev_memset
+USE device_util_m, ONLY : dev_memset
+USE dftd3_api, ONLY : dftd3_init, dftd3_set_params, &
+USE dftd3_api, ONLY : dftd3_pbc_dispersion, &
+USE dftd3_api, ONLY : get_atomic_number, dftd3_calc
+USE dftd3_qe, ONLY : dftd3_clean
+USE dftd3_qe, ONLY : dftd3, dftd3_in, energy_dftd3
+USE dftd3_qe, ONLY : dftd3_pbc_gdisp, dftd3
+USE dftd3_qe, ONLY : dftd3_printout, dftd3_xc, dftd3, dftd3_in
+USE dfunct_gpum, ONLY : newd_gpu
+USE dfunct, ONLY : newd
+USE dynamics_module, ONLY : allocate_dyn_vars
+USE dynamics_module, ONLY : control_temp, temperature, thermostat, &
+USE dynamics_module, ONLY : deallocate_dyn_vars
+USE dynamics_module, ONLY: dt, delta_t, nraise, &
+USE dynamics_module, ONLY : dt, temperature
+USE dynamics_module, ONLY : smart_MC, langevin_md
+USE dynamics_module, ONLY : vel
+USE dynamics_module, ONLY : verlet, terminate_verlet, proj_verlet
+USE electrons_base, ONLY : nupdwn, set_nelup_neldw
+USE electrons_base, ONLY : set_nelup_neldw
+USE ener
+USE ener, ONLY : demet, ef, ef_up, ef_dw
+USE ener, ONLY : eband
+USE ener, ONLY : ef
+USE ener, ONLY: ef
+USE ener, ONLY : ef, eband 
+USE ener, ONLY : ef, ef_up, ef_dw
+USE ener, ONLY : ef, ef_up, ef_dw, vtxc, etxc, ewld, etot, &
+USE ener, ONLY: ehart
+USE ener, ONLY : ehart, etxc, vtxc, epaw
+USE ener, ONLY : etot
+USE ener, ONLY: etot, eband, ehart, etxc, vtxc, ewld, demet, ef 
+USE ener, ONLY : etot, ef
+USE ener, ONLY : etot, hwf_energy, eband, deband, ehart, &
+USE ener, ONLY : etxc, vtxc
+USE ener, ONLY: ewld, ehart, etxc, vtxc, etot, etxcc, demet, ef
+USE ener, ONLY : vtxc, etxc
+USE environment, ONLY : environment_end
+USE environment, ONLY : environment_start
+USE environment, ONLY : environment_start, environment_end
+USE esm, ONLY : do_comp_esm 
+USE esm, ONLY: do_comp_esm, &
+USE esm, ONLY : do_comp_esm, esm_bc
+USE esm, ONLY : do_comp_esm, esm_bc, esm_force_ew
+USE esm, ONLY : do_comp_esm, esm_bc ! for ESM stress
+USE esm, ONLY : do_comp_esm, esm_hartree, esm_bc
+USE esm, ONLY : do_comp_esm, esm_init
+USE esm, ONLY : do_comp_esm, esm_printpot, esm_ewald
+USE esm, ONLY : do_comp_esm, esm_summary
+USE esm, ONLY : esm_force_lc, do_comp_esm, esm_bc
+USE esm, ONLY : esm_local, esm_bc, do_comp_esm
+USE esm, ONLY : esm_stres_har, esm_stres_ewa, esm_stres_loclong ! for ESM stress
+Use experimental implementation of Hybrid Functional to compute
+USE extfield, ONLY : dipfield, emaxpos, eopreg, edir
+USE extfield, ONLY : etotefield
+USE extfield, ONLY : forcefield, forcegate
+USE extfield, ONLY : forcefield, forcegate, tefield, dipfield, &
+USE extfield, ONLY : gate
+USE extfield, ONLY : gate, dipfield, zgate, saw
+USE extfield, ONLY: gate, etotgatefield, tefield, etotefield 
+USE extfield, ONLY : relaxz
+USE extfield, ONLY : saw
+USE extfield, ONLY: tefield, dipfield, edir, eamp, emaxpos, saw, &
+USE extfield, ONLY : tefield, dipfield, edir, etotefield, &
+USE extfield, ONLY : tefield, dipfield, etotefield, gate, &
+USE extfield, ONLY : tefield, etotefield
+USE extfield, ONLY : tefield, etotefield, gate, etotgatefield !TB
+USE extfield, ONLY : tefield, forcefield, gate, forcegate, relaxz
+USE extfield, ONLY : tefield_ => tefield, &
+USE extfield, ONLY : zgate, gate, dipfield, forcegate, mopopla, &
+USE extrapolation, ONLY : pot_order, wfc_order
+USE extrapolation, ONLY : update_file, update_pot
+USE exx_band, ONLY : change_data_structure, &
+USE exx_band, ONLY : change_data_structure, nwordwfc_exx, &
+USE exx_band, ONLY : change_data_structure, transform_evc_to_exx, &
+USE exx_band, ONLY : igk_exx
+USE exx_band, ONLY : igk_exx 
+USE exx_band, ONLY : igk_exx, change_data_structure, &
+USE exx_band, ONLY : igk_exx_d
+USE exx_band, ONLY : nwordwfc_exx, igk_exx
+USE exx_band, ONLY : result_sum, igk_exx
+USE exx_band, ONLY : result_sum, igk_exx, igk_exx_d
+USE exx_band, ONLY : smap_exx
+USE exx_band, ONLY : transform_psi_to_exx, transform_hpsi_to_local, &
+USE exx_base, ONLY : exx_grid_init, exx_mp_init
+USE exx_base, ONLY : exx_grid_init, exx_mp_init, exx_div_check
+USE exx_base, ONLY : exx_grid_init, exx_mp_init, exx_div_check, & 
+USE exx_base, ONLY : index_xkq, nqs, index_xk, xkq_collect, &
+USE exx_base, ONLY : nkqs
+USE exx_base, ONLY : nkqs, xkq_collect, index_xk, index_sym, &
+USE exx_base, ONLY : nq1, nq2, nq3, nqs, eps, exxdiv, &
+USE exx_base, ONLY : nqs, index_xkq, index_xk, xkq_collect, &
+USE exx_base, ONLY : nqs, xkq_collect, index_xkq, index_xk, &
+USE exx_base, ONLY : x_gamma_extrapolation, nq1, nq2, nq3, &
+USE exx_base, ONLY : x_gamma_extrapolation_ => x_gamma_extrapolation, &
+USE exx_base, ONLY : xkq_collect, index_xkq, index_xk, index_sym, rir, &
+USE exx, ONLY : aceinit,exxinit, exxenergy2, exxbuff, &
+USE exx, ONLY : compute_density
+USE exx, ONLY : compute_density_k
+USE exx, ONLY : deallocate_exx
+USE exx, ONLY : dfftt, exxbuff, exxmat
+USE exx, ONLY : dfftt, exx_fft_create, deallocate_exx 
+USE exx, ONLY : dfftt, x_nbnd_occ, locbuff, locmat
+USE exx, ONLY : ecutfock
+USE exx, ONLY: ecutfock_ => ecutfock, &
+USE exx, ONLY : ecutfock, local_thr
+USE exx, ONLY : ecutfock, local_thr 
+USE exx, ONLY : ecutfock, nbndproj
+USE exx, ONLY : ecutfock, use_ace
+USE exx, ONLY : exxenergy2, fock2
+USE exx, ONLY : exx_gvec_reinit
+USE exx, ONLY : exx_stress
+USE exx, ONLY : gt
+USE exx, ONLY : npwt
+USE exx, ONLY: use_ace, vexx, vexxace_gamma, vexxace_k
+USE exx, ONLY : vexxace_gamma, vexxace_k, domat
+USE exx, ONLY : x_occupation
+USE f90sockets, ONLY : open_socket 
+USE f90sockets, ONLY : readbuffer, writebuffer
+USE fcp, ONLY : fcp_summary
+USE fcp, ONLY : fcp_verlet, fcp_line_minimisation, &
+USE fcp_variables, ONLY: fcp_mu, fcp_mass, fcp_temperature, fcp_relax, &
+USE fcp_variables,ONLY: fcp_mu, lfcpopt, lfcpdyn 
+USE fcp_variables, ONLY : lfcpopt, lfcpdyn
+USE fcp_variables, ONLY : lfcpopt, lfcpdyn, fcp_mu 
+USE fcp_variables, ONLY : lfcpopt, lfcpdyn, fcp_mu, &
+USE fcp_variables, ONLY : lfcpopt_ => lfcpopt, &
+USE fft_base , ONLY : dfftp
+USE fft_base, ONLY : dfftp
+USE fft_base, ONLY : dfftp 
+USE fft_base, ONLY: dfftp
+USE fft_base, ONLY : dfftp !, dffts
+USE fft_base, ONLY : dfftp, dffts
+USE fft_base, ONLY : dfftp, dffts 
+USE fft_base, ONLY : dfftp, dffts, fft_base_info, smap
+USE fft_base, ONLY : dfftp, dffts, smap, fft_base_info
+USE fft_base, ONLY : dffts
+USE fft_base, ONLY : dffts 
+USE fft_base, ONLY: dffts
+USE fft_base, ONLY : dffts, dfftp
+USE fft_base, ONLY : pstickdealloc
+USE fft_base, ONLY : smap
+USE fft_helper_subroutines
+USE fft_helper_subroutines, ONLY : fftx_ntgrp, fftx_tgpe, &
+USE fft_helper_subroutines, ONLY : fftx_ntgrp, tg_get_nnr, &
+USE fft_helper_subroutines, ONLY : fftx_ntgrp, tg_get_recip_inc
+USE fft_interfaces, ONLY : fft_interpolate
+USE fft_interfaces, ONLY : fwfft
+USE fft_interfaces, ONLY: fwfft
+USE fft_interfaces,ONLY : fwfft
+USE fft_interfaces, ONLY : fwfft, invfft
+USE fft_interfaces,ONLY : fwfft, invfft
+USE fft_interfaces, ONLY : invfft
+USE fft_interfaces, ONLY: invfft
+USE fft_interfaces,ONLY : invfft
+USE fft_rho, ONLY : rho_g2r
+USE fft_rho, ONLY : rho_g2r, rho_r2g
+USE fft_rho, ONLY: rho_r2g
+USE fft_scalar, ONLY: cfft3ds
+USE fft_scalar, ONLY : cft_1z
+USE fft_support, ONLY: allowed, good_fft_dimension
+USE fft_types, ONLY : fft_index_to_3d
+USE fft_types, ONLY: fft_index_to_3d
+USE fft_types, ONLY : fft_type_deallocate
+USE fft_types, ONLY : fft_type_deallocate 
+USE fft_types, ONLY : fft_type_descriptor
+USE fft_types, ONLY: fft_type_descriptor
+USE fft_types, ONLY : fft_type_init
+USE fixed_occ
+USE fixed_occ, ONLY : f_inp
+USE fixed_occ, ONLY: f_inp 
+USE fixed_occ, ONLY : f_inp, tfixed_occ
+USE fixed_occ, ONLY : f_inp, tfixed_occ, one_atom_occupations
+USE fixed_occ, ONLY : one_atom_occupations
+USE fixed_occ, ONLY: one_atom_occupations
+USE fixed_occ, ONLY : tfixed_occ, f_inp
+USE fixed_occ, ONLY : tfixed_occ, f_inp_ => f_inp, &
+USE force_mod
+USE force_mod, ONLY : force
+USE force_mod, ONLY : force, lforce, sumfor
+USE force_mod, ONLY : force, lstres
+USE force_mod, ONLY : force, sigma
+USE force_mod, ONLY: force, sigma
+USE force_mod, ONLY : lforce
+USE force_mod, ONLY: lforce
+USE force_mod, ONLY : lforce, lstres
+USE force_mod, ONLY : lforce, lstres, sigma, force
+USE force_mod, ONLY : lforce, sumfor, force, sigma, lstres
+USE funct, ONLY : dft_is_gradient
+USE funct, ONLY: dft_is_gradient, dft_is_meta, get_meta
+USE funct, ONLY : dft_is_hybrid
+USE funct, ONLY : dft_is_hybrid, dft_has_finite_size_correction, &
+USE funct, ONLY : dft_is_hybrid, exx_is_active
+USE funct, ONLY : dft_is_hybrid, stop_exx
+USE funct, ONLY : dft_is_hybrid, stop_exx 
+USE funct, ONLY : dft_is_meta
+USE funct, ONLY: dft_is_meta
+USE funct, ONLY : dft_is_meta, dft_is_gradient
+USE funct, ONLY : dft_is_meta, dft_is_hybrid
+USE funct, ONLY : dft_is_meta, dft_is_hybrid, dft_is_gradient
+USE funct, ONLY : dft_is_meta, get_meta
+USE funct, ONLY : exx_is_active
+USE funct, ONLY: exx_is_active
+USE funct, ONLY: get_dft_is_hybrid => dft_is_hybrid, get_inlc, &
+USE funct, ONLY : get_dft_short, get_inlc, get_nonlocc_name, dft_is_nonlocc
+USE funct, ONLY : get_exx_fraction, dft_is_hybrid, &
+USE funct, ONLY : get_exx_fraction, start_exx,exx_is_active, &
+USE funct, ONLY : get_iexch, get_icorr, get_igcx, get_igcc
+use funct, ONLY : get_igcc, get_inlc 
+USE funct, ONLY : get_inlc
+USE funct, ONLY : get_inlc, get_dft_name
+USE funct, ONLY : get_meta, dft_is_nonlocc, nlc, is_libxc
+USE funct, ONLY : get_screening_parameter
+USE funct, ONLY : igcc_is_lyp
+USE funct, ONLY : igcc_is_lyp, dft_is_gradient, get_igcc
+USE funct, ONLY : is_libxc
+USE funct, ONLY : nlc, dft_is_nonlocc
+USE funct, ONLY : set_exx_fraction, set_screening_parameter
+USE funct, ONLY : set_exx_fraction, set_screening_parameter, &
+USE funct, ONLY : write_dft_name, dft_is_hybrid
+USE gbuffers, ONLY : buffer=>dev_buf
+USE gbuffers , ONLY : dev_buf
+USE gbuffers, ONLY : dev_buf
+USE gbuffers, ONLY: dev_buf
+USE gbuffers, ONLY : dev_buf, pin_buf
+USE g_psi_mod
+USE g_psi_mod_gpum, ONLY : h_diag_d, s_diag_d, using_h_diag_d, using_s_diag_d
+USE g_psi_mod_gpum, ONLY : h_diag_d, s_diag_d, using_h_diag, using_s_diag, using_h_diag_d, using_s_diag_d
+USE g_psi_mod_gpum, ONLY : using_h_diag, using_s_diag
+USE g_psi_mod, ONLY : h_diag
+USE g_psi_mod, ONLY : h_diag, s_diag
+USE g_psi_mod, ONLY : s_diag
+USE gvecs, ONLY : doublegrid
+USE gvecs, ONLY : doublegrid, gcutms, dual
+USE gvecs, ONLY : doublegrid, ngms
+USE gvecs, ONLY : doublegrid, ngms, ngms_g, gcutms
+USE gvecs, ONLY : dual
+USE gvecs, ONLY : gcutms, dual, doublegrid
+USE gvecs, ONLY : gcutms, gvecs_init, doublegrid
+USE gvecs, ONLY : gcutms, ngms
+USE gvecs, ONLY : gcutms, ngms, ngms_g, gvecs_init
+USE gvecs, ONLY : ngms
+USE gvecs, ONLY : ngms, doublegrid
+USE gvecs, ONLY : ngms, gcutms 
+USE gvecs, ONLY : ngms_g, dual
+USE gvect
+USE gvect_gpum, ONLY : deallocate_gvect_gpu !using_g, using_gg, using_g_d, using_gg_d
+USE gvect_gpum, ONLY : eigts1_d, eigts2_d, eigts3_d, mill_d, g_d
+USE gvect_gpum, ONLY : g_d
+USE gvect_gpum, ONLY: g_d
+USE gvect_gpum, ONLY : g_d, gg_d
+USE gvect_gpum, ONLY: g_d, gg_d
+USE gvect_gpum, ONLY : g_d, gg_d, mill_d, &
+USE gvect_gpum, ONLY : g_d, using_g_d
+USE gvect_gpum, ONLY : gg_d, g_d, &
+USE gvect_gpum, ONLY : gg_d, g_d, eigts1_d, eigts2_d, eigts3_d, mill_d
+USE gvect_gpum, ONLY: mill_d, eigts1_d, eigts2_d, eigts3_d, g_d
+USE gvect_gpum, ONLY : using_eigts1, using_eigts2, using_eigts3, &
+USE gvect_gpum, ONLY : using_g, using_g_d, using_gg, using_gg_d
+USE gvect_gpum, ONLY : using_g, using_gg, using_g_d, using_gg_d, &
+USE gvect, ONLY : deallocate_gvect
+USE gvect, ONLY : ecutrho
+USE gvect, ONLY: ecutrho
+USE gvect, ONLY : ecutrho, gcutm
+USE gvect, ONLY : ecutrho, ngm, g, gg, gstart, mill
+USE gvect, ONLY : ecutrho, ngm, ngm_g, gcutm
+USE gvect, ONLY : eigts1, eigts2, eigts3, mill, g
+USE gvect, ONLY : eigts1, eigts2, eigts3, ngm, ngl
+USE gvect, ONLY : g
+USE gvect, ONLY: g
+USE gvect, ONLY : gcutm
+USE gvect, ONLY : gcutm, ecutrho
+USE gvect, ONLY: gcutm, gstart, ngm, g, gg
+USE gvect, ONLY : gcutm, gvect_init
+USE gvect, ONLY : gcutm, ig_l2g, g, gg, ngm, ngm_g, mill, &
+USE gvect, ONLY : g, eigts1, eigts2, eigts3, mill, gstart
+USE gvect, ONLY : g, gg
+USE gvect, ONLY : gg, g, gstart, eigts1, eigts2, eigts3, mill
+USE gvect, ONLY : g, gg, mill, gcutm, ig_l2g, ngm, ngm_g, &
+USE gvect, ONLY : g, gg, ngm
+USE gvect, ONLY : g, gg, ngm, gstart, igtongl
+USE gvect, ONLY : g, gg, ngm, gstart, mill, &
+USE gvect, ONLY : gg, gstart
+USE gvect, ONLY : gg, ngm
+USE gvect, ONLY : gg, ngm, g, gcutm, mill, ngm_g, ig_l2g, &
+USE gvect, ONLY : g, gstart
+USE gvect, ONLY : g, ngm
+USE gvect, ONLY : g, ngm, ngmx
+USE gvect, ONLY : gstart
+USE gvect, ONLY: gstart
+USE gvect, ONLY : gstart, ngm, g
+USE gvect, ONLY : gstart, ngm, gg, g
+USE gvect, ONLY : ig_l2g
+USE gvect, ONLY: ig_l2g
+USE gvect, ONLY : ig_l2g, mill
+USE gvect, ONLY : igtongl, gg
+USE gvect, ONLY : mill
+USE gvect, ONLY : mill, eigts1, eigts2, eigts3, g
+USE gvect, ONLY: mill, eigts1, eigts2, eigts3, g
+USE gvect, ONLY : ngl, gl
+USE gvect, ONLY : ngm
+USE gvect, ONLY : ngm 
+USE gvect, ONLY : ngm, eigts1, eigts2, eigts3, mill
+USE gvect, ONLY : ngm_g
+USE gvect, ONLY : ngm, g
+USE gvect, ONLY : ngm, gcutm, g, gg
+USE gvect, ONLY : ngm_g, ecutrho
+USE gvect, ONLY : ngm, g, eigts1, eigts2, eigts3
+USE gvect, ONLY : ngm, gg
+USE gvect, ONLY: ngm, g, gcutm, ngm_g
+USE gvect, ONLY : ngm, g, gcutm, ngm_g, ig_l2g
+USE gvect, ONLY : ngm, g, gcutm, ngm_g, ngmx, ig_l2g
+USE gvect, ONLY : ngm, gg, g, &
+USE gvect, ONLY : ngm, gg, g, eigts1, eigts2, eigts3, mill
+USE gvect, ONLY : ngm, g, gg, gstart
+USE gvect, ONLY : ngm, gg, g , gstart
+USE gvect, ONLY : ngm, g, gg, gstart, eigts1, eigts2, eigts3, &
+USE gvect, ONLY : ngm, g, gg, mill, igtongl
+USE gvect, ONLY : ngm, gg, g, ngmx
+USE gvect, ONLY : ngm, gg , gstart
+USE gvect, ONLY : ngm, gg, gstart
+USE gvect, ONLY : ngm, gg, gstart, g
+USE gvect, ONLY : ngm, gg, gstart_ => gstart, ecutrho
+USE gvect, ONLY : ngm_g, g, ngm, ig_l2g
+USE gvect, ONLY : ngm, g, mill
+USE gvect, ONLY : ngm , gstart
+USE gvect, ONLY : ngm, gstart
+USE gvect, ONLY: ngm, gstart
+USE gvect, ONLY : ngm, gstart, g
+USE gvect, ONLY : ngm, gstart !, g, gg
+USE gvect, ONLY: ngm, gstart, g, gg
+USE gvect, ONLY : ngm, gstart, g, gg, gcutm
+USE gvect, ONLY: ngm, gstart, g, gg, gcutm, igtongl
+USE gvect, ONLY : ngm, gstart, g, gg, ig_l2g
+USE gvect, ONLY : ngm, gstart, g, gg, ngl, gl, gl_d, igtongl, igtongl_d
+USE gvect, ONLY : ngm, gstart, g, gg, ngl, gl,igtongl
+USE gvect, ONLY : ngm, gstart, g, gg, ngl, gl, igtongl
+USE gvect, ONLY : ngm, gstart, g, ngl, gl_d, igtongl_d
+USE gvect, ONLY : ngm, gstart, g, ngl, gl, igtongl
+USE gvect, ONLY : ngm, gstart, ngl, gl, igtongl, &
+USE gvect, ONLY : ngm, gstart, ngl, gl, igtongl, igtongl_d
+USE gvect, ONLY : ngm, gstart, ngl, igtongl, g
+USE gvect, ONLY : ngm, gstart, ngl, igtongl, igtongl_d, g, gg, gcutm
+USE gvect, ONLY: ngm, ig_l2g, mill
+USE gvect, ONLY : ngm, mill
+USE gvect, ONLY : ngm, mill, igtongl
+USE gvect, ONLY : ngm, ngl, gl, igtongl
+USE gvect, ONLY : ngm, ngl, gstart, gl, igtongl
+USE gvect, ONLY : ngm, ngl, ngm_g, g, ecutrho
+USE gvect, ONLY : ngm, ngm_g, g
+USE gvect, ONLY : ngm, ngm_g, g, gcutm, ig_l2g
+USE gvecw, ONLY : ecfixed_ => ecfixed, &
+USE gvecw, ONLY : ecfixed, qcutz, q2sigma
+USE gvecw, ONLY : ecutwfc
+USE gvecw, ONLY: ecutwfc
+USE gvecw, ONLY : ecutwfc, gcutw
+USE gvecw, ONLY : gcutw
+USE gvecw, ONLY : gcutw, ecutwfc
+USE gvecw, ONLY : gcutw, gkcut
+USE gvecw, ONLY : gkcut, ecutwfc, gcutw
+USE gvecw, ONLY: qcutz, ecfixed, q2sigma
+USE gvecw, ONLY : qcutz, ecfixed, q2sigma, ecutwfc
+USE hdf5_qe, ONLY : initialize_hdf5
+USE input_parameters, ONLY : adaptive_thr, conv_thr_init, conv_thr_multi
+USE input_parameters, ONLY : atom_label, atom_pfile, atom_mass, taspc, &
+USE input_parameters, ONLY : cell_parameters, cell_dynamics, press, wmass, &
+USE input_parameters, only: constrain_pot, wan_data
+USE input_parameters, ONLY : deallocate_input_parameters
+USE input_parameters, ONLY : electron_maxstep, mixing_mode, mixing_beta, &
+USE input_parameters, ONLY : ibrav, celldm, a, b, c, cosab, cosac, cosbc, &
+USE input_parameters, ONLY : ion_dynamics, ion_positions, tolp, &
+USE input_parameters, ONLY : k_points, xk, wk, nk1, nk2, nk3, &
+USE input_parameters, ONLY : nconstr_inp, trd_ht, rd_ht, cell_units, &
+USE input_parameters, ONLY : outdir
+USE input_parameters, ONLY: title, calculation, restart_mode, prefix, pseudo_dir, outdir, tstress, tprnfor, &
+USE input_parameters, ONLY : title, calculation, verbosity, restart_mode, &
+USE input_parameters, ONLY : use_wannier, nwan, constrain_pot, &
+USE input_parameters, ONLY : verbosity, calculation, ion_dynamics, starting_ns_eigenvalue, &
+USE io_base, ONLY : read_rhog
+USE io_base, ONLY : read_wfc
+USE io_base, ONLY: write_rhog
+USE io_base, ONLY : write_rhog, read_rhog
+USE io_base, ONLY : write_wfc
+USE io_files
+USE io_files, ONLY : create_directory
+USE io_files, ONLY : delete_if_present
+USE io_files, ONLY : diropn
+USE io_files, ONLY : diropn, wfc_dir
+USE io_files, ONLY : input_drho, output_drho, &
+USE io_files, ONLY : iunbfgs, tmp_dir
+USE io_files, ONLY : iunhub, iunhub2, nwordwfcU
+USE io_files, ONLY : iunhub, iunwfc, nwordwfc, nwordwfcU
+USE io_files, ONLY : iunmix, output_drho
+USE io_files, ONLY : iunpun, iunwfc, nwordwfc, diropn, &
+USE io_files, ONLY : iunpun, xmlfile
+USE io_files, ONLY : iunres, seqopn
+USE io_files, ONLY: iunres, seqopn
+USE io_files, ONLY : iunsat, nwordatwfc
+USE io_files, ONLY : iuntmp, seqopn
+USE io_files, ONLY : iunupdate, nd_nmbr, prefix, restart_dir, &
+USE io_files, ONLY : iunupdate, nd_nmbr, seqopn, restart_dir
+USE io_files, ONLY : iunupdate, seqopn
+USE io_files, ONLY : iunwfc_exx, nwordwfc
+USE io_files, ONLY : iunwfc, nwordwfc
+USE io_files, ONLY: iunwfc, nwordwfc
+USE io_files, ONLY: iunwfc, nwordwfc, iunefieldm, iunefieldp
+USE io_files, ONLY: iunwfc, nwordwfc,prefix,tmp_dir
+USE io_files, ONLY : nwordwfc, iunefieldp, iunefieldm
+USE io_files, ONLY : nwordwfc, iunwfc
+USE io_files, ONLY : nwordwfc, iunwfc_exx
+USE io_files, ONLY : nwordwfc, iunwfc, iunhub2, nwordwfcU
+USE io_files, ONLY : nwordwfc, iunwfc, iunoldwfc, &
+USE io_files, ONLY : nwordwfc, iunwfc, iunwfc_exx
+USE io_files, ONLY : nwordwfc, iunwfc, nwordatwfc, iunsat
+USE io_files, ONLY : nwordwfc, iunwfc, nwordwfcU, iunhub
+USE io_files, ONLY : nwordwfc, iunwfc, nwordwfcU, iunsat, iunhub
+USE io_files, ONLY: nwordwfc, iunwfc, prefix, tmp_dir, seqopn
+USE io_files, ONLY : nwordwfc, iunwfc, restart_dir
+USE io_files, ONLY : nwordwfc, iunwfc, wfc_dir, tmp_dir, restart_dir
+USE io_files, ONLY : nwordwfc, nwordwfcU, iunhub, iunwfc,&
+USE io_files, ONLY: output_drho, restart_dir
+USE io_files, ONLY : prefix
+USE io_files, ONLY : prefix, delete_if_present, seqopn
+USE io_files, ONLY : prefix, iunpun, iunsat, iunhub2, &
+USE io_files, ONLY: prefix, iunwfc, iunsat, iunhub2, &
+USE io_files, ONLY : prefix, tmp_dir
+USE io_files, ONLY : prefix, tmp_dir, seqopn
+USE io_files, ONLY : pseudo_dir, psfile
+USE io_files, ONLY : psfile, pseudo_dir
+USE io_files, ONLY : psfile, pseudo_dir, pseudo_dir_cur, &
+USE io_files, ONLY : restart_dir
+USE io_files, ONLY : restart_dir, input_drho, check_file_exist
+USE io_files, ONLY : restart_dir, iunwfc, nwordwfc
+USE io_files, ONLY : restart_dir, xmlfile
+USE io_files, ONLY : seqopn
+USE io_files, ONLY: seqopn
+USE io_files, ONLY : tmp_dir
+USE io_files, ONLY : wfc_dir, prefix
+USE io_files, ONLY : xmlfile
+USE io_global, ONLY : ionode
+USE io_global, ONLY : ionode_id
+USE io_global, ONLY : ionode_id, ionode
+USE io_global, ONLY : ionode, ionode_id
+USE io_global, ONLY: ionode, ionode_id
+USE io_global, ONLY : ionode, ionode_id, stdout
+USE io_global, ONLY : ionode, stdout
+use io_global, only : stdout
+USE io_global, ONLY : stdout
+USE io_global, ONLY : stdout 
+USE io_global, ONLY: stdout
+USE io_global, ONLY: stdout 
+USE io_global,ONLY : stdout
+USE io_global, ONLY : stdout,ionode
+USE io_global, ONLY : stdout, ionode
+USE io_global, ONLY : stdout, ionode 
+USE io_global, ONLY: stdout,ionode
+USE io_global, ONLY : stdout, ionode, ionode_id
+USE io_global, ONLY: stdout, ionode, ionode_id
+USE ions_base, ONLY : amass
+USE ions_base, ONLY : amass, if_pos 
+USE ions_base, ONLY : deallocate_ions_base
+USE ions_base, ONLY : if_pos
+USE ions_base, ONLY : if_pos, ityp, tau, extfor, &
+USE ions_base, ONLY: iob_tau=>tau
+USE ions_base, ONLY : ityp
+USE ions_base, ONLY : ityp, ntyp => nsp
+USE ions_base, ONLY : ityp, tau, nat, ntyp => nsp
+USE ions_base, ONLY: ityp, tau, nat,ntyp => nsp
+USE ions_base, only : nat
+USE ions_base, ONLY : nat
+USE ions_base, ONLY : nat 
+USE ions_base, ONLY: nat
+USE ions_base, ONLY : nat, atm, zv, tau, ntyp => nsp, ityp
+USE ions_base, ONLY : nat, fixatom
+USE ions_base, ONLY : nat, if_pos
+USE ions_base, ONLY : nat,ityp
+USE ions_base, ONLY : nat, ityp
+use ions_base, only : nat, ityp, atm,tau
+USE ions_base, ONLY : nat, ityp, ntyp => nsp
+USE ions_base, ONLY : nat, ityp, tau
+USE ions_base, ONLY : nat, ityp, tau, if_pos
+USE ions_base, ONLY : nat, ityp, tau, if_pos,atm
+USE ions_base, ONLY : nat, ityp, tau, ntyp => nsp
+USE ions_base, ONLY : nat, ityp, tau, zv
+USE ions_base, ONLY : nat, ityp, zv
+USE ions_base, ONLY: nat, ityp, zv
+USE ions_base, ONLY : nat, ityp, zv, tau
+USE ions_base, ONLY : nat, ityp, zv, tau, if_pos
+USE ions_base, ONLY : nat_ => nat, ntyp_ => nsp, ityp, tau, atm, &
+USE ions_base, ONLY : nat, nsp
+USE ions_base, ONLY : nat, nsp, ityp
+USE ions_base, ONLY: nat, nsp, ityp
+USE ions_base, ONLY : nat, nsp, ityp, amass, atm, tau, extfor
+USE ions_base, ONLY : nat, nsp, ityp, tau
+USE ions_base, ONLY : nat, nsp, ityp, tau, if_pos, atm
+USE ions_base, ONLY : nat, nsp, tau, ityp
+USE ions_base, ONLY : nat, ntyp => nsp
+USE ions_base, ONLY : nat, ntyp=>nsp, ityp
+USE ions_base, ONLY : nat, ntyp => nsp, ityp
+USE ions_base, ONLY: nat, ntyp => nsp, ityp
+USE ions_base, ONLY : nat, ntyp => nsp, ityp, tau
+USE ions_base, ONLY: nat, ntyp => nsp, ityp, tau
+USE ions_base, ONLY : nat, ntyp => nsp, ityp, tau, zv
+USE ions_base, ONLY : nat, ntyp => nsp, ityp, tau, zv, amass, extfor, atm
+USE ions_base, ONLY : nat, ntyp => nsp, ityp, tau, zv, atm
+USE ions_base, ONLY: nat, ntyp => nsp, ityp, tau, zv, atm
+USE ions_base, ONLY : nat, tau
+USE ions_base, ONLY : nat, tau, atm, ityp, ntyp => nsp
+USE ions_base, ONLY : nat, tau, fixatom
+USE ions_base, ONLY : nat, tau, ityp
+USE ions_base, ONLY: nat, tau, ityp
+USE ions_base, ONLY : nat, tau, ityp, atm
+USE ions_base, ONLY : nat, tau, ityp, atm, if_pos, tau_format, amass
+USE ions_base, ONLY : nat, tau, ityp, zv
+USE ions_base, ONLY : nat, tau, nsp, ityp
+USE ions_base, ONLY : nat, tau, ntyp => nsp, ityp
+USE ions_base, ONLY : nat, tau, ntyp => nsp, ityp, zv
+USE ions_base, ONLY : nat, zv, ityp
+USE ions_base, ONLY : nat, zv, tau, ityp
+USE ions_base, ONLY : nsp
+USE ions_base, ONLY : nsp, ityp, atm, nat, tau, zv, amass
+USE ions_base, ONLY : nsp, ityp, nat
+USE ions_base, ONLY: nsp, nat, ityp
+USE ions_base, ONLY : ntyp => nsp
+USE ions_base, ONLY: ntyp => nsp
+USE ions_base, ONLY : ntyp => nsp, ityp, nat
+USE ions_base, ONLY : tau
+USE ions_base, ONLY : tau, nat, ityp
+USE ions_base, ONLY: tau, nat, nsp, atm, ityp
+USE ions_base, ONLY : tau, nat, ntyp => nsp, ityp, atm, if_pos
+USE ions_base, ONLY : zv, nat, ityp
+USE ions_base, ONLY : zv, nat, nsp, ityp
+USE ions_base, ONLY : zv, nat, nsp, ityp, tau
+USE ions_base, ONLY : zv, nat, nsp, ityp, tau, compute_eextfor, atm, &
+USE ions_base, ONLY : zv, nat, nsp, tau, ityp
+USE ions_base, ONLY : zv, nat, tau, ityp
+USE ions_base, ONLY : zv, nat, tau, ityp, ntyp => nsp
+USE ions_base, ONLY : zv, nsp
+USE ions_base, ONLY : zv, nsp, nat, ityp
+USE ions_base, ONLY : zv, ntyp => nsp
+USE ions_base, ONLY : zv, ntyp => nsp, nat, ityp, atm, tau
+USE io_rho_xml, ONLY : read_scf
+USE io_rho_xml, ONLY : write_scf
+USE iso_c_binding, ONLY : c_int
+use k = 0 (no need to list k-point specifications after card)
+use kinds
+USE kinds
+use kinds, only: dp
+use kinds, only : DP 
+USE kinds, only : dp
+USE kinds, only : DP
+USE kinds, ONLY : dp
+USE kinds, ONLY : dp 
+USE kinds, ONLY: dp
+USE kinds, ONLY : DP
+USE kinds, ONLY : DP 
+USE kinds, ONLY: DP
+USE kinds, ONLY: DP 
+USE Kinds, ONLY : DP
+USE kinds, ONLY: DP,sgl
+USE klist
+USE klist, ONLY : deallocate_igk
+USE klist, ONLY : degauss, smearing, lgauss, ltetra, nkstot, xk, &
+USE klist, ONLY: degauss, tot_charge
+USE klist, ONLY : igk_k
+USE klist, ONLY : igk_k_d
+USE klist, ONLY : ltetra, lgauss, degauss, ngauss, nks, &
+USE klist, ONLY : ltetra, lgauss, ngauss, two_fermi_energies, &
+USE klist, ONLY : nelec
+USE klist, ONLY : nelec, degauss, nks, xk, wk, igk_k, ngk
+USE klist, ONLY : nelec, degauss, nks, xk, wk, ngk, igk_k
+USE klist, ONLY: nelec, degauss, nks, xk, wk, ngk, igk_k
+USE klist, ONLY : nelec !TB
+USE klist, ONLY : nelec, tot_charge
+USE klist, ONLY: nelec, tot_charge
+USE klist, ONLY : ngk
+USE klist, ONLY : ngk, igk_k
+USE klist, ONLY : ngk, nks, nkstot, xk, wk, igk_k
+USE klist, ONLY : ngk, nkstot
+USE klist, ONLY : ngk, nks, xk
+USE klist, only: nks
+USE klist, ONLY : nks
+USE klist, ONLY: nks
+USE klist, ONLY : nks, igk_k
+USE klist , ONLY: nks, nelec, xk, wk, degauss, ngauss, igk_k, ngk
+USE klist, ONLY : nks, ngk
+USE klist, ONLY : nks, ngk, igk_k
+USE klist, ONLY : nks, ngk, xk, igk_k
+use klist, only : nks, nkstot
+USE klist, ONLY : nks, nkstot, wk, xk, ngk, igk_k
+USE klist, ONLY : nks, nkstot, wk, xk, ngk, igk_k, igk_k_d
+USE klist, ONLY : nks, nkstot, xk, ngk, igk_k
+USE klist, ONLY : nks, nkstot, xk, ngk, wk, &
+USE klist, ONLY : nks, nkstot, xk, qnorm
+USE klist, ONLY : nks, nkstot, xk, wk
+USE klist, ONLY : nks, nkstot, xk, wk, tot_magnetization, &
+USE klist, ONLY : nkstot
+USE klist, ONLY : nkstot, nks, ngk, igk_k, igk_k_d, xk
+USE klist, ONLY : nkstot, nks, xk, ngk, igk_k
+USE klist, ONLY : nkstot, nks, xk, wk
+USE klist, ONLY : nkstot, wk
+USE klist, ONLY : nkstot, xk
+USE klist, ONLY : nks, xk
+USE klist, ONLY : nks, xk, igk_k, ngk
+USE klist, ONLY : nks, xk, ngk
+USE klist, ONLY : nks, xk, ngk, igk_k
+USE klist, ONLY: nks, xk, ngk, igk_k
+USE klist, ONLY : nks, xk, ngk, igk_k_d
+USE klist, ONLY: nks, xk, ngk, igk_k_d
+USE klist, ONLY : nks, xk, ngk, igk_k, igk_k_d
+USE klist, ONLY : qnorm
+USE klist, ONLY : tot_charge
+USE klist, ONLY : two_fermi_energies, lgauss, ltetra
+USE klist, ONLY : wk
+USE klist, ONLY : xk
+USE klist, ONLY : xk, igk_k
+USE klist, ONLY: xk, igk_k
+USE klist, ONLY : xk, igk_k, ngk
+USE klist, ONLY : xk, ngk, igk_k
+USE klist, ONLY: xk, ngk, igk_k
+USE klist, ONLY : xk, ngk, igk_k_d
+USE klist, ONLY: xk, ngk, igk_k_d
+USE klist, ONLY : xk, ngk, nks
+USE klist, ONLY : xk, ngk, nks, nkstot
+USE klist, ONLY : xk, ngk, nks, nkstot, wk
+USE klist, ONLY : xk, nks
+USE klist, ONLY : xk, nks, init_igk
+USE klist, ONLY : xk, nks, ngk
+USE klist, ONLY : xk, nks, ngk, igk_k
+USE klist, ONLY : xk, nks, ngk, igk_k_d
+USE klist, ONLY : xk, nks, nkstot
+USE klist, ONLY : xk, nks, nkstot, igk_k
+USE klist, ONLY : xk, nkstot, nks
+USE klist, ONLY : xk, wk, nelec, ngk, nks, nkstot, lgauss, &
+USE klist, ONLY : xk, wk, nks, nelec, degauss, lgauss, &
+USE klist, ONLY : xk, wk, nks, nkstot, two_fermi_energies
+USE klist, ONLY : xk, wk, nkstot
+USE klist, ONLY : xk, wk, nkstot, nks, qnorm
+USE ktetra, ONLY : deallocate_tetra
+USE ktetra, ONLY : ntetra, tetra, tetra_type, &
+USE ktetra, ONLY : ntetra, tetra, tetra_type, tetra_weights, &
+USE ktetra, ONLY : ntetra, tetra_type
+USE ktetra, ONLY : tetra_type
+USE ktetra, ONLY : tetra_type, opt_tetra_init, tetra_init
+USE ldaU, ONLY : atom_pos
+USE ldaU, ONLY : atom_pos, at_sc, sc_at
+USE ldaU, ONLY : at_sc, ldim_u, neighood, phase_fac, sc_size
+USE ldaU, ONLY : deallocate_ldaU
+USE ldaU, ONLY : d_spin_ldau
+USE ldaU, ONLY : eth
+USE ldaU, ONLY : eth, lda_plus_u, lda_plus_u_kind, &
+USE ldaU, ONLY : Hubbard_J0, Hubbard_beta, Hubbard_U_back, &
+USE ldaU, ONLY : Hubbard_l 
+USE ldaU, ONLY : Hubbard_l, Hubbard_alpha, Hubbard_J0, Hubbard_beta, &
+USE ldaU, ONLY : Hubbard_l, Hubbard_l_back, Hubbard_l1_back, &
+USE ldaU, ONLY : Hubbard_l, Hubbard_U, Hubbard_U_back, ldim_back, &
+USE ldaU, ONLY : Hubbard_lmax, Hubbard_l, &
+USE ldaU, ONLY : Hubbard_lmax, Hubbard_l, Hubbard_alpha, &
+USE ldaU, ONLY : Hubbard_lmax, Hubbard_l, Hubbard_U, &
+USE ldaU, ONLY : Hubbard_lmax, Hubbard_l, Hubbard_U, Hubbard_J, &
+USE ldaU, ONLY : Hubbard_lmax, Hubbard_l, Hubbard_U, starting_ns
+USE ldaU, ONLY : Hubbard_lmax, Hubbard_l, Hubbard_U, starting_ns, &
+USE ldaU, ONLY : Hubbard_lmax, Hubbard_l, is_hubbard, &
+USE ldaU, ONLY : Hubbard_lmax, Hubbard_l, is_Hubbard, &
+USE ldaU, ONLY: Hubbard_lmax, Hubbard_l, is_Hubbard, nwfcU, &
+USE ldaU, ONLY : hubbard_lmax, hubbard_l, U_projection, &
+USE ldaU, ONLY : Hubbard_lmax, Hubbard_l, wfcU, &
+USE ldaU, ONLY : Hubbard_l, q_ae, U_projection, wfcU, nwfcU, &
+USE ldaU, ONLY : Hubbard_l, q_ae, wfcU, U_projection, backall, &
+USE ldaU, ONLY : hubbard_u, hubbard_l
+USE ldaU, ONLY : Hubbard_U_ => hubbard_u, &
+USE ldaU, ONLY : Hubbard_V
+USE ldaU, ONLY : Hubbard_V, max_num_neighbors, is_hubbard, &
+USE ldaU, ONLY : is_hubbard, Hubbard_l, nwfcU, offsetU, &
+USE ldaU, ONLY : is_hubbard, Hubbard_l, nwfcU, offsetU, at_sc, &
+USE ldaU, ONLY : is_hubbard, Hubbard_l, nwfcU, wfcU, offsetU, &
+USE ldaU, ONLY : is_hubbard, Hubbard_l, offsetU, q_ae
+USE ldaU, ONLY : is_hubbard, is_hubbard_back, Hubbard_l, &
+USE ldaU, ONLY : is_hubbard, nwfcU
+USE ldaU, ONLY : lda_plus_u
+USE ldaU, ONLY: lda_plus_u
+USE ldaU, ONLY : lda_plus_u, eth, init_lda_plus_u, U_projection, &
+USE ldaU, ONLY : lda_plus_u, hub_back, lda_plus_u_kind, nsg
+USE ldaU, ONLY : lda_plus_u, Hubbard_lmax, eth, &
+USE ldaU, ONLY : lda_plus_u, Hubbard_lmax, lda_plus_u_kind, ldmx, &
+USE ldaU, ONLY : lda_plus_U, Hubbard_u, Hubbard_j, Hubbard_alpha, &
+USE ldaU, ONLY : lda_plus_u, init_lda_plus_u
+USE ldaU, ONLY : lda_plus_u, lda_plus_u_kind, Hubbard_lmax, Hubbard_lmax_back, &
+USE ldaU, ONLY : lda_plus_u, lda_plus_u_kind, is_hubbard_back
+USE ldaU, ONLY : lda_plus_u, lda_plus_u_kind, ldim_u, &
+USE ldaU, ONLY : lda_plus_u, lda_plus_u_kind, ldmx_b, &
+USE ldaU, ONLY : lda_plus_u, lda_plus_u_kind, U_projection, &
+USE ldaU, ONLY: lda_plus_u, lda_plus_u_kind, U_projection
+USE ldaU, ONLY : lda_plus_u, lda_plus_u_kind, U_projection, wfcU
+USE ldaU, ONLY : lda_plus_u, starting_ns, hub_back, &
+USE ldaU, ONLY : lda_plus_u, U_projection
+USE ldaU, ONLY: lda_plus_u, U_projection
+USE ldaU, ONLY : lda_plus_U, U_projection
+USE ldaU, ONLY : lda_plus_u, U_projection, nwfcU
+USE ldaU, ONLY : lda_plus_U, U_projection, nwfcU
+USE ldaU, ONLY : lda_plus_u, U_projection, wfcU, lda_plus_u_kind
+USE ldaU, ONLY : ldim_back, ldmx_b, Hubbard_l1_back
+USE ldaU, ONLY : ldim_u, neighood, at_sc, phase_fac, Hubbard_V, v_nsg
+USE ldaU, ONLY : ldmx, Hubbard_l, q_ae, wfcU, &
+USE ldaU, ONLY : neighood
+USE ldaU, ONLY : nwfcU, Hubbard_l, is_hubbard, Hubbard_l_back, &
+USE ldaU, ONLY : nwfcU, offsetU, Hubbard_l, is_hubbard, &
+USE ldaU, ONLY : nwfcU, wfcU
+USE ldaU, ONLY : q_ae, q_ps, Hubbard_l, &
+USE ldaU, ONLY : sc_size, num_uc, max_num_neighbors, neighood, &
+USE ldaU, ONLY : U_projection, wfcU, nwfcU, copy_U_wfc
+USE ldaU, ONLY : wfcU, nwfcU, lda_plus_u, U_projection
+use linear-algebra parallelization, with scalapack if possible.
+USE loc_scdm_k, ONLY : localize_orbitals_k
+USE loc_scdm, ONLY: scdm_thresholds, scdm_points, scdm_prescreening
+USE loc_scdm, ONLY : use_scdm, localize_orbitals
+USE loc_scdm, ONLY : use_scdm, scdm_den, scdm_grd, n_scdm
+USE london_module, ONLY : dealloca_london
+USE london_module, ONLY : energy_london
+USE london_module, ONLY : force_london
+USE london_module, ONLY : init_london, lon_rcut, scal6, in_c6, in_rvdw
+USE london_module, ONLY : scal6, lon_rcut, c6_i
+USE london_module, ONLY : scal6, lon_rcut, in_C6
+USE london_module, ONLY : stres_london
+use Lowdin orthogonalized atomic wfc's
+USE lsda_mod
+USE lsda_mod, ONLY : current_spin
+USE lsda_mod, ONLY: current_spin
+USE lsda_mod, ONLY : current_spin, lsda, isk
+USE lsda_mod, ONLY: current_spin, lsda, nspin, isk
+USE lsda_mod, ONLY : current_spin, nspin
+USE lsda_mod, ONLY: current_spin, nspin
+USE lsda_mod, ONLY : isk
+USE lsda_mod, ONLY : lsda
+USE lsda_mod, ONLY : lsda, absmag
+USE lsda_mod, ONLY : lsda, current_spin, isk
+USE lsda_mod, ONLY : lsda, current_spin, isk, nspin
+USE lsda_mod, ONLY : lsda, current_spin, nspin, isk
+USE lsda_mod, ONLY : lsda, isk, current_spin
+USE lsda_mod, ONLY : lsda, nspin
+USE lsda_mod, ONLY: lsda, nspin
+USE lsda_mod, ONLY : lsda, nspin, current_spin, isk
+USE lsda_mod, ONLY : lsda, nspin, current_spin, isk, &
+USE lsda_mod, ONLY : lsda, nspin, isk
+USE lsda_mod, ONLY : lsda, nspin, magtot, absmag, isk
+USE lsda_mod, ONLY : lsda, starting_magnetization
+use lsda_mod, only: nspin
+USE lsda_mod, only: nspin
+USE lsda_mod, ONLY : nspin
+USE lsda_mod, ONLY: nspin
+USE lsda_mod, ONLY : nspin, absmag
+USE lsda_mod, ONLY : nspin, current_spin
+USE lsda_mod, ONLY : nspin, current_spin, isk
+USE lsda_mod, ONLY : nspin, isk
+USE lsda_mod, ONLY : nspin, isk, lsda
+USE lsda_mod, ONLY : nspin, isk, lsda, starting_magnetization,&
+USE lsda_mod, ONLY : nspin, isk, lsda, starting_magnetization, magtot, absmag
+USE lsda_mod, ONLY : nspin_ => nspin, &
+USE lsda_mod, ONLY : nspin, starting_magnetization
+USE lsda_mod, ONLY : starting_magnetization
+USE martyna_tuckerman, ONLY : do_comp_mt 
+USE martyna_tuckerman, ONLY: do_comp_mt
+USE martyna_tuckerman,ONLY: do_comp_mt
+USE martyna_tuckerman, ONLY : do_comp_mt, wg_corr_force
+USE martyna_tuckerman, ONLY : tag_wg_corr_as_obsolete
+USE martyna_tuckerman, ONLY : wg_corr_ewald, do_comp_mt
+USE martyna_tuckerman, ONLY : wg_corr_force
+USE martyna_tuckerman, ONLY : wg_corr_h, do_comp_mt
+USE martyna_tuckerman, ONLY : wg_corr_loc, do_comp_mt
+USE matrix_inversion
+USE mdiis, ONLY: mdiis_type, allocate_mdiis, deallocate_mdiis, &
+USE m_gth, ONLY : deallocate_gth
+USE m_gth, ONLY : dvloc_gth
+USE m_gth, ONLY : dvloc_gth_gpu
+USE m_gth, ONLY: mk_dffnl_gth
+USE m_gth, ONLY: mk_dffnl_gth, mk_dffnl_gth_gpu
+USE m_gth, ONLY : mk_ffnl_gth
+USE m_gth, ONLY : vloc_gth
+USE mix_save
+USE mp_bands, ONLY : inter_bgrp_comm
+USE mp_bands, ONLY : inter_bgrp_comm, intra_bgrp_comm, nbgrp
+USE mp_bands, ONLY : intra_bgrp_comm
+USE mp_bands, ONLY: intra_bgrp_comm
+USE mp_bands, ONLY : intra_bgrp_comm, inter_bgrp_comm
+USE mp_bands, ONLY : intra_bgrp_comm, inter_bgrp_comm 
+USE mp_bands, ONLY : intra_bgrp_comm, inter_bgrp_comm, &
+USE mp_bands, ONLY : intra_bgrp_comm, me_bgrp, nproc_bgrp
+USE mp_bands, ONLY: intra_bgrp_comm, me_bgrp, nproc_bgrp
+USE mp_bands, ONLY : intra_bgrp_comm, me_bgrp, root_bgrp
+USE mp_bands, ONLY : intra_bgrp_comm, nproc_bgrp
+USE mp_bands, ONLY : intra_bgrp_comm, ntask_groups, nyfft
+USE mp_bands, ONLY : intra_bgrp_comm, nyfft
+USE mp_bands , ONLY : intra_bgrp_comm, root_bgrp
+USE mp_bands, ONLY : me_bgrp
+USE mp_bands, ONLY: me_bgrp
+USE mp_bands, ONLY : me_bgrp, intra_bgrp_comm
+USE mp_bands, ONLY : me_bgrp, intra_bgrp_comm, nproc_bgrp
+USE mp_bands, ONLY : me_bgrp, root_bgrp, intra_bgrp_comm
+USE mp_bands, ONLY : me_bgrp, root_bgrp, intra_bgrp_comm, &
+USE mp_bands, ONLY : my_bgrp_id, root_bgrp_id, &
+USE mp_bands, ONLY: my_bgrp_id, root_bgrp_id, &
+USE mp_bands, ONLY : my_bgrp_id, root_bgrp_id, root_bgrp, &
+USE mp_bands, ONLY : nbgrp
+USE mp_bands, ONLY : nbgrp,inter_bgrp_comm
+USE mp_bands, ONLY : nbgrp, me_bgrp, root_bgrp, intra_bgrp_comm
+USE mp_bands, ONLY : nproc_bgrp
+USE mp_bands, ONLY: nproc_bgrp
+USE mp_bands, ONLY : nproc_bgrp, intra_bgrp_comm, inter_bgrp_comm, &
+USE mp_bands, ONLY : nproc_bgrp, intra_bgrp_comm, nyfft
+USE mp_bands, ONLY : nproc_bgrp, intra_bgrp_comm, nyfft, ntask_groups
+USE mp_bands, ONLY : nproc_bgrp, me_bgrp, intra_bgrp_comm
+USE mp_bands, ONLY : nproc_bgrp, nbgrp
+USE mp_bands, ONLY : root_bgrp, intra_bgrp_comm
+USE mp_bands, ONLY : root_bgrp, intra_bgrp_comm, inter_bgrp_comm
+USE mp_bands, ONLY : use_bgrp_in_hpsi
+USE mp_bands, ONLY : use_bgrp_in_hpsi, inter_bgrp_comm
+USE mp_bands, ONLY: use_bgrp_in_hpsi, inter_bgrp_comm
+USE mp_exx, ONLY : ibands, nibands, my_egrp_id
+USE mp_exx, ONLY : iexx_istart_d
+USE mp_exx, ONLY : iexx_istart, iexx_iend, my_egrp_id
+USE mp_exx, ONLY : iexx_start, iexx_end, inter_egrp_comm, &
+USE mp_exx, ONLY : inter_egrp_comm, intra_egrp_comm, &
+USE mp_exx, ONLY : inter_egrp_comm, my_egrp_id, &
+USE mp_exx, ONLY : inter_egrp_comm, my_egrp_id, negrp, &
+USE mp_exx, ONLY : intra_egrp_comm
+USE mp_exx, ONLY : intra_egrp_comm, inter_egrp_comm, &
+USE mp_exx, ONLY : intra_egrp_comm, intra_egrp_comm, &
+USE mp_exx, ONLY : intra_egrp_comm, me_egrp, exx_mode, nproc_egrp, &
+USE mp_exx, ONLY : max_ibands, negrp
+USE mp_exx, ONLY : me_egrp, negrp, init_index_over_band, &
+USE mp_exx, ONLY : negrp
+USE mp_exx, ONLY : negrp, inter_egrp_comm, init_index_over_band
+USE mp_exx, ONLY : negrp, nibands, my_egrp_id, max_ibands
+USE mp_exx, ONLY : nproc_egrp, negrp, intra_egrp_comm
+USE mp_exx, ONLY : nproc_egrp, negrp, my_egrp_id, me_egrp, &
+USE mp_global, ONLY : inter_pool_comm
+USE mp_global, ONLY : mp_global_end
+USE mp_global, ONLY : mp_startup
+USE mp_global, ONLY : mp_startup, mp_global_end
+USE mp_global, ONLY : nproc_file, nproc_pool_file, &
+USE mp_images, ONLY : intra_image_comm
+USE mp_images, ONLY: intra_image_comm
+USE mp_images, ONLY : me_image, intra_image_comm
+USE mp_images, ONLY : me_image, nproc_image
+USE mp_images, ONLY : me_image, nproc_image, intra_image_comm
+USE mp_images, ONLY : my_image_id
+USE mp_images, ONLY : nimage
+USE mp_images, ONLY : nproc_image 
+USE mp_images, ONLY : nproc_image, me_image, intra_image_comm
+USE mp, ONLY : mp_allgather, mp_size, &
+USE mp, ONLY: mp_allgather, mp_size, &
+USE mp, ONLY : mp_barrier
+USE mp, ONLY : mp_barrier 
+USE mp, ONLY: mp_barrier
+USE mp, ONLY : mp_barrier, mp_comm_split, &
+USE mp, ONLY : mp_bcast
+USE mp, ONLY : mp_bcast 
+USE mp, ONLY : mp_bcast, mp_sum
+USE mp, ONLY: mp_bcast, mp_sum
+USE mp, ONLY : mp_comm_split, mp_comm_free, mp_size, mp_rank
+USE mp, ONLY: mp_get
+USE mp, ONLY: mp_get_comm_null, mp_circular_shift_left
+USE mp, ONLY : mp_max
+USE mp, ONLY: mp_max
+USE mp, ONLY : mp_max, mp_min
+USE mp, ONLY : mp_max, mp_sum
+USE mp, ONLY : mp_rank, mp_size
+USE mp, ONLY : mp_stop
+USE mp, ONLY : mp_stop, mp_barrier, mp_sum
+USE mp, ONLY : mp_sum
+USE mp, ONLY : mp_sum 
+USE mp, ONLY: mp_sum
+USE mp, ONLY : mp_sum, mp_barrier
+USE mp, ONLY : mp_sum,mp_barrier
+USE mp, ONLY : mp_sum, mp_barrier, mp_circular_shift_left
+USE mp, ONLY : mp_sum, mp_bcast
+USE mp, ONLY: mp_sum, mp_bcast
+USE mp, ONLY : mp_sum, mp_circular_shift_left
+USE mp, ONLY : mp_sum, mp_comm_split
+USE mp, ONLY: mp_sum, mp_gather, mp_bcast, mp_get
+USE mp, ONLY : mp_sum, mp_get_comm_null
+USE mp, ONLY : mp_sum, mp_get_comm_null, &
+USE mp, ONLY : mp_sum, mp_get_comm_null, mp_circular_shift_left 
+USE mp, ONLY : mp_sum, mp_max
+USE mp_orthopools, ONLY : intra_orthopool_comm
+USE mp_orthopools, ONLY : mp_start_orthopools, intra_orthopool_comm
+USE mp_pools, ONLY : inter_pool_comm
+USE mp_pools, ONLY : inter_pool_comm 
+USE mp_pools, ONLY: inter_pool_comm
+USE mp_pools, ONLY : inter_pool_comm, intra_pool_comm, me_pool, &
+USE mp_pools, ONLY: inter_pool_comm, intra_pool_comm, nproc_pool, me_pool
+USE mp_pools, ONLY : inter_pool_comm, me_pool, nproc_pool
+USE mp_pools, ONLY : inter_pool_comm, npool, me_pool, &
+USE mp_pools, ONLY : inter_pool_comm, npool, me_pool, root_pool, &
+USE mp_pools, ONLY : intra_pool_comm
+USE mp_pools, ONLY: intra_pool_comm
+USE mp_pools, ONLY : intra_pool_comm, inter_pool_comm
+USE mp_pools, ONLY : intra_pool_comm, inter_pool_comm, &
+USE mp_pools, ONLY : intra_pool_comm, me_pool, nproc_pool
+USE mp_pools, ONLY : kunit
+USE mp_pools, ONLY : me_pool, my_pool_id, root_pool, &
+USE mp_pools, ONLY: me_pool,nproc_pool,intra_pool_comm
+USE mp_pools, ONLY : me_pool, root_pool
+USE mp_pools, ONLY : me_pool, root_pool, &
+USE mp_pools, ONLY : my_pool_id
+USE mp_pools, ONLY: my_pool_id
+USE mp_pools, ONLY : my_pool_id, npool, kunit
+USE mp_pools, ONLY : my_pool_id, npool, kunit, &
+USE mp_pools, ONLY : npool
+USE mp_pools, ONLY : npool, inter_pool_comm
+USE mp_pools, ONLY : npool, kunit, inter_pool_comm
+USE mp_pools, ONLY : npool, my_pool_id, kunit
+USE mp_pools, ONLY: npool, my_pool_id, kunit
+USE mp_pools, ONLY : npool, nproc_pool, me_pool, inter_pool_comm
+USE mp_pools, ONLY : nproc_pool, me_pool
+USE mp_pools, ONLY : nproc_pool, me_pool, intra_pool_comm
+USE mp_pools, ONLY : root_pool, me_pool, my_pool_id, &
+USE mp_world, ONLY : nnode, world_comm
+USE mp_world, ONLY : root, world_comm
+USE mp_world, ONLY : world_comm
+USE mp_world, ONLY : world_comm,mpime,nproc
+USE mytime, ONLY :
+USE noncollin_module
+USE noncollin_module, ONLY : angle1, angle2
+USE noncollin_module, ONLY : angle1, angle2 
+USE noncollin_module, ONLY: angle1, angle2
+USE noncollin_module, ONLY : angle1, angle2, i_cons, mcons, bfield, magtot_nc, &
+USE noncollin_module, ONLY : bfield, lambda, i_cons, mcons, &
+USE noncollin_module, ONLY : deallocate_noncol
+USE noncollin_module, ONLY : factlist, pointlist, r_m
+USE noncollin_module, ONLY : i_cons, mcons, bfield, &
+USE noncollin_module, ONLY : lsign
+USE noncollin_module, ONLY : lsign, ux
+USE noncollin_module, ONLY : noncolin
+USE noncollin_module, ONLY: noncolin
+USE noncollin_module,ONLY : noncolin
+USE noncollin_module, ONLY : noncolin, angle1, angle2
+USE noncollin_module, ONLY : noncolin, magtot_nc, i_cons, bfield, &
+USE noncollin_module, ONLY: noncolin, mcons, i_cons
+USE noncollin_module, ONLY : noncolin, npol
+USE noncollin_module, ONLY: noncolin, npol
+USE noncollin_module, ONLY: noncolin, npol 
+USE noncollin_module, ONLY : noncolin, npol, angle1, angle2
+USE noncollin_module,ONLY : noncolin, npol, angle1, angle2, bfield, &
+USE noncollin_module, ONLY : noncolin, npol, i_cons, m_loc, &
+USE noncollin_module, ONLY : noncolin, npol, nspin_lsda
+USE noncollin_module, ONLY : noncolin, npol, nspin_mag
+USE noncollin_module, ONLY : noncolin, nspin_lsda
+USE noncollin_module, ONLY : noncolin, nspin_mag
+USE noncollin_module, ONLY : noncolin, nspin_mag, nspin_gga
+USE noncollin_module, ONLY : noncolin, report
+USE noncollin_module, ONLY : npol
+USE noncollin_module, ONLY : npol 
+USE noncollin_module, ONLY: npol
+USE noncollin_module, ONLY: npol 
+USE noncollin_module, ONLY : npol, noncolin
+USE noncollin_module, ONLY: npol, noncolin
+USE noncollin_module, ONLY : npol, nspin_mag
+USE noncollin_module, ONLY : nspin_gga
+USE noncollin_module, ONLY : nspin_gga, nspin_mag
+USE noncollin_module, ONLY : nspin_lsda
+USE noncollin_module, ONLY : nspin_lsda, noncolin
+USE noncollin_module, ONLY : nspin_lsda, nspin_mag
+USE noncollin_module, ONLY : nspin_mag
+USE noncollin_module, ONLY : nspin_mag, angle1, angle2
+USE noncollin_module, ONLY : nspin_mag, nspin_gga
+USE noncollin_module, ONLY : nspin_mag, nspin_lsda
+USE noncollin_module, ONLY: pointlist, factlist, noncolin
+USE noncollin_module, ONLY : pointlist, factlist, report, noncolin, npol
+USE noncollin_module, ONLY : report
+USE noncollin_module, ONLY : ux, nspin_gga
+USE noncollin_module, ONLY : ux, nspin_gga, nspin_mag
+USE omp_lib
+USE parallel_include
+USE parallel_include 
+USE parameters, ONLY : npk
+USE parameters, ONLY : ntypx
+USE parameters, ONLY: ntypx
+USE parameters, ONLY : ntypx, natx
+USE parameters, ONLY : ntypx, npk
+USE paw_exx, ONLY : PAW_init_fock_kernel
+USE paw_exx, ONLY : PAW_newdxx
+USE paw_exx, ONLY : PAW_xx_energy
+USE paw_init, ONLY : deallocate_paw_internals
+USE paw_init, ONLY : PAW_atomic_becsum
+USE paw_init, ONLY : paw_init_onecenter, allocate_paw_internals
+USE paw_init, ONLY : paw_post_init
+USE paw_onecenter, ONLY : paw_ddot
+USE paw_onecenter, ONLY : PAW_h_potential
+USE paw_onecenter, ONLY : paw_potential
+USE paw_onecenter, ONLY : PAW_potential
+USE paw_onecenter, ONLY : paw_rho_lm
+USE paw_symmetry, ONLY : PAW_symmetrize
+USE paw_symmetry, ONLY : paw_symmetrize_ddd
+USE paw_symmetry, ONLY : PAW_symmetrize_ddd
+USE paw_variables
+USE paw_variables, ONLY : okpaw
+USE paw_variables,ONLY : okpaw
+USE paw_variables, ONLY : okpaw, ddd_paw
+USE paw_variables, ONLY : okpaw, ddd_PAW
+USE paw_variables, ONLY : okpaw, ddd_paw, total_core_energy, only_paw
+USE paw_variables, ONLY : paw_info
+USE paw_variables, ONLY : paw_info, rad, radial_grad_style, vs_rad
+USE paw_variables, ONLY : paw_radial_integrator
+USE paw_variables, ONLY : rad, paw_is_init
+USE paw_variables, ONLY : xlm, lm_fact, lm_fact_x, &
+USE plugin_flags
+USE plugin_flags, ONLY : use_pw2casino
+USE plugin_variables, ONLY : plugin_etot
+USE powell, ONLY : POWELL_MIN
+USE pseudo_types, ONLY : deallocate_pseudo_upf
+USE pw2blip
+USE pw_restart_new, ONLY : pw_write_schema, pw_write_binaries
+USE pw_restart_new, ONLY : read_collected_wfc
+USE pw_restart_new, ONLY : read_xml_file
+USE qes_bcast_module,ONLY : qes_bcast
+USE qes_libs_module
+USE qes_libs_module, ONLY : qes_reset
+USE qes_reset_module, ONLY: qes_reset 
+USE qes_types_module
+USE qes_types_module, ONLY : input_type
+USE qes_types_module, ONLY : output_type
+USE qes_types_module,ONLY : output_type
+USE qes_types_module, ONLY : output_type, parallel_info_type, &
+USE qes_write_module, ONLY: qes_write
+USE qexsd_copy, ONLY : qexsd_copy_atomic_structure
+USE qexsd_copy, ONLY : qexsd_copy_efermi
+USE qexsd_copy, ONLY : qexsd_copy_parallel_info, &
+USE qexsd_init, ONLY: qexsd_init_atomic_species, qexsd_init_atomic_structure, qexsd_init_dft, &
+USE qexsd_init, ONLY : qexsd_init_berryPhaseOutput, qexsd_bp_obj
+USE qexsd_init, ONLY: qexsd_init_convergence_info, qexsd_init_algorithmic_info, & 
+USE qexsd_input 
+USE qexsd_input, ONLY : qexsd_input_obj
+USE qexsd_input, ONLY : qexsd_input_obj, qexsd_init_k_points_ibz, &
+USE qexsd_module, ONLY : qexsd_readschema
+USE qexsd_module, ONLY : qexsd_reset_steps
+USE qexsd_module, ONLY : qexsd_set_status
+USE qexsd_module, ONLY: qexsd_step_addstep
+USE qexsd_module, ONLY: qexsd_xf, qexsd_openschema, qexsd_closeschema, &
+USE qmmm, ONLY : qmmm_add_esf
+USE qmmm, ONLY : qmmm_config
+USE qmmm, ONLY : qmmm_initialization, qmmm_shutdown, &
+USE qmmm, ONLY : qmmm_mode
+USE qvan2_gpum, ONLY : qvan2_kernel
+USE radial_grids, ONLY : deallocate_radial_grid
+USE radial_grids, ONLY : do_mesh
+USE radial_grids, ONLY : hartree
+USE random_numbers_gpum, ONLY : randy_vect_gpu => randy_vect_debug_gpu
+USE random_numbers, ONLY : gauss_dist
+USE random_numbers, ONLY : gauss_dist, set_random_seed
+USE random_numbers, ONLY : gauss_dist, sum_of_gaussians2
+USE random_numbers, ONLY : randy
+USE random_numbers, ONLY: randy
+USE random_numbers, ONLY : randy, gauss_dist
+USE random_numbers, ONLY: randy, gauss_dist
+USE rap_point_group_is, ONLY : code_group_is, gname_is
+USE rap_point_group_is, ONLY : nsym_is, sr_is, ft_is, d_spin_is, &
+USE rap_point_group, ONLY : code_group, nclass, nelem, elem, &
+USE rap_point_group, ONLY : code_group, nclass, nelem, elem, which_irr, &
+USE rap_point_group, ONLY : elem, nelem, name_class
+USE rap_point_group_so, ONLY : elem_so, nelem_so, name_class_so
+USE rap_point_group_so, ONLY : nrap, nelem_so, elem_so, has_e, &
+USE read_input, ONLY : read_input_file
+USE read_namelists_module, ONLY : read_namelists, sm_not_set
+USE read_pseudo_mod, ONLY : readpp
+USE realus, ONLY : addusdens_r
+USE realus, ONLY : addusforce_r
+USE realus, ONLY : addusstress_r
+USE realus, ONLY : betapointlist, generate_qpointlist, &
+USE realus, ONLY : deallocate_realsp
+USE realus, ONLY : generate_qpointlist, betapointlist, &
+USE realus, ONLY : newq_r
+USE realus, ONLY : qpointlist, tabxx, tabp
+USE realus, ONLY : real_space
+USE realus, ONLY : real_space, &
+USE realus, ONLY: real_space, invfft_orbital_gamma, &
+USE realus, ONLY: real_space, invfft_orbital_gamma, fwfft_orbital_gamma, &
+USE realus, ONLY : real_space_ => real_space
+USE realus, ONLY : tabxx
+USE recvec_subs, ONLY : ggen, ggens
+USE relax
+USE relax, ONLY : epse, epsf
+USE relax, ONLY : epse, epsf, epsp
+USE relax, ONLY : epse, epsf, epsp, starting_scf_threshold
+USE run_info, ONLY : title
+USE run_info, ONLY : title_ => title
+USE run_info, ONLY: title ! title of the run
+USE rVV10, ONLY : stress_rVV10
+USE scatter_mod, ONLY : gather_grid, scatter_grid
+USE scf_gpum, ONLY : deallocate_scf_gpu
+USE scf_gpum, ONLY : using_vrs
+USE scf_gpum, ONLY: vrs_d, using_vrs_d
+USE scf, ONLY : kedtau
+USE scf, ONLY : mix_type
+USE scf, ONLY : mix_type, local_tf_ddot
+USE scf, ONLY : rho
+USE scf, ONLY: rho
+USE scf, ONLY : rho_core, rhog_core
+USE scf, ONLY : rho, rho_core, rhog_core
+USE scf, ONLY : rho, rho_core, rhog_core, &
+USE scf, ONLY : rho, rho_core, rhog_core, v
+USE scf, ONLY: rho, rho_core, rhog_core, v
+USE scf, ONLY : rho, rho_core, rhog_core, v, vltot, vrs, &
+USE scf, ONLY : rho, rhoz_or_updw
+USE scf, ONLY : rho, v
+USE scf, ONLY : rho, v_of_0, vltot
+USE scf, ONLY : rho, v, vltot, rho_core, rhog_core, &
+USE scf, ONLY : rho, v, vnew, vltot, vrs, rho_core, rhog_core, &
+USE scf, ONLY : scf_type
+USE scf, ONLY : scf_type, create_scf_type, destroy_scf_type, &
+USE scf, ONLY : scf_type, rhoz_or_updw
+USE scf, ONLY : scf_type, scf_type_COPY, bcast_scf_type,&
+USE scf, ONLY : v
+USE scf, ONLY: v
+USE scf, ONLY : vltot
+USE scf, ONLY : vnew
+USE scf, ONLY : v_of_0
+USE scf, ONLY : v, rho
+USE scf, ONLY : vrs
+USE scf, ONLY : vrs 
+USE scf, ONLY: vrs 
+USE scf, ONLY : vrs, vltot, v, kedtau
+USE scf, ONLY : v, vltot
+USE simpsn_gpum, ONLY : simpsn_gpu_dev
+USE simpsn_gpum, ONLY: simpsn_gpu_dev
+USE sph_bes_gpum, ONLY : sph_bes_gpu
+USE spin_orb
+USE spin_orb_gpum, ONLY : deallocate_spin_orb_gpu
+USE spin_orb_gpum, ONLY : fcoef_d
+USE spin_orb_gpum, ONLY : fcoef_d, using_fcoef_d
+USE spin_orb_gpum,ONLY : using_fcoef, using_fcoef_d
+USE spin_orb, ONLY : domag
+USE spin_orb, ONLY: domag
+USE spin_orb, ONLY : domag, lforcet
+USE spin_orb, ONLY : domag, lspinorb
+USE spin_orb, ONLY : fcoef
+USE spin_orb, ONLY : fcoef, domag
+USE spin_orb, ONLY : lforcet
+USE spin_orb, ONLY : lspinorb
+USE spin_orb, ONLY: lspinorb
+USE spin_orb, ONLY : lspinorb, domag
+USE spin_orb, ONLY : lspinorb, domag, fcoef
+USE spin_orb, ONLY : lspinorb, fcoef
+USE spin_orb, ONLY : lspinorb_ => lspinorb, &
+USE spin_orb, ONLY : lspinorb, rot_ylm, fcoef, lmaxx
+USE spin_orb, ONLY : lspinorb, rot_ylm, fcoef, lmaxx, domag, &
+USE splinelib
+USE splinelib_gpum, ONLY : splint_eq_gpu
+USE splinelib, ONLY : spline
+USE splinelib, ONLY : spline, splint
+USE splinelib, ONLY : splint
+USE start_k, ONLY : init_start_k
+USE start_k, ONLY : nk1, nk2, nk3
+USE start_k, ONLY : nk1, nk2, nk3 
+USE start_k, ONLY : nk1,nk2,nk3
+USE start_k, ONLY : nk1, nk2, nk3, k1, k2, k3, &
+USE start_k, ONLY : nks_start, xk_start, nk1,nk2,nk3
+USE start_k, ONLY : nks_start, xk_start, wk_start, &
+USE stick_base, ONLY : sticks_map
+USE stick_base, ONLY : sticks_map, sticks_map_deallocate
+USE symm_base, ONLY : checkallsym
+USE symm_base, ONLY : d1, d2, d3
+USE symm_base, ONLY : fft_fact
+USE symm_base, ONLY : invsym, nsym, irt
+USE symm_base, ONLY : irt
+USE symm_base, ONLY : irt, d1, d2, d3, s, nsym
+USE symm_base, ONLY : irt, d1, d2, d3, t_rev, sname, s, nsym, &
+USE symm_base, ONLY : no_t_rev_ => no_t_rev, nofrac, allfrac, &
+USE symm_base, ONLY : nrot, nsym, invsym, s, ft, irt, &
+USE symm_base, ONLY : nrot, nsym, invsym, s, ft, irt, t_rev, &
+USE symm_base, ONLY : nsym
+USE symm_base, ONLY : nsym, irt
+USE symm_base, ONLY : nsym, irt, d1, d2, d3
+USE symm_base, ONLY : nsym, irt, d1, d2, d3, s, t_rev, sname, &
+USE symm_base, ONLY : nsym, irt, d1, d2, d3, t_rev, sname, s, &
+USE symm_base, ONLY : nsym, irt, time_reversal, t_rev
+USE symm_base, ONLY : nsym, nsym_ns, nsym_na, invsym, s, sr, &
+USE symm_base, ONLY : nsym, s
+USE symm_base, ONLY: nsym, sr
+USE symm_base, ONLY : nsym, sr, t_rev, sname
+USE symm_base, ONLY : nsym, s, sr
+USE symm_base, ONLY : nsym, s, sr, ft
+USE symm_base, ONLY : s
+use symm_base, only: set_sym_bl, s, nrot
+USE symm_base, ONLY : s,ft,nsym,irt
+USE symm_base, ONLY : s, nsym, irt
+USE symm_base, ONLY : spacegroup
+USE symm_base, ONLY : s, sname, ft, nrot, nsym, t_rev, time_reversal, &
+USE symm_base, ONLY : s, t_rev, irt, nrot, nsym, invsym, nosym, &
+USE symme, ONLY : symmatrix
+USE symme, ONLY: symmatrix
+USE symme, ONLY : sym_rho
+USE symme, ONLY : sym_rho_deallocate
+USE symme, ONLY : sym_rho_init
+USE symme, ONLY : symvector
+USE tsvdw_module, ONLY : EtsvdW
+USE tsvdw_module, ONLY : FtsvdW
+USE tsvdw_module, ONLY : HtsvdW
+USE tsvdw_module, ONLY : tsvdw_calculate, UtsvdW
+USE tsvdw_module, ONLY : tsvdw_finalize
+USE tsvdw_module, ONLY : tsvdw_initialize
+USE tsvdw_module, ONLY : vdw_isolated
+USE tsvdw_module, ONLY : vdw_isolated, vdw_econv_thr
+USE upf_params, ONLY : lmaxx
+USE upf_params, ONLY : lmaxx, lqmax
+USE upf_params, ONLY : lqmax
+USE us_exx, ONLY : becxx
+USE us_exx, ONLY : bexg_merge, becxx, addusxx_g, &
+USE us_exx, ONLY : bexg_merge, becxx, addusxx_g, addusxx_r, &
+USE us_exx, ONLY : rotate_becxx
+USE us_exx, ONLY : store_becxx0
+USE us_gpum, ONLY : deallocate_us_gpu
+USE us_gpum, ONLY: qrad_d
+USE us_gpum, ONLY : tab_d, tab_d2y_d
+USE us_gpum, ONLY : using_qrad
+USE us_gpum, ONLY : using_qrad_d
+USE us_gpum, ONLY : using_tab_at
+USE us_gpum, ONLY : using_tab_d, using_tab_d2y_d
+USE us_gpum, ONLY : using_tab, using_tab_at, using_qrad
+USE us_gpum, ONLY : using_tab, using_tab_at, using_tab_d2y, using_qrad
+USE us_gpum, ONLY : using_tab, using_tab_d2y
+USE us_gpum, ONLY: using_tab, using_tab_d2y, &
+USE us_gpum, ONLY : using_tab, using_tab_d2y, using_qrad
+USE us, ONLY : dq
+USE us, ONLY: dq
+USE us, ONLY: dq, qrad
+USE us, ONLY : nqx, dq, spline_ps
+USE us, ONLY : nqx, dq, tab, tab_d2y, spline_ps
+USE us, ONLY : nqxq, dq, nqx, tab, tab_d2y, qrad, spline_ps
+USE us, ONLY : nqxq, dq, qrad
+USE us, ONLY : nqxq, qrad, tab, tab_at, dq
+USE us, ONLY: nqx, tab, tab_d2y, dq, spline_ps
+USE us, ONLY : qrad
+USE us, ONLY : qrad, tab, tab_at, tab_d2y, spline_ps
+USE us, ONLY : qrad, tab, tab_d2y, tab_at, dq, nqx, &
+USE us, ONLY : spline_ps_ => spline_ps
+USE us, ONLY : tab
+USE us, ONLY : tab_at
+USE us, ONLY : tab_at, dq
+USE us, ONLY: tab_at, dq
+USE us, ONLY : tab_at, nqx, dq
+USE us, ONLY : tab_d2y
+USE uspp_gpum, ONLY : becsum_d, ebecsum_d, vkb_d, using_vkb, &
+USE uspp_gpum, ONLY : becsum_d, using_becsum_d
+USE uspp_gpum, ONLY : deallocate_uspp_gpu
+USE uspp_gpum, ONLY : deeq_d, deeq_nc_d, &
+USE uspp_gpum, ONLY: deeq_d, vkb_d, qq_at_d
+USE uspp_gpum, ONLY: deeq_d, vkb_d, qq_at_d, qq_so_d, deeq_nc_d
+USE uspp_gpum, ONLY : ijtoh_d
+USE uspp_gpum, ONLY : ijtoh_d, nhtol_d, nhtoj_d, indv_d
+USE uspp_gpum, ONLY : indv_d, nhtolm_d
+USE uspp_gpum, ONLY : qq_at_d, using_qq_at_d
+USE uspp_gpum, ONLY : qq_at_d, using_qq_at_d, deeq_d, using_deeq_d
+USE uspp_gpum, ONLY : qq_at_d, using_qq_at_d, qq_so_d, using_qq_so_d
+USE uspp_gpum, ONLY : using_becsum
+USE uspp_gpum, ONLY : using_becsum_d, becsum_d
+USE uspp_gpum, ONLY : using_becsum, using_ebecsum
+USE uspp_gpum, ONLY : using_deeq
+USE uspp_gpum, ONLY: using_deeq_d, deeq_d, &
+USE uspp_gpum, ONLY: using_deeq_nc_d, using_qq_at_d, &
+USE uspp_gpum, ONLY : using_deeq_nc, using_qq_at, using_qq_so
+USE uspp_gpum, ONLY : using_deeq, using_deeq_nc
+USE uspp_gpum, ONLY : using_deeq, using_qq_at
+USE uspp_gpum, ONLY : using_indv_d, using_nhtolm_d, &
+USE uspp_gpum, ONLY : using_indv_ijkb0
+USE uspp_gpum, ONLY : using_indv_ijkb0, &
+USE uspp_gpum, ONLY : using_indv_ijkb0, using_indv_ijkb0_d, &
+USE uspp_gpum, ONLY : using_qq_at
+USE uspp_gpum, ONLY : using_qq_at, using_qq_so, using_vkb
+USE uspp_gpum, ONLY: using_qq_at, using_vkb
+USE uspp_gpum, ONLY : using_vkb
+USE uspp_gpum, ONLY : using_vkb 
+USE uspp_gpum, ONLY: using_vkb
+USE uspp_gpum, ONLY : using_vkb_d, using_becsum_d, using_ebecsum_d, using_indv_ijkb0_d
+USE uspp_gpum, ONLY : using_vkb_d, using_indv_ijkb0, using_deeq_d, using_deeq_nc_d
+USE uspp_gpum, ONLY : using_vkb_d, using_indv_ijkb0, using_deeq_d, using_deeq_nc_d, &
+USE uspp_gpum, ONLY : using_vkb ! is this needed?
+USE uspp_gpum, ONLY : using_vkb, using_becsum
+USE uspp_gpum, ONLY : using_vkb, using_becsum, using_ebecsum
+USE uspp_gpum, ONLY : using_vkb, using_deeq
+USE uspp_gpum, ONLY : using_vkb, using_indv_ijkb0
+USE uspp_gpum, ONLY : using_vkb, using_indv_ijkb0, &
+USE uspp_gpum, ONLY : using_vkb, using_indv_ijkb0, using_deeq, using_deeq_nc
+USE uspp_gpum, ONLY : using_vkb, using_indv_ijkb0, using_deeq, using_deeq_nc, &
+USE uspp_gpum, ONLY : using_vkb, using_indv_ijkb0, using_qq_at, &
+USE uspp_gpum, ONLY: using_vkb, using_indv_ijkb0, using_qq_at
+USE uspp_gpum, ONLY: using_vkb, using_indv_ijkb0, using_qq_at, using_qq_so
+USE uspp_gpum, ONLY : using_vkb, using_qq_at
+USE uspp_gpum, ONLY : vkb_d, becsum_d, ebecsum_d, indv_ijkb0_d
+USE uspp_gpum, ONLY : vkb_d, deeq_d, deeq_nc_d
+USE uspp_gpum, ONLY: vkb_d, qq_at_d, qq_so_d, deeq_nc_d
+USE uspp_gpum, ONLY : vkb_d, using_vkb_d
+USE uspp_gpum, ONLY: vkb_d, using_vkb_d
+USE uspp_gpum, ONLY : vkb_d, using_vkb_d, using_indv_ijkb0
+USE uspp_gpum, ONLY : vkb_d, using_vkb, using_vkb_d
+USE uspp_gpum, ONLY : vkb_d, using_vkb, using_vkb_d, &
+USE uspp, ONLY : becsum
+USE uspp, ONLY : becsum, ebecsum, okvan
+USE uspp, ONLY : becsum, okvan
+USE uspp, ONLY : deallocate_uspp
+USE uspp, ONLY : deeq, dvan, deeq_nc, dvan_so, okvan
+USE uspp, ONLY : deeq, indv_ijkb0
+USE uspp, ONLY: deeq_nc, qq_at, qq_so, okvan
+USE uspp, ONLY : deeq, okvan
+USE uspp, ONLY: deeq, qq_at, okvan
+USE uspp, ONLY: deeq, vkb, qq_at, qq_so, deeq_nc, indv_ijkb0
+USE uspp, ONLY : ijtoh
+USE uspp, ONLY : ijtoh, nhtol, nhtoj, indv
+USE uspp, ONLY : indv, ap, nhtolm,lpl,lpx
+USE uspp, ONLY : indv_ijkb0
+USE uspp, ONLY: indv_ijkb0
+USE uspp, ONLY: indv_ijkb0, nkb
+USE uspp, ONLY : indv, nhtolm, ap
+USE uspp, ONLY : indv, nhtolm, ap, qq_at
+USE uspp, ONLY : indv, nhtol, nhtolm, ijtoh, qq_at, qq_nt, &
+USE uspp, ONLY : indv, nhtol, nhtolm, nkb
+USE uspp, ONLY: lpl_d, lpx_d, ap_d
+USE uspp, ONLY : nhtoj, nhtol, indv, becsum
+USE uspp, ONLY : nhtolm, nhtol, ijtoh
+USE uspp, ONLY : nhtolm,nhtol,ijtoh
+USE uspp, ONLY : nhtol, nhtoj, indv
+USE uspp, ONLY : nhtol, nhtoj, nhtolm, ijtoh, dvan, qq_at, qq_nt, indv,&
+USE uspp, ONLY : nhtol, nhtolm
+USE uspp, ONLY: nhtol, nhtolm, indv, nlx, ap
+USE uspp, ONLY : nkb
+USE uspp, ONLY: nkb
+USE uspp, ONLY : nkb, becsum, ebecsum, indv_ijkb0
+USE uspp, ONLY : nkb, ijtoh, indv_ijkb0
+USE uspp, ONLY : nkb, indv_ijkb0
+USE uspp, ONLY : nkb, indv_ijkb0, nhtolm, nhtol
+USE uspp, ONLY: nkb, indv, nhtol, nhtolm
+USE uspp, ONLY : nkb, nhtol, nhtolm, indv
+USE uspp, ONLY : nkb, nkbus
+USE uspp, ONLY : nkb, okvan
+USE uspp, ONLY : nkb, okvan, indv_ijkb0
+USE uspp, ONLY : nkb, okvan,indv_ijkb0
+USE uspp, ONLY : nkb, qq_at, deeq, qq_so, deeq_nc, indv_ijkb0
+USE uspp, ONLY : nkb, vkb
+USE uspp, ONLY : nkb, vkb, becsum, ebecsum, indv_ijkb0
+USE uspp, ONLY : nkb, vkb, becsum, ebecsum, nhtol, nhtoj, indv, okvan
+USE uspp, ONLY : nkb, vkb, becsum, okvan
+USE uspp, ONLY : nkb, vkb, deeq, deeq_nc
+USE uspp, ONLY: nkb, vkb, dvan
+USE uspp, ONLY : nkb, vkb, indv_ijkb0
+USE uspp, ONLY : nkb, vkb, okvan
+USE uspp, ONLY: nkb, vkb, okvan
+USE uspp, ONLY : nkb, vkb, okvan, indv_ijkb0, ijtoh
+USE uspp, ONLY : nkb, vkb, qq_at
+USE uspp, ONLY : nkb, vkb, qq_at, deeq, qq_so, deeq_nc, indv_ijkb0
+USE uspp, ONLY: nlx, lpl, lpx, ap, indv, nhtolm
+USE uspp, ONLY: nlx, lpl, lpx, ap, indv, nhtol, nhtolm
+USE uspp, ONLY: nlx, nhtolm, indv
+USE uspp, ONLY : okvan
+USE uspp, ONLY: okvan
+USE uspp, ONLY : okvan, becsum
+USE uspp, ONLY : okvan, indv,nhtolm
+USE uspp, ONLY : okvan, nkb, ijtoh, indv_ijkb0
+USE uspp, ONLY : okvan,nkb,vkb
+USE uspp, ONLY: okvan, nkb, vkb
+USE uspp, ONLY : okvan, nkb, vkb, qq_so, qq_at
+USE uspp, ONLY : okvan, qq_at, qq_nt, nhtol
+USE uspp, ONLY : qq_at, indv_ijkb0
+USE uspp, ONLY : vkb, nkb
+USE uspp, ONLY: vkb, nkb
+USE uspp, ONLY: vkb, nkb, deeq, deeq_nc, indv_ijkb0
+USE uspp, ONLY : vkb, nkb, okvan
+USE uspp, ONLY: vkb, nkb, okvan, qq_at, qq_so, indv_ijkb0
+USE uspp_param,ONLY : lmaxkb, upf, nh, nbetam
+USE uspp_param, ONLY: lmaxq, nbetam
+USE uspp_param, ONLY : nbetam, nh, nhm, upf
+USE uspp_param, ONLY : nh
+USE uspp_param, ONLY: nh
+USE uspp_param, ONLY : nhm
+USE uspp_param, ONLY: nhm
+USE uspp_param, ONLY : nhm, nh
+USE uspp_param, ONLY : nhm, upf
+USE uspp_param, ONLY : nh, nhm
+USE uspp_param, ONLY: nh, nhm
+USE uspp_param, ONLY : nh, nhm, nbetam
+USE uspp_param, ONLY : nh, nhm, upf
+USE uspp_param, ONLY : nh, upf
+USE uspp_param, ONLY : upf
+USE uspp_param, ONLY : upf 
+USE uspp_param, ONLY: upf
+USE uspp_param,ONLY : upf
+USE uspp_param, ONLY: upf, lmaxkb, nbetam, nh
+USE uspp_param, ONLY: upf, lmaxkb, nbetam, nh, nhm
+USE uspp_param, ONLY : upf, lmaxkb, nhm, nh
+USE uspp_param, ONLY : upf, lmaxkb, nh, nhm
+USE uspp_param, ONLY : upf, lmaxkb, nh, nhm, nbetam
+USE uspp_param, ONLY : upf, lmaxq, lmaxkb, nh, nhm, nbetam
+USE uspp_param, ONLY: upf, lmaxq, nbetam
+USE uspp_param, ONLY : upf, lmaxq, nbetam, nh, nhm
+USE uspp_param, ONLY: upf, lmaxq, nbetam, nh, nhm
+USE uspp_param, ONLY : upf, lmaxq, nbetam, nh, nhm, lmaxkb
+USE uspp_param, ONLY : upf, lmaxq, nh
+USE uspp_param, ONLY : upf, lmaxq, nh, nhm
+USE uspp_param, ONLY : upf, lmaxq, nh, nhm, lmaxkb
+USE uspp_param, ONLY : upf, n_atom_wfc
+USE uspp_param, ONLY : upf, nbetam
+USE uspp_param, ONLY: upf, nbetam, lmaxq
+USE uspp_param, ONLY: upf, nbetam, nh, nhm
+USE uspp_param, ONLY : upf, nh
+USE uspp_param, ONLY: upf, nh
+USE uspp_param, ONLY : upf, nh, lmaxq
+USE uspp_param, ONLY : upf, nhm, nh
+USE uspp_param, ONLY : upf, nh, nhm
+USE uspp_param, ONLY: upf, nh, nhm
+USE uspp_param, ONLY : upf, nh, nhm, lmaxq
+USE uspp_param, ONLY: upf, nh, nhm, nbetam, lmaxq
+Use variable \texttt{ion\_dynamics} in namelist \&IONS
+USE vdW_DF, ONLY : vdW_DF_stress
+USE vlocal
+USE vlocal, ONLY : starting_charge
+USE vlocal, ONLY : starting_charge_ => starting_charge
+USE vlocal, ONLY : starting_charge, strf
+USE vlocal, ONLY : strf
+USE vlocal, ONLY: strf
+USE vlocal, ONLY : strf, vloc
+USE vlocal, ONLY : vloc
+USE vlocal, ONLY : vloc, strf
+USE vlocal, ONLY: vloc, strf
+USE wannier_new 
+USE wannier_new, ONLY: nwan, pp
+use wannier_new, only: nwan, wan_in, use_energy_int
+USE wannier_new, ONLY : use_wannier
+USE wannier_new, ONLY : use_wannier 
+USE wannier_new, ONLY: use_wannier
+USE wannier_new,ONLY: use_wannier
+USE wannier_new, ONLY : use_wannier_ => use_wannier, &
+USE wannier_new, only: wan_in, wan_pot, wannier_energy, wannier_occ, pp, coef
+USE wavefunctions, &
+USE wavefunctions_gpum, ONLY : deallocate_wavefunctions_gpu
+USE wavefunctions_gpum, ONLY : evc_d, using_evc_d
+USE wavefunctions_gpum, ONLY : evc_d, using_evc, using_evc_d
+USE wavefunctions_gpum, ONLY : psic_d
+USE wavefunctions_gpum, ONLY : psic_nc_d
+USE wavefunctions_gpum, ONLY: psic_nc_d
+USE wavefunctions_gpum, ONLY : using_evc
+USE wavefunctions_gpum, ONLY: using_evc
+USE wavefunctions_gpum, ONLY : using_evc_d, using_evc
+USE wavefunctions_gpum, ONLY : using_evc, using_evc_d, evc_d
+USE wavefunctions_gpum, ONLY: using_evc, using_evc_d, evc_d 
+USE wavefunctions_gpum, ONLY: using_evc, using_evc_d, evc_d, &
+USE wavefunctions_gpum, ONLY : using_psic, using_psic_d, psic_d
+USE wavefunctions_gpum, ONLY: using_psic, using_psic_d, psic_d
+USE wavefunctions_gpum, ONLY : using_psic, using_psic_nc, &
+USE wavefunctions, ONLY : evc
+USE wavefunctions, ONLY: evc
+USE wavefunctions, ONLY : evc, psic
+USE wavefunctions, ONLY : evc, psic, psic_nc
+USE wavefunctions, ONLY : psic
+USE wavefunctions, ONLY: psic
+USE wavefunctions, ONLY : psic, evc
+USE wavefunctions, ONLY: psic_h => psic
+USE wavefunctions, ONLY : psic_nc
+USE wavefunctions, ONLY : psic, psic_nc
+Use with care and if you know what you are doing!
+Use with care, especially in metals where it may give raise
+Use with care, especially in metals where it may give raise 
+USE wrappers, ONLY : f_copy
+USE wrappers, ONLY : f_mkdir_safe
+USE wrappers, ONLY : memstat
+USE ws_base
+USE wvfct
+USE wvfct_gpum, ONLY : deallocate_wvfct_gpu !et
+USE wvfct_gpum, ONLY : et_d, using_et_d
+USE wvfct_gpum, ONLY : et_d, using_et, using_et_d, &
+USE wvfct_gpum, ONLY : et_d, wg_d, using_et, using_et_d, using_wg_d
+USE wvfct_gpum, ONLY : g2kin_d, using_g2kin_d
+USE wvfct_gpum, ONLY : using_et
+USE wvfct_gpum, ONLY: using_et
+USE wvfct_gpum, ONLY : using_et, using_wg
+USE wvfct_gpum, ONLY : using_et, using_wg, using_wg_d
+USE wvfct_gpum, ONLY : using_g2kin
+USE wvfct_gpum, ONLY : using_wg_d,wg_d
+USE wvfct_gpum, ONLY : wg_d, using_wg_d, et_d, using_et_d
+USE wvfct, ONLY : current_k
+USE wvfct, ONLY : current_k, npwx
+USE wvfct, ONLY : current_k, npwx, nbnd
+USE wvfct, ONLY : current_k, wg
+USE wvfct, ONLY : et
+USE wvfct, ONLY : et, nbnd
+USE wvfct, ONLY : et, nbnd, npwx, current_k
+USE wvfct, ONLY : g2kin
+USE wvfct, ONLY: g2kin
+USE wvfct, ONLY : g2kin, et, wg, btype
+USE wvfct, ONLY : g2kin, nbndx, et, nbnd, npwx, btype
+use wvfct, only: nbnd
+USE wvfct, ONLY : nbnd
+USE wvfct, ONLY: nbnd
+USE wvfct, ONLY : nbnd, current_k
+USE wvfct, ONLY : nbnd, et
+USE wvfct, ONLY : nbnd, et, npwx
+USE wvfct, ONLY : nbnd, et, wg
+USE wvfct, ONLY: nbnd, et, wg
+USE wvfct, ONLY : nbnd, et, wg, btype
+USE wvfct, ONLY : nbnd_ => nbnd
+USE wvfct, ONLY : nbnd, nbndx
+USE wvfct, ONLY : nbnd, nbndx, et, wg
+USE wvfct, ONLY : nbnd, npw, npwx, wg
+USE wvfct, only : nbnd, npwx
+USE wvfct, ONLY : nbnd, npwx
+USE wvfct, ONLY : nbnd, npwx, current_k
+USE wvfct, ONLY : nbnd, npwx, et
+USE wvfct, ONLY : nbnd, npwx, npw, wg
+USE wvfct, ONLY : nbnd, npwx, wg
+USE wvfct, ONLY : nbnd, npwx, wg 
+USE wvfct, ONLY : nbnd, npwx, wg, current_k
+USE wvfct, ONLY : nbnd, npwx, wg, et
+USE wvfct, ONLY : nbnd, npwx, wg, et, btype
+USE wvfct, ONLY : nbnd, wg, et
+USE wvfct, ONLY : nbnd, wg, et, current_k
+USE wvfct, ONLY : npwx
+USE wvfct, ONLY: npwx
+USE wvfct, ONLY : npwx, current_k
+USE wvfct, ONLY : npwx, current_k, nbnd
+USE wvfct, ONLY : npwx, et, wg, nbnd
+USE wvfct, ONLY : npwx, g2kin
+USE wvfct, ONLY : npwx, g2kin, et, wg, nbnd
+USE wvfct, ONLY : npwx, nbnd
+USE wvfct, ONLY: npwx, nbnd
+USE wvfct, ONLY : npwx, nbnd, et, current_k
+USE wvfct, ONLY : npwx, nbnd, et, wg
+USE wvfct, ONLY : npwx, nbnd, ik => current_k
+USE wvfct, ONLY : npwx, nbnd, wg
+USE wvfct, ONLY: npwx, nbnd, wg
+USE wvfct, ONLY : npwx, nbnd, wg, et
+USE wvfct, ONLY: npwx, nbnd, wg, et
+USE wvfct, ONLY : wg
+USE wvfct, ONLY : wg, npwx
+USE wyckoff, ONLY : nattot, tautot, ityptot, extfortot, &
+USE xc_gga, ONLY : xc_gcx
+USE xc_gga, ONLY: xc_gcx
+USE xc_gga, ONLY : xc_gcx, change_threshold_gga
+USE xc_gga, ONLY : xc_gcx, gcx_spin, gcc_spin
+USE xc_lda_lsda, ONLY : xc
+USE xc_mgga, ONLY : xc_metagcx
+USE xc_mgga, ONLY: xc_metagcx
+USE xdm_module, ONLY : cleanup_xdm
+USE xdm_module, ONLY : energy_xdm
+USE xdm_module, ONLY : force_xdm
+USE xdm_module, ONLY : init_xdm, a1i, a2i
+USE xdm_module, ONLY : stress_xdm
+USE xdm_module, ONLY : write_xdmdat
+USE xdm_module, ONLY : xdm_a1=>a1i, xdm_a2=>a2i
+use kinds, only: dp
+use us_gpum, only: qrad_d
+use uspp,      only: lpl_d, lpx_d, ap_d
+use uspp_gpum, only : indv_d, nhtolm_d

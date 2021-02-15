@@ -1,0 +1,745 @@
+def removeTypePrefix(varName):
+    return varName.split("%")[-1]
+
+def replaceIgnoreCase(key,subst,text):
+    return re.sub(re.escape(key), subst, text, flags=re.IGNORECASE)
+
+def flattenList(items):
+    """Yield items from any nested iterable"""
+    for x in items:
+        if isinstance(x, Iterable) and not isinstance(x, (str, bytes)):
+            for sub_x in flattenList(x):
+                yield sub_x
+        else:
+            yield x
+
+# Object representation
+
+# We create an object tree because we want to preserve the scopes.
+# This allows us to lookup if a device variable
+# was defined in a higher-level scope
+
+class Tagged():
+    def tag(self):
+        """
+        Construct a tag that can be used to search the index.
+        """
+        result = self._name.lower()
+        def recursiveParentLookup(curr):
+            nonlocal result
+            if type(curr) is not STRoot:
+                result = curr._name.lower() + ":" + result
+                recursiveParentLookup(curr._parent)
+        recursiveParentLookup(self._parent)        
+        return result
+
+class STNode():
+    def __init__(self,parent,lineno,lines=[]):
+        self._lineno     = lineno
+        self._lines      = lines
+        self._name       = None
+        self._children   = []
+        self._parent     = parent
+        self._included   = False # included from used module; not actually present in this file
+        # transformation
+        self._preamble = set() 
+        self._epilog = set()
+    def lines(self):
+        return self._lines
+    def minLineno(self):
+        """
+        :return: Inclusive first line number belonging to this object.
+        """
+        return self._lineno
+    def maxLineno(self):
+        """
+        :return: Inclusive last line number belonging to this object.
+        """
+        return self._lineno + len(self._lines) - 1
+    def strippedContent(self):
+        """
+        :return: The stripped content of this object as text. The functions removes all
+        comments and Fortran linebreak characters '&'.
+        :rettype: str
+        """
+        result = "".join(self._lines)
+        comment = Literal("!") + ~(~White()+Literal("$")) + restOfLine + Optional(Regex(r"\n")) # via pyparsing
+        amperSand = Regex(r"&\n")
+        comment.setParseAction(lambda tokens: "") # remove comments
+        amperSand.setParseAction(lambda tokens: "") # remove &
+        result = commentCopy.transformString(result)
+        result = amperSand.transformString(result)
+        return result
+    def considerInSource2SourceTranslation(self):
+        """
+        Consider this object when transforming host code.
+        :return: The default implementation returns False if the parent
+                 of the object is a device subroutine.
+        """
+        return not isinstance(self._parent, STLoopKernel) and\
+               (not type(self._parent) is STSubroutine or not self._parent.isDeviceSubroutine())
+    def append(self,child):
+        self._children.append(child)
+    def listOfParents(self):
+        """
+        Returns a list that contains all
+        parents of a node plus the node itself._
+        """
+        result = []
+        def recursiveParentLookup(curr):
+            if curr != None:
+                result.append(curr)
+                recursiveParentLookup(curr._parent)
+
+        recursiveParentLookup(self)        
+        return result
+    def findAll(self,filter=lambda child : True,recursively=False):
+        result = []
+        def descend(curr):
+            for child in curr._children:
+                if filter(child):
+                    result.append(child) 
+                elif recursively:
+                    descend(child)
+        descend(self)       
+        return result
+    def findFirst(self,filter=lambda child: True):
+        for child in self._children:
+            if filter(child):
+                return child
+        return None
+    def findLast(self,filter=lambda child: True):
+        for child in reversed(self._children):
+            if filter(child):
+                return child
+        return None
+    def extractFirst(self,text,expression):
+        """
+        Extract (first) part of the text that contains a given expression.
+        :rtype: str
+        :return: The first part of the text that matches the expression.
+        """ 
+        for tokens,start,end in expression.scanString(text):
+             return text[start:end]
+        return ""
+    def extractAll(self,text,expression):
+        """
+        Extract all parts of the text that contain a given pyparsing expression.
+        :rtype: list
+        :return: All parts of the text that match the pyparsing expression
+        """
+        result = []
+        for tokens,start,end in expression.scanString(text):
+             result.append(text[start:end])
+        return result
+    def preamble(self):
+        """
+        Some node transformations may require additional definitions
+        such as the definition of macros.
+        They write these definitions to the preamble so that
+        a higher-level function can use them and place
+        them at an appropriate location.
+        """
+        return "\n".join([el.rstrip() for el in self._preamble])
+    def epilog(self):
+        """
+        Some node transformations may require additional definitions
+        such as the definition of macros.
+        They write these definitions to the preamble so that
+        a higher-level function can use them and place
+        them at an appropriate location.
+        """
+        return "\n".join([el.rstrip() for el in self._epilog])
+    def transformFSnippet(self,fSnippet):
+        """
+        :param line: An excerpt from a Fortran file, possibly multiple lines
+        :type line: str
+        :return: If the text was changed at all
+        :rtype: bool
+        """
+        return fSnippet, False
+    def replaceAll(self,fSnippet,ppexpression,repl=lambda parseResult: ("",False)):
+        """
+        Replaces all matches for the given pyparsing expression with
+        the string generated by the 'repl' function argument, 
+        which takes the pyparsing parse result into account.
+
+        :warning: broken
+        """
+        matched     = True
+        transformed = False
+        usedList    = []
+        while matched:
+            matched = False
+            for tokens,begin,end in ppexpression.scanString(fSnippet):
+                 parseResult = tokens[0]
+                 subst, changed = repl(parseResult)
+                 transformed |= changed
+                 if not begin in usedList:
+                     if changed:
+                         fSnippet = fSnippet.replace(fSnippet[begin:end],subst)
+                     else:
+                         usedList.append(begin) # do not check this match again
+                     matched = True
+                     break
+        return fSnippet, transformed
+    def replaceFirst(self,fSnippet,ppexpression,repl=lambda parseResult: ("",False)):
+        """
+        Replaces the first match for the given pyparsing expression with
+        the string generated by the 'repl' function argument, 
+        which takes the pyparsing parse result into account.
+        """
+        transformed = False
+        for tokens,begin,end in ppexpression.scanString(fSnippet):
+            parseResult = tokens[0]
+            subst, transformed = repl(parseResult)
+            if transformed:
+                 fSnippet = fSnippet.replace(fSnippet[begin:end],subst)
+            break
+        return fSnippet, transformed
+
+class STRoot(STNode):
+    def __init__(self):
+        STNode.__init__(self,None,-1)
+    def considerInSource2SourceTranslation(self):
+        return False
+
+class STModule(STNode,Tagged):
+    def __init__(self,name,parent,lineno):
+        STNode.__init__(self,parent,lineno)
+        self._name = name.lower()
+    def considerInSource2SourceTranslation(self):
+        return False
+
+class STProgram(STNode,Tagged):
+    def __init__(self,name,parent,lineno):
+        STNode.__init__(self,parent,lineno)
+        self._name = name.lower()
+    def considerInSource2SourceTranslation(self):
+        return False
+
+class STUseStatement(STNode):
+    def __init__(self,parent,lineno,lines):
+        STNode.__init__(self,parent,lineno,lines)
+        self._name = None
+    def name(self):
+        return self._name
+    def hipFStr(self,indent=""):
+        indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
+        result = "".join(self._lines).lower()
+        useCuda = False
+        for lib in HOST_MODULES:
+            libLower = lib.lower()
+            if libLower in result:
+                useCuda = True
+                result = result.replace(lib,lib.replace("cudafor",HIP_MODULE_NAME).replace("cu",HIP_MATH_MODULE_PREFIX+"hip"))
+                if libLower == "cudafor":
+                    result = result.rstrip("\n")+"\n" + "{0}use iso_c_binding\n{0}use iso_c_binding_ext".format(indent) 
+        return result, useCuda
+    def considerInSource2SourceTranslation(self):
+        if not STNode.considerInSource2SourceTranslation(self):
+            return False
+        else:
+            useCuda = False
+            result = "".join(self._lines).lower()
+            for lib in HOST_MODULES:
+                 useCuda |= lib.lower() in result
+            return useCuda or len(self._preamble) or len(self._epilog)
+
+class STPlaceHolder(STNode):
+    def __init__(self,parent,lineno,lines):
+        STNode.__init__(self,parent,lineno,lines)
+        self._name = None
+    def hipFStr(self,indent=""):
+        return self._lines[0], False
+    def considerInSource2SourceTranslation(self):
+        return STNode.considerInSource2SourceTranslation(self) or\
+               len(self._preamble) or len(self._epilog)
+
+class STProcedure(STNode,Tagged):
+    def __init__(self,name,parent,lineno):
+        STNode.__init__(self,qualifier,name,dummyVars,parent,lineno)
+        self._qualifier = qualifier
+        self._name = name
+        self._dummyVars = dummyVars
+        self._lines = []
+        self._considerInSource2SourceTranslation
+    def dummyArgumentNames(self):
+        """
+        :return: the list of procedure arguments.
+        """
+        return self._dummyVars
+
+class STSubroutine(STProcedure):
+    def isDeviceSubroutine(self):
+        for keyword in ["device","global"]:
+             if keyword in self._qualifier.lower():
+                 return True
+        return False
+    def declarationsInBody(self):
+        return self.findAll(filter=lambda child : type(child) is STDeclaration, recursively=False)
+    def considerInSource2SourceTranslation(self):
+        return self._considerInSource2SourceTranslation
+    def transformFSnippet(self,fSnippet):
+        indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
+        return "{0}! extracted to HIP C++ file".format(indent), True
+    def hipFStr(self,):
+        return self.transformFSnippet("")
+
+class STFunction(STProcedure):
+    def considerInSource2SourceTranslation(self):
+        return False
+
+class STDirective(STNode):
+    def __init__(self,parent,lineno,lines,directiveNo,sentinel="!$cuf"):
+        STNode.__init__(self,parent,lineno,lines)
+        self._directiveLines      = lines
+        self._sentinel            = sentinel
+        self._singleLineStatement = None
+        self._directiveNo         = directiveNo
+    def singleLineStatement(self):
+        """
+        Express the statement as lower case single-line statement
+        """
+        assert len(self._directiveLines)
+        if self._singleLineStatement is None:
+            _genericPragma = genericPragma.copy().setParseAction(lambda tokens: "") # do not overwrite existing parse action if any
+            self._singleLineStatement = self._sentinel + " " + _genericPragma.transformString(" ".join(self._directiveLines)).rstrip("\n").replace("&","").lower()
+            # remove whitespaces
+            self._singleLineStatement = White().setParseAction(lambda tokens: " ").transformString(self._singleLineStatement)
+        return self._singleLineStatement
+
+class STLoopKernel(STNode):
+    def __init__(self,parent,lineno,lines):
+        STNode.__init__(self,parent,lineno,lines)
+        self._doLoopCtrMemorised  = -1
+        self._singleLineStatement = None
+        self._sharedMem           = "0" # set from extraction routine
+        self._stream              = "c_null_ptr" # set from extraction routine
+        self._kernelArgNames = [] # set from extraction routine
+    def stripLines(self,lines):
+        """Remove whitespace characters and comments."""
+        result = ""
+        for line in lines:
+             result += line.split("!")[0]
+        result = result.replace(" ","")
+        result = result.replace("&","")
+        return result.lower()
+    def hashSnippet(self):
+        snippet = self.stripLines(self._lines) 
+        return hashlib.md5(snippet.encode()).hexdigest()[0:6]
+    def hashBody(self):
+        snippet = self.stripLines(self._lines[1:]) 
+        return hashlib.md5(snippet.encode()).hexdigest()[0:6]
+    def kernelName(self):
+        """
+        Derive a name for the kernel.
+        
+        We hash the body because we will use different block sizes and shmem anyway in HIP.
+        """
+        return "krnl_{0}_{1}".format(self.hashBody(),self._lineno)
+    def kernelLauncherName(self):
+        return "launch_{}".format(self.kernelName())
+    def transformFSnippet(self,fSnippet):
+        indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
+        stream = "c_null_ptr" if self._stream == "0" else self._stream
+        result="""{4}! extracted to HIP C++ file
+{4}! TODO(gpufort) fix arguments
+{4}CALL {0}_auto({1},{2},{3})""".format(self.kernelLauncherName(),self._sharedMem,stream,",".join(self._kernelArgNames),indent)
+        return result, True
+    def hipFStr(self):
+        return self.transformFSnippet("".join(self._lines))
+
+class STCufLoopKernel(STDirective,STLoopKernel):
+    def __init__(self,parent,lineno,lines):
+        STDirective.__init__(self,parent,lineno,lines)
+        STLoopKernel.__init__(self,parent,lineno,lines)
+    def directiveLines(self):
+        """
+        :note: used for kernel generation
+        """
+        return self._lines[0]
+    def bodyLines(self):
+        """
+        :note: used for kernel generation
+        """
+        return self._lines[1:]
+
+class Attributed():
+    def hasAllocatable(self):
+        return self._parseResult.hasStringQualifier("allocatable")
+    def hasPointer(self):
+        return self._parseResult.hasStringQualifier("pointer")
+    def hasDimension(self):
+        return self._parseResult.hasDimension()
+    def hasDevice(self):
+        return self._parseResult.hasStringQualifier("device")
+    def hasPinned(self):
+        return self._parseResult.hasStringQualifier("pinned")
+    def hasManaged(self):
+        return self._parseResult.hasStringQualifier("managed")
+
+class STDeclaration(STNode,Attributed):
+    """
+    Works with Fortran declarations such as
+    ```Fortran
+    Complex(DP), allocatable, device :: devArray(:,:)
+    ```
+    """
+    def __init__(self,parent,lineno,lines):
+        STNode.__init__(self,parent,lineno,lines)
+        self._prefix          = ""
+        self._ttdeclaration   = translator.declaration.parseString(self._lines[0])[0] # ! Must be parsed and analysed at creation time
+        self._parseResult     = self._ttdeclaration
+        self._vars            = [self._prefix+name.lower() for name in self._ttdeclaration.variableNames()]
+        self._arrayVars       = [self._prefix+name.lower() for name in self._ttdeclaration.arrayVariableNames()]
+        self._unprefixedVars  = [name.lower() for name in self._ttdeclaration.variableNames()]
+        #print(self._ttdeclaration._qualifiers)
+        self._madeTarget = False 
+        self._madeDevice = False 
+    def fType(self):
+        """
+        :return: Fortran datatype of the variable, e.g 'integer'.
+        :rtype: str
+        """
+        return self._ttdeclaration.fType()
+    def isDerivedType(self):
+        """
+        :return: If the datatype is a derived Fortran type.
+        :note: kind() function then returns the name of the derived type.
+        """
+        return self._ttdeclaration.isDerivedType();
+    def kind(self):
+        """
+        :return: kind of the variable's datatype, e.g. '4' if 32-bit integer. Number of bytes may differ
+        :rtype: str
+        :see: bytesPerElement
+        """
+        return self._ttdeclaration.kind()
+    def cType(self):
+        """
+        :return: C/C++ datatype of the variable, e.g 'size_t'
+        :rtype: str
+        """
+        return translator.convertToCType(self.fType(),self.kind(),"void")
+    def bytesPerElement(self):
+        """
+        :return: the bytes per element of this datatype.
+        :rtype: str
+        """
+        return self._ttdeclaration.bytesPerElement()
+    def isArray(self,varName):
+        """
+        :note: Can also be used to check if declaration declares this array variable.
+        """
+        return varName.lower() in self._arrayVars
+    def isAllocatableArray(self,varName):
+        """
+        :note: Can also be used to check if declaration declares this array variable.
+        """
+        return self.hasAllocatable() and varName.lower() in self._arrayVars
+    def numElements(self,varName):
+        """
+        Get the number of elements an array variable stores.
+        """
+        return self._ttdeclaration.numElements(varName)
+    def isStream(self):
+        return self.fType().lower() == "integer" and self.kind().lower() == "cuda_stream_kind"
+    def makeTarget(self):
+        self._madeTarget = True
+    def makeDevice(self):
+        self._madeDevice = True
+    def arrayBoundVariableNamesFStr(self,varName):
+        """
+        :param varName: Name of a variable, possibly prefixed if member of a derived type.
+        :return: Returns identifiers for array bound variables (all lower bound).
+        :rtype: list 
+        """
+        unprefixedName = removeTypePrefix(varName) 
+        return self._ttdeclaration.arrayBoundVariableNamesFStr(unprefixedName)
+    def arrayVariableIndexStr(self,arrayName):
+        """
+        :return: An index macro for the variable.
+        :rtype: str
+        """
+        unprefixedName = removeTypePrefix(varName) 
+        return self._ttdeclaration.arrayVariableIndexStr(unprefixedName)
+    def arrayVariableIndexMacroCStr(self,arrayName):
+        """
+        :return: An index macro for the variable.
+        :rtype: str
+        """
+        unprefixedName = removeTypePrefix(arrayName) 
+        return self._ttdeclaration.arrayVariableIndexMacroCStr(unprefixedName,usePlaceHolders=True)
+    def arrayVariableIndexMacroFStr(self,arrayName):
+        """
+        :return: An index macro for the variable.
+        :rtype: str
+        """
+        unprefixedName = removeTypePrefix(arrayName) 
+        return self._ttdeclaration.arrayVariableIndexMacroFStr(unprefixedName,usePlaceHolders=True)
+    def createCodegenContext(self):
+        return translator.createCodegenContextFromDeclaration(self._parseResult)
+    def rhsCStr(self,varName):
+        """
+        :param varName: Name of a variable, possibly prefixed if member of a derived type.
+        :return: C expression for the right-hand side if present. Otherwise an empty string `''`.
+        :rtype: str
+        """
+        unprefixedName = removeTypePrefix(varName) 
+        return self._ttdeclaration.rhsCStr(unprefixedName)
+    def considerInSource2SourceTranslation(self):
+        if STNode.considerInSource2SourceTranslation(self):
+            return len(self._preamble) or len(self._epilog) or self.hasDevice() or self._madeDevice or self.hasPinned() or self.hasManaged() or self._madeTarget or self.isStream()
+        else:
+            return False
+    def hipFStr(self):
+        # TODO(dominic) rewrite docu
+        """
+        """
+        indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
+        if self.hasDevice() or self._madeDevice or self.hasPinned() or self.isStream():
+            devicePtr = copy.deepcopy(self._ttdeclaration)
+            # TODO Only make a pointer if this an input argument of a subroutine
+            # TODO extend subroutine / function objects to return dummy variable list
+            # in order to check what qualifiers should be selected
+            for q in ["device","pinned","allocatable"]:
+                qualifiersLower = [x.lower() for x in devicePtr._qualifiers if type(x) is str]
+                if q in qualifiersLower:
+                    index = qualifiersLower.index(q)
+                    devicePtr._qualifiers.pop(index)
+                print(qualifiersLower)
+            if not "pointer" in devicePtr._qualifiers:
+                for varName in self._ttdeclaration.arrayVariableNames():
+                    # TODO : fix this !!!
+                    if isinstance(self._parent, STProcedure):
+                        if not "target" in devicePtr._qualifiers:
+                           devicePtr._qualifiers.append("target")
+                    else:
+                       devicePtr._qualifiers.append("pointer")
+            #devicePtr.convertToCptr()
+            result = "{1}{0}\n".format(devicePtr.fStr(),indent)
+        elif self.isStream():
+            devicePtr = copy.deepcopy(self._ttdeclaration)
+            devicePtr.convertToCptr()
+        else:
+            if not self.hasPointer() and self._madeTarget:
+                targetArray = copy.deepcopy(self._ttdeclaration)
+                targetArray._qualifiers.append("target")
+                return "{1}{0}".format(targetArray.fStr(),indent), True
+            else:
+                return "".join(self._lines), False
+
+class STAttributes(STNode,Attributed):
+    def __init__(self,parent,lineno,lines):
+        STNode.__init__(self,parent,lineno,lines)
+        self._parseResult = translator.attributes.parseString(self._lines[0])[0] # ! Must be parsed and analysed at creation time
+        self._vars        = [name.lower() for name in self._parseResult.variableNames()]
+        # Add device qualifier
+        if self.hasDevice():
+            for arraydecl in self.arraysInScope():
+                if len(set(self._vars) & set(arraydecl._vars)):
+                    arraydecl.makeDevice()
+                    #print(self._vars)
+                
+        #print(self._vars)
+    def considerInSource2SourceTranslation(self):
+        return False
+
+class MemOperation(): #TODO give better name
+    def lookupArrayDeclaration(self,arrayName):
+        """
+        :note: Adds target qualifier to host arrays
+        :return: Bytes per element of this array and device specific qualifier
+        """
+        mappedArrayName = self.mapNameToDerivedType(arrayName)
+        #print(mappedArrayName)
+        #print(arrayName)
+        qualifier = ""
+        bytesPerElement = "-1"
+        onDevice = False
+        indexMacro = ""
+        boundVariableNames = []
+        for stdeclaration in self.arraysInScope():
+            # names may be prefixed by type0%type1%...
+            #print(mappedArrayName  + " vs " + str(stdeclaration._arrayVars))
+            if mappedArrayName.lower() in stdeclaration._arrayVars:
+                bytesPerElement    = stdeclaration.bytesPerElement()  
+                indexMacro         = stdeclaration.arrayVariableIndexMacroCStr(mappedArrayName)
+                boundVariableNames = [el.replace(mappedArrayName,arrayName) for el in stdeclaration.arrayBoundVariableNamesFStr(mappedArrayName)]
+                # side effect:
+                if not stdeclaration.hasDevice():
+                    stdeclaration.makeTarget()              
+  
+                if stdeclaration.hasDevice() or stdeclaration._madeDevice:
+                    qualifier = "device"
+                    onDevice  = True
+                elif stdeclaration.hasPinned():
+                    qualifier = "pinned"
+                elif stdeclaration.hasManaged():
+                    qualifier = "managed"
+        return bytesPerElement, onDevice, qualifier, indexMacro, boundVariableNames
+
+class STNonZeroCheck(STNode,MemOperation):
+    def __init__(self,parent,lineno,lines):
+        STNode.__init__(self,parent,lineno,lines)
+    def transformFSnippet(self,fSnippet): # TODO
+        result = fSnippet
+        transformed = False
+        for tokens,start,end in translator.nonZeroCheck.scanString(result):
+            parseResult = tokens[0]
+            lhsName = parseResult.lhsFStr()
+            bpe,onDevice,qualifier,indexMacro,boundVariableNames = self.lookupArrayDeclaration(lhsName)
+            transformed |= onDevice
+            if onDevice:
+                subst = parseResult.fStr()
+                result = result.replace(result[start:end],subst)
+        return result, transformed
+
+class STAllocated(STNode,MemOperation):
+    def __init__(self,parent,lineno,lines):
+        STNode.__init__(self,parent,lineno,lines)
+    def transformFSnippet(self,fSnippet): # TODO
+        def repl(parseResult):
+            varName = parseResult.varName()
+            bpe,onDevice,qualifier,indexMacro,boundVariableNames = self.lookupArrayDeclaration(varName)
+            return (parseResult.fStr(), onDevice)
+        result, transformed = self.replaceAll(fSnippet,translator.allocated,repl)
+        assert result != None
+        return result, transformed
+
+class STAllocate(STNode,MemOperation):
+    def __init__(self,parent,lineno,lines):
+        STNode.__init__(self,parent,lineno,lines)
+    def transformFSnippet(self,fSnippet): # TODO
+        def repl(parseResult):
+            transformed     = False
+            vars            = [name.lower() for name in parseResult.variableNames()]
+            bytesPerElement = []
+            arrayQualifiers = []
+            for arrayName in vars:
+                bpe,onDevice,qualifier,indexMacro,boundVariableNames = self.lookupArrayDeclaration(arrayName)
+                bytesPerElement.append(bpe)
+                arrayQualifiers.append(qualifier)
+                transformed |= qualifier.lower() in ["pinned","device"]
+            subst = parseResult.fStr(bytesPerElement,arrayQualifiers,indent="")
+            return (subst, transformed)
+        return self.replaceAll(fSnippet,translator.allocate,repl)
+             
+class STDeallocate(STNode,MemOperation):
+    def __init__(self,parent,lineno,lines):
+        STNode.__init__(self,parent,lineno,lines)
+    def transformFSnippet(self,fSnippet): # TODO
+        """
+        :note: `wrapInIfDef` can be deactivated if a higher level function
+        embeds the outcome already in an `ifdef`.
+        """
+        def repl(parseResult):
+            transformed     = False
+            vars            = [name.lower() for name in parseResult.variableNames()]
+            arrayQualifiers = []
+            for arrayName in vars:
+                bpe,onDevice,qualifier,indexMacro,boundVariableNames = self.lookupArrayDeclaration(arrayName)
+                arrayQualifiers.append(qualifier)
+                transformed |= qualifier.lower() in ["pinned","device"]
+            subst = parseResult.fStr(arrayQualifiers,indent="")
+            return (subst, transformed)
+        return self.replaceAll(fSnippet,translator.deallocate,repl)
+         
+class STMemcpy(STNode,MemOperation):
+    def __init__(self,parent,lineno,lines):
+        STNode.__init__(self,parent,lineno,lines)
+    def transformFSnippet(self,fSnippet): # TODO
+        def replMemcpy(parseResult):
+            destName = parseResult.destNameFStr()
+            srcName  = parseResult.srcNameFStr()
+            destBpe,destOnDevice,qualifier,destIndexMacro,boundVariableNames = self.lookupArrayDeclaration(destName)
+            srcBpe,srcOnDevice,qualifier,srcIndexMacro,boundVariableNames    = self.lookupArrayDeclaration(srcName)
+            if srcBpe == "-1":
+                bpe = destBpe
+            else:
+                bpe = srcBpe
+            if destOnDevice and parseResult.destHasArgs():
+                self._preamble.add(destIndexMacro)
+            if srcOnDevice and parseResult.srcHasArgs():
+                self._preamble.add(srcIndexMacro)
+            if destOnDevice or srcOnDevice:
+                subst       = parseResult.fStr(destOnDevice,srcOnDevice,bpe)
+                return (subst,True)
+            else:
+                return ("",False) # no transformation; will not be considered
+        fSnippet,transformed = self.replaceAll(fSnippet,translator.memcpy,replMemcpy)
+        return fSnippet, transformed
+
+class STCudaLibCall(STNode,MemOperation):
+    def __init__(self,parent,lineno):
+        STNode.__init__(self,parent,lineno)
+        self._cudaApi = ""
+        self._hasCublas = False
+    def hasCublas(self):
+        """
+        :return: Scanned code lines contain a cublas call.
+        :rtype: bool
+        """
+        return self._hasCublas
+    def transformFSnippet(self,fSnippet):
+        global CUBLAS_VERSION 
+        global KEEP_CUDA_LIB_NAMES
+        oldfSnippet = fSnippet
+        indent = ""#" "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
+        transformed = False
+        if not KEEP_CUDA_LIB_NAMES:
+            def replMemcpy(parseResult):
+                destName = parseResult.destNameFStr()
+                srcName  = parseResult.srcNameFStr()
+                destBpe,destOnDevice,qualifier,destIndexMacro,boundVariableNames = self.lookupArrayDeclaration(destName)
+                srcBpe,srcOnDevice,qualifier,srcIndexMacro,boundVariableNames    = self.lookupArrayDeclaration(srcName)
+                if srcBpe == "-1":
+                    bpe = destBpe
+                else:
+                    bpe = srcBpe
+                subst = parseResult.fStr(destOnDevice,srcOnDevice,bpe,indent)
+                if destOnDevice and parseResult.destHasArgs():
+                    self._preamble.add(destIndexMacro)
+                if srcOnDevice and parseResult.srcHasArgs():
+                    self._preamble.add(srcIndexMacro)
+                return (subst, True)
+            fSnippet,_ = self.replaceAll(fSnippet,translator.cufCudaMemcpyVariant,replMemcpy)
+        # place C_LOC
+        def replCublas(parseResult):
+            subst = parseResult.fStr(indent)
+            return (subst, True)
+        fSnippet,haveCublas = self.replaceAll(fSnippet,translator.cublasCall,replCublas)
+        if haveCublas:
+            self._hasCublas = True
+        for elem in CUDA_RUNTIME_ENUMS:
+             fSnippet = replaceIgnoreCase(elem,elem.replace("cuda","hip").replace("CUDA","HIP"),fSnippet)
+        for elem in CUDA_LIB_ENUMS:
+             fSnippet = replaceIgnoreCase(elem,elem.replace("cu","hip").replace("CU","HIP"),fSnippet)
+        for elem in ALL_HOST_ROUTINES: # runtime routines
+             fSnippet = replaceIgnoreCase(elem,elem.replace("cuda","hip"),fSnippet)
+        for elem in CUDA_MATH_LIB_FUNCTIONS:
+             fSnippet = replaceIgnoreCase(elem,elem.replace("cu","hip"),fSnippet)
+        transformed = fSnippet.lower() != oldfSnippet 
+        return fSnippet, transformed
+
+class STCudaKernelCall(STNode):
+    """TODO(gpufort): Fix
+    """
+    def transformFSnippet(self,fSnippet):
+        #TODO(gpufort): Check variables, check which ones are array variables and replace with additional information such as size per dimension and lower bound,  _ni and _lbi.
+        for tokens,start,end in translator.cudaKernelCall.scanString(fSnippet):
+            parseResult = tokens[0]
+            kernelArgs = self._lines[0].split("(")[1]
+            kernelLaunchInfo = translator.cudaKernelCall.parseString(self._lines[0])[0]
+            subst="CALL launch_{0}({1},{2},{3},{4},{5}".format(\
+              kernelLaunchInfo.kernelNameFStr(),\
+              kernelLaunchInfo.gridFStr(),
+              kernelLaunchInfo.blockFStr(),\
+              kernelLaunchInfo.sharedMemFStr(),
+              kernelLaunchInfo.streamFStr(),\
+              kernelArgs
+            )
+            fSnippet = fSnippet.replace(fSnippet[start:end],subst)
+            break
+        return fSnippet, True

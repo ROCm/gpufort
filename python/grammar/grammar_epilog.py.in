@@ -1,0 +1,4 @@
+# Combine expressions from all grammar definitions
+singleExecutionStatement = accKernelBodyDirective | comment | printStatement | controlStatements | subroutineCall | ifElseBlock | singleLineIf | selectCaseBlock | doLoop | whileLoop | matrixAssignment | complexAssignment | assignment | funcCall
+
+executionStatement <<= Group(ZeroOrMore(singleExecutionStatement))

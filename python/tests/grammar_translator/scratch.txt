@@ -1,0 +1,46 @@
+../scanner/scanner.py:893:def Module_visit(tokens):
+../scanner/scanner.py:894:    def __init__(self,tokens):
+../scanner/scanner.py:900:def Program_visit(tokens):
+../scanner/scanner.py:901:    def __init__(self,tokens):
+../scanner/scanner.py:906:def Type_visit(tokens):
+../scanner/scanner.py:907:    def __init__(self,tokens):
+../scanner/scanner.py:912:def Type_leave(tokens):
+../scanner/scanner.py:913:    def __init__(self,tokens):
+../scanner/scanner.py:917:def Function_visit(tokens):
+../scanner/scanner.py:918:    def __init__(self, tokens):
+../scanner/scanner.py:929:def Structure_leave(tokens):
+../scanner/scanner.py:930:    def __init__(self,tokens):
+../scanner/scanner.py:941:def Subroutine_visit(tokens):
+../scanner/scanner.py:942:    def __init__(self, tokens):
+../scanner/scanner.py:953:def DoLoop_visit(tokens):
+../scanner/scanner.py:954:    def __init__(self,tokens):
+../scanner/scanner.py:969:def DoLoop_leave(tokens):
+../scanner/scanner.py:970:    def __init__(self,tokens):
+../scanner/scanner.py:989:def CufLoopKernel(tokens):
+../scanner/scanner.py:990:    def __init__(self,tokens):
+../scanner/scanner.py:1009:def Declaration(tokens):
+../scanner/scanner.py:1010:    def __init__(self,tokens):
+../scanner/scanner.py:1016:def Attributes(tokens):
+../scanner/scanner.py:1017:    def __init__(self,tokens):
+../scanner/scanner.py:1025:def UseStatement(tokens):
+../scanner/scanner.py:1026:    def __init__(self,tokens):
+../scanner/scanner.py:1035:def PlaceHolder(tokens):
+../scanner/scanner.py:1036:    def __init__(self,tokens):
+../scanner/scanner.py:1041:def NonZeroCheck(tokens):
+../scanner/scanner.py:1042:    def __init__(self,tokens):
+../scanner/scanner.py:1047:def Allocated(tokens):
+../scanner/scanner.py:1048:    def __init__(self,tokens):
+../scanner/scanner.py:1053:def Allocate(tokens):
+../scanner/scanner.py:1054:    def __init__(self,tokens):
+../scanner/scanner.py:1059:def Deallocate(tokens):
+../scanner/scanner.py:1060:    def __init__(self,tokens):
+../scanner/scanner.py:1066:def Memcpy(tokens):
+../scanner/scanner.py:1067:    def __init__(self,tokens):
+../scanner/scanner.py:1072:def CudaLibCall(tokens):
+../scanner/scanner.py:1074:    def __init__(self,tokens):
+../scanner/scanner.py:1087:def CudaKernelCall(tokens):
+../scanner/scanner.py:1088:    def __init__(self,tokens):
+../scanner/scanner.py:1105:def AccDirective(tokens):
+../scanner/scanner.py:1106:    def __init__(self,tokens):
+../scanner/scanner.py:1139:def Assignment(tokens):
+../scanner/scanner.py:1140:    def __init__(self,tokens):

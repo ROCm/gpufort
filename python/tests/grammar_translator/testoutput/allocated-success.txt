@@ -1,0 +1,1 @@
+allocated(A_d)allocated(message%incoming%buffer(:))

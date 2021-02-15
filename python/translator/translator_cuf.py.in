@@ -1,0 +1,503 @@
+# local imports
+#from translator.translator_f03 import *
+#import utils
+
+#CUDA Fortran
+class TTCppIfdef(TTNode):
+    def assignFields(self,tokens):
+        self._ppVar = tokens
+    def pPVar(self):
+        """
+        For checking if this a CUDA preprocessor variable
+        """
+        return self._ppVar
+    def fStr(self,hipVar):
+        return "#if defined({0}) || defined({1})".format(self._ppVar,hipVar)
+
+class TTCppDefined(TTNode):
+    def assignFields(self,tokens):
+        self._ppVar = tokens
+    def pPVar(self):
+        """
+        For checking if this a CUDA preprocessor variable
+        """
+        return self._ppVar
+    def fStr(self,hipVar):
+        return "( defined({0}) || defined({1}) )".format(self._ppVar,hipVar)
+
+class TTCudaKernelCall(TTNode):
+    def assignFields(self,tokens):
+        def postprocessDim3(dim3):
+            try:
+                intVal = int(dim3)
+                isOne = intVal is 1
+            except:
+                isOne = False
+            if isOne:
+                return "dim3Ones" # specifically for Eigensolver_gpu
+            else:
+                return dim3 
+        self._kernelName  = tokens[0]
+        self._grid        = postprocessDim3(tokens[1][0])
+        self._block       = postprocessDim3(tokens[1][1])
+        self._sharedMem   = tokens[1][2]
+        self._stream      = tokens[1][3]
+    def kernelNameFStr(self):
+        return makeFStr(self._kernelName)
+    def gridFStr(self):
+        return makeFStr(self._grid)
+    def blockFStr(self):
+        return makeFStr(self._block)
+    def useDefaultStream(self):
+        return self._stream == "0"
+    def streamFStr(self):
+        if self.useDefaultStream():
+            return "hipDefaultStream"
+        else:
+            return makeFStr(self._stream)
+    def sharedMemFStr(self):
+        return makeFStr(self._sharedMem)
+
+class TTCufPragma(TTNode,LaunchInfo):
+    def __init__(self,s,loc,tokens):
+        LaunchInfo.__init__(self)
+        TTNode.__init__(self,s,loc,tokens)
+    def assignFields(self,tokens):
+        def postprocessDim3(dim3):
+            #print("dim3 = {}".format(dim3))
+            result=["-1"]*3
+            if len(dim3) and not dim3 in ["", "*"]:
+                for i,d in enumerate(dim3.split(",")):
+                   result[i] = d
+            return result
+        self._numLoopsToMap = tokens[0]
+        self._grid        = postprocessDim3(tokens[1][0])
+        self._block       = postprocessDim3(tokens[1][1])
+        self._sharedMem   = tokens[1][2]
+        self._stream      = tokens[1][3]
+    def cStr(self):
+        return LaunchInfo.cStr(self)
+
+
+
+class TTCufLoopKernel(TTLoopKernel):
+    def assignFields(self,tokens):
+        self._launchInfo, self._body  = tokens
+    def kernelLaunchInfo(self):
+        return self._launchInfo
+
+class TTAllocateRvalue(TTNode):
+    def assignFields(self,tokens):
+        self._var    = tokens[0]
+        self._bounds = None
+        if len(tokens) == 2:
+            self._bounds = tokens[1]
+    def varName(self,converter=makeFStr):
+        """
+        A name that can be used to generate macros
+        and to look up the corresponding definitions.
+
+        Derived type elements return the full identifier name, e.g.
+        `mytype%myothertype%myvar`.
+        """
+        return converter(self._var)
+    def boundVariableAssignments(self,arrayName):
+        if self._bounds != None:
+            return self._bounds.boundVariableAssignments(arrayName)
+        else:
+            # TODO(gpufort): Add Warning
+            return "TODO(gpufort): UNKNOWN"
+    
+    def size(self,bytesPerElement=1,converter=makeCStr):
+        if self._bounds != None:
+            return self._bounds.size(bytesPerElement,converter)
+        else:
+            # TODO(gpufort): Add Warning
+            return "TODO(gpufort): UNKNOWN"
+    def makeHipDeviceFStr(self,bytesPerElement):
+        # Offsets are known
+        if self._bounds != None:
+            name = makeFStr(self._var)
+            unprefixedName = name.split("%")[-1]
+            #args = ",".join(self._bounds.specifiedLowerBounds(makeFStr))
+            # TODO(gpufort): Replace by something better
+            args = makeFStr(self._bounds)
+            offsetInBytes  = "_idx_{0}{1}*({2})".format(unprefixedName,args,bytesPerElement)
+            return "inc_c_ptr({0},{1})".format(name,offsetInBytes)
+        else:
+            return self.fStr()
+    def cStr(self):
+        return "{0}{1}".format(makeFStr(self._var),makeFStr(self._bounds))
+    def fStr(self):
+        return "{0}{1}".format(makeFStr(self._var),makeFStr(self._bounds))
+
+class TTCufAllocated(TTNode):
+    """
+    For `type(c_ptr)` variables the standard `allocated` check
+    do not work. We need to replace this by `c_associated(var)`.
+    """
+    def assignFields(self,tokens):
+        self._var = tokens[0]
+    def varName(self):
+        return self._var.varName()
+    def fStr(self):
+        return "c_associated({0})".format(makeFStr(self._var))
+
+class TTCufNonZeroCheck(TTNode):
+    """
+    For `type(c_ptr)` variables that replace CUDA Fortran stream and , the standard `allocated` check
+    do not work. We need to replace this by `c_associated(var)`.d
+    """
+    def assignFields(self,tokens):
+        self._lhs = tokens
+    def lhsFStr(self):
+        return makeFStr(self._lhs)
+    def fStr(self):
+        return "c_associated({0})".format(makeFStr(self._lhs))
+
+class TTCufPointerAssignment(TTNode):
+    """
+    For `type(c_ptr)` variables that replace device array pointers,
+    the Fortran pointer assignment operator `=>` must be replaced by `=`.
+ 
+    Calling function needs to check if at least one (should be both in any case)
+    pointer is pointing to data on the device. 
+    """
+    def assignFields(self,tokens):
+        self._lhs, self._rhs = tokens
+    def lhsFStr(self):
+        return makeFStr(self._lhs)
+    def rhsFStr(self):
+        return makeFStr(self._rhs)
+    def fStr(self,lhsBoundVariableNames=[]):
+        lhsName = self.lhsFStr()
+        rhsName = self.rhsFStr()
+        boundVariableAssignments = "\n".join(["{0} = {1}".format(el,el.replace(lhsName,rhsName)) for el in lhsBoundVariableNames])
+        return "{0} = {1}\n{2}".format(lhsName,rhsName,boundVariableAssignments)
+
+class TTCufAllocate(TTNode):
+    """
+    This statement has nearly no context except the bounds (in elements, not bytes)
+    of the array that is allocated.
+    Most information needs to be provided from calling function in order
+    to convert this call to a hip malloc.
+
+    Spawned from grammar:
+
+    ```python
+    ```
+
+    where
+    
+    ```python
+    allocateRvalue = ( identifier | simpleStructElem ) + Optional(LPAR + bounds + RPAR,default=[])
+    ```
+    """
+    def assignFields(self,tokens):
+        self._vars = tokens
+    def variableNames(self):
+        """
+        :return: names of the variables appearing on the right-hand-side.
+        :return type: list of str
+        """
+        return [array.varName() for array in self._vars] 
+    def fStr(self,bytesPerElement,arrayQualifiers,indent=""):
+        """
+        Generate HIP ISO C Fortran expression for all
+        device and pinned host allocations.
+        Use standard allocate for all other allocations.
+
+        :param arrayQualifiers: List storing per variable, one of 'managed', 'constant', 'shared', 'pinned', 'texture', 'device', None
+        or no entry at all.
+
+        :see: variableNames(self) 
+        """
+        assert len(bytesPerElement) is len(self._vars)
+        assert len(arrayQualifiers) is len(self._vars)
+        result       = []
+        otherArrays  = []
+        for i,array in enumerate(self._vars):
+            sizeBytes = array.size(bytesPerElement[i],makeFStr)
+            if arrayQualifiers[i] == "device":
+                line = "{2}CALL hipCheck(hipMalloc({0}, {1}))".format(array.varName(),sizeBytes,indent)
+                result.append(line)
+            elif arrayQualifiers[i] == "pinned":
+                line = "{2}CALL hipCheck(hipHostMalloc({0}, {1}, hipHostMallocDefault))".format(array.varName(),sizeBytes,indent)
+                result.append(line)
+            else:
+                otherArrays.append(makeFStr(array)) 
+            if arrayQualifiers[i] in ["device","pinned"]:
+                result += array.boundVariableAssignments(array.varName())
+        if len(otherArrays):
+            line = "{1}ALLOCATE({0})".format(",".join(otherArrays),indent)
+            result.append(line)
+        return "\n".join(result)
+
+class TTCufDeallocate(TTNode):
+    """
+    This statement has nearly no context except the bounds (in elements, not bytes)
+    of the array that is allocated.
+    Most information needs to be provided from calling function in order
+    to convert this call to a hip malloc.
+
+    Spawned from grammar:
+
+    ```python
+    ```
+
+    where
+    
+    ```python
+    allocateRvalue = ( identifier | simpleStructElem ) + Optional(LPAR + bounds + RPAR,default=[])
+    ```
+    """
+    def assignFields(self,tokens):
+        self._vars             = tokens
+    def configure(self,bytesPerElement, arrayQualifiers):
+        self._arrayQualifiers = arrayQualifiers
+    def variableNames(self):
+        """
+        :return: names of the variables appearing on the right-hand-side.
+        :return type: list of str
+        """
+        return [array.varName() for array in self._vars] 
+    def fStr(self,arrayQualifiers,indent=""):
+        """
+        Generate HIP ISO C Fortran expression for all
+        device and pinned host allocations.
+        Use standard allocate for all other allocations.
+
+        :param arrayQualifiers: List storing per variable, one of 'managed', 'constant', 'shared', 'pinned', 'texture', 'device', None
+        or no entry at all.
+
+        :see: variableNames(self) 
+        """
+        result       = []
+        otherArrays  = []
+        for i,array in enumerate(self._vars):
+            if arrayQualifiers[i] == "device":
+                line =  "{1}CALL hipCheck(hipFree({0}))".format(array.varName(),indent)
+                result.append(line)
+            elif arrayQualifiers[i] == "pinned":
+                line = "{1}CALL hipCheck(hipHostFree({0}))".format(array.varName(),indent)
+                result.append(line)
+            else:
+                otherArrays.append(makeFStr(array)) 
+        if len(otherArrays):
+            line = "{1}deallocate({0})".format(",".join(otherArrays),indent)
+            result.append(line)
+        return "\n".join(result)
+
+class CufMemcpyBase():
+    """
+    Abstract base class.
+    Subclasses initialize members (api,dest,src)
+    """
+    def hipAPI(self):
+        return "hip" + self._api[4:].title().replace("async","Async")
+    def hipDestFStr(self,onDevice,bytesPerElement):
+        """
+        :return: simply returns the Fortran pointer representation of the destination. 
+        """
+        return makeFStr(self._dest)  
+        #"""
+        #:return: expression for HIP/ISO C destination pointer; may contain '%' if derived type member.
+        #:note: do not confuse with destNameFStr method, which gives the name of the variable.
+        #"""
+        #memcpyKind = str(self._memcpyKind).lower()
+        #if "tohost" in memcpyKind:
+        #    return "c_loc({0})".format(makeFStr(self._dest))
+        #elif "todevice" in memcpyKind:
+        #    return self._dest.makeHipDeviceFStr(bytesPerElement)
+        #else:
+        #    return self._dest.makeHipDeviceFStr(bytesPerElement) if onDevice else "c_loc({0})".format(makeFStr(self._dest))
+    def hipSrcFStr(self,onDevice,bytesPerElement):
+        """
+        :return: the Fortran pointer representation of the source.
+        """
+        return makeFStr(self._src)  
+        #"""
+        #:return: expression for HIP/ISO C source pointer; may contain '%' if derived type member.
+        #:note: do not confuse with destNameFStr method, which gives the name of the variable.
+        #"""
+        #memcpyKind = str(self._memcpyKind).lower()
+        #if "cudamemcpyhost" in memcpyKind:
+        #    return "c_loc({0})".format(makeFStr(self._src))
+        #elif "cudamemcpydevice" in memcpyKind:
+        #    return self._src.makeHipDeviceFStr(bytesPerElement)
+        #else:
+        #    return self._src.makeHipDeviceFStr(bytesPerElement) if onDevice else "c_loc({0})".format(makeFStr(self._src))
+    def destNameFStr(self):
+        """
+        :return: name of destination variable; may contain '%' if derived type member.
+        """
+        return makeFStr(self._dest._var)
+    def srcNameFStr(self):
+        """
+        :return: name of source variable; may contain '%' if derived type member.
+        """
+        return makeFStr(self._src._var)
+    def destHasArgs(self):
+        """
+        :return: name of destination variable; may contain '%' if derived type member.
+        """
+        return self._dest._bounds !=None
+    def srcHasArgs(self):
+        """
+        :return: name of source variable; may contain '%' if derived type member.
+        """
+        return self._src._bounds !=None
+    def sizeFStr(self,name,bytesPerElement=1):
+        """
+        The size of transferred memory (in bytes if bytes per element are given).
+        multiplication by 1_8 ensures this is a type
+        compatible with `integer(c_size_t)`.
+        """
+        assert name in self.__dict__
+        size = makeFStr(self.__dict__[name])
+        return "1_8 * ({0}) * ({1})".format(size,bytesPerElement)
+    def memcpyKind(self,destOnDevice,srcOnDevice):
+        if self._memcpyKind != None:
+            return self._memcpyKind
+        else:
+            result = "hipMemcpy"
+            result += "Device" if srcOnDevice else "Host"
+            result += "ToDevice" if destOnDevice else "ToHost"
+            return result
+    def hipStreamFStr(self):
+        if str(self._stream) == "0":
+            return "c_null_ptr"
+        else:
+            return makeFStr(self._stream)
+
+class TTCufMemcpyIntrinsic(TTNode,CufMemcpyBase):
+    # dest,src,count,[,stream] # kind is inferred from dest and src
+    def assignFields(self,tokens):
+        self._dest       = tokens[0]
+        self._src        = tokens[1]
+        self._bounds     = tokens[0]._bounds
+        self._memcpyKind = ""
+    def fStr(self,destOnDevice,srcOnDevice,bytesPerElement=1,indent=""):
+        api = "hipMemcpy"
+        if self._bounds != None:
+            size = self._bounds.size(bytesPerElement,makeFStr)
+        args = []
+        args.append(self.hipDestFStr(destOnDevice,bytesPerElement))
+        args.append(self.hipSrcFStr(srcOnDevice,bytesPerElement))
+        args.append(self.memcpyKind(destOnDevice,srcOnDevice))
+        return "{2}{0}( {1} )".format(api,", ".join(args),indent) 
+
+#class TTCufCudaMemcpy(TTNode,CufMemcpyBase):
+#    # dest,src,count,[,stream] # kind is inferred from dest and src
+#    def assignFields(self,tokens):
+#        #print(tokens)
+#        self._api        = tokens[0] 
+#        self._dest       = tokens[1]
+#        self._src        = tokens[2]
+#        self._count      = tokens[3]
+#        self._memcpyKind = tokens[4]
+#        self._stream     = tokens[5]
+#    def fStr(self,destOnDevice,srcOnDevice,bytesPerElement=1,indent=""):
+#        api = self.hipAPI()
+#        args = []
+#        args.append(self.hipDestFStr(destOnDevice,bytesPerElement))
+#        args.append(self.hipSrcFStr(srcOnDevice,bytesPerElement))
+#        args.append(self.sizeFStr("_count", bytesPerElement)) 
+#        args.append(self.memcpyKind(destOnDevice,srcOnDevice))
+#        if "Async" in api:
+#             args.append(makeFStr(self._stream))
+#        return "{2}{0}( {1} )".format(api,", ".join(args),indent) 
+#
+#class TTCufCudaMemcpy2D(TTNode,CufMemcpyBase):
+#    # dest,dpitch(count),src,spitch(count),width(count),height(count)[,stream] # kind is inferred from dest and src
+#    def assignFields(self,tokens):
+#        self._api        = tokens[0]
+#        self._dest       = tokens[1]
+#        self._dpitch     = tokens[2]
+#        self._src        = tokens[3]
+#        self._spitch     = tokens[4]
+#        self._width      = tokens[5]
+#        self._height     = tokens[6]
+#        self._memcpyKind = tokens[7]
+#        self._stream     = tokens[8]
+#    def fStr(self,destOnDevice,srcOnDevice,bytesPerElement=1,indent=""):
+#        api = self.hipAPI()
+#        args = []
+#        args.append(self.hipDestFStr(destOnDevice,bytesPerElement))
+#        args.append(self.sizeFStr("_dpitch", bytesPerElement))
+#        args.append(self.hipSrcFStr(srcOnDevice,bytesPerElement))
+#        args.append(self.sizeFStr("_spitch", bytesPerElement))
+#        args.append(self.sizeFStr("_width", bytesPerElement)) 
+#        args.append(self.sizeFStr("_height", 1))
+#        args.append(self.memcpyKind(destOnDevice,srcOnDevice))
+#        if "Async" in api:
+#            args.append(self.hipStreamFStr())
+#        return "{2}{0}({1})".format(api,",".join(args),indent)
+#
+#class TTCufCudaMemcpy3D(TTNode,CufMemcpyBase):
+#    # dest,dpitch(count),src,spitch(count),width(count),height(count),depth(count),[,stream] # kind is inferred from dest and src
+#    def assignFields(self,tokens):
+#        self._api        = tokens[0]
+#        self._dest       = tokens[1]
+#        self._dpitch     = tokens[2]
+#        self._src        = tokens[3]
+#        self._spitch     = tokens[4]
+#        self._width      = tokens[5]
+#        self._height     = tokens[6]
+#        self._depth      = tokens[7]
+#        self._memcpyKind = tokens[8]
+#        self._stream     = tokens[9]
+#    def fStr(self,destOnDevice,srcOnDevice,bytesPerElement=1,indent=""):
+#        api = self.hipAPI()
+#        args = []
+#        args.append(self.hipDestFStr(destOnDevice,bytesPerElement))
+#        args.append(self.sizeFStr("_dpitch", bytesPerElement))
+#        args.append(self.hipSrcFStr(srcOnDevice,bytesPerElement))
+#        args.append(self.sizeFStr("_spitch", bytesPerElement))
+#        args.append(self.sizeFStr("_width", bytesPerElement)) 
+#        args.append(self.sizeFStr("_height", 1))
+#        args.append(self.sizeFStr("_depth", 1)) 
+#        args.append(self.memcpyKind(destOnDevice,srcOnDevice))
+#        if "Async" in api:
+#            args.append(self.hipStreamFStr())
+#        return "{2}{0}({1})".format(api,",".join(args),indent)
+
+class TTCufCublasCall(TTNode):
+    def assignFields(self,tokens):
+        self._api    = tokens[0] # does not include cublas
+        self._args   = tokens[1]
+    def fStr(self,indent=""):
+        global CUBLAS_VERSION 
+        api = "hipblas" + makeFStr(self._api)
+        args = []
+        if CUBLAS_VERSION is 1:
+            args.append("hipblasHandle")
+        else:
+            api = api.split("_")[0] # remove _v2 if present
+        args += [makeFStr(arg) for arg in self._args]
+        result = "{2}{0}({1})".format(api,",".join(args),indent)
+        cublasOperationType = Regex("'[NTCntc]'").setParseAction(lambda tokens: "HIPBLAS_OP_"+tokens[0].strip("'").upper())
+        result = cublasOperationType.transformString(result)
+        return result
+
+## Link actions
+# CUDA Fortran
+cufPragma.setParseAction(TTCufPragma)
+cufLoopKernel.setParseAction(TTCufLoopKernel)
+
+allocateRvalue.setParseAction(TTAllocateRvalue)
+memCpyValue.setParseAction(TTAllocateRvalue)
+allocate.setParseAction(TTCufAllocate)
+allocated.setParseAction(TTCufAllocated)
+deallocate.setParseAction(TTCufDeallocate)
+
+memcpy.setParseAction(TTCufMemcpyIntrinsic)
+nonZeroCheck.setParseAction(TTCufNonZeroCheck)
+#pointerAssignment.setParseAction(TTCufPointerAssignment)
+
+#cufCudaMemcpy.setParseAction(TTCufCudaMemcpy)
+#cufCudaMemcpy2D.setParseAction(TTCufCudaMemcpy2D)
+#cufCudaMemcpy3D.setParseAction(TTCufCudaMemcpy3D)
+
+cublasCall.setParseAction(TTCufCublasCall)
+cudaKernelCall.setParseAction(TTCudaKernelCall)

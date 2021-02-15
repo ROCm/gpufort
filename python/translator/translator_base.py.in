@@ -1,0 +1,192 @@
+def bytes(fType,kind,default=None,floatComplex=FLOAT_COMPLEX,doubleComplex=DOUBLE_COMPLEX):
+    assert type(fType) is str
+    assert type(kind) is str
+    kindLower = kind.lower()
+    return FORTRAN_TYPE_2_BYTES_MAP.get(fType.lower(),{ kindLower : default }).get(kindLower, "UNKNOWN")
+
+ADDITIONS = "cuf kernel kind" # TODO
+KEYWORDS = " ".join([CUDA_FORTRAN_KEYWORDS_STR, FORTRAN_INTRINSICS_STR, F08_KEYWORDS_STR, ADDITIONS])
+KEYWORDS = KEYWORDS.lower().split(" ")
+
+## Define actions
+class TTNode(object):
+    def __init__(self, s, loc, tokens):
+       self._location = loc
+       self.assignFields(tokens)
+    def __str__(self):
+       return self.__class__.__name__ + ':' + str(self.__dict__)
+    def assignFields(self,tokens):
+        pass
+    def cStr(self): # TODO: Rename to flatten
+        pass
+    #__repr__ = __str__
+
+def findAllMatching(body,filterExpr=lambda x: True,N=-1):
+    """
+    Find all nodes in tree of type 'searchedType'.
+    """
+    result = []
+    def descend(curr):
+        if N > 0 and len(result) > N:
+            return
+        if filterExpr(curr):
+            result.append(curr)
+        if isinstance(curr,ParseResults) or\
+           isinstance(curr,list):
+            for el in curr:
+                descend(el)
+        elif isinstance(curr,TTNode):
+            for value in curr.__dict__.values():
+                descend(value)
+    descend(body)       
+    return result
+
+def findFirstMatching(body,filterExpr=lambda x: True):
+    """
+    Find first node in tree where the filte returns true.
+    """
+    result = findAllMatching(body,filterExpr,N=1)
+    if len(result):
+        return result[0]
+    else:
+        return None
+
+def findAll(body,searchedType,N=-1):
+    """
+    Find all nodes in tree of type 'searchedType'.
+    """
+    result = []
+    def descend(curr):
+        if N > 0 and len(result) > N:
+            return
+        if type(curr) is searchedType:
+            result.append(curr)
+        if isinstance(curr,ParseResults) or\
+           isinstance(curr,list):
+            for el in curr:
+                descend(el)
+        elif isinstance(curr,TTNode):
+            for value in curr.__dict__.values():
+                descend(value)
+    descend(body)       
+    return result
+
+def findFirst(body,searchedType):
+    """
+    Find first node in tree of type 'searchedType'.
+    """
+    result = findAll(body,searchedType,N=1)
+    if len(result):
+        return result[0]
+    else:
+        return None
+
+def makeCStr(obj):
+    if obj is None:
+      return ""
+    try:
+        return obj.cStr()
+    except Exception as e:
+        if isinstance(obj,ParseResults) or\
+           isinstance(obj,list):
+            result = ""
+            for child in obj:
+                result += makeCStr(child)
+            return result
+        elif type(obj) in [bool,int,float,str]:
+            return str(obj)
+        else:
+            raise e
+
+def makeFStr(obj):
+    if obj is None:
+       return ""
+    try:
+        return obj.fStr()
+    except Exception as e:
+        if isinstance(obj,ParseResults) or\
+           isinstance(obj,list):
+            result = ""
+            for child in obj:
+                result += makeFStr(child)
+            return result
+        elif type(obj) in [int,float,str]:
+            return str(obj)
+        else:
+            raise e
+
+def flattenBody(body):
+    #TODO: Check if this is the same as makeCStr()
+    def descend(statement):
+        term = ""
+        if isinstance(statement,ParseResults) or\
+           isinstance(statement,list):
+            for el in statement:
+                term += descend(el)
+            return term
+        elif isinstance(statement,TTNode):
+           try:
+               return statement.cStr() 
+           except Exception as e:
+               #print(statement)
+               raise e
+        else:
+           return ""
+    return descend(body)       
+
+def convertToCType(fType,kind,default=None):
+    """
+    :return: An equivalent C datatype for a given Fortran type, e.g. `double` for a `REAL*8`.
+    :param fType: The original Fortran type, e.g. `REAL` for a `REAL*8`.
+    :param kind: The kind of the Fortran type, e.g. `8` for a `REAL*8`.
+    :rtype: str
+    """
+    assert type(fType) is str
+    if kind is None:
+        kind = ""
+    assert type(kind) is str, "{}, {}".format(kind,type(kind))
+    kindLower = kind.lower()
+    return FORTRAN_2_C_TYPE_MAP.get(fType.lower(),{ kindLower : default }).get(kindLower, "UNKNOWN")
+
+COMMENT = r"(!|^\s*[\*cCdD])[^\$].+"
+pIgnore = re.compile(COMMENT+"|\&")
+pElseIf = re.compile(r"elseif", re.IGNORECASE)
+
+def prepareFortranSnippet(fortranSnippet):
+    """
+    Converts the Fortran snippet to lower case as
+    we convert into a case-sensitive C language (preserves case in comments).
+    Furthermore, applies a number of hacks that were necessary to get the parser work.
+    """
+    result = pIgnore.sub("",fortranSnippet)
+    result = pElseIf.sub("else if",result)
+    # replace power (**) expression by func call expression
+    result = power.transformString(result)
+    return result
+
+GPUFORT_CPP_ROUTINES = { "__pow" : "pow" }
+
+def postprocessCSnippet(cSnippet):
+    toHip = GPUFORT_CPP_ROUTINES 
+    toHip.update({
+       "threadidx" : "threadIdx",
+       "blockdim" : "blockDim",
+       "blockidx" : "blockIdx",
+       "griddim" : "gridDim",
+       "warpsize" : "warpSize",
+       "syncthreads" : "__syncthreads",
+       "atomicadd" : "atomicAdd",
+       "atomicsub" : "atomicSub",
+       "atomicmax" : "atomicMax",
+       "atomicmin" : "atomicMin",
+       "atomicand" : "atomicAnd",
+       "atomicor"   : "atomicOr",
+       "atomicxor"  : "atomicXor",
+       "atomicexch" : "atomicExch",
+       "atomicinc" : "atomicInc",
+       "atomicdec" : "atomicDec",
+       "atomiccas" : "atomicCas",
+    })
+    for key,subst in toHip.items():
+        cSnippet = cSnippet.replace(key,subst)
+    return cSnippet

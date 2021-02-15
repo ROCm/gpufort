@@ -1,0 +1,9 @@
+class Acc2Omp:
+    def hipFStr(self):
+        print(self.__dict__)
+        return "! here would be an OpenMP directive instead", True
+
+class Acc2OmpLoopKernel:
+    def hipFStr(self):
+        print(self.__dict__)
+        return "! here would be an OpenMP loopnest instead", True

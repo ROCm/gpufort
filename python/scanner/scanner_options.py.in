@@ -1,0 +1,16 @@
+# Scanner options
+SOURCE_DIALECTS     = ["cuf","acc"] # one of ["acc","cuf","omp"]
+DESTINATION_DIALECT = "omp"   # one of ["omp","hip"]
+
+KERNELS_TO_CONVERT_TO_HIP = [] # add line number here (might change if snippets are included included); check log to find actual line number
+
+LOOP_VARIABLES="integer :: {}".format(",".join(["_"+chr(ord("a")+i) for i in range(0,20) ])) # integer :: a,b,c,d,...
+GLOBAL_DECLARATIONS=[ LOOP_VARIABLES ]
+
+HIP_MODULE_NAME="hipfort"
+HIP_MATH_MODULE_PREFIX=HIP_MODULE_NAME+"_"
+
+HIP_IFDEF = "__HIP"
+CUDA_IFDEF = "CUDA"
+CUBLAS_VERSION = 1
+KEEP_CUDA_LIB_NAMES = False

@@ -1,0 +1,85 @@
+def createCodegenContextFromDeclaration(ttdeclaration):
+    """
+    Per declared variable in the declaration, creates
+    a context dictionary that can be easily piped
+    to the (HIP) kernel code generation
+    and the Fortran-C interface code generation.
+    """
+    context = []
+    hasDimension = ttdeclaration.hasDimension()
+    for ttdeclaredvariable in ttdeclaration._rhs:
+        varName    = ttdeclaredvariable.name().lower()
+        varContext = {}
+        # basic 
+        fType = makeFStr(ttdeclaration._datatype.type())
+        kind  = makeFStr(ttdeclaration._datatype.kind())
+        bpe   = bytes(fType,kind,default=None)
+        varContext["name"]                       = varName
+        varContext["fType"]                      = fType
+        varContext["kind"]                       = kind
+        varContext["bytesPerElement"]            = bpe 
+        varContext["cType"]                      = convertToCType(fType,kind,"TODO unknown")
+        varContext["fInterfaceType"]             = varContext["cType"]
+        varContext["fInterfaceQualifiers"]       = [ "value" ] # assume pass by value by default
+        varContext["parameter"]                  = ttdeclaration.hasParameter()
+        varContext["pointer"]                    = ttdeclaration.hasStringQualifier("pointer")
+        # CUF
+        varContext["device"]                     = ttdeclaration.hasStringQualifier("device")
+        varContext["pinned"]                     = ttdeclaration.hasStringQualifier("pinned")
+        varContext["managed"]                    = ttdeclaration.hasStringQualifier("managed")
+        varContext["allocatable"]                = ttdeclaration.hasStringQualifier("allocatable")
+        # ACC/OMP
+        varContext["declaredOnTarget"]           = False
+        # arrays
+        varContext["rank"]                       = 0
+        varContext["unspecifiedBounds"]          = True
+        varContext["lbounds"]                    = []
+        varContext["counts"]                     = []
+        varContext["totalCount"]                 = "1" 
+        varContext["totalBytes"]                 = bpe
+        varContext["indexMacro"]                 = "_idx_{}(a) (a)".format(varName) 
+        varContext["indexMacroWithPlaceHolders"] = varContext["indexMacro"]
+        dimensionQualifier = findAll(ttdeclaration._qualifiers,TTDimensionQualifier)
+        if ttdeclaredvariable.hasBounds() or len(dimensionQualifier):
+            varContext["fInterfaceType"] = "type(c_ptr)"
+            if len(dimensionQualifier):
+                ttbounds = dimensionQualifier[0]._bounds
+            else:
+                ttbounds = ttdeclaredvariable.getBounds()
+            rank = ttbounds.rank()
+            varContext["rank"] = rank
+            varContext["unspecifiedBounds"] = ttbounds.hasUnspecifiedBounds()
+            if varContext["unspecifiedBounds"]: # TODO: return a mix of unspecified bounds and specified bounds in the future
+                varContext["lbounds"]                    = [ "{0}_lb{1}".format(varName,i) for i in range(1,rank+1) ]
+                varContext["counts"]                     = [ "{0}_n{1}".format(varName,i) for i in range(1,rank+1 ) ]
+                varContext["indexMacroWithPlaceHolders"] = ttbounds.indexMacroCStr(varName,usePlaceHolders=True)
+                varContext["indexMacro"]                 = varContext["indexMacroWithPlaceHolders"]
+            else:
+                varContext["lbounds"]                    = ttbounds.specifiedLowerBounds()
+                varContext["counts"]                     = ttbounds.specifiedCounts()
+                varContext["indexMacroWithPlaceHolders"] = ttbounds.indexMacroCStr(varName,usePlaceHolders=True) 
+                varContext["indexMacro"]                 = ttbounds.indexMacroCStr(varName,usePlaceHolders=False)
+            varContext["totalCount"]   = "*".join(varContext["counts"])
+            varContext["totalBytes"]   = None if bpe is None else bpe+"*("+varContext["totalCount"]+")"
+        # handle parameters
+        varContext["value"] = None
+        if ttdeclaration.hasParameter():
+            if ttdeclaredvariable.rhsIsNumber():
+                varContext["value"] = ttdeclaredvariable.rhsCStr()
+            else:
+                #varContext["value"] = ttdeclaredvariable.rhsCStr()
+                # TODO 
+                pass
+        context.append(varContext)
+    return context
+
+def changeKind(varContext,kind):
+     fType = varContext["fType"]
+     bpe   = bytes(fType,kind,default=None)
+     varContext["kind"]                 = kind
+     varContext["bytesPerElement"]      = bpe 
+     varContext["cType"]                = convertToCType(fType,kind,"TODO unknown")
+     if varContext["rank"] is 0:
+       varContext["fInterfaceType"] = varContext["cType"]
+     #
+     varContext["totalBytes"] = None if bpe is None else bpe+"*("+varContext["totalCount"]+")"

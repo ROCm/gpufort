@@ -1,0 +1,127 @@
+#from grammar_acc import *
+
+# OpenACC
+ACC,KERNELS,PARALLEL,LOOP,DATA,ENTER,EXIT,HOST_DATA,ATOMIC,UPDATE,SERIAL,CACHE,ROUTINE,DECLARE = makeCaselessLiteral("acc,kernels,parallel,loop,data,enter,exit,host_data,atomic,update,serial,cache,routine,declare",suppress=True)
+
+ASYNC,WAIT,NUM_GANGS,NUM_WORKERS,VECTOR_LENGTH,DEVICE_TYPE,COPY,COPYIN,COPYOUT,CREATE,NO_CREATE,PRESENT,DEVICEPTR,ATTACH,DETACH,DEFAULT,NONE,PRIVATE,FIRST_PRIVATE,REDUCTION,DELETE,ROUTINE,USE_DEVICE,COLLAPSE,SELF,DEVICE,HOST,BIND,DEVICE_RESIDENT,LINK,TILE=\
+  makeCaselessLiteral("async,wait,num_gangs,num_workers,vector_length,device_type,copy,copyin,copyout,create,no_create,present,deviceptr,attach,detach,default,none,private,first_private,reduction,delete,routine,use_device,collapse,self,device,host,bind,device_resident,link,tile",suppress=True)
+
+GANG,VECTOR,WORKER = makeCaselessLiteral("gang,vector,worker",suppress=False)
+
+accVarList = Group(delimitedList(allocateRvalue)) 
+
+acc_async = ASYNC + Optional(LPAR + rvalue + RPAR, default = "0") 
+
+# work partitioning
+acc_gang          = GANG + Optional(LPAR + integer + RPAR,default = -1)
+acc_worker        = WORKER + Optional(LPAR + integer + RPAR,default = -1)
+acc_vector        = VECTOR + Optional(LPAR + integer + RPAR,default = -1)
+acc_num_gangs     = NUM_GANGS + LPAR + integer + RPAR 
+acc_num_workers   = NUM_WORKERS + LPAR + integer + RPAR 
+acc_vector_length = VECTOR_LENGTH + LPAR + integer + RPAR
+
+acc_device_type = DEVICE_TYPE + LPAR + Group(delimitedList(identifier | Literal("*"))) + RPAR
+acc_if          = IF + LPAR + arithmeticLogicalExpression + RPAR
+acc_copy        = COPY + LPAR + accVarList + RPAR
+acc_copyin      = COPYIN + LPAR + accVarList + RPAR
+acc_copyout     = COPYOUT + LPAR + accVarList + RPAR
+
+acc_create           = CREATE + LPAR + accVarList + RPAR
+acc_no_create        = NO_CREATE + LPAR + accVarList + RPAR
+acc_present          = PRESENT + LPAR + accVarList + RPAR
+acc_deviceptr        = DEVICEPTR + LPAR + accVarList + RPAR
+acc_attach           = ATTACH + LPAR + accVarList + RPAR
+acc_detach           = DETACH + LPAR + accVarList + RPAR
+acc_default          = DEFAULT + LPAR +  (CASELESS_LITERAL("none") | CASELESS_LITERAL("present")) + RPAR
+acc_use_device       = USE_DEVICE + LPAR + accVarList + RPAR
+acc_private          = PRIVATE + LPAR + accVarList + RPAR
+accReductionOperator = oneOf("+ * max min iand ior ieor .and. .or. .eqv. .neqv.", caseless=CASELESS)
+accReductionVar      = accReductionOperator + Suppress(":") + allocateRvalue
+accReductionVarList  = Group(delimitedList(accReductionVar))
+acc_reduction        = REDUCTION + LPAR + accReductionVarList + RPAR
+acc_delete           = DELETE + LPAR + accVarList + RPAR
+acc_routine          = ROUTINE + LPAR + identifier + RPAR
+acc_private          = PRIVATE + LPAR + accVarList + RPAR
+acc_first_private    = FIRST_PRIVATE + LPAR + accVarList + RPAR 
+acc_collapse         = COLLAPSE + LPAR + integer + RPAR
+acc_device           = DEVICE + LPAR + accVarList + RPAR
+acc_host             = HOST + LPAR + accVarList + RPAR
+acc_self             = SELF + LPAR + accVarList + RPAR
+acc_bind             = BIND + LPAR + identifier + RPAR
+acc_device_resident  = DEVICE_RESIDENT + LPAR + accVarList + RPAR
+acc_link             = LINK + LPAR + accVarList + RPAR
+acc_tile             = TILE + LPAR + Group(integer + Suppress(",") + integer) + RPAR
+acc_wait             = WAIT + Optional(LPAR + accVarList + RPAR, default=[])
+
+# TODO(acc) Add more clauses where needed
+# Probably need to support collapse and reduction ...
+acc_seq,acc_auto,acc_independent,acc_read,acc_write,acc_capture,acc_nohost,acc_finalize,acc_if_present = makeCaselessLiteral("seq,auto,independent,read,write,capture,nohost,finalize,if_present",suppress=False)
+
+# ACC LoopKernel directive
+accKernelsStructuredBlock = doLoop
+accBlock = executionStatement
+
+accBegin = PRAGMA + ACC
+accEnd   = accBegin.copy() + END
+
+accClause = acc_if | acc_self | acc_host | acc_async | acc_wait | acc_num_gangs | acc_num_workers | acc_vector_length | acc_device_type |\
+    acc_copy | acc_copyin | acc_copyout | acc_create | acc_present | acc_deviceptr | acc_default |\
+    acc_private | acc_first_private | acc_no_create | acc_delete | acc_reduction | acc_detach | acc_collapse |\
+    acc_use_device | acc_device | acc_bind | acc_device_resident | acc_link | acc_tile | acc_seq | acc_auto |\
+    acc_independent | acc_gang | acc_worker | acc_vector | acc_read | acc_write | acc_capture |\
+    acc_nohost | acc_finalize | acc_if_present 
+
+accClauses = Optional(OneOrMore(Optional(accBegin + Literal("&")).suppress() + accClause), default=[])
+
+##
+## DIRECTVIES
+##
+accUpdate = accBegin + UPDATE + accClauses # 2 tokens -> [(False|True),[*]],*
+
+# kernels
+accKernelsBegin = accBegin + KERNELS + accClauses
+accKernels = accKernelsBegin + accBlock + accEnd + KERNELS
+# parallel
+accParallelBegin = accBegin + PARALLEL + accClauses
+accParallel = accParallelBegin + accBlock + accEnd + PARALLEL
+
+accWait = accBegin + accClauses
+
+accHostData = accBegin + HOST_DATA + accClauses +\
+                accBlock +\
+              accEnd + HOST_DATA
+
+accData = accBegin + DATA + accClauses +\
+            accBlock +\
+          accEnd + DATA
+
+accEnterData = accBegin + ENTER + DATA + accClauses
+
+accExitData = accBegin + EXIT + DATA + accClauses
+
+accLoop = accBegin + LOOP + accClauses
+accParallelLoop = accBegin + PARALLEL + LOOP + accClauses
+accKernelsLoop = accBegin + KERNELS + LOOP + accClauses
+
+accRoutine =  accBegin + ROUTINE + Optional(LPAR + identifier + RPAR,default = None) + accClauses
+
+accAtomic = accBegin + ATOMIC + Optional(accClauses , default = "update") +\
+               accBlock +\
+           Optional( accEnd + ATOMIC )
+accUpdate = accBegin + CASELESS_LITERAL("update").suppress() + accClauses
+accSerial = accBegin + SERIAL + accClauses +\
+              accBlock +\
+            accEnd + SERIAL
+accCache   = accBegin + CACHE + LPAR + accVarList + RPAR
+accDeclare = accBegin + DECLARE + accClauses
+
+accConstruct = accKernels | accParallel | accWait | accHostData | accData | accEnterData | accExitData | accLoop | accRoutine | accAtomic | accUpdate | accSerial | accCache | accDeclare
+
+accKernelBodyDirective = accLoop | accSerial | accAtomic
+accLoopLoopKernel = Group(OneOrMore(accParallelLoop|accKernelsLoop|accKernelsBegin|accParallelBegin)) + executionStatement # ! emits two tokens: [*],*
+
+# Ideally pass the following:
+# multiple acc directives/lines 
+# !acc ...
+# !acc ...
+# some Fortran code

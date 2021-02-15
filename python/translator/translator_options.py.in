@@ -1,0 +1,69 @@
+# general options
+
+UNCONVERTED = "TODO(gpufort) UNCONVERTED - Please adjust yourself!"
+FLOAT_COMPLEX="hipFloatComplex"
+DOUBLE_COMPLEX="hipDoubleComplex"
+FORTRAN_2_C_TYPE_MAP = { 
+  "complex" : { 
+     "": FLOAT_COMPLEX,
+     "16": None,
+     "8": DOUBLE_COMPLEX,
+     "4": FLOAT_COMPLEX,
+     "2": None,
+     "1": None,
+  },
+  "real" : { 
+     "": "float",
+     "16": "long double",
+     "8": "double",
+     "4": "float",
+     "2": "_Float16",
+     "1": None,
+  },
+  "integer" : { 
+     "": "int",
+     "8": "long",
+     "4": "int",
+     "2": "short",
+     "1": "char",
+  },
+  "logical" : { 
+    "": "bool"
+  }
+} 
+    
+FORTRAN_TYPE_2_BYTES_MAP = { 
+  "complex" : { 
+     "":   "2*4",
+     "16": "2*16",
+     "8":  "2*8",
+     "4":  "2*4",
+     "2":  "2*2",
+     "1":  "2*1",
+  },
+  "real" : { 
+     "": "4",
+     "16": "16",
+     "8": "8",
+     "4": "4",
+     "2": "2",
+     "1": "1",
+  },
+  "integer" : { 
+     "": "4",
+     "8": "8",
+     "4": "4",
+     "2": "2",
+     "1": "1",
+  },
+  "logical" : { 
+    "": "1"
+  }
+}
+
+# one of "collapse", "collapse-always", "grid"
+LOOP_COLLAPSE_STRATEGY="collapse"
+LOOP_COLLAPSE_STRATEGY_OPTIONS=["collapse","collapse-always","grid"]
+
+# options for CUF
+CUBLAS_VERSION = 1

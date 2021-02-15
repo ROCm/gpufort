@@ -1,0 +1,15 @@
+# configurable parameters
+DISCOVER_INPUT_FILES="find {search_dir} -type f -name \"*.*\" | grep \"\.[fF]\(90\|95\|77\)\?$\" | grep -v hipified"
+FILTER_INPUT_FILES="grep -l \"{module_names}\" {input_files}"
+
+PREPROCESS_FORTRAN_FILE="gfortran -cpp -E {options} {file} | grep -v \"^# [0-9]\""
+
+STRUCTURES=r"\b(module|program|interface|function|routine|procedure|subroutine|type|end)\b"
+DECLARATIONS=r"\b(integer|real|double|logical)\b" # derived types already considered by definition
+DIRECTIVES=r"([!c\*]\$\w+\&\s+)"
+USE=r"use\b\s+"
+CONTINUATION=r"(\&\s*\n)|(\n[!c\*]\$\w+\&)"
+ANTIFILTER=r"\bend\b\s+\b(do|if)\b"
+FILTER=STRUCTURES+"|"+DECLARATIONS+"|"+DIRECTIVES+"|"+USE
+
+ERROR_HANDLING="warn" # one of "warn","error"

@@ -1,0 +1,188 @@
+# local imports
+#from translator.translator_f03 import *
+#import utils
+
+# clauses
+
+class TTAccCollapse(TTNode):
+    def assignFields(self,tokens):
+        self._value = tokens[0]
+    def value(self):
+        return int(self._value._value)
+class TTAccIf(TTNode):
+    def assignFields(self,tokens):
+        self._condition = tokens[0]
+    def condition(self):
+        return self._condition.fStr()
+class TTAccGang(TTNode):
+    def assignFields(self,tokens):
+        self._value = tokens[0]
+    def value(self):
+        return self._value
+class TTAccWorker(TTNode):
+    def assignFields(self,tokens):
+        self._value = tokens[0]
+    def value(self):
+        return self._value
+class TTAccVector(TTNode):
+    """
+    should be aligned with warp size
+    """
+    def assignFields(self,tokens):
+        self._value = tokens[0]
+    def value(self):
+        return self._value
+class TTAccNumGangs(TTAccGang):
+    pass
+class TTAccNumWorkers(TTAccWorker):
+    pass
+
+class TTAccAsync(TTNode):
+    def assignFields(self,tokens):
+        self._queue = tokens[0]
+    def queue(self):
+        return self._queue
+
+class TTAccReductionVar(TTNode):
+    def assignFields(self,tokens):
+        self._operator, self._var = tokens
+        # post-process
+        # "+" "*" "max" "min" "iand" "ior" "ieor" ".and." ".or." ".eqv." ".neqv."
+        self._operator = self._operator.replace(".","")
+        self._operator = self._operator.replace("+","add")
+        self._operator = self._operator.replace("*","mult")
+class TTAccReduction(TTNode):
+    def assignFields(self,tokens):
+        self._reductions = findAll(tokens[0],TTAccReductionVar)
+    def reductionVars(self):
+        result = {}
+        for red in self._reductions:
+            varName = makeCStr(red._var).lower()
+            result[varName] = makeCStr(red._operator).lower() 
+        return result
+
+class TTAccPrivate(TTNode):
+    def assignFields(self,tokens):
+        self._threadPrivateVars = tokens[0]
+    def threadPrivateVarNames(self):
+        return [ var.varName().lower() for var in self._threadPrivateVars ]
+
+class TTAccLoopKernel(TTLoopKernel):
+    def assignFields(self,tokens):
+        self._mainAccDirective, self._body = tokens
+        self._launchInfo = LaunchInfo()
+        self._launchInfo._numLoopsToMap = 1
+        self._reductionVars = {}
+        self._threadPrivateVars = []
+        #print(self._mainAccDirective)
+        
+        # handle clauses
+        self.handleCollapse()
+        self.handleReduction()
+        self.handlePrivate()
+    
+    def handleGang(self):
+        # acc collapse(int)
+        expr = findFirstMatching(self._mainAccDirective,lambda x: isinstance(x,TTAccGang))
+        if not expr is None:
+            self._launchInfo._grid[0] = expr.value()
+    def handleAsync(self):
+        # acc collapse(int)
+        expr = findFirst(self._mainAccDirective,TTAccAsync)
+        if not expr is None:
+            self._launchInfo._stream = "gpufort_acc_get_stream({0})".format(expr.queue())
+    def handleCollapse(self):
+        # acc collapse(int)
+        expr = findFirst(self._mainAccDirective,TTAccCollapse)
+        if not expr is None:
+            self._launchInfo._numLoopsToMap = expr.value()
+    def handleReduction(self):
+        # acc collapse(int)
+        expr = findFirst(self._mainAccDirective,TTAccReduction)
+        if not expr is None:
+            self._reductionVars = expr.reductionVars()
+    def handlePrivate(self):
+        # acc collapse(int)
+        private = findFirst(self._mainAccDirective,TTAccPrivate)
+        if not private is None:
+            self._threadPrivateVars += private.threadPrivateVarNames()
+    def threadPrivateVars(self):
+        return self._threadPrivateVars
+
+acc_gang.setParseAction(TTAccGang)
+acc_worker.setParseAction(TTAccWorker)
+acc_vector.setParseAction(TTAccVector)
+acc_num_gangs.setParseAction(TTAccNumGangs)
+acc_num_workers.setParseAction(TTAccNumWorkers)
+acc_vector_length.setParseAction(TTAccVector)
+
+acc_async.setParseAction(TTAccAsync)
+acc_private.setParseAction(TTAccPrivate)
+acc_if.setParseAction(TTAccIf)
+acc_collapse.setParseAction(TTAccCollapse)
+accReductionVar.setParseAction(TTAccReductionVar)
+acc_reduction.setParseAction(TTAccReduction)
+accLoopLoopKernel.setParseAction(TTAccLoopKernel)
+
+recursionsLeft=0
+def convertAccLoopLoopKernel(fortranSnippet,maxRecursions=30):
+    """
+    Return a csnippet equivalent to the original Fortran code.
+    """
+    global KEYWORDS 
+
+    def convertAccKernelRecursively(fortranSnippet,recursionsToGo):
+        global recursionsLeft
+        recursionsLeft = recursionsToGo
+        try:
+            return accLoopLoopKernel.parseString(fortranSnippet)[0]
+        except ParseBaseException as pbe:
+            if recursionsToGo <= 0:
+                raise pbe
+            else:
+                lineno = pbe.__getattr__("lineno")
+                lines = fortranSnippet.split("\n")
+                lines[lineno-1] = "! TODO could not parse: {}".format(lines[lineno-1])
+                modifiedFortranSnippet = "\n".join(lines)
+                #print(modifiedFortranSnippet)
+                return convertAccKernelRecursively(modifiedFortranSnippet,recursionsToGo-1)
+        except Exception as e:
+            raise e        
+   
+    fortranSnippet = prepareFortranSnippet(fortranSnippet)
+    try:
+        result           = convertAccKernelRecursively(fortranSnippet,maxRecursions)
+        cSnippet         = utils.prettifyCCode(result.cStr())
+        
+        kernelLaunchInfo = result.kernelLaunchInfo()
+        identifierNames  = result.allIdentifiers()
+        loopVars         = result.loopVars()
+        localLvalues     = list(filter(lambda x: x not in loopVars, result.allLocalLvalues())) 
+        localLvalues     += result.threadPrivateVars()
+        reductionVars    = result.reductionVars()
+        problemSize      = result.problemSize()
+        #print(recursionsLeft)
+        if recursionsLeft < maxRecursions:
+            body = "\n".join(fortranSnippet.split("\n")[1:])
+            identifierNames = list(set(filter(lambda x: x.lower() not in KEYWORDS,[makeFStr(ident) for ident in identifier.searchString(body)])))
+            #print(identifierNames) 
+        cSnippet = postprocessCSnippet(cSnippet)
+    except Exception as e:
+        raise e
+        logger = logging.getLogger('') 
+        logger.error("failed to convert kernel:\n{}".format(fortranSnippet))
+        logger.error(str(e))
+        cSnippet = "" 
+        pragmaLine = fortranSnippet.split("\n")[0]
+        body = "\n".join(fortranSnippet.split("\n")[1:])
+        #kernelLaunchInfo = acc.parseString(pragmaLine)[0] 
+        kernelLaunchInfo = LaunchInfo()
+        #print(body)
+        identifierNames = list(set(filter(lambda x: x.lower() not in KEYWORDS,[makeFStr(ident) for ident in identifier.searchString(body)])))
+        numLoopsToMap     = int(kernelLaunchInfo._numLoopsToMap)
+        loopVars        = []
+        localLvalues    = []
+        reductionVars   = []
+        problemSize     = ["TODO unknown"]*numLoopsToMap
+        #print(type(e))
+    return cSnippet, problemSize, kernelLaunchInfo, identifierNames, localLvalues, loopVars, reductionVars

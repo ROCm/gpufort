@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+#from grammar_f03 import *
+
+## CUDA Fortran specific
+## CUF LoopKernel loop directive
+CUF,KERNEL,STREAM = makeCaselessLiteral("cuf,kernel,stream",suppress=True)
+
+dim3=LPAR + delimitedList(pyparsing_common.integer,combine=True) + RPAR
+grid=Literal("*") | dim3 | identifier | simpleStructElem
+block=grid.copy()
+streamType=( structElem | funcCall | identifier | number )
+streamArg = Optional(STREAM + EQ) + Optional(streamType,default="0")
+kernelLaunchArgs = Group(Suppress("<<<") + \
+            Optional(grid,default="*")  + COMMA + \
+            Optional(block,default="*") + OPTCOMMA + \
+            Optional(pyparsing_common.integer,default=0) + OPTCOMMA + \
+            streamArg + OPTCOMMA +\
+            Suppress(">>>")) # grid,block,shmem,stream
+numLoopsToMapArg = Optional(LPAR + pyparsing_common.integer + RPAR,default=1)
+
+#!$acc
+#c$acc
+#*$acc
+PRAGMA = Regex(r"[!c\*]\$").suppress()
+genericPragma        = Regex(r"[!c\*]\$\w+")
+genericPragmaNewline = Regex(r"[!c\*]\$\w+\&")
+
+cufPragma = PRAGMA + CUF + KERNEL + DO + numLoopsToMapArg + Optional(kernelLaunchArgs,default=["*","*",0,"0"])
+
+cufLoopKernel = cufPragma + doLoop
+
+# kernelextractor/analysis
+ALLOCATE,ALLOCATED,DEALLOCATE = makeCaselessLiteral("allocate,allocated,deallocate",suppress=True)
+#allocateRvalue = (( simpleStructElem | identifier ) + bounds) | simpleStructElem | identifier
+allocateRvalue = (( structElem | identifier ) + bounds) | structElem | identifier # TODO check if this can be generalized
+#allocateRvalue = bounds
+allocateRvalueList = delimitedList(allocateRvalue)
+allocate   = ALLOCATE + LPAR + allocateRvalueList + RPAR
+allocated  = ALLOCATED + LPAR + allocateRvalue + RPAR
+deallocate = DEALLOCATE + LPAR + allocateRvalueList + RPAR
+#memCpyValue = ( simpleStructElem | identifier ) + Optional( matrixRanges )
+memCpyValue = allocateRvalue.copy() # TODO check if duplicate
+memcpy = memCpyValue + EQ + memCpyValue + ( Suppress(";") | LineEnd() )
+NOT = CASELESS_LITERAL(".NOT.").suppress() 
+nonZeroCheck = allocateRvalue + oneOf("/= .ne.",caseless=CASELESS).suppress() + Suppress("0")
+pointerAssignment = allocateRvalue + PEQ + allocateRvalue
+singleLineIfNotAllocatedAllocate = IF + LPAR + NOT + allocated + RPAR + ~THEN + allocate + ~ENDIF # produces two tokens
+singleLineIfAllocatedDeallocate  = IF + LPAR + allocated + RPAR + ~THEN + deallocate + ~ENDIF # produces two tokens
+
+# kernelextractor/analysis
+CUDAMALLOC,CUDAMEMCPY,CUDAMEMCPYASYNC,CUDAMEMCPY2D,CUDAMEMCPY2DASYNC,CUDAMEMCPY3D,CUDAMEMCPY3DASYNC = makeCaselessLiteral(\
+  "cudamalloc,cudamemcpy,cudamemcpyasync,cudamemcpy2d,cudamemcpy2dasync,cudamemcpy3d,cudamemcpy3dasync")
+# dest,count # kind is inferred from dest and src
+cufCudaMalloc = CUDAMALLOC + LPAR + identifier + COMMA + arithmeticExpression + RPAR
+# dest,src,count,[,stream] # kind is inferred from dest and src
+cudaMemcpyType     = oneOf("cudamemcpyhosttohost cudamemcpyhosttodevice cudamemcpydevicetohost cudamemcpydevicetodevice",caseless=CASELESS)
+cudaMemcpyArgsExt  = Optional(COMMA + cudaMemcpyType,default=None) + Optional(COMMA + streamArg,default=None)
+cufCudaMemcpyArgs  = separatedSequence([allocateRvalue,allocateRvalue,arithmeticExpression]) + cudaMemcpyArgsExt
+cufCudaMemcpy      = ( CUDAMEMCPYASYNC | CUDAMEMCPY ) + LPAR + cufCudaMemcpyArgs + RPAR
+# dest,dpitch(count),src,spitch(count),width(count),height(count)[,stream] # kind is inferred from dest and src
+cufCudaMemcpy2DArgs  = separatedSequence([allocateRvalue,arithmeticExpression,allocateRvalue,arithmeticExpression,arithmeticExpression,arithmeticExpression]) + cudaMemcpyArgsExt
+cufCudaMemcpy2D      = ( CUDAMEMCPY2D | CUDAMEMCPY2DASYNC )  + LPAR + cufCudaMemcpy2DArgs + RPAR
+# dest,dpitch(count),src,spitch(count),width(count),height(count),depth(count),[,stream] # kind is inferred from dest and src
+cufCudaMemcpy3DArgs  = separatedSequence([allocateRvalue,arithmeticExpression,allocateRvalue,arithmeticExpression,arithmeticExpression,arithmeticExpression,arithmeticExpression]) + cudaMemcpyArgsExt
+cufCudaMemcpy3D      = ( CUDAMEMCPY3D | CUDAMEMCPY3DASYNC ) + LPAR + cufCudaMemcpy3DArgs + RPAR
+cufCudaMemcpyVariant = cufCudaMemcpy | cufCudaMemcpy2D | cufCudaMemcpy3D
+# cublas/analysis
+cublasOperationType = Regex("'[NTCntc]'")#.setParseAction(lambda tokens: "hipblas_op_"+tokens[0].strip("'").upper())
+#cublasArgList       = Group(delimitedList(cublasOperationType | allocateRvalue)) 
+# TODO: Explicitly scan for allocateRvalues in cublasArgList's arithmeticLogicalExpressions when transforming host code
+cublasArgList       = Group(delimitedList(cublasOperationType | arithmeticLogicalExpression)) 
+cublasCall          = CASELESS_LITERAL("cublas").suppress() + identifier + LPAR + cublasArgList + RPAR  # emits 2 tokens
+
+# anchors; TODO(Dominic): Rename
+cudaAPI        = Regex(r"\b").suppress() + Combine(oneOf("cublas cufft cusparse cuda cusolver",caseless=CASELESS) + identifier)
+FUNCTION_BREAK = Regex(",\s*\&").setParseAction(lambda tokens: False) # continues on next lines
+FUNCTION_END   = Regex("\)").setParseAction(lambda tokens: True)      # finishes on this line
+# cudaLibCall is used to detect any CUDA library calls; 
+# they are then analysed and transformed using more specific constructs
+cudaLibCall = ((identifier + EQ) | CALL).suppress() + cudaAPI + LPAR + Optional(argList,default=[]) + ( FUNCTION_BREAK | FUNCTION_END ) # emits 3 tokens -> *,
+#Example: call ylmr2_gpu_kernel<<<grid,tBlock>>>(lmax, lmax2, ng, g_d, gg_d, ylm_d)
+cudaKernelCall = CALL + identifier + kernelLaunchArgs + LPAR + Optional(argList,default=[])  + ( FUNCTION_BREAK | FUNCTION_END ) # emits 4 tokens -> *,[*],[*],False/True
+callEnd        = argList + FUNCTION_END.suppress() + Optional(comment).suppress() # emits 1 token -> [*]

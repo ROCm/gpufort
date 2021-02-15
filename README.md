@@ -1,6 +1,6 @@
 # gpufort
 
-This project develops a tool for source2source translation of
+This project develops a source to source ranslation tool that translates:
 
 1. Fortran+OpenACC and CUDA Fortran -> Fortran + OpenMP 4.5+
 2. Fortran+OpenACC and CUDA Fortran -> Fortran + [GCC/AOMP OpenACC/MP runtime calls] + HIP C++
@@ -12,9 +12,9 @@ with hipfort or a combination of hipcc and gfortran.
 Note that a OpenACC runtime is only necessary for translating
 OpenACC code.
 
-These translation processes are illustrated below:
+An overview of the different translation processes is shown below:
 
-
+![Image](https://github.com/ROCmSoftwarePlatform/gpufort/blob/develop/gpufort.png?raw=true)
 
 ## Limitations
 
@@ -47,7 +47,7 @@ directives should be translated to OpenMP.
 
 ## Background
 
-## Key ingredient: pyparsing grammars and parse actions
+### Key ingredient: pyparsing grammars and parse actions
 
 The fundamental ingredient of `gpufort` is its pyparsing grammar that (currently) covers a subset of the Fortran
 language that plays a role in computations. This grammar is extended by additional grammar that describes
@@ -57,9 +57,7 @@ While easing development of a parser with shortcuts such as forward declarations
 pyparsing quickly allows to generate an abstract syntax tree (AST) from a grammar with the aid 
 of so-called parse actions.
 
-A simple pyparsing grammar is given below:
-
-
+A simple pyparsing grammar is shown below:
 
 ```python
 import pyparsing as pp

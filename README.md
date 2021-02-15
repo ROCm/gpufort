@@ -1,6 +1,6 @@
 # gpufort
 
-This project develops a source to source ranslation tool that translates:
+This project develops a source to source translation tool that is able to convert:
 
 1. Fortran+OpenACC and CUDA Fortran -> Fortran + OpenMP 4.5+
 2. Fortran+OpenACC and CUDA Fortran -> Fortran + [GCC/AOMP OpenACC/MP runtime calls] + HIP C++

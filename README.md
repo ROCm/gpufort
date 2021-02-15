@@ -12,6 +12,10 @@ with hipfort or a combination of hipcc and gfortran.
 Note that a OpenACC runtime is only necessary for translating
 OpenACC code.
 
+These translation processes are illustrated below:
+
+
+
 ## Limitations
 
 * `gpufort` is not a compiler (yet)
@@ -55,6 +59,8 @@ of so-called parse actions.
 
 A simple pyparsing grammar is given below:
 
+
+
 ```python
 import pyparsing as pp
 
@@ -68,7 +74,7 @@ expr = rvalue + op + rvalue
 print(expr.parseString("a + b")) # output : ['a','+','b']
 ```
 
-This is nice but very helpful. Let's directly generate an AST from the parsed string:
+We can directly generate an AST from the parsed string:
 
 ```python
 # ...

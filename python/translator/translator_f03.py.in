@@ -1024,7 +1024,7 @@ class TTAttributes(TTNode,Attributed):
         else:
             return ""
 
-class TTDo(TTNode):
+class TTDoLoop(TTNode):
     def assignFields(self,tokens):
         # Assignment, number | variable
         self._begin, self._end, self._step, self._body = tokens
@@ -1224,7 +1224,7 @@ class TTLoopKernel(TTNode):
         return self._launchInfo
     def loopVars(self):
         identifierNames = []
-        doLoops  = findAll(self._body,TTDo)
+        doLoops  = findAll(self._body,TTDoLoop)
         for loop in doLoops:
              identifierNames.append(loop.loopVarCStr())
         return identifierNames
@@ -1280,14 +1280,14 @@ class TTLoopKernel(TTNode):
         if LOOP_COLLAPSE_STRATEGY == "grid" or numLoopsToMap == 1:
             numLoopsToMap = min(3,numLoopsToMap)
             result = ["-1"]*numLoopsToMap
-            doLoops = findAll(self._body,TTDo)
+            doLoops = findAll(self._body,TTDoLoop)
             for i,loop in enumerate(doLoops):
                 if i < numLoopsToMap:
                     result[i] = loop.problemSizeCStr()
             return result
         else: # "collapse"
             result = ""
-            doLoops = findAll(self._body,TTDo)
+            doLoops = findAll(self._body,TTDoLoop)
             for loop in reversed(doLoops[0:numLoopsToMap]):
                 if len(result):
                     result += "*"
@@ -1321,7 +1321,7 @@ class TTLoopKernel(TTNode):
         for var,op in self._reductionVars.items():
             reductionPreamble += "reduce_op_{op}::init({var}[{tidx}]);\n".format(op=op,var=var,tidx=tidx)
         # 3. collapse and transform do-loops
-        doLoops = findAll(self._body,TTDo)
+        doLoops = findAll(self._body,TTDoLoop)
         numLoopsToMap = int(self._launchInfo._numLoopsToMap)
         if numLoopsToMap is 1 or (LOOP_COLLAPSE_STRATEGY == "grid" and numLoopsToMap <= 3):
             if numLoopsToMap > 3:
@@ -1403,7 +1403,7 @@ matrixAssignment.setParseAction(TTMatrixAssignment)
 complexAssignment.setParseAction(TTComplexAssignment)
 attributes.setParseAction(TTAttributes)
 
-doLoop.setParseAction(TTDo)
+annotatedDoLoop.setParseAction(TTDoLoop)
 whileLoop.setParseAction(TTWhile)
 singleLineIf.setParseAction(TTSingleLineIf)
 ifElseBlock.setParseAction(TTIfElseBlock)

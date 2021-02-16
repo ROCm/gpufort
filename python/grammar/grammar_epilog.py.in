@@ -1,6 +1,6 @@
 # Combine expressions from all grammar definitions
 loopAnnotation <<= accParallelLoop | accKernelsLoop | accLoop | cufKernelDo 
 
-statement = accKernelBodyDirective | comment | printStatement | controlStatements | subroutineCall | ifElseBlock | singleLineIf | selectCaseBlock | doLoop | whileLoop | matrixAssignment | complexAssignment | assignment | funcCall
+statement = accKernelBodyDirective | comment | printStatement | controlStatements | subroutineCall | ifElseBlock | singleLineIf | selectCaseBlock | annotatedDoLoop | whileLoop | matrixAssignment | complexAssignment | assignment | funcCall
 
 block <<= Group(ZeroOrMore(statement))

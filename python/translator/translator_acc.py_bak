@@ -378,7 +378,7 @@ class TTAccKernels(TTNode):
         print(self.pragma[0].cStr())
     
     def cStr(self):
-        doLoops = findAll(self.body,TTDo)
+        doLoops = findAll(self.body,TTDoLoop)
         print(self.body)
         #numLoopsToMap = 1
         numLoopsToMap = min(3,len(doLoops))
@@ -404,7 +404,7 @@ class TTAccParallel(TTNode):
         print(self.pragma[0].cStr())
 
     def cStr(self):
-        doLoops = findAll(self.body,TTDo)
+        doLoops = findAll(self.body,TTDoLoop)
         numLoopsToMap = 1
         threadIndices = ["x","y","z"]
         for i in range(0,3-numLoopsToMap):
@@ -436,7 +436,7 @@ class TTAccHostData(TTNode):
         print(self.pragma[0].cStr())
 
     def cStr(self):
-        doLoops = findAll(self.body,TTDo)
+        doLoops = findAll(self.body,TTDoLoop)
         #print(self.body)
         #numLoopsToMap = min(3,int(self.pragma.numLoopsToMap))
         numLoopsToMap = 1
@@ -461,7 +461,7 @@ class TTAccData(TTNode):
         print(self.pragma[0].cStr())
 
     def cStr(self):
-        doLoops = findAll(self.body,TTDo)
+        doLoops = findAll(self.body,TTDoLoop)
         #print(self.body)
         #numLoopsToMap = min(3,int(self.pragma.numLoopsToMap))
         numLoopsToMap = 1
@@ -521,7 +521,7 @@ class TTAccAtomic(TTNode):
         print(self.pragma)
         print(self.body)
     def cStr(self):
-        doLoops = findAll(self.body,TTDo)
+        doLoops = findAll(self.body,TTDoLoop)
         print(self.body)
         #numLoopsToMap = 1
         numLoopsToMap = min(3,len(doLoops))
@@ -561,7 +561,7 @@ class TTAccSerial(TTNode):
         print(self.pragma)
         print(self.body)
     def cStr(self):
-        doLoops = findAll(self.body,TTDo)
+        doLoops = findAll(self.body,TTDoLoop)
         print(self.body)
         #numLoopsToMap = 1
         numLoopsToMap = min(3,len(doLoops))
@@ -615,15 +615,15 @@ class TTAccConstruct(TTNode):
         return set(identifierNames)
     def loopVars(self):
         identifierNames = []
-        doLoops  = findAll(self.construct,TTDo)
+        doLoops  = findAll(self.construct,TTDoLoop)
         for loop in doLoops:
              identifierNames.append(loop.loopVarCStr())
         return identifierNames
     def problemSize(self):
         #numLoopsToMap = min(3,int(self.pragma.numLoopsToMap))
-        numLoopsToMap = min(3,len(findAll(self.construct,TTDo)))
+        numLoopsToMap = min(3,len(findAll(self.construct,TTDoLoop)))
         result = ["-1"]*numLoopsToMap
-        doLoops = findAll(self.construct,TTDo)
+        doLoops = findAll(self.construct,TTDoLoop)
 
         for i,loop in enumerate(doLoops):
             if i < numLoopsToMap:
@@ -754,7 +754,7 @@ class TTAccLoopKernel(TTLoopKernel):
     def assignFields(self,tokens):
         self._launchInfo, self._body = tokens
     def cStr(self):
-        doLoops = findAll(self._body,TTDo)
+        doLoops = findAll(self._body,TTDoLoop)
         #print(self._body)
         numLoopsToMap = min(3,int(self._pragma._numLoopsToMap))
         
@@ -775,7 +775,7 @@ class TTAccLoopKernel(TTLoopKernel):
 
     def loopVars(self):
         identifierNames = []
-        doLoops  = findAll(self._body,TTDo)
+        doLoops  = findAll(self._body,TTDoLoop)
         for loop in doLoops:
              identifierNames.append(loop.loopVarCStr())
         return identifierNames

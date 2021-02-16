@@ -1076,7 +1076,7 @@ class TTDo(TTNode):
     def loopVarCStr(self):
         return makeCStr(self._begin._lhs)
 
-class TTSingleExecutionStatement(TTNode):
+class TTStatement(TTNode):
     """
     Mainly used for searching expressions and replacing them in the translator AST.
     One example is converting to colon operations to do loops.
@@ -1243,7 +1243,7 @@ class TTLoopKernel(TTNode):
         or be a struct.
         NOTE: The loop variables need to be removed from this result when rendering the corresponding C kernel.
         NOTE: When rendering the kernel, it is best to exclude all variables for which an array declaration has been found,
-        from the result list. TTCufLoopKernel instances do not know of the type of the variables.
+        from the result list. TTCufKernelDo instances do not know of the type of the variables.
 
         """
         # TODO(gpufort): Rewrite to go through all assignments one by one: 
@@ -1308,7 +1308,7 @@ class TTLoopKernel(TTNode):
             dim=1
         tidx = "__gidx{dim}".format(dim=dim)
         # 1. unpack colon (":") expressions 
-        for expr in findAll(self._body,TTSingleExecutionStatement): 
+        for expr in findAll(self._body,TTStatement): 
             if type(expr._statement[0]) is TTAssignment:
                 expr._statement[0] = expr._statement[0].convertToDoLoopNestIfNecessary()
         # 2. Identify reduction variables
@@ -1410,8 +1410,8 @@ ifElseBlock.setParseAction(TTIfElseBlock)
 #ifElseIf.setParseAction(TTIfElseIf)
 #ELSE.setParseAction(TTElse)
 #ENDIF.setParseAction(TTEndIf)
-singleLineIfBody.setParseAction(TTSingleExecutionStatement)
-singleExecutionStatement.setParseAction(TTSingleExecutionStatement)
+singleLineIfBody.setParseAction(TTStatement)
+statement.setParseAction(TTStatement)
 
 use.setParseAction(TTIgnore)
 returnStatement.setParseAction(TTSimpleToken)

@@ -61,7 +61,7 @@ testdata.append("""
 """)
 for i in range(len(testdata)):
     """
-    results = executionStatement.parseString(testdata[i])
+    results = block.parseString(testdata[i])
     print(results)
     print(str(i),results)
     results[0][0].printTokens()

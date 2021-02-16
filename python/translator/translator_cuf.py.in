@@ -80,7 +80,7 @@ class TTCufPragma(TTNode,LaunchInfo):
 
 
 
-class TTCufLoopKernel(TTLoopKernel):
+class TTCufKernelDo(TTLoopKernel):
     def assignFields(self,tokens):
         self._launchInfo, self._body  = tokens
     def kernelLaunchInfo(self):
@@ -482,8 +482,8 @@ class TTCufCublasCall(TTNode):
 
 ## Link actions
 # CUDA Fortran
-cufPragma.setParseAction(TTCufPragma)
-cufLoopKernel.setParseAction(TTCufLoopKernel)
+cufKernelDo.setParseAction(TTCufKernelDo)
+cufLoopKernel.setParseAction(TTCufKernelDo)
 
 allocateRvalue.setParseAction(TTAllocateRvalue)
 memCpyValue.setParseAction(TTAllocateRvalue)

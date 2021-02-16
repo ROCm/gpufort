@@ -1,1 +1,0 @@
-CASELESS = False # False: expect lower case input, True: consider arbitrary case

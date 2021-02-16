@@ -12,7 +12,7 @@ LIST_OF_TENSORS.clear()
 
 #sys.exit()
 
-#cufPragmaVariants="""!$cuf kernel do
+#cufKernelDoVariants="""!$cuf kernel do
 #!$cuf kernel do
 #!$cuf kernel do (1)
 #!$cuf kernel do (1)
@@ -45,9 +45,9 @@ LIST_OF_TENSORS.clear()
 #!$cuf kernel do(3) <<<*,(16,16,1), 0, stream>>>
 #!$cuf kernel do(4)""".split("\n")
 
-#for v in cufPragmaVariants:
+#for v in cufKernelDoVariants:
 #  try:
-#     print("{} -> {}".format(v,cufPragma.parseString(v)))
+#     print("{} -> {}".format(v,cufKernelDo.parseString(v)))
 #  except Exception as e:
 #     print("failed to parse {}".format(v))
 #     print(e)

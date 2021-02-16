@@ -196,7 +196,7 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
             cSnippet, problemSize, kernelLaunchInfo,\
             identifiers, localLvalues, loopVars,\
             reductionOps\
-                = translator.convertAccLoopLoopKernel(fSnippet,filteredIndex[0])
+                = translator.convertAccLoopKernel(fSnippet,filteredIndex[0])
 
         kernelArgs, cKernelLocalVars, macros, localCpuRoutineArgs =\
           deriveLoopKernelArguments(index, identifiers, localLvalues, loopVars, [], True, type(stLoopKernel) is scanner.STCufLoopKernel)
@@ -232,7 +232,7 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
 
         # C LoopKernel
         cKernelDict = {}
-        cLoopKernelDict["isLoopLoopKernel"] = True
+        cLoopKernelDict["isLoopKernel"] = True
         dimensions = kernelLaunchInfo.dimensions()
         cKernelDict["size"]  = convertDim3(problemSize,dimensions,doFilter=False)
         cKernelDict["grid"]  = convertDim3(kernelLaunchInfo._grid ,dimensions)
@@ -369,7 +369,7 @@ def extractAcceleratorRoutine(acceleratorRoutines,cContext,fContext):
         def argNames(args):
             return [arg["name"] for arg in args]
         cKernelDict = {}
-        cLoopKernelDict["isLoopLoopKernel"]     = False
+        cLoopKernelDict["isLoopKernel"]     = False
         cKernelDict["kernelName"]       = kernelName
         cKernelDict["macros"]           = macros
         cKernelDict["cBody"]            = cBody

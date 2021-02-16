@@ -177,12 +177,12 @@ test=\
 translator.LOOP_COLLAPSE_STRATEGY="collapse"
 #test = translator.prepareFortranSnippet(test)
 #print(test)
-#print(grammar.accLoopLoopKernel.parseString(test))
-#result = translator.accLoopLoopKernel.parseString(test)[0]
+#print(grammar.accLoopKernel.parseString(test))
+#result = translator.accLoopKernel.parseString(test)[0]
 #print(result.cStr())
 #print(result.problemSize())
 cSnippet, problemSize, kernelLaunchInfo, identifierNames, localLvalues, loopVars, reductionVars =\
-        translator.convertAccLoopLoopKernel(test)
+        translator.convertAccLoopKernel(test)
 print(cSnippet)
 
 #for i in range(len(testdata)):

@@ -60,13 +60,11 @@ class TTAccReduction(TTNode):
             varName = makeCStr(red._var).lower()
             result[varName] = makeCStr(red._operator).lower() 
         return result
-
 class TTAccPrivate(TTNode):
     def assignFields(self,tokens):
         self._threadPrivateVars = tokens[0]
     def threadPrivateVarNames(self):
         return [ var.varName().lower() for var in self._threadPrivateVars ]
-
 class TTAccLoopKernel(TTLoopKernel):
     def assignFields(self,tokens):
         self._mainAccDirective, self._body = tokens
@@ -75,7 +73,6 @@ class TTAccLoopKernel(TTLoopKernel):
         self._reductionVars = {}
         self._threadPrivateVars = []
         #print(self._mainAccDirective)
-        
         # handle clauses
         self.handleCollapse()
         self.handleReduction()
@@ -122,10 +119,10 @@ acc_if.setParseAction(TTAccIf)
 acc_collapse.setParseAction(TTAccCollapse)
 accReductionVar.setParseAction(TTAccReductionVar)
 acc_reduction.setParseAction(TTAccReduction)
-accLoopLoopKernel.setParseAction(TTAccLoopKernel)
+accLoopKernel.setParseAction(TTAccLoopKernel)
 
 recursionsLeft=0
-def convertAccLoopLoopKernel(fortranSnippet,maxRecursions=30):
+def convertAccLoopKernel(fortranSnippet,maxRecursions=30):
     """
     Return a csnippet equivalent to the original Fortran code.
     """
@@ -135,7 +132,7 @@ def convertAccLoopLoopKernel(fortranSnippet,maxRecursions=30):
         global recursionsLeft
         recursionsLeft = recursionsToGo
         try:
-            return accLoopLoopKernel.parseString(fortranSnippet)[0]
+            return accLoopKernel.parseString(fortranSnippet)[0]
         except ParseBaseException as pbe:
             if recursionsToGo <= 0:
                 raise pbe

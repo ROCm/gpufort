@@ -8,12 +8,8 @@ import ast
 import re
 
 #from grammar import *
-grammarDir = os.path.join(os.path.dirname(__file__),"../grammar")
-exec(open("{0}/grammar_options.py.in".format(grammarDir)).read())
-exec(open("{0}/grammar_f03.py.in".format(grammarDir)).read())
-exec(open("{0}/grammar_cuf.py.in".format(grammarDir)).read())
-exec(open("{0}/grammar_acc.py.in".format(grammarDir)).read())
-exec(open("{0}/grammar_epilog.py.in".format(grammarDir)).read())
+GRAMMAR_DIR = os.path.join(os.path.dirname(__file__),"../grammar")
+exec(open("{0}/grammar.py".format(GRAMMAR_DIR)).read())
 
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "translator_options.py.in")).read())
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "translator_base.py.in")).read())
@@ -73,7 +69,7 @@ def convertCufLoopKernel(fortranSnippet,index=[],maxRecursions=10):
         cSnippet = "" 
         pragmaLine = fortranSnippet.split("\n")[0]
         body = "\n".join(fortranSnippet.split("\n")[1:])
-        kernelLaunchInfo = cufPragma.parseString(pragmaLine)[0] 
+        kernelLaunchInfo = cufKernelDo.parseString(pragmaLine)[0] 
         numLoopsToMap = int(kernelLaunchInfo._numLoopsToMap)
         #print(body)
         identifierNames = list(filter(lambda x: x.lower() not in KEYWORDS,[makeFStr(ident) for ident in identifier.searchString(body)]))
@@ -129,7 +125,7 @@ def convertDeviceSubroutine(fortranSnippet,index=[],maxRecursions=10):
     return name,argNames,cBody
 
 remainingRecursions=0
-def convertAccLoopLoopKernel(fortranSnippet,index=[],maxRecursions=30):
+def convertAccLoopKernel(fortranSnippet,index=[],maxRecursions=30):
     """
     Return a csnippet equivalent to the original Fortran code.
     """
@@ -139,7 +135,7 @@ def convertAccLoopLoopKernel(fortranSnippet,index=[],maxRecursions=30):
         global remainingRecursions
         remainingRecursions = recursionsToGo
         try:
-            return accLoopLoopKernel.parseString(fortranSnippet)[0]
+            return accLoopKernel.parseString(fortranSnippet)[0]
         except ParseBaseException as pbe:
             if recursionsToGo <= 0:
                 raise pbe

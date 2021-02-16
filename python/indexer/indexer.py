@@ -13,12 +13,8 @@ from multiprocessing import Pool
 import translator.translator as translator
 import utils
 
-grammarDir = os.path.join(os.path.dirname(__file__),"../grammar")
-exec(open("{0}/grammar_options.py.in".format(grammarDir)).read())
-exec(open("{0}/grammar_f03.py.in".format(grammarDir)).read())
-exec(open("{0}/grammar_cuf.py.in".format(grammarDir)).read())
-exec(open("{0}/grammar_acc.py.in".format(grammarDir)).read())
-exec(open("{0}/grammar_epilog.py.in".format(grammarDir)).read())
+GRAMMAR_DIR = os.path.join(os.path.dirname(__file__),"../grammar")
+exec(open("{0}/grammar.py".format(GRAMMAR_DIR)).read())
 
 # configurable parameters
 indexerDir = os.path.dirname(__file__)

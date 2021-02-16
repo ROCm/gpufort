@@ -59,7 +59,7 @@ acc_seq,acc_auto,acc_independent,acc_read,acc_write,acc_capture,acc_nohost,acc_f
 
 # ACC LoopKernel directive
 accKernelsStructuredBlock = doLoop
-accBlock = executionStatement
+accBlock = block
 
 accBegin = PRAGMA + ACC
 accEnd   = accBegin.copy() + END
@@ -80,10 +80,10 @@ accUpdate = accBegin + UPDATE + accClauses # 2 tokens -> [(False|True),[*]],*
 
 # kernels
 accKernelsBegin = accBegin + KERNELS + accClauses
-accKernels = accKernelsBegin + accBlock + accEnd + KERNELS
+accKernels      = accKernelsBegin + accBlock + accEnd + KERNELS
 # parallel
 accParallelBegin = accBegin + PARALLEL + accClauses
-accParallel = accParallelBegin + accBlock + accEnd + PARALLEL
+accParallel      = accParallelBegin + accBlock + accEnd + PARALLEL
 
 accWait = accBegin + accClauses
 
@@ -99,9 +99,9 @@ accEnterData = accBegin + ENTER + DATA + accClauses
 
 accExitData = accBegin + EXIT + DATA + accClauses
 
-accLoop = accBegin + LOOP + accClauses
+accLoop         = accBegin + LOOP + accClauses
 accParallelLoop = accBegin + PARALLEL + LOOP + accClauses
-accKernelsLoop = accBegin + KERNELS + LOOP + accClauses
+accKernelsLoop  = accBegin + KERNELS + LOOP + accClauses
 
 accRoutine =  accBegin + ROUTINE + Optional(LPAR + identifier + RPAR,default = None) + accClauses
 
@@ -118,7 +118,7 @@ accDeclare = accBegin + DECLARE + accClauses
 accConstruct = accKernels | accParallel | accWait | accHostData | accData | accEnterData | accExitData | accLoop | accRoutine | accAtomic | accUpdate | accSerial | accCache | accDeclare
 
 accKernelBodyDirective = accLoop | accSerial | accAtomic
-accLoopLoopKernel = Group(OneOrMore(accParallelLoop|accKernelsLoop|accKernelsBegin|accParallelBegin)) + executionStatement # ! emits two tokens: [*],*
+accLoopKernel = Group(OneOrMore(accParallelLoop|accKernelsLoop|accKernelsBegin|accParallelBegin)) + block # ! emits two tokens: [*],*
 
 # Ideally pass the following:
 # multiple acc directives/lines 

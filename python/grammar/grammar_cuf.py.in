@@ -5,45 +5,35 @@
 ## CUF LoopKernel loop directive
 CUF,KERNEL,STREAM = makeCaselessLiteral("cuf,kernel,stream",suppress=True)
 
-dim3=LPAR + delimitedList(pyparsing_common.integer,combine=True) + RPAR
-grid=Literal("*") | dim3 | identifier | simpleStructElem
-block=grid.copy()
-streamType=( structElem | funcCall | identifier | number )
-streamArg = Optional(STREAM + EQ) + Optional(streamType,default="0")
+dim3        = LPAR + delimitedList(pyparsing_common.integer,combine=True) + RPAR
+grid        = Literal("*") | dim3 | identifier | simpleStructElem
+threadBlock = grid.copy()
+streamType  = ( structElem | funcCall | identifier | number )
+streamArg   = Optional(STREAM + EQ) + Optional(streamType,default="0")
 kernelLaunchArgs = Group(Suppress("<<<") + \
-            Optional(grid,default="*")  + COMMA + \
-            Optional(block,default="*") + OPTCOMMA + \
-            Optional(pyparsing_common.integer,default=0) + OPTCOMMA + \
-            streamArg + OPTCOMMA +\
-            Suppress(">>>")) # grid,block,shmem,stream
+  Optional(grid,default="*")  + COMMA + \
+  Optional(threadBlock,default="*") + OPTCOMMA + \
+  Optional(pyparsing_common.integer,default=0) + OPTCOMMA + \
+  streamArg + OPTCOMMA +\
+  Suppress(">>>")) # grid,threadBlock,shmem,stream
 numLoopsToMapArg = Optional(LPAR + pyparsing_common.integer + RPAR,default=1)
 
-#!$acc
-#c$acc
-#*$acc
-PRAGMA = Regex(r"[!c\*]\$").suppress()
-genericPragma        = Regex(r"[!c\*]\$\w+")
-genericPragmaNewline = Regex(r"[!c\*]\$\w+\&")
-
-cufPragma = PRAGMA + CUF + KERNEL + DO + numLoopsToMapArg + Optional(kernelLaunchArgs,default=["*","*",0,"0"])
-
-cufLoopKernel = cufPragma + doLoop
+cufKernelDo     = PRAGMA + CUF + KERNEL + DO + numLoopsToMapArg + Optional(kernelLaunchArgs,default=["*","*",0,"0"])
+cufLoopKernel = cufKernelDo + doLoop
 
 # kernelextractor/analysis
 ALLOCATE,ALLOCATED,DEALLOCATE = makeCaselessLiteral("allocate,allocated,deallocate",suppress=True)
-#allocateRvalue = (( simpleStructElem | identifier ) + bounds) | simpleStructElem | identifier
-allocateRvalue = (( structElem | identifier ) + bounds) | structElem | identifier # TODO check if this can be generalized
-#allocateRvalue = bounds
-allocateRvalueList = delimitedList(allocateRvalue)
-allocate   = ALLOCATE + LPAR + allocateRvalueList + RPAR
-allocated  = ALLOCATED + LPAR + allocateRvalue + RPAR
-deallocate = DEALLOCATE + LPAR + allocateRvalueList + RPAR
-#memCpyValue = ( simpleStructElem | identifier ) + Optional( matrixRanges )
-memCpyValue = allocateRvalue.copy() # TODO check if duplicate
-memcpy = memCpyValue + EQ + memCpyValue + ( Suppress(";") | LineEnd() )
-NOT = CASELESS_LITERAL(".NOT.").suppress() 
-nonZeroCheck = allocateRvalue + oneOf("/= .ne.",caseless=CASELESS).suppress() + Suppress("0")
-pointerAssignment = allocateRvalue + PEQ + allocateRvalue
+allocateRvalue                =  (( structElem | identifier ) + bounds) | structElem | identifier # TODO check if this can be generalized
+allocateRvalueList            = delimitedList(allocateRvalue)
+
+allocate                         = ALLOCATE + LPAR + allocateRvalueList + RPAR
+allocated                        = ALLOCATED + LPAR + allocateRvalue + RPAR
+deallocate                       = DEALLOCATE + LPAR + allocateRvalueList + RPAR
+memCpyValue                      = allocateRvalue.copy() # TODO check if duplicate
+memcpy                           = memCpyValue + EQ + memCpyValue + ( Suppress(";") | LineEnd() )
+NOT                              = CASELESS_LITERAL(".NOT.").suppress() 
+nonZeroCheck                     = allocateRvalue + oneOf("/= .ne.",caseless=CASELESS).suppress() + Suppress("0")
+pointerAssignment                = allocateRvalue + PEQ + allocateRvalue
 singleLineIfNotAllocatedAllocate = IF + LPAR + NOT + allocated + RPAR + ~THEN + allocate + ~ENDIF # produces two tokens
 singleLineIfAllocatedDeallocate  = IF + LPAR + allocated + RPAR + ~THEN + deallocate + ~ENDIF # produces two tokens
 
@@ -71,7 +61,7 @@ cublasOperationType = Regex("'[NTCntc]'")#.setParseAction(lambda tokens: "hipbla
 cublasArgList       = Group(delimitedList(cublasOperationType | arithmeticLogicalExpression)) 
 cublasCall          = CASELESS_LITERAL("cublas").suppress() + identifier + LPAR + cublasArgList + RPAR  # emits 2 tokens
 
-# anchors; TODO(Dominic): Rename
+# anchors; TODO(Dominic): Can be simplified
 cudaAPI        = Regex(r"\b").suppress() + Combine(oneOf("cublas cufft cusparse cuda cusolver",caseless=CASELESS) + identifier)
 FUNCTION_BREAK = Regex(",\s*\&").setParseAction(lambda tokens: False) # continues on next lines
 FUNCTION_END   = Regex("\)").setParseAction(lambda tokens: True)      # finishes on this line
@@ -80,4 +70,4 @@ FUNCTION_END   = Regex("\)").setParseAction(lambda tokens: True)      # finishes
 cudaLibCall = ((identifier + EQ) | CALL).suppress() + cudaAPI + LPAR + Optional(argList,default=[]) + ( FUNCTION_BREAK | FUNCTION_END ) # emits 3 tokens -> *,
 #Example: call ylmr2_gpu_kernel<<<grid,tBlock>>>(lmax, lmax2, ng, g_d, gg_d, ylm_d)
 cudaKernelCall = CALL + identifier + kernelLaunchArgs + LPAR + Optional(argList,default=[])  + ( FUNCTION_BREAK | FUNCTION_END ) # emits 4 tokens -> *,[*],[*],False/True
-callEnd        = argList + FUNCTION_END.suppress() + Optional(comment).suppress() # emits 1 token -> [*]
+callEnd = argList + FUNCTION_END.suppress() + Optional(comment).suppress() # emits 1 token -> [*]

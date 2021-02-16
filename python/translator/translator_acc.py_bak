@@ -635,7 +635,7 @@ class TTAccConstruct(TTNode):
         or be a struct.
         NOTE: The loop variables need to be removed from this result when rendering the corresponding C kernel.
         NOTE: When rendering the kernel, it is best to exclude all variables for which an array declaration has been found,
-        from the result list. TTCufLoopKernel instances do not know of the type of the variables.
+        from the result list. TTCufKernelDo instances do not know of the type of the variables.
         """
         identifierNames = []
         lvalues = list(filter(lambda x: x.isIdentifier(), findAll(self.construct,TTLvalue))) # excludes array assignments, where brackets are used
@@ -796,7 +796,7 @@ class TTAccLoopKernel(TTLoopKernel):
         or be a struct.
         NOTE: The loop variables need to be removed from this result when rendering the corresponding C kernel.
         NOTE: When rendering the kernel, it is best to exclude all variables for which an array declaration has been found,
-        from the result list. TTCufLoopKernel instances do not know of the type of the variables.
+        from the result list. TTCufKernelDo instances do not know of the type of the variables.
         """
         identifierNames = []
         lvalues = list(filter(lambda x: x.isIdentifier(), findAll(self._body,TTLvalue))) # excludes array assignments, where brackets are used
@@ -847,7 +847,7 @@ def convertAccLoopKernel(fortranSnippet,maxRecursions=10):
         cSnippet = "" 
         pragmaLine = fortranSnippet.split("\n")[0]
         body = "\n".join(fortranSnippet.split("\n")[1:])
-        kernelLaunchInfo = cufPragma.parseString(pragmaLine)[0] 
+        kernelLaunchInfo = cufKernelDo.parseString(pragmaLine)[0] 
         #print(body)
         identifierNames = list(filter(lambda x: x.lower() not in KEYWORDS,[makeFStr(ident) for ident in identifier.searchString(body)]))
         numLoopsToMap = int(kernelLaunchInfo._numLoopsToMap)

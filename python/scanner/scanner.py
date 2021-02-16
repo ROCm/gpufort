@@ -19,13 +19,8 @@ import translator.translator as translator
 
 # dirty hack that allows us to load independent versions of the grammar module
 #from grammar import *
-grammarDir = os.path.join(os.path.dirname(__file__),"../grammar")
-print(grammarDir)
-exec(open("{0}/grammar_options.py.in".format(grammarDir)).read())
-exec(open("{0}/grammar_f03.py.in".format(grammarDir)).read())
-exec(open("{0}/grammar_cuf.py.in".format(grammarDir)).read())
-exec(open("{0}/grammar_acc.py.in".format(grammarDir)).read())
-exec(open("{0}/grammar_epilog.py.in".format(grammarDir)).read())
+GRAMMAR_DIR = os.path.join(os.path.dirname(__file__),"../grammar")
+exec(open("{0}/grammar.py".format(GRAMMAR_DIR)).read())
 
 scannerDir = os.path.dirname(__file__)
 exec(open("{0}/scanner_options.py.in".format(scannerDir)).read())
@@ -303,7 +298,7 @@ def parseFile(fortranFilePath):
     nonZeroCheck.setParseAction(NonZeroCheck)
 
     # CUDA Fortran 
-    cufPragma.setParseAction(CufLoopKernel)
+    cufKernelDo.setParseAction(CufLoopKernel)
     cudaLibCall.setParseAction(CudaLibCall)
     cudaKernelCall.setParseAction(CudaKernelCall)
 
@@ -397,8 +392,8 @@ def parseFile(fortranFilePath):
                 # host/device environments  
                 #tryToParseString("callEnd",callEnd)
                 if not tryToParseString("structureEnd|ENDDO",structureEnd|ENDDO):
-                    tryToParseString("use|CONTAINS|IMPLICIT|declaration|accBegin|cufPragma|DO|moduleStart|programStart|functionStart|subroutineStart",\
-                       use|CONTAINS|IMPLICIT|declaration|accBegin|cufPragma|DO|moduleStart|programStart|functionStart|subroutineStart)
+                    tryToParseString("use|CONTAINS|IMPLICIT|declaration|accBegin|cufKernelDo|DO|moduleStart|programStart|functionStart|subroutineStart",\
+                       use|CONTAINS|IMPLICIT|declaration|accBegin|cufKernelDo|DO|moduleStart|programStart|functionStart|subroutineStart)
                 if keepRecording:
                    try:
                       current._lines += currentLines

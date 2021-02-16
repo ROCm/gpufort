@@ -1,39 +1,3 @@
-#!/usr/bin/env python3
-import sys
-
-# third-party modules
-from pyparsing import *
-
-# local modules
-from grammar.cudafor import *
-
-if CASELESS:
-    CASELESS_LITERAL = CaselessLiteral
-else:
-    CASELESS_LITERAL = Literal
-
-# Performance Tips:
-# - try using enablePackrat()
-# - use MatchFirst(|) instead of Or(^)
-def makeCaselessLiteral(commaSeparatedList,suppress=False):
-     result1 = map(CASELESS_LITERAL, commaSeparatedList.split(","))
-     if suppress:
-        result2 = []
-        for element in result1:
-             result2.append(element.suppress())
-        return result2
-     else:
-        return result1
-
-def separatedSequence(tokens,separator=Suppress(",")):
-    result = tokens[0]
-    for token in tokens[1:]:
-         result += separator + token
-    return result
-
-ParserElement.setDefaultWhitespaceChars("\r\n\t &;")
-ParserElement.enablePackrat() 
-
 LPAR,RPAR = map(Suppress, "()")
 EQ,ELEM,COMMA,DOT,UNDERSCORE = map(Suppress, "=%,._")
 PEQ=Suppress("=>")
@@ -147,7 +111,7 @@ ENDDO     = END + DO.copy()
 ENDSELECT = END + SELECT.copy()
 
 singleLineIfBody = Forward()
-executionStatement = Forward() # forward declaration
+block = Forward() # forward declaration
 
 # Example:
 #
@@ -172,9 +136,9 @@ singleLineIf = IF + LPAR + arithmeticLogicalExpression + RPAR + ~THEN + singleLi
 ifElseIf = Optional(ELSE,default="") + IF + LPAR + arithmeticLogicalExpression + RPAR + THEN
 ifElseBlock = ifElseIf | ELSE | ENDIF
 
-ifBranch     = Group(IF + LPAR + arithmeticLogicalExpression + RPAR + THEN + executionStatement)
-elseIfBranch = Group(ELSE.suppress() + IF + LPAR + arithmeticLogicalExpression + RPAR + THEN + executionStatement)
-elseBranch   = Group(ELSE.suppress() + executionStatement)
+ifBranch     = Group(IF + LPAR + arithmeticLogicalExpression + RPAR + THEN + block)
+elseIfBranch = Group(ELSE.suppress() + IF + LPAR + arithmeticLogicalExpression + RPAR + THEN + block)
+elseBranch   = Group(ELSE.suppress() + block)
 ifElseBlock = ifBranch +\
      Optional(Group(OneOrMore(elseIfBranch)),default=[]) +\
      Optional(elseBranch,default=None) +\
@@ -194,14 +158,14 @@ selectExpression = logical | number | character | identifier | arithmeticLogical
 selectExpression
 selectCaseBlock = Optional(identifier) + Group(SELECT + CASE + LPAR + selectExpression + RPAR) +\
      OneOrMore(CASE + LPAR + (logical | number | character) + RPAR +\
-         executionStatement) +\
+         block) +\
      Group(Optional(CASE + DEFAULT) +\
-         executionStatement ) +\
+         block ) +\
      ENDSELECT
 
 ## Do Loop
-doLoop = DO + assignment + COMMA + arithmeticExpression + Optional(COMMA + arithmeticExpression,default="1") + executionStatement + ENDDO 
-whileLoop = DO + WHILE + LPAR + arithmeticLogicalExpression + RPAR + executionStatement + ENDDO 
+doLoop = DO + assignment + COMMA + arithmeticExpression + Optional(COMMA + arithmeticExpression,default="1") + block + ENDDO 
+whileLoop = DO + WHILE + LPAR + arithmeticLogicalExpression + RPAR + block + ENDDO 
 
 # TODO Dominic: Simplify
 ## Declaration  // example: "real(kind=8), device, host, parameter :: rhx, rhy"
@@ -257,14 +221,14 @@ declaration = declarationLhs + Group(delimitedList(declaredVariable))   # ! emit
 #precisionDeclaredVariable = identifier + EQ + CASELESS_LITERAL("selected_kind").suppress() + LPAR + integer + COMMA + integer + RPAR # ! emits [*,[*],*]
 #precisionDeclaration      = integerType + COMMA + qualifierList + COLONS + Group(delimitedList(precisionDeclaredVariableVariable))   # ! emits *,[*],[*]
 
-# Define forward-declared executionStatement
+# Define forward-declared block
 comment = Combine(Literal("!") + ~(~White()+Literal("$")) + restOfLine())
 printStatement = Combine(oneOf("print write read format",caseless=CASELESS) + restOfLine)
 returnStatement = CASELESS_LITERAL("return")
 controlStatements = returnStatement
 
-singleExecutionStatement = comment | printStatement | controlStatements | subroutineCall | ifElseBlock | singleLineIf | selectCaseBlock | doLoop | whileLoop | matrixAssignment | complexAssignment | assignment | funcCall 
-executionStatement <<= Group(ZeroOrMore(singleExecutionStatement))
+statement = comment | printStatement | controlStatements | subroutineCall | ifElseBlock | singleLineIf | selectCaseBlock | doLoop | whileLoop | matrixAssignment | complexAssignment | assignment | funcCall 
+block <<= Group(ZeroOrMore(statement))
 singleLineIfBody <<= comment | printStatement | controlStatements | subroutineCall | matrixAssignment | complexAssignment | assignment | funcCall 
 
 ## Attributes // example: attributes
@@ -289,7 +253,7 @@ NONSTRUCTURE = DO|IF|SELECT|WHERE|FORALL|FOREACH|TYPE|INTERFACE
 only = Group(identifier + Optional(PEQ + identifier,default=None))
 use = USE + Optional(COMMA + INTRINSIC,default=None) + identifier + Optional(COMMA + ONLY + singleColon.suppress() + Group(delimitedList(only)),default=[]) # emits 3 tokens; [*,*,[*]] 
 implicit = IMPLICIT + NONE # TODO no complete description
-subroutineBody = Group(ZeroOrMore(use | implicit | declaration | attributes | singleExecutionStatement))
+subroutineBody = Group(ZeroOrMore(use | implicit | declaration | attributes | statement))
 
 subroutineStart = Optional(ATTRIBUTES + LPAR + identifier + RPAR,default="host") + SUBROUTINE + identifier +\
         Optional(LPAR + Group(delimitedList(identifier)) + RPAR, default=[]) # emits 3 tokens -> *,*,[*]

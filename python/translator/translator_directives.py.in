@@ -1,35 +1,73 @@
-class IAnnotatedLoop():
+CLAUSE_NOT_FOUND           = -2
+CLAUSE_VALUE_NOT_SPECIFIED = -1
+
+class IComputeConstruct():
+    def deviceTypes(self): 
+        return "*"
+    def condition(self): 
+        """ OMP,ACC: accelerate only if condition is satisfied. Empty string means condition is satisfied. """
+        return ""
+    def asyncNowait(): 
+        """value > 0 means True"""
+        return CLAUSE_NOT_FOUND
+    def depend(self): 
+        """ only OMP """
+        return []
+    def devicePtrs(self):
+        return []
+    def presentVars(self): 
+        """ CUF: all arrays are present, ACC: all arrays present if default(present) """
+        return []
+    def createVars(self):
+        return []
+    def copyMapToFromVars(self):
+        return []
+    def copyinMapToVars(self):
+        return []
+    def copyoutMapFromVars(self):
+        return []
+    def reductionVars(self): 
+        """ CUF: Scalar lvalues are reduced by default """
+        return []
+    def sharedVars(self): 
+        """ only OMP """
+        return []
+    def privateVars(self): 
+        """ CUF,ACC: all scalars are private by default """ 
+        return []
+    def firstprivateVars(self): 
+        """ only OMP """
+        return []
+    def lastprivateVars(self): 
+        """ only OMP """
+        return []
+
+class ILoopAnnotation():
     def numCollapse(self):
         return 1
     def tileSizes(self):
         return [1]
     def numGangsTeamsBlocks(self):
-        return [-1]
+        return [CLAUSE_NOT_FOUND]
     def numThreadsInBlock(self):
-        return [-1]
+        return [CLAUSE_NOT_FOUND]
     def numWorkers(self):
-        return [-1]
-    def lenSimdVectors(self):
-        return [-1]
-    def dataIndependentIterations():
-        return False
-    def reductionVars():
-        return []
-    def privateVars():
-        return []
-    def firstprivateVars():
-        return []
-    def lastprivateVars():
-        return []
+        return [CLAUSE_NOT_FOUND]
+    def lenSimdVector(self):
+        return [CLAUSE_NOT_FOUND]
+    def dataIndependentIterations(self):
+        return True
 
 class TTDoLoop(TTNode):
     def assignFields(self,tokens):
         # Assignment, number | variable
-        self._directive, self._begin, self._end, self._step, self._body = tokens
+        self._annotation, self._begin, self._end, self._step, self._body = tokens
         self._threadIndex = None # "z","y","x"
+        if self._annotation is None:
+            self._annotation = ILoopAnnotation()
     def loopVarCStr():
         return makeCStr(self._begin._lhs)
-    def setThreadIndex(self,name):
+    def setHipThreadIndex(self,name):
         self._threadIndex = name
     def hipThreadIndexCStr(self):
         indexVar = self.loopVarCStr()
@@ -168,7 +206,7 @@ class TTLoopKernel(TTNode):
                 expr._statement[0] = expr._statement[0].convertToDoLoopNestIfNecessary()
         # 2. Identify reduction variables
         for expr in findAll(self._body,TTAssignment):
-            for var in findAllMatching(expr,lambda x: isinstance(x,Value)):
+            for var in findAllMatching(expr,lambda x: isinstance(x,IValue)):
                 if type(var._value) in [TTStructElem,TTIdentifier]:
                     if var.name().lower() in self._reductionVars.keys():
                         var._reductionIndex = tidx
@@ -190,7 +228,7 @@ class TTLoopKernel(TTNode):
             for loop in doLoops:
                 if not len(threadIndices):
                     break
-                loop.setThreadIndex(threadIndices.pop())
+                loop.setHipThreadIndex(threadIndices.pop())
                 indices   += loop.hipThreadIndexCStr()
                 conditions.append(loop.hipThreadBoundCStr()) 
         else: # "collapse" or numLoopsToMap > 3
@@ -198,7 +236,7 @@ class TTLoopKernel(TTNode):
             conditions = []
             denominatorFactors = []
             for loop in reversed(doLoops[0:numLoopsToMap]):
-                loop.setThreadIndex(tidx)
+                loop.setHipThreadIndex(tidx)
                 # denominator1 = "" 
                 # denominator2 = "/" + "(end1 - begin1 + 1)"
                 # denominator3 = "/" + "(end1 - begin1 + 1)*(end1 - begin1 + 1)"

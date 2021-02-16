@@ -25,9 +25,6 @@ class TTAccWorker(TTNode):
     def value(self):
         return self._value
 class TTAccVector(TTNode):
-    """
-    should be aligned with warp size
-    """
     def assignFields(self,tokens):
         self._value = tokens[0]
     def value(self):
@@ -36,7 +33,6 @@ class TTAccNumGangs(TTAccGang):
     pass
 class TTAccNumWorkers(TTAccWorker):
     pass
-
 class TTAccAsync(TTNode):
     def assignFields(self,tokens):
         self._queue = tokens[0]
@@ -66,27 +62,43 @@ class TTAccPrivate(TTNode):
     def threadPrivateVarNames(self):
         return [ var.varName().lower() for var in self._threadPrivateVars ]
 
-class TTAccLoop(TTNode,IAnnotatedLoop):
+class TTAccLoop(TTNode,ILoopAnnotation):
     def assignFields(self,tokens):
        self._clauses = tokens
     def numCollapse(self):
-        return 1
+        node = findFirst(self._clauses,TTAccCollapse)
+        return 1 if node is None else node.value()
     def tileSizes(self):
+        assert False, "Not implemented!"
         return [1]
     def numGangsTeamsBlocks(self):
-        return [-1]
+        node = findFirstMatching(self._clauses,lambda x: isinstance(x,TTAccGang))
+        return [CLAUSE_NOT_FOUND] if node is None else [node.value()]
     def numThreadsInBlock(self):
-        return [-1]
+        workers   = self.numWorkers()
+        vectorLen = self.lenSimdVector()
+        if workers[0] < 1 or vectorLen[0] < 1:
+            return [CLAUSE_NOT_FOUND]
+        else:
+            return [workers[0] * vectorLen[0]]
     def numWorkers(self):
-        return [-1]
-    def lenSimdVectors(self):
-        return [-1]
-    def dataIndependentIterations():
-        return False
-    def reductionVars():
-        return []
-    def privateVars():
-        return []
+        node = findFirstMatching(self._clauses,lambda x: isinstance(x,TTAccWorker))
+        return [CLAUSE_NOT_FOUND] if node is None else [node.value()]
+    def lenSimdVector(self):
+        node = findFirstMatching(self._clauses,lambda x: isinstance(x,TTAccVector))
+        return [CLAUSE_NOT_FOUND] if node is None else [node.value()]
+    def dataIndependentIterations(self):
+        """ Always assume data independent if no seq clause is used """
+        node = findFirstMatching(self._clauses,lambda x: x=="seq")
+        return True if node is None else False
+    def reductionVars(self):
+        node = findFirst(self._mainAccDirective,TTAccReduction)
+        if not node is None:
+            self._reductionVars = node.reductionVars()
+    def privateVars(self):
+        node = findFirst(self._clauses,TTAccPrivate)
+        if not node is None:
+            self._threadPrivateVars += node.threadPrivateVarNames()
 
 class TTAccKernelsLoop(TTAccLoop):
     pass

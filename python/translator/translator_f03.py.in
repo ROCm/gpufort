@@ -142,7 +142,7 @@ class TTIdentifier(TTNode):
     def name(self,mangleName=False): # argument is never used as we have already an identifier
         return self.fStr()
 
-class Value:
+class IValue:
     def isIdentifier(self):
         return type(self._value) is TTIdentifier      
     def name(self):
@@ -170,7 +170,7 @@ class Value:
         else:
             return []
 
-class TTRvalue(TTNode,Value):
+class TTRvalue(TTNode,IValue):
     def assignFields(self,tokens):
         self._sign = tokens[0]
         self._value = tokens[1]
@@ -183,7 +183,7 @@ class TTRvalue(TTNode,Value):
         if len(self._reductionIndex):
             result += "[{idx}]".format(idx=self._reductionIndex) 
         return result
-class TTLvalue(TTNode,Value):
+class TTLvalue(TTNode,IValue):
     def assignFields(self,tokens):
         self._value = tokens[0]
         self._reductionIndex = ""
@@ -1031,7 +1031,7 @@ class TTDoLoop(TTNode):
         self._threadIndex = None # "z","y","x"
     def loopVarCStr():
         return makeCStr(self._begin._lhs)
-    def setThreadIndex(self,name):
+    def setHipThreadIndex(self,name):
         self._threadIndex = name
     def hipThreadIndexCStr(self):
         indexVar = self.loopVarCStr()

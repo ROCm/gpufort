@@ -347,7 +347,7 @@ class TTAccPragma(TTNode):
         cStr += "// - reduce operator, variables: {}\n".format(process(self.reduction))
         cStr += "// - Detach Vars:  {}\n".format(processList(self.detach))  
         cStr += "// - Use_Device Name: {}\n".format(processList(self.usedevice))
-        cStr += "// - Collapse Value: {} ('-1' means not specified)\n".format(process(self.collapse))
+        cStr += "// - Collapse IValue: {} ('-1' means not specified)\n".format(process(self.collapse))
         cStr += "// - Device Vars: {}\n".format(processList(self.device))
         cStr += "// - Bind name: {}\n".format(process(self.bind))
         cStr += "// - Device Resident Vars: {}\n".format(processList(self.device_resident))

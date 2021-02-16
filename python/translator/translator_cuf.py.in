@@ -78,8 +78,6 @@ class TTCufPragma(TTNode,LaunchInfo):
     def cStr(self):
         return LaunchInfo.cStr(self)
 
-
-
 class TTCufKernelDo(TTLoopKernel):
     def assignFields(self,tokens):
         self._launchInfo, self._body  = tokens

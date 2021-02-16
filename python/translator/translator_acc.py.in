@@ -66,12 +66,30 @@ class TTAccPrivate(TTNode):
     def threadPrivateVarNames(self):
         return [ var.varName().lower() for var in self._threadPrivateVars ]
 
-class TTAccLoop(TTNode):
+class TTAccLoop(TTNode,IAnnotatedLoop):
     def assignFields(self,tokens):
        self._clauses = tokens
+    def numCollapse(self):
+        return 1
+    def tileSizes(self):
+        return [1]
+    def numGangsTeamsBlocks(self):
+        return [-1]
+    def numThreadsInBlock(self):
+        return [-1]
+    def numWorkers(self):
+        return [-1]
+    def lenSimdVectors(self):
+        return [-1]
+    def dataIndependentIterations():
+        return False
+    def reductionVars():
+        return []
+    def privateVars():
+        return []
+
 class TTAccKernelsLoop(TTAccLoop):
     pass
-
 class TTAccParallelLoop(TTAccLoop):
     pass
 

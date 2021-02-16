@@ -17,7 +17,7 @@ class TTNode(object):
        return self.__class__.__name__ + ':' + str(self.__dict__)
     def assignFields(self,tokens):
         pass
-    def cStr(self): # TODO: Rename to flatten
+    def cStr(self):
         pass
     #__repr__ = __str__
 

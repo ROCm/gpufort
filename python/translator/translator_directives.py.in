@@ -1,0 +1,214 @@
+class IAnnotatedLoop():
+    def numCollapse(self):
+        return 1
+    def tileSizes(self):
+        return [1]
+    def numGangsTeamsBlocks(self):
+        return [-1]
+    def numThreadsInBlock(self):
+        return [-1]
+    def numWorkers(self):
+        return [-1]
+    def lenSimdVectors(self):
+        return [-1]
+    def dataIndependentIterations():
+        return False
+    def reductionVars():
+        return []
+    def privateVars():
+        return []
+    def firstprivateVars():
+        return []
+    def lastprivateVars():
+        return []
+
+class TTDoLoop(TTNode):
+    def assignFields(self,tokens):
+        # Assignment, number | variable
+        self._directive, self._begin, self._end, self._step, self._body = tokens
+        self._threadIndex = None # "z","y","x"
+    def loopVarCStr():
+        return makeCStr(self._begin._lhs)
+    def setThreadIndex(self,name):
+        self._threadIndex = name
+    def hipThreadIndexCStr(self):
+        indexVar = self.loopVarCStr()
+        begin    = makeCStr(self._begin._rhs) # array indexing is corrected in index macro
+        step     = makeCStr(self._step)
+        return "int {var} = {begin} + ({step})*(threadIdx.{idx} + blockIdx.{idx} * blockDim.{idx});\n".format(\
+                var=indexVar,begin=begin,idx=self._threadIndex,step=step)
+    def collapsedLoopIndexCStr(self,denominator):
+        indexVar = self.loopVarCStr()
+        tid      = self._threadIndex
+        assert not tid is None
+        begin    = makeCStr(self._begin._rhs)
+        size     = self.problemSizeCStr()
+        step     = makeCStr(self._step)
+        # int i<n> = begin<n> + step<n>*(i<denominator<n>> % size<n>)
+        return "int {var} = {begin} + ({step})*({tid}{denom} % {size});\n".format(\
+                var=indexVar,begin=begin,tid=tid,denom=denominator,size=size,step=step)
+    def problemSizeCStr(self):
+        if self._step == "1":
+            return "(1 + (({end}) - ({begin})))".format(\
+                begin=makeCStr(self._begin._rhs),end=makeCStr(self._end),step=makeCStr(self._step) )
+        else:
+            return "(1 + (({end}) - ({begin}))/({step}))".format(\
+                begin=makeCStr(self._begin._rhs),end=makeCStr(self._end),step=makeCStr(self._step))
+    def hipThreadBoundCStr(self) :
+        indexVar = self.loopVarCStr()
+        begin    = makeCStr(self._begin._rhs)
+        end      = makeCStr(self._end)
+        step     = makeCStr(self._step)
+        return "loop_cond({0},{1},{2})".format(indexVar, end, step)
+    def cStr(self):
+        indexVar    = self.loopVarCStr()
+        begin       = makeCStr(self._begin._rhs) # array indexing is corrected in index macro
+        end         = makeCStr(self._end)
+        step        = makeCStr(self._step)
+        bodyContent = flattenBody(self._body) 
+        if self._threadIndex == None:
+            #print(self._body)
+            return "for (int {0}={1}; {0} <= {2}; {0} += {3}) {{\n  {4}\n}}".format(indexVar, begin, end, step, bodyContent)
+        else:
+            return bodyContent
+    def loopVarCStr(self):
+        return makeCStr(self._begin._lhs)
+
+class TTLoopKernel(TTNode):
+    def kernelLaunchInfo(self) :
+        return self._launchInfo
+    def loopVars(self):
+        identifierNames = []
+        doLoops  = findAll(self._body,TTDoLoop)
+        for loop in doLoops:
+             identifierNames.append(loop.loopVarCStr())
+        return identifierNames
+    def allIdentifiers(self):
+        identifierNames = []
+        myList = findAll(self._body,TTIdentifier) # includes the identifiers of the function calls
+        for ident in myList:
+            name = makeCStr(ident._name)
+            if not name.lower() in KEYWORDS and\
+               not name.lower() in GPUFORT_CPP_ROUTINES:
+                   identifierNames.append(name)
+        return set(identifierNames)
+    def allLocalLvalues(self):
+        """
+        We focus on scalar identifiers here, i.e. the left-hand side must not contain any index operator evaluations
+        or be a struct.
+        NOTE: The loop variables need to be removed from this result when rendering the corresponding C kernel.
+        NOTE: When rendering the kernel, it is best to exclude all variables for which an array declaration has been found,
+        from the result list. TTCufKernelDo instances do not know of the type of the variables.
+
+        """
+        # TODO(gpufort): Rewrite to go through all assignments one by one: 
+        # get list of assignments
+        # lvLastRead     = {}
+        # lvLastAssigned = {}
+        # for i,assignment in enumerate(list)
+        #     get lhs, get rvalue in lhs
+        #     if lhs in rvalue list
+        #     lvLastRead[lhs.name()] = 
+        #     ...
+        # Use findFirstMatching routine
+        identifierNames = []
+        #reductionCandidates = []
+        lvalues = list(filter(lambda x: x.isIdentifier(), findAll(self._body,TTLvalue))) # excludes array assignments, where brackets are used
+        rvalues = list(filter(lambda x: x.isIdentifier(), findAll(self._body,TTRvalue))) 
+        for lvalue in lvalues:
+             lvName = makeCStr(lvalue._value)
+             readBeforeAssignment = False
+             readAfterAssignment  = False
+             for rvalue in rvalues:
+                 if lvName == makeCStr(rvalue._value):
+                    if rvalue._location < lvalue._location: # rvalue occurred before
+                        readBeforeAssignment = True
+                    #if rvalue._location > lvalue._location: # rvalue occurred before
+                    #    readAfterAssignment = True
+             if not readBeforeAssignment and not lvName in self._reductionVars: 
+                identifierNames.append(lvName)
+             #if readAfterAssignment:
+             #   reductionCandidates.append(lvName)
+        return set(identifierNames)
+    def problemSize(self):
+        numLoopsToMap = int(self._launchInfo._numLoopsToMap)
+        if LOOP_COLLAPSE_STRATEGY == "grid" or numLoopsToMap == 1:
+            numLoopsToMap = min(3,numLoopsToMap)
+            result = ["-1"]*numLoopsToMap
+            doLoops = findAll(self._body,TTDoLoop)
+            for i,loop in enumerate(doLoops):
+                if i < numLoopsToMap:
+                    result[i] = loop.problemSizeCStr()
+            return result
+        else: # "collapse"
+            result = ""
+            doLoops = findAll(self._body,TTDoLoop)
+            for loop in reversed(doLoops[0:numLoopsToMap]):
+                if len(result):
+                    result += "*"
+                result += loop.problemSizeCStr()
+            if len(result):
+                return [result]
+            else:
+                return ["-1"]
+    def reductionVars(self):
+        return self._reductionVars
+    def privateGangVars(self):
+        return self._privateGangVars
+    def cStr(self):
+        numLoopsToMap = int(self._launchInfo._numLoopsToMap)
+        if LOOP_COLLAPSE_STRATEGY == "grid" and numLoopsToMap <= 3:
+            dim=numLoopsToMap
+        else: # "collapse" or numLoopsToMap > 3
+            dim=1
+        tidx = "__gidx{dim}".format(dim=dim)
+        # 1. unpack colon (":") expressions 
+        for expr in findAll(self._body,TTStatement): 
+            if type(expr._statement[0]) is TTAssignment:
+                expr._statement[0] = expr._statement[0].convertToDoLoopNestIfNecessary()
+        # 2. Identify reduction variables
+        for expr in findAll(self._body,TTAssignment):
+            for var in findAllMatching(expr,lambda x: isinstance(x,Value)):
+                if type(var._value) in [TTStructElem,TTIdentifier]:
+                    if var.name().lower() in self._reductionVars.keys():
+                        var._reductionIndex = tidx
+        reductionPreamble = ""
+        for var,op in self._reductionVars.items():
+            reductionPreamble += "reduce_op_{op}::init({var}[{tidx}]);\n".format(op=op,var=var,tidx=tidx)
+        # 3. collapse and transform do-loops
+        doLoops = findAll(self._body,TTDoLoop)
+        numLoopsToMap = int(self._launchInfo._numLoopsToMap)
+        if numLoopsToMap is 1 or (LOOP_COLLAPSE_STRATEGY == "grid" and numLoopsToMap <= 3):
+            if numLoopsToMap > 3:
+                logging.getLogger("").warn("loop collapse strategy grid chosen with nested loops > 3")
+            numLoopsToMap = min(3,numLoopsToMap)
+            threadIndices = ["x","y","z"]
+            for i in range(0,3-numLoopsToMap):
+                threadIndices.pop()
+            indices    = ""
+            conditions = []
+            for loop in doLoops:
+                if not len(threadIndices):
+                    break
+                loop.setThreadIndex(threadIndices.pop())
+                indices   += loop.hipThreadIndexCStr()
+                conditions.append(loop.hipThreadBoundCStr()) 
+        else: # "collapse" or numLoopsToMap > 3
+            indices    = ""
+            conditions = []
+            denominatorFactors = []
+            for loop in reversed(doLoops[0:numLoopsToMap]):
+                loop.setThreadIndex(tidx)
+                # denominator1 = "" 
+                # denominator2 = "/" + "(end1 - begin1 + 1)"
+                # denominator3 = "/" + "(end1 - begin1 + 1)*(end1 - begin1 + 1)"
+                if len(denominatorFactors):
+                    indices += loop.collapsedLoopIndexCStr("/("+"*".join(denominatorFactors)+")")
+                else:
+                    indices += loop.collapsedLoopIndexCStr("")
+                denominatorFactors.append(loop.problemSizeCStr())
+                conditions.append(loop.hipThreadBoundCStr()) 
+        return "{0}{2}if ({1}) {{\n{3}}}".format(\
+            indices,"&&".join(conditions),reductionPreamble,makeCStr(self._body))
+
+annotatedDoLoop.setParseAction(TTDoLoop)

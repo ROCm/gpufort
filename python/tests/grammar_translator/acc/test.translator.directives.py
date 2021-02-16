@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import addtoplevelpath
 import os,sys
-import grammar.grammar as grammar
+import translator.translator as translator
 
 print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.stderr)
 
@@ -60,7 +60,7 @@ end do
 
 for snippet in testdata:
     try:
-        grammar.annotatedDoLoop.parseString(snippet)
+        translator.annotatedDoLoop.parseString(snippet)
     except:
         print(" - FAILED",file=sys.stderr)
         print("failed to parse '{}'".format(snippet),file=sys.stderr)

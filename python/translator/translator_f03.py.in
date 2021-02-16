@@ -1027,7 +1027,7 @@ class TTAttributes(TTNode,Attributed):
 class TTDoLoop(TTNode):
     def assignFields(self,tokens):
         # Assignment, number | variable
-        self._begin, self._end, self._step, self._body = tokens
+        self._directive, self._begin, self._end, self._step, self._body = tokens
         self._threadIndex = None # "z","y","x"
     def loopVarCStr():
         return makeCStr(self._begin._lhs)

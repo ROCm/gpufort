@@ -99,9 +99,9 @@ accEnterData = accBegin + ENTER + DATA + accClauses
 
 accExitData = accBegin + EXIT + DATA + accClauses
 
-accLoop         = accBegin + LOOP + accClauses
-accParallelLoop = accBegin + PARALLEL + LOOP + accClauses
-accKernelsLoop  = accBegin + KERNELS + LOOP + accClauses
+acc_loop          = accBegin + LOOP + accClauses
+acc_parallel_loop = accBegin + PARALLEL + LOOP + accClauses
+acc_kernels_loop  = accBegin + KERNELS + LOOP + accClauses
 
 accRoutine =  accBegin + ROUTINE + Optional(LPAR + identifier + RPAR,default = None) + accClauses
 
@@ -115,10 +115,10 @@ accSerial = accBegin + SERIAL + accClauses +\
 accCache   = accBegin + CACHE + LPAR + accVarList + RPAR
 accDeclare = accBegin + DECLARE + accClauses
 
-accConstruct = accKernels | accParallel | accWait | accHostData | accData | accEnterData | accExitData | accLoop | accRoutine | accAtomic | accUpdate | accSerial | accCache | accDeclare
+accConstruct = accKernels | accParallel | accWait | accHostData | accData | accEnterData | accExitData | acc_loop | accRoutine | accAtomic | accUpdate | accSerial | accCache | accDeclare
 
-accKernelBodyDirective = accLoop | accSerial | accAtomic
-accLoopKernel = Group(OneOrMore(accParallelLoop|accKernelsLoop|accKernelsBegin|accParallelBegin)) + block # ! emits two tokens: [*],*
+accKernelBodyDirective = acc_loop | accSerial | accAtomic
+accLoopKernel = Group(OneOrMore(acc_parallel_loop|acc_kernels_loop|accKernelsBegin|accParallelBegin)) + block # ! emits two tokens: [*],*
 
 # Ideally pass the following:
 # multiple acc directives/lines 

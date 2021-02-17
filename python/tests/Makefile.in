@@ -1,0 +1,20 @@
+GRAMMAR_TESTS = $(shell find . -name "test.grammar.*.py" -execdir basename {} ';')
+TRANSLATOR_TESTS = $(shell find . -name "test.translator.*.py" -execdir basename {} ';')
+CUSTOM_TESTS = $(shell find . -name "test.custom.*.py" -execdir basename {} ';')
+
+.PHONY: $(GRAMMAR_TESTS) $(TRANSLATOR_TESTS) $(CUSTOM_TESTS) test.grammar test.translator test.custom
+
+$(GRAMMAR_TESTS): %:
+	python3 $@
+
+$(TRANSLATOR_TESTS): %:
+	python3 $@
+
+$(CUSTOM_TESTS): %:
+	python3 $@
+
+test.grammar: $(GRAMMAR_TESTS)
+
+test.translator: $(TRANSLATOR_TESTS)
+
+test.custom: $(CUSTOM_TESTS)

@@ -18,7 +18,7 @@ class IComputeConstruct():
     def presentVars(self): 
         """ CUF: all arrays are present, ACC: all arrays present if default(present) """
         return []
-    def createVars(self):
+    def createAllocVars(self):
         return []
     def copyMapToFromVars(self):
         return []
@@ -26,37 +26,36 @@ class IComputeConstruct():
         return []
     def copyoutMapFromVars(self):
         return []
+
+class ILoopAnnotation():
+    def numCollapse(self):
+        return CLAUSE_NOT_FOUND
+    def tileSizes(self):
+        return [CLAUSE_NOT_FOUND]
+    def numGangsTeamsBlocks(self):
+        return [CLAUSE_NOT_FOUND]
+    def numThreadsInBlock(self):
+        return [CLAUSE_NOT_FOUND]
+    def numWorkers(self): """ only ACC """
+        return [CLAUSE_NOT_FOUND]
+    def vectorLengthThreadLimit(self):
+        return [CLAUSE_NOT_FOUND]
+    def simd(self):
+        return [CLAUSE_NOT_FOUND]
+    def dataIndependentIterations(self):
+        return True
+    def privateVars(self): 
+        """ CUF,ACC: all scalars are private by default """ 
+        return []
+    def lastprivateVars(self): 
+        """ only OMP """
+        return []
     def reductionVars(self): 
         """ CUF: Scalar lvalues are reduced by default """
         return []
     def sharedVars(self): 
         """ only OMP """
         return []
-    def privateVars(self): 
-        """ CUF,ACC: all scalars are private by default """ 
-        return []
-    def firstprivateVars(self): 
-        """ only OMP """
-        return []
-    def lastprivateVars(self): 
-        """ only OMP """
-        return []
-
-class ILoopAnnotation():
-    def numCollapse(self):
-        return 1
-    def tileSizes(self):
-        return [1]
-    def numGangsTeamsBlocks(self):
-        return [CLAUSE_NOT_FOUND]
-    def numThreadsInBlock(self):
-        return [CLAUSE_NOT_FOUND]
-    def numWorkers(self):
-        return [CLAUSE_NOT_FOUND]
-    def lenSimdVector(self):
-        return [CLAUSE_NOT_FOUND]
-    def dataIndependentIterations(self):
-        return True
 
 class TTDoLoop(TTNode):
     def assignFields(self,tokens):
@@ -112,7 +111,11 @@ class TTDoLoop(TTNode):
     def loopVarCStr(self):
         return makeCStr(self._begin._lhs)
 
-class TTLoopKernel(TTNode):
+# Optional: top-level directive, must be accessible have all information
+# Required: (annotated) loop
+# Q: Scanner target nodes must interact?
+
+class TTLoopKernel(TTNode,IComputeConstruct):
     def kernelLaunchInfo(self) :
         return self._launchInfo
     def loopVars(self):

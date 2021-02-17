@@ -60,7 +60,7 @@ end do
 
 for snippet in testdata:
     try:
-        translator.annotatedDoLoop.parseString(snippet)
+        print(translator.annotatedDoLoop.parseString(snippet)[0])
     except:
         print(" - FAILED",file=sys.stderr)
         print("failed to parse '{}'".format(snippet),file=sys.stderr)

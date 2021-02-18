@@ -189,14 +189,14 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
             cSnippet, problemSize, kernelLaunchInfo,\
             identifiers, localLvalues, loopVars,\
             reductionOps\
-                = translator.convertCufLoopKernel(fSnippet,filteredIndex[0])
+                = translator.convertCufLoopKernel2Hip(fSnippet,filteredIndex[0])
             #deviceVarsInScope = stkernel.deviceVarsInScope() # TODO only printed in testComment
         elif type(stLoopKernel) is scanner.STAccLoopKernel:
             #deviceVarsInScope = stkernel.arraysInScope() + stkernel.scalarsInScope() # TODO only printed in testComment
             cSnippet, problemSize, kernelLaunchInfo,\
             identifiers, localLvalues, loopVars,\
             reductionOps\
-                = translator.convertAccLoopKernel(fSnippet,filteredIndex[0])
+                = translator.convertAccLoopKernel2Hip(fSnippet,filteredIndex[0])
 
         kernelArgs, cKernelLocalVars, macros, localCpuRoutineArgs =\
           deriveLoopKernelArguments(index, identifiers, localLvalues, loopVars, [], True, type(stLoopKernel) is scanner.STCufLoopKernel)

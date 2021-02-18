@@ -4,6 +4,8 @@ CUSTOM_TESTS = $(shell find . -name "test.custom.*.py" -execdir basename {} ';')
 
 .PHONY: $(GRAMMAR_TESTS) $(TRANSLATOR_TESTS) $(CUSTOM_TESTS) test.grammar test.translator test.custom
 
+all: test.grammar test.translator test.custom
+
 $(GRAMMAR_TESTS): %:
 	python3 $@
 

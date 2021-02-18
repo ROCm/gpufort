@@ -36,7 +36,8 @@ class ILoopAnnotation():
         return [CLAUSE_NOT_FOUND]
     def numThreadsInBlock(self):
         return [CLAUSE_NOT_FOUND]
-    def numWorkers(self): """ only ACC """
+    def numWorkers(self): 
+        """ only ACC """
         return [CLAUSE_NOT_FOUND]
     def vectorLengthThreadLimit(self):
         return [CLAUSE_NOT_FOUND]

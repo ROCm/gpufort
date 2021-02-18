@@ -182,7 +182,7 @@ translator.LOOP_COLLAPSE_STRATEGY="collapse"
 #print(result.cStr())
 #print(result.problemSize())
 cSnippet, problemSize, kernelLaunchInfo, identifierNames, localLvalues, loopVars, reductionVars =\
-        translator.convertAccLoopKernel(test)
+        translator.convertAccLoopKernel2Hip(test)
 print(cSnippet)
 
 #for i in range(len(testdata)):

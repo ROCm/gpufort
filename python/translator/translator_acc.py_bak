@@ -803,13 +803,13 @@ class TTAccLoopKernel(TTLoopKernel):
 
 
 recursionsLeft=0
-def convertAccLoopKernel(fortranSnippet,maxRecursions=10):
+def convertAccLoopKernel2Hip(fortranSnippet,maxRecursions=10):
     """
     Return a csnippet equit
     """
     global KEYWORDS 
 
-    def convertAccKernelRecursively(fortranSnippet,recursionsToGo):
+    def convertAccKernel2HipRecursively(fortranSnippet,recursionsToGo):
         global recursionsLeft
         recursionsLeft = recursionsToGo
         try:
@@ -823,14 +823,14 @@ def convertAccLoopKernel(fortranSnippet,maxRecursions=10):
                 lines[lineno-1] = "! TODO could not parse: {}".format(lines[lineno-1])
                 modifiedFortranSnippet = "\n".join(lines)
                 #print(modifiedFortranSnippet)
-                return convertAccKernelRecursively(modifiedFortranSnippet,recursionsToGo-1)
+                return convertAccKernel2HipRecursively(modifiedFortranSnippet,recursionsToGo-1)
         except Exception as e:
             raise e        
    
     fortranSnippet = prepareFortranSnippet(fortranSnippet)
     #print(fortranSnippet)
     try:
-        result = convertAccKernelRecursively(fortranSnippet,maxRecursions)
+        result = convertAccKernel2HipRecursively(fortranSnippet,maxRecursions)
         cSnippet = utils.prettifyCCode(result.cStr())
         kernelLaunchInfo = result.kernelLaunchInfo()
         identifierNames = result.allIdentifiers()

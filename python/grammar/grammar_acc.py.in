@@ -10,21 +10,23 @@ GANG,VECTOR,WORKER = makeCaselessLiteral("gang,vector,worker",suppress=False)
 
 accVarList = Group(delimitedList(allocateRvalue)) 
 
-acc_async = ASYNC + Optional(LPAR + rvalue + RPAR, default = "0") 
+accReductionOperator = oneOf("+ * max min iand ior ieor .and. .or. .eqv. .neqv.", caseless=CASELESS)
+accReductionVar      = accReductionOperator + Suppress(":") + allocateRvalue
+accReductionVarList  = Group(delimitedList(accReductionVar))
 
-# work partitioning
-acc_gang          = GANG + Optional(LPAR + integer + RPAR,default = -1)
-acc_worker        = WORKER + Optional(LPAR + integer + RPAR,default = -1)
-acc_vector        = VECTOR + Optional(LPAR + integer + RPAR,default = -1)
-acc_num_gangs     = NUM_GANGS + LPAR + integer + RPAR 
-acc_num_workers   = NUM_WORKERS + LPAR + integer + RPAR 
-acc_vector_length = VECTOR_LENGTH + LPAR + integer + RPAR
+# clauses
+acc_gang             = GANG + Optional(LPAR + integer + RPAR,default = -1)
+acc_worker           = WORKER + Optional(LPAR + integer + RPAR,default = -1)
+acc_vector           = VECTOR + Optional(LPAR + integer + RPAR,default = -1)
+acc_num_gangs        = NUM_GANGS + LPAR + integer + RPAR 
+acc_num_workers      = NUM_WORKERS + LPAR + integer + RPAR 
+acc_vector_length    = VECTOR_LENGTH + LPAR + integer + RPAR
 
-acc_device_type = DEVICE_TYPE + LPAR + Group(delimitedList(identifier | Literal("*"))) + RPAR
-acc_if          = IF + LPAR + arithmeticLogicalExpression + RPAR
-acc_copy        = COPY + LPAR + accVarList + RPAR
-acc_copyin      = COPYIN + LPAR + accVarList + RPAR
-acc_copyout     = COPYOUT + LPAR + accVarList + RPAR
+acc_device_type      = DEVICE_TYPE + LPAR + Group(delimitedList(identifier | Literal("*"))) + RPAR
+acc_if               = IF + LPAR + arithmeticLogicalExpression + RPAR
+acc_copy             = COPY + LPAR + accVarList + RPAR
+acc_copyin           = COPYIN + LPAR + accVarList + RPAR
+acc_copyout          = COPYOUT + LPAR + accVarList + RPAR
 
 acc_create           = CREATE + LPAR + accVarList + RPAR
 acc_no_create        = NO_CREATE + LPAR + accVarList + RPAR
@@ -35,9 +37,6 @@ acc_detach           = DETACH + LPAR + accVarList + RPAR
 acc_default          = DEFAULT + LPAR +  (CASELESS_LITERAL("none") | CASELESS_LITERAL("present")) + RPAR
 acc_use_device       = USE_DEVICE + LPAR + accVarList + RPAR
 acc_private          = PRIVATE + LPAR + accVarList + RPAR
-accReductionOperator = oneOf("+ * max min iand ior ieor .and. .or. .eqv. .neqv.", caseless=CASELESS)
-accReductionVar      = accReductionOperator + Suppress(":") + allocateRvalue
-accReductionVarList  = Group(delimitedList(accReductionVar))
 acc_reduction        = REDUCTION + LPAR + accReductionVarList + RPAR
 acc_delete           = DELETE + LPAR + accVarList + RPAR
 acc_routine          = ROUTINE + LPAR + identifier + RPAR
@@ -52,73 +51,76 @@ acc_device_resident  = DEVICE_RESIDENT + LPAR + accVarList + RPAR
 acc_link             = LINK + LPAR + accVarList + RPAR
 acc_tile             = TILE + LPAR + Group(integer + Suppress(",") + integer) + RPAR
 acc_wait             = WAIT + Optional(LPAR + accVarList + RPAR, default=[])
+acc_async            = ASYNC + Optional(LPAR + rvalue + RPAR, default = "0") 
 
 # TODO(acc) Add more clauses where needed
 # Probably need to support collapse and reduction ...
 acc_seq,acc_auto,acc_independent,acc_read,acc_write,acc_capture,acc_nohost,acc_finalize,acc_if_present = makeCaselessLiteral("seq,auto,independent,read,write,capture,nohost,finalize,if_present",suppress=False)
 
 # ACC LoopKernel directive
-accKernelsStructuredBlock = doLoop
-accBlock = block
+ACC_START = PRAGMA + ACC
+ACC_END   = ACC_START.copy() + END
 
-accBegin = PRAGMA + ACC
-accEnd   = accBegin.copy() + END
-
-accClause = acc_if | acc_self | acc_host | acc_async | acc_wait | acc_num_gangs | acc_num_workers | acc_vector_length | acc_device_type |\
+acc_clause = acc_if | acc_self | acc_host | acc_async | acc_wait | acc_num_gangs | acc_num_workers | acc_vector_length | acc_device_type |\
     acc_copy | acc_copyin | acc_copyout | acc_create | acc_present | acc_deviceptr | acc_default |\
     acc_private | acc_first_private | acc_no_create | acc_delete | acc_reduction | acc_detach | acc_collapse |\
     acc_use_device | acc_device | acc_bind | acc_device_resident | acc_link | acc_tile | acc_seq | acc_auto |\
     acc_independent | acc_gang | acc_worker | acc_vector | acc_read | acc_write | acc_capture |\
     acc_nohost | acc_finalize | acc_if_present 
 
-accClauses = Optional(OneOrMore(Optional(accBegin + Literal("&")).suppress() + accClause), default=[])
+acc_clause_list = Optional(OneOrMore(Optional(ACC_START + Literal("&")).suppress() + acc_clause), default=[])
 
 ##
 ## DIRECTVIES
 ##
-accUpdate = accBegin + UPDATE + accClauses # 2 tokens -> [(False|True),[*]],*
+acc_update = ACC_START + UPDATE + acc_clause_list # 2 tokens -> [(False|True),[*]],*
 
-# kernels
-accKernelsBegin = accBegin + KERNELS + accClauses
-accKernels      = accKernelsBegin + accBlock + accEnd + KERNELS
-# parallel
-accParallelBegin = accBegin + PARALLEL + accClauses
-accParallel      = accParallelBegin + accBlock + accEnd + PARALLEL
+# compute constructs
+acc_kernels         = ACC_START + KERNELS + acc_clause_list
+ACC_END_KERNELS     = ACC_END + KERNELS
+acc_kernels_region  = acc_kernels + block + Optional(ACC_END_KERNELS) 
 
-accWait = accBegin + accClauses
+acc_parallel        = ACC_START + PARALLEL + acc_clause_list
+ACC_END_PARALLEL    = ACC_END + PARALLEL
+acc_parallel_region = acc_parallel + block + Optional(ACC_END_PARALLEL)
 
-accHostData = accBegin + HOST_DATA + accClauses +\
-                accBlock +\
-              accEnd + HOST_DATA
+acc_wait = ACC_START + acc_wait + acc_clause_list
 
-accData = accBegin + DATA + accClauses +\
-            accBlock +\
-          accEnd + DATA
+acc_host_data        = ACC_START + HOST_DATA + acc_clause_list 
+ACC_END_HOST_DATA    = ACC_END + HOST_DATA
+acc_host_data_region = acc_host_data + block + ACC_END_HOST_DATA 
 
-accEnterData = accBegin + ENTER + DATA + accClauses
+acc_data        = ACC_START + HOST_DATA + acc_clause_list 
+ACC_END_DATA    = ACC_END + DATA
+acc_data_region = acc_data + block + ACC_END_DATA 
 
-accExitData = accBegin + EXIT + DATA + accClauses
+acc_enter_data = ACC_START + ENTER + DATA + acc_clause_list
+acc_exit_data  = ACC_START + EXIT  + DATA + acc_clause_list
 
-acc_loop          = accBegin + LOOP + accClauses
-acc_parallel_loop = accBegin + PARALLEL + LOOP + accClauses
-acc_kernels_loop  = accBegin + KERNELS + LOOP + accClauses
+acc_loop                 = ACC_START + LOOP + acc_clause_list
+acc_parallel_loop        = ACC_START + PARALLEL + LOOP + acc_clause_list
+ACC_END_PARALLEL_LOOP    = ACC_END + PARALLEL + LOOP
+acc_parallel_loop_region = acc_parallel_loop + block + ACC_END_PARALLEL
+acc_kernels_loop         = ACC_START + KERNELS + LOOP + acc_clause_list
+ACC_END_KERNELS_LOOP     = ACC_END + KERNELS + LOOP
+acc_kernels_loop_region  = acc_kernels_loop + block + ACC_END_KERNELS
 
-accRoutine =  accBegin + ROUTINE + Optional(LPAR + identifier + RPAR,default = None) + accClauses
+accRoutine =  ACC_START + ROUTINE + Optional(LPAR + identifier + RPAR,default = None) + acc_clause_list
 
-accAtomic = accBegin + ATOMIC + Optional(accClauses , default = "update") +\
-               accBlock +\
-           Optional( accEnd + ATOMIC )
-accUpdate = accBegin + CASELESS_LITERAL("update").suppress() + accClauses
-accSerial = accBegin + SERIAL + accClauses +\
-              accBlock +\
-            accEnd + SERIAL
-accCache   = accBegin + CACHE + LPAR + accVarList + RPAR
-accDeclare = accBegin + DECLARE + accClauses
+accAtomic = ACC_START + ATOMIC + Optional(acc_clause_list , default = "update") +\
+               block +\
+           Optional( ACC_END + ATOMIC )
+accUpdate = ACC_START + CASELESS_LITERAL("update").suppress() + acc_clause_list
+accSerial = ACC_START + SERIAL + acc_clause_list +\
+              block +\
+            ACC_END + SERIAL
+accCache   = ACC_START + CACHE + LPAR + accVarList + RPAR
+accDeclare = ACC_START + DECLARE + acc_clause_list
 
-accConstruct = accKernels | accParallel | accWait | accHostData | accData | accEnterData | accExitData | acc_loop | accRoutine | accAtomic | accUpdate | accSerial | accCache | accDeclare
+accConstruct = accKernels | acc_parallel | accWait | accHostData | accData | accEnterData | accExitData | acc_loop | accRoutine | accAtomic | accUpdate | accSerial | accCache | accDeclare
 
 accKernelBodyDirective = acc_loop | accSerial | accAtomic
-accLoopKernel = Group(OneOrMore(acc_parallel_loop|acc_kernels_loop|accKernelsBegin|accParallelBegin)) + block # ! emits two tokens: [*],*
+accLoopKernel = Group(OneOrMore(acc_parallel_loop|acc_kernels_loop|acc_kernels|acc_parallelBegin)) + block # ! emits two tokens: [*],*
 
 # Ideally pass the following:
 # multiple acc directives/lines 

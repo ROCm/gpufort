@@ -4,6 +4,49 @@
 
 # clauses
 
+# directives without arguements
+singleDirDict = {
+    'loop': 'parallel do',
+    'gang': emptyString,
+    'independent': emptyString,
+    'parallel': 'target teams distribute',
+    'vector': 'simd',
+    'routine': 'declare target',
+    'seq': emptyString,
+    'data': 'data',
+    'end': 'end',
+    'enter': 'target enter',
+    'exit': 'target exit',
+    'atomic': 'atomic',
+    'serial': 'target',
+    'declare': 'declare target',
+}
+
+#dualDirDict = {}
+#
+## directives with arguements
+#singleDirwargsDict = {
+#    'attach': 'map(to:',
+#    'detach': 'map(from:',
+#    'copy': 'map(tofrom:',
+#    'copyin': 'map(to:',
+#    'copyout': 'map(from:',
+#    'create': 'map(alloc:',
+#    'delete': 'map(release:',
+#    'async': 'depend(out:',
+#    'wait': 'task depend(in:',
+#    'collapse': 'collapse(',
+#    'private': 'private(',
+#    'vector_length': 'simd simdlen(',
+#    'num_gangs': 'num_teams(',
+#    'present': emptyString,
+#}
+#
+#dualDirwargsDict = {
+#    'update host': 'target update from(',
+#    'update device': 'target update to(',
+#}
+
 class TTAccCollapse(TTNode):
     def assignFields(self,tokens):
         self._value = tokens[0]
@@ -62,7 +105,13 @@ class TTAccPrivate(TTNode):
     def threadPrivateVarNames(self):
         return [ var.varName().lower() for var in self._threadPrivateVars ]
 
-class TTAccLoop(TTNode,ILoopAnnotation):
+class TTAccDirective(TTNode):
+    def assignFields(self,tokens):
+       self._clauses = tokens
+    def ompFStr(self):
+       pass        
+
+class TTAccLoopDirective(TTAccDirective,ILoopAnnotation):
     def assignFields(self,tokens):
        self._clauses = tokens
     def numCollapse(self):
@@ -166,13 +215,13 @@ acc_kernels_loop.setParseAction(TTAccKernelsLoop)
 accLoopKernel.setParseAction(TTAccLoopKernel)
 
 recursionsLeft=0
-def convertAccLoopKernel(fortranSnippet,maxRecursions=30):
+def convertAccLoopKernel2Hip(fortranSnippet,maxRecursions=30):
     """
     Return a csnippet equivalent to the original Fortran code.
     """
     global KEYWORDS 
 
-    def convertAccKernelRecursively(fortranSnippet,recursionsToGo):
+    def convertAccKernel2HipRecursively(fortranSnippet,recursionsToGo):
         global recursionsLeft
         recursionsLeft = recursionsToGo
         try:
@@ -186,13 +235,13 @@ def convertAccLoopKernel(fortranSnippet,maxRecursions=30):
                 lines[lineno-1] = "! TODO could not parse: {}".format(lines[lineno-1])
                 modifiedFortranSnippet = "\n".join(lines)
                 #print(modifiedFortranSnippet)
-                return convertAccKernelRecursively(modifiedFortranSnippet,recursionsToGo-1)
+                return convertAccKernel2HipRecursively(modifiedFortranSnippet,recursionsToGo-1)
         except Exception as e:
             raise e        
    
     fortranSnippet = prepareFortranSnippet(fortranSnippet)
     try:
-        result           = convertAccKernelRecursively(fortranSnippet,maxRecursions)
+        result           = convertAccKernel2HipRecursively(fortranSnippet,maxRecursions)
         cSnippet         = utils.prettifyCCode(result.cStr())
         
         kernelLaunchInfo = result.kernelLaunchInfo()

@@ -25,13 +25,13 @@ def convertArithmeticExpression(fortranSnippet):
     return ( matrixArithmeticExpression | complexArithmeticExpression | arithmeticExpression ).parseString(fortranSnippet)[0].cStr()
 
 remainingRecursions=0
-def convertCufLoopKernel(fortranSnippet,index=[],maxRecursions=10):
+def convertCufLoopKernel2Hip(fortranSnippet,index=[],maxRecursions=10):
     """
     Return a csnippet equit
     """
     global KEYWORDS 
 
-    def convertCufKernelRecursively(fortranSnippet,recursionsToGo):
+    def convertCufKernel2HipRecursively(fortranSnippet,recursionsToGo):
         global remainingRecursions
         remainingRecursions = recursionsToGo
         try:
@@ -45,14 +45,14 @@ def convertCufLoopKernel(fortranSnippet,index=[],maxRecursions=10):
                 lines[lineno-1] = "! TODO could not parse: {}".format(lines[lineno-1])
                 modifiedFortranSnippet = "\n".join(lines)
                 #print(modifiedFortranSnippet)
-                return convertCufKernelRecursively(modifiedFortranSnippet,recursionsToGo-1)
+                return convertCufKernel2HipRecursively(modifiedFortranSnippet,recursionsToGo-1)
         except Exception as e:
             raise e        
    
     fortranSnippet = prepareFortranSnippet(fortranSnippet)
     #print(fortranSnippet)
     try:
-        result = convertCufKernelRecursively(fortranSnippet,maxRecursions)
+        result = convertCufKernel2HipRecursively(fortranSnippet,maxRecursions)
         cSnippet = utils.prettifyCCode(result.cStr())
         kernelLaunchInfo = result.kernelLaunchInfo()
         identifierNames  = result.allIdentifiers()
@@ -126,13 +126,13 @@ def convertDeviceSubroutine(fortranSnippet,index=[],maxRecursions=10):
     return name,argNames,cBody
 
 remainingRecursions=0
-def convertAccLoopKernel(fortranSnippet,index=[],maxRecursions=30):
+def convertAccLoopKernel2Hip(fortranSnippet,index=[],maxRecursions=30):
     """
     Return a csnippet equivalent to the original Fortran code.
     """
     global KEYWORDS 
 
-    def convertAccKernelRecursively(fortranSnippet,recursionsToGo):
+    def convertAccKernel2HipRecursively(fortranSnippet,recursionsToGo):
         global remainingRecursions
         remainingRecursions = recursionsToGo
         try:
@@ -146,13 +146,13 @@ def convertAccLoopKernel(fortranSnippet,index=[],maxRecursions=30):
                 lines[lineno-1] = "! TODO could not parse: {}".format(lines[lineno-1])
                 modifiedFortranSnippet = "\n".join(lines)
                 #print(modifiedFortranSnippet)
-                return convertAccKernelRecursively(modifiedFortranSnippet,recursionsToGo-1)
+                return convertAccKernel2HipRecursively(modifiedFortranSnippet,recursionsToGo-1)
         except Exception as e:
             raise e        
    
     fortranSnippet = prepareFortranSnippet(fortranSnippet)
     try:
-        result           = convertAccKernelRecursively(fortranSnippet,maxRecursions)
+        result           = convertAccKernel2HipRecursively(fortranSnippet,maxRecursions)
         # TODO modify AST here
         cSnippet         = utils.prettifyCCode(result.cStr())
         

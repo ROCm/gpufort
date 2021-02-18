@@ -45,7 +45,7 @@ program main
   !$omp target parallel do collapse(2)
   do j = 1,N
     do i = 1,N
-      a(i,j) = 2*a(i,j) + 0.001 + b(i,j)
+      a(i,j) = 2*a(i,j) + 0.001 + b(i,j) ! a is synchronized but device 'b' was not updated, so b(i,j) is 0
     end do
   end do
   

@@ -431,7 +431,7 @@ successfullyParsed = []
 success = True
 for v in testdata: 
     try:
-       cSnippet, problemSize, LoopKernelLaunchInfo, identifierNames, localLvalues, loopVars = translator.convertCufLoopKernel(v)
+       cSnippet, problemSize, LoopKernelLaunchInfo, identifierNames, localLvalues, loopVars = translator.convertCufLoopKernel2Hip(v)
        print("{} -> {}".format(v,cSnippet))
        successfullyParsed.append(v)
        print(localLvalues)

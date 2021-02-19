@@ -1,10 +1,23 @@
-TEST_FOLDERS = tests/grammar_translator/acc
+TEST_FOLDERS = test/grammar_translator/acc
 
-TESTS_COLLECTIONS = $(TEST_FOLDERS:/=.)
+TEST_COLLECTIONS            := $(shell echo "$(TEST_FOLDERS)" | sed "s,/,.,g")
+GRAMMAR_TEST_COLLECTIONS    := $(addsuffix .grammar,$(TEST_COLLECTIONS))
+TRANSLATOR_TEST_COLLECTIONS := $(addsuffix .translator,$(TEST_COLLECTIONS))
 
-.PHONY: tests $(TESTS_COLLECTIONS)
+.PHONY: test test.grammar $(TEST_COLLECTIONS) $(GRAMMAR_TEST_COLLECTIONS) $(TRANSLATOR_TEST_COLLECTIONS)
 
-$(TESTS_COLLECTIONS): %:
-	make -C $@
+test.grammar: $(GRAMMAR_TEST_COLLECTIONS)
+	@echo $(TEST_FOLDERS)
+	@echo $(TEST_COLLECTIONS)
+	@echo $(GRAMMAR_TEST_COLLECTIONS)
 
-tests: $(TESTS_COLLECTIONS)
+$(TEST_COLLECTIONS): %:
+	make -C $(shell echo "$@" | sed "s,\.,/,g")
+
+$(GRAMMAR_TEST_COLLECTIONS): %:
+	make -C $(shell echo "$@" | sed "s,\.grammar\>,,g" | sed "s,\.,/,g") test.grammar
+
+$(TRANSLATOR_TEST_COLLECTIONS): %:
+	make -C $(shell echo "$@" | sed "s,\.grammar\>,,g" | sed "s,\.,/,g") test.translator
+
+test: $(TEST_COLLECTIONS)

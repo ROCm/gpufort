@@ -94,7 +94,7 @@ def parseConfig():
     global configAfterCommandLineParsing
 
     # DEFAULTS:
-    scanner.HIP_IFDEF           = "__HIP" 
+    scanner.GPUFORT_IFDEF           = "__HIP" 
     scanner.CUF_IFDEF           = "CUDA"
     # cublas_v1 routines do not have an handle. cublas v2 routines do
     scanner.CUBLAS_VERSION      = 1
@@ -225,7 +225,7 @@ if __name__ == "__main__":
 
     # extract kernels
     if not args.onlyModifyHostCode:
-       kernelsToConvertToHip = "*" # all of them
+       kernelsToConvertToHip = ["*"] # all of them
        if scanner.DESTINATION_DIALECT == "omp": # TODO allow to convert a number of kernels to hip via selection
            kernelsToConvertToHip = [] # empty list means none
            kernelsToConvertToHip += scanner.KERNELS_TO_CONVERT_TO_HIP

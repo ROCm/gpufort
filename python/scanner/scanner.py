@@ -298,12 +298,12 @@ def parseFile(fortranFilePath):
     nonZeroCheck.setParseAction(NonZeroCheck)
 
     # CUDA Fortran 
-    cufKernelDo.setParseAction(CufLoopKernel)
+    cuf_kernel_do.setParseAction(CufLoopKernel)
     cudaLibCall.setParseAction(CudaLibCall)
     cudaKernelCall.setParseAction(CudaKernelCall)
 
     # OpenACC
-    accBegin.setParseAction(AccDirective)
+    ACC_START.setParseAction(AccDirective)
     assignmentBegin.setParseAction(Assignment)
 
     currentFile = str(fortranFilePath)
@@ -327,7 +327,7 @@ def parseFile(fortranFilePath):
     def tryToParseString(expressionName,expression):
         """
         These expressions might never be hidden behind a single-line if or might
-        never be an argument of anoother calls.
+        never be an argument of another calls.
         No need to check if comments are in the line as the first
         words of the line must match the expression.
         """
@@ -392,8 +392,8 @@ def parseFile(fortranFilePath):
                 # host/device environments  
                 #tryToParseString("callEnd",callEnd)
                 if not tryToParseString("structureEnd|ENDDO",structureEnd|ENDDO):
-                    tryToParseString("use|CONTAINS|IMPLICIT|declaration|accBegin|cufKernelDo|DO|moduleStart|programStart|functionStart|subroutineStart",\
-                       use|CONTAINS|IMPLICIT|declaration|accBegin|cufKernelDo|DO|moduleStart|programStart|functionStart|subroutineStart)
+                    tryToParseString("use|CONTAINS|IMPLICIT|declaration|ACC_START|cuf_kernel_do|DO|moduleStart|programStart|functionStart|subroutineStart",\
+                       use|CONTAINS|IMPLICIT|declaration|ACC_START|cuf_kernel_do|DO|moduleStart|programStart|functionStart|subroutineStart)
                 if keepRecording:
                    try:
                       current._lines += currentLines
@@ -403,22 +403,26 @@ def parseFile(fortranFilePath):
     assert type(current) is STRoot
     return current
 
-def postProcess(stree,hipModuleName):
+def postProcessAcc(stree,hipModuleName):
+    """
+    Add use statements as well as handles plus their creation and destruction for certain
+    math libraries.
+    """
+    global ACC_RUNTIME_NAME
+    # acc detection
+    directives = stree.findAll(filter=lambda node: isinstance(node,STAccDirective), recursively=True)
+    for directive in directives:
+         stnode = directive._parent.findFirst(filter=lambda child : type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
+         if not stnode is None:
+             indent = " "*(len(stnode.lines()[0]) - len(stnode.lines()[0].lstrip()))
+             stnode._preamble.add("{0}use iso_c_binding\n{0}use {1}\n".format(indent,ACC_RUNTIME_NAME))
+    
+def postProcessCuf(stree,hipModuleName):
     """
     Add use statements as well as handles plus their creation and destruction for certain
     math libraries.
     """
     global CUBLAS_VERSION 
-    # insert use kernel statements at appropriate point
-    def isLoopKernel(child):
-        return isinstance(child,STLoopKernel) or\
-               (type(child) is STSubroutine and child.isDeviceSubroutine())
-    kernels = stree.findAll(filter=isLoopKernel, recursively=True)
-    for kernel in kernels:
-         stnode = kernel._parent.findFirst(filter=lambda child: not child._included and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
-         assert not stnode is None
-         indent = " "*(len(stnode.lines()[0]) - len(stnode.lines()[0].lstrip()))
-         stnode._preamble.add("{0}use {1}\n".format(indent,hipModuleName))
     # cublas_v1 detection
     if CUBLAS_VERSION is 1:
         def hasCublasCall(child):
@@ -438,43 +442,29 @@ def postProcess(stree,hipModuleName):
             last = localCublasCalls[-1]
             indent = " "*(len(last.lines()[0]) - len(last.lines()[0].lstrip()))
             last._epilog.add("{0}hipblasDestroy(hipblasHandle)\n".format(indent))
-    # acc detection
-    directives = stree.findAll(filter=lambda node: isinstance(node,STAccDirective), recursively=True)
-    for directive in directives:
-         stnode = directive._parent.findFirst(filter=lambda child : type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
-         if not stnode is None:
-             indent = " "*(len(stnode.lines()[0]) - len(stnode.lines()[0].lstrip()))
-             stnode._preamble.add("{0}use iso_c_binding\n{0}use {1}\n".format(indent,"gpufort_acc_runtime"))
- 
-def groupObjects(stree):
-    """ 
-    Groups object tree nodes and puts each group into a map that is indexed by the line number of the first node in a group.
-    :return: a dict mapping line numbers to groups
-    :rtype: dict
-    :note: Must be called before declarations from other modules are loaded
+
+def postProcess(stree,hipModuleName):
     """
-    def transformOneByOne(stnode):
-        return type(stnode) in  [STDeclaration,STUseStatement,STPlaceHolder,STSubroutine,STAccDirective] or isinstance(stnode,STLoopKernel)
-    groups = [ MatchAllGroup() ]
-    def descend(curr):
-        for stnode in curr._children:
-            logging.getLogger("").debug("scanner:groubObjects(...):\t{0}".format("{}-{}: ".format(stnode._lineno,stnode._lineno+len(stnode.lines()))+str(stnode)))
-            if not stnode._included and stnode.considerInSource2SourceTranslation():
-                # insert new group if necessary
-                if not groups[-1].borders(stnode): 
-                    if transformOneByOne(stnode): # TODO two groups. One contains data, the other can match anything
-                        groups.append(OneByOneGroup())
-                    else:
-                        groups.append(MatchAllGroup())
-                else:
-                    if type(groups[-1]) is MatchAllGroup and transformOneByOne(stnode):
-                        groups.append(OneByOneGroup())
-                    elif type(groups[-1]) is OneByOneGroup and not transformOneByOne(stnode):
-                        groups.append(MatchAllGroup())
-                groups[-1].add(stnode)
-            descend(stnode)
-    descend(stree)      
-    groupMap = {}
-    for group in groups:
-         groupMap[group._minLineno] = group
-    return groupMap
+    Add use statements as well as handles plus their creation and destruction for certain
+    math libraries.
+    """
+    if "hip" in DESTINATION_DIALECT or len(KERNELS_TO_CONVERT_TO_HIP):
+    # insert use kernel statements at appropriate point
+    def isLoopKernel(child):
+        return isinstance(child,STLoopKernel) or\
+               (type(child) is STSubroutine and child.isDeviceSubroutine())
+    kernels = stree.findAll(filter=isLoopKernel, recursively=True)
+    for kernel in kernels:
+        if "hip" in DESTINATION_DIALECT or\
+          kernel._lineno in kernelsToConvertToHip or\
+          kernel.kernelName() in kernelsToConvertToHip:
+            stnode = kernel._parent.findFirst(filter=lambda child: not child._included and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
+            assert not stnode is None
+            indent = " "*(len(stnode.lines()[0]) - len(stnode.lines()[0].lstrip()))
+            stnode._preamble.add("{0}use {1}\n".format(indent,hipModuleName))
+   
+   if "cuf" in SOURCE_DIALECTS:
+        postProcessCuf(stree,hipModuleName)
+   
+   if "acc" in SOURCE_DIALECTS:
+        postProcessAcc(stree,hipModuleName)

@@ -172,7 +172,7 @@ def deriveKernelArguments(index, identifiers, localVars, loopVars, whiteList=[],
     
 def extractLoopKernels(loopKernels,index,cContext,fContext):
     """
-    loopLoopKernels is a list of STCufLoopKernel objects.
+    loopKernels is a list of STCufLoopKernel objects.
     cContext, fContext are inout arguments for generating C/Fortran files, respectively.
     """
     cContext["haveReductions"] = False
@@ -460,12 +460,12 @@ def renderTemplates(outputFilePrefix,cContext,fContext):
 
 def generateHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename):
     global FORTRAN_MODULE_PREAMBLE
-    if type(kernelsToConvertToHip) is list and not len(kernelsToConvertToHip):
+    if not len(kernelsToConvertToHip):
         return
     
     def select(kernel):
         nonlocal kernelsToConvertToHip
-        if kernelsToConvertToHip == "*":
+        if kernelsToConvertToHip[0] == "*":
             return True
         else:
             return kernel._lineno in kernelsToConvertToHip or\
@@ -486,7 +486,7 @@ def generateHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basena
     fContext["routines"]   = []
 
     # extract kernels
-    loopLoopKernels         = stree.findAll(filter=lambda child : isinstance(child, scanner.STLoopKernel) and select(child), recursively=True)
+    loopKernels         = stree.findAll(filter=lambda child : isinstance(child, scanner.STLoopKernel) and select(child), recursively=True)
     acceleratorRoutines = stree.findAll(filter=lambda child : type(child) is scanner.STSubroutine and child.isAcceleratorRoutine() and select(child), recursively=True)
 
     if (len(loopKernels) or len(acceleratorRoutines)):

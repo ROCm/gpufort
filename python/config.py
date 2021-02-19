@@ -23,7 +23,7 @@ scanner.DESTINATION_DIALECT   = "omp"   # one of ["omp","hip"]
 
 scanner.CONVERT_TO_HIP=[] # list of kernels to convert to HIP. Is ignored if Destination DIALECT is hip.  
 
-scanner.HIP_IFDEF           = "__HIP" 
+scanner.GPUFORT_IFDEF           = "__HIP" 
 scanner.CUF_IFDEF           = "CUDA"
 # cublas_v1 routines do not have an handle. cublas v2 routines do
 scanner.CUBLAS_VERSION      = 1

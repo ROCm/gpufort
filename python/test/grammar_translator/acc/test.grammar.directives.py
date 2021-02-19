@@ -58,9 +58,11 @@ do i = 1, n
 end do
 """)
 
+loop = acc_kernels_loop_region | acc_parallel_loop_region | acc_loop
+
 for snippet in testdata:
     try:
-        grammar.annotatedDoLoop.parseString(snippet)
+        grammar.loop.parseString(snippet)
     except:
         print(" - FAILED",file=sys.stderr)
         print("failed to parse '{}'".format(snippet),file=sys.stderr)

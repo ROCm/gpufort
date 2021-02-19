@@ -4,7 +4,7 @@
 
 #CUDA Fortran
 class TTCppIfdef(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._ppVar = tokens
     def pPVar(self):
         """
@@ -15,7 +15,7 @@ class TTCppIfdef(TTNode):
         return "#if defined({0}) || defined({1})".format(self._ppVar,hipVar)
 
 class TTCppDefined(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._ppVar = tokens
     def pPVar(self):
         """
@@ -26,7 +26,7 @@ class TTCppDefined(TTNode):
         return "( defined({0}) || defined({1}) )".format(self._ppVar,hipVar)
 
 class TTCudaKernelCall(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         def postprocessDim3(dim3):
             try:
                 intVal = int(dim3)
@@ -62,7 +62,7 @@ class TTCufPragma(TTNode,LaunchInfo):
     def __init__(self,s,loc,tokens):
         LaunchInfo.__init__(self)
         TTNode.__init__(self,s,loc,tokens)
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         def postprocessDim3(dim3):
             #print("dim3 = {}".format(dim3))
             result=["-1"]*3
@@ -79,13 +79,13 @@ class TTCufPragma(TTNode,LaunchInfo):
         return LaunchInfo.cStr(self)
 
 class TTCufKernelDo(TTLoopKernel):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._launchInfo, self._body  = tokens
     def kernelLaunchInfo(self):
         return self._launchInfo
 
 class TTAllocateRvalue(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._var    = tokens[0]
         self._bounds = None
         if len(tokens) == 2:
@@ -134,7 +134,7 @@ class TTCufAllocated(TTNode):
     For `type(c_ptr)` variables the standard `allocated` check
     do not work. We need to replace this by `c_associated(var)`.
     """
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._var = tokens[0]
     def varName(self):
         return self._var.varName()
@@ -146,7 +146,7 @@ class TTCufNonZeroCheck(TTNode):
     For `type(c_ptr)` variables that replace CUDA Fortran stream and , the standard `allocated` check
     do not work. We need to replace this by `c_associated(var)`.d
     """
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._lhs = tokens
     def lhsFStr(self):
         return makeFStr(self._lhs)
@@ -161,7 +161,7 @@ class TTCufPointerAssignment(TTNode):
     Calling function needs to check if at least one (should be both in any case)
     pointer is pointing to data on the device. 
     """
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._lhs, self._rhs = tokens
     def lhsFStr(self):
         return makeFStr(self._lhs)
@@ -191,7 +191,7 @@ class TTCufAllocate(TTNode):
     allocateRvalue = ( identifier | simpleStructElem ) + Optional(LPAR + bounds + RPAR,default=[])
     ```
     """
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._vars = tokens
     def variableNames(self):
         """
@@ -249,7 +249,7 @@ class TTCufDeallocate(TTNode):
     allocateRvalue = ( identifier | simpleStructElem ) + Optional(LPAR + bounds + RPAR,default=[])
     ```
     """
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._vars             = tokens
     def configure(self,bytesPerElement, arrayQualifiers):
         self._arrayQualifiers = arrayQualifiers
@@ -370,7 +370,7 @@ class CufMemcpyBase():
 
 class TTCufMemcpyIntrinsic(TTNode,CufMemcpyBase):
     # dest,src,count,[,stream] # kind is inferred from dest and src
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._dest       = tokens[0]
         self._src        = tokens[1]
         self._bounds     = tokens[0]._bounds
@@ -387,7 +387,7 @@ class TTCufMemcpyIntrinsic(TTNode,CufMemcpyBase):
 
 #class TTCufCudaMemcpy(TTNode,CufMemcpyBase):
 #    # dest,src,count,[,stream] # kind is inferred from dest and src
-#    def assignFields(self,tokens):
+#    def _assignFields(self,tokens):
 #        #print(tokens)
 #        self._api        = tokens[0] 
 #        self._dest       = tokens[1]
@@ -408,7 +408,7 @@ class TTCufMemcpyIntrinsic(TTNode,CufMemcpyBase):
 #
 #class TTCufCudaMemcpy2D(TTNode,CufMemcpyBase):
 #    # dest,dpitch(count),src,spitch(count),width(count),height(count)[,stream] # kind is inferred from dest and src
-#    def assignFields(self,tokens):
+#    def _assignFields(self,tokens):
 #        self._api        = tokens[0]
 #        self._dest       = tokens[1]
 #        self._dpitch     = tokens[2]
@@ -434,7 +434,7 @@ class TTCufMemcpyIntrinsic(TTNode,CufMemcpyBase):
 #
 #class TTCufCudaMemcpy3D(TTNode,CufMemcpyBase):
 #    # dest,dpitch(count),src,spitch(count),width(count),height(count),depth(count),[,stream] # kind is inferred from dest and src
-#    def assignFields(self,tokens):
+#    def _assignFields(self,tokens):
 #        self._api        = tokens[0]
 #        self._dest       = tokens[1]
 #        self._dpitch     = tokens[2]
@@ -461,7 +461,7 @@ class TTCufMemcpyIntrinsic(TTNode,CufMemcpyBase):
 #        return "{2}{0}({1})".format(api,",".join(args),indent)
 
 class TTCufCublasCall(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._api    = tokens[0] # does not include cublas
         self._args   = tokens[1]
     def fStr(self,indent=""):

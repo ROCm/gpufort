@@ -6,10 +6,9 @@ TRANSLATOR_TEST_COLLECTIONS := $(addsuffix .translator,$(TEST_COLLECTIONS))
 
 .PHONY: test test.grammar $(TEST_COLLECTIONS) $(GRAMMAR_TEST_COLLECTIONS) $(TRANSLATOR_TEST_COLLECTIONS)
 
+test: $(TEST_COLLECTIONS)
+
 test.grammar: $(GRAMMAR_TEST_COLLECTIONS)
-	@echo $(TEST_FOLDERS)
-	@echo $(TEST_COLLECTIONS)
-	@echo $(GRAMMAR_TEST_COLLECTIONS)
 
 $(TEST_COLLECTIONS): %:
 	make -C $(shell echo "$@" | sed "s,\.,/,g")
@@ -19,5 +18,3 @@ $(GRAMMAR_TEST_COLLECTIONS): %:
 
 $(TRANSLATOR_TEST_COLLECTIONS): %:
 	make -C $(shell echo "$@" | sed "s,\.grammar\>,,g" | sed "s,\.,/,g") test.translator
-
-test: $(TEST_COLLECTIONS)

@@ -75,15 +75,6 @@ acc_clause_list = Optional(OneOrMore(Optional(ACC_START + Literal("&")).suppress
 ##
 acc_update = ACC_START + UPDATE + acc_clause_list # 2 tokens -> [(False|True),[*]],*
 
-# compute constructs
-acc_kernels         = ACC_START + KERNELS + acc_clause_list
-ACC_END_KERNELS     = ACC_END + KERNELS
-acc_kernels_region  = acc_kernels + block + Optional(ACC_END_KERNELS) 
-
-acc_parallel        = ACC_START + PARALLEL + acc_clause_list
-ACC_END_PARALLEL    = ACC_END + PARALLEL
-acc_parallel_region = acc_parallel + block + Optional(ACC_END_PARALLEL)
-
 acc_wait = ACC_START + acc_wait + acc_clause_list
 
 acc_host_data        = ACC_START + HOST_DATA + acc_clause_list 
@@ -97,21 +88,22 @@ acc_data_region = acc_data + block + ACC_END_DATA
 acc_enter_data = ACC_START + ENTER + DATA + acc_clause_list
 acc_exit_data  = ACC_START + EXIT  + DATA + acc_clause_list
 
-acc_loop                 = ACC_START + LOOP + acc_clause_list + doLoop
-acc_parallel_loop        = ACC_START + PARALLEL + LOOP + acc_clause_list + doLoop
-ACC_END_PARALLEL_LOOP    = ACC_END + PARALLEL + LOOP
-acc_parallel_loop_region = acc_parallel_loop + ACC_END_PARALLEL
-acc_kernels_loop         = ACC_START + KERNELS + LOOP + acc_clause_list + doLoop
-ACC_END_KERNELS_LOOP     = ACC_END + KERNELS + LOOP
-acc_kernels_loop_region  = acc_kernels_loop + ACC_END_KERNELS
+acc_loop          = ACC_START + LOOP + acc_clause_list
+
+# kernels / parallels
+acc_kernels         = ACC_START + KERNELS + acc_clause_list
+acc_parallel        = ACC_START + PARALLEL + acc_clause_list
+acc_parallel_loop = ACC_START + PARALLEL + LOOP + acc_clause_list
+acc_kernels_loop  = ACC_START + KERNELS + LOOP + acc_clause_list
+
+ACC_END_KERNELS       = ACC_END + KERNELS
+ACC_END_PARALLEL      = ACC_END + PARALLEL
+ACC_END_PARALLEL_LOOP = ACC_END_PARALLEL.copy() + LOOP # copy() allows us to attach different parse action
+ACC_END_KERNELS_LOOP  = ACC_END_KERNELS.copy()  + LOOP
 
 acc_routine =  ACC_START + ROUTINE + Optional(LPAR + identifier + RPAR,default = None) + acc_clause_list
-
-acc_update = ACC_START + CASELESS_LITERAL("update").suppress() + acc_clause_list
-
 acc_declare = ACC_START + DECLARE + acc_clause_list
-
-acc_atomic = ACC_START + ATOMIC + Optional(acc_clause_list , default = "update") +\
+acc_atomic  = ACC_START + ATOMIC + Optional(acc_clause_list,default = "update") +\
                block +\
            Optional( ACC_END + ATOMIC )
 acc_serial = ACC_START + SERIAL + acc_clause_list +\
@@ -119,10 +111,16 @@ acc_serial = ACC_START + SERIAL + acc_clause_list +\
             ACC_END + SERIAL
 acc_cache = ACC_START + CACHE + LPAR + accVarList + RPAR
 
-acc_directive = acc_kernels | acc_parallel | accWait | accHostData | accData | accEnterData | accExitData | acc_loop | acc_routine | acc_atomic | acc_update | acc_serial | acc_cache | acc_declare
+# regions
+acc_kernels_region       = acc_kernels + block + Optional(ACC_END_KERNELS) 
+acc_parallel_region      = acc_parallel + block + Optional(ACC_END_PARALLEL)
+acc_parallel_loop_region = acc_parallel_loop + annotatedDoLoop + Optional(ACC_END_PARALLEL_LOOP)
+acc_kernels_loop_region  = acc_kernels_loop  + annotatedDoLoop + Optional(ACC_END_KERNELS_LOOP)
 
-accKernelBodyDirective = acc_loop | acc_serial | acc_atomic
-accLoopKernel          = acc_parallel_loop_region | acc_kernels_loop_region | acc_parallel_region | acc_kernels_region # emits 1 token
+accDirective = acc_kernels_loop | acc_parallel_loop | acc_kernels | acc_parallel | acc_wait | acc_host_data | acc_data | acc_enter_data | acc_exit_data | acc_loop | acc_routine | acc_atomic | acc_update | acc_serial | acc_cache | acc_declare
+accKernelBodyDirective = acc_loop | acc_serial | acc_atomic | acc_cache
+
+accLoopKernel = acc_parallel_loop_region | acc_kernels_loop_region | acc_parallel_region | acc_kernels_region # emits 1 token
 
 # Ideally pass the following:
 # multiple acc directives/lines 

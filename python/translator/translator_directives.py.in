@@ -14,17 +14,19 @@ class IComputeConstruct():
         """ only OMP """
         return []
     def devicePtrs(self):
-        return []
-    def presentVars(self): 
-        """ CUF: all arrays are present, ACC: all arrays present if default(present) """
+        """ CUF: """
         return []
     def createAllocVars(self):
         return []
+    def deleteReleaseVars(self):
+        return []
     def copyMapToFromVars(self):
         return []
-    def copyinMapToVars(self):
+    def copyinMapToAttachVars(self):
+        """ ACC: also include attach vars """
         return []
-    def copyoutMapFromVars(self):
+    def copyoutMapFromDetachVars(self):
+        """ ACC: also include attach vars """
         return []
 
 class ILoopAnnotation():
@@ -59,12 +61,14 @@ class ILoopAnnotation():
         return []
 
 class TTDoLoop(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         # Assignment, number | variable
         self._annotation, self._begin, self._end, self._step, self._body = tokens
         self._threadIndex = None # "z","y","x"
         if self._annotation is None:
             self._annotation = ILoopAnnotation()
+    def loopAnnotation():
+        return self._annotation
     def loopVarCStr():
         return makeCStr(self._begin._lhs)
     def setHipThreadIndex(self,name):

@@ -6,6 +6,8 @@ from pyparsing import *
 # local modules
 from grammar.cudafor import *
 
+# The module executes the content of this module can set
+# the GRAMMAR_DIR global variable beforehand.
 if not 'GRAMMAR_DIR' in globals():
     GRAMMAR_DIR = os.path.dirname(os.path.abspath(__file__))
 if not 'CASELESS' in globals():

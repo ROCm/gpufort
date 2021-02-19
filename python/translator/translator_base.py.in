@@ -11,11 +11,12 @@ KEYWORDS = KEYWORDS.lower().split(" ")
 ## Define actions
 class TTNode(object):
     def __init__(self, s, loc, tokens):
+       self._input    = s
        self._location = loc
-       self.assignFields(tokens)
+       self._assignFields(tokens)
     def __str__(self):
        return self.__class__.__name__ + ':' + str(self.__dict__)
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         pass
     def cStr(self):
         pass

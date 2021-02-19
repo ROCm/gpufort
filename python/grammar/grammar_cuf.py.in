@@ -18,7 +18,8 @@ kernelLaunchArgs = Group(Suppress("<<<") + \
   Suppress(">>>")) # grid,threadBlock,shmem,stream
 numLoopsToMapArg = Optional(LPAR + pyparsing_common.integer + RPAR,default=1)
 
-cuf_kernel_do = PRAGMA + CUF + KERNEL + DO + numLoopsToMapArg + Optional(kernelLaunchArgs,default=["*","*",0,"0"]) + doLoop
+# directives
+cuf_kernel_do = PRAGMA + CUF + KERNEL + DO + numLoopsToMapArg + Optional(kernelLaunchArgs,default=["*","*",0,"0"])
 
 # kernelextractor/analysis
 ALLOCATE,ALLOCATED,DEALLOCATE = makeCaselessLiteral("allocate,allocated,deallocate",suppress=True)

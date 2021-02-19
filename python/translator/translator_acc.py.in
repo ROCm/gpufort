@@ -48,27 +48,27 @@ singleDirDict = {
 #}
 
 class TTAccCollapse(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._value = tokens[0]
     def value(self):
         return int(self._value._value)
 class TTAccIf(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._condition = tokens[0]
     def condition(self):
         return self._condition.fStr()
 class TTAccGang(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._value = tokens[0]
     def value(self):
         return self._value
 class TTAccWorker(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._value = tokens[0]
     def value(self):
         return self._value
 class TTAccVector(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._value = tokens[0]
     def value(self):
         return self._value
@@ -77,13 +77,12 @@ class TTAccNumGangs(TTAccGang):
 class TTAccNumWorkers(TTAccWorker):
     pass
 class TTAccAsync(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._queue = tokens[0]
     def queue(self):
         return self._queue
-
 class TTAccReductionVar(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._operator, self._var = tokens
         # post-process
         # "+" "*" "max" "min" "iand" "ior" "ieor" ".and." ".or." ".eqv." ".neqv."
@@ -91,7 +90,7 @@ class TTAccReductionVar(TTNode):
         self._operator = self._operator.replace("+","add")
         self._operator = self._operator.replace("*","mult")
 class TTAccReduction(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._reductions = findAll(tokens[0],TTAccReductionVar)
     def reductionVars(self):
         result = {}
@@ -100,19 +99,24 @@ class TTAccReduction(TTNode):
             result[varName] = makeCStr(red._operator).lower() 
         return result
 class TTAccPrivate(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._threadPrivateVars = tokens[0]
     def threadPrivateVarNames(self):
         return [ var.varName().lower() for var in self._threadPrivateVars ]
 
 class TTAccDirective(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
        self._clauses = tokens
     def ompFStr(self):
-       pass        
+       assert False, "Not implemented"     
+
+class TTAccWait(TTAccDirective):
+    def ompFStr(self):
+       result = "!$omp taskwait" 
+    def hipFStr(self):
 
 class TTAccLoopDirective(TTAccDirective,ILoopAnnotation):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
        self._clauses = tokens
     def numCollapse(self):
         node = findFirst(self._clauses,TTAccCollapse)
@@ -155,7 +159,7 @@ class TTAccParallelLoop(TTAccLoop):
     pass
 
 class TTAccLoopKernel(TTLoopKernel):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._mainAccDirective, self._body = tokens
         self._launchInfo = LaunchInfo()
         self._launchInfo._numLoopsToMap = 1

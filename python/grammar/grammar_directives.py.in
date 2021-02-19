@@ -1,3 +1,5 @@
 PRAGMA               = Regex(r"[!c\*]\$").suppress()
 genericPragma        = Regex(r"[!c\*]\$\w+")
 genericPragmaNewline = Regex(r"[!c\*]\$\w+\&")
+
+annotatedDoLoop = Forward()

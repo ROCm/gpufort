@@ -1,6 +1,12 @@
 # Combine expressions from all grammar definitions
-loop = acc_loop | doLoop | whileLoop
+annotatedDoLoop <<= Optional( acc_parallel_loop | acc_kernels_loop | acc_loop | cuf_kernel_do, default=None) +\
+    doLoop +\
+  Optional(ACC_END_PARALLEL_LOOP | ACC_END_KERNELS_LOOP) # will be consumed but suppressed
 
-statement = accKernelBodyDirective | comment | printStatement | controlStatements | subroutineCall | ifElseBlock | singleLineIf | selectCaseBlock | loop | matrixAssignment | complexAssignment | assignment | funcCall
+statement = accKernelBodyDirective | comment | printStatement | controlStatements | subroutineCall | ifElseBlock | singleLineIf | selectCaseBlock | annotatedDoLoop | whileLoop | matrixAssignment | complexAssignment | assignment | funcCall
 
 block <<= Group(ZeroOrMore(statement))
+
+# reduced number of possible statements in "body" of single-line if statement
+singleLineIfBody <<= comment | printStatement | controlStatements | subroutineCall | matrixAssignment | complexAssignment | assignment | funcCall 
+

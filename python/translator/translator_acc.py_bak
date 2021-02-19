@@ -3,121 +3,121 @@
 #import utils
 
 class TTAccIf(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.condition = tokens[0]
     def cStr(self):
         return makeCStr(self.condition)
 
 class TTAccSelf(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.condition = tokens[0]
     def cStr(self):
         return makeCStr(self.condition)
 
 class TTAccAsync(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.queue = tokens[0]
     def cStr(self):
         return makeCStr(self.queue)
 
 class TTAccWait(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.queues = tokens[0]
     def cStr(self):
         return makeCStr(self.queues)
 
 class TTAccNumGangs(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.gangs = tokens[0]
     def cStr(self):
         return makeCStr(self.gangs)
 
 class TTAccNumWorkers(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.workers = tokens[0]
     def cStr(self):
         return makeCStr(self.workers)
 
 class TTAccVectorLen(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.vectorlen = tokens[0]
     def cStr(self):
         return makeCStr(self.vectorlen)
 
 class TTAccCopy(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.copy = tokens[0]
     def cStr(self):
         return makeCStr(self.copy)
 
 class TTAccCopyIn(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.copyin = tokens[0]
     def cStr(self):
         return makeCStr(self.copyin)
 
 class TTAccCopyOut(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.copyout = tokens[0]
     def cStr(self):
         return makeCStr(self.copyout)
 
 class TTAccCreate(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.create = tokens[0]
     def cStr(self):
         return makeCStr(self.create)
 
 class TTAccPresent(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.present = tokens[0]
     def cStr(self):
         return makeCStr(self.present)
 
 class TTAccDevicePtr(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.deviceptr = tokens[0]
     def cStr(self):
         return makeCStr(self.deviceptr)
 
 class TTAccDefault(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.default = tokens[0]
     def cStr(self):
         return makeCStr(self.default)
 
 class TTAccPrivate(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.private = tokens[0]
     def cStr(self):
         return makeCStr(self.private)
 
 class TTAccFirstPrivate(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.firstprivate = tokens[0]
     def cStr(self):
         return makeCStr(self.firstprivate)
 
 class TTAccNoCreate(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.nocreate = tokens[0]
     def cStr(self):
         return makeCStr(self.nocreate)
 
 class TTAccDelete(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.delete = tokens[0]
     def cStr(self):
         return makeCStr(self.delete)
 
 class TTAccReduceOperator(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.operator = tokens[0]
     def cStr(self):
         return makeCStr(self.operator)
 
 class TTAccReduction(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.operator = tokens[0]
         self.var = tokens[1]
     def cStr(self):
@@ -132,115 +132,115 @@ class TTAccReduction(TTNode):
         return makeCStr(self.operator)+", "+str(processList(self.var))
 
 class TTAccDetach(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.detach=tokens[0]
     def cStr(self):
         return makeCStr(self.detach)
 
 class TTAccUseDevice(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.usedevice=tokens[0]
     def cStr(self):
         return makeCStr(self.usedevice)
 
 class TTAccCollapse(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.collapse=tokens[0]
     def cStr(self):
         return makeCStr(self.collapse)
    
 class TTAccDevice(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.device=tokens[0]
     def cStr(self):
         return makeCStr(self.device)
 
 class TTAccBind(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.bind=tokens[0]
     def cStr(self):
         return makeCStr(self.bind)
 
 class TTAccDeviceResident(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.device_resident=tokens[0]
     def cStr(self):
         return makeCStr(self.device_resident)
 
 class TTAccLink(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.link=tokens[0]
     def cStr(self):
         return makeCStr(self.link)
 
 class TTAccTile(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.tile=tokens[0]
     def cStr(self):
         return makeCStr(self.tile)
 
 class TTAccSeq(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.seq=tokens[0]
     def cStr(self):
         return self.seq
 
 class TTAccAuto(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.auto=tokens[0]
     def cStr(self):
         return self.auto
 
 class TTAccIndependent(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.independent=tokens[0]
     def cStr(self):
         return self.independent
 
 class TTAccRead(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.read=tokens[0]
     def cStr(self):
         return self.read
 
 class TTAccWrite(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.write=tokens[0]
     def cStr(self):
         return self.write
 
 class TTAccUpdate(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.update=tokens[0]
     def cStr(self):
         return self.update
 
 class TTAccCapture(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.capture=tokens[0]
     def cStr(self):
         return self.capture
 
 class TTAccGang(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.gang,self.numgang = tokens
     def cStr(self):
         return self.gang + "," + makeCStr(self.numgang)
 
 class TTAccVector(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.vector,self.numvector = tokens
     def cStr(self):
         return self.vector + "," + makeCStr(self.numvector)
 
 class TTAccWorker(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.worker,self.numworker = tokens
     def cStr(self):
         return self.worker + "," + makeCStr(self.numworker)
 
 class TTAccPragma(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         def findClause(expr):
             temp = findAll(self.clauses,expr)
             if len(temp) > 0:
@@ -367,7 +367,7 @@ class TTAccPragma(TTNode):
         return cStr
 
 class TTAccKernels(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
          #print(tokens)
          self.pragma, self.body  = tokens
     
@@ -396,7 +396,7 @@ class TTAccKernels(TTNode):
         return "{0}if ({1}) {{\n{2}}}".format(hipThreadIndices,"&&".join(hipThreadConditions),makeCStr(self.body))
 
 class TTAccParallel(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.pragma, self.body = tokens
 
     def printTokens(self):
@@ -420,7 +420,7 @@ class TTAccParallel(TTNode):
         return "{0}if ({1}) {{\n{2}}}".format(hipThreadIndices,"&&".join(hipThreadConditions),makeCStr(self.body))
 
 class TTAccWait(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.pragma = tokens[0]
     def printTokens(self):
         print(self.pragma)
@@ -429,7 +429,7 @@ class TTAccWait(TTNode):
         pass
 
 class TTAccHostData(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.pragma,self.body = tokens
     def printTokens(self):
         print(self.pragma)
@@ -454,7 +454,7 @@ class TTAccHostData(TTNode):
         return "{0}if ({1}) {{\n{2}}}".format(hipThreadIndices,"&&".join(hipThreadConditions),makeCStr(self.body))
 
 class TTAccData(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.pragma,self.body = tokens
     def printTokens(self):
         print(self.pragma)
@@ -479,7 +479,7 @@ class TTAccData(TTNode):
         return "{0}if ({1}) {{\n{2}}}".format(hipThreadIndices,"&&".join(hipThreadConditions),makeCStr(self.body))
 
 class TTAccEnterData(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.pragma = tokens[0]
     def printTokens(self):
         print(self.pragma)
@@ -488,7 +488,7 @@ class TTAccEnterData(TTNode):
         pass
 
 class TTAccExitData(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.pragma = tokens[0]
     def printTokens(self):
         print(self.pragma)
@@ -497,7 +497,7 @@ class TTAccExitData(TTNode):
         pass
 
 class TTAccLoop(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.pragma = tokens[0]
     def printTokens(self):
         print(self.pragma[0])
@@ -506,7 +506,7 @@ class TTAccLoop(TTNode):
         return self.pragma[0].cStr() 
 
 class TTAccRoutine(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.name, self.pragma = tokens
     def printTokens(self):
         print(self.name)
@@ -515,7 +515,7 @@ class TTAccRoutine(TTNode):
         return makeCStr(self.name)+makeCStr(self.pragma[0])
 
 class TTAccAtomic(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.pragma, self.body = tokens
     def printTokens(self):
         print(self.pragma)
@@ -539,7 +539,7 @@ class TTAccAtomic(TTNode):
         return "{0}if ({1}) {{\n{2}}}".format(hipThreadIndices,"&&".join(hipThreadConditions),makeCStr(self.body))
 
 class TTAccUpdate(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.pragma = tokens[0]
     def printTokens(self):
         print(self.pragma)
@@ -547,7 +547,7 @@ class TTAccUpdate(TTNode):
         pass
 
 class TTAccDeclare(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.pragma = tokens[0]
     def printTokens(self):
         print(self.pragma)
@@ -555,7 +555,7 @@ class TTAccDeclare(TTNode):
         pass
 
 class TTAccSerial(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.pragma, self.body = tokens
     def printTokens(self):
         print(self.pragma)
@@ -579,7 +579,7 @@ class TTAccSerial(TTNode):
         return "{0}if ({1}) {{\n{2}}}".format(hipThreadIndices,"&&".join(hipThreadConditions),makeCStr(self.body))
 
 class TTAccCache(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.list = tokens[0]
     def printTokens(self):
         print(self.list)
@@ -590,7 +590,7 @@ class TTAccCache(TTNode):
         return temp
 
 class TTAccConstruct(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.construct = tokens[0]
     def printTokens(self):
         print(self.construct)
@@ -668,7 +668,7 @@ class TTAccConstruct(TTNode):
         return self.variables(self.construct.pragma[0].create)
 
 class TTAccSubroutine(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self.qualifier = tokens[0]
         self.name      = tokens[1]
         self.args      = tokens[2]
@@ -751,7 +751,7 @@ class TTAccSubroutine(TTNode):
 #accConstruct.setParseAction(TTAccConstruct)
 
 class TTAccLoopKernel(TTLoopKernel):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._launchInfo, self._body = tokens
     def cStr(self):
         doLoops = findAll(self._body,TTDoLoop)

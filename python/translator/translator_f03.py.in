@@ -16,7 +16,7 @@ def flattenArithmeticExpression(expr,converter=makeCStr):
     return descend(expr)       
 
 class TTSimpleToken(TTNode):
-      def assignFields(self,tokens):
+      def _assignFields(self,tokens):
           self._text = " ".join(tokens)
       def cStr(self):
           return "{};".format(self._text.lower())
@@ -24,7 +24,7 @@ class TTSimpleToken(TTNode):
           return str(self._text)
 
 class TTCommentedOut(TTNode):
-      def assignFields(self,tokens):
+      def _assignFields(self,tokens):
           self._text = " ".join(tokens)
       def cStr(self):
           return "// {}\n".format(self._text)
@@ -34,7 +34,7 @@ class TTIgnore(TTNode):
           return ""
 
 class TTLogical(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._value = tokens[0]
     def cStr(self):
         return "true" if self._value.lower() == ".true." else "false"
@@ -42,7 +42,7 @@ class TTLogical(TTNode):
         return self._value
 
 class TTNumber(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._value = tokens[0]
     def cStr(self):
         parts = self._value.replace("d","e").split("_")
@@ -56,7 +56,7 @@ class TTNumber(TTNode):
 
 class TTDatatype_Comment(TTNode):
     # generates object Datatype{'type' : '...', 'kind' : '...'}
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._type   = tokens[0]
         self._kind   = tokens[1][0]
         self._length = tokens[1][1]
@@ -94,7 +94,7 @@ class TTDatatype_Comment(TTNode):
 
 class TTDatatype_Convert(TTNode):
     # generates object Datatype{'type' : '...', 'kind' : '...'}
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._type   = tokens[0]
         self._kind   = tokens[1][0]
         self._length = tokens[1][1]
@@ -133,7 +133,7 @@ class TTDatatype_Convert(TTNode):
         return result            
 
 class TTIdentifier(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._name = tokens[0]
     def fStr(self):
         return str(self._name)
@@ -171,7 +171,7 @@ class IValue:
             return []
 
 class TTRvalue(TTNode,IValue):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._sign = tokens[0]
         self._value = tokens[1]
         self._reductionIndex = ""
@@ -184,7 +184,7 @@ class TTRvalue(TTNode,IValue):
             result += "[{idx}]".format(idx=self._reductionIndex) 
         return result
 class TTLvalue(TTNode,IValue):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._value = tokens[0]
         self._reductionIndex = ""
         #print("{0}: {1}".format(self.cStr(),self.location))
@@ -197,7 +197,7 @@ class TTLvalue(TTNode,IValue):
         return result
 
 class TTFunctionCallOrTensorAccess(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._name = tokens[0]
         self._args = tokens[1]
     def matrixRangeArgs(self):
@@ -239,7 +239,7 @@ class TTFunctionCallOrTensorAccess(TTNode):
         return "{0}({1})".format(name,",".join([makeFStr(s) for s in self._args]))
 
 class TTConvertToExtractReal (TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._ref, self._kind = tokens
     def cStr(self):
         cType = convertToCType("real",self._kind).replace(" ","_") # TODO check if his anything else than double or float
@@ -251,7 +251,7 @@ class TTConvertToExtractReal (TTNode):
         return result + ")"
 
 class TTConvertToDouble(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._ref, self._kind = tokens
     def cStr(self):
         return "make_double({0})".format(makeCStr(self._ref)) # rely on C++ compiler to make the correct type conversion
@@ -259,7 +259,7 @@ class TTConvertToDouble(TTNode):
         return "DBLE({0})".format(makeFStr(self._ref)) # rely on C++ compiler to make the correct type conversion
 
 class TTConvertToComplex(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._x, self._y, self._kind = tokens
     def cStr(self):
         cType = convertToCType("complex",self._kind,default=None,floatComplex="floatComplex",doubleComplex="doubleComplex")
@@ -271,7 +271,7 @@ class TTConvertToComplex(TTNode):
         return result + ")"
 
 class TTConvertToDoubleComplex(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._x, self._y, self._kind = tokens
     def cStr(self):
         cType="doubleComplex"
@@ -281,19 +281,19 @@ class TTConvertToDoubleComplex(TTNode):
         return result + ")"
 
 class TTExtractImag(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._ref, self._kind = tokens
     def cStr(self):
         return "{0}._y".format(makeCStr(self._ref))
 
 class TTConjugate(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._ref, self._kind = tokens
     def cStr(self):
         return "conj({0})".format(makeCStr(self._ref))
 
 class TTStructElem(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._type, self._element = tokens
         #print(self._type)
     def lastElementMatrixRangeArgs(self):
@@ -330,13 +330,13 @@ class TTStructElem(TTNode):
         return makeFStr(self._type) + "%" + makeFStr(self._element)
 
 class TTSubroutineCall(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._subroutine=tokens[0]
     def cStr(self):
         return self._subroutine.cStr(isDefinitivelyFunction=True)
 
 class TTOperator(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._name = tokens[0]
     def cStr(self):
         f2c = {
@@ -359,7 +359,7 @@ class TTOperator(TTNode):
         return str(self._name)
 
 class TTArithmeticExpression(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._expr = tokens
     def cStr(self):
         return flattenArithmeticExpression(self._expr)
@@ -367,7 +367,7 @@ class TTArithmeticExpression(TTNode):
         return flattenArithmeticExpression(self._expr,makeFStr)
 
 class TTComplexArithmeticExpression(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._real, self._imag = tokens[0]
     def cStr(self):
         return "make_hipComplex({real},{imag})".format(\
@@ -379,7 +379,7 @@ class TTComplexArithmeticExpression(TTNode):
                 imag=flattenArithmeticExpression(self._imag,makeFStr))
 
 class TTPower(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._base, self._exp = tokens
     def hipFStr(self):
         sign = ""
@@ -398,7 +398,7 @@ class TTPower(TTNode):
             base=makeCStr(self._base),exp=makeCStr(self._exp))
 
 class TTAssignment(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._lhs, self._rhs = tokens
     def convertToDoLoopNestIfNecessary(self):
         """
@@ -457,7 +457,7 @@ class TTAssignment(TTNode):
            return self._lhs.fStr() + "=" + flattenArithmeticExpression(self._rhs,converter=makeFStr) + ";\n"
 
 class TTRange(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._begin, self._end = tokens
         del self._tokens
     def fStr(self):
@@ -466,7 +466,7 @@ class TTRange(TTNode):
         return self.fStr()
 
 class TTComplexAssignment(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._lhs, self._rhs = tokens
         
     def cStr(self):
@@ -479,7 +479,7 @@ class TTComplexAssignment(TTNode):
         return result
 
 class TTMatrixAssignment(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._lhs, self._rhs = tokens
         
     def cStr(self):
@@ -493,7 +493,7 @@ class TTMatrixAssignment(TTNode):
         return result
 
 class TTIntentQualifier(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         #print("found intentQualifier")
         #print(tokens[0])
         self._intent = tokens[0][0]
@@ -504,7 +504,7 @@ class TTIntentQualifier(TTNode):
         return "intent({0})".format(self._intent)
 
 class TTMatrixRange(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._lbound, self._ubound, self._stride = tokens 
         self._loopVar = ""
     def setLoopVar(self,name):
@@ -568,7 +568,7 @@ class TTBounds(TTNode):
     dimensionValue = ( matrixRange | arithmeticExpression | Literal("*"))
     ```
     """
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._bounds = []
         if tokens != None:
             self._bounds = tokens[0]
@@ -716,7 +716,7 @@ class TTBounds(TTNode):
         return "({0})".format(",".join(makeFStr(el) for el in self._bounds)) 
 
 class TTDimensionQualifier(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._bounds = tokens[0][0]
     def cStr(self):
         return makeCStr(self._bounds) 
@@ -731,7 +731,7 @@ class TTDeclaredVariable(TTNode):
     declarationVariable = Group( identifier + Optional(LPAR + dimensionList + RPAR,default=[]) + Optional(EQ + ( matrixArithmeticExpression | complexArithmeticExpression | arithmeticExpression ), default=None)) # ! emits [*,[*],*]
     ```
     """
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._name   = tokens[0][0]
         self._bounds = tokens[0][1]
         self._rhs    = tokens[0][2]
@@ -801,7 +801,7 @@ class TTDeclaration(TTNode,Attributed):
     declaration = datatype + Optional(COMMA + qualifierList,default=[]) + COLONS + Group(delimitedList(declarationVariable))   # ! emits *,[*],[*]
     ```
     """
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         #declaration = datatype + Optional(COMMA + attributeList,default=[]) + COLONS + Group(delimitedList(declarationVariable))   # ! emits *,[*],[*]
         self._datatype, self._qualifiers, self._rhs = tokens
         self._ignoreList = []
@@ -1005,7 +1005,7 @@ class TTDeclaration(TTNode,Attributed):
             return result.rstrip(",")
 
 class TTAttributes(TTNode,Attributed):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         #print(tokens)
         self._qualifiers, self._rhs = tokens
         self._ignore = False
@@ -1025,7 +1025,7 @@ class TTAttributes(TTNode,Attributed):
             return ""
 
 class TTDoLoop(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         # Assignment, number | variable
         self._directive, self._begin, self._end, self._step, self._body = tokens
         self._threadIndex = None # "z","y","x"
@@ -1081,7 +1081,7 @@ class TTStatement(TTNode):
     Mainly used for searching expressions and replacing them in the translator AST.
     One example is converting to colon operations to do loops.
     """
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._statement = tokens
     def cStr(self):
         return makeCStr(self._statement)
@@ -1089,7 +1089,7 @@ class TTStatement(TTNode):
         return makeFStr(self._statement)
 
 class TTSingleLineIf(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._condition, self._body, self._semicolon= tokens
     def cStr(self):
         bodyContent = flattenBody(self._body) 
@@ -1105,7 +1105,7 @@ class TTSingleLineIf(TTNode):
         return self.multilineIfFStr()
 
 class TTIfElseBlock(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._ifBlock, self._elseIfBlocks, self._elseBlock = tokens
     def cStr(self):
         condition = self._ifBlock[0]
@@ -1121,7 +1121,7 @@ class TTIfElseBlock(TTNode):
         return cStr
 
 class TTIfElseIf(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._else      = tokens[0]
         self._condition = tokens[2]
     def cStr(self):
@@ -1132,19 +1132,19 @@ class TTIfElseIf(TTNode):
             return "if ({0}) {{\n".format(makeCStr(condition))
 
 class TTElse(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         pass
     def cStr(self):
         return "} else {\n"
 
 class TTEndIf(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         pass
     def cStr(self):
         return "}\n"
 
 class TTWhile(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._condition, self._body = tokens
         
     def cStr(self):    
@@ -1154,7 +1154,7 @@ class TTWhile(TTNode):
         return cStr
 
 class TTSubroutine(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._qualifier = tokens[0]
         self._name      = tokens[1]
         self._args      = tokens[2]

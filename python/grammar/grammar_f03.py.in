@@ -222,14 +222,10 @@ declaration = declarationLhs + Group(delimitedList(declaredVariable))   # ! emit
 #precisionDeclaration      = integerType + COMMA + qualifierList + COLONS + Group(delimitedList(precisionDeclaredVariableVariable))   # ! emits *,[*],[*]
 
 # Define forward-declared block
-comment = Combine(Literal("!") + ~(~White()+Literal("$")) + restOfLine())
-printStatement = Combine(oneOf("print write read format",caseless=CASELESS) + restOfLine)
-returnStatement = CASELESS_LITERAL("return")
+comment           = Combine(Literal("!") + ~(~White()+Literal("$")) + restOfLine())
+printStatement    = Combine(oneOf("print write read format",caseless=CASELESS) + restOfLine)
+returnStatement   = CASELESS_LITERAL("return")
 controlStatements = returnStatement
-
-statement = comment | printStatement | controlStatements | subroutineCall | ifElseBlock | singleLineIf | selectCaseBlock | doLoop | whileLoop | matrixAssignment | complexAssignment | assignment | funcCall 
-block <<= Group(ZeroOrMore(statement))
-singleLineIfBody <<= comment | printStatement | controlStatements | subroutineCall | matrixAssignment | complexAssignment | assignment | funcCall 
 
 ## Attributes // example: attributes
 attributes=CASELESS_LITERAL("attributes").suppress() + LPAR + qualifierList + RPAR + COLONS + Group(delimitedList(identifier))
@@ -253,7 +249,7 @@ NONSTRUCTURE = DO|IF|SELECT|WHERE|FORALL|FOREACH|TYPE|INTERFACE
 only = Group(identifier + Optional(PEQ + identifier,default=None))
 use = USE + Optional(COMMA + INTRINSIC,default=None) + identifier + Optional(COMMA + ONLY + singleColon.suppress() + Group(delimitedList(only)),default=[]) # emits 3 tokens; [*,*,[*]] 
 implicit = IMPLICIT + NONE # TODO no complete description
-subroutineBody = Group(ZeroOrMore(use | implicit | declaration | attributes | statement))
+subroutineBody = Group(ZeroOrMore(use | implicit | declaration | attributes | block))
 
 subroutineStart = Optional(ATTRIBUTES + LPAR + identifier + RPAR,default="host") + SUBROUTINE + identifier +\
         Optional(LPAR + Group(delimitedList(identifier)) + RPAR, default=[]) # emits 3 tokens -> *,*,[*]

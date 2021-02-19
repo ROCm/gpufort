@@ -177,19 +177,19 @@ class TTLoopKernel(TTNode,IComputeConstruct):
              #   reductionCandidates.append(lvName)
         return set(identifierNames)
     def problemSize(self):
-        numLoopsToMap = int(self._launchInfo._numLoopsToMap)
-        if LOOP_COLLAPSE_STRATEGY == "grid" or numLoopsToMap == 1:
-            numLoopsToMap = min(3,numLoopsToMap)
-            result = ["-1"]*numLoopsToMap
+        numOuterLoopsToMap = int(self._launchInfo._numOuterLoopsToMap)
+        if LOOP_COLLAPSE_STRATEGY == "grid" or numOuterLoopsToMap == 1:
+            numOuterLoopsToMap = min(3,numOuterLoopsToMap)
+            result = ["-1"]*numOuterLoopsToMap
             doLoops = findAll(self._body,TTDoLoop)
             for i,loop in enumerate(doLoops):
-                if i < numLoopsToMap:
+                if i < numOuterLoopsToMap:
                     result[i] = loop.problemSizeCStr()
             return result
         else: # "collapse"
             result = ""
             doLoops = findAll(self._body,TTDoLoop)
-            for loop in reversed(doLoops[0:numLoopsToMap]):
+            for loop in reversed(doLoops[0:numOuterLoopsToMap]):
                 if len(result):
                     result += "*"
                 result += loop.problemSizeCStr()
@@ -202,10 +202,10 @@ class TTLoopKernel(TTNode,IComputeConstruct):
     def privateGangVars(self):
         return self._privateGangVars
     def cStr(self):
-        numLoopsToMap = int(self._launchInfo._numLoopsToMap)
-        if LOOP_COLLAPSE_STRATEGY == "grid" and numLoopsToMap <= 3:
-            dim=numLoopsToMap
-        else: # "collapse" or numLoopsToMap > 3
+        numOuterLoopsToMap = int(self._launchInfo._numOuterLoopsToMap)
+        if LOOP_COLLAPSE_STRATEGY == "grid" and numOuterLoopsToMap <= 3:
+            dim=numOuterLoopsToMap
+        else: # "collapse" or numOuterLoopsToMap > 3
             dim=1
         tidx = "__gidx{dim}".format(dim=dim)
         # 1. unpack colon (":") expressions 
@@ -223,13 +223,13 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             reductionPreamble += "reduce_op_{op}::init({var}[{tidx}]);\n".format(op=op,var=var,tidx=tidx)
         # 3. collapse and transform do-loops
         doLoops = findAll(self._body,TTDoLoop)
-        numLoopsToMap = int(self._launchInfo._numLoopsToMap)
-        if numLoopsToMap is 1 or (LOOP_COLLAPSE_STRATEGY == "grid" and numLoopsToMap <= 3):
-            if numLoopsToMap > 3:
+        numOuterLoopsToMap = int(self._launchInfo._numOuterLoopsToMap)
+        if numOuterLoopsToMap is 1 or (LOOP_COLLAPSE_STRATEGY == "grid" and numOuterLoopsToMap <= 3):
+            if numOuterLoopsToMap > 3:
                 logging.getLogger("").warn("loop collapse strategy grid chosen with nested loops > 3")
-            numLoopsToMap = min(3,numLoopsToMap)
+            numOuterLoopsToMap = min(3,numOuterLoopsToMap)
             threadIndices = ["x","y","z"]
-            for i in range(0,3-numLoopsToMap):
+            for i in range(0,3-numOuterLoopsToMap):
                 threadIndices.pop()
             indices    = ""
             conditions = []
@@ -239,11 +239,11 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 loop.setHipThreadIndex(threadIndices.pop())
                 indices   += loop.hipThreadIndexCStr()
                 conditions.append(loop.hipThreadBoundCStr()) 
-        else: # "collapse" or numLoopsToMap > 3
+        else: # "collapse" or numOuterLoopsToMap > 3
             indices    = ""
             conditions = []
             denominatorFactors = []
-            for loop in reversed(doLoops[0:numLoopsToMap]):
+            for loop in reversed(doLoops[0:numOuterLoopsToMap]):
                 loop.setHipThreadIndex(tidx)
                 # denominator1 = "" 
                 # denominator2 = "/" + "(end1 - begin1 + 1)"

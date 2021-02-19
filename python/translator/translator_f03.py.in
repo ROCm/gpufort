@@ -1190,7 +1190,7 @@ class TTSubroutine(TTNode):
 
 class LaunchInfo():
     def __init__(self):
-        self._numLoopsToMap = 1 
+        self._numOuterLoopsToMap = 1 
         self._grid        = ["-1"]*3
         self._block       = ["-1"]*3
         self._sharedMem   = 0
@@ -1201,7 +1201,7 @@ class LaunchInfo():
         return makeFStr(self._sharedMem)
     def cStr(self):
         result  = "// NOTE: The following information was given in the orignal Cuf kernel pragma:\n"
-        result += "// - Nested outer-most do-loops that are directly mapped to threads: {}\n".format(makeCStr(self._numLoopsToMap))
+        result += "// - Nested outer-most do-loops that are directly mapped to threads: {}\n".format(makeCStr(self._numOuterLoopsToMap))
         result += "// - Number of blocks (CUDA): {}. ('-1' means not specified)\n".format(makeCStr(self._grid))
         result += "// - Threads per block (CUDA): {}. ('-1' means not specified)\n".format(makeCStr(self._block))
         result += "// - Shared Memory: {}\n".format(makeFStr(self._sharedMem))
@@ -1215,7 +1215,7 @@ class LaunchInfo():
         This might differ from the number of nested loops.
         """
         if LOOP_COLLAPSE_STRATEGY=="grid":
-            return int(self._numLoopsToMap)
+            return int(self._numOuterLoopsToMap)
         else:
             return 1
 

@@ -70,7 +70,7 @@ class TTCufPragma(TTNode,LaunchInfo):
                 for i,d in enumerate(dim3.split(",")):
                    result[i] = d
             return result
-        self._numLoopsToMap = tokens[0]
+        self._numOuterLoopsToMap = tokens[0]
         self._grid        = postprocessDim3(tokens[1][0])
         self._block       = postprocessDim3(tokens[1][1])
         self._sharedMem   = tokens[1][2]

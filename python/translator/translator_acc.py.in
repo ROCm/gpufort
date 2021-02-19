@@ -114,8 +114,9 @@ class TTAccWait(TTAccDirective):
     def ompFStr(self):
        result = "!$omp taskwait" 
     def hipFStr(self):
+       
 
-class TTAccLoopDirective(TTAccDirective,ILoopAnnotation):
+class TTAccLoop(TTAccDirective,ILoopAnnotation):
     def _assignFields(self,tokens):
        self._clauses = tokens
     def numCollapse(self):
@@ -162,7 +163,7 @@ class TTAccLoopKernel(TTLoopKernel):
     def _assignFields(self,tokens):
         self._mainAccDirective, self._body = tokens
         self._launchInfo = LaunchInfo()
-        self._launchInfo._numLoopsToMap = 1
+        self._launchInfo._numOuterLoopsToMap = 1
         self._reductionVars = {}
         self._threadPrivateVars = []
         #print(self._mainAccDirective)
@@ -184,7 +185,7 @@ class TTAccLoopKernel(TTLoopKernel):
         # acc collapse(int)
         expr = findFirst(self._mainAccDirective,TTAccCollapse)
         if not expr is None:
-            self._launchInfo._numLoopsToMap = expr.value()
+            self._launchInfo._numOuterLoopsToMap = expr.value()
     def handleReduction(self):
         # acc collapse(int)
         expr = findFirst(self._mainAccDirective,TTAccReduction)
@@ -273,10 +274,10 @@ def convertAccLoopKernel2Hip(fortranSnippet,maxRecursions=30):
         kernelLaunchInfo = LaunchInfo()
         #print(body)
         identifierNames = list(set(filter(lambda x: x.lower() not in KEYWORDS,[makeFStr(ident) for ident in identifier.searchString(body)])))
-        numLoopsToMap     = int(kernelLaunchInfo._numLoopsToMap)
+        numOuterLoopsToMap     = int(kernelLaunchInfo._numOuterLoopsToMap)
         loopVars        = []
         localLvalues    = []
         reductionVars   = []
-        problemSize     = ["TODO unknown"]*numLoopsToMap
+        problemSize     = ["TODO unknown"]*numOuterLoopsToMap
         #print(type(e))
     return cSnippet, problemSize, kernelLaunchInfo, identifierNames, localLvalues, loopVars, reductionVars

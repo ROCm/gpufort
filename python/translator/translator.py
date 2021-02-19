@@ -71,13 +71,13 @@ def convertCufLoopKernel2Hip(fortranSnippet,index=[],maxRecursions=10):
         pragmaLine = fortranSnippet.split("\n")[0]
         body = "\n".join(fortranSnippet.split("\n")[1:])
         kernelLaunchInfo = cufKernelDo.parseString(pragmaLine)[0] 
-        numLoopsToMap = int(kernelLaunchInfo._numLoopsToMap)
+        numOuterLoopsToMap = int(kernelLaunchInfo._numOuterLoopsToMap)
         #print(body)
         identifierNames = list(filter(lambda x: x.lower() not in KEYWORDS,[makeFStr(ident) for ident in identifier.searchString(body)]))
         reductionVars   = []
         loopVars        = []
         localLvalues    = []
-        problemSize = ["TODO unknown"]*numLoopsToMap
+        problemSize = ["TODO unknown"]*numOuterLoopsToMap
         #print(type(e))
         raise(e)
     cSnippet = postprocessCSnippet(cSnippet)
@@ -181,10 +181,10 @@ def convertAccLoopKernel2Hip(fortranSnippet,index=[],maxRecursions=30):
         kernelLaunchInfo = LaunchInfo()
         #print(body)
         identifierNames = list(set(filter(lambda x: x.lower() not in KEYWORDS,[makeFStr(ident) for ident in identifier.searchString(body)])))
-        numLoopsToMap     = int(kernelLaunchInfo._numLoopsToMap)
+        numOuterLoopsToMap     = int(kernelLaunchInfo._numOuterLoopsToMap)
         loopVars        = []
         localLvalues    = []
         reductionVars   = []
-        problemSize     = ["TODO unknown"]*numLoopsToMap
+        problemSize     = ["TODO unknown"]*numOuterLoopsToMap
         #print(type(e))
     return cSnippet, problemSize, kernelLaunchInfo, identifierNames, localLvalues, loopVars, reductionVars

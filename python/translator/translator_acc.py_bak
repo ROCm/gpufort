@@ -380,10 +380,10 @@ class TTAccKernels(TTNode):
     def cStr(self):
         doLoops = findAll(self.body,TTDoLoop)
         print(self.body)
-        #numLoopsToMap = 1
-        numLoopsToMap = min(3,len(doLoops))
+        #numOuterLoopsToMap = 1
+        numOuterLoopsToMap = min(3,len(doLoops))
         threadIndices = ["x","y","z"]
-        for i in range(0,3-numLoopsToMap):
+        for i in range(0,3-numOuterLoopsToMap):
             threadIndices.pop()
         hipThreadIndices    = ""
         hipThreadConditions = []
@@ -405,9 +405,9 @@ class TTAccParallel(TTNode):
 
     def cStr(self):
         doLoops = findAll(self.body,TTDoLoop)
-        numLoopsToMap = 1
+        numOuterLoopsToMap = 1
         threadIndices = ["x","y","z"]
-        for i in range(0,3-numLoopsToMap):
+        for i in range(0,3-numOuterLoopsToMap):
             threadIndices.pop()
         hipThreadIndices = ""
         hipThreadConditions = []
@@ -438,10 +438,10 @@ class TTAccHostData(TTNode):
     def cStr(self):
         doLoops = findAll(self.body,TTDoLoop)
         #print(self.body)
-        #numLoopsToMap = min(3,int(self.pragma.numLoopsToMap))
-        numLoopsToMap = 1
+        #numOuterLoopsToMap = min(3,int(self.pragma.numOuterLoopsToMap))
+        numOuterLoopsToMap = 1
         threadIndices = ["x","y","z"]
-        for i in range(0,3-numLoopsToMap):
+        for i in range(0,3-numOuterLoopsToMap):
             threadIndices.pop()
         hipThreadIndices    = ""
         hipThreadConditions = []
@@ -463,10 +463,10 @@ class TTAccData(TTNode):
     def cStr(self):
         doLoops = findAll(self.body,TTDoLoop)
         #print(self.body)
-        #numLoopsToMap = min(3,int(self.pragma.numLoopsToMap))
-        numLoopsToMap = 1
+        #numOuterLoopsToMap = min(3,int(self.pragma.numOuterLoopsToMap))
+        numOuterLoopsToMap = 1
         threadIndices = ["x","y","z"]
-        for i in range(0,3-numLoopsToMap):
+        for i in range(0,3-numOuterLoopsToMap):
             threadIndices.pop()
         hipThreadIndices    = ""
         hipThreadConditions = []
@@ -523,10 +523,10 @@ class TTAccAtomic(TTNode):
     def cStr(self):
         doLoops = findAll(self.body,TTDoLoop)
         print(self.body)
-        #numLoopsToMap = 1
-        numLoopsToMap = min(3,len(doLoops))
+        #numOuterLoopsToMap = 1
+        numOuterLoopsToMap = min(3,len(doLoops))
         threadIndices = ["x","y","z"]
-        for i in range(0,3-numLoopsToMap):
+        for i in range(0,3-numOuterLoopsToMap):
             threadIndices.pop()
         hipThreadIndices    = ""
         hipThreadConditions = []
@@ -563,10 +563,10 @@ class TTAccSerial(TTNode):
     def cStr(self):
         doLoops = findAll(self.body,TTDoLoop)
         print(self.body)
-        #numLoopsToMap = 1
-        numLoopsToMap = min(3,len(doLoops))
+        #numOuterLoopsToMap = 1
+        numOuterLoopsToMap = min(3,len(doLoops))
         threadIndices = ["x","y","z"]
-        for i in range(0,3-numLoopsToMap):
+        for i in range(0,3-numOuterLoopsToMap):
             threadIndices.pop()
         hipThreadIndices    = ""
         hipThreadConditions = []
@@ -620,13 +620,13 @@ class TTAccConstruct(TTNode):
              identifierNames.append(loop.loopVarCStr())
         return identifierNames
     def problemSize(self):
-        #numLoopsToMap = min(3,int(self.pragma.numLoopsToMap))
-        numLoopsToMap = min(3,len(findAll(self.construct,TTDoLoop)))
-        result = ["-1"]*numLoopsToMap
+        #numOuterLoopsToMap = min(3,int(self.pragma.numOuterLoopsToMap))
+        numOuterLoopsToMap = min(3,len(findAll(self.construct,TTDoLoop)))
+        result = ["-1"]*numOuterLoopsToMap
         doLoops = findAll(self.construct,TTDoLoop)
 
         for i,loop in enumerate(doLoops):
-            if i < numLoopsToMap:
+            if i < numOuterLoopsToMap:
                 result[i] = loop.problemSizeCStr()
         return result
     def allLocalLvalues(self):
@@ -756,10 +756,10 @@ class TTAccLoopKernel(TTLoopKernel):
     def cStr(self):
         doLoops = findAll(self._body,TTDoLoop)
         #print(self._body)
-        numLoopsToMap = min(3,int(self._pragma._numLoopsToMap))
+        numOuterLoopsToMap = min(3,int(self._pragma._numOuterLoopsToMap))
         
         threadIndices = ["x","y","z"]
-        for i in range(0,3-numLoopsToMap):
+        for i in range(0,3-numOuterLoopsToMap):
             threadIndices.pop()
         hipThreadIndices    = ""
         hipThreadConditions = []
@@ -850,5 +850,5 @@ def convertAccLoopKernel2Hip(fortranSnippet,maxRecursions=10):
         kernelLaunchInfo = cufKernelDo.parseString(pragmaLine)[0] 
         #print(body)
         identifierNames = list(filter(lambda x: x.lower() not in KEYWORDS,[makeFStr(ident) for ident in identifier.searchString(body)]))
-        numLoopsToMap = int(kernelLaunchInfo._numLoopsToMap)
+        numOuterLoopsToMap = int(kernelLaunchInfo._numOuterLoopsToMap)
         loopVars = []

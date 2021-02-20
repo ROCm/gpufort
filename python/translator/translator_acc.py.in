@@ -47,36 +47,36 @@ singleDirDict = {
 #    'update device': 'target update to(',
 #}
 
-class TTAccCollapse(TTNode):
+class TTAccClauseCollapse(TTNode):
     def _assignFields(self,tokens):
         self._value = tokens[0]
     def value(self):
         return int(self._value._value)
-class TTAccIf(TTNode):
+class TTAccClauseIf(TTNode):
     def _assignFields(self,tokens):
         self._condition = tokens[0]
     def condition(self):
         return self._condition.fStr()
-class TTAccGang(TTNode):
+class TTAccClauseGang(TTNode):
     def _assignFields(self,tokens):
         self._value = tokens[0]
     def value(self):
         return self._value
-class TTAccWorker(TTNode):
+class TTAccClauseWorker(TTNode):
     def _assignFields(self,tokens):
         self._value = tokens[0]
     def value(self):
         return self._value
-class TTAccVector(TTNode):
+class TTAccClauseVector(TTNode):
     def _assignFields(self,tokens):
         self._value = tokens[0]
     def value(self):
         return self._value
-class TTAccNumGangs(TTAccGang):
+class TTAccClauseNumGangs(TTAccClauseGang):
     pass
-class TTAccNumWorkers(TTAccWorker):
+class TTAccClauseNumWorkers(TTAccClauseWorker):
     pass
-class TTAccAsync(TTNode):
+class TTAccClauseAsync(TTNode):
     def _assignFields(self,tokens):
         self._queue = tokens[0]
     def queue(self):
@@ -89,16 +89,16 @@ class TTAccReductionVar(TTNode):
         self._operator = self._operator.replace(".","")
         self._operator = self._operator.replace("+","add")
         self._operator = self._operator.replace("*","mult")
-class TTAccReduction(TTNode):
+class TTAccClauseReduction(TTNode):
     def _assignFields(self,tokens):
-        self._reductions = findAll(tokens[0],TTAccReductionVar)
+        self._reductions = findAll(tokens[0],TTAccClauseReductionVar)
     def reductionVars(self):
         result = {}
         for red in self._reductions:
             varName = makeCStr(red._var).lower()
             result[varName] = makeCStr(red._operator).lower() 
         return result
-class TTAccPrivate(TTNode):
+class TTAccClausePrivate(TTNode):
     def _assignFields(self,tokens):
         self._threadPrivateVars = tokens[0]
     def threadPrivateVarNames(self):
@@ -110,13 +110,11 @@ class TTAccDirective(TTNode):
     def ompFStr(self):
        assert False, "Not implemented"     
 
-class TTAccWait(TTAccDirective):
-    def ompFStr(self):
-       result = "!$omp taskwait" 
-    def hipFStr(self):
-       
+class TTAccWaitDirective(TTAccDirective):
+    def _assignFields(self,tokens):
+       self._clauses = tokens
 
-class TTAccLoop(TTAccDirective,ILoopAnnotation):
+class TTAccLoopDirective(TTAccDirective,ILoopAnnotation):
     def _assignFields(self,tokens):
        self._clauses = tokens
     def numCollapse(self):
@@ -199,19 +197,18 @@ class TTAccLoopKernel(TTLoopKernel):
     def threadPrivateVars(self):
         return self._threadPrivateVars
 
-acc_gang.setParseAction(TTAccGang)
-acc_worker.setParseAction(TTAccWorker)
-acc_vector.setParseAction(TTAccVector)
-acc_num_gangs.setParseAction(TTAccNumGangs)
-acc_num_workers.setParseAction(TTAccNumWorkers)
-acc_vector_length.setParseAction(TTAccVector)
-
-acc_async.setParseAction(TTAccAsync)
-acc_private.setParseAction(TTAccPrivate)
-acc_if.setParseAction(TTAccIf)
-acc_collapse.setParseAction(TTAccCollapse)
+acc_clause_gang.setParseAction(TTAccClauseGang)
+acc_clause_worker.setParseAction(TTAccClauseWorker)
+acc_clause_vector.setParseAction(TTAccClauseVector)
+acc_clause_num_gangs.setParseAction(TTAccClauseNumGangs)
+acc_clause_num_workers.setParseAction(TTAccClauseNumWorkers)
+acc_clause_vector_length.setParseAction(TTAccClauseVector)
+acc_clause_async.setParseAction(TTAccClauseAsync)
+acc_clause_private.setParseAction(TTAccClausePrivate)
+acc_clause_if.setParseAction(TTAccClauseIf)
+acc_clause_collapse.setParseAction(TTAccClauseCollapse)
 accReductionVar.setParseAction(TTAccReductionVar)
-acc_reduction.setParseAction(TTAccReduction)
+acc_clause_reduction.setParseAction(TTAccClauseReduction)
 
 acc_loop.setParseAction(TTAccLoop)
 acc_parallel_loop.setParseAction(TTAccParallelLoop)

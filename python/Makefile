@@ -10,6 +10,8 @@ test: $(TEST_COLLECTIONS)
 
 test.grammar: $(GRAMMAR_TEST_COLLECTIONS)
 
+test.translator: $(TRANSLATOR_TEST_COLLECTIONS)
+
 $(TEST_COLLECTIONS): %:
 	make -C $(shell echo "$@" | sed "s,\.,/,g")
 
@@ -17,4 +19,4 @@ $(GRAMMAR_TEST_COLLECTIONS): %:
 	make -C $(shell echo "$@" | sed "s,\.grammar\>,,g" | sed "s,\.,/,g") test.grammar
 
 $(TRANSLATOR_TEST_COLLECTIONS): %:
-	make -C $(shell echo "$@" | sed "s,\.grammar\>,,g" | sed "s,\.,/,g") test.translator
+	make -C $(shell echo "$@" | sed "s,\.translator\>,,g" | sed "s,\.,/,g") test.translator

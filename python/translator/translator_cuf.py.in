@@ -78,7 +78,13 @@ class TTCufPragma(TTNode,LaunchInfo):
     def cStr(self):
         return LaunchInfo.cStr(self)
 
-class TTCufKernelDo(TTLoopKernel):
+class TTCufKernelDo(TTLoopKernel,ILoopAnnotation):
+    def _assignFields(self,tokens):
+        self._launchInfo, self._body  = tokens
+    def kernelLaunchInfo(self):
+        return self._launchInfo
+
+class TTCufKernelDoLoop(TTLoopKernel,ILoopAnnotation):
     def _assignFields(self,tokens):
         self._launchInfo, self._body  = tokens
     def kernelLaunchInfo(self):

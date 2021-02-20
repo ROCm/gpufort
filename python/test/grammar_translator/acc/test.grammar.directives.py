@@ -66,9 +66,20 @@ end do
 !$acc end parallel
 """)
 
+testdata.append("""
+!$cuf kernel do(3)
+do i = 1, n
+  do i = 1, n
+    do j = 1, n
+      a(i,j,k) = 3;
+    end do
+  end do
+end do
+""")
+
 for snippet in testdata:
     try:
-        grammar.accLoopKernel.parseString(snippet)
+        grammar.loopKernel.parseString(snippet)
     except Exception as e:
         print(" - FAILED",file=sys.stderr)
         print("failed to parse '{}'".format(snippet),file=sys.stderr)

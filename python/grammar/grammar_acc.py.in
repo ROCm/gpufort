@@ -102,14 +102,14 @@ acc_loop             = ACC_START + LOOP + accClauseList
 
 # kernels / parallels
 acc_serial          = ACC_START + SERIAL + accClauseList
-acc_kernels         = ACC_START + KERNELS + accClauseList
-acc_parallel        = ACC_START + PARALLEL + accClauseList
-acc_parallel_loop   = ACC_START + PARALLEL + LOOP + accClauseList
-acc_kernels_loop    = ACC_START + KERNELS + LOOP + accClauseList
+acc_kernels         = ACC_START + KERNELS  + ~LOOP + accClauseList
+acc_parallel        = ACC_START + PARALLEL + ~LOOP + accClauseList
+acc_parallel_loop   = ACC_START + PARALLEL + LOOP  + accClauseList
+acc_kernels_loop    = ACC_START + KERNELS  + LOOP  + accClauseList
 
 ACC_END_SERIAL        = ACC_END + SERIAL
-ACC_END_KERNELS       = ACC_END + KERNELS
-ACC_END_PARALLEL      = ACC_END + PARALLEL
+ACC_END_KERNELS       = ACC_END + KERNELS  + ~LOOP
+ACC_END_PARALLEL      = ACC_END + PARALLEL + ~LOOP
 ACC_END_PARALLEL_LOOP = ACC_END_PARALLEL.copy() + LOOP # copy() allows us to attach different parse action
 ACC_END_KERNELS_LOOP  = ACC_END_KERNELS.copy()  + LOOP
 
@@ -130,9 +130,8 @@ acc_kernels_loop_region  = acc_kernels_loop  + annotatedDoLoop + Optional(ACC_EN
 
 # manual grouping
 accDirective = acc_kernels_loop | acc_parallel_loop | acc_kernels | acc_parallel | acc_wait | acc_host_data | acc_data | acc_enter_data | acc_exit_data | acc_loop | acc_routine | acc_atomic | acc_update | acc_serial | acc_cache | acc_declare
-accKernelBodyDirective = acc_loop | acc_serial_region | acc_atomic_region | acc_cache
 
-accLoopKernel = acc_parallel_loop_region | acc_kernels_loop_region | acc_parallel_region | acc_kernels_region # emits 1 token
+accKernelBodyDirective = acc_loop | acc_serial_region | acc_atomic_region | acc_cache
 
 # Ideally pass the following:
 # multiple acc directives/lines 

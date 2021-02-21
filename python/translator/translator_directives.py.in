@@ -1,34 +1,6 @@
 CLAUSE_NOT_FOUND           = -2
 CLAUSE_VALUE_NOT_SPECIFIED = -1
 
-class IComputeConstruct():
-    def deviceTypes(self): 
-        return "*"
-    def condition(self): 
-        """ OMP,ACC: accelerate only if condition is satisfied. Empty string means condition is satisfied. """
-        return ""
-    def asyncNowait(): 
-        """value > 0 means True"""
-        return CLAUSE_NOT_FOUND
-    def depend(self): 
-        """ only OMP """
-        return []
-    def devicePtrs(self):
-        """ CUF: """
-        return []
-    def createAllocVars(self):
-        return []
-    def deleteReleaseVars(self):
-        return []
-    def copyMapToFromVars(self):
-        return []
-    def copyinMapToAttachVars(self):
-        """ ACC: also include attach vars """
-        return []
-    def copyoutMapFromDetachVars(self):
-        """ ACC: also include attach vars """
-        return []
-
 class ILoopAnnotation():
     def numCollapse(self):
         return CLAUSE_NOT_FOUND
@@ -119,6 +91,41 @@ class TTDoLoop(TTNode):
 # Optional: top-level directive, must be accessible have all information
 # Required: (annotated) loop
 # Q: Scanner target nodes must interact?
+
+class IComputeConstruct():
+    def deviceTypes(self): 
+        return "*"
+    def condition(self): 
+        """ OMP,ACC: accelerate only if condition is satisfied. Empty string means condition is satisfied. """
+        return ""
+    def asyncNowait(): 
+        """value != CLAUSE_NOT_FOUND means True"""
+        return CLAUSE_NOT_FOUND
+    def depend(self): 
+        """ only OMP """
+        return {
+          "in":[],
+          "out":[],
+          "inout":[],
+          "inout":[],
+          "mutexinoutset":[],
+          "depobj":[]
+        }
+    def devicePtrs(self):
+        """ CUF: """
+        return []
+    def createAllocVars(self):
+        return []
+    def deleteReleaseVars(self):
+        return []
+    def copyMapToFromVars(self):
+        return []
+    def copyinMapToAttachVars(self):
+        """ ACC: also include attach vars """
+        return []
+    def copyoutMapFromDetachVars(self):
+        """ ACC: also include attach vars """
+        return []
 
 class TTLoopKernel(TTNode,IComputeConstruct):
     def kernelLaunchInfo(self) :

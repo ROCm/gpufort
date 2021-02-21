@@ -486,8 +486,8 @@ class TTCufCublasCall(TTNode):
 
 ## Link actions
 # CUDA Fortran
-cufKernelDo.setParseAction(TTCufKernelDo)
-cufLoopKernel.setParseAction(TTCufKernelDo)
+cuf_kernel_do.setParseAction(TTCufKernelDo)
+#cufLoopKernel.setParseAction(TTCufKernelDo)
 
 allocateRvalue.setParseAction(TTAllocateRvalue)
 memCpyValue.setParseAction(TTAllocateRvalue)

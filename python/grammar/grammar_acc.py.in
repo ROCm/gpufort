@@ -48,7 +48,6 @@ acc_clause_routine          = ROUTINE + LPAR + identifier + RPAR
 acc_clause_private          = PRIVATE + LPAR + accVarList + RPAR
 acc_clause_first_private    = FIRST_PRIVATE + LPAR + accVarList + RPAR 
 acc_clause_collapse         = COLLAPSE + LPAR + integer + RPAR
-acc_clause_device           = DEVICE + LPAR + accVarList + RPAR
 acc_clause_host             = HOST + LPAR + accVarList + RPAR
 acc_clause_self             = SELF + LPAR + accVarList + RPAR
 acc_clause_bind             = BIND + LPAR + identifier + RPAR
@@ -67,7 +66,7 @@ ACC_END   = ACC_START.copy() + END
 acc_clause = acc_clause_if | acc_clause_self | acc_clause_host | acc_clause_async | acc_clause_wait | acc_clause_num_gangs | acc_clause_num_workers | acc_clause_vector_length | acc_clause_device_type |\
     acc_clause_copy | acc_clause_copyin | acc_clause_copyout | acc_clause_create | acc_clause_present | acc_clause_deviceptr | acc_clause_default |\
     acc_clause_private | acc_clause_first_private | acc_clause_no_create | acc_clause_delete | acc_clause_reduction | acc_clause_detach | acc_clause_collapse |\
-    acc_clause_use_device | acc_clause_device | acc_clause_bind | acc_clause_device_resident | acc_clause_link | acc_clause_tile | acc_clause_seq | acc_clause_auto |\
+    acc_clause_use_device | acc_clause_bind | acc_clause_device_resident | acc_clause_link | acc_clause_tile | acc_clause_seq | acc_clause_auto |\
     acc_clause_independent | acc_clause_gang | acc_clause_worker | acc_clause_vector | acc_clause_read | acc_clause_write | acc_clause_capture |\
     acc_clause_nohost | acc_clause_finalize | acc_clause_if_present 
 
@@ -101,11 +100,11 @@ acc_cache            = ACC_START + CACHE + LPAR + accVarList + RPAR
 acc_loop             = ACC_START + LOOP + accClauseList
 
 # kernels / parallels
-acc_serial          = ACC_START + SERIAL + accClauseList
-acc_kernels         = ACC_START + KERNELS  + ~LOOP + accClauseList
-acc_parallel        = ACC_START + PARALLEL + ~LOOP + accClauseList
-acc_parallel_loop   = ACC_START + PARALLEL + LOOP  + accClauseList
-acc_kernels_loop    = ACC_START + KERNELS  + LOOP  + accClauseList
+acc_serial         = ACC_START + SERIAL + accClauseList
+acc_kernels        = ACC_START + KERNELS  + ~LOOP + accClauseList
+acc_parallel       = ACC_START + PARALLEL + ~LOOP + accClauseList
+acc_parallel_loop  = ACC_START + PARALLEL + LOOP  + accClauseList
+acc_kernels_loop   = ACC_START + KERNELS  + LOOP  + accClauseList
 
 ACC_END_SERIAL        = ACC_END + SERIAL
 ACC_END_KERNELS       = ACC_END + KERNELS  + ~LOOP

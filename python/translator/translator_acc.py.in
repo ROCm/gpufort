@@ -2,9 +2,50 @@
 #from translator.translator_f03 import *
 #import utils
 
+#class TTAccLoopKernel(TTLoopKernel):
+#    def _assignFields(self,tokens):
+#        self._regionDirective, self._body = tokens
+#        self._launchInfo = LaunchInfo()
+#        self._launchInfo._numOuterLoopsToMap = 1
+#        self._reductionVars = {}
+#        self._threadPrivateVars = []
+#        #print(self._mainAccDirective)
+#        # handle clauses
+#        self.handleCollapse()
+#        self.handleReduction()
+#        self.handlePrivate()
+#    def handleGang(self):
+#        # acc collapse(int)
+#        expr = findFirstMatching(self._mainAccDirective,lambda x: isinstance(x,TTAccGang))
+#        if not expr is None:
+#            self._launchInfo._grid[0] = expr.value()
+#    def handleAsync(self):
+#        # acc collapse(int)
+#        expr = findFirst(self._mainAccDirective,TTAccAsync)
+#        if not expr is None:
+#            self._launchInfo._stream = "gpufort_acc_get_stream({0})".format(expr.queue())
+#    def handleCollapse(self):
+#        # acc collapse(int)
+#        expr = findFirst(self._mainAccDirective,TTAccCollapse)
+#        if not expr is None:
+#            self._launchInfo._numOuterLoopsToMap = expr.value()
+#    def handleReduction(self):
+#        # acc collapse(int)
+#        expr = findFirst(self._mainAccDirective,TTAccReduction)
+#        if not expr is None:
+#            self._reductionVars = expr.reductionVars()
+#    def handlePrivate(self):
+#        # acc collapse(int)
+#        private = findFirst(self._mainAccDirective,TTAccPrivate)
+#        if not private is None:
+#            self._threadPrivateVars += private.threadPrivateVarNames()
+#    def threadPrivateVars(self):
+#        return self._threadPrivateVars
+
 # clauses
 
 # directives without arguements
+emptyString = ""
 singleDirDict = {
     'loop': 'parallel do',
     'gang': emptyString,
@@ -47,16 +88,6 @@ singleDirDict = {
 #    'update device': 'target update to(',
 #}
 
-class TTAccClauseCollapse(TTNode):
-    def _assignFields(self,tokens):
-        self._value = tokens[0]
-    def value(self):
-        return int(self._value._value)
-class TTAccClauseIf(TTNode):
-    def _assignFields(self,tokens):
-        self._condition = tokens[0]
-    def condition(self):
-        return self._condition.fStr()
 class TTAccClauseGang(TTNode):
     def _assignFields(self,tokens):
         self._value = tokens[0]
@@ -76,11 +107,57 @@ class TTAccClauseNumGangs(TTAccClauseGang):
     pass
 class TTAccClauseNumWorkers(TTAccClauseWorker):
     pass
-class TTAccClauseAsync(TTNode):
+class TTAccClauseVectorLength(TTAccClauseVector):
+    pass
+class TTAccClauseDeviceType(TTNode):
     def _assignFields(self,tokens):
-        self._queue = tokens[0]
-    def queue(self):
-        return self._queue
+        self._deviceTypes = tokens
+    def deviceTypes(self):
+        return self._deviceTypes
+class TTAccClauseIf(TTNode):
+    def _assignFields(self,tokens):
+        self._condition = tokens[0]
+    def condition(self):
+        return self._condition.fStr()
+
+class TTSimpleMapping(TTNode):
+    def _assignFields(self,tokens):
+        self._varList = tokens[0].asList()
+    def varNames():
+        return [ var.varName() for var in self._varList ]
+class TTAccClauseCopy(TTSimpleMapping):
+    pass
+class TTAccClauseCopyin(TTSimpleMapping):
+    pass
+class TTAccClauseCopyout(TTSimpleMapping):
+    pass
+class TTAccClauseCreate(TTSimpleMapping):
+    pass
+class TTAccClauseNoCreate(TTSimpleMapping):
+    pass
+class TTAccClausePresent(TTSimpleMapping):
+    pass
+class TTAccClauseDeviceptr(TTSimpleMapping):
+    pass
+class TTAccClauseAttach(TTSimpleMapping):
+    pass
+class TTAccClauseDetach(TTSimpleMapping):
+    pass
+class TTAccClausePrivate(TTSimpleMapping):
+    pass
+class TTAccClauseFirstprivate(TTSimpleMapping):
+    pass
+class TTAccClauseUseDevice(TTSimpleMapping):
+    pass
+class TTAccClauseDevice(TTSimpleMapping):
+    pass
+class TTAccClauseHost(TTSimpleMapping):
+    pass
+class TTAccClauseLink(TTSimpleMapping):
+    pass
+class TTAccClauseDefault(TTNode):
+    def _assignFields(self,tokens):
+        pass
 class TTAccReductionVar(TTNode):
     def _assignFields(self,tokens):
         self._operator, self._var = tokens
@@ -98,11 +175,41 @@ class TTAccClauseReduction(TTNode):
             varName = makeCStr(red._var).lower()
             result[varName] = makeCStr(red._operator).lower() 
         return result
-class TTAccClausePrivate(TTNode):
+class TTAccClauseRoutine(TTNode):
     def _assignFields(self,tokens):
-        self._threadPrivateVars = tokens[0]
-    def threadPrivateVarNames(self):
-        return [ var.varName().lower() for var in self._threadPrivateVars ]
+        pass
+class TTAccClauseBind(TTNode):
+    def _assignFields(self,tokens):
+        pass
+class TTAccClauseDelete(TTNode):
+    def _assignFields(self,tokens):
+        pass
+class TTAccClauseDeviceResident(TTSimpleMapping):
+    pass
+class TTAccClauseTile(TTNode):
+    def _assignFields(self,tokens):
+        self._tilesPerDim = tokens[0]
+    def values():
+        return self._tilesPerDim
+class TTAccClauseCollapse(TTNode):
+    def _assignFields(self,tokens):
+        self._value = tokens[0]
+    def value(self):
+        return int(self._value._value)
+class TTAccClauseWait(TTNode):
+    def _assignFields(self,tokens):
+        self._expressions = list(tokens[0])
+    def expressions(self):
+        return self._expressions
+class TTAccClauseAsync(TTNode):
+    def _assignFields(self,tokens):
+        self._expression = tokens[0]
+    def expression(self):
+        return makeFStr(self._expression)
+
+#
+# Directives
+#
 
 class TTAccDirective(TTNode):
     def _assignFields(self,tokens):
@@ -110,13 +217,71 @@ class TTAccDirective(TTNode):
     def ompFStr(self):
        assert False, "Not implemented"     
 
-class TTAccWaitDirective(TTAccDirective):
-    def _assignFields(self,tokens):
-       self._clauses = tokens
+class TTAccDeclare(TTAccDirective):
+    """ NOTE: In contrast to OMP, '!$acc declare' is only applied to global variables.
+    There is '!$acc routine' for routines.
+    """
+    def __handleSimpleMapping(self,clauseType):
+        clause = findFirst(self._clauses,clauseType)
+        if not clause is None:
+            return clause.varNames()
+        else:
+            return []
+    def ompFStr(self):
+        toList =\
+          self.__handleSimpleMapping(self,TTAccClauseCreate) +\
+          self.__handleSimpleMapping(self,TTAccClauseCopy) +\
+          self.__handleSimpleMapping(self,TTAccClauseCopyin) +\
+          self.__handleSimpleMapping(self,TTAccClauseAttach) +\
+          self.__handleSimpleMapping(self,TTAccClauseCopyout) +\
+          self.__handleSimpleMapping(self,TTAccClauseDetach)
+    
+       # TODO: not sure about this mapping       
+       toList += self.__handleSimpleMapping(self,TTAccClauseDeviceResident)
 
-class TTAccLoopDirective(TTAccDirective,ILoopAnnotation):
-    def _assignFields(self,tokens):
-       self._clauses = tokens
+       linkList = self.__handleSimpleMapping(self,TTAccClauseLink)
+       
+       result = "!$omp target declare"
+       if len(toList):
+           result += " to("+",".join(toList)+")"
+       if len(linkList):
+           result += " to("+",".join(linkList)+")"
+       return result
+
+class TTAccUpdate(TTAccDirective):
+    def ompFStr(self):
+        result = "!$omp target update"
+        hostClause   = findFirst(self._clauses,TTAccClauseHost)
+        deviceClause = findFirst(self._clauses,TTAccClauseDevice)
+        if hostClause not None:
+            result += " to("+",".join(hostClause.varNames())+")"
+        if deviceClause not None:
+            result += " from("+",".join(deviceClause.varNames())+")"
+        return result
+
+class TTAccWait(TTAccDirective):
+    def waitArgs(self):
+        """ Can be used to deduce task dependencies """
+        clause = findFirst(self._clauses,TTAccClauseWait)
+        if clause is None:
+            return None
+        else:
+            return clause.expressions()
+    def asyncQueue(self):
+        assert False, "Not implemented!"
+    def ompFStr(self,dependOut=[]):
+        result = "!$omp taskwait"
+        if len(dependOut):
+            result += " depend(out:"+",".join(dependOut)")"
+        return result
+
+class TTAccLoop(TTAccDirective,ILoopAnnotation):
+    def __handleSimpleMapping(self,clauseType):
+        clause = findFirst(self._clauses,clauseType)
+        if not clause is None:
+            return clause.varNames()
+        else:
+            return []
     def numCollapse(self):
         node = findFirst(self._clauses,TTAccCollapse)
         return 1 if node is None else node.value()
@@ -144,77 +309,96 @@ class TTAccLoopDirective(TTAccDirective,ILoopAnnotation):
         node = findFirstMatching(self._clauses,lambda x: x=="seq")
         return True if node is None else False
     def reductionVars(self):
-        node = findFirst(self._mainAccDirective,TTAccReduction)
+        node = findFirst(self._mainDirective,TTAccClauseReduction)
         if not node is None:
-            self._reductionVars = node.reductionVars()
+            return node.reductionVars()
+        else:
+            return {}
     def privateVars(self):
-        node = findFirst(self._clauses,TTAccPrivate)
-        if not node is None:
-            self._threadPrivateVars += node.threadPrivateVarNames()
+        return self.__handleSimpleMapping(TTAccClausePrivate)
+    def firstprivateVars(self):
+        return self.__handleSimpleMapping(TTAccClauseFirstprivate)
 
-class TTAccKernelsLoop(TTAccLoop):
-    pass
-class TTAccParallelLoop(TTAccLoop):
-    pass
+class TTAccParallel(TTAccDirective,IComputeConstruct):
+    def __handleSimpleMapping(self,clauseType):
+        clause = findFirst(self._clauses,clauseType)
+        if not clause is None:
+            return clause.varNames()
+        else:
+            return []
+    def deviceTypes(self): 
+        return "*"
+    def condition(self): 
+        """ OMP,ACC: accelerate only if condition is satisfied. Empty string means condition is satisfied. """
+        return ""
+    def asyncNowait(): 
+        return CLAUSE_NOT_FOUND
+    def devicePtrs(self):
+        return self.__handleSimpleMapping(self,TTAccClauseDeviceptr)
+    def createAllocVars(self):
+        return self.__handleSimpleMapping(self,TTAccClauseCreate)
+    def deleteReleaseVars(self):
+        return self.__handleSimpleMapping(self,TTAccClauseDelete)
+    def copyMapToFromVars(self):
+        return self.__handleSimpleMapping(self,TTAccClauseCopy)
+    def copyinMapToAttachVars(self):
+        return self.__handleSimpleMapping(self,TTAccClauseCopyin) +\
+               self.__handleSimpleMapping(self,TTAccClauseAttach)
+    def copyoutMapFromDetachVars(self):
+        return self.__handleSimpleMapping(self,TTAccClauseCopyout) +\
+               self.__handleSimpleMapping(self,TTAccClauseDetach)
 
-class TTAccLoopKernel(TTLoopKernel):
-    def _assignFields(self,tokens):
-        self._mainAccDirective, self._body = tokens
-        self._launchInfo = LaunchInfo()
-        self._launchInfo._numOuterLoopsToMap = 1
-        self._reductionVars = {}
-        self._threadPrivateVars = []
-        #print(self._mainAccDirective)
-        # handle clauses
-        self.handleCollapse()
-        self.handleReduction()
-        self.handlePrivate()
-    def handleGang(self):
-        # acc collapse(int)
-        expr = findFirstMatching(self._mainAccDirective,lambda x: isinstance(x,TTAccGang))
-        if not expr is None:
-            self._launchInfo._grid[0] = expr.value()
-    def handleAsync(self):
-        # acc collapse(int)
-        expr = findFirst(self._mainAccDirective,TTAccAsync)
-        if not expr is None:
-            self._launchInfo._stream = "gpufort_acc_get_stream({0})".format(expr.queue())
-    def handleCollapse(self):
-        # acc collapse(int)
-        expr = findFirst(self._mainAccDirective,TTAccCollapse)
-        if not expr is None:
-            self._launchInfo._numOuterLoopsToMap = expr.value()
-    def handleReduction(self):
-        # acc collapse(int)
-        expr = findFirst(self._mainAccDirective,TTAccReduction)
-        if not expr is None:
-            self._reductionVars = expr.reductionVars()
-    def handlePrivate(self):
-        # acc collapse(int)
-        private = findFirst(self._mainAccDirective,TTAccPrivate)
-        if not private is None:
-            self._threadPrivateVars += private.threadPrivateVarNames()
-    def threadPrivateVars(self):
-        return self._threadPrivateVars
+class TTAccParallelLoop(TTAccParallel,TTAccLoop):
+    pass
+# treat kernels and parallel same way for now
+class TTAccKernels(TTAccParallel):
+    pass
+class TTAccKernelsLoop(TTAccParallelLoop):
+    pass
 
 acc_clause_gang.setParseAction(TTAccClauseGang)
 acc_clause_worker.setParseAction(TTAccClauseWorker)
 acc_clause_vector.setParseAction(TTAccClauseVector)
 acc_clause_num_gangs.setParseAction(TTAccClauseNumGangs)
 acc_clause_num_workers.setParseAction(TTAccClauseNumWorkers)
-acc_clause_vector_length.setParseAction(TTAccClauseVector)
-acc_clause_async.setParseAction(TTAccClauseAsync)
-acc_clause_private.setParseAction(TTAccClausePrivate)
+acc_clause_vector_length.setParseAction(TTAccClauseVectorLength)
+
+acc_clause_device_type.setParseAction(TTAccClauseDeviceType)
 acc_clause_if.setParseAction(TTAccClauseIf)
-acc_clause_collapse.setParseAction(TTAccClauseCollapse)
+
+acc_clause_copy.setParseAction(TTAccClauseCopy)
+acc_clause_copyin.setParseAction(TTAccClauseCopyin)
+acc_clause_copyout.setParseAction(TTAccClauseCopyout)
+
+acc_clause_create.setParseAction(TTAccClauseCreate)
+acc_clause_no_create.setParseAction(TTAccClauseNoCreate)
+acc_clause_present.setParseAction(TTAccClausePresent)
+acc_clause_deviceptr.setParseAction(TTAccClauseDeviceptr)
+acc_clause_attach.setParseAction(TTAccClauseAttach)
+acc_clause_detach.setParseAction(TTAccClauseDetach)
+acc_clause_default.setParseAction(TTAccClauseDefault)
+acc_clause_use_device.setParseAction(TTAccClauseUseDevice)
+acc_clause_private.setParseAction(TTAccClausePrivate)
 accReductionVar.setParseAction(TTAccReductionVar)
 acc_clause_reduction.setParseAction(TTAccClauseReduction)
+acc_clause_delete.setParseAction(TTAccClauseDelete)
+acc_clause_routine.setParseAction(TTAccClauseRoutine)
+acc_clause_private.setParseAction(TTAccClausePrivate)
+acc_clause_first_private.setParseAction(TTAccClauseFirstprivate)
+acc_clause_collapse.setParseAction(TTAccClauseCollapse)
+acc_clause_host.setParseAction(TTAccClauseHost)
+acc_clause_self.setParseAction(TTAccClauseHost)
+acc_clause_bind.setParseAction(TTAccClauseBind)
+acc_clause_device_resident.setParseAction(TTAccClauseDeviceResident)
+acc_clause_link.setParseAction(TTAccClauseLink)
+acc_clause_tile.setParseAction(TTAccClauseTile)
+acc_clause_wait.setParseAction(TTAccClauseWait)
+acc_clause_async.setParseAction(TTAccClauseAsync)
+
 
 acc_loop.setParseAction(TTAccLoop)
 acc_parallel_loop.setParseAction(TTAccParallelLoop)
 acc_kernels_loop.setParseAction(TTAccKernelsLoop)
-
-accLoopKernel.setParseAction(TTAccLoopKernel)
 
 recursionsLeft=0
 def convertAccLoopKernel2Hip(fortranSnippet,maxRecursions=30):

@@ -44,7 +44,6 @@ acc_clause_use_device       = USE_DEVICE + LPAR + accVarList + RPAR
 acc_clause_private          = PRIVATE + LPAR + accVarList + RPAR
 acc_clause_reduction        = REDUCTION + LPAR + accReductionVarList + RPAR
 acc_clause_delete           = DELETE + LPAR + accVarList + RPAR
-acc_clause_routine          = ROUTINE + LPAR + identifier + RPAR
 acc_clause_private          = PRIVATE + LPAR + accVarList + RPAR
 acc_clause_first_private    = FIRST_PRIVATE + LPAR + accVarList + RPAR 
 acc_clause_collapse         = COLLAPSE + LPAR + integer + RPAR

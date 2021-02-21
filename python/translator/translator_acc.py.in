@@ -2,66 +2,26 @@
 #from translator.translator_f03 import *
 #import utils
 
-#class TTAccLoopKernel(TTLoopKernel):
-#    def _assignFields(self,tokens):
-#        self._regionDirective, self._body = tokens
-#        self._launchInfo = LaunchInfo()
-#        self._launchInfo._numOuterLoopsToMap = 1
-#        self._reductionVars = {}
-#        self._threadPrivateVars = []
-#        #print(self._mainAccDirective)
-#        # handle clauses
-#        self.handleCollapse()
-#        self.handleReduction()
-#        self.handlePrivate()
-#    def handleGang(self):
-#        # acc collapse(int)
-#        expr = findFirstMatching(self._mainAccDirective,lambda x: isinstance(x,TTAccGang))
-#        if not expr is None:
-#            self._launchInfo._grid[0] = expr.value()
-#    def handleAsync(self):
-#        # acc collapse(int)
-#        expr = findFirst(self._mainAccDirective,TTAccAsync)
-#        if not expr is None:
-#            self._launchInfo._stream = "gpufort_acc_get_stream({0})".format(expr.queue())
-#    def handleCollapse(self):
-#        # acc collapse(int)
-#        expr = findFirst(self._mainAccDirective,TTAccCollapse)
-#        if not expr is None:
-#            self._launchInfo._numOuterLoopsToMap = expr.value()
-#    def handleReduction(self):
-#        # acc collapse(int)
-#        expr = findFirst(self._mainAccDirective,TTAccReduction)
-#        if not expr is None:
-#            self._reductionVars = expr.reductionVars()
-#    def handlePrivate(self):
-#        # acc collapse(int)
-#        private = findFirst(self._mainAccDirective,TTAccPrivate)
-#        if not private is None:
-#            self._threadPrivateVars += private.threadPrivateVarNames()
-#    def threadPrivateVars(self):
-#        return self._threadPrivateVars
-
 # clauses
 
 # directives without arguements
-emptyString = ""
-singleDirDict = {
-    'loop': 'parallel do',
-    'gang': emptyString,
-    'independent': emptyString,
-    'parallel': 'target teams distribute',
-    'vector': 'simd',
-    'routine': 'declare target',
-    'seq': emptyString,
-    'data': 'data',
-    'end': 'end',
-    'enter': 'target enter',
-    'exit': 'target exit',
-    'atomic': 'atomic',
-    'serial': 'target',
-    'declare': 'declare target',
-}
+#emptyString = ""
+#singleDirDict = {
+#    'loop': 'parallel do',
+#    'gang': emptyString,
+#    'independent': emptyString,
+#    'parallel': 'target teams distribute',
+#    'vector': 'simd',
+#    'routine': 'declare target',
+#    'seq': emptyString,
+#    'data': 'data',
+#    'end': 'end',
+#    'enter': 'target enter',
+#    'exit': 'target exit',
+#    'atomic': 'atomic',
+#    'serial': 'target',
+#    'declare': 'declare target',
+#}
 
 #dualDirDict = {}
 #
@@ -248,6 +208,26 @@ class TTAccDeclare(TTAccDirective):
            result += " to("+",".join(linkList)+")"
        return result
 
+class TTAccRoutine(TTAccDirective):
+    def _assignFields(self,tokens):
+        self._id, self._clauses = tokens
+    def ompFStr(self,additions=""):
+        """ additions can be used to pass 'notinbranch' 'inbranch'"""
+        result = "!$omp target declare"
+        #if findFirst(self._clauses,TTAccClauseGang) is not None:
+        #    pass
+        #elif findFirst(self._clauses,TTAccClauseWorker) is not None:
+        #    pass
+        if findFirst(self._clauses,TTAccClauseVector) is not None:
+            if self._id not None:
+                result += " simd("+makeFStr(self._id)+")"
+            else:
+                result += " simd "
+        #if not "device_type" in additions:
+        #    result += " device_type(any)"
+        result += additions
+       return result
+
 class TTAccUpdate(TTAccDirective):
     def ompFStr(self):
         result = "!$omp target update"
@@ -276,6 +256,20 @@ class TTAccWait(TTAccDirective):
         return result
 
 class TTAccLoop(TTAccDirective,ILoopAnnotation):
+    """
+    possible clauses:
+      collapse( n )
+      gang [( gang-arg-list )]
+      worker [( [num:]int-expr )]
+      vector [( [length:]int-expr )]
+      seq
+      auto
+      tile( size-expr-list )
+      device_type( device-type-list )
+      independent
+      private( var-list )
+      reduction( operator:var-list )
+    """
     def __handleSimpleMapping(self,clauseType):
         clause = findFirst(self._clauses,clauseType)
         if not clause is None:
@@ -283,14 +277,20 @@ class TTAccLoop(TTAccDirective,ILoopAnnotation):
         else:
             return []
     def numCollapse(self):
-        node = findFirst(self._clauses,TTAccCollapse)
-        return 1 if node is None else node.value()
+        clause = findFirst(self._clauses,TTAccCollapse)
+        return 1 if clause is None else clause.value()
     def tileSizes(self):
         assert False, "Not implemented!"
         return [1]
     def numGangsTeamsBlocks(self):
-        node = findFirstMatching(self._clauses,lambda x: isinstance(x,TTAccGang))
-        return [CLAUSE_NOT_FOUND] if node is None else [node.value()]
+        clauses = findAllMatching(self._clauses,lambda x: isinstance(x,TTAccClauseGang),2)
+        return [CLAUSE_NOT_FOUND] if clause is None else [max([c.value() for c in clauses])]
+    def numWorkers(self):
+        clauses = findAllMatching(self._clauses,lambda x: isinstance(x,TTAccClauseWorker),2)
+        return [CLAUSE_NOT_FOUND] if clause is None else [max([c.value() for c in clauses])]
+    def simdlenVectorLength(self):
+        clauses = findAllMatching(self._clauses,lambda x: isinstance(x,TTAccClauseVector),2)
+        return [CLAUSE_NOT_FOUND] if clause is None else [max([c.value() for c in clauses])]
     def numThreadsInBlock(self):
         workers   = self.numWorkers()
         vectorLen = self.lenSimdVector()
@@ -298,28 +298,68 @@ class TTAccLoop(TTAccDirective,ILoopAnnotation):
             return [CLAUSE_NOT_FOUND]
         else:
             return [workers[0] * vectorLen[0]]
-    def numWorkers(self):
-        node = findFirstMatching(self._clauses,lambda x: isinstance(x,TTAccWorker))
-        return [CLAUSE_NOT_FOUND] if node is None else [node.value()]
-    def lenSimdVector(self):
-        node = findFirstMatching(self._clauses,lambda x: isinstance(x,TTAccVector))
-        return [CLAUSE_NOT_FOUND] if node is None else [node.value()]
     def dataIndependentIterations(self):
         """ Always assume data independent if no seq clause is used """
-        node = findFirstMatching(self._clauses,lambda x: x=="seq")
-        return True if node is None else False
+        clause = findFirstMatching(self._clauses,lambda x: x=="seq")
+        return True if clause is None else False
     def reductionVars(self):
-        node = findFirst(self._mainDirective,TTAccClauseReduction)
-        if not node is None:
-            return node.reductionVars()
+        clause = findFirst(self._mainDirective,TTAccClauseReduction)
+        if not clause is None:
+            return clause.reductionVars()
         else:
             return {}
     def privateVars(self):
         return self.__handleSimpleMapping(TTAccClausePrivate)
     def firstprivateVars(self):
         return self.__handleSimpleMapping(TTAccClauseFirstprivate)
+    def ompFStr(self,prefix="!$omp",parallelRegion="",loopType="do"):
+        result = prefix
+        def parallelismClause(clause):
+            return type(clause) is TTAccClauseGang or\
+                   type(clause) is TTAccClauseWorker or\
+                   type(clause) is TTAccClauseVector
+        for clause in findAllMatching(self._clauses,parallelismClause):
+            if type(clause) is TTAccClauseGang:
+                result += " teams distribute"
+        for clause in findAllMatching(self._clauses,parallelismClause):
+            if type(clause) is TTAccClauseWorker:
+                pass
+            elif type(clause) is TTAccClauseVector:
+                pass
+        result +=  " "+parallelRegion+" "+loopType
+        if len(self.privateVars()):
+            result += " private("+",".join(self.privateVars())+")" 
+        #if len(self.firstprivateVars()):
+        #    result += " firstprivate("+",".join(self.firstprivateVars())+")" 
+        #if len(self.sharedVars()):
+        #    result += " shared("+",".join(self.sharedVars())+")" 
+        return result
+
 
 class TTAccParallel(TTAccDirective,IComputeConstruct):
+    """
+    possible clauses:
+      async [( int-expr )]
+      wait [( int-expr-list )]
+      num_gangs( int-expr )
+      num_workers( int-expr )
+      vector_length( int-expr )
+      device_type( device-type-list )
+      if( condition )
+      self [( condition )]
+      reduction( operator:var-list )
+      copy( var-list )
+      copyin( [readonly:]var-list )
+      copyout( var-list )
+      create( var-list )
+      no_create( var-list )
+      present( var-list )
+      deviceptr( var-list )
+      attach( var-list )
+      private( var-list )
+      firstprivate( var-list )
+      default( none | present )
+    """
     def __handleSimpleMapping(self,clauseType):
         clause = findFirst(self._clauses,clauseType)
         if not clause is None:
@@ -349,8 +389,11 @@ class TTAccParallel(TTAccDirective,IComputeConstruct):
                self.__handleSimpleMapping(self,TTAccClauseDetach)
 
 class TTAccParallelLoop(TTAccParallel,TTAccLoop):
-    pass
-# treat kernels and parallel same way for now
+    def ompFStr(self,prefix):
+        result = "!$omp target parallel loop"
+        result = TTAccLoop.ompFStr(self,"")
+
+# TODO treat kernels and parallel same way for now
 class TTAccKernels(TTAccParallel):
     pass
 class TTAccKernelsLoop(TTAccParallelLoop):
@@ -395,11 +438,14 @@ acc_clause_tile.setParseAction(TTAccClauseTile)
 acc_clause_wait.setParseAction(TTAccClauseWait)
 acc_clause_async.setParseAction(TTAccClauseAsync)
 
-
 acc_loop.setParseAction(TTAccLoop)
 acc_parallel_loop.setParseAction(TTAccParallelLoop)
 acc_kernels_loop.setParseAction(TTAccKernelsLoop)
 
+
+# TODO parsing and translation is similar but analysis differs between the different kernel
+# types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)
+# while they are specified with ACC,OMP.
 recursionsLeft=0
 def convertAccLoopKernel2Hip(fortranSnippet,maxRecursions=30):
     """
@@ -411,7 +457,7 @@ def convertAccLoopKernel2Hip(fortranSnippet,maxRecursions=30):
         global recursionsLeft
         recursionsLeft = recursionsToGo
         try:
-            return accLoopKernel.parseString(fortranSnippet)[0]
+            return lookKernel.parseString(fortranSnippet)[0]
         except ParseBaseException as pbe:
             if recursionsToGo <= 0:
                 raise pbe

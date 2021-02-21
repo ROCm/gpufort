@@ -13,9 +13,7 @@ class ILoopAnnotation():
     def numWorkers(self): 
         """ only ACC """
         return [CLAUSE_NOT_FOUND]
-    def vectorLengthThreadLimit(self):
-        return [CLAUSE_NOT_FOUND]
-    def simd(self):
+    def simdlenVectorLength(self):
         return [CLAUSE_NOT_FOUND]
     def dataIndependentIterations(self):
         return True
@@ -27,7 +25,7 @@ class ILoopAnnotation():
         return []
     def reductionVars(self): 
         """ CUF: Scalar lvalues are reduced by default """
-        return []
+        return {}
     def sharedVars(self): 
         """ only OMP """
         return []
@@ -39,7 +37,7 @@ class TTDoLoop(TTNode):
         self._threadIndex = None # "z","y","x"
         if self._annotation is None:
             self._annotation = ILoopAnnotation()
-    def loopAnnotation():
+    def annotation():
         return self._annotation
     def loopVarCStr():
         return makeCStr(self._begin._lhs)
@@ -74,6 +72,8 @@ class TTDoLoop(TTNode):
         end      = makeCStr(self._end)
         step     = makeCStr(self._step)
         return "loop_cond({0},{1},{2})".format(indexVar, end, step)
+    def loopVarCStr(self):
+        return makeCStr(self._begin._lhs)
     def cStr(self):
         indexVar    = self.loopVarCStr()
         begin       = makeCStr(self._begin._rhs) # array indexing is corrected in index macro
@@ -85,8 +85,6 @@ class TTDoLoop(TTNode):
             return "for (int {0}={1}; {0} <= {2}; {0} += {3}) {{\n  {4}\n}}".format(indexVar, begin, end, step, bodyContent)
         else:
             return bodyContent
-    def loopVarCStr(self):
-        return makeCStr(self._begin._lhs)
 
 # Optional: top-level directive, must be accessible have all information
 # Required: (annotated) loop
@@ -263,5 +261,13 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 conditions.append(loop.hipThreadBoundCStr()) 
         return "{0}{2}if ({1}) {{\n{3}}}".format(\
             indices,"&&".join(conditions),reductionPreamble,makeCStr(self._body))
+    def ompFStr(self):
+        # TODO target teams distribute parallel workshare not part of OpenMP standard
+        # 1. unpack colon (":") expressions 
+        for expr in findAll(self._body,TTStatement): 
+            if type(expr._statement[0]) is TTAssignment:
+                expr._statement[0] = expr._statement[0].convertToDoLoopNestIfNecessary()
+        assert False, "Not implemented!"
 
 annotatedDoLoop.setParseAction(TTDoLoop)
+loopKernel.setParseAction(TTLoopKernel)

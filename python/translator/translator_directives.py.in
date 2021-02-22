@@ -30,6 +30,57 @@ class ILoopAnnotation():
         """ only OMP """
         return []
 
+class IDataRegion():
+    def asyncNowait(): 
+        """value != CLAUSE_NOT_FOUND means True"""
+        return CLAUSE_NOT_FOUND
+    def deviceTypes(self): 
+        return "*"
+    def conditionFStr(self): 
+        """ OMP,ACC: accelerate only if condition is satisfied. Empty string means condition is satisfied. """
+        return ""
+    def conditionCStr(self): 
+        """ OMP,ACC: accelerate only if condition is satisfied. Empty string means condition is satisfied. """
+        return ""
+    def asyncNowait():
+        return CLAUSE_NOT_FOUND
+    def devicePtrs(self):
+        return []
+    def createAllocVars(self):
+        return []
+    def no_createVars(self):
+        """ only ACC"""
+        return self.__handleSimpleMapping(self,TTAccClauseCreate)
+    def presentVars(self):
+        """ only ACC"""
+        return self.__handleSimpleMapping(self,TTAccClauseCreate)
+    def deleteReleaseVars(self):
+        return []
+    def copyMapToFromVars(self):
+        return []
+    def copyinMapToAttachVars(self):
+        """ ACC: also include attach vars """
+        return []
+    def copyoutMapFromDetachVars(self):
+        """ ACC: also include attach vars """
+        return []
+
+
+class IComputeConstruct(IDataRegion):
+    def depend(self): 
+        """ only OMP """
+        return {
+          "in":[],
+          "out":[],
+          "inout":[],
+          "inout":[],
+          "mutexinoutset":[],
+          "depobj":[]
+        }
+    def presentByDefault(self):
+        """ only ACC """
+        return True
+
 class TTDoLoop(TTNode):
     def _assignFields(self,tokens):
         # Assignment, number | variable
@@ -86,46 +137,9 @@ class TTDoLoop(TTNode):
         else:
             return bodyContent
 
-# Optional: top-level directive, must be accessible have all information
-# Required: (annotated) loop
-# Q: Scanner target nodes must interact?
-
-class IComputeConstruct():
-    def deviceTypes(self): 
-        return "*"
-    def condition(self): 
-        """ OMP,ACC: accelerate only if condition is satisfied. Empty string means condition is satisfied. """
-        return ""
-    def asyncNowait(): 
-        """value != CLAUSE_NOT_FOUND means True"""
-        return CLAUSE_NOT_FOUND
-    def depend(self): 
-        """ only OMP """
-        return {
-          "in":[],
-          "out":[],
-          "inout":[],
-          "inout":[],
-          "mutexinoutset":[],
-          "depobj":[]
-        }
-    def devicePtrs(self):
-        """ CUF: """
-        return []
-    def createAllocVars(self):
-        return []
-    def deleteReleaseVars(self):
-        return []
-    def copyMapToFromVars(self):
-        return []
-    def copyinMapToAttachVars(self):
-        """ ACC: also include attach vars """
-        return []
-    def copyoutMapFromDetachVars(self):
-        """ ACC: also include attach vars """
-        return []
-
 class TTLoopKernel(TTNode,IComputeConstruct):
+    def _assignFields(self):
+        self._parentDirective, self._body = self.tokens
     def kernelLaunchInfo(self) :
         return self._launchInfo
     def loopVars(self):
@@ -261,13 +275,6 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 conditions.append(loop.hipThreadBoundCStr()) 
         return "{0}{2}if ({1}) {{\n{3}}}".format(\
             indices,"&&".join(conditions),reductionPreamble,makeCStr(self._body))
-    def ompFStr(self):
-        # TODO target teams distribute parallel workshare not part of OpenMP standard
-        # 1. unpack colon (":") expressions 
-        for expr in findAll(self._body,TTStatement): 
-            if type(expr._statement[0]) is TTAssignment:
-                expr._statement[0] = expr._statement[0].convertToDoLoopNestIfNecessary()
-        assert False, "Not implemented!"
 
 annotatedDoLoop.setParseAction(TTDoLoop)
 loopKernel.setParseAction(TTLoopKernel)

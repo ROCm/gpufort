@@ -117,7 +117,9 @@ class TTAccClauseLink(TTSimpleMapping):
     pass
 class TTAccClauseDefault(TTNode):
     def _assignFields(self,tokens):
-        pass
+        self._value = tokens
+    def value(self):
+        return self._value
 class TTAccReductionVar(TTNode):
     def _assignFields(self,tokens):
         self._operator, self._var = tokens
@@ -132,8 +134,8 @@ class TTAccClauseReduction(TTNode):
     def reductionVars(self):
         result = {}
         for red in self._reductions:
-            varName = makeCStr(red._var).lower()
-            result[varName] = makeCStr(red._operator).lower() 
+            varName = makeCStr(red._var)
+            result[varName] = makeCStr(red._operator) 
         return result
 class TTAccClauseRoutine(TTNode):
     def _assignFields(self,tokens):
@@ -171,13 +173,121 @@ class TTAccClauseAsync(TTNode):
 # Directives
 #
 
-class TTAccDirective(TTNode):
+class TTAccDirectiveBase(TTNode):
     def _assignFields(self,tokens):
        self._clauses = tokens
     def ompFStr(self):
        assert False, "Not implemented"     
 
-class TTAccDeclare(TTAccDirective):
+class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
+    """
+    Abstract class that handles the following clauses
+      if( condition )
+      copy( var-list )
+      copyin( [readonly:]var-list )
+      copyout( var-list )
+      create( var-list )
+      no_create( var-list )
+      present( var-list )
+      deviceptr( var-list )
+      attach( var-list )
+      default( none | present )
+    which are common to data to parallel, kernels and data directives.
+    """
+    def __handleSimpleMapping(self,clauseType):
+        clause = findFirst(self._clauses,clauseType)
+        if not clause is None:
+            return clause.varNames()
+        else:
+            return []
+    def devicePtrs(self):
+        return self.__handleSimpleMapping(TTAccClauseDeviceptr)
+    def createAllocVars(self):
+        return self.__handleSimpleMapping(TTAccClauseCreate)
+    def no_createVars(self):
+        return self.__handleSimpleMapping(TTAccClauseNoCreate)
+    def presentVars(self):
+        return self.__handleSimpleMapping(TTAccClausePresent)
+    def copyMapToFromVars(self):
+        return self.__handleSimpleMapping(TTAccClauseCopy)
+    def copyinMapToAttachVars(self):
+        return self.__handleSimpleMapping(TTAccClauseCopyin) +\
+               self.__handleSimpleMapping(TTAccClauseAttach)
+    def copyoutMapFromDetachVars(self):
+        return self.__handleSimpleMapping(TTAccClauseCopyout) +\
+               self.__handleSimpleMapping(TTAccClauseDetach)
+    def deleteReleaseVars(self):
+        return self.__handleSimpleMapping(TTAccClauseDelete)
+    def conditionFStr(self):
+        clause = findFirst(self._clauses,TTAccClauseIf)
+        if not clause is None:
+            return [makeFStr(e) for e in clause.expressions()]
+        else:
+            return ""
+    def conditionCStr(self):
+        clause = findFirst(self._clauses,TTAccClauseIf)
+        if not clause is None:
+            return [makeCStr(e) for e in clause.expressions()]
+        else:
+            return ""
+    def presentByDefault(self):
+        clause = findFirst(self._clauses,TTAccClauseDefault)
+        if not clause is None:
+            return clause.value() == "present"
+        else:
+            return True
+    def ompFStr(self,prefix=""):
+        """
+        :return: 'prefix' [mapped-clauses]
+        
+        where the clauses are mapped as follows:
+        
+        attach:    "map(to: var-list)"
+        copyin:    "map(to: var-list)"
+        detach:    "map(from: var-list)"
+        copyout:   "map(from: var-list)"
+        copy:      "map(tofrom: var-list)"
+        create:    "map(alloc: var-list)"
+        delete:    "map(release: var-list)"
+        present:   "" 
+        no_create: ""
+        """
+        result      = prefix
+        toList      = self.copyinMapToAttachVars()
+        fromList    = self.copyoutMapFromDetachVars()
+        tofromList  = self.copyMapToFromVars()
+        allocList   = self.createAllocVars()
+        releaseList = self.deleteReleaseVars()       
+        if len(toList):
+            result += " map(to:"+",".join(toList)+")"
+        if len(fromList):
+            result += " map(from:"+",".join(fromList)+")"
+        if len(tofromList):
+            result += " map(tofrom:"+",".join(tofromList)+")"
+        if len(allocList):
+            result += " map(alloc:"+",".join(allocList)+")"
+        if len(releaseList):
+            result += " map(release:"+",".join(releaseList)+")"
+        return result
+
+class TTAccData(TTAccDataManagementDirectiveBase):
+    """
+    possible clauses
+      if( condition )
+      copy( var-list )
+      copyin( [readonly:]var-list )
+      copyout( var-list )
+      create( var-list )
+      no_create( var-list )
+      present( var-list )
+      deviceptr( var-list )
+      attach( var-list )
+      default( none | present )
+    """
+    
+class TTAccData(TTAccDataManagementDirectiveBase):
+
+class TTAccDeclare(TTAccDirectiveBase):
     """ NOTE: In contrast to OMP, '!$acc declare' is only applied to global variables.
     There is '!$acc routine' for routines.
     """
@@ -189,26 +299,26 @@ class TTAccDeclare(TTAccDirective):
             return []
     def ompFStr(self):
         toList =\
-          self.__handleSimpleMapping(self,TTAccClauseCreate) +\
-          self.__handleSimpleMapping(self,TTAccClauseCopy) +\
-          self.__handleSimpleMapping(self,TTAccClauseCopyin) +\
-          self.__handleSimpleMapping(self,TTAccClauseAttach) +\
-          self.__handleSimpleMapping(self,TTAccClauseCopyout) +\
-          self.__handleSimpleMapping(self,TTAccClauseDetach)
+          self.__handleSimpleMapping(TTAccClauseCreate) +\
+          self.__handleSimpleMapping(TTAccClauseCopy) +\
+          self.__handleSimpleMapping(TTAccClauseCopyin) +\
+          self.__handleSimpleMapping(TTAccClauseAttach) +\
+          self.__handleSimpleMapping(TTAccClauseCopyout) +\
+          self.__handleSimpleMapping(TTAccClauseDetach)
     
        # TODO: not sure about this mapping       
-       toList += self.__handleSimpleMapping(self,TTAccClauseDeviceResident)
+       toList += self.__handleSimpleMapping(TTAccClauseDeviceResident)
 
-       linkList = self.__handleSimpleMapping(self,TTAccClauseLink)
+       linkList = self.__handleSimpleMapping(TTAccClauseLink)
        
        result = "!$omp target declare"
        if len(toList):
            result += " to("+",".join(toList)+")"
        if len(linkList):
-           result += " to("+",".join(linkList)+")"
+           result += " link("+",".join(linkList)+")"
        return result
 
-class TTAccRoutine(TTAccDirective):
+class TTAccRoutine(TTAccDirectiveBase):
     def _assignFields(self,tokens):
         self._id, self._clauses = tokens
     def ompFStr(self,additions=""):
@@ -225,10 +335,10 @@ class TTAccRoutine(TTAccDirective):
                 result += " simd "
         #if not "device_type" in additions:
         #    result += " device_type(any)"
-        result += additions
+        result += " "+additions
        return result
 
-class TTAccUpdate(TTAccDirective):
+class TTAccUpdate(TTAccDirectiveBase):
     def ompFStr(self):
         result = "!$omp target update"
         hostClause   = findFirst(self._clauses,TTAccClauseHost)
@@ -239,7 +349,7 @@ class TTAccUpdate(TTAccDirective):
             result += " from("+",".join(deviceClause.varNames())+")"
         return result
 
-class TTAccWait(TTAccDirective):
+class TTAccWait(TTAccDirectiveBase):
     def waitArgs(self):
         """ Can be used to deduce task dependencies """
         clause = findFirst(self._clauses,TTAccClauseWait)
@@ -255,7 +365,7 @@ class TTAccWait(TTAccDirective):
             result += " depend(out:"+",".join(dependOut)")"
         return result
 
-class TTAccLoop(TTAccDirective,ILoopAnnotation):
+class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
     """
     possible clauses:
       collapse( n )
@@ -312,7 +422,7 @@ class TTAccLoop(TTAccDirective,ILoopAnnotation):
         return self.__handleSimpleMapping(TTAccClausePrivate)
     def firstprivateVars(self):
         return self.__handleSimpleMapping(TTAccClauseFirstprivate)
-    def ompFStr(self,prefix="!$omp",parallelRegion="",loopType="do"):
+    def ompFStr(self,prefix="!$omp",loopType="do",parallelRegion="parallel"):
         result = prefix
         def parallelismClause(clause):
             return type(clause) is TTAccClauseGang or\
@@ -321,14 +431,19 @@ class TTAccLoop(TTAccDirective,ILoopAnnotation):
         for clause in findAllMatching(self._clauses,parallelismClause):
             if type(clause) is TTAccClauseGang:
                 result += " teams distribute"
+        result +=  " "+parallelRegion+" "+loopType
         for clause in findAllMatching(self._clauses,parallelismClause):
             if type(clause) is TTAccClauseWorker:
                 pass
             elif type(clause) is TTAccClauseVector:
-                pass
-        result +=  " "+parallelRegion+" "+loopType
-        if len(self.privateVars()):
-            result += " private("+",".join(self.privateVars())+")" 
+                result += " simd"
+                if clause.value() > 0:
+                    result += " simd simdlen("+str(clause.value())+")"
+        privateVars = self.privateVars() 
+        if len():
+            result += " private("+",".join(privateVars+")" 
+        if len(self.reductionVars()):
+            result += " reduction("+",".join(self.firstprivateVars())+")" 
         #if len(self.firstprivateVars()):
         #    result += " firstprivate("+",".join(self.firstprivateVars())+")" 
         #if len(self.sharedVars()):
@@ -336,7 +451,7 @@ class TTAccLoop(TTAccDirective,ILoopAnnotation):
         return result
 
 
-class TTAccParallel(TTAccDirective,IComputeConstruct):
+class TTAccParallel(TTAccDataManagementDirectiveBase):
     """
     possible clauses:
       async [( int-expr )]
@@ -373,25 +488,20 @@ class TTAccParallel(TTAccDirective,IComputeConstruct):
         return ""
     def asyncNowait(): 
         return CLAUSE_NOT_FOUND
-    def devicePtrs(self):
-        return self.__handleSimpleMapping(self,TTAccClauseDeviceptr)
-    def createAllocVars(self):
-        return self.__handleSimpleMapping(self,TTAccClauseCreate)
-    def deleteReleaseVars(self):
-        return self.__handleSimpleMapping(self,TTAccClauseDelete)
-    def copyMapToFromVars(self):
-        return self.__handleSimpleMapping(self,TTAccClauseCopy)
-    def copyinMapToAttachVars(self):
-        return self.__handleSimpleMapping(self,TTAccClauseCopyin) +\
-               self.__handleSimpleMapping(self,TTAccClauseAttach)
-    def copyoutMapFromDetachVars(self):
-        return self.__handleSimpleMapping(self,TTAccClauseCopyout) +\
-               self.__handleSimpleMapping(self,TTAccClauseDetach)
+    def ompFStr(self,prefix="!$omp target teams distribute"):
+        result   = prefix 
+        dataPart = " "+TTAccDataManagementDirectiveBase.ompFStr(self,prefix="")
+        # TODO add more details
+        return result
 
 class TTAccParallelLoop(TTAccParallel,TTAccLoop):
-    def ompFStr(self,prefix):
-        result = "!$omp target parallel loop"
-        result = TTAccLoop.ompFStr(self,"")
+    def ompFStr(self,prefix="!$omp",parallelRegion="",loopType="do"):
+        dataPart = " "+TTAccParallel.ompFStr(self,prefix="")
+        loopPart = TTAccLoop.ompFStr(self,"")
+        result   = "!$omp target"
+        if not "teamsdistribute" in loopPart.replace(" ",""):
+           result += " teams distribute" 
+        return result + " " + loopPart + " " + dataPart
 
 # TODO treat kernels and parallel same way for now
 class TTAccKernels(TTAccParallel):

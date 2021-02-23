@@ -5,8 +5,6 @@ import translator.translator as translator
 
 print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.stderr)
 
-sys.exit()
-
 testdata = []
 testdata.append("""
 !$acc loop 
@@ -15,9 +13,10 @@ do i = 1, n
 end do
 """)
 testdata.append("""
-!$acc kernels loop 
+!$acc kernels loop reduction(+:c)
 do i = 1, n
   a(i) = 3;
+  c = c + a(i)
 end do
 """)
 
@@ -62,9 +61,10 @@ end do
 
 for snippet in testdata:
     try:
-        print(translator.annotatedDoLoop.parseString(snippet)[0])
-    except:
+        print(translator.annotatedDoLoop.parseString(snippet)[0]._annotation.ompFStr())
+    except Exception as e:
         print(" - FAILED",file=sys.stderr)
         print("failed to parse '{}'".format(snippet),file=sys.stderr)
+        raise e
         sys.exit(2)
 print(" - PASSED",file=sys.stderr)

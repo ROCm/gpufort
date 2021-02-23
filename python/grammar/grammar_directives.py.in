@@ -3,3 +3,6 @@ genericPragma        = Regex(r"[!c\*]\$\w+")
 genericPragmaNewline = Regex(r"[!c\*]\$\w+\&")
 
 annotatedDoLoop = Forward()
+
+CLAUSE_NOT_FOUND           = -2
+CLAUSE_VALUE_NOT_SPECIFIED = -1

@@ -193,11 +193,25 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
       attach( var-list )
       default( none | present )
     which are common to data to parallel, kernels and data directives.
+    
+    Further handles the following additional clauses
+    that can appear with 'data', 'enter data' and 'exit data'
+    directives:
+      if( condition )  
+      async [( int-expr )]
+      wait [( wait-argument )]
+      finalize
     """
-    def __handleSimpleMapping(self,clauseType):
-        clause = findFirst(self._clauses,clauseType)
+    def __handleSimpleMapping(self,TTAccClauseAsync):
+        clause = findFirst(self._clauses,TTAccClauseAsync)
         if not clause is None:
             return clause.varNames()
+        else:
+            return []
+    def asyncNowait(): 
+        clause = findFirst(self._clauses,TTAccClauseAsync)
+        if not clause is None:
+            return makeFstr(clause.expression())
         else:
             return []
     def devicePtrs(self):
@@ -210,24 +224,20 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
         return self.__handleSimpleMapping(TTAccClausePresent)
     def copyMapToFromVars(self):
         return self.__handleSimpleMapping(TTAccClauseCopy)
-    def copyinMapToAttachVars(self):
-        return self.__handleSimpleMapping(TTAccClauseCopyin) +\
-               self.__handleSimpleMapping(TTAccClauseAttach)
-    def copyoutMapFromDetachVars(self):
+    def copyinMapToVars(self):
+        return self.__handleSimpleMapping(TTAccClauseCopyin)
+    def copyoutMapFromVars(self):
         return self.__handleSimpleMapping(TTAccClauseCopyout) +\
-               self.__handleSimpleMapping(TTAccClauseDetach)
+    def attachVars(self):
+        return self.__handleSimpleMapping(TTAccClauseAttach)
+    def detachVars(self):
+        return self.__handleSimpleMapping(TTAccClauseDetach)
     def deleteReleaseVars(self):
         return self.__handleSimpleMapping(TTAccClauseDelete)
-    def conditionFStr(self):
+    def condition(self):
         clause = findFirst(self._clauses,TTAccClauseIf)
         if not clause is None:
-            return [makeFStr(e) for e in clause.expressions()]
-        else:
-            return ""
-    def conditionCStr(self):
-        clause = findFirst(self._clauses,TTAccClauseIf)
-        if not clause is None:
-            return [makeCStr(e) for e in clause.expressions()]
+            return [makeFStr(e) for e in clause.expression()]
         else:
             return ""
     def presentByDefault(self):
@@ -236,28 +246,42 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
             return clause.value() == "present"
         else:
             return True
-    def ompFStr(self,prefix=""):
+    def ompFStr(self,prefix="",arraysInBody=set(),inoutArraysInBody=set()):
+        # TODO split in frontend and backend?
         """
+        :param: inoutArrays all used in embedded regions whose elements appear as lvalues
+        :param: inArrays    all arrays that are not lvalues
         :return: 'prefix' [mapped-clauses]
         
         where the clauses are mapped as follows:
         
-        attach:    "map(to: var-list)"
-        copyin:    "map(to: var-list)"
-        detach:    "map(from: var-list)"
-        copyout:   "map(from: var-list)"
-        copy:      "map(tofrom: var-list)"
-        create:    "map(alloc: var-list)"
-        delete:    "map(release: var-list)"
-        present:   "" 
-        no_create: ""
+        attach,copyin:  "map(to: var-list)"
+        detach,copyout: "map(from: var-list)"
+        copy:           "map(tofrom: var-list)"
+        create:         "map(alloc: var-list)"
+        delete:         "map(release: var-list)"
+        present:        "" 
+        no_create:      ""
         """
-        result      = prefix
-        toList      = self.copyinMapToAttachVars()
-        fromList    = self.copyoutMapFromDetachVars()
-        tofromList  = self.copyMapToFromVars()
-        allocList   = self.createAllocVars()
-        releaseList = self.deleteReleaseVars()       
+   
+        toList        = self.copyinMapToAttachVars()
+        fromList      = self.copyoutMapFromDetachVars()
+        tofromList    = self.copyMapToFromVars()
+        allocList     = self.createAllocVars()
+        releaseList   = self.deleteReleaseVars()       
+        deviceptrList = self.devicePtrs()
+        presentList   = self.presentVars() 
+        allocList    +=  self.no_createVars()
+
+        if not self.presentByDefault():
+            inArraysInBody    = arraysInBody - inoutArraysInBody
+            alreadyConsidered = set(toList+fromList+tofromList+allocList+deviceptrList+presentList)
+            inArraysInBody    = inArraysInBody    - alreadyConsidered # note: {val} - {val,otherVal} = empty set
+            inoutArraysInBody = inoutArraysInBody - alreadyConsidered 
+            toList     += inArraysInBody
+            tofromList += inoutArraysInBody
+
+        result        = prefixi+" "
         if len(toList):
             result += " map(to:"+",".join(toList)+")"
         if len(fromList):
@@ -268,31 +292,43 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
             result += " map(alloc:"+",".join(allocList)+")"
         if len(releaseList):
             result += " map(release:"+",".join(releaseList)+")"
+        if len(devicePtrs):
+            result += " use_device_ptr("+",".join(deviceptrList)+")"
         return result
 
 class TTAccData(TTAccDataManagementDirectiveBase):
     """
-    possible clauses
+    possible clauses:
+      clauses of TTAccDataManagementDirectiveBase
       if( condition )
-      copy( var-list )
-      copyin( [readonly:]var-list )
-      copyout( var-list )
-      create( var-list )
-      no_create( var-list )
-      present( var-list )
-      deviceptr( var-list )
-      attach( var-list )
-      default( none | present )
     """
-    
-class TTAccData(TTAccDataManagementDirectiveBase):
+    def ompFStr(self,arraysInBody=set(),inoutArraysInBody=set()):
+        return TTAccDataManagementDirectiveBase.ompFstr(self,"$!omp acc data"
 
+class TTAccEnterData(TTAccDataManagementDirectiveBase):
+    """
+    possible clauses:
+      clauses of TTAccData
+    """
+    def ompFStr(self,arraysInBody=set(),inoutArraysInBody=set()):
+        return TTAccDataManagementDirectiveBase.ompFstr(self,"$!omp acc enter data"
+
+class TTAccExitData(TTAccDataManagementDirectiveBase):
+    """
+    possible clauses:
+      clauses of TTAccData
+      async [( int-expr )]
+      wait [( wait-argument )]
+    """
+    def ompFStr(self,arraysInBody=set(),inoutArraysInBody=set()):
+        return TTAccDataManagementDirectiveBase.ompFstr(self,"$!omp acc exit data"
+    
 class TTAccDeclare(TTAccDirectiveBase):
     """ NOTE: In contrast to OMP, '!$acc declare' is only applied to global variables.
     There is '!$acc routine' for routines.
     """
-    def __handleSimpleMapping(self,clauseType):
-        clause = findFirst(self._clauses,clauseType)
+    def __handleSimpleMapping(self,TTAccClauseAsync):
+        clause = findFirst(self._clauses,TTAccClauseAsync)
         if not clause is None:
             return clause.varNames()
         else:
@@ -359,10 +395,11 @@ class TTAccWait(TTAccDirectiveBase):
             return clause.expressions()
     def asyncQueue(self):
         assert False, "Not implemented!"
-    def ompFStr(self,dependOut=[]):
+    def ompFStr(self,dependStr=""):
+        """ :param dependStr: Append depend clauses """
         result = "!$omp taskwait"
-        if len(dependOut):
-            result += " depend(out:"+",".join(dependOut)")"
+        if len(dependStr):
+            result += " "+dependStr
         return result
 
 class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
@@ -380,8 +417,8 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
       private( var-list )
       reduction( operator:var-list )
     """
-    def __handleSimpleMapping(self,clauseType):
-        clause = findFirst(self._clauses,clauseType)
+    def __handleSimpleMapping(self,TTAccClauseAsync):
+        clause = findFirst(self._clauses,TTAccClauseAsync)
         if not clause is None:
             return clause.varNames()
         else:
@@ -420,8 +457,6 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
             return {}
     def privateVars(self):
         return self.__handleSimpleMapping(TTAccClausePrivate)
-    def firstprivateVars(self):
-        return self.__handleSimpleMapping(TTAccClauseFirstprivate)
     def ompFStr(self,prefix="!$omp",loopType="do",parallelRegion="parallel"):
         result = prefix
         def parallelismClause(clause):
@@ -444,10 +479,6 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
             result += " private("+",".join(privateVars+")" 
         if len(self.reductionVars()):
             result += " reduction("+",".join(self.firstprivateVars())+")" 
-        #if len(self.firstprivateVars()):
-        #    result += " firstprivate("+",".join(self.firstprivateVars())+")" 
-        #if len(self.sharedVars()):
-        #    result += " shared("+",".join(self.sharedVars())+")" 
         return result
 
 
@@ -475,19 +506,16 @@ class TTAccParallel(TTAccDataManagementDirectiveBase):
       firstprivate( var-list )
       default( none | present )
     """
-    def __handleSimpleMapping(self,clauseType):
-        clause = findFirst(self._clauses,clauseType)
+    def __handleSimpleMapping(self,TTAccClauseAsync):
+        clause = findFirst(self._clauses,TTAccClauseAsync)
         if not clause is None:
             return clause.varNames()
         else:
             return []
-    def deviceTypes(self): 
-        return "*"
-    def condition(self): 
-        """ OMP,ACC: accelerate only if condition is satisfied. Empty string means condition is satisfied. """
-        return ""
-    def asyncNowait(): 
-        return CLAUSE_NOT_FOUND
+    def privateVars(self):
+        return self.__handleSimpleMapping(TTAccClausePrivate)
+    def firstprivateVars(self):
+        return self.__handleSimpleMapping(TTAccClauseFirstprivate)
     def ompFStr(self,prefix="!$omp target teams distribute"):
         result   = prefix 
         dataPart = " "+TTAccDataManagementDirectiveBase.ompFStr(self,prefix="")

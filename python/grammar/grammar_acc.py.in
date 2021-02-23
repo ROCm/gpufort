@@ -20,9 +20,9 @@ accReductionVar      = accReductionOperator + Suppress(":") + allocateRvalue
 accReductionVarList  = Group(delimitedList(accReductionVar))
 
 # clauses
-acc_clause_gang             = GANG + Optional(LPAR + integer + RPAR,default = -1)
-acc_clause_worker           = WORKER + Optional(LPAR + integer + RPAR,default = -1)
-acc_clause_vector           = VECTOR + Optional(LPAR + integer + RPAR,default = -1)
+acc_clause_gang             = GANG + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
+acc_clause_worker           = WORKER + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
+acc_clause_vector           = VECTOR + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
 acc_clause_num_gangs        = NUM_GANGS + LPAR + integer + RPAR 
 acc_clause_num_workers      = NUM_WORKERS + LPAR + integer + RPAR 
 acc_clause_vector_length    = VECTOR_LENGTH + LPAR + integer + RPAR
@@ -54,7 +54,7 @@ acc_clause_device_resident  = DEVICE_RESIDENT + LPAR + accVarList + RPAR
 acc_clause_link             = LINK + LPAR + accVarList + RPAR
 acc_clause_tile             = TILE + LPAR + Group(integer + Suppress(",") + integer) + RPAR
 acc_clause_wait             = WAIT + Optional(LPAR + accVarList + RPAR, default=[])
-acc_clause_async            = ASYNC + Optional(LPAR + rvalue + RPAR, default = "0") 
+acc_clause_async            = ASYNC + Optional(LPAR + rvalue + RPAR, default = CLAUSE_VALUE_NOT_SPECIFIED) 
 
 acc_clause_seq,acc_clause_auto,acc_clause_independent,acc_clause_read,acc_clause_write,acc_clause_capture,acc_clause_nohost,acc_clause_finalize,acc_clause_if_present = makeCaselessLiteral("seq,auto,independent,read,write,capture,nohost,finalize,if_present",suppress=False)
 

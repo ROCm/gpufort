@@ -7,17 +7,12 @@
 
 # OpenACC
 ACC,KERNELS,PARALLEL,LOOP,DATA,ENTER,EXIT,HOST_DATA,ATOMIC,UPDATE,SERIAL,CACHE,ROUTINE,DECLARE = makeCaselessLiteral("acc,kernels,parallel,loop,data,enter,exit,host_data,atomic,update,serial,cache,routine,declare",suppress=True)
-
 ASYNC,WAIT,NUM_GANGS,NUM_WORKERS,VECTOR_LENGTH,DEVICE_TYPE,COPY,COPYIN,COPYOUT,CREATE,NO_CREATE,PRESENT,DEVICEPTR,ATTACH,DETACH,DEFAULT,NONE,PRIVATE,FIRST_PRIVATE,REDUCTION,DELETE,ROUTINE,USE_DEVICE,COLLAPSE,SELF,DEVICE,HOST,BIND,DEVICE_RESIDENT,LINK,TILE=\
   makeCaselessLiteral("async,wait,num_gangs,num_workers,vector_length,device_type,copy,copyin,copyout,create,no_create,present,deviceptr,attach,detach,default,none,private,first_private,reduction,delete,routine,use_device,collapse,self,device,host,bind,device_resident,link,tile",suppress=True)
-
 GANG,VECTOR,WORKER = makeCaselessLiteral("gang,vector,worker",suppress=False)
+ACC_REDUCTION_OP   = oneOf("+ * max min iand ior ieor .and. .or. .eqv. .neqv.", caseless=CASELESS)
 
 accVarList = Group(delimitedList(allocateRvalue)) 
-
-accReductionOperator = oneOf("+ * max min iand ior ieor .and. .or. .eqv. .neqv.", caseless=CASELESS)
-accReductionVar      = accReductionOperator + Suppress(":") + allocateRvalue
-accReductionVarList  = Group(delimitedList(accReductionVar))
 
 # clauses
 acc_clause_gang             = GANG + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
@@ -42,13 +37,13 @@ acc_clause_detach           = DETACH + LPAR + accVarList + RPAR
 acc_clause_default          = DEFAULT + LPAR +  (CASELESS_LITERAL("none") | CASELESS_LITERAL("present")) + RPAR
 acc_clause_use_device       = USE_DEVICE + LPAR + accVarList + RPAR
 acc_clause_private          = PRIVATE + LPAR + accVarList + RPAR
-acc_clause_reduction        = REDUCTION + LPAR + accReductionVarList + RPAR
+acc_clause_reduction        = REDUCTION + LPAR + ACC_REDUCTION_OP + Suppress(":") + accVarList + RPAR
 acc_clause_delete           = DELETE + LPAR + accVarList + RPAR
 acc_clause_private          = PRIVATE + LPAR + accVarList + RPAR
 acc_clause_first_private    = FIRST_PRIVATE + LPAR + accVarList + RPAR 
 acc_clause_collapse         = COLLAPSE + LPAR + integer + RPAR
-acc_clause_host             = HOST + LPAR + accVarList + RPAR
-acc_clause_self             = SELF + LPAR + accVarList + RPAR
+acc_clause_host             = ( HOST | SELF) + LPAR + accVarList + RPAR
+acc_clause_self             = SELF + LPAR + arithmeticLogicalExpression + RPAR
 acc_clause_bind             = BIND + LPAR + identifier + RPAR
 acc_clause_device_resident  = DEVICE_RESIDENT + LPAR + accVarList + RPAR
 acc_clause_link             = LINK + LPAR + accVarList + RPAR

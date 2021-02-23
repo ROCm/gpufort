@@ -149,7 +149,6 @@ def convertToCType(fType,kind,default=None):
     kindLower = kind.lower()
     return FORTRAN_2_C_TYPE_MAP.get(fType.lower(),{ kindLower : default }).get(kindLower, "UNKNOWN")
 
-COMMENT = r"(!|^\s*[\*cCdD])[^\$].+"
 pIgnore = re.compile(COMMENT+"|\&")
 pElseIf = re.compile(r"elseif", re.IGNORECASE)
 
@@ -164,8 +163,6 @@ def prepareFortranSnippet(fortranSnippet):
     # replace power (**) expression by func call expression
     result = power.transformString(result)
     return result
-
-GPUFORT_CPP_ROUTINES = { "__pow" : "pow" }
 
 def postprocessCSnippet(cSnippet):
     toHip = GPUFORT_CPP_ROUTINES 

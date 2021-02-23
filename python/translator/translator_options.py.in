@@ -1,4 +1,6 @@
 # general options
+COMMENT = r"(!|^\s*[\*cCdD])[^\$].+"
+GPUFORT_CPP_ROUTINES = { "__pow" : "pow" }
 
 UNCONVERTED = "TODO(gpufort) UNCONVERTED - Please adjust yourself!"
 FLOAT_COMPLEX="hipFloatComplex"

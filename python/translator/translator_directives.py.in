@@ -14,16 +14,16 @@ class ILoopAnnotation():
         return [CLAUSE_NOT_FOUND]
     def dataIndependentIterations(self):
         return True
-    def privateVars(self): 
+    def privateVars(self,converter=makeFStr): 
         """ CUF,ACC: all scalars are private by default """ 
         return []
-    def lastprivateVars(self): 
+    def lastprivateVars(self,converter=makeFStr): 
         """ only OMP """
         return []
-    def reductionVars(self): 
+    def reductionVars(self,converter=makeFStr): 
         """ CUF: Scalar lvalues are reduced by default """
         return {}
-    def sharedVars(self): 
+    def sharedVars(self,converter=makeFStr): 
         """ only OMP """
         return []
 
@@ -33,12 +33,15 @@ class IDataRegion():
         return CLAUSE_NOT_FOUND
     def deviceTypes(self): 
         return "*"
-    def condition(self): 
+    def ifCondition(self): 
         """ OMP,ACC: accelerate only if condition is satisfied. Empty string means condition is satisfied. """
+        return ""
+    def selfCondition(self): 
+        """ OMP,ACC: run on current CPU / device (and do not offload) """
         return ""
     def asyncNowait():
         return CLAUSE_NOT_FOUND
-    def devicePtrs(self):
+    def deviceptrs(self):
         return []
     def createAllocVars(self):
         return []
@@ -63,7 +66,6 @@ class IDataRegion():
         """ only ACC """
         return []
 
-
 class IComputeConstruct(IDataRegion):
     def depend(self): 
         """ only OMP """
@@ -75,6 +77,12 @@ class IComputeConstruct(IDataRegion):
           "mutexinoutset":[],
           "depobj":[]
         }
+    def privateVars(self,converter=makeFStr): 
+        """ CUF,ACC: all scalars are private by default """ 
+        return []
+    def firstprivateVars(self,converter=makeFStr): 
+        """ CUF,ACC: all scalars are private by default """ 
+        return []
     def presentByDefault(self):
         """ only ACC """
         return True

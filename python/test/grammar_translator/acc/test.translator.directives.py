@@ -5,6 +5,8 @@ import translator.translator as translator
 
 print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.stderr)
 
+sys.exit()
+
 testdata = []
 testdata.append("""
 !$acc loop 

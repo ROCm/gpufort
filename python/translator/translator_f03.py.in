@@ -172,8 +172,8 @@ class IValue:
 
 class TTRvalue(TTNode,IValue):
     def _assignFields(self,tokens):
-        self._sign = tokens[0]
-        self._value = tokens[1]
+        self._sign           = tokens[0]
+        self._value          = tokens[1]
         self._reductionIndex = ""
         #print("{0}: {1}".format(self.cStr(),self.location))
     def fStr(self):
@@ -185,7 +185,7 @@ class TTRvalue(TTNode,IValue):
         return result
 class TTLvalue(TTNode,IValue):
     def _assignFields(self,tokens):
-        self._value = tokens[0]
+        self._value          = tokens[0]
         self._reductionIndex = ""
         #print("{0}: {1}".format(self.cStr(),self.location))
     def fStr(self):
@@ -1233,7 +1233,7 @@ identifier.setParseAction(TTIdentifier)
 rvalue.setParseAction(TTRvalue)
 lvalue.setParseAction(TTLvalue)
 simpleStructElem.setParseAction(TTStructElem)
-structElem.setParseAction(TTStructElem)
+derivedTypeElem.setParseAction(TTStructElem)
 funcCall.setParseAction(TTFunctionCallOrTensorAccess)
 subroutineCall.setParseAction(TTSubroutineCall)
 

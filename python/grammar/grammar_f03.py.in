@@ -42,17 +42,17 @@ conjugateDoubleComplex = DCONJG + singleArgPlusKind # emits 1 tokens, op: x+iy -
 
 conversions = convertToExtractReal | convertToDouble | convertToComplex | convertToDoubleComplex | extractImag | conjugate | conjugateDoubleComplex
 
-# structs
+# derivedTypes
 simpleStructRvalue = Forward()
 simpleStructElem   = identifier + ELEM + simpleStructRvalue
 simpleStructRvalue <<= simpleStructElem | identifier
 #
-structRvalue = Forward()
-structElem = (( funcCall | identifier ) + ELEM + structRvalue )
-structRvalue <<= funcCall | structElem | identifier
+derivedTypeRvalue = Forward()
+derivedTypeElem = (( funcCall | identifier ) + ELEM + derivedTypeRvalue )
+derivedTypeRvalue <<= funcCall | derivedTypeElem | identifier
 
 complexArithmeticExpression = Forward()
-rvalue = OPTSIGN + (conversions | complexArithmeticExpression | structElem | funcCall | identifier | logical | character | number)  # |: ordered OR, order is important
+rvalue = OPTSIGN + (conversions | complexArithmeticExpression | derivedTypeElem | funcCall | identifier | logical | character | number)  # |: ordered OR, order is important
 subroutineCall = CALL + funcCall
 
 # assignments
@@ -72,12 +72,12 @@ arithmeticLogicalExpression = infixNotation(rvalue, #NOTE: Slower because of the
 )
 
 # use in preprocessing step
-powerValue1 = OPTSIGN + (conversions | structElem | funcCall | identifier | number)
+powerValue1 = OPTSIGN + (conversions | derivedTypeElem | funcCall | identifier | number)
 powerValue2 = LPAR + arithmeticExpression + RPAR
 powerValue  = powerValue2 | powerValue1
 power = powerValue + Suppress("**") + powerValue
 
-lvalue = structElem | funcCall | identifier
+lvalue = derivedTypeElem | funcCall | identifier
 lvalueList = Group(delimitedList(lvalue))
 assignmentBegin = lvalue + EQ
 assignment = lvalue + EQ + arithmeticExpression # ! emits 2 tokens: *,*
@@ -285,7 +285,7 @@ programEnd = END + PROGRAM + Optional(identifier.suppress())
 typeStart = TYPE.suppress() + Optional(Optional(qualifierList) + COLONS,default=[]) + identifier # ! emits 2 tokens: [[*], *]
 typeEnd   = END + TYPE.suppress() + Optional(identifier).suppress()
 
-structureEnd = END + ~(NONSTRUCTURE) + Optional(FUNCTION|SUBROUTINE|MODULE).suppress() + Optional(identifier).suppress()
+derivedTypeureEnd = END + ~(NONSTRUCTURE) + Optional(FUNCTION|SUBROUTINE|MODULE).suppress() + Optional(identifier).suppress()
 # preprocessor
 cpp_defined      = CASELESS_LITERAL("defined").suppress() + LPAR + identifier + RPAR 
 cpp_ifdef        = CASELESS_LITERAL("ifdef").suppress() + identifier 

@@ -84,6 +84,8 @@ class TTDoLoop(TTNode):
             return bodyContent
 
 class IComputeConstruct():
+    def identifiersInBody(self,converter=makeFStr):
+        return []
     def arraysInBody(self,converter=makeFStr):
         return []
     def inoutArraysInBody(self,converter=makeFStr):
@@ -127,14 +129,7 @@ class IComputeConstruct():
         return []
     def depend(self): 
         """ only OMP """
-        #return {
-        #  "in":[],
-        #  "out":[],
-        #  "inout":[],
-        #  "inout":[],
-        #  "mutexinoutset":[],
-        #  "depobj":[]
-        #}
+        #return { "in":[], "out":[], "inout":[], "inout":[], "mutexinoutset":[], "depobj":[] }
         return {}
     def gangTeamPrivateVars(self,converter=makeFStr): 
         return []
@@ -147,21 +142,34 @@ class IComputeConstruct():
         """ only ACC parallel """
         return True
 
+class EmptyComputeConstruct(IComputeConstruct):
+    def __init__(self,fSnippet):
+        self._fSnippet = fSnippet
+    def identifiersInBody(self,converter=makeFStr):
+        valueType = TTLValue | TTRValue
+        identifierNames = []
+        for ident in valueType.scanString(self._fSnippet): # includes the identifiers of the function calls
+            val = converter(ident._value)
+            if not val.lower() in KEYWORDS and\
+               not val.lower() in GPUFORT_CPP_ROUTINES:
+                   identifierNames.append(val)
+        return set(identifierNames)
+
 class TTLoopKernel(TTNode,IComputeConstruct):
     def _assignFields(self):
         self._parentDirective, self._body = self.tokens
-    def kernelLaunchInfo(self) :
-        return self._launchInfo
+        self._indexHints = []
+    def setIndexHints(self,indexHints):
+        self._indexHints = []
     def loopVars(self):
         identifierNames = []
         doLoops  = findAll(self._body,TTDoLoop)
         for loop in doLoops:
              identifierNames.append(loop.loopVarCStr())
         return identifierNames
-    def allIdentifiers(self):
+    def identifiersInBody(self):
         identifierNames = []
-        myList = findAll(self._body,TTIdentifier) # includes the identifiers of the function calls
-        for ident in myList:
+        for ident in findAll(self._body,IValue): # includes the identifiers of the function calls
             name = makeCStr(ident._name)
             if not name.lower() in KEYWORDS and\
                not name.lower() in GPUFORT_CPP_ROUTINES:
@@ -170,7 +178,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
     def allLocalLvalues(self): # TODO specific for CUF input
         """
         We focus on scalar identifiers here, i.e. the left-hand side must not contain any index operator evaluations
-        or be a struct.
+        or be a derivedType.
         NOTE: The loop variables need to be removed from this result when rendering the corresponding C kernel.
         NOTE: When rendering the kernel, it is best to exclude all variables for which an array declaration has been found,
         from the result list. TTCufKernelDo instances do not know of the type of the variables.
@@ -278,25 +286,13 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 else:
                     indices += loop.collapsedLoopIndexCStr("")
                 denominatorFactors.append(loop.problemSizeCStr())
-                conditions.append(loop.hipThreadBoundCStr()) 
-        return "{0}{2}if ({1}) {{\n{3}}}".format(\
+                conditions.append(loop.hipThreadBoundCStr())
+        cSnippet = "{0}{2}if ({1}) {{\n{3}}}".format(\
             indices,"&&".join(conditions),reductionPreamble,makeCStr(self._body))
+        return postprocessCSnippet(cSnippet)
 
 annotatedDoLoop.setParseAction(TTDoLoop)
 loopKernel.setParseAction(TTLoopKernel)
-
-def formatDirective(directiveLine,maxLineWidth):
-    result   = ""
-    line     = ""
-    tokens   = directiveLine.split(" ")
-    sentinel = tokens[0]
-    for tk in tokens:
-        if len(line+tk) > maxLineWidth-1:
-            result += line + "&\n"
-            line = sentinel+" "
-        line += tk+" "
-    result += line.rstrip() 
-    return result
 
 # TODO parsing and translation is similar but analysis differs between the different kernel
 # types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)
@@ -328,29 +324,26 @@ def parseLoopKernel(fortranSnippet,maxRecursions=30):
    
     fortranSnippet = prepareFortranSnippet(fortranSnippet)
     try:
-        result           = simplifyLoopKernelUntilItCanGetParsed(fortranSnippet,maxRecursions)
-        #print(recursionsLeft)
+        computeConstruct = simplifyLoopKernelUntilItCanGetParsed(fortranSnippet,maxRecursions)
         if recursionsLeft < maxRecursions:
             body = "\n".join(fortranSnippet.split("\n")[1:])
-            identifierNames = list(set(filter(lambda x: x.lower() not in KEYWORDS,[makeFStr(ident) for ident in identifier.searchString(body)])))
-            #print(identifierNames) 
-        cSnippet = postprocessCSnippet(cSnippet)
+        return computeConstruct
     except Exception as e:
-        raise e
+        #raise e
         logger = logging.getLogger('') 
         logger.error("failed to convert kernel:\n{}".format(fortranSnippet))
         logger.error(str(e))
-        cSnippet = "" 
-        pragmaLine = fortranSnippet.split("\n")[0]
-        body = "\n".join(fortranSnippet.split("\n")[1:])
-        #kernelLaunchInfo = acc.parseString(pragmaLine)[0] 
-        kernelLaunchInfo = LaunchInfo()
-        #print(body)
-        identifierNames = list(set(filter(lambda x: x.lower() not in KEYWORDS,[makeFStr(ident) for ident in identifier.searchString(body)])))
-        numOuterLoopsToMap     = int(kernelLaunchInfo._numOuterLoopsToMap)
-        loopVars        = []
-        localLvalues    = []
-        reductionVars   = []
-        problemSize     = ["TODO unknown"]*numOuterLoopsToMap
-        #print(type(e))
-    return cSnippet, problemSize, kernelLaunchInfo, identifierNames, localLvalues, loopVars, reductionVars
+        return EmptyComputeConstruct(fsnippet)
+
+def formatDirective(directiveLine,maxLineWidth):
+    result   = ""
+    line     = ""
+    tokens   = directiveLine.split(" ")
+    sentinel = tokens[0]
+    for tk in tokens:
+        if len(line+tk) > maxLineWidth-1:
+            result += line + "&\n"
+            line = sentinel+" "
+        line += tk+" "
+    result += line.rstrip() 
+    return result

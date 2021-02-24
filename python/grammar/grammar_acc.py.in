@@ -131,3 +131,6 @@ accKernelBodyDirective = acc_loop | acc_serial_region | acc_atomic_region | acc_
 # !acc ...
 # !acc ...
 # some Fortran code
+
+# runtime symbols
+acc_runtime_symbol = Regex(r"acc_\w+")

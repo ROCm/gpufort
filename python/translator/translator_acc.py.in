@@ -1,4 +1,4 @@
-# local imports
+
 #from translator.translator_f03 import *
 #import utils
 
@@ -116,7 +116,7 @@ class TTAccClauseWait(TTNode):
     def _assignFields(self,tokens):
         self._expressions = list(tokens[0])
     def expressions(self):
-        return self._expressions
+        return makeFStr(self._expressions)
 class TTAccClauseAsync(TTNode):
     def _assignFields(self,tokens):
         self._expression = tokens[0]
@@ -164,12 +164,12 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
       wait [( wait-argument )]
       finalize
     """
-    def asyncNowait(): 
+    def asyncNowait(self): 
         clause = findFirst(self._clauses,TTAccClauseAsync)
         if not clause is None:
             return makeFStr(clause.expression())
         else:
-            return []
+            return CLAUSE_NOT_FOUND
     def deviceptrs(self):
         return self._handleSimpleMapping(TTAccClauseDeviceptr)
     def createAllocVars(self):
@@ -208,11 +208,11 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
             return clause.value() == "present"
         else:
             return True
-    def ompFStr(self,prefix="",arraysInBody=set(),inoutArraysInBody=set()):
+    def ompFStr(self,prefix="",arraysInBody=set(),inoutArraysInBody=set(),depend={}):
         # TODO split in frontend and backend?
         """
-        :param: inoutArrays all used in embedded regions whose elements appear as lvalues
-        :param: inArrays    all arrays that are not lvalues
+        :param: arraysInBody      all array lvalues and rvalues
+        :param: inoutArraysInBody all used in embedded regions whose elements appear as lvalues
         :return: 'prefix' [mapped-clauses]
         
         where the clauses are mapped as follows:
@@ -235,13 +235,11 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
         deviceptrList  = self.deviceptrs()
         presentList    = self.presentVars() 
 
+        inArraysInBody    = arraysInBody - inoutArraysInBody
+        alreadyConsidered = set(toList+fromList+tofromList+allocList+deviceptrList+presentList)
         if not self.presentByDefault():
-            inArraysInBody    = arraysInBody - inoutArraysInBody
-            alreadyConsidered = set(toList+fromList+tofromList+allocList+deviceptrList+presentList)
-            inArraysInBody    = inArraysInBody    - alreadyConsidered # note: {val} - {val,otherVal} = empty set
-            inoutArraysInBody = inoutArraysInBody - alreadyConsidered 
-            toList     += inArraysInBody
-            tofromList += inoutArraysInBody
+            toList     += list(inArraysInBody    - alreadyConsidered)  # note: {val} - {val,otherVal} = empty set
+            tofromList += list(inoutArraysInBody - alreadyConsidered)
 
         result = prefix+" "
         if len(toList):
@@ -256,6 +254,21 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
             result += " map(release:"+",".join(releaseList)+")"
         if len(deviceptrList):
             result += " use_device_ptr("+",".join(deviceptrList)+")"
+        # if, async
+        if self.asyncNowait() != CLAUSE_NOT_FOUND:
+            result += " nowait"
+            if len(depend):
+                for kind,variables in depend.items():
+                    result += " depend("+kind+":"+",".join(variables)+")"
+            else: 
+                if len(inArraysInBody):
+                    result += " depend("+kind+":"+",".join(inArraysInBody)+")"
+                if len(inoutArraysInBody):
+                    result += " depend("+kind+":"+",".join(inoutArraysInBody)+")"
+                    
+        ifCondition = self.ifCondition()
+        if len(ifCondition):
+            result += " if ("+ifCondition+")" 
         return result
 
 class TTAccData(TTAccDataManagementDirectiveBase):
@@ -357,6 +370,10 @@ class TTAccWait(TTAccDirectiveBase):
         result = "!$omp taskwait"
         if len(dependStr):
             result += " "+dependStr
+        else:
+            waitArgs = self.waitArgs()
+            if len(waitArgs):
+                result += " depend("+DEPEND_TODO+")"
         return result
 
 class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
@@ -442,7 +459,7 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
                 result += " reduction("+op+":"+",".join(values)+")" 
         return result
 
-class TTAccParallel(TTAccDataManagementDirectiveBase):
+class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase):
     """
     possible clauses:
       async [( int-expr )]
@@ -473,7 +490,11 @@ class TTAccParallel(TTAccDataManagementDirectiveBase):
     def ompFStr(self,prefix="!$omp target teams distribute",arraysInBody=set(),inoutArraysInBody=set()):
         result   = prefix
         dataPart = " "+TTAccDataManagementDirectiveBase.ompFStr(self,"",arraysInBody,inoutArraysInBody)
-        return result
+        return result + dataPart
+
+class TTAccParallel(TTAccComputeConstructBase):
+    def ompFStr(self,prefix="!$omp target teams distribute",arraysInBody=set(),inoutArraysInBody=set()):
+        return TTAccComputeConstructBase.ompFStr(self,"") # no in/inout array analysis required
 
 class TTAccParallelLoop(TTAccParallel,TTAccLoop):
     def _assignFields(self,tokens):
@@ -481,15 +502,17 @@ class TTAccParallelLoop(TTAccParallel,TTAccLoop):
         self._loopHandlesMutualClauses = False
     def ompFStr(self,loopType="do",arraysInBody=set(),inoutArraysInBody=set()):
         result       = "!$omp target teams distribute"
-        parallelPart = TTAccParallel.ompFStr(self,"",arraysInBody,inoutArraysInBody)
+        parallelPart = TTAccParallel.ompFStr(self,"")
         loopPart     = TTAccLoop.ompFStr(self,prefix="",loopType="do")
         return result + " " + loopPart.lstrip() + " " + parallelPart.lstrip()
 
-# TODO treat kernels and parallel same way for now
-class TTAccKernels(TTAccParallel):
+class TTAccKernels(TTAccComputeConstructBase):
     pass
+
 class TTAccKernelsLoop(TTAccParallelLoop):
-    pass
+    def _assignFields(self,tokens):
+        self._clauses                  = tokens
+        self._loopHandlesMutualClauses = False
 
 #
 # Connect actions with grammar
@@ -552,69 +575,3 @@ acc_kernels.setParseAction(TTAccKernels)
 acc_parallel.setParseAction(TTAccParallel)
 acc_parallel_loop.setParseAction(TTAccParallelLoop)
 acc_kernels_loop.setParseAction(TTAccKernelsLoop)
-
-# TODO parsing and translation is similar but analysis differs between the different kernel
-# types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)
-# while they are specified with ACC,OMP.
-recursionsLeft=0
-def convertAccLoopKernel2Hip(fortranSnippet,maxRecursions=30):
-    """
-    Return a csnippet equivalent to the original Fortran code.
-    """
-    global KEYWORDS 
-
-    def convertAccKernel2HipRecursively(fortranSnippet,recursionsToGo):
-        global recursionsLeft
-        recursionsLeft = recursionsToGo
-        try:
-            return lookKernel.parseString(fortranSnippet)[0]
-        except ParseBaseException as pbe:
-            if recursionsToGo <= 0:
-                raise pbe
-            else:
-                lineno = pbe.__getattr__("lineno")
-                lines = fortranSnippet.split("\n")
-                lines[lineno-1] = "! TODO could not parse: {}".format(lines[lineno-1])
-                modifiedFortranSnippet = "\n".join(lines)
-                #print(modifiedFortranSnippet)
-                return convertAccKernel2HipRecursively(modifiedFortranSnippet,recursionsToGo-1)
-        except Exception as e:
-            raise e        
-   
-    fortranSnippet = prepareFortranSnippet(fortranSnippet)
-    try:
-        result           = convertAccKernel2HipRecursively(fortranSnippet,maxRecursions)
-        cSnippet         = utils.prettifyCCode(result.cStr())
-        
-        kernelLaunchInfo = result.kernelLaunchInfo()
-        identifierNames  = result.allIdentifiers()
-        loopVars         = result.loopVars()
-        localLvalues     = list(filter(lambda x: x not in loopVars, result.allLocalLvalues())) 
-        localLvalues     += result.threadPrivateVars()
-        reductionVars    = result.reductionVars()
-        problemSize      = result.problemSize()
-        #print(recursionsLeft)
-        if recursionsLeft < maxRecursions:
-            body = "\n".join(fortranSnippet.split("\n")[1:])
-            identifierNames = list(set(filter(lambda x: x.lower() not in KEYWORDS,[makeFStr(ident) for ident in identifier.searchString(body)])))
-            #print(identifierNames) 
-        cSnippet = postprocessCSnippet(cSnippet)
-    except Exception as e:
-        raise e
-        logger = logging.getLogger('') 
-        logger.error("failed to convert kernel:\n{}".format(fortranSnippet))
-        logger.error(str(e))
-        cSnippet = "" 
-        pragmaLine = fortranSnippet.split("\n")[0]
-        body = "\n".join(fortranSnippet.split("\n")[1:])
-        #kernelLaunchInfo = acc.parseString(pragmaLine)[0] 
-        kernelLaunchInfo = LaunchInfo()
-        #print(body)
-        identifierNames = list(set(filter(lambda x: x.lower() not in KEYWORDS,[makeFStr(ident) for ident in identifier.searchString(body)])))
-        numOuterLoopsToMap     = int(kernelLaunchInfo._numOuterLoopsToMap)
-        loopVars        = []
-        localLvalues    = []
-        reductionVars   = []
-        problemSize     = ["TODO unknown"]*numOuterLoopsToMap
-        #print(type(e))
-    return cSnippet, problemSize, kernelLaunchInfo, identifierNames, localLvalues, loopVars, reductionVars

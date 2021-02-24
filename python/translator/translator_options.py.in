@@ -3,6 +3,8 @@ COMMENT = r"(!|^\s*[\*cCdD])[^\$].+"
 GPUFORT_CPP_ROUTINES = { "__pow" : "pow" }
 
 UNCONVERTED = "TODO(gpufort) UNCONVERTED - Please adjust yourself!"
+DEPEND_TODO = "TODO(gpufort) - specify depend inputs"
+
 FLOAT_COMPLEX="hipFloatComplex"
 DOUBLE_COMPLEX="hipDoubleComplex"
 FORTRAN_2_C_TYPE_MAP = { 

@@ -83,6 +83,9 @@ class IComputeConstruct(IDataRegion):
     def firstprivateVars(self,converter=makeFStr): 
         """ CUF,ACC: all scalars are private by default """ 
         return []
+    def gangTeamReductionVars(self,converter=makeFStr): 
+        """ CUF,ACC: all scalars are private by default """ 
+        return []
     def presentByDefault(self):
         """ only ACC """
         return True
@@ -163,7 +166,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                not name.lower() in GPUFORT_CPP_ROUTINES:
                    identifierNames.append(name)
         return set(identifierNames)
-    def allLocalLvalues(self):
+    def allLocalLvalues(self): # TODO specific for CUF input
         """
         We focus on scalar identifiers here, i.e. the left-hand side must not contain any index operator evaluations
         or be a struct.
@@ -222,9 +225,9 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 return [result]
             else:
                 return ["-1"]
-    def reductionVars(self):
+    def teamGangReductionVars(self):
         return self._reductionVars
-    def privateGangVars(self):
+    def teamGangPrivateVars(self):
         return self._privateGangVars
     def cStr(self):
         numOuterLoopsToMap = int(self._launchInfo._numOuterLoopsToMap)
@@ -284,3 +287,69 @@ class TTLoopKernel(TTNode,IComputeConstruct):
 
 annotatedDoLoop.setParseAction(TTDoLoop)
 loopKernel.setParseAction(TTLoopKernel)
+
+# TODO parsing and translation is similar but analysis differs between the different kernel
+# types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)
+# while they are specified with ACC,OMP.
+def converLoopKernel2Hip(fortranSnippet,maxRecursions=30):
+    """
+    Return a csnippet equivalent to the original Fortran code.
+    """
+    global KEYWORDS 
+
+    recursionsLeft=0
+    def simplifyLoopKernelUntilItCanGetParsed(fortranSnippet,recursionsToGo):
+        nonlocal recursionsLeft
+        recursionsLeft = recursionsToGo
+        try:
+            return loopKernel.parseString(fortranSnippet)[0]
+        except ParseBaseException as pbe:
+            if recursionsToGo <= 0:
+                raise pbe
+            else:
+                lineno = pbe.__getattr__("lineno")
+                lines = fortranSnippet.split("\n")
+                lines[lineno-1] = "! TODO could not parse: {}".format(lines[lineno-1])
+                modifiedFortranSnippet = "\n".join(lines)
+                #print(modifiedFortranSnippet)
+                return simplifyLoopKernelUntilItCanGetParsed(modifiedFortranSnippet,recursionsToGo-1)
+        except Exception as e:
+            raise e        
+   
+    fortranSnippet = prepareFortranSnippet(fortranSnippet)
+    try:
+        result           = simplifyLoopKernelUntilItCanGetParsed(fortranSnippet,maxRecursions)
+        cSnippet         = utils.prettifyCCode(result.cStr())
+        
+        kernelLaunchInfo = result.kernelLaunchInfo()
+        identifierNames  = result.allIdentifiers()
+        loopVars         = result.loopVars()
+        localLvalues     = list(filter(lambda x: x not in loopVars, result.allLocalLvalues())) 
+        localLvalues     += result.threadPrivateVars()
+        reductionVars    = result.reductionVars()
+        problemSize      = result.problemSize()
+        #print(recursionsLeft)
+        if recursionsLeft < maxRecursions:
+            body = "\n".join(fortranSnippet.split("\n")[1:])
+            identifierNames = list(set(filter(lambda x: x.lower() not in KEYWORDS,[makeFStr(ident) for ident in identifier.searchString(body)])))
+            #print(identifierNames) 
+        cSnippet = postprocessCSnippet(cSnippet)
+    except Exception as e:
+        raise e
+        logger = logging.getLogger('') 
+        logger.error("failed to convert kernel:\n{}".format(fortranSnippet))
+        logger.error(str(e))
+        cSnippet = "" 
+        pragmaLine = fortranSnippet.split("\n")[0]
+        body = "\n".join(fortranSnippet.split("\n")[1:])
+        #kernelLaunchInfo = acc.parseString(pragmaLine)[0] 
+        kernelLaunchInfo = LaunchInfo()
+        #print(body)
+        identifierNames = list(set(filter(lambda x: x.lower() not in KEYWORDS,[makeFStr(ident) for ident in identifier.searchString(body)])))
+        numOuterLoopsToMap     = int(kernelLaunchInfo._numOuterLoopsToMap)
+        loopVars        = []
+        localLvalues    = []
+        reductionVars   = []
+        problemSize     = ["TODO unknown"]*numOuterLoopsToMap
+        #print(type(e))
+    return cSnippet, problemSize, kernelLaunchInfo, identifierNames, localLvalues, loopVars, reductionVars

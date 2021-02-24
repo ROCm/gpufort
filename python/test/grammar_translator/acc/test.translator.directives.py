@@ -13,7 +13,7 @@ do i = 1, n
 end do
 """)
 testdata.append("""
-!$acc kernels loop reduction(+:c)
+!$acc kernels loop reduction(+:c) async(1)
 do i = 1, n
   a(i) = 3;
   c = c + a(i)

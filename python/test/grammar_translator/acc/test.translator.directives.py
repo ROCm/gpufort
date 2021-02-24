@@ -13,9 +13,9 @@ do i = 1, n
 end do
 """)
 testdata.append("""
-!$acc kernels loop reduction(+:c) async(1)
+!$acc kernels loop create(b) copy(a(:)) reduction(+:c) async(1)
 do i = 1, n
-  a(i) = 3;
+  a(i) = b(i) + c;
   c = c + a(i)
 end do
 """)
@@ -61,7 +61,8 @@ end do
 
 for snippet in testdata:
     try:
-        print(translator.annotatedDoLoop.parseString(snippet)[0]._annotation.ompFStr())
+        result = translator.annotatedDoLoop.parseString(snippet)[0]
+        print(translator.formatDirective(result._annotation.ompFStr(),80))
     except Exception as e:
         print(" - FAILED",file=sys.stderr)
         print("failed to parse '{}'".format(snippet),file=sys.stderr)

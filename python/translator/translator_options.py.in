@@ -2,6 +2,8 @@
 COMMENT = r"(!|^\s*[\*cCdD])[^\$].+"
 GPUFORT_CPP_ROUTINES = { "__pow" : "pow" }
 
+MAX_DIRECTIVE_LINE_WIDTH = 80
+
 UNCONVERTED = "TODO(gpufort) UNCONVERTED - Please adjust yourself!"
 DEPEND_TODO = "TODO(gpufort) - specify depend inputs"
 

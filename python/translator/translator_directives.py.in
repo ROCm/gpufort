@@ -27,69 +27,6 @@ class ILoopAnnotation():
         """ only OMP """
         return []
 
-class IDataRegion():
-    def asyncNowait(): 
-        """value != CLAUSE_NOT_FOUND means True"""
-        return CLAUSE_NOT_FOUND
-    def deviceTypes(self): 
-        return "*"
-    def ifCondition(self): 
-        """ OMP,ACC: accelerate only if condition is satisfied. Empty string means condition is satisfied. """
-        return ""
-    def selfCondition(self): 
-        """ OMP,ACC: run on current CPU / device (and do not offload) """
-        return ""
-    def asyncNowait():
-        return CLAUSE_NOT_FOUND
-    def deviceptrs(self):
-        return []
-    def createAllocVars(self):
-        return []
-    def no_createVars(self):
-        """ only ACC"""
-        return self.__handleSimpleMapping(self,TTAccClauseCreate)
-    def presentVars(self):
-        """ only ACC"""
-        return self.__handleSimpleMapping(self,TTAccClauseCreate)
-    def deleteReleaseVars(self):
-        return []
-    def copyMapToFromVars(self):
-        return []
-    def copyinMapToVars(self):
-        return []
-    def copyoutMapFromVars(self):
-        return []
-    def attachVars(self):
-        """ only ACC """
-        return []
-    def detachVars(self):
-        """ only ACC """
-        return []
-
-class IComputeConstruct(IDataRegion):
-    def depend(self): 
-        """ only OMP """
-        return {
-          "in":[],
-          "out":[],
-          "inout":[],
-          "inout":[],
-          "mutexinoutset":[],
-          "depobj":[]
-        }
-    def privateVars(self,converter=makeFStr): 
-        """ CUF,ACC: all scalars are private by default """ 
-        return []
-    def firstprivateVars(self,converter=makeFStr): 
-        """ CUF,ACC: all scalars are private by default """ 
-        return []
-    def gangTeamReductionVars(self,converter=makeFStr): 
-        """ CUF,ACC: all scalars are private by default """ 
-        return []
-    def presentByDefault(self):
-        """ only ACC """
-        return True
-
 class TTDoLoop(TTNode):
     def _assignFields(self,tokens):
         # Assignment, number | variable
@@ -145,6 +82,70 @@ class TTDoLoop(TTNode):
             return "for (int {0}={1}; {0} <= {2}; {0} += {3}) {{\n  {4}\n}}".format(indexVar, begin, end, step, bodyContent)
         else:
             return bodyContent
+
+class IComputeConstruct():
+    def arraysInBody(self,converter=makeFStr):
+        return []
+    def inoutArraysInBody(self,converter=makeFStr):
+        return []
+    def asyncNowait(): 
+        """value != CLAUSE_NOT_FOUND means True"""
+        return CLAUSE_NOT_FOUND
+    def deviceTypes(self): 
+        return "*"
+    def ifCondition(self): 
+        """ OMP,ACC: accelerate only if condition is satisfied. Empty string means condition is satisfied. """
+        return ""
+    def selfCondition(self): 
+        """ OMP,ACC: run on current CPU / device (and do not offload) """
+        return ""
+    def asyncNowait():
+        return CLAUSE_NOT_FOUND
+    def deviceptrs(self):
+        return []
+    def createAllocVars(self):
+        return []
+    def no_createVars(self):
+        """ only ACC"""
+        return self.__handleSimpleMapping(self,TTAccClauseCreate)
+    def presentVars(self):
+        """ only ACC"""
+        return self.__handleSimpleMapping(self,TTAccClauseCreate)
+    def deleteReleaseVars(self):
+        return []
+    def copyMapToFromVars(self):
+        return []
+    def copyinMapToVars(self):
+        return []
+    def copyoutMapFromVars(self):
+        return []
+    def attachVars(self):
+        """ only ACC """
+        return []
+    def detachVars(self):
+        """ only ACC """
+        return []
+    def depend(self): 
+        """ only OMP """
+        #return {
+        #  "in":[],
+        #  "out":[],
+        #  "inout":[],
+        #  "inout":[],
+        #  "mutexinoutset":[],
+        #  "depobj":[]
+        #}
+        return {}
+    def gangTeamPrivateVars(self,converter=makeFStr): 
+        return []
+    def gangTeamFirstprivateVars(self,converter=makeFStr): 
+        return []
+    def gangTeamReductionVars(self,converter=makeFStr): 
+        """ CUF,ACC: all scalars are private by default """ 
+        return {}
+    def presentByDefault(self):
+        """ only ACC parallel """
+        return True
 
 class TTLoopKernel(TTNode,IComputeConstruct):
     def _assignFields(self):
@@ -225,10 +226,6 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 return [result]
             else:
                 return ["-1"]
-    def teamGangReductionVars(self):
-        return self._reductionVars
-    def teamGangPrivateVars(self):
-        return self._privateGangVars
     def cStr(self):
         numOuterLoopsToMap = int(self._launchInfo._numOuterLoopsToMap)
         if LOOP_COLLAPSE_STRATEGY == "grid" and numOuterLoopsToMap <= 3:
@@ -288,10 +285,23 @@ class TTLoopKernel(TTNode,IComputeConstruct):
 annotatedDoLoop.setParseAction(TTDoLoop)
 loopKernel.setParseAction(TTLoopKernel)
 
+def formatDirective(directiveLine,maxLineWidth):
+    result   = ""
+    line     = ""
+    tokens   = directiveLine.split(" ")
+    sentinel = tokens[0]
+    for tk in tokens:
+        if len(line+tk) > maxLineWidth-1:
+            result += line + "&\n"
+            line = sentinel+" "
+        line += tk+" "
+    result += line.rstrip() 
+    return result
+
 # TODO parsing and translation is similar but analysis differs between the different kernel
 # types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)
 # while they are specified with ACC,OMP.
-def converLoopKernel2Hip(fortranSnippet,maxRecursions=30):
+def parseLoopKernel(fortranSnippet,maxRecursions=30):
     """
     Return a csnippet equivalent to the original Fortran code.
     """
@@ -319,15 +329,6 @@ def converLoopKernel2Hip(fortranSnippet,maxRecursions=30):
     fortranSnippet = prepareFortranSnippet(fortranSnippet)
     try:
         result           = simplifyLoopKernelUntilItCanGetParsed(fortranSnippet,maxRecursions)
-        cSnippet         = utils.prettifyCCode(result.cStr())
-        
-        kernelLaunchInfo = result.kernelLaunchInfo()
-        identifierNames  = result.allIdentifiers()
-        loopVars         = result.loopVars()
-        localLvalues     = list(filter(lambda x: x not in loopVars, result.allLocalLvalues())) 
-        localLvalues     += result.threadPrivateVars()
-        reductionVars    = result.reductionVars()
-        problemSize      = result.problemSize()
         #print(recursionsLeft)
         if recursionsLeft < maxRecursions:
             body = "\n".join(fortranSnippet.split("\n")[1:])

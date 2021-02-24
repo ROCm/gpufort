@@ -43,6 +43,8 @@ class TTSimpleMapping(TTNode):
         self._varList = tokens[0].asList()
     def varNames(self,converter=makeFStr):
         return [ var.varName(converter) for var in self._varList ]
+    def varExpressions(self,converter=makeFStr):
+        return [ converter(var) for var in self._varList ]
 class TTAccClauseCopy(TTSimpleMapping):
     pass
 class TTAccClauseCopyin(TTSimpleMapping):
@@ -133,7 +135,7 @@ class TTAccDirectiveBase(TTNode):
     def _handleSimpleMapping(self,clauseType,converter=makeFStr):
         result = []
         for clause in findAll(self._clauses,clauseType):
-            result += clause.varNames(converter)
+            result += clause.varExpressions()
         return result
     def ompFStr(self):
        assert False, "Not implemented"     

@@ -184,6 +184,12 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         from the result list. TTCufKernelDo instances do not know of the type of the variables.
 
         """
+        currentBody = self._body
+        while type(currentBody) is TTDoLoop:
+
+            
+        assignments = findAll(self._body,TTLvalue)))
+
         # TODO(gpufort): Rewrite to go through all assignments one by one: 
         # get list of assignments
         # lvLastRead     = {}

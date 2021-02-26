@@ -63,6 +63,7 @@ for snippet in testdata:
     try:
         result = translator.annotatedDoLoop.parseString(snippet)[0]
         print(translator.formatDirective(result._annotation.ompFStr(),80))
+        result = translator.loopKernel.parseString(snippet)[0]
     except Exception as e:
         print(" - FAILED",file=sys.stderr)
         print("failed to parse '{}'".format(snippet),file=sys.stderr)

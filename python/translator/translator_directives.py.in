@@ -160,8 +160,8 @@ class EmptyComputeConstruct(IComputeConstruct):
         return set(identifierNames)
 
 class TTLoopKernel(TTNode,IComputeConstruct):
-    def _assignFields(self):
-        self._parentDirective, self._body = self.tokens
+    def _assignFields(self,tokens):
+        self._parentDirective, self._body = tokens
         if self._parentDirective is None:
             assert type(self._body) is TTDoLoop
             self._parentDirective = self._body.annotation()
@@ -321,6 +321,14 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         return self._parentDirective.gangTeamFirstprivateVars(converter)
     def gangTeamReductionVars(self,converter=makeFStr): 
         return self._parentDirective.gangTeamReductionVars(converter)
+    def ompFStr(self,fSnippet):
+        """
+        :note: The string used for parsing was preprocessed. Hence
+               we pass the original Fortran snippet here.
+        """
+        
+
+        
     def cStr(self):
         numOuterLoopsToMap = int(self._body.numCollapse())
         if LOOP_COLLAPSE_STRATEGY == "grid" and numOuterLoopsToMap <= 3:

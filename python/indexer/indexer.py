@@ -11,6 +11,7 @@ from multiprocessing import Pool
 import translator.translator as translator
 import utils
 
+CASELESS    = False
 GRAMMAR_DIR = os.path.join(os.path.dirname(__file__),"../grammar")
 exec(open("{0}/grammar.py".format(GRAMMAR_DIR)).read())
 

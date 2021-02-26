@@ -11,6 +11,7 @@ import re
 import indexer.indexertools as indexertools
 
 #from grammar import *
+CASELESS    = True
 GRAMMAR_DIR = os.path.join(os.path.dirname(__file__),"../grammar")
 exec(open("{0}/grammar.py".format(GRAMMAR_DIR)).read())
 

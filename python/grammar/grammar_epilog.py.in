@@ -1,5 +1,6 @@
 # Combine expressions from all grammar definitions
-annotatedDoLoop <<= Optional( acc_parallel_loop | acc_kernels_loop | acc_loop | cuf_kernel_do, default=None) +\
+loopAnnotation = acc_parallel_loop | acc_kernels_loop | acc_loop | cuf_kernel_do
+annotatedDoLoop <<= Optional( loopAnnotation, default=None) +\
     doLoop +\
   Optional(ACC_END_PARALLEL_LOOP | ACC_END_KERNELS_LOOP) # will be consumed but suppressed
 

@@ -19,6 +19,7 @@ import translator.translator as translator
 
 # dirty hack that allows us to load independent versions of the grammar module
 #from grammar import *
+CASELESS    = True
 GRAMMAR_DIR = os.path.join(os.path.dirname(__file__),"../grammar")
 exec(open("{0}/grammar.py".format(GRAMMAR_DIR)).read())
 

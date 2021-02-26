@@ -24,8 +24,11 @@ ParserElement.setDefaultWhitespaceChars("\r\n\t &;")
 ParserElement.enablePackrat() 
 
 # helper functions
-def makeCaselessLiteral(commaSeparatedList,suppress=False):
-     result1 = map(CASELESS_LITERAL, commaSeparatedList.split(","))
+def makeCaselessLiteral(commaSeparatedList,suppress=False,forceCaseLess=False):
+     if forceCaseLess:
+        result1 = map(CaselessLiteral, commaSeparatedList.split(","))
+     else: # can be overwritten via options
+        result1 = map(CASELESS_LITERAL, commaSeparatedList.split(","))
      if suppress:
         result2 = []
         for element in result1:

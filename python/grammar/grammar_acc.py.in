@@ -9,8 +9,8 @@
 ACC,KERNELS,PARALLEL,LOOP,DATA,ENTER,EXIT,HOST_DATA,ATOMIC,UPDATE,SERIAL,CACHE,ROUTINE,DECLARE = makeCaselessLiteral("acc,kernels,parallel,loop,data,enter,exit,host_data,atomic,update,serial,cache,routine,declare",suppress=True)
 ASYNC,WAIT,NUM_GANGS,NUM_WORKERS,VECTOR_LENGTH,DEVICE_TYPE,COPY,COPYIN,COPYOUT,CREATE,NO_CREATE,PRESENT,DEVICEPTR,ATTACH,DETACH,DEFAULT,NONE,PRIVATE,FIRST_PRIVATE,REDUCTION,DELETE,ROUTINE,USE_DEVICE,COLLAPSE,SELF,DEVICE,HOST,BIND,DEVICE_RESIDENT,LINK,TILE=\
   makeCaselessLiteral("async,wait,num_gangs,num_workers,vector_length,device_type,copy,copyin,copyout,create,no_create,present,deviceptr,attach,detach,default,none,private,first_private,reduction,delete,routine,use_device,collapse,self,device,host,bind,device_resident,link,tile",suppress=True)
-GANG,VECTOR,WORKER = makeCaselessLiteral("gang,vector,worker",suppress=False)
-ACC_REDUCTION_OP   = oneOf("+ * max min iand ior ieor .and. .or. .eqv. .neqv.", caseless=CASELESS)
+GANG,VECTOR,WORKER = makeCaselessLiteral("gang,vector,worker",suppress=True)
+ACC_REDUCTION_OP   = oneOf("+ * max min iand ior ieor .and. .or. .eqv. .neqv.",caseless=CASELESS)
 
 accVarList = Group(delimitedList(allocateRValue)) 
 

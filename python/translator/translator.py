@@ -7,6 +7,9 @@ import collections
 import ast
 import re
 
+# recursive inclusion
+import indexer.indexertools as indexertools
+
 #from grammar import *
 GRAMMAR_DIR = os.path.join(os.path.dirname(__file__),"../grammar")
 exec(open("{0}/grammar.py".format(GRAMMAR_DIR)).read())
@@ -59,7 +62,7 @@ def convertCufLoopKernel2Hip(fortranSnippet,index=[],maxRecursions=10):
         reductionVars    = result.reductionVars()
         loopVars         = result.loopVars()
         #print(loopVars)
-        localLvalues = list(filter(lambda x: x not in loopVars,result.allLocalLvalues())) 
+        localLValues = list(filter(lambda x: x not in loopVars,result.allLocalLValues())) 
         problemSize = result.problemSize()
         #print(remainingRecursions)
         if remainingRecursions < maxRecursions:
@@ -76,12 +79,12 @@ def convertCufLoopKernel2Hip(fortranSnippet,index=[],maxRecursions=10):
         identifierNames = list(filter(lambda x: x.lower() not in KEYWORDS,[makeFStr(ident) for ident in identifier.searchString(body)]))
         reductionVars   = []
         loopVars        = []
-        localLvalues    = []
+        localLValues    = []
         problemSize = ["TODO unknown"]*numOuterLoopsToMap
         #print(type(e))
         raise(e)
     cSnippet = postprocessCSnippet(cSnippet)
-    return cSnippet, problemSize, kernelLaunchInfo, identifierNames, localLvalues, loopVars
+    return cSnippet, problemSize, kernelLaunchInfo, identifierNames, localLValues, loopVars
 
 def convertDeviceSubroutine(fortranSnippet,index=[],maxRecursions=10):
     """
@@ -159,8 +162,8 @@ def convertAccLoopKernel2Hip(fortranSnippet,index=[],maxRecursions=30):
         kernelLaunchInfo = result.kernelLaunchInfo()
         identifierNames  = result.allIdentifiers()
         loopVars         = result.loopVars()
-        localLvalues     = list(filter(lambda x: x not in loopVars, result.allLocalLvalues())) 
-        localLvalues     += result.threadPrivateVars()
+        localLValues     = list(filter(lambda x: x not in loopVars, result.allLocalLValues())) 
+        localLValues     += result.threadPrivateVars()
         reductionVars    = result.reductionVars()
         problemSize      = result.problemSize()
         #print(remainingRecursions)
@@ -183,8 +186,8 @@ def convertAccLoopKernel2Hip(fortranSnippet,index=[],maxRecursions=30):
         identifierNames = list(set(filter(lambda x: x.lower() not in KEYWORDS,[makeFStr(ident) for ident in identifier.searchString(body)])))
         numOuterLoopsToMap     = int(kernelLaunchInfo._numOuterLoopsToMap)
         loopVars        = []
-        localLvalues    = []
+        localLValues    = []
         reductionVars   = []
         problemSize     = ["TODO unknown"]*numOuterLoopsToMap
         #print(type(e))
-    return cSnippet, problemSize, kernelLaunchInfo, identifierNames, localLvalues, loopVars, reductionVars
+    return cSnippet, problemSize, kernelLaunchInfo, identifierNames, localLValues, loopVars, reductionVars

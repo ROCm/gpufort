@@ -15,10 +15,10 @@ testdata.append("""!$acc kernels num_gangs(8)
           end do
         !$acc end kernels""")
 for i in range(len(testdata)):
-    cSnippet, KernelLaunchInfo, problemSize, identifierNames, loopVars, localLvalues = convertAccConstruct(testdata[i])
+    cSnippet, KernelLaunchInfo, problemSize, identifierNames, loopVars, localLValues = convertAccConstruct(testdata[i])
     print(cSnippet)
     #print(KernelLaunchInfo)
     print(problemSize)
     print(identifierNames)
     print(loopVars)
-    print(localLvalues)
+    print(localLValues)

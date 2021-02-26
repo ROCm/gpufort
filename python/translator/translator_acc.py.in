@@ -461,7 +461,7 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
                 result += " reduction("+op+":"+",".join(values)+")" 
         return result
 
-class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase):
+class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase,IComputeConstruct):
     """
     possible clauses:
       async [( int-expr )]

@@ -90,7 +90,7 @@ class TTCufKernelDoLoop(TTLoopKernel,ILoopAnnotation):
     def kernelLaunchInfo(self):
         return self._launchInfo
 
-class TTAllocateRvalue(TTNode):
+class TTAllocateRValue(TTNode):
     def _assignFields(self,tokens):
         self._var    = tokens[0]
         self._bounds = None
@@ -194,7 +194,7 @@ class TTCufAllocate(TTNode):
     where
     
     ```python
-    allocateRvalue = ( identifier | simpleStructElem ) + Optional(LPAR + bounds + RPAR,default=[])
+    allocateRValue = ( identifier | simpleDerivedTypeMember ) + Optional(LPAR + bounds + RPAR,default=[])
     ```
     """
     def _assignFields(self,tokens):
@@ -252,7 +252,7 @@ class TTCufDeallocate(TTNode):
     where
     
     ```python
-    allocateRvalue = ( identifier | simpleStructElem ) + Optional(LPAR + bounds + RPAR,default=[])
+    allocateRValue = ( identifier | simpleDerivedTypeMember ) + Optional(LPAR + bounds + RPAR,default=[])
     ```
     """
     def _assignFields(self,tokens):
@@ -489,8 +489,8 @@ class TTCufCublasCall(TTNode):
 cuf_kernel_do.setParseAction(TTCufKernelDo)
 #cufLoopKernel.setParseAction(TTCufKernelDo)
 
-allocateRvalue.setParseAction(TTAllocateRvalue)
-memCpyValue.setParseAction(TTAllocateRvalue)
+allocateRValue.setParseAction(TTAllocateRValue)
+memCpyValue.setParseAction(TTAllocateRValue)
 allocate.setParseAction(TTCufAllocate)
 allocated.setParseAction(TTCufAllocated)
 deallocate.setParseAction(TTCufDeallocate)

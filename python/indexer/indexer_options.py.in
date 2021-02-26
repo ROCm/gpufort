@@ -11,5 +11,3 @@ USE=r"use\b\s+"
 CONTINUATION=r"(\&\s*\n)|(\n[!c\*]\$\w+\&)"
 ANTIFILTER=r"\bend\b\s+\b(do|if)\b"
 FILTER=STRUCTURES+"|"+DECLARATIONS+"|"+DIRECTIVES+"|"+USE
-
-ERROR_HANDLING="warn" # one of "warn","error"

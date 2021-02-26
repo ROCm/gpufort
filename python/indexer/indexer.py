@@ -3,10 +3,8 @@ import addtoplevelpath
 import os,sys
 import re
 import subprocess
-import tempfile
 import logging
 import json
-import time
 
 from multiprocessing import Pool
 
@@ -23,33 +21,6 @@ exec(open("{0}/indexer_options.py.in".format(indexerDir)).read())
 pContinuation = re.compile(CONTINUATION)
 pFilter       = re.compile(FILTER) 
 pAntiFilter   = re.compile(ANTIFILTER)
-
-EMPTY = { "types" : [], "variables" : [] } 
-
-EMPTY_VARIABLE = {
-  "name"                       : "UNKNOWN",
-  "fType"                      : "UNKNOWN",
-  "kind"                       : "UNKNOWN",
-  "bytesPerElement"            : "UNKNOWN",
-  "cType"                      : "UNKNOWN",
-  "fInterfaceType"             : "UNKNOWN",
-  "fInterfaceQualifiers"       : "UNKNOWN",
-  "hasParameter"               : "UNKNOWN",
-  "hasPointer"                 : "UNKNOWN",
-  "hasDevice"                  : "UNKNOWN",
-  "hasPinned"                  : "UNKNOWN",
-  "hasManaged"                 : "UNKNOWN",
-  "hasAllocatable"             : "UNKNOWN",
-  "declaredOnTarget"           : "UNKNOWN",
-  "rank"                       : "UNKNOWN",
-  "unspecifiedBounds"          : "UNKNOWN",
-  "lbounds"                    : "UNKNOWN",
-  "counts"                     : "UNKNOWN",
-  "totalCount"                 : "UNKNOWN",
-  "totalBytes"                 : "UNKNOWN",
-  "indexMacro"                 : "UNKNOWN",
-  "indexMacroWithPlaceHolders" : "UNKNOWN"
-}
 
 def __readFortranFile(filepath,compilerOptions):
     def considerLine(strippedLine):
@@ -329,70 +300,3 @@ def resolveDependencies(index,searchedFiles=[],searchedTags=[]):
                 index[i] = result
     # filter out not needed entries 
     return [module for module in index if select(module)]
-
-def filterIndexByTag(index,tag):
-    """
-    Return only the structure(s) (module,program,subroutine,function) with
-    a certain tag.
-    """
-    resultSet = [structure for structure in index if structure["tag"] == tag]
-    if len(resultSet) is not 1:
-        msg = "'{}' entries found for tag '{}'. Expected to find a single entry.".format(len(resultSet),tag)
-        if indexer.ERROR_HANDLING == "strict":
-            logging.getLogger("").error(msg)
-            print("ERROR: "+msg,file=sys.stderr)
-            sys.exit(1001)
-        else:
-            logging.getLogger("").warn(msg)
-            return [ indexer.EMPTY ]
-    else:
-        msg = "'{}' entries found for tag '{}'".format(len(resultSet),tag)
-        logging.getLogger("").debug2(msg)
-        return resultSet
-
-def searchIndexForVariable(index,variableExpression):
-    """
-    Input might be a simple identifier such as 'a' or 'A_d'
-    or a more complicated derived-type member expression such
-    as 'a%b%c' or 'A%b(i)%c'.
-
-    :param index: list with single structure dict as produced by 'filterIndexByTag'. 
-
-    :see: filterIndexByTag
-
-    :note: Fortran does not support nested declarations of types. If a derived type
-    has other derived type members, they must be declared before the definition of a new
-    type that uses them.
-    """
-    result = None
-    def lookupFromLeftToRight(structure,expression):
-        nonlocal result
-        if "%" not in expression:
-            result = next((var for var in structure["variables"] if var["name"] == expression),None)  
-        else:
-            parts     = expression.split("%")
-            typeVar   = parts[0].split("(")[0] # strip away array brackets
-            remainder = "%".join(parts[1:])
-            try:
-                matchingTypeVar = next((var for var in structure["variables"] if var["name"] == typeVar),None)
-                matchingType    = next((struct for struct in structure["types"] if struct["name"] == matchingTypeVar["kind"]),None)
-                lookupFromLeftToRight(matchingType,remainder)
-            except:
-                pass
-    for structure in index:
-        lookupFromLeftToRight(structure,variableExpression.lower().replace(" ",""))
-    if result is None:
-        result         = indexer.EMPTY_VARIABLE
-        result["name"] = variableExpression
-        msg = "No entry found for variable '{}'.".format(variableExpression)
-        if indexer.ERROR_HANDLING == "strict":
-            logging.getLogger("").error(msg)
-            print("ERROR: "+msg,file=sys.stderr)
-            sys.exit(1002)
-        else:
-            logging.getLogger("").warn(msg)
-        return result, False
-    else:
-        msg = "single entry found for variable '{}'".format(variableExpression)
-        logging.getLogger("").debug2(msg)
-        return result, True

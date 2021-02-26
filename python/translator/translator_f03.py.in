@@ -142,60 +142,6 @@ class TTIdentifier(TTNode):
     def name(self,mangleName=False): # argument is never used as we have already an identifier
         return self.fStr()
 
-class IValue:
-    def isIdentifier(self):
-        return type(self._value) is TTIdentifier      
-    def name(self):
-        if type(self._value) is TTFunctionCallOrTensorAccess:
-            return self._value.name(False)
-        elif type(self._value) is TTStructElem:
-            return self._value.name(True)
-        else:
-            return self._value.name(False)
-    def hasMatrixRangeArgs(self):
-        """
-        Functionality for scanner.
-        """
-        if type(self._value) is TTFunctionCallOrTensorAccess:
-            return self._value.hasMatrixRangeArgs()
-        elif type(self._value) is TTStructElem:
-            return self._value.lastElementHasMatrixRangeArgs()
-        else:
-            return False
-    def matrixRangeArgs(self):
-        if type(self._value) is TTFunctionCallOrTensorAccess:
-            return self._value.matrixRangeArgs()
-        elif type(self._value) is TTStructElem:
-            return self._value.lastElementMatrixRangeArgs()
-        else:
-            return []
-
-class TTRvalue(TTNode,IValue):
-    def _assignFields(self,tokens):
-        self._sign           = tokens[0]
-        self._value          = tokens[1]
-        self._reductionIndex = ""
-        #print("{0}: {1}".format(self.cStr(),self.location))
-    def fStr(self):
-        return self._sign + makeFStr(self._value)
-    def cStr(self):
-        result = self._sign + makeCStr(self._value)
-        if len(self._reductionIndex):
-            result += "[{idx}]".format(idx=self._reductionIndex) 
-        return result
-class TTLvalue(TTNode,IValue):
-    def _assignFields(self,tokens):
-        self._value          = tokens[0]
-        self._reductionIndex = ""
-        #print("{0}: {1}".format(self.cStr(),self.location))
-    def fStr(self):
-        return makeFStr(self._value)
-    def cStr(self):
-        result = makeCStr(self._value)
-        if len(self._reductionIndex):
-            result += "[{idx}]".format(idx=self._reductionIndex) 
-        return result
-
 class TTFunctionCallOrTensorAccess(TTNode):
     def _assignFields(self,tokens):
         self._name = tokens[0]
@@ -237,6 +183,60 @@ class TTFunctionCallOrTensorAccess(TTNode):
     def fStr(self):
         name = makeFStr(self._name)
         return "{0}({1})".format(name,",".join([makeFStr(s) for s in self._args]))
+
+class IValue:
+    def isIdentifier(self):
+        return type(self._value) is TTIdentifier      
+    def name(self):
+        if type(self._value) is TTFunctionCallOrTensorAccess:
+            return self._value.name(False)
+        elif type(self._value) is TTDerivedTypeMember:
+            return self._value.name(False)
+        else:
+            return self._value.name(False)
+    def hasMatrixRangeArgs(self):
+        """
+        Functionality for scanner.
+        """
+        if type(self._value) is TTFunctionCallOrTensorAccess:
+            return self._value.hasMatrixRangeArgs()
+        elif type(self._value) is TTDerivedTypeMember:
+            return self._value.lastElementHasMatrixRangeArgs()
+        else:
+            return False
+    def matrixRangeArgs(self):
+        if type(self._value) is TTFunctionCallOrTensorAccess:
+            return self._value.matrixRangeArgs()
+        elif type(self._value) is TTDerivedTypeMember:
+            return self._value.lastElementMatrixRangeArgs()
+        else:
+            return []
+
+class TTRValue(TTNode,IValue):
+    def _assignFields(self,tokens):
+        self._sign           = tokens[0]
+        self._value          = tokens[1]
+        self._reductionIndex = ""
+        #print("{0}: {1}".format(self.cStr(),self.location))
+    def fStr(self):
+        return self._sign + makeFStr(self._value)
+    def cStr(self):
+        result = self._sign + makeCStr(self._value)
+        if len(self._reductionIndex):
+            result += "[{idx}]".format(idx=self._reductionIndex) 
+        return result
+class TTLValue(TTNode,IValue):
+    def _assignFields(self,tokens):
+        self._value          = tokens[0]
+        self._reductionIndex = ""
+        #print("{0}: {1}".format(self.cStr(),self.location))
+    def fStr(self):
+        return makeFStr(self._value)
+    def cStr(self):
+        result = makeCStr(self._value)
+        if len(self._reductionIndex):
+            result += "[{idx}]".format(idx=self._reductionIndex) 
+        return result
 
 class TTConvertToExtractReal (TTNode):
     def _assignFields(self,tokens):
@@ -292,7 +292,7 @@ class TTConjugate(TTNode):
     def cStr(self):
         return "conj({0})".format(makeCStr(self._ref))
 
-class TTStructElem(TTNode):
+class TTDerivedTypeMember(TTNode):
     def _assignFields(self,tokens):
         self._type, self._element = tokens
         #print(self._type)
@@ -302,7 +302,7 @@ class TTStructElem(TTNode):
         """
         result = []
         current = self._element
-        while type(current) is TTStructElem:
+        while type(current) is TTDerivedTypeMember:
             current = current._element
         if type(current) is TTFunctionCallOrTensorAccess:
             return current.matrixRangeArgs()
@@ -314,7 +314,7 @@ class TTStructElem(TTNode):
         """
         result = []
         current = self._element
-        while type(current) is TTStructElem:
+        while type(current) is TTDerivedTypeMember:
             current = current._element
         if type(current) is TTFunctionCallOrTensorAccess:
             return current.hasMatrixRangeArgs()
@@ -384,7 +384,7 @@ class TTPower(TTNode):
     def hipFStr(self):
         sign = ""
         base = self._base
-        if type(self._base) is TTRvalue:
+        if type(self._base) is TTRValue:
             base = self._base._value
             sign = self._base._sign
         return "{sign}__pow({base},{exp})".format(\
@@ -429,7 +429,7 @@ class TTAssignment(TTNode):
             loopNestEnd   = "end do\n" + loopNestEnd 
         if len(loopNestStart):
             # TODO put into options
-            for rvalue in findAll(self._rhs,searchedType=TTRvalue):
+            for rvalue in findAll(self._rhs,searchedType=TTRValue):
                 for i,matrixRange in enumerate(rvalue.matrixRangeArgs()):
                  loopVarName = "_"+chr(ord('a')+i) # Fortran names cannot start with "_"
                  matrixRange.setLoopVar(loopVarName)
@@ -1024,58 +1024,6 @@ class TTAttributes(TTNode,Attributed):
         else:
             return ""
 
-class TTDoLoop(TTNode):
-    def _assignFields(self,tokens):
-        # Assignment, number | variable
-        self._directive, self._begin, self._end, self._step, self._body = tokens
-        self._threadIndex = None # "z","y","x"
-    def loopVarCStr():
-        return makeCStr(self._begin._lhs)
-    def setHipThreadIndex(self,name):
-        self._threadIndex = name
-    def hipThreadIndexCStr(self):
-        indexVar = self.loopVarCStr()
-        begin    = makeCStr(self._begin._rhs) # array indexing is corrected in index macro
-        step     = makeCStr(self._step)
-        return "int {var} = {begin} + ({step})*(threadIdx.{idx} + blockIdx.{idx} * blockDim.{idx});\n".format(\
-                var=indexVar,begin=begin,idx=self._threadIndex,step=step)
-    def collapsedLoopIndexCStr(self,denominator):
-        indexVar = self.loopVarCStr()
-        tid      = self._threadIndex
-        assert not tid is None
-        begin    = makeCStr(self._begin._rhs)
-        size     = self.problemSizeCStr()
-        step     = makeCStr(self._step)
-        # int i<n> = begin<n> + step<n>*(i<denominator<n>> % size<n>)
-        return "int {var} = {begin} + ({step})*({tid}{denom} % {size});\n".format(\
-                var=indexVar,begin=begin,tid=tid,denom=denominator,size=size,step=step)
-    def problemSizeCStr(self):
-        if self._step == "1":
-            return "(1 + (({end}) - ({begin})))".format(\
-                begin=makeCStr(self._begin._rhs),end=makeCStr(self._end),step=makeCStr(self._step) )
-        else:
-            return "(1 + (({end}) - ({begin}))/({step}))".format(\
-                begin=makeCStr(self._begin._rhs),end=makeCStr(self._end),step=makeCStr(self._step))
-    def hipThreadBoundCStr(self) :
-        indexVar = self.loopVarCStr()
-        begin    = makeCStr(self._begin._rhs)
-        end      = makeCStr(self._end)
-        step     = makeCStr(self._step)
-        return "loop_cond({0},{1},{2})".format(indexVar, end, step)
-    def cStr(self):
-        indexVar    = self.loopVarCStr()
-        begin       = makeCStr(self._begin._rhs) # array indexing is corrected in index macro
-        end         = makeCStr(self._end)
-        step        = makeCStr(self._step)
-        bodyContent = flattenBody(self._body) 
-        if self._threadIndex == None:
-            #print(self._body)
-            return "for (int {0}={1}; {0} <= {2}; {0} += {3}) {{\n  {4}\n}}".format(indexVar, begin, end, step, bodyContent)
-        else:
-            return bodyContent
-    def loopVarCStr(self):
-        return makeCStr(self._begin._lhs)
-
 class TTStatement(TTNode):
     """
     Mainly used for searching expressions and replacing them in the translator AST.
@@ -1230,10 +1178,10 @@ lArithOperator.setParseAction(TTOperator)
 #rArithOperator.setParseAction(TTOperator)
 conditionOp.setParseAction(TTOperator)
 identifier.setParseAction(TTIdentifier)
-rvalue.setParseAction(TTRvalue)
-lvalue.setParseAction(TTLvalue)
-simpleStructElem.setParseAction(TTStructElem)
-derivedTypeElem.setParseAction(TTStructElem)
+rvalue.setParseAction(TTRValue)
+lvalue.setParseAction(TTLValue)
+simpleDerivedTypeMember.setParseAction(TTDerivedTypeMember)
+derivedTypeElem.setParseAction(TTDerivedTypeMember)
 funcCall.setParseAction(TTFunctionCallOrTensorAccess)
 subroutineCall.setParseAction(TTSubroutineCall)
 
@@ -1259,7 +1207,7 @@ declaration.setParseAction(TTDeclaration)
 arithmeticExpression.setParseAction(TTArithmeticExpression)
 arithmeticLogicalExpression.setParseAction(TTArithmeticExpression)
 complexArithmeticExpression.setParseAction(TTComplexArithmeticExpression)
-powerValue1.setParseAction(TTRvalue)
+powerValue1.setParseAction(TTRValue)
 power.setParseAction(TTPower)
 assignment.setParseAction(TTAssignment)
 matrixAssignment.setParseAction(TTMatrixAssignment)

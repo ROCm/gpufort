@@ -7,6 +7,7 @@ import addtoplevelpath
 import fort2hip.model as model
 import translator.translator as translator
 import indexer.indexer as indexer
+import indexer.indexertools as indexertools
 import scanner.scanner as scanner
 
 fort2hipDir = os.path.dirname(__file__)
@@ -114,7 +115,7 @@ def deriveKernelArguments(index, identifiers, localVars, loopVars, whiteList=[],
     for name in identifiers: # TODO does not play well with structs
         if includeArgument(name):
             foundDeclaration = name in loopVars # TODO rename loop variables to local variables; this way we can filter out local subroutine variables
-            indexedVariable,discovered = indexer.searchIndexForVariable(index,name) # TODO treat implicit here
+            indexedVariable,discovered = indexertools.searchIndexForVariable(index,name) # TODO treat implicit here
             argName = name
             if not discovered:
                  arg = initArg(name,"TODO declaration not found","",[],"TODO declaration not found")
@@ -187,19 +188,19 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
         # translate and analyze kernels
         if type(stLoopKernel) is scanner.STCufLoopKernel:
             cSnippet, problemSize, kernelLaunchInfo,\
-            identifiers, localLvalues, loopVars,\
+            identifiers, localLValues, loopVars,\
             reductionOps\
                 = translator.convertCufLoopKernel2Hip(fSnippet,filteredIndex[0])
             #deviceVarsInScope = stkernel.deviceVarsInScope() # TODO only printed in testComment
         elif type(stLoopKernel) is scanner.STAccLoopKernel:
             #deviceVarsInScope = stkernel.arraysInScope() + stkernel.scalarsInScope() # TODO only printed in testComment
             cSnippet, problemSize, kernelLaunchInfo,\
-            identifiers, localLvalues, loopVars,\
+            identifiers, localLValues, loopVars,\
             reductionOps\
                 = translator.convertAccLoopKernel2Hip(fSnippet,filteredIndex[0])
 
         kernelArgs, cKernelLocalVars, macros, localCpuRoutineArgs =\
-          deriveLoopKernelArguments(index, identifiers, localLvalues, loopVars, [], True, type(stLoopKernel) is scanner.STCufLoopKernel)
+          deriveLoopKernelArguments(index, identifiers, localLValues, loopVars, [], True, type(stLoopKernel) is scanner.STCufLoopKernel)
 
         # general
         kernelName         = stkernel.kernelName()
@@ -338,7 +339,7 @@ def extractAcceleratorRoutine(acceleratorRoutines,cContext,fContext):
 
         kernelName, argNames, cBody = translator.convertAcceleratorRoutine(fSnippet)
         kernelLauncherName = "launch_{}".format(kernelName)
-        loopVars = []; localLvalues = []
+        loopVars = []; localLValues = []
         
         filteredIndex = indexer.filterIndexByTag(index,stroutine.tag())
 
@@ -347,7 +348,7 @@ def extractAcceleratorRoutine(acceleratorRoutines,cContext,fContext):
              identifiers += declaration._vars
 
         kernelArgs, cKernelLocalVars, macros, localCpuRoutineArgs, localCpuRoutineArrayNames =\
-               deriveKernelArguments(filteredIndex,identifiers,localLvalues,loopVars,argNames,False,cudaFortran=True)
+               deriveKernelArguments(filteredIndex,identifiers,localLValues,loopVars,argNames,False,cudaFortran=True)
         #print(argNames)
 
         def beginOfBody(lines):
@@ -493,5 +494,3 @@ def generateHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basena
         extractLoopKernels(loopKernels,index,cContext,fContext)
         #extractAcceleratorRoutine(acceleratorRoutines,cContext,fContext)
         renderTemplates(outputFilePrefix,cContext,fContext)
-
-

@@ -12,7 +12,7 @@ ASYNC,WAIT,NUM_GANGS,NUM_WORKERS,VECTOR_LENGTH,DEVICE_TYPE,COPY,COPYIN,COPYOUT,C
 GANG,VECTOR,WORKER = makeCaselessLiteral("gang,vector,worker",suppress=False)
 ACC_REDUCTION_OP   = oneOf("+ * max min iand ior ieor .and. .or. .eqv. .neqv.", caseless=CASELESS)
 
-accVarList = Group(delimitedList(allocateRvalue)) 
+accVarList = Group(delimitedList(allocateRValue)) 
 
 # clauses
 acc_clause_gang             = GANG + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)

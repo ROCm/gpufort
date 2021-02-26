@@ -268,7 +268,7 @@ def parseFile(fortranFilePath):
         nonlocal singleLineStatement
         if inParallelAccRegionAndNotRecording():
             parseResult = translator.assignmentBegin.parseString(singleLineStatement)
-            lvalue = translator.findFirst(parseResult,translator.TTLvalue)
+            lvalue = translator.findFirst(parseResult,translator.TTLValue)
             if not lvalue is None and lvalue.hasMatrixRangeArgs():
                 new = STAccLoopKernel(parent=current,lineno=currentLineno,lines=currentLines)
                 new._directiveLines = current._directiveLines # TODO make args or move into constructor

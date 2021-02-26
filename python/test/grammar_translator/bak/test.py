@@ -54,8 +54,8 @@ LIST_OF_TENSORS.clear()
 
 
 print (assignment.parseString("a = 5")[0].cStr())
-print (structElem.parseString("threadidx%x3")[0])
-print (structElem.parseString("threadidx%x3")[0].cStr())
+print (derivedTypeMember.parseString("threadidx%x3")[0])
+print (derivedTypeMember.parseString("threadidx%x3")[0].cStr())
 print (datatype.parseString("double precision")[0].cStr())
 print (declaration.parseString("real(kind=8) :: rhx, rhy")[0].cStr())
 

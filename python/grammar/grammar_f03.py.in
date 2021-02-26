@@ -16,20 +16,20 @@ character  = QuotedString('"', escQuote='\\') | QuotedString("'", escQuote="\\")
 OPTSIGN    = Optional(Regex("[-+]") | CASELESS_LITERAL(".not."),default="")
 
 # arithmetic logical expressions and assignments
-funcRvalue = Forward()
+funcRValue = Forward()
 
 funcKind = COMMA + ( KIND + EQ + Regex(r"[0-9]+|([sSdDqQ][pP])") ) | Regex(r"[sSdDqQ][pP]") # ! emits one token
-argList = Group(delimitedList(Group(~funcKind + funcRvalue)))
+argList = Group(delimitedList(Group(~funcKind + funcRValue)))
 funcCall = identifier + LPAR + Optional(argList, default=[]) + RPAR # emits 2 tokens: *,*,*
 
 # conversion functions
 # TODO check type of variable when translating
 # see http://userweb.eng.gla.ac.uk/peter.smart/com/com/f77-conv.htm
 # for now, always assume conversion between complex and float types 
-conversionRvalue = Forward()
+conversionRValue = Forward()
 REAL,DBLE,CMPLX,DCMPLX,AIMAG,CONJG,DCONJG = makeCaselessLiteral("real,dble,cmplx,dcmplx,aimag,conjg,dconjg",suppress=True)
-singleArgPlusKind = LPAR + (~funcKind+conversionRvalue) + Optional(funcKind,default=None) + RPAR # emits 2 tokens: *,*,*
-doubleArgPlusKind = LPAR + (~funcKind+conversionRvalue) + Optional(COMMA + (~funcKind+conversionRvalue),default="0") +\
+singleArgPlusKind = LPAR + (~funcKind+conversionRValue) + Optional(funcKind,default=None) + RPAR # emits 2 tokens: *,*,*
+doubleArgPlusKind = LPAR + (~funcKind+conversionRValue) + Optional(COMMA + (~funcKind+conversionRValue),default="0") +\
                            Optional(funcKind,default=None) + RPAR # emits 2 tokens: *,*,*
 
 convertToExtractReal   = REAL   + singleArgPlusKind # emits 2 tokens,
@@ -43,13 +43,13 @@ conjugateDoubleComplex = DCONJG + singleArgPlusKind # emits 1 tokens, op: x+iy -
 conversions = convertToExtractReal | convertToDouble | convertToComplex | convertToDoubleComplex | extractImag | conjugate | conjugateDoubleComplex
 
 # derivedTypes
-simpleStructRvalue = Forward()
-simpleStructElem   = identifier + ELEM + simpleStructRvalue
-simpleStructRvalue <<= simpleStructElem | identifier
+simpleStructRValue = Forward()
+simpleDerivedTypeMember   = identifier + ELEM + simpleStructRValue
+simpleStructRValue <<= simpleDerivedTypeMember | identifier
 #
-derivedTypeRvalue = Forward()
-derivedTypeElem = (( funcCall | identifier ) + ELEM + derivedTypeRvalue )
-derivedTypeRvalue <<= funcCall | derivedTypeElem | identifier
+derivedTypeRValue = Forward()
+derivedTypeElem = (( funcCall | identifier ) + ELEM + derivedTypeRValue )
+derivedTypeRValue <<= funcCall | derivedTypeElem | identifier
 
 complexArithmeticExpression = Forward()
 rvalue = OPTSIGN + (conversions | complexArithmeticExpression | derivedTypeElem | funcCall | identifier | logical | character | number)  # |: ordered OR, order is important
@@ -98,8 +98,8 @@ matrixRange1b = (singleColon + arithmeticExpression).setParseAction(lambda token
 matrixRange2  = (arithmeticExpression + singleColon + arithmeticExpression)
 matrixRange = (matrixRange2 | matrixRange1b | matrixRange1a | matrixRange0) + Optional(stride,default=None)
 # define forward declared tokens
-funcRvalue <<= matrixRange | arithmeticLogicalExpression
-conversionRvalue <<= arithmeticExpression
+funcRValue <<= matrixRange | arithmeticLogicalExpression
+conversionRValue <<= arithmeticExpression
 
 ## Condition
 ### If statement
@@ -172,16 +172,16 @@ whileLoop = DO + WHILE + LPAR + arithmeticLogicalExpression + RPAR + block + END
 TYPE,CHARACTER,INTEGER,LOGICAL,REAL,COMPLEX,DOUBlE,PRECISION = makeCaselessLiteral(\
   "type,character,integer,logical,real,complex,double,precision")
 MULT=Literal("*")
-kindRvalue = MULT | integer | ( ~LEN + identifier )
+kindRValue = MULT | integer | ( ~LEN + identifier )
 kindList =\
       LPAR +\
-        Optional(( KIND + EQ + kindRvalue) |\
-        ( KIND + LPAR + kindRvalue + RPAR) |\
-        kindRvalue,default=None) +\
+        Optional(( KIND + EQ + kindRValue) |\
+        ( KIND + LPAR + kindRValue + RPAR) |\
+        kindRValue,default=None) +\
         OPTCOMMA +\
-        Optional(LEN + EQ + kindRvalue,default=None) +\
+        Optional(LEN + EQ + kindRValue,default=None) +\
       RPAR  # emits 2 tokens [kind,len]
-multType = ( MULT.suppress() + Optional(LPAR) + kindRvalue + Optional(RPAR)).setParseAction(lambda tokens: [tokens[0],tokens[0]]) # emits 2 tokens
+multType = ( MULT.suppress() + Optional(LPAR) + kindRValue + Optional(RPAR)).setParseAction(lambda tokens: [tokens[0],tokens[0]]) # emits 2 tokens
 
 sizeOf = Optional( Group(multType) | Group(kindList), default = [None,None] )
 

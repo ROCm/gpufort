@@ -124,4 +124,3 @@ def addLoggingLevel(levelName, levelNum, methodName=None):
     setattr(logging, levelName, levelNum)
     setattr(logging.getLoggerClass(), methodName, logForLevel)
     setattr(logging, methodName, logToRoot)
-

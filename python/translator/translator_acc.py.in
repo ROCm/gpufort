@@ -495,17 +495,22 @@ class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase,IComputeConstru
         return result + dataPart
 
 class TTAccParallel(TTAccComputeConstructBase):
-    def ompFStr(self,prefix="!$omp target teams distribute",arraysInBody=set(),inoutArraysInBody=set()):
+    def ompFStr(self,arraysInBody=set(),inoutArraysInBody=set(),prefix="!$omp target teams distribute"):
         return TTAccComputeConstructBase.ompFStr(self,"") # no in/inout array analysis required
 
 class TTAccParallelLoop(TTAccParallel,TTAccLoop):
     def _assignFields(self,tokens):
         self._clauses                  = tokens
         self._loopHandlesMutualClauses = False
-    def ompFStr(self,loopType="do",arraysInBody=set(),inoutArraysInBody=set()):
+    def ompFStr(self,arraysInBody=set(),inoutArraysInBody=set(),loopType="do"):
+        """
+        :note: loopType may be changed later if there is a target 'workshare' construct
+               in the OpenMP standard. Then, matrix assignments can be mapped
+               with such a construct.
+        """
         result       = "!$omp target teams distribute"
-        parallelPart = TTAccParallel.ompFStr(self,"")
-        loopPart     = TTAccLoop.ompFStr(self,prefix="",loopType="do")
+        parallelPart = TTAccParallel.ompFStr(self,set(),set(),"")
+        loopPart     = TTAccLoop.ompFStr(self,prefix="",loopType)
         return result + " " + loopPart.lstrip() + " " + parallelPart.lstrip()
 
 class TTAccKernels(TTAccComputeConstructBase):

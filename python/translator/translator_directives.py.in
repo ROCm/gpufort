@@ -1,3 +1,5 @@
+# extensions for directive-based programming
+
 class ILoopAnnotation():
     def numCollapse(self):
         return CLAUSE_NOT_FOUND
@@ -82,6 +84,26 @@ class TTDoLoop(TTNode):
             return bodyContent
 
 class IComputeConstruct():
+    def numCollapse(self):
+        return CLAUSE_NOT_FOUND
+    def numDimensions(self):
+        return 1
+    def numGangsTeamsBlocks(self):
+        return [CLAUSE_NOT_FOUND]
+    def numThreadsInBlock(self):
+        return [CLAUSE_NOT_FOUND]
+    def numWorkers(self): 
+        """ only ACC """
+        return [CLAUSE_NOT_FOUND]
+    def simdlenVectorLength(self):
+        return [CLAUSE_NOT_FOUND]
+    def gangTeamPrivateVars(self,converter=makeFStr): 
+        return []
+    def gangTeamFirstprivateVars(self,converter=makeFStr): 
+        return []
+    def gangTeamReductionVars(self,converter=makeFStr): 
+        """ CUF,ACC: all scalars are private by default """ 
+        return {}
     def identifiersInBody(self,converter=makeFStr):
         return []
     def arraysInBody(self,converter=makeFStr):
@@ -91,6 +113,12 @@ class IComputeConstruct():
     def asyncNowait(): 
         """value != CLAUSE_NOT_FOUND means True"""
         return CLAUSE_NOT_FOUND
+    def stream(self,converter):
+        return ""
+    def sharedMem(self,converter):
+        return 0
+    def useDefaultStream(self):
+        return True
     def depend(self): 
         """ only OMP """
         #return { "in":[], "out":[], "inout":[], "inout":[], "mutexinoutset":[], "depobj":[] }
@@ -130,13 +158,6 @@ class IComputeConstruct():
     def presentByDefault(self):
         """ only ACC parallel """
         return True
-    def gangTeamPrivateVars(self,converter=makeFStr): 
-        return []
-    def gangTeamFirstprivateVars(self,converter=makeFStr): 
-        return []
-    def gangTeamReductionVars(self,converter=makeFStr): 
-        """ CUF,ACC: all scalars are private by default """ 
-        return {}
 
 class EmptyComputeConstruct(IComputeConstruct):
     """
@@ -214,6 +235,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         local variable      - scalar variable that is not read before the assignment (and is no derived type member)
         reductionCandidates - scalar variable that is written but not read anymore 
 
+        NOTE: Always returns Fortran identifiers
         NOTE: The loop variables need to be removed from this result when rendering the corresponding C kernel.
         NOTE: Implementatin assumes that loop condition variables are not written to in loop body. 
         NOTE: When rendering the kernel, it is best to exclude all variables for which an array declaration has been found,
@@ -320,15 +342,64 @@ class TTLoopKernel(TTNode,IComputeConstruct):
     def gangTeamFirstprivateVars(self,converter=makeFStr): 
         return self._parentDirective.gangTeamFirstprivateVars(converter)
     def gangTeamReductionVars(self,converter=makeFStr): 
-        return self._parentDirective.gangTeamReductionVars(converter)
+        if type(self._parentDirective) is TTCufKernelDo:
+            return self._parentDirective.gangTeamReductionVars(converter)
+        else:
+            return { "UNKNOWN" : self.reductionCandidates() } # TODO default reduction type should be configurable
     def ompFStr(self,fSnippet):
         """
         :note: The string used for parsing was preprocessed. Hence
                we pass the original Fortran snippet here.
         """
-        
+        # TODO There is only one loop or loop-like expression
+        # in a parallel loop.
+        # There might me multiple loops or look-like expressions
+        # in a kernels region.
+        # kernels directives must be split
+        # into multiple clauses.
+        # In all cases the begin and end directives must
+        # be consumed.
+        # TODO find out relevant directives
+        # TODO transform string
+        # TODO preprocess Fortran colon expressions
+        inoutArraysInBody = self.inoutArraysInBody()
+        arraysInBody      = self.arraysInBody()
+        reductionVars     = self.gangTeamReductionVars()
+        depend            = self.depend()
 
+        # TODO preprocess loop statements outside
+        # of this routine if needed
+            
+        if type(self._parentDirective) is TTCufKernelDo:
+            def cufKernelDoRepl(parseResult):
+                nonlocal arraysInBody
+                nonlocal inoutArraysInBody
+                nonlocal reductionVars
+                return parseResult.ompFStr(arraysInBody,inoutArraysInBody,reductionVars,depend), True
         
+            result,_ = pyparsingtools.replaceFirst(fSnippet,\
+                cuf_kernel_do,\
+                cufKernelDoRepl)
+        else:
+            def accComputeRepl():
+                nonlocal arraysInBody
+                nonlocal inoutArraysInBody
+                nonlocal reductionVars
+                return parseResult.ompFStr(arraysInBody,inoutArraysInBody,depend), True
+            def accLoopRepl():
+                nonlocal arraysInBody
+                nonlocal inoutArraysInBody
+                nonlocal reductionVars
+                return parseResult.ompFStr(), True
+
+                result,_ = pyparsingtools.replaceFirst(fSnippet,\
+                        acc_parallel | acc_parallel_loop | acc_kernels | acc_kernels_loop,\
+                        accComputeRepl)
+                result,_ = pyparsingtools.replaceAll(result,\
+                        acc_loop,\
+                        accLoopRepl)
+        return result
+
     def cStr(self):
         numOuterLoopsToMap = int(self._body.numCollapse())
         if LOOP_COLLAPSE_STRATEGY == "grid" and numOuterLoopsToMap <= 3:
@@ -347,8 +418,9 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                     if var.name().lower() in self._reductionVars.keys():
                         var._reductionIndex = tidx
         reductionPreamble = ""
-        for var,op in self._reductionVars.items():
-            reductionPreamble += "reduce_op_{op}::init({var}[{tidx}]);\n".format(op=op,var=var,tidx=tidx)
+        for kind,variables in self.reductionVars.items():
+            for var in variables: 
+                reductionPreamble += "reduce_op_{kind}::init({var}[{tidx}]);\n".format(kind=kind,var=var,tidx=tidx)
         # 3. collapse and transform do-loops
         doLoops = findAll(self._body,TTDoLoop)
         numOuterLoopsToMap = int(self._launchInfo._numOuterLoopsToMap)

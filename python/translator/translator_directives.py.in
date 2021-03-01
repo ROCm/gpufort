@@ -368,7 +368,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 nonlocal arraysInBody
                 nonlocal inoutArraysInBody
                 nonlocal reductionVars
-                return parseResult.ompFStr(arraysInBody,inoutArraysInBody,reductionVars,depend), True
+                return parseResult.ompFStr(arraysInBody,inoutArraysInBody,reductionVars,depend)+"\n", True
             
             result,_ = pyparsingtools.replaceFirst(fSnippet,\
                 cuf_kernel_do,\
@@ -379,13 +379,17 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 nonlocal arraysInBody
                 nonlocal inoutArraysInBody
                 nonlocal reductionVars
-                print(parseResult)
-                return parseResult.ompFStr(arraysInBody,inoutArraysInBody,depend), True
+                return formatDirective(parseResult.ompFStr(arraysInBody,inoutArraysInBody,depend),80)+"\n", True
             def accLoopRepl(parseResult):
                 nonlocal arraysInBody
                 nonlocal inoutArraysInBody
                 nonlocal reductionVars
-                return parseResult.ompFStr(), True
+                return formatDirective(parseResult.ompFStr(),80)+"\n", True
+            def accEndRepl(parseResult):
+                nonlocal arraysInBody
+                nonlocal inoutArraysInBody
+                nonlocal reductionVars
+                return formatDirective(parseResult+"!$omp end target",80)+"\n", True
             
             result,_ = pyparsingtools.replaceFirst(fSnippet,\
                     acc_parallel | acc_parallel_loop | acc_kernels | acc_kernels_loop,\
@@ -393,6 +397,11 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             result,_ = pyparsingtools.replaceAll(result,\
                     acc_loop,\
                     accLoopRepl)
+            result,_ = pyparsingtools.replaceFirst(result,\
+                    ( ACC_END_PARALLEL | ACC_END_KERNELS ),
+                    accEndRepl)
+            result,_ = pyparsingtools.eraseFirst(result,\
+                    ACC_END_PARALLEL_LOOP | ACC_END_KERNELS_LOOP)
             return result
 
     def cStr(self):

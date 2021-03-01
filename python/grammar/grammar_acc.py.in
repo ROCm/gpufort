@@ -12,7 +12,7 @@ ASYNC,WAIT,NUM_GANGS,NUM_WORKERS,VECTOR_LENGTH,DEVICE_TYPE,COPY,COPYIN,COPYOUT,C
 GANG,VECTOR,WORKER = makeCaselessLiteral("gang,vector,worker",suppress=True)
 ACC_REDUCTION_OP   = oneOf("+ * max min iand ior ieor .and. .or. .eqv. .neqv.",caseless=CASELESS)
 
-accVarList = Group(delimitedList(allocateRValue)) 
+accVarList = LPAR + Group(delimitedList(allocateRValue)) + RPAR
 
 # clauses
 acc_clause_gang             = GANG + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
@@ -24,37 +24,37 @@ acc_clause_vector_length    = VECTOR_LENGTH + LPAR + integer + RPAR
 
 acc_clause_device_type      = DEVICE_TYPE + LPAR + Group(delimitedList(identifier | Literal("*"))) + RPAR
 acc_clause_if               = IF + LPAR + arithmeticLogicalExpression + RPAR
-acc_clause_copy             = COPY + LPAR + accVarList + RPAR
-acc_clause_copyin           = COPYIN + LPAR + accVarList + RPAR
-acc_clause_copyout          = COPYOUT + LPAR + accVarList + RPAR
+acc_clause_copy             = COPY    + accVarList
+acc_clause_copyin           = COPYIN  + accVarList
+acc_clause_copyout          = COPYOUT + accVarList
 
-acc_clause_create           = CREATE + LPAR + accVarList + RPAR
-acc_clause_no_create        = NO_CREATE + LPAR + accVarList + RPAR
-acc_clause_present          = PRESENT + LPAR + accVarList + RPAR
-acc_clause_deviceptr        = DEVICEPTR + LPAR + accVarList + RPAR
-acc_clause_attach           = ATTACH + LPAR + accVarList + RPAR
-acc_clause_detach           = DETACH + LPAR + accVarList + RPAR
-acc_clause_default          = DEFAULT + LPAR +  (CASELESS_LITERAL("none") | CASELESS_LITERAL("present")) + RPAR
-acc_clause_use_device       = USE_DEVICE + LPAR + accVarList + RPAR
-acc_clause_private          = PRIVATE + LPAR + accVarList + RPAR
-acc_clause_reduction        = REDUCTION + LPAR + ACC_REDUCTION_OP + Suppress(":") + accVarList + RPAR
-acc_clause_delete           = DELETE + LPAR + accVarList + RPAR
-acc_clause_private          = PRIVATE + LPAR + accVarList + RPAR
-acc_clause_first_private    = FIRST_PRIVATE + LPAR + accVarList + RPAR 
-acc_clause_collapse         = COLLAPSE + LPAR + integer + RPAR
-acc_clause_host             = ( HOST | SELF) + LPAR + accVarList + RPAR
-acc_clause_self             = SELF + LPAR + arithmeticLogicalExpression + RPAR
-acc_clause_bind             = BIND + LPAR + identifier + RPAR
-acc_clause_device_resident  = DEVICE_RESIDENT + LPAR + accVarList + RPAR
-acc_clause_link             = LINK + LPAR + accVarList + RPAR
-acc_clause_tile             = TILE + LPAR + Group(integer + Suppress(",") + integer) + RPAR
-acc_clause_wait             = WAIT + Optional(LPAR + accVarList + RPAR, default=[])
-acc_clause_async            = ASYNC + Optional(LPAR + rvalue + RPAR, default = CLAUSE_VALUE_NOT_SPECIFIED) 
+acc_clause_create           = CREATE          + accVarList
+acc_clause_no_create        = NO_CREATE       + accVarList
+acc_clause_present          = PRESENT         + accVarList
+acc_clause_deviceptr        = DEVICEPTR       + accVarList
+acc_clause_attach           = ATTACH          + accVarList
+acc_clause_detach           = DETACH          + accVarList
+acc_clause_use_device       = USE_DEVICE      + accVarList
+acc_clause_private          = PRIVATE         + accVarList
+acc_clause_delete           = DELETE          + accVarList
+acc_clause_private          = PRIVATE         + accVarList
+acc_clause_first_private    = FIRST_PRIVATE   + accVarList 
+acc_clause_host             = ( HOST | SELF)  + accVarList
+acc_clause_device_resident  = DEVICE_RESIDENT + accVarList
+acc_clause_link             = LINK            + accVarList
+acc_clause_default          = DEFAULT         + LPAR + (CASELESS_LITERAL("none") | CASELESS_LITERAL("present")) + RPAR # do not suppress
+acc_clause_reduction        = REDUCTION       + LPAR + ACC_REDUCTION_OP + Suppress(":") + Group(delimitedList(allocateRValue)) + RPAR
+acc_clause_collapse         = COLLAPSE        + LPAR + integer + RPAR
+acc_clause_self             = SELF            + LPAR + arithmeticLogicalExpression + RPAR
+acc_clause_bind             = BIND            + LPAR + identifier + RPAR
+acc_clause_tile             = TILE            + LPAR + Group(integer + Suppress(",") + integer) + RPAR
+acc_clause_wait             = WAIT            + Optional(accVarList, default=[])
+acc_clause_async            = ASYNC           + Optional(LPAR + rvalue + RPAR, default = CLAUSE_VALUE_NOT_SPECIFIED) 
 
 acc_clause_seq,acc_clause_auto,acc_clause_independent,acc_clause_read,acc_clause_write,acc_clause_capture,acc_clause_nohost,acc_clause_finalize,acc_clause_if_present = makeCaselessLiteral("seq,auto,independent,read,write,capture,nohost,finalize,if_present",suppress=False)
 
 # ACC LoopKernel directive
-ACC_START = PRAGMA + ACC
+ACC_START = WHITE + PRAGMA + ACC 
 ACC_END   = ACC_START.copy() + END
 
 acc_clause = acc_clause_if | acc_clause_self | acc_clause_host | acc_clause_async | acc_clause_wait | acc_clause_num_gangs | acc_clause_num_workers | acc_clause_vector_length | acc_clause_device_type |\
@@ -64,7 +64,7 @@ acc_clause = acc_clause_if | acc_clause_self | acc_clause_host | acc_clause_asyn
     acc_clause_independent | acc_clause_gang | acc_clause_worker | acc_clause_vector | acc_clause_read | acc_clause_write | acc_clause_capture |\
     acc_clause_nohost | acc_clause_finalize | acc_clause_if_present 
 
-accClauseList = Optional(OneOrMore(Optional(ACC_START + Literal("&")).suppress() + acc_clause), default=[])
+accClauseList = Group(Optional(OneOrMore(Optional(ACC_START + Literal("&")).suppress() + acc_clause), default=[]))
 
 ##
 ## DIRECTVIES
@@ -73,32 +73,32 @@ ACC_END_HOST_DATA    = ACC_END + HOST_DATA
 ACC_END_DATA         = ACC_END + DATA
 ACC_END_ATOMIC       = ACC_END + ATOMIC
 
-acc_update           = ACC_START + UPDATE + accClauseList # 2 tokens -> [(False|True),[*]],*
+acc_update           = ACC_START + UPDATE + accClauseList + WHITE # 2 tokens -> [(False|True),[*]],*
 
-acc_wait             = ACC_START + acc_clause_wait + accClauseList
+acc_wait             = ACC_START + acc_clause_wait + accClauseList + WHITE
 
-acc_host_data        = ACC_START + HOST_DATA + accClauseList 
+acc_host_data        = ACC_START + HOST_DATA + accClauseList + WHITE
 
-acc_data             = ACC_START + HOST_DATA + accClauseList 
+acc_data             = ACC_START + HOST_DATA + accClauseList + WHITE
 
-acc_enter_data       = ACC_START + ENTER + DATA + accClauseList
-acc_exit_data        = ACC_START + EXIT  + DATA + accClauseList
+acc_enter_data       = ACC_START + ENTER + DATA + accClauseList + WHITE
+acc_exit_data        = ACC_START + EXIT  + DATA + accClauseList + WHITE
 
-acc_routine          = ACC_START + ROUTINE + Optional(LPAR + identifier + RPAR,default = None) + accClauseList
-acc_declare          = ACC_START + DECLARE + accClauseList
+acc_routine          = ACC_START + ROUTINE + Optional(LPAR + identifier + RPAR,default = None) + accClauseList + WHITE
+acc_declare          = ACC_START + DECLARE + accClauseList + WHITE
 
-acc_atomic           = ACC_START + ATOMIC + Optional(accClauseList,default=None)
+acc_atomic           = ACC_START + ATOMIC + accClauseList + WHITE
 
-acc_cache            = ACC_START + CACHE + LPAR + accVarList + RPAR
+acc_cache            = ACC_START + CACHE + LPAR + accVarList + RPAR + WHITE
 
-acc_loop             = ACC_START + LOOP + accClauseList
+acc_loop             = ACC_START + LOOP + accClauseList + WHITE
 
 # kernels / parallels
-acc_serial         = ACC_START + SERIAL + accClauseList
-acc_kernels        = ACC_START + KERNELS  + ~LOOP + accClauseList
-acc_parallel       = ACC_START + PARALLEL + ~LOOP + accClauseList
-acc_parallel_loop  = ACC_START + PARALLEL + LOOP  + accClauseList
-acc_kernels_loop   = ACC_START + KERNELS  + LOOP  + accClauseList
+acc_serial         = ACC_START + SERIAL + accClauseList + WHITE
+acc_kernels        = ACC_START + KERNELS  + ~LOOP + accClauseList + WHITE
+acc_parallel       = ACC_START + PARALLEL + ~LOOP + accClauseList + WHITE
+acc_parallel_loop  = ACC_START + PARALLEL + LOOP  + accClauseList + WHITE
+acc_kernels_loop   = ACC_START + KERNELS  + LOOP  + accClauseList + WHITE
 
 ACC_END_SERIAL        = ACC_END + SERIAL
 ACC_END_KERNELS       = ACC_END + KERNELS  + ~LOOP

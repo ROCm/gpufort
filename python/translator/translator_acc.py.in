@@ -131,14 +131,16 @@ class TTAccClauseAsync(TTNode):
 
 class TTAccDirectiveBase(TTNode):
     def _assignFields(self,tokens):
-       self._clauses = tokens
+        self._whiteBefore, self._clauses, self._whiteAfter = tokens
     def _handleSimpleMapping(self,clauseType,converter=makeFStr):
         result = []
         for clause in findAll(self._clauses,clauseType):
             result += clause.varExpressions()
         return result
+    def _format(self,fSnippet):
+        return self._whiteBefore + formatDirective(fSnippet,80) + self._whiteAfter
     def ompFStr(self):
-       assert False, "Not implemented"     
+        assert False, "Not implemented"     
 
 
 # TODO add host data
@@ -279,7 +281,7 @@ class TTAccData(TTAccDataManagementDirectiveBase):
       if( condition )
     """
     def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={}):
-        return TTAccDataManagementDirectiveBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"$!omp target data")
+        return self._format(TTAccDataManagementDirectiveBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"$!omp target data"))
 
 class TTAccEnterData(TTAccDataManagementDirectiveBase):
     """
@@ -287,7 +289,7 @@ class TTAccEnterData(TTAccDataManagementDirectiveBase):
       clauses of TTAccData
     """
     def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={}):
-        return TTAccDataManagementDirectiveBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"$!omp target enter data")
+        return self._format(TTAccDataManagementDirectiveBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"$!omp target enter data"))
 
 class TTAccExitData(TTAccDataManagementDirectiveBase):
     """
@@ -297,7 +299,7 @@ class TTAccExitData(TTAccDataManagementDirectiveBase):
       wait [( wait-argument )]
     """
     def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={}):
-        return TTAccDataManagementDirectiveBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"$!omp target exit data")
+        return self._format(TTAccDataManagementDirectiveBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"$!omp target exit data"))
     
 class TTAccDeclare(TTAccDirectiveBase):
     """ NOTE: In contrast to OMP, '!$acc declare' is only applied to global variables.
@@ -322,7 +324,7 @@ class TTAccDeclare(TTAccDirectiveBase):
             result += " to("+",".join(toList)+")"
         if len(linkList):
             result += " link("+",".join(linkList)+")"
-        return result
+        return self._format(result)
 
 class TTAccRoutine(TTAccDirectiveBase):
     def _assignFields(self,tokens):
@@ -343,7 +345,7 @@ class TTAccRoutine(TTAccDirectiveBase):
         #    result += " device_type(any)"
         if len(additions):
             result += " "+additions
-        return result
+        return self._format(result)
 
 class TTAccUpdate(TTAccDirectiveBase):
     def ompFStr(self):
@@ -354,7 +356,7 @@ class TTAccUpdate(TTAccDirectiveBase):
             result += " to("+",".join(hostClause.varNames())+")"
         if deviceClause is not None:
             result += " from("+",".join(deviceClause.varNames())+")"
-        return result
+        return self._format(result)
 
 class TTAccWait(TTAccDirectiveBase):
     def waitArgs(self):
@@ -375,7 +377,7 @@ class TTAccWait(TTAccDirectiveBase):
             waitArgs = self.waitArgs()
             if len(waitArgs):
                 result += " depend("+DEPEND_TODO+")"
-        return result
+        return self._format(result)
 
 class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
     """
@@ -393,7 +395,7 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
       reduction( operator:var-list )
     """
     def _assignFields(self,tokens):
-        self._clauses                  = tokens
+        TTAccDirectiveBase._assignFields(self,tokens)
         self._loopHandlesMutualClauses = True    # can be unset by TTAccParallelLoop or TTAccKernelsLoop
     def numCollapse(self):
         clause = findFirst(self._clauses,TTAccCollapse)
@@ -460,7 +462,10 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
         if len(reductionVars):
             for op,values in reductionVars.items():
                 result += " reduction("+op+":"+",".join(values)+")" 
-        return result
+        if self._loopHandlesMutualClauses:
+            return self._format(result)
+        else:
+            return result
 
 class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase,IComputeConstruct):
     """
@@ -490,18 +495,18 @@ class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase,IComputeConstru
         return self._handleSimpleMapping(TTAccClausePrivate,converter)
     def firstprivateVars(self,converter=makeFStr):
         return self._handleSimpleMapping(TTAccClauseFirstprivate,converter)
-    def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={},prefix="!$omp target teams distribute"):
+    def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={},prefix="!$omp target"):
         result   = prefix
         dataPart = " "+TTAccDataManagementDirectiveBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"")
         return result + dataPart
 
 class TTAccParallel(TTAccComputeConstructBase):
-    def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={},prefix="!$omp target teams distribute"):
-        return TTAccComputeConstructBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,prefix) # no in/inout array analysis required
+    def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={},prefix="!$omp target"):
+        return self._format(TTAccComputeConstructBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,prefix))
 
 class TTAccParallelLoop(TTAccParallel,TTAccLoop):
     def _assignFields(self,tokens):
-        self._clauses                  = tokens
+        TTAccDirectiveBase._assignFields(self,tokens)
         self._loopHandlesMutualClauses = False
     def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={},loopType="do"):
         """
@@ -512,15 +517,12 @@ class TTAccParallelLoop(TTAccParallel,TTAccLoop):
         result       = "!$omp target teams distribute"
         parallelPart = TTAccParallel.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"")
         loopPart     = TTAccLoop.ompFStr(self,loopType,"parallel","")
-        return result + " " + loopPart.lstrip() + " " + parallelPart.strip()
+        return self._format(result + " " + loopPart.lstrip() + " " + parallelPart.strip())
 
-class TTAccKernels(TTAccComputeConstructBase):
+class TTAccKernels(TTAccParallel):
     pass
-
 class TTAccKernelsLoop(TTAccParallelLoop):
-    def _assignFields(self,tokens):
-        self._clauses                  = tokens
-        self._loopHandlesMutualClauses = False
+    pass
 
 #
 # Connect actions with grammar

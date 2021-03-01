@@ -23,6 +23,8 @@ else:
 ParserElement.setDefaultWhitespaceChars("\r\n\t &;")
 ParserElement.enablePackrat() 
 
+WHITE = Regex(r"(\r\n\t\s)*")
+
 # helper functions
 def makeCaselessLiteral(commaSeparatedList,suppress=False,forceCaseLess=False):
      if forceCaseLess:

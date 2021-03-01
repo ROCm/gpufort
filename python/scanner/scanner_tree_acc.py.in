@@ -11,16 +11,6 @@ class STAccDirective(STDirective,Acc2Hip,Acc2Omp):
     def __init__(self,parent,lineno,lines,directiveNo):
         STDirective.__init__(self,parent,lineno,lines,directiveNo,sentinel="!$acc")
         self._defaultPresentVars = []
-    def appendDefaultPresentVar(self,name):
-        """
-        Append variables that are assumed to be present and
-        used to generate host code when a default(present) clause
-        is detected.
-
-        TODO(dominic): Potentially this can be managed by
-        the class itself and must not be set from the outside.
-        """
-        self._defaultPresentVars.append(name)
     def considerInSource2SourceTranslation(self):
         """
         Consider this object when transforming host code.
@@ -58,17 +48,16 @@ class STAccDirective(STDirective,Acc2Hip,Acc2Omp):
         return self.findSubstring("acc loop")
     def isKernelsDirective(self):
         return not self.findSubstring("acc kernels loop") and\
-               self.findSubstring("acc kernels")
+            self.findSubstring("acc kernels")
     def isParallelDirective(self):
         return not self.findSubstring("acc parallel loop") and\
-               self.findSubstring("acc parallel")
+            self.findSubstring("acc parallel")
     def isLoopDirective(self):
         return self.findSubstring("acc loop")
     def isParallelLoopDirective(self):
         return self.findSubstring("acc parallel loop")
     def isKernelsLoopDirective(self):
         return self.findSubstring("acc kernels loop")
-    
     def __str__(self):
         return """
 {{ singleLineStatement={singleLineStatement},
@@ -106,24 +95,12 @@ class STAccLoopKernel(STAccDirective,STLoopKernel,Acc2HipLoopKernel,Acc2OmpLoopK
     def __init__(self,parent,lineno,lines,directiveNo):
         STAccDirective.__init__(self,parent,lineno,lines,directiveNo)
         STLoopKernel.__init__(self,parent,lineno,lines)
+
+        print(lines)
     def lines(self):
         """
         :note: used for grouping scanner tree objects
         """
-        return self._lines
-    def directiveLines(self):
-        """
-        :note: used for kernel generation
-        """
-        return [self.singleLineStatement()]
-    def bodyLines(self):
-        """
-        In case of parallel loop and LoopKernels loop STAccLoopKernel constructs,
-        the first lines already contain the main directive. 
-        :note: used for kernel generation
-        """
-        if self.isParallelLoopDirective() or self.isKernelsLoopDirective():
-            return self._lines[len(self._directiveLines):]
         return self._lines
     def hipFStr(self):
         if DESTINATION_DIALECT is "hip":

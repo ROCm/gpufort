@@ -195,7 +195,7 @@ class STUseStatement(STNode):
                 useCuda = True
                 result = result.replace(lib,lib.replace("cudafor",HIP_MODULE_NAME).replace("cu",HIP_MATH_MODULE_PREFIX+"hip"))
                 if libLower == "cudafor":
-                    result = result.rstrip("\n")+"\n" + "{0}use iso_c_binding\n{0}use iso_c_binding_ext".format(indent) 
+                    result = result.rstrip("\n")+"\n" + "{0}use iso_c_binding".format(indent) 
         return result, useCuda
     def considerInSource2SourceTranslation(self):
         if not STNode.considerInSource2SourceTranslation(self):
@@ -254,7 +254,6 @@ class STFunction(STProcedure):
 class STDirective(STNode):
     def __init__(self,parent,lineno,lines,directiveNo,sentinel="!$cuf"):
         STNode.__init__(self,parent,lineno,lines)
-        self._directiveLines      = lines
         self._sentinel            = sentinel
         self._singleLineStatement = None
         self._directiveNo         = directiveNo
@@ -262,10 +261,10 @@ class STDirective(STNode):
         """
         Express the statement as lower case single-line statement
         """
-        assert len(self._directiveLines)
+        assert len(self._lines)
         if self._singleLineStatement is None:
             _genericPragma = genericPragma.copy().setParseAction(lambda tokens: "") # do not overwrite existing parse action if any
-            self._singleLineStatement = self._sentinel + " " + _genericPragma.transformString(" ".join(self._directiveLines)).rstrip("\n").replace("&","").lower()
+            self._singleLineStatement = self._sentinel + " " + _genericPragma.transformString(" ".join(self._lines)).rstrip("\n").replace("&","").lower()
             # remove whitespaces
             self._singleLineStatement = White().setParseAction(lambda tokens: " ").transformString(self._singleLineStatement)
         return self._singleLineStatement
@@ -315,16 +314,6 @@ class STCufLoopKernel(STDirective,STLoopKernel):
     def __init__(self,parent,lineno,lines):
         STDirective.__init__(self,parent,lineno,lines)
         STLoopKernel.__init__(self,parent,lineno,lines)
-    def directiveLines(self):
-        """
-        :note: used for kernel generation
-        """
-        return self._lines[0]
-    def bodyLines(self):
-        """
-        :note: used for kernel generation
-        """
-        return self._lines[1:]
 
 class Attributed():
     def hasAllocatable(self):
@@ -439,8 +428,6 @@ class STDeclaration(STNode,Attributed):
         """
         unprefixedName = removeTypePrefix(arrayName) 
         return self._ttdeclaration.arrayVariableIndexMacroFStr(unprefixedName,usePlaceHolders=True)
-    def createCodegenContext(self):
-        return translator.createCodegenContextFromDeclaration(self._parseResult)
     def rhsCStr(self,varName):
         """
         :param varName: Name of a variable, possibly prefixed if member of a derived type.
@@ -454,6 +441,8 @@ class STDeclaration(STNode,Attributed):
             return len(self._preamble) or len(self._epilog) or self.hasDevice() or self._madeDevice or self.hasPinned() or self.hasManaged() or self._madeTarget or self.isStream()
         else:
             return False
+    def createCodegenContext(self):
+        return translator.createCodegenContextFromDeclaration(self._parseResult)
     def hipFStr(self):
         # TODO(dominic) rewrite docu
         """

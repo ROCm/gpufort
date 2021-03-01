@@ -120,7 +120,6 @@ def parseFile(fortranFilePath):
         nonlocal doLoopCtr
         if inParallelAccRegionAndNotRecording():
             new = STAccLoopKernel(parent=current,lineno=currentLineno,lines=currentLines)
-            new._directiveLines = current._directiveLines
             new._lines = []
             new._doLoopCtrMemorised=doLoopCtr
             descend(new) 
@@ -144,7 +143,6 @@ def parseFile(fortranFilePath):
         nonlocal currentLines
         nonlocal keepRecording
         new = STCufLoopKernel(parent=current,lineno=currentLineno,lines=currentLines)
-        new._directiveLines = currentLines
         new._doLoopCtrMemorised=doLoopCtr
         descend(new) 
         keepRecording = True
@@ -250,7 +248,6 @@ def parseFile(fortranFilePath):
             current.append(new)
         # descend in constructs or new node
         elif new.isParallelLoopDirective() or new.isKernelsLoopDirective():
-            keepRecording = True
             new = STAccLoopKernel(current,currentLineno,currentLines,directiveNo)
             new._doLoopCtrMemorised=doLoopCtr
             descend(new)  # descend also appends 
@@ -271,9 +268,7 @@ def parseFile(fortranFilePath):
             parseResult = translator.assignmentBegin.parseString(singleLineStatement)
             lvalue = translator.findFirst(parseResult,translator.TTLValue)
             if not lvalue is None and lvalue.hasMatrixRangeArgs():
-                new = STAccLoopKernel(parent=current,lineno=currentLineno,lines=currentLines)
-                new._directiveLines = current._directiveLines # TODO make args or move into constructor
-                new._lines          = currentLines
+                new  = STAccLoopKernel(parent=current,lineno=currentLineno,lines=currentLines)
                 current.append(new)
     
     moduleStart.setParseAction(Module_visit)
@@ -450,22 +445,22 @@ def postProcess(stree,hipModuleName):
     math libraries.
     """
     if "hip" in DESTINATION_DIALECT or len(KERNELS_TO_CONVERT_TO_HIP):
-    # insert use kernel statements at appropriate point
-    def isLoopKernel(child):
-        return isinstance(child,STLoopKernel) or\
-               (type(child) is STSubroutine and child.isDeviceSubroutine())
-    kernels = stree.findAll(filter=isLoopKernel, recursively=True)
-    for kernel in kernels:
-        if "hip" in DESTINATION_DIALECT or\
-          kernel._lineno in kernelsToConvertToHip or\
-          kernel.kernelName() in kernelsToConvertToHip:
-            stnode = kernel._parent.findFirst(filter=lambda child: not child._included and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
-            assert not stnode is None
-            indent = " "*(len(stnode.lines()[0]) - len(stnode.lines()[0].lstrip()))
-            stnode._preamble.add("{0}use {1}\n".format(indent,hipModuleName))
+        # insert use kernel statements at appropriate point
+        def isLoopKernel(child):
+            return isinstance(child,STLoopKernel) or\
+                   (type(child) is STSubroutine and child.isDeviceSubroutine())
+        kernels = stree.findAll(filter=isLoopKernel, recursively=True)
+        for kernel in kernels:
+            if "hip" in DESTINATION_DIALECT or\
+              kernel._lineno in kernelsToConvertToHip or\
+              kernel.kernelName() in kernelsToConvertToHip:
+                stnode = kernel._parent.findFirst(filter=lambda child: not child._included and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
+                assert not stnode is None
+                indent = " "*(len(stnode.lines()[0]) - len(stnode.lines()[0].lstrip()))
+                stnode._preamble.add("{0}use {1}\n".format(indent,hipModuleName))
    
-   if "cuf" in SOURCE_DIALECTS:
-        postProcessCuf(stree,hipModuleName)
-   
-   if "acc" in SOURCE_DIALECTS:
-        postProcessAcc(stree,hipModuleName)
+    if "cuf" in SOURCE_DIALECTS:
+         postProcessCuf(stree,hipModuleName)
+    
+    if "acc" in SOURCE_DIALECTS:
+         postProcessAcc(stree,hipModuleName)

@@ -285,7 +285,7 @@ programEnd = END + PROGRAM + Optional(identifier.suppress())
 typeStart = TYPE.suppress() + Optional(Optional(qualifierList) + COLONS,default=[]) + identifier # ! emits 2 tokens: [[*], *]
 typeEnd   = END + TYPE.suppress() + Optional(identifier).suppress()
 
-derivedTypeureEnd = END + ~(NONSTRUCTURE) + Optional(FUNCTION|SUBROUTINE|MODULE).suppress() + Optional(identifier).suppress()
+structureEnd = END + ~(NONSTRUCTURE) + Optional(FUNCTION|SUBROUTINE|MODULE).suppress() + Optional(identifier).suppress()
 # preprocessor
 cpp_defined      = CASELESS_LITERAL("defined").suppress() + LPAR + identifier + RPAR 
 cpp_ifdef        = CASELESS_LITERAL("ifdef").suppress() + identifier 

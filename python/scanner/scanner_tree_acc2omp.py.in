@@ -1,9 +1,11 @@
-class Acc2Omp:
+class Acc2Omp():
     def hipFStr(self):
-        print(self.__dict__)
+        print("".join(self._lines))
         return "! here would be an OpenMP directive instead", True
 
-class Acc2OmpLoopKernel:
+class Acc2OmpLoopKernel():
     def hipFStr(self):
-        print(self.__dict__)
-        return "! here would be an OpenMP loopnest instead", True
+        print(self._lines)
+        fSnippet = "".join(self._lines)
+        parseResult = translator.loopKernel.parseString(fSnippet)
+        return parseResult.ompFStr(fSnippet), True 

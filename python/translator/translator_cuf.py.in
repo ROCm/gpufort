@@ -60,25 +60,18 @@ class TTCudaKernelCall(TTNode):
 
 class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
     def _assignFields(self,tokens):
-        def postprocessDim3(dim3):
-            #print("dim3 = {}".format(dim3))
-            result=["-1"]*3
-            if len(dim3) and not dim3 in ["", "*"]:
-                for i,d in enumerate(dim3.split(",")):
-                   result[i] = d
-            return result
-        self._numOuterLoopsToMap = tokens[0]
-        self._grid               = postprocessDim3(tokens[1][0])
-        self._block              = postprocessDim3(tokens[1][1])
+        self._numOuterLoopsToMap = int(tokens[0])
+        self._grid               = tokens[1][0]
+        self._block              = tokens[1][1]
         self._sharedMem          = tokens[1][2]
         self._stream             = tokens[1][3]
-    def streamFStr(self):
+    def stream(self):
         return makeFStr(self._stream)
-    def sharedMemFStr(self):
+    def sharedMem(self):
         return makeFStr(self._sharedMem)
     def useDefaultStream(self):
         return self._stream == "0"
-    def dimensions(self):
+    def numDimensions(self):
         """
         Get the number of grid and block dimensions.
         This might differ from the number of nested loops.
@@ -87,6 +80,22 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
             return int(self._numOuterLoopsToMap)
         else:
             return 1
+    def presentByDefault(self):
+        return True
+    def dataIndependentIterations(self):
+        return True
+    def numCollapse(self):
+        return self._numOuterLoopsToMap
+    def numGangsTeamsBlocks(self,converter=makeFStr):
+        if self._grid == "*":
+            return [CLAUSE_NOT_FOUND]*self._numOuterLoopsToMap
+        else:
+            return [converter(gridDim) for gridDim in self._grid]
+    def numThreadsInBlock(self,converter=makeFStr):
+        if self._block == "*":
+            return [CLAUSE_NOT_FOUND]*self._numOuterLoopsToMap
+        else:
+            return [converter(blockDim) for blockDim in self._block]
     def cStr(self):
         result  = "// NOTE: The following information was given in the orignal CUDA Fortran kernel pragma:\n"
         result += "// - Nested outer-most do-loops that are directly mapped to threads: {}\n".format(makeCStr(self._numOuterLoopsToMap))
@@ -95,12 +104,6 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
         result += "// - Shared Memory: {}\n".format(makeFStr(self._sharedMem))
         result += "// - Stream: {}\n".format(makeFStr(self._stream))
         return result
-    def presentByDefault(self):
-        clause = findFirst(self._clauses,TTAccClauseDefault)
-        if not clause is None:
-            return clause.value() == "present"
-        else:
-            return True
     def ompFStr(self,arraysInBody=set(),inoutArraysInBody=set(),reductionVars={},depend={},loopType="do"):
         result = "!$omp target teams distribute parallel "+loopType  
         # reduction vars

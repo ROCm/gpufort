@@ -7,10 +7,12 @@ print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.std
 
 testdata = []
 testdata.append("""
+!$acc parallel
 !$acc loop 
 do i = 1, n
   a(i) = 3;
 end do
+!$acc end parallel
 """)
 testdata.append("""
 !$acc kernels loop create(b) copy(a(:)) reduction(+:c) async(1)
@@ -28,15 +30,17 @@ end do
 """)
 
 testdata.append("""
-!$acc loop 
+!$acc kernels loop collapse(2)
 do i = 1, n
   do j = 1, n
     a(i,j) = 3;
   end do
 end do
+!$acc end kernels loop
 """)
 
 testdata.append("""
+!$acc parallel
 !$acc loop gang worker
 do i = 1, n
   !$acc loop vector
@@ -44,9 +48,11 @@ do i = 1, n
     a(i,j) = 3;
   end do
 end do
+!$acc end parallel
 """)
 
 testdata.append("""
+!$acc kernels
 !$acc loop gang
 do i = 1, n
 !$acc loop worker
@@ -57,16 +63,18 @@ do i = 1, n
     end do
   end do
 end do
+!$acc end kernels
 """)
 
 for snippet in testdata:
     try:
-        result = translator.annotatedDoLoop.parseString(snippet)[0]
-        print(translator.formatDirective(result._annotation.ompFStr(),80))
         result = translator.loopKernel.parseString(snippet)[0]
+        print(result.ompFStr(snippet))
+        #result = translator.loopKernel.parseString(snippet)[0]
     except Exception as e:
         print(" - FAILED",file=sys.stderr)
         print("failed to parse '{}'".format(snippet),file=sys.stderr)
         raise e
         sys.exit(2)
+
 print(" - PASSED",file=sys.stderr)

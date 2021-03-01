@@ -5,8 +5,8 @@
 ## CUF LoopKernel loop directive
 CUF,KERNEL,STREAM = makeCaselessLiteral("cuf,kernel,stream",suppress=True)
 
-dim3        = LPAR + delimitedList(pyparsing_common.integer,combine=True) + RPAR
-grid        = Literal("*") | dim3 | identifier | simpleDerivedTypeMember
+dim3        = LPAR + delimitedList(arithmeticExpression) + RPAR
+grid        = Literal("*") | dim3 
 threadBlock = grid.copy()
 streamType  = ( derivedTypeElem | funcCall | identifier | number )
 streamArg   = Optional(STREAM + EQ) + Optional(streamType,default="0")
@@ -21,7 +21,7 @@ numLoopsToMapArg = Optional(LPAR + pyparsing_common.integer + RPAR,default=1)
 # directives
 cuf_kernel_do = PRAGMA + CUF + KERNEL + DO + numLoopsToMapArg + Optional(kernelLaunchArgs,default=["*","*",0,"0"])
 
-# kernelextractor/analysis
+# scanner/analysis
 ALLOCATE,ALLOCATED,DEALLOCATE = makeCaselessLiteral("allocate,allocated,deallocate",suppress=True)
 allocateRValue                =  (( derivedTypeElem | identifier ) + bounds) | derivedTypeElem | identifier # TODO check if this can be generalized
 allocateRValueList            = delimitedList(allocateRValue)

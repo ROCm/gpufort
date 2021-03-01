@@ -11,9 +11,9 @@ class ILoopAnnotation():
         return [CLAUSE_NOT_FOUND]
     def numWorkers(self): 
         """ only ACC """
-        return [CLAUSE_NOT_FOUND]
+        return CLAUSE_NOT_FOUND
     def simdlenVectorLength(self):
-        return [CLAUSE_NOT_FOUND]
+        return CLAUSE_NOT_FOUND
     def dataIndependentIterations(self):
         return True
     def privateVars(self,converter=makeFStr): 
@@ -91,11 +91,6 @@ class IComputeConstruct():
     def numGangsTeamsBlocks(self):
         return [CLAUSE_NOT_FOUND]
     def numThreadsInBlock(self):
-        return [CLAUSE_NOT_FOUND]
-    def numWorkers(self): 
-        """ only ACC """
-        return [CLAUSE_NOT_FOUND]
-    def simdlenVectorLength(self):
         return [CLAUSE_NOT_FOUND]
     def gangTeamPrivateVars(self,converter=makeFStr): 
         return []
@@ -214,21 +209,21 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         """
         if len(indexHints):
             self._indexHints = indexHints
-        return self.__searchValueInBody(lambda child: type(child) is IValue,
+        return self.__searchValueInBody(lambda node: type(node) is IValue,
                 self._indexHints)
         def arraysInBody(self,indexHints=[]):
             if len(indexHints):
                 self._indexHints = indexHints
         def searchFilter(node):
-            return type(child) is IValue and\
-                    type(child._value) is TTFunctionCallOrTensorAccess 
+            return type(node) is IValue and\
+                    type(node._value) is TTFunctionCallOrTensorAccess 
         return self.__searchValueInBody(searchFilter,self._indexHints,1)
     def inoutArraysInBody(self,indexHints=[]):
         if len(indexHints):
             self._indexHints = indexHints
         def searchFilter(node):
-            return type(child) is LValue and\
-                    type(child._value) is TTFunctionCallOrTensorAccess 
+            return type(node) is TTLValue and\
+                    type(node._value) is TTFunctionCallOrTensorAccess 
         return self.__searchValueInBody(searchFilter,self._indexHints,1)
     def __localScalarsAndReductionCandidates(self,indexHints):
         """
@@ -246,8 +241,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
 
         # depth first search
         assignments = findAllMatching(self._body,
-                lambda child: type(child) in 
-                [TTAssignment,TTComplexAssignment,TTMatrixAssignment])
+                lambda node: type(node) in [TTAssignment,TTComplexAssignment,TTMatrixAssignment])
         for assignment in assignments:   
             # lhs scalars
             lvalue     = assignment._lhs._value
@@ -343,9 +337,9 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         return self._parentDirective.gangTeamFirstprivateVars(converter)
     def gangTeamReductionVars(self,converter=makeFStr): 
         if type(self._parentDirective) is TTCufKernelDo:
-            return self._parentDirective.gangTeamReductionVars(converter)
-        else:
             return { "UNKNOWN" : self.reductionCandidates() } # TODO default reduction type should be configurable
+        else:
+            return self._parentDirective.gangTeamReductionVars(converter)
     def ompFStr(self,fSnippet):
         """
         :note: The string used for parsing was preprocessed. Hence
@@ -369,36 +363,37 @@ class TTLoopKernel(TTNode,IComputeConstruct):
 
         # TODO preprocess loop statements outside
         # of this routine if needed
-            
         if type(self._parentDirective) is TTCufKernelDo:
             def cufKernelDoRepl(parseResult):
                 nonlocal arraysInBody
                 nonlocal inoutArraysInBody
                 nonlocal reductionVars
                 return parseResult.ompFStr(arraysInBody,inoutArraysInBody,reductionVars,depend), True
-        
+            
             result,_ = pyparsingtools.replaceFirst(fSnippet,\
                 cuf_kernel_do,\
                 cufKernelDoRepl)
+            return result
         else:
-            def accComputeRepl():
+            def accComputeRepl(parseResult):
                 nonlocal arraysInBody
                 nonlocal inoutArraysInBody
                 nonlocal reductionVars
+                print(parseResult)
                 return parseResult.ompFStr(arraysInBody,inoutArraysInBody,depend), True
-            def accLoopRepl():
+            def accLoopRepl(parseResult):
                 nonlocal arraysInBody
                 nonlocal inoutArraysInBody
                 nonlocal reductionVars
                 return parseResult.ompFStr(), True
-
-                result,_ = pyparsingtools.replaceFirst(fSnippet,\
-                        acc_parallel | acc_parallel_loop | acc_kernels | acc_kernels_loop,\
-                        accComputeRepl)
-                result,_ = pyparsingtools.replaceAll(result,\
-                        acc_loop,\
-                        accLoopRepl)
-        return result
+            
+            result,_ = pyparsingtools.replaceFirst(fSnippet,\
+                    acc_parallel | acc_parallel_loop | acc_kernels | acc_kernels_loop,\
+                    accComputeRepl)
+            result,_ = pyparsingtools.replaceAll(result,\
+                    acc_loop,\
+                    accLoopRepl)
+            return result
 
     def cStr(self):
         numOuterLoopsToMap = int(self._body.numCollapse())

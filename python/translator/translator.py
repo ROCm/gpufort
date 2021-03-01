@@ -9,6 +9,7 @@ import re
 
 # recursive inclusion
 import indexer.indexertools as indexertools
+import pyparsingtools as pyparsingtools
 
 #from grammar import *
 CASELESS    = True

@@ -131,14 +131,14 @@ class TTAccClauseAsync(TTNode):
 
 class TTAccDirectiveBase(TTNode):
     def _assignFields(self,tokens):
-        self._whiteBefore, self._clauses, self._whiteAfter = tokens
+        self._clauses = tokens
     def _handleSimpleMapping(self,clauseType,converter=makeFStr):
         result = []
         for clause in findAll(self._clauses,clauseType):
             result += clause.varExpressions()
         return result
     def _format(self,fSnippet):
-        return self._whiteBefore + formatDirective(fSnippet,80) + self._whiteAfter
+        return formatDirective(fSnippet,80) 
     def ompFStr(self):
         assert False, "Not implemented"     
 

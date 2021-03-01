@@ -54,11 +54,11 @@ end do
 testdata.append("""
 !$acc kernels
 !$acc loop gang
-do i = 1, n
-!$acc loop worker
-  do i = 1, n
+do k = 1, n
+  !$acc loop worker
+  do j = 1, n
     !$acc loop vector
-    do j = 1, n
+    do i = 1, n
       a(i,j,k) = 3;
     end do
   end do

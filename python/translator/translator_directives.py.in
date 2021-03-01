@@ -379,17 +379,22 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 nonlocal arraysInBody
                 nonlocal inoutArraysInBody
                 nonlocal reductionVars
-                return formatDirective(parseResult.ompFStr(arraysInBody,inoutArraysInBody,depend),80)+"\n", True
+                return parseResult.ompFStr(arraysInBody,inoutArraysInBody,depend), True
+            parallelRegion = "parallel" 
             def accLoopRepl(parseResult):
                 nonlocal arraysInBody
                 nonlocal inoutArraysInBody
                 nonlocal reductionVars
-                return formatDirective(parseResult.ompFStr(),80)+"\n", True
+                nonlocal parallelRegion
+                print('{}'.format(parseResult))
+                result = parseResult.ompFStr("do",parallelRegion)
+                parallelRegion = ""
+                return result, True
             def accEndRepl(parseResult):
                 nonlocal arraysInBody
                 nonlocal inoutArraysInBody
                 nonlocal reductionVars
-                return formatDirective(parseResult+"!$omp end target",80)+"\n", True
+                return parseResult.strip("\n")+"!$omp end target", True
             
             result,_ = pyparsingtools.replaceFirst(fSnippet,\
                     acc_parallel | acc_parallel_loop | acc_kernels | acc_kernels_loop,\
@@ -398,9 +403,9 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                     acc_loop,\
                     accLoopRepl)
             result,_ = pyparsingtools.replaceFirst(result,\
-                    ( ACC_END_PARALLEL | ACC_END_KERNELS ),
+                    Optional(White(),default="") + ( ACC_END_PARALLEL | ACC_END_KERNELS ),
                     accEndRepl)
-            result,_ = pyparsingtools.eraseFirst(result,\
+            result,_ = pyparsingtools.eraseAll(result,\
                     ACC_END_PARALLEL_LOOP | ACC_END_KERNELS_LOOP)
             return result
 
@@ -516,5 +521,5 @@ def formatDirective(directiveLine,maxLineWidth):
             result += line + "&\n"
             line = sentinel+" "
         line += tk+" "
-    result += line.rstrip() 
+    result += line.rstrip()
     return result

@@ -54,7 +54,7 @@ acc_clause_async            = ASYNC           + Optional(LPAR + rvalue + RPAR, d
 acc_clause_seq,acc_clause_auto,acc_clause_independent,acc_clause_read,acc_clause_write,acc_clause_capture,acc_clause_nohost,acc_clause_finalize,acc_clause_if_present = makeCaselessLiteral("seq,auto,independent,read,write,capture,nohost,finalize,if_present",suppress=False)
 
 # ACC LoopKernel directive
-ACC_START = WHITE + PRAGMA + ACC 
+ACC_START = PRAGMA + ACC 
 ACC_END   = ACC_START.copy() + END
 
 acc_clause = acc_clause_if | acc_clause_self | acc_clause_host | acc_clause_async | acc_clause_wait | acc_clause_num_gangs | acc_clause_num_workers | acc_clause_vector_length | acc_clause_device_type |\
@@ -73,38 +73,38 @@ ACC_END_HOST_DATA    = ACC_END + HOST_DATA
 ACC_END_DATA         = ACC_END + DATA
 ACC_END_ATOMIC       = ACC_END + ATOMIC
 
-acc_update           = ACC_START + UPDATE + accClauseList + WHITE # 2 tokens -> [(False|True),[*]],*
+acc_update           = ACC_START + UPDATE + accClauseList # 2 tokens -> [(False|True),[*]],*
 
-acc_wait             = ACC_START + acc_clause_wait + accClauseList + WHITE
+acc_wait             = ACC_START + acc_clause_wait + accClauseList
 
-acc_host_data        = ACC_START + HOST_DATA + accClauseList + WHITE
+acc_host_data        = ACC_START + HOST_DATA + accClauseList
 
-acc_data             = ACC_START + HOST_DATA + accClauseList + WHITE
+acc_data             = ACC_START + HOST_DATA + accClauseList
 
-acc_enter_data       = ACC_START + ENTER + DATA + accClauseList + WHITE
-acc_exit_data        = ACC_START + EXIT  + DATA + accClauseList + WHITE
+acc_enter_data       = ACC_START + ENTER + DATA + accClauseList
+acc_exit_data        = ACC_START + EXIT  + DATA + accClauseList
 
-acc_routine          = ACC_START + ROUTINE + Optional(LPAR + identifier + RPAR,default = None) + accClauseList + WHITE
-acc_declare          = ACC_START + DECLARE + accClauseList + WHITE
+acc_routine          = ACC_START + ROUTINE + Optional(LPAR + identifier + RPAR,default = None) + accClauseList
+acc_declare          = ACC_START + DECLARE + accClauseList
 
-acc_atomic           = ACC_START + ATOMIC + accClauseList + WHITE
+acc_atomic           = ACC_START + ATOMIC + accClauseList
 
-acc_cache            = ACC_START + CACHE + LPAR + accVarList + RPAR + WHITE
+acc_cache            = ACC_START + CACHE + LPAR + accVarList + RPAR
 
-acc_loop             = ACC_START + LOOP + accClauseList + WHITE
+acc_loop             = ACC_START + LOOP + accClauseList
 
 # kernels / parallels
-acc_serial         = ACC_START + SERIAL + accClauseList + WHITE
-acc_kernels        = ACC_START + KERNELS  + ~LOOP + accClauseList + WHITE
-acc_parallel       = ACC_START + PARALLEL + ~LOOP + accClauseList + WHITE
-acc_parallel_loop  = ACC_START + PARALLEL + LOOP  + accClauseList + WHITE
-acc_kernels_loop   = ACC_START + KERNELS  + LOOP  + accClauseList + WHITE
+acc_serial         = ACC_START + SERIAL + accClauseList
+acc_kernels        = ACC_START + KERNELS  + ~LOOP + accClauseList
+acc_parallel       = ACC_START + PARALLEL + ~LOOP + accClauseList
+acc_parallel_loop  = ACC_START + PARALLEL + LOOP  + accClauseList
+acc_kernels_loop   = ACC_START + KERNELS  + LOOP  + accClauseList
 
 ACC_END_SERIAL        = ACC_END + SERIAL
 ACC_END_KERNELS       = ACC_END + KERNELS  + ~LOOP
 ACC_END_PARALLEL      = ACC_END + PARALLEL + ~LOOP
-ACC_END_PARALLEL_LOOP = ACC_END_PARALLEL.copy() + LOOP # copy() allows us to attach different parse action
-ACC_END_KERNELS_LOOP  = ACC_END_KERNELS.copy()  + LOOP
+ACC_END_PARALLEL_LOOP = ACC_END + PARALLEL + LOOP # copy() allows us to attach different parse action
+ACC_END_KERNELS_LOOP  = ACC_END + KERNELS  + LOOP
 
 #
 # Regions

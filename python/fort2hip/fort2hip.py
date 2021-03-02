@@ -195,33 +195,35 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
             kernelParseResult.loopVars(),\
             [], True, type(stkernel) is scanner.STCufLoopKernel)
 
+        reductionOps       = []
+        
         # general
         kernelName         = stkernel.kernelName()
         kernelLauncherName = stkernel.kernelLauncherName()
    
         cSnippet = kernelParseResult.cStr()
 #        # treat reduction vars / acc default(present) vars
-#        cContext["haveReductions"] |= len(reductionOps)
+        cContext["haveReductions"] |= len(reductionOps)
         kernelCallArgNames = []
         reductionVars      = []
-#        for arg in kernelArgs:
-#            name  = arg["name"]
-#            cType = arg["cType"]
-#            if name in reductionOps:
-#                # modify argument
-#                arg["qualifiers"].remove("value")
-#                arg["cType"] = cType + "*"
-#                # reduction buffer var
-#                bufferName = "_d_" + name
-#                var = { "buffer": bufferName, "name" : name, "type" : cType, "op" : reductionOps[name] }
-#                reductionVars.append(var)
-#                # call args
-#                kernelCallArgNames.append(bufferName)
-#            else:
-#                kernelCallArgNames.append(name)
-#                if type(stLoopKernel) is scanner.STAccLoopKernel:
-#                    if len(arg["cSize"]):
-#                        stkernel.appendDefaultPresentVar(name)
+        for arg in kernelArgs:
+            name  = arg["name"]
+            cType = arg["cType"]
+            if name in reductionOps:
+                # modify argument
+                arg["qualifiers"].remove("value")
+                arg["cType"] = cType + "*"
+                # reduction buffer var
+                bufferName = "_d_" + name
+                var = { "buffer": bufferName, "name" : name, "type" : cType, "op" : reductionOps[name] }
+                reductionVars.append(var)
+                # call args
+                kernelCallArgNames.append(bufferName)
+            else:
+                kernelCallArgNames.append(name)
+                if type(stkernel) is scanner.STAccLoopKernel:
+                    if len(arg["cSize"]):
+                        stkernel.appendDefaultPresentVar(name)
         def argNames(args):
             return [arg["name"] for arg in args]
 

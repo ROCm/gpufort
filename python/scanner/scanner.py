@@ -9,8 +9,6 @@ from collections import Iterable # < py38
 import importlib
 import logging
 
-import yaml
-
 import re
 
 # local includes
@@ -18,18 +16,35 @@ import addtoplevelpath
 import translator.translator as translator
 import pyparsingtools
 
+SCANNER_ERROR_CODE = 1000
+#SUPPORTED_DESTINATION_DIALECTS = ["omp","hip-gpufort-rt","hip-gcc-rt","hip-hpe-rt","hip"]
+SUPPORTED_DESTINATION_DIALECTS = ["omp","hip-gpufort-rt"]
+    
 # dirty hack that allows us to load independent versions of the grammar module
 #from grammar import *
 CASELESS    = True
 GRAMMAR_DIR = os.path.join(os.path.dirname(__file__),"../grammar")
 exec(open("{0}/grammar.py".format(GRAMMAR_DIR)).read())
-
 scannerDir = os.path.dirname(__file__)
 exec(open("{0}/scanner_options.py.in".format(scannerDir)).read())
 exec(open("{0}/scanner_tree.py.in".format(scannerDir)).read())
 exec(open("{0}/scanner_tree_acc.py.in".format(scannerDir)).read())
 exec(open("{0}/scanner_groups.py.in".format(scannerDir)).read())
-    
+
+def checkDestinationDialect(destinationDialect):
+    if destinationDialect in SUPPORTED_DESTINATION_DIALECTS:
+        return destinationDialect
+    else:
+        msg = "scanner: destination dialect '{}' is not supported. Must be one of: {}".format(\
+                destinationDialect,", ".join(SUPPORTED_DESTINATION_DIALECTS))
+        logging.getLogger("").error(msg)
+        sys.abort(SCANNER_ERROR_CODE)
+
+def accRuntimeModuleName():
+    global DESTINATION_DIALECT
+    global DESTINATION_DIALECT_2_RUNTIME_MODULE
+    return DESTINATION_DIALECT_2_RUNTIME_MODULE[DESTINATION_DIALECT]
+
 def handleIncludeStatements(fortranFilePath,lines):
     """
     Copy included files' content into current file.
@@ -406,14 +421,13 @@ def postProcessAcc(stree,hipModuleName):
     Add use statements as well as handles plus their creation and destruction for certain
     math libraries.
     """
-    global ACC_RUNTIME_NAME
     # acc detection
     directives = stree.findAll(filter=lambda node: isinstance(node,STAccDirective), recursively=True)
     for directive in directives:
          stnode = directive._parent.findFirst(filter=lambda child : type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
          if not stnode is None:
              indent = " "*(len(stnode.lines()[0]) - len(stnode.lines()[0].lstrip()))
-             stnode._preamble.add("{0}use iso_c_binding\n{0}use {1}\n".format(indent,ACC_RUNTIME_NAME))
+             stnode._preamble.add("{0}use iso_c_binding\n{0}use {1}\n".format(indent,accRuntimeModuleName()))
     
 def postProcessCuf(stree,hipModuleName):
     """

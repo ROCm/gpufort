@@ -1,5 +1,5 @@
 class Acc2Omp():
-    def hipFStr(self):
+    def gpufortFStr(self):
         fSnippet = "".join(self._lines)
         try:
            def repl(parseResult):
@@ -14,7 +14,7 @@ class Acc2Omp():
            return "", False 
 
 class Acc2OmpLoopKernel():
-    def hipFStr(self):
+    def gpufortFStr(self):
        fSnippet = "".join(self._lines)
        try:
           parseResult = translator.loopKernel.parseString(fSnippet)[0]

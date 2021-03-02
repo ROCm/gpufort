@@ -185,7 +185,7 @@ class STUseStatement(STNode):
         self._name = None
     def name(self):
         return self._name
-    def hipFStr(self,indent=""):
+    def gpufortFStr(self,indent=""):
         indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
         result = "".join(self._lines).lower()
         useCuda = False
@@ -211,7 +211,7 @@ class STPlaceHolder(STNode):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
         self._name = None
-    def hipFStr(self,indent=""):
+    def gpufortFStr(self,indent=""):
         return self._lines[0], False
     def considerInSource2SourceTranslation(self):
         return STNode.considerInSource2SourceTranslation(self) or\
@@ -244,7 +244,7 @@ class STSubroutine(STProcedure):
     def transformFSnippet(self,fSnippet):
         indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
         return "{0}! extracted to HIP C++ file".format(indent), True
-    def hipFStr(self,):
+    def gpufortFStr(self,):
         return self.transformFSnippet("")
 
 class STFunction(STProcedure):
@@ -307,7 +307,7 @@ class STLoopKernel(STNode):
 {4}! TODO(gpufort) fix arguments
 {4}CALL {0}_auto({1},{2},{3})""".format(self.kernelLauncherName(),self._sharedMem,stream,",".join(self._kernelArgNames),indent)
         return result, True
-    def hipFStr(self):
+    def gpufortFStr(self):
         return self.transformFSnippet("".join(self._lines))
 
 class STCufLoopKernel(STDirective,STLoopKernel):
@@ -443,7 +443,7 @@ class STDeclaration(STNode,Attributed):
             return False
     def createCodegenContext(self):
         return translator.createCodegenContextFromDeclaration(self._parseResult)
-    def hipFStr(self):
+    def gpufortFStr(self):
         # TODO(dominic) rewrite docu
         """
         """

@@ -113,7 +113,7 @@ class OneByOneGroup(STGroup):
         preamble = ""
         epilog   = ""
         for stnode in self._objects:
-            fStr, transformed = stnode.hipFStr() # TODO
+            fStr, transformed = stnode.gpufortFStr() # TODO
             result += fStr.rstrip("\n")+"\n"
             performedTransformation |= transformed
             if len(stnode.preamble()): 

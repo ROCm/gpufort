@@ -1,6 +1,13 @@
 # Scanner options
 SOURCE_DIALECTS     = ["cuf","acc"] # one of ["acc","cuf","omp"]
-DESTINATION_DIALECT = "omp"   # one of ["omp","hip"]
+DESTINATION_DIALECT = "omp"         # one of ["omp","hip-runtime-rt"]
+
+DESTINATION_DIALECT_2_RUNTIME_MODULE = {
+      "omp" : None,
+      "hip-gpufort-rt" : "gpufort_acc_runtime",
+      "hip-gcc-rt"     : "openacc_gomp",
+      "hip"            : "hipfort"
+    }
 
 KERNELS_TO_CONVERT_TO_HIP = [] # add line number here (might change if snippets are included included); check log to find actual line number
 
@@ -10,10 +17,11 @@ GLOBAL_DECLARATIONS=[ LOOP_VARIABLES ] # TODO check if this still works
 HIP_MODULE_NAME        = "hipfort"
 HIP_MATH_MODULE_PREFIX = HIP_MODULE_NAME+"_"
 
-GPUFORT_IFDEF = "__HIP"
-
-CUDA_IFDEF = "CUDA"
-CUBLAS_VERSION = 1
+GPUFORT_IFDEF        = "__HIP"
+CUDA_IFDEF           = "CUDA"
+CUBLAS_VERSION       = 1
 KEEP_CUDA_LIB_NAMES = False
 
-ACC_RUNTIME_NAME = "gpufort_acc_runtime"
+ACC_DEV_PREFIX="dev_"
+ACC_DEV_SUFFIX=""
+

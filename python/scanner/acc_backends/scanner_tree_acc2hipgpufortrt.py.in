@@ -1,6 +1,3 @@
-ACC_DEV_PREFIX="dev_"
-ACC_DEV_SUFFIX=""
-
 # init shutdown
 tAccInit     = "call gpufort_acc_init()\n"
 tAccShutdown = "call gpufort_acc_shutdown()\n"
@@ -40,7 +37,7 @@ def devVarName(var):
     result = result.replace("$","_")
     return ACC_DEV_PREFIX + result + ACC_DEV_SUFFIX
 
-class Acc2Hip:
+class Acc2HipGpufortRT:
     # clauses 
     def handleAsync(self,queue=None,prefix=",async="):
         """
@@ -242,7 +239,7 @@ class Acc2Hip:
         for parseResult in translator.acc_if.searchString(self.singleLineStatement(),1):
             condition = parseResult[0].condition()
         return condition
-    def hipFStr(self,handleIf=True):
+    def gpufortFStr(self,handleIf=True):
         """
         :param line: An excerpt from a Fortran file, possibly multiple lines
         :type line: str
@@ -349,13 +346,13 @@ class Acc2Hip:
 
         return result, len(result)
 
-class Acc2HipLoopKernel:
-    def hipFStr(self):
+class Acc2HipGpufortRTLoopKernel:
+    def gpufortFStr(self):
         result = ""
         if self.isParallelLoopDirective() or self.isKernelsLoopDirective():
-            partialResult, _ = STAccDirective.hipFStr(self,handleIf=False) 
+            partialResult, _ = STAccDirective.gpufortFStr(self,handleIf=False) 
             result = partialResult
-        partialResult, _ = STLoopKernel.hipFStr(self) 
+        partialResult, _ = STLoopKernel.gpufortFStr(self) 
         result += partialResult
         if self.isParallelLoopDirective() or self.isKernelsLoopDirective():
            result += "\n"+tAccExitRegion

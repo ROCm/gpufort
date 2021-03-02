@@ -381,7 +381,7 @@ class TTComplexArithmeticExpression(TTNode):
 class TTPower(TTNode):
     def _assignFields(self,tokens):
         self._base, self._exp = tokens
-    def hipFStr(self):
+    def gpufortFStr(self):
         sign = ""
         base = self._base
         if type(self._base) is TTRValue:
@@ -391,7 +391,7 @@ class TTPower(TTNode):
             sign=makeFStr(sign),base=makeFStr(base),
             exp=makeFStr(self._exp))
     
-    __str__ = hipFStr
+    __str__ = gpufortFStr
     
     def fStr(self):
         return "({base})**({exp})".format(\

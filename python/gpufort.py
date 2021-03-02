@@ -226,7 +226,7 @@ if __name__ == "__main__":
     # extract kernels
     if not args.onlyModifyHostCode:
        kernelsToConvertToHip = ["*"] # all of them
-       if scanner.DESTINATION_DIALECT == "omp": # TODO allow to convert a number of kernels to hip via selection
+       if "omp" in scanner.DESTINATION_DIALECT: 
            kernelsToConvertToHip = [] # empty list means none
            kernelsToConvertToHip += scanner.KERNELS_TO_CONVERT_TO_HIP
        fort2hip.generateHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename)

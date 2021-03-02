@@ -153,6 +153,8 @@ class IComputeConstruct():
     def presentByDefault(self):
         """ only ACC parallel """
         return True
+    def cStr(self):
+        return ""
 
 class EmptyComputeConstruct(IComputeConstruct):
     """
@@ -160,7 +162,10 @@ class EmptyComputeConstruct(IComputeConstruct):
     Inteneded to reveal as much information as possible
     """
     def __init__(self,fSnippet):
-        self._fSnippet = fSnippet
+        self._fSnippet   = fSnippet
+        self._indexHints = []
+    def setIndexHints(self,indexHints):
+        self._indexHints = indexHints
     def identifiersInBody(self,converter=makeFStr):
         valueType = lvalue | rvalue
         identifierNames = []
@@ -245,7 +250,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         for assignment in assignments:   
             # lhs scalars
             lvalue     = assignment._lhs._value
-            lvalueName = makeFStr(lvalue._value)
+            lvalueName = makeFStr(lvalue)
             if type(lvalue) is TTIdentifier: # could still be a matrix
                 definition,foundInIndex = indexertools.searchIndexForVariable(indexHints,lvalueName)
                 if not foundInIndex or definition["rank"] == 0 and\
@@ -472,7 +477,7 @@ loopKernel.setParseAction(TTLoopKernel)
 # TODO parsing and translation is similar but analysis differs between the different kernel
 # types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)
 # while they are specified with ACC,OMP.
-def parseLoopKernel(fortranSnippet,maxRecursions=30):
+def parseLoopKernel(fortranSnippet,indexHints=[],maxRecursions=30):
     """
     Return a csnippet equivalent to the original Fortran code.
     """
@@ -500,6 +505,7 @@ def parseLoopKernel(fortranSnippet,maxRecursions=30):
     fortranSnippet = prepareFortranSnippet(fortranSnippet)
     try:
         computeConstruct = simplifyLoopKernelUntilItCanGetParsed(fortranSnippet,maxRecursions)
+        computeConstruct.setIndexHints(indexHints)
         if recursionsLeft < maxRecursions:
             body = "\n".join(fortranSnippet.split("\n")[1:])
         return computeConstruct

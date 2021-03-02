@@ -39,48 +39,63 @@ def devVarName(var):
 
 class Acc2HipGpufortRT:
     # clauses 
-    def handleAsync(self,queue=None,prefix=",async="):
+    def _handleAsync(self,queue=None,prefix=",async="):
         """
         :return: Empty string if no queue was found
         :rtype: str
         """
         result = ""
         if queue is None:
-            for parseResult in translator.acc_async.searchString(queue,1):
+            for parseResult in translator.acc_clause_async.searchString(queue,1):
                 #print(parseResult)
                 # TODO find ...
                 result = parseResult[0].queue()
         if len(result):
            result = prefix + result
         return result
-    def handleFinalize(self):
+    def _handleFinalize(self):
         """
         :return: If a finalize clause is present
         :rtype: bool
         """
-        return len(translator.acc_finalize.searchString(self.singleLineStatement(),1))
-    def handlePresent(self):
+        return len(translator.acc_clause_finalize.searchString(self.singleLineStatement(),1))
+    def _handleSimpleMapping(self,expression,template):
         """
-        Emits a acc_present command for every variable in the list
         """
         result = ""
         tempVars = set()
-        template = tAccPresent
-        for parseResult in translator.acc_present.scanString(self.singleLineStatement()):
-            for rvalue in parseResult[0][0]:
-                varExpr = rvalue.varName()
-                deviceptr = devVarName(varExpr)
+        #
+        for parseResult in expression.scanString(self.singleLineStatement()):
+            clause = parseResult[0][0]
+            varNames       = clause.varNames()
+            varExpressions = clause.varExpressions()
+            for i,varExpr in enumerate(varExpressions):
+                deviceptr = devVarName(varNames[i])
+                result += template.format(var=varExpr,devVar=deviceptr,async=self._handleAsync())
                 tempVars.add(deviceptr)
-                result += template.format(var=varExpr,devVar=deviceptr)
         return result, len(result), tempVars
-    def handleDefault(self):
+    def _handlePresent(self):
+        return self._handleSimpleMapping(translator.acc_clause_present,tAccPresent)
+    def _handleCreate(self):
+        return self._handleSimpleMapping(translator.acc_clause_create,tAccCreate)
+    def _handleNoCreate(self):
+        return self._handleSimpleMapping(translator.acc_clause_no_create,tAccNoCreate)
+    def _handleDelete(self):
+        return self._handleSimpleMapping(translator.acc_clause_delete,tAccDelete)
+    def _handleCopy(self):
+        return self._handleSimpleMapping(translator.acc_clause_copy,tAccCopy)
+    def _handleCopyin(self):
+        return self._handleSimpleMapping(translator.acc_clause_copyin,tAccCopy)
+    def _handleCopyout(self):
+        return self._handleSimpleMapping(translator.acc_clause_copyout,tAccCopyout)
+    def _handleDefault(self):
         """
-        Emits a acc_present command for every variable in the list
+        Emits a acc_clause_present command for every variable in the list
         """
         result = ""
         tempVars = set()
         template = tAccPresent
-        for parseResult in translator.acc_default.scanString(self.singleLineStatement(),1):
+        for parseResult in translator.acc_clause_default.scanString(self.singleLineStatement(),1):
             value = str(parseResult[0][0]).lower()
             #print(value)
             if value == "present":
@@ -89,110 +104,17 @@ class Acc2HipGpufortRT:
                     tempVars.add(deviceptr)
                     result += template.format(var=varExpr,devVar=deviceptr)
         return result, len(result), tempVars
-    def handleCreate(self):
+    def _handleUpdate(self):
         """
-        Emits a acc_create command for every variable in the list
-        """
-        result = ""
-        tempVars = set()
-        # create
-        template = tAccCreate
-        for parseResult in translator.acc_create.scanString(self.singleLineStatement()):
-            for rvalue in parseResult[0][0]:
-                varExpr = rvalue.varName()
-                deviceptr = devVarName(varExpr)
-                tempVars.add(deviceptr)
-                result += template.format(var=varExpr,devVar=deviceptr)
-        return result, len(result), tempVars
-    def handleNoCreate(self):
-        """
-        Emits a acc_no_create command for every variable in the list
-        """
-        result = ""
-        tempVars = set()
-        # no_create
-        template = tAccNoCreate
-        for parseResult in translator.acc_no_create.scanString(self.singleLineStatement()):
-            for rvalue in parseResult[0][0]:
-                varExpr = rvalue.varName()
-                deviceptr = devVarName(varExpr)
-                tempVars.add(deviceptr)
-                result += template.format(var=varExpr,devVar=deviceptr)
-        return result, len(result), tempVars
-    def handleDelete(self):
-        """
-        Emits a acc_delete command for every variable in the list
-        """
-        result = ""
-        tempVars = set()
-        # delete
-        template = tAccDelete
-        for parseResult in translator.acc_delete.scanString(self.singleLineStatement()):
-            for rvalue in parseResult[0][0]:
-                varExpr = rvalue.varName()
-                deviceptr = devVarName(varExpr)
-                finalize = ""
-                if self.handleFinalize():
-                    finalize = ".TRUE."
-                result += template.format(var=varExpr,devVar=deviceptr,finalize=finalize)
-        return result, len(result), tempVars
-    def handleCopy(self):
-        """
-        Emits a acc_copy command for every variable in the list
-        """
-        result = ""
-        tempVars = set()
-
-        # copy
-        template = tAccCopy
-        for parseResult in translator.acc_copy.scanString(self.singleLineStatement()):
-            for rvalue in parseResult[0][0]:
-                varExpr = rvalue.varName()
-                deviceptr = devVarName(varExpr)
-                tempVars.add(deviceptr)
-                result += template.format(var=varExpr,devVar=deviceptr,async=self.handleAsync())
-        return result, len(result), tempVars
-    def handleCopyin(self):
-        """
-        Emits a acc_copyin command for every variable in the list
-        """
-        result = ""
-        tempVars = set()
-        # copyin
-        template = tAccCopyin
-        for parseResult in translator.acc_copyin.scanString(self.singleLineStatement()):
-            for rvalue in parseResult[0][0]:
-                varExpr = rvalue.varName()
-                deviceptr = devVarName(varExpr)
-                tempVars.add(deviceptr)
-                result += template.format(var=varExpr,devVar=deviceptr,async=self.handleAsync())
-        return result, len(result), tempVars
-    def handleCopyout(self):
-        """
-        Emits a acc_copyout command for every variable in the list
-        """
-        result = ""
-        tempVars = set()
-        # copyout
-        template = tAccCopyout
-        for parseResult in translator.acc_copyout.scanString(self.singleLineStatement()):
-            for rvalue in parseResult[0][0]:
-                varExpr = rvalue.varName()
-                deviceptr = devVarName(varExpr)
-                tempVars.add(deviceptr)
-                result += template.format(var=varExpr,devVar=deviceptr,async=self.handleAsync())
-        return result, len(result), tempVars
-    def handleUpdate(self):
-        """
-        Emits a acc_copy command for every variable in the list
+        Emits a acc_clause_copy command for every variable in the list
         """
         result = ""
         tempVars = set()
         # update host
-        #for parseResult in translator.acc_update.scanString(self.singleLineStatement()):
+        #for parseResult in translator.acc_clause_update.scanString(self.singleLineStatement()):
         #    #print(parseResult[0][0])
         #    #print(parseResult[0][1])
-        #    async=self.handleAsync(parseResult[0][1])
+        #    async=self._handleAsync(parseResult[0][1])
         #    #print(async)
         #    for dest in parseResult[0][0]:
         #        #print(dest)
@@ -207,15 +129,15 @@ class Acc2HipGpufortRT:
         #            deviceptr = devVarName(varExpr)
         #            result += template.format(var=varExpr,devVar=deviceptr,async=async)
         return result, len(result), tempVars
-    def handleWait(self):
+    def _handleWait(self):
         """
-        Emits a acc_wait command for every variable in the list
+        Emits a acc_clause_wait command for every variable in the list
         """
         result = ""
         tempVars = set()
         # wait
         template = tAccWait
-        for parseResult in translator.acc_wait.scanString(self.singleLineStatement()):
+        for parseResult in translator.acc_clause_wait.scanString(self.singleLineStatement()):
             queueList=[]
             asyncList=[]
             for rvalue in parseResult[0][0]: # queue ids
@@ -230,13 +152,13 @@ class Acc2HipGpufortRT:
                 async = ",[{}]".format(",".join(asyncList))
             result += template.format(queue=queue,async=async)
         return result, len(result), tempVars
-    def handleIf(self):
+    def _handleIf(self):
         """
         :return: Empty string if no if was found
         :rtype: str
         """
         condition = ""
-        for parseResult in translator.acc_if.searchString(self.singleLineStatement(),1):
+        for parseResult in translator.acc_clause_if.searchString(self.singleLineStatement(),1):
             condition = parseResult[0].condition()
         return condition
     def gpufortFStr(self,handleIf=True):
@@ -264,54 +186,54 @@ class Acc2HipGpufortRT:
 
         ## Other directives/clauses
         # create
-        partialResult, transformed, tempVars = self.handleCreate()
+        partialResult, transformed, tempVars = self._handleCreate()
         if transformed:
             result += partialResult
             allTempVars.update(tempVars)
         # no_create
-        partialResult, transformed, tempVars = self.handleNoCreate()
+        partialResult, transformed, tempVars = self._handleNoCreate()
         if transformed:
             result += partialResult
             allTempVars.update(tempVars)
         # present
-        partialResult, transformed, tempVars = self.handlePresent()
+        partialResult, transformed, tempVars = self._handlePresent()
         if transformed:
             result += partialResult
             allTempVars.update(tempVars)
         # default
-        partialResult, transformed, tempVars = self.handleDefault()
+        partialResult, transformed, tempVars = self._handleDefault()
         if transformed:
             result += partialResult
             allTempVars.update(tempVars)
         # delete
-        partialResult, transformed, tempVars = self.handleDelete()
+        partialResult, transformed, tempVars = self._handleDelete()
         if transformed:
             result += partialResult
             allTempVars.update(tempVars)
         # copy
-        partialResult, transformed, tempVars = self.handleCopy()
+        partialResult, transformed, tempVars = self._handleCopy()
         if transformed:
             result += partialResult
             allTempVars.update(tempVars)
         # copyin
-        partialResult, transformed, tempVars = self.handleCopyin()
+        partialResult, transformed, tempVars = self._handleCopyin()
         if transformed:
             result += partialResult
             allTempVars.update(tempVars)
         # copyout
-        partialResult, transformed, tempVars = self.handleCopyout()
+        partialResult, transformed, tempVars = self._handleCopyout()
         if transformed:
             result += partialResult
             allTempVars.update(tempVars)
         
         # update directive
-        partialResult, transformed, tempVars = self.handleUpdate()
+        partialResult, transformed, tempVars = self._handleUpdate()
         if transformed:
             result += partialResult
             allTempVars.update(tempVars)
         
         ## wait
-        partialResult, transformed, _ = self.handleWait()
+        partialResult, transformed, _ = self._handleWait()
         if transformed:
             result += partialResult
         
@@ -325,8 +247,8 @@ class Acc2HipGpufortRT:
         if self.isShutdownDirective():
             result += tAccShutdown
        
-        # handle if 
-        condition = self.handleIf()
+        # _handle if 
+        condition = self._handleIf()
         if len(condition) and handleIf:
             result = "if ( {condition} ) then\n{result}\n endif".format(\
                     condition=condition, result=result.rstrip("\n"))
@@ -350,7 +272,7 @@ class Acc2HipGpufortRTLoopKernel:
     def gpufortFStr(self):
         result = ""
         if self.isParallelLoopDirective() or self.isKernelsLoopDirective():
-            partialResult, _ = STAccDirective.gpufortFStr(self,handleIf=False) 
+            partialResult, _ = Acc2HipGpufortRT.gpufortFStr(self,handleIf=False) 
             result = partialResult
         partialResult, _ = STLoopKernel.gpufortFStr(self) 
         result += partialResult
@@ -358,12 +280,12 @@ class Acc2HipGpufortRTLoopKernel:
            result += "\n"+tAccExitRegion
        
         # add wait call if necessary
-        queue = self.handleAsync(None,"")
+        queue = self._handleAsync(None,"")
         if not len(queue):
             result += "\n" + tAccWait.format(queue=queue,async="")
 
         # wrap in ifdef if necessary
-        condition = self.handleIf()
+        condition = self._handleIf()
         if len(condition):
             result = "if ( {condition} ) then\n{result}\nelse\n {original}\n endif".format(\
                     condition=condition, result=result.rstrip("\n"), original="".join(self._lines).rstrip("\n"))

@@ -179,7 +179,7 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
     cContext["haveReductions"] = False
     for stkernel in loopKernels:
         parentTag     = stkernel._parent.tag()
-        filteredIndex = indexer.filterIndexByTag(index,parentTag)
+        filteredIndex = indexertools.filterIndexByTag(index,parentTag)
        
         fSnippet = "\n".join([line.strip("\n") for line in (stkernel.directiveLines() + stkernel.bodyLines())])
         fBody   = "\n".join([line.strip() for line in stkernel.bodyLines()])
@@ -341,7 +341,7 @@ def extractAcceleratorRoutine(acceleratorRoutines,cContext,fContext):
         kernelLauncherName = "launch_{}".format(kernelName)
         loopVars = []; localLValues = []
         
-        filteredIndex = indexer.filterIndexByTag(index,stroutine.tag())
+        filteredIndex = indexertools.filterIndexByTag(index,stroutine.tag())
 
         identifiers = [] # TODO identifiers not the best name # TODO this is redundant with the ignore list
         for declaration in declaredVars:

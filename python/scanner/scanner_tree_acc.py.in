@@ -85,9 +85,10 @@ class STAccDirective(STDirective,Acc2HipGpufortRT,Acc2Omp):
          isParallelLoopDirective=self.isParallelLoopDirective()
          ).strip().replace("\n","")
     __repr__ = __str__ 
-    def gpufortFStr(self,destinationDialect=DESTINATION_DIALECT):
-        checkedDialect = checkDestinationDialect(destinationDialect)
-        if checkedDialect is "hip-gpufort-rt":
+    def gpufortFStr(self,destinationDialect=""):
+        checkedDialect = checkDestinationDialect(\
+            DESTINATION_DIALECT if not len(destinationDialect) else destinationDialect)
+        if checkedDialect == "hip-gpufort-rt":
             return Acc2HipGpufortRT.gpufortFStr(self)
         else:
             return Acc2Omp.gpufortFStr(self)
@@ -101,9 +102,10 @@ class STAccLoopKernel(STAccDirective,STLoopKernel,Acc2HipGpufortRTLoopKernel,Acc
         :note: used for grouping scanner tree objects
         """
         return self._lines
-    def gpufortFStr(self,destinationDialect=DESTINATION_DIALECT):
-        checkedDialect = checkDestinationDialect(destinationDialect)
-        if checkedDialect is "hip-gpufort-rt":
+    def gpufortFStr(self,destinationDialect=""):
+        checkedDialect = checkDestinationDialect(\
+            DESTINATION_DIALECT if not len(destinationDialect) else destinationDialect)
+        if checkedDialect == "hip-gpufort-rt":
             return Acc2HipGpufortRTLoopKernel.gpufortFStr(self)
         else:
             return Acc2OmpLoopKernel.gpufortFStr(self)

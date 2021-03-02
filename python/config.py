@@ -18,15 +18,16 @@
 # Use one of 'FATAL','CRITICAL','ERROR','WARNING','WARN','INFO','DEBUG','DEBUG2','DEBUG3','NOTSET' 
 LOG_LEVEL = logging.INFO
 
-scanner.SOURCE_DIALECTS = ["cuf","acc"] # one of ["acc","cuf","omp"]
-scanner.DESTINATION_DIALECT   = "omp"   # one of ["omp","hip"]
+scanner.SOURCE_DIALECTS     = ["cuf","acc"] # one of ["acc","cuf","omp"]
+scanner.DESTINATION_DIALECT = "hip-gpufort-rt"   # one of ["omp","hip-gpufort-rt"]
 
-scanner.CONVERT_TO_HIP=[] # list of kernels to convert to HIP. Is ignored if Destination DIALECT is hip.  
+scanner.CONVERT_TO_HIP      = [] # list of kernels to convert to HIP. Is ignored if Destination DIALECT is hip.  
 
-scanner.GPUFORT_IFDEF           = "__HIP" 
+scanner.GPUFORT_IFDEF       = "__GPUFORT" 
 scanner.CUF_IFDEF           = "CUDA"
 # cublas_v1 routines do not have an handle. cublas v2 routines do
 scanner.CUBLAS_VERSION      = 1
+
 translator.CUBLAS_VERSION   = scanner.CUBLAS_VERSION
 # look for integer (array) with this name; disable: leave empty string or comment out
 translator.HINT_CUFFT_PLAN  = r"cufft_plan\w+"
@@ -34,8 +35,8 @@ translator.HINT_CUFFT_PLAN  = r"cufft_plan\w+"
 translator.HINT_CUDA_STREAM = r"stream|strm"
 
 # CUF options
-scanner.HIP_MODULE_NAME="hipfort"
-scanner.HIP_MATH_MODULE_PREFIX=scanner.HIP_MODULE_NAME+"_"
+scanner.HIP_MODULE_NAME        = "hipfort"
+scanner.HIP_MATH_MODULE_PREFIX = scanner.HIP_MODULE_NAME+"_"
 
 # ACC options
 scanner.ACC_DEV_PREFIX=""

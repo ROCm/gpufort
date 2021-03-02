@@ -211,11 +211,11 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             self._indexHints = indexHints
         return self.__searchValueInBody(lambda node: type(node) is IValue,
                 self._indexHints)
-        def arraysInBody(self,indexHints=[]):
-            if len(indexHints):
-                self._indexHints = indexHints
+    def arraysInBody(self,indexHints=[]):
+        if len(indexHints):
+            self._indexHints = indexHints
         def searchFilter(node):
-            return type(node) is IValue and\
+            return isinstance(node,IValue) and\
                     type(node._value) is TTFunctionCallOrTensorAccess 
         return self.__searchValueInBody(searchFilter,self._indexHints,1)
     def inoutArraysInBody(self,indexHints=[]):
@@ -300,7 +300,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 return ["-1"]
     def asyncNowait(): 
         """value != CLAUSE_NOT_FOUND means True"""
-        return 
+        return self._parentDirective.asyncNowait() 
     def depend(self): 
         return self._parentDirective.depend()
     def deviceTypes(self): 
@@ -386,7 +386,6 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 nonlocal inoutArraysInBody
                 nonlocal reductionVars
                 nonlocal parallelRegion
-                print('{}'.format(parseResult))
                 result = parseResult.ompFStr("do",parallelRegion)
                 parallelRegion = ""
                 return result, True
@@ -394,7 +393,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 nonlocal arraysInBody
                 nonlocal inoutArraysInBody
                 nonlocal reductionVars
-                return parseResult.strip("\n")+"!$omp end target", True
+                return parseResult.strip()+"!$omp end target", True
             
             result,_ = pyparsingtools.replaceFirst(fSnippet,\
                     acc_parallel | acc_parallel_loop | acc_kernels | acc_kernels_loop,\

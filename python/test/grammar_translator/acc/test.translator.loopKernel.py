@@ -15,7 +15,7 @@ end do
 !$acc end parallel
 """)
 testdata.append("""
-!$acc kernels loop create(b) copy(a(:)) reduction(+:c) async(1)
+!$acc kernels loop copyin(b) copy(a(:)) reduction(+:c) async(1)
 do i = 1, n
   a(i) = b(i) + c;
   c = c + a(i)

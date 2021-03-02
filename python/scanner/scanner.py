@@ -16,6 +16,7 @@ import re
 # local includes
 import addtoplevelpath
 import translator.translator as translator
+import pyparsingtools
 
 # dirty hack that allows us to load independent versions of the grammar module
 #from grammar import *
@@ -115,10 +116,16 @@ def parseFile(fortranFilePath):
             current._lines += currentLines
             keepRecording = False
         ascend()
+    def inKernelsAccRegionAndNotRecording():
+        nonlocal current
+        nonlocal keepRecording
+        return not keepRecording and\
+            (type(current) is STAccDirective) and\
+            (current.isKernelsDirective())
     def DoLoop_visit(tokens):
         nonlocal keepRecording
         nonlocal doLoopCtr
-        if inParallelAccRegionAndNotRecording():
+        if inKernelsAccRegionAndNotRecording():
             new = STAccLoopKernel(parent=current,lineno=currentLineno,lines=currentLines)
             new._lines = []
             new._doLoopCtrMemorised=doLoopCtr
@@ -224,12 +231,6 @@ def parseFile(fortranFilePath):
         new = STCudaKernelCall(parent=current,lineno=currentLineno,lines=currentLines)
         new._lines = currentLines
         current.append(new)
-    def inParallelAccRegionAndNotRecording():
-        nonlocal current
-        nonlocal keepRecording
-        return not keepRecording and\
-            (type(current) is STAccDirective) and\
-            (current.isKernelsDirective() or current.isParallelDirective())
     def AccDirective(tokens):
         nonlocal current
         nonlocal currentLines
@@ -242,18 +243,18 @@ def parseFile(fortranFilePath):
         msg = "scanner: {}: found acc construct:\t'{}'".format(currentLineno,new.singleLineStatement())
         logging.getLogger("").info(msg) ; print(msg)
         # if end directive ascend
-        if new.isEndDirective() and type(current) is STAccDirective and\
-           (current.isKernelsDirective() or current.isParallelDirective()):
+        if new.isEndDirective() and\
+           type(current) is STAccDirective and current.isKernelsDirective():
             ascend()
             current.append(new)
         # descend in constructs or new node
-        elif new.isParallelLoopDirective() or new.isKernelsLoopDirective():
-            new = STAccLoopKernel(current,currentLineno,currentLines,directiveNo)
+        elif new.isParallelLoopDirective() or new.isKernelsLoopDirective() or\
+             (not new.isEndDirective() and new.isParallelDirective()):
+            new = STAccLoopKernel(current,currentLineno,[],directiveNo)
             new._doLoopCtrMemorised=doLoopCtr
             descend(new)  # descend also appends 
             keepRecording = True
-            #print("descend into parallel loop: do loops=%d" % doLoopCtr)
-        elif not new.isEndDirective() and (new.isKernelsDirective() or new.isParallelDirective()):
+        elif not new.isEndDirective() and new.isKernelsDirective():
             descend(new)  # descend also appends 
             #print("descending into kernels or parallel construct")
         else:
@@ -264,13 +265,14 @@ def parseFile(fortranFilePath):
         nonlocal currentLines
         nonlocal currentLineno
         nonlocal singleLineStatement
-        if inParallelAccRegionAndNotRecording():
+        if inKernelsAccRegionAndNotRecording():
             parseResult = translator.assignmentBegin.parseString(singleLineStatement)
             lvalue = translator.findFirst(parseResult,translator.TTLValue)
             if not lvalue is None and lvalue.hasMatrixRangeArgs():
                 new  = STAccLoopKernel(parent=current,lineno=currentLineno,lines=currentLines)
                 current.append(new)
-    
+    # TODO completely remove / comment out !$acc end kernels
+
     moduleStart.setParseAction(Module_visit)
     programStart.setParseAction(Program_visit)
     functionStart.setParseAction(Function_visit)

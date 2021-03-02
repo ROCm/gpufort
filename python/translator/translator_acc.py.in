@@ -281,7 +281,7 @@ class TTAccData(TTAccDataManagementDirectiveBase):
       if( condition )
     """
     def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={}):
-        return self._format(TTAccDataManagementDirectiveBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"$!omp target data"))
+        return self._format(TTAccDataManagementDirectiveBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"!$omp target data"))
 
 class TTAccEnterData(TTAccDataManagementDirectiveBase):
     """
@@ -289,7 +289,7 @@ class TTAccEnterData(TTAccDataManagementDirectiveBase):
       clauses of TTAccData
     """
     def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={}):
-        return self._format(TTAccDataManagementDirectiveBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"$!omp target enter data"))
+        return self._format(TTAccDataManagementDirectiveBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"!$omp target enter data"))
 
 class TTAccExitData(TTAccDataManagementDirectiveBase):
     """
@@ -299,7 +299,7 @@ class TTAccExitData(TTAccDataManagementDirectiveBase):
       wait [( wait-argument )]
     """
     def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={}):
-        return self._format(TTAccDataManagementDirectiveBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"$!omp target exit data"))
+        return self._format(TTAccDataManagementDirectiveBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"!$omp target exit data"))
     
 class TTAccDeclare(TTAccDirectiveBase):
     """ NOTE: In contrast to OMP, '!$acc declare' is only applied to global variables.
@@ -524,6 +524,13 @@ class TTAccKernels(TTAccParallel):
 class TTAccKernelsLoop(TTAccParallelLoop):
     pass
 
+# end directives
+class TTAccEndData(TTAccDirectiveBase):
+    def _assignFields(self,tokens):
+        pass
+    def ompFStr(self):
+        return self._format("!$omp end target data")
+
 #
 # Connect actions with grammar
 #
@@ -585,3 +592,5 @@ acc_kernels.setParseAction(TTAccKernels)
 acc_parallel.setParseAction(TTAccParallel)
 acc_parallel_loop.setParseAction(TTAccParallelLoop)
 acc_kernels_loop.setParseAction(TTAccKernelsLoop)
+
+ACC_END_DATA.setParseAction(TTAccEndData)

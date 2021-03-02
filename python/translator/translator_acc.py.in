@@ -398,7 +398,7 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
         TTAccDirectiveBase._assignFields(self,tokens)
         self._loopHandlesMutualClauses = True    # can be unset by TTAccParallelLoop or TTAccKernelsLoop
     def numCollapse(self):
-        clause = findFirst(self._clauses,TTAccCollapse)
+        clause = findFirst(self._clauses,TTAccClauseCollapse)
         return 1 if clause is None else clause.value()
     def tileSizes(self):
         assert False, "Not implemented!"

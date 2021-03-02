@@ -93,7 +93,7 @@ extern "C" void {{ifacePrefix}}(dim3* grid, dim3* block, const int sharedMem, hi
   hipLaunchKernelGGL(({{krnlPrefix}}), *grid, *block, sharedMem, stream, {{kernel.kernelCallArgNames | join(",")}});
 {{ reductions_finalize(kernel,"*") }}
 }
-{% if LoopKernel.isLoopKernel %}extern "C" void {{ifacePrefix}}_auto(const int sharedMem, hipStream_t stream,{{LoopKernel.interfaceArgs | join(",")}}) {
+{% if kernel.isLoopKernel %}extern "C" void {{ifacePrefix}}_auto(const int sharedMem, hipStream_t stream,{{kernel.interfaceArgs | join(",")}}) {
 {{ make_block(kernel) }}
 {{ make_grid(kernel) }}   
 {{ reductions_prepare(kernel,"") }}

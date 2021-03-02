@@ -108,10 +108,10 @@ class IComputeConstruct():
     def asyncNowait(): 
         """value != CLAUSE_NOT_FOUND means True"""
         return CLAUSE_NOT_FOUND
-    def stream(self,converter):
-        return ""
-    def sharedMem(self,converter):
-        return 0
+    def stream(self,converter=makeFStr):
+        return "c_null_ptr"
+    def sharedMem(self,converter=makeFStr):
+        return "0"
     def useDefaultStream(self):
         return True
     def depend(self): 
@@ -345,6 +345,10 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             return { "UNKNOWN" : self.reductionCandidates() } # TODO default reduction type should be configurable
         else:
             return self._parentDirective.gangTeamReductionVars(converter)
+    def stream(self,converter=makeFStr):
+        return self._parentDirective.stream(converter)
+    def sharedMem(self,converter=makeFStr):
+        return self._parentDirective.sharedMem(converter)
     def ompFStr(self,fSnippet):
         """
         :note: The string used for parsing was preprocessed. Hence
@@ -412,9 +416,8 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             result,_ = pyparsingtools.eraseAll(result,\
                     ACC_END_PARALLEL_LOOP | ACC_END_KERNELS_LOOP)
             return result
-
     def cStr(self):
-        numOuterLoopsToMap = int(self._body.numCollapse())
+        numOuterLoopsToMap = int(self._parentDirective.numCollapse())
         if LOOP_COLLAPSE_STRATEGY == "grid" and numOuterLoopsToMap <= 3:
             dim=numOuterLoopsToMap
         else: # "collapse" or numOuterLoopsToMap > 3
@@ -425,18 +428,17 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             if type(expr._statement[0]) is TTAssignment:
                 expr._statement[0] = expr._statement[0].convertToDoLoopNestIfNecessary()
         # 2. Identify reduction variables
-        for expr in findAll(self._body,TTAssignment):
-            for var in findAllMatching(expr,lambda x: isinstance(x,IValue)):
-                if type(var._value) in [TTDerivedTypeMember,TTIdentifier]:
-                    if var.name().lower() in self._reductionVars.keys():
-                        var._reductionIndex = tidx
+        #for expr in findAll(self._body,TTAssignment):
+        #    for var in findAllMatching(expr,lambda x: isinstance(x,IValue)):
+        #        if type(var._value) in [TTDerivedTypeMember,TTIdentifier]:
+        #            if var.name().lower() in self.reductionVars().keys():
+        #                var._reductionIndex = tidx
         reductionPreamble = ""
-        for kind,variables in self.reductionVars.items():
-            for var in variables: 
-                reductionPreamble += "reduce_op_{kind}::init({var}[{tidx}]);\n".format(kind=kind,var=var,tidx=tidx)
+        #for kind,variables in self.reductionVars().items():
+        #    for var in variables: 
+        #        reductionPreamble += "reduce_op_{kind}::init({var}[{tidx}]);\n".format(kind=kind,var=var,tidx=tidx)
         # 3. collapse and transform do-loops
         doLoops = findAll(self._body,TTDoLoop)
-        numOuterLoopsToMap = int(self._launchInfo._numOuterLoopsToMap)
         if numOuterLoopsToMap is 1 or (LOOP_COLLAPSE_STRATEGY == "grid" and numOuterLoopsToMap <= 3):
             if numOuterLoopsToMap > 3:
                 logging.getLogger("").warn("loop collapse strategy grid chosen with nested loops > 3")

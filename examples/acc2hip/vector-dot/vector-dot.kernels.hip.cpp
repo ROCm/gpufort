@@ -7,9 +7,6 @@
 #include <cstdio>
 #include <iostream>
 
-#include "hipcub/hipcub.hpp"
-#include <limits>
-
 #define HIP_CHECK(condition)                                                                                                               \
   {                                                                                                                                        \
     hipError_t error = condition;                                                                                                          \
@@ -72,77 +69,20 @@ __device__ __forceinline__ hipDoubleComplex conj(const hipDoubleComplex &z) { re
 // ...
 } // namespace
 
-// reductions
-namespace {
-struct reduce_op_mult {
-  template <typename T> static __host__ __device__ __forceinline__ T ival() { return (T)1; }
-  template <typename T> static __host__ __device__ __forceinline__ void init(T &a) { a = ival<T>(); }
-  template <typename T> __device__ __forceinline__ T operator()(const T &a, const T &b) const { return a * b; }
-};
-
-struct reduce_op_add {
-  template <typename T> static __host__ __device__ __forceinline__ T ival() { return (T)0; }
-  template <typename T> static __host__ __device__ __forceinline__ void init(T &a) { a = ival<T>(); }
-  template <typename T> __device__ __forceinline__ T operator()(const T &a, const T &b) const { return a + b; }
-};
-
-struct reduce_op_max {
-  template <typename T> static __host__ __device__ __forceinline__ T ival() {
-    return -std::numeric_limits<T>::max(); // has negative sign
-  }
-  template <typename T> static __host__ __device__ __forceinline__ void init(T &a) { a = ival<T>(); }
-  template <typename T> __device__ __forceinline__ T operator()(const T &a, const T &b) const { return std::max(a, b); }
-};
-
-struct reduce_op_min {
-  template <typename T> static __host__ __device__ __forceinline__ T ival() { return std::numeric_limits<T>::max(); }
-  template <typename T> static __host__ __device__ __forceinline__ void init(T &a) { a = ival<T>(); }
-  template <typename T> __device__ __forceinline__ T operator()(const T &a, const T &b) const { return std::min(a, b); }
-};
-
-template <typename T, typename ReduceOpT> void reduce(const T *const d_in, const int &NX, const T *h_out) {
-  T *d_out = nullptr;
-  hipMalloc((void **)&d_out, sizeof(T));
-  // Determine temporary device storage requirements
-  void *temp_storage = nullptr;
-  size_t temp_storage_bytes = 0;
-  ReduceOpT reduceOp;
-  hipcub::DeviceReduce::Reduce(temp_storage, temp_storage_bytes, d_in, d_out, NX, ReduceOpT(), ReduceOpT::template ival<T>());
-  // Allocate temporary storage
-  hipMalloc(&temp_storage, temp_storage_bytes);
-  // Run reduction
-  hipcub::DeviceReduce::Reduce(temp_storage, temp_storage_bytes, d_in, d_out, NX, ReduceOpT(), ReduceOpT::template ival<T>());
-  hipMemcpy((void *)h_out, d_out, sizeof(T), hipMemcpyDeviceToHost);
-  // Clean up
-  hipFree(d_out);
-  hipFree(temp_storage);
-}
-} // namespace
-
 // end of preamble
 #define divideAndRoundUp(x, y) ((x) / (y) + ((x) % (y) != 0))
 
-// BEGIN krnl_cecba2_-1
+// BEGIN krnl_cecba2_8
 /* Fortran original:
-! parallel loop
+  ! parallel loop
   do i = 1, N
      x(i) = 1
      y(i) = 2
   end do
 
 */
-// NOTE: The following information was given in the orignal Cuf kernel pragma:
-// - Nested outer-most do-loops that are directly mapped to threads: 1
-// - Number of blocks (CUDA): -1-1-1. ('-1' means not specified)
-// - Threads per block (CUDA): -1-1-1. ('-1' means not specified)
-// - Shared Memory: 0
-// - Stream: 0
 
-__global__ void krnl_cecba2_ - 1(int x, const int x_n1, const int x_lb1, int N, int y, const int y_n1, const int y_lb1) {
-#undef _idx_x
-#define _idx_x(a) ((a - (x_lb1)))
-#undef _idx_y
-#define _idx_y(a) ((a - (y_lb1)))
+__global__ void krnl_cecba2_8() {
 
   int i = 1 + (1) * (threadIdx.x + blockIdx.x * blockDim.x);
   if (loop_cond(i, N, 1)) {
@@ -151,107 +91,55 @@ __global__ void krnl_cecba2_ - 1(int x, const int x_n1, const int x_lb1, int N, 
   }
 }
 
-extern "C" void launch_krnl_cecba2_ - 1(dim3 *grid,
-                                        dim3 *block,
-                                        const int sharedMem,
-                                        hipStream_t stream,
-                                        int x,
-                                        const int x_n1,
-                                        const int x_lb1,
-                                        int N,
-                                        int y,
-                                        const int y_n1,
-                                        const int y_lb1) {
+extern "C" void launch_krnl_cecba2_8(dim3 *grid, dim3 *block, const int sharedMem, hipStream_t stream, ) {
 
   // launch kernel
-  hipLaunchKernelGGL((krnl_cecba2_ - 1), *grid, *block, sharedMem, stream, x, x_n1, x_lb1, N, y, y_n1, y_lb1);
+  hipLaunchKernelGGL((krnl_cecba2_8), *grid, *block, sharedMem, stream, );
 }
-extern "C" void launch_krnl_cecba2_ -
-    1_auto(const int sharedMem, hipStream_t stream, int x, const int x_n1, const int x_lb1, int N, int y, const int y_n1, const int y_lb1) {
-  const unsigned int krnl_cecba2_ - 1_blockX = 256;
-  dim3 block(krnl_cecba2_ - 1_blockX);
-  const unsigned int krnl_cecba2_ - 1_NX = (1 + ((N) - (1)));
+extern "C" void launch_krnl_cecba2_8_auto(const int sharedMem, hipStream_t stream, ) {
+  const unsigned int krnl_cecba2_8_blockX = -2;
+  dim3 block(krnl_cecba2_8_blockX);
+  const unsigned int krnl_cecba2_8_NX = (1 + ((N) - (1)));
 
-  const unsigned int krnl_cecba2_ - 1_gridX = divideAndRoundUp(krnl_cecba2_ - 1_NX, krnl_cecba2_ - 1_blockX);
-  dim3 grid(krnl_cecba2_ - 1_gridX);
+  const unsigned int krnl_cecba2_8_gridX = -2;
+  dim3 grid(krnl_cecba2_8_gridX);
 
   // launch kernel
-  hipLaunchKernelGGL((krnl_cecba2_ - 1), grid, block, sharedMem, stream, x, x_n1, x_lb1, N, y, y_n1, y_lb1);
+  hipLaunchKernelGGL((krnl_cecba2_8), grid, block, sharedMem, stream, );
 }
-// END krnl_cecba2_-1
+// END krnl_cecba2_8
 
-// BEGIN krnl_e7eb26_-1
+// BEGIN krnl_e7eb26_15
 /* Fortran original:
-! parallel loop reduction(+:res)
+  ! parallel loop reduction(+:res)
   do i = 1, N
      res = res + x(i)*y(i)
   end do
 
 */
-// NOTE: The following information was given in the orignal Cuf kernel pragma:
-// - Nested outer-most do-loops that are directly mapped to threads: 1
-// - Number of blocks (CUDA): -1-1-1. ('-1' means not specified)
-// - Threads per block (CUDA): -1-1-1. ('-1' means not specified)
-// - Shared Memory: 0
-// - Stream: 0
 
-__global__ void krnl_e7eb26_ - 1(int x, const int x_n1, const int x_lb1, int y, const int y_n1, const int y_lb1, int *res, int N) {
-#undef _idx_x
-#define _idx_x(a) ((a - (x_lb1)))
-#undef _idx_y
-#define _idx_y(a) ((a - (y_lb1)))
+__global__ void krnl_e7eb26_15() {
 
   int i = 1 + (1) * (threadIdx.x + blockIdx.x * blockDim.x);
-  reduce_op_add::init(res[__gidx1]);
   if (loop_cond(i, N, 1)) {
-    res[__gidx1] = (res[__gidx1] + x[_idx_x(i)] * y[_idx_y(i)]);
+    res = (res + x[_idx_x(i)] * y[_idx_y(i)]);
   }
 }
 
-extern "C" void launch_krnl_e7eb26_ - 1(dim3 *grid,
-                                        dim3 *block,
-                                        const int sharedMem,
-                                        hipStream_t stream,
-                                        int x,
-                                        const int x_n1,
-                                        const int x_lb1,
-                                        int y,
-                                        const int y_n1,
-                                        const int y_lb1,
-                                        int *res,
-                                        int N) {
-
-  int *_d_res;
-  HIP_CHECK(hipMalloc((void **)&_d_res, __total_threads((*grid), (*block)) * sizeof(int)));
+extern "C" void launch_krnl_e7eb26_15(dim3 *grid, dim3 *block, const int sharedMem, hipStream_t stream, ) {
 
   // launch kernel
-  hipLaunchKernelGGL((krnl_e7eb26_ - 1), *grid, *block, sharedMem, stream, x, x_n1, x_lb1, y, y_n1, y_lb1, _d_res, N);
-  reduce<int, reduce_op_add>(_d_res, __total_threads((*grid), (*block)), res);
-  HIP_CHECK(hipFree(_d_res));
+  hipLaunchKernelGGL((krnl_e7eb26_15), *grid, *block, sharedMem, stream, );
 }
-extern "C" void launch_krnl_e7eb26_ - 1_auto(const int sharedMem,
-                                             hipStream_t stream,
-                                             int x,
-                                             const int x_n1,
-                                             const int x_lb1,
-                                             int y,
-                                             const int y_n1,
-                                             const int y_lb1,
-                                             int *res,
-                                             int N) {
-  const unsigned int krnl_e7eb26_ - 1_blockX = 256;
-  dim3 block(krnl_e7eb26_ - 1_blockX);
-  const unsigned int krnl_e7eb26_ - 1_NX = (1 + ((N) - (1)));
+extern "C" void launch_krnl_e7eb26_15_auto(const int sharedMem, hipStream_t stream, ) {
+  const unsigned int krnl_e7eb26_15_blockX = -2;
+  dim3 block(krnl_e7eb26_15_blockX);
+  const unsigned int krnl_e7eb26_15_NX = (1 + ((N) - (1)));
 
-  const unsigned int krnl_e7eb26_ - 1_gridX = divideAndRoundUp(krnl_e7eb26_ - 1_NX, krnl_e7eb26_ - 1_blockX);
-  dim3 grid(krnl_e7eb26_ - 1_gridX);
-
-  int *_d_res;
-  HIP_CHECK(hipMalloc((void **)&_d_res, __total_threads((grid), (block)) * sizeof(int)));
+  const unsigned int krnl_e7eb26_15_gridX = -2;
+  dim3 grid(krnl_e7eb26_15_gridX);
 
   // launch kernel
-  hipLaunchKernelGGL((krnl_e7eb26_ - 1), grid, block, sharedMem, stream, x, x_n1, x_lb1, y, y_n1, y_lb1, _d_res, N);
-  reduce<int, reduce_op_add>(_d_res, __total_threads((grid), (block)), res);
-  HIP_CHECK(hipFree(_d_res));
+  hipLaunchKernelGGL((krnl_e7eb26_15), grid, block, sharedMem, stream, );
 }
-// END krnl_e7eb26_-1
+// END krnl_e7eb26_15

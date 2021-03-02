@@ -221,7 +221,6 @@ if __name__ == "__main__":
     # What is needed only for ACC -> OMP?
     # - for some directives, only source2source
     # - OpenACC implicitly assumes that scalars are private -> need to know what is a scalar
-    # 
 
     # extract kernels
     if not args.onlyModifyHostCode:

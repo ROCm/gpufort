@@ -211,7 +211,6 @@ class IValue:
             return self._value.lastElementMatrixRangeArgs()
         else:
             return []
-
 class TTRValue(TTNode,IValue):
     def _assignFields(self,tokens):
         self._sign           = tokens[0]

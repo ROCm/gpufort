@@ -186,6 +186,8 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
         # translate and analyze kernels
         kernelParseResult = translator.parseLoopKernel(fSnippet,filteredIndex)
 
+        print(kernelParseResult.identifiersInBody())
+        
         kernelArgs, cKernelLocalVars, macros, localCpuRoutineArgs =\
           deriveKernelArguments(index,\
             kernelParseResult.identifiersInBody(),\

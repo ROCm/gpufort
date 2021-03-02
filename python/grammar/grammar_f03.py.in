@@ -75,17 +75,17 @@ arithmeticLogicalExpression = infixNotation(rvalue, #NOTE: Slower because of the
 powerValue1 = OPTSIGN + (conversions | derivedTypeElem | funcCall | identifier | number)
 powerValue2 = LPAR + arithmeticExpression + RPAR
 powerValue  = powerValue2 | powerValue1
-power = powerValue + Suppress("**") + powerValue
+power       = powerValue + Suppress("**") + powerValue
 
-lvalue = derivedTypeElem | funcCall | identifier
-lvalueList = Group(delimitedList(lvalue))
+lvalue          = derivedTypeElem | funcCall | identifier
+lvalueList      = Group(delimitedList(lvalue))
 assignmentBegin = lvalue + EQ
-assignment = lvalue + EQ + arithmeticExpression # ! emits 2 tokens: *,*
-MATLPAR = Regex(r"\(\/|\[").suppress()
-MATRPAR = Regex(r"\/\)|\]").suppress()
+assignment      = lvalue + EQ + arithmeticExpression # ! emits 2 tokens: *,*
 
+MATLPAR                    = Regex(r"\(\/|\[").suppress()
+MATRPAR                    = Regex(r"\/\)|\]").suppress()
 matrixArithmeticExpression = MATLPAR + Group(delimitedList(arithmeticExpression)) + MATRPAR
-matrixAssignment = lvalue + EQ + matrixArithmeticExpression
+matrixAssignment           = lvalue + EQ + matrixArithmeticExpression
 
 complexArithmeticExpression <<= LPAR + Group(arithmeticExpression + COMMA + arithmeticExpression) + RPAR 
 complexAssignment = lvalue + EQ + complexArithmeticExpression
@@ -96,9 +96,9 @@ matrixRange0  = singleColon.copy().setParseAction(lambda tokens: [None,None])
 matrixRange1a = (arithmeticExpression + singleColon).setParseAction(lambda tokens: [None,tokens[0]]) 
 matrixRange1b = (singleColon + arithmeticExpression).setParseAction(lambda tokens: [tokens[0],None])
 matrixRange2  = (arithmeticExpression + singleColon + arithmeticExpression)
-matrixRange = (matrixRange2 | matrixRange1b | matrixRange1a | matrixRange0) + Optional(stride,default=None)
+matrixRange   = (matrixRange2 | matrixRange1b | matrixRange1a | matrixRange0) + Optional(stride,default=None)
 # define forward declared tokens
-funcRValue <<= matrixRange | arithmeticLogicalExpression
+funcRValue       <<= matrixRange | arithmeticLogicalExpression
 conversionRValue <<= arithmeticExpression
 
 ## Condition

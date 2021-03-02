@@ -178,7 +178,7 @@ class EmptyComputeConstruct(IComputeConstruct):
                not nameLower in GPUFORT_CPP_ROUTINES)) and\
                not name in identifierNames: # using set destroys order
                 identifierNames.append(name)
-        return set(identifierNames)
+        return identifierNames
 
 class TTLoopKernel(TTNode,IComputeConstruct):
     def _assignFields(self,tokens):
@@ -202,11 +202,11 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             nameLower = name.lower()
             definition,foundInIndex = indexertools.searchIndexForVariable(indexHints,nameLower)
             if (foundInIndex or\
-                    (not nameLower in KEYWORDS and\
-                    not nameLower in GPUFORT_CPP_ROUTINES)) and\
-                    definition["rank"] >= -minRank and\
-                    not name in identifierNames: # using set destroys order
-                        identifierNames.append(name)
+                (not nameLower in KEYWORDS and\
+                not nameLower in GPUFORT_CPP_ROUTINES)) and\
+                definition["rank"] >= minRank and\
+                not name in identifierNames: # using set destroys order
+                     identifierNames.append(name)
         return identifierNames
     def identifiersInBody(self,indexHints=[]):
         """
@@ -214,8 +214,11 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         """
         if len(indexHints):
             self._indexHints = indexHints
-        return self.__searchValueInBody(lambda node: type(node) is IValue,
-                self._indexHints)
+        def searchFilter(node):
+            return isinstance(node, IValue) and\
+                   type(node._value) in [TTDerivedTypeMember,TTIdentifier,TTFunctionCallOrTensorAccess]
+        result = self.__searchValueInBody(searchFilter,self._indexHints)
+        return result
     def arraysInBody(self,indexHints=[]):
         if len(indexHints):
             self._indexHints = indexHints

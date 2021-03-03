@@ -87,14 +87,14 @@ class TTAccClauseDefault(TTNode):
 class TTAccClauseReduction(TTNode):
     def _assignFields(self,tokens):
         self._operator, self._vars = tokens
-    def reduction(self,converter=makeFStr):
+    def reductions(self,converter=makeFStr):
         result          = {}
         op              = converter(self._operator)
-        if converter is makeCStr:
+        if converter == makeCStr:
             # post-process
-            self._operator = self._operator.replace(".","")
-            self._operator = self._operator.replace("+","add")
-            self._operator = self._operator.replace("*","mult")
+            op = op.replace(".","")
+            op = op.replace("+","add")
+            op = op.replace("*","mult")
             # "+" "*" "max" "min" "iand" "ior" "ieor" ".and." ".or." ".eqv." ".neqv."
         result[op] = [makeFStr(var) for var in self._vars] 
         return result
@@ -423,10 +423,10 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
         """ Always assume data independent if no seq clause is used """
         clause = findFirstMatching(self._clauses,lambda x: x=="seq")
         return True if clause is None else False
-    def reduction(self,converter=makeFStr):
+    def reductions(self,converter=makeFStr):
         result = {}
         for clause in findAll(self._clauses,TTAccClauseReduction):
-            contrib = clause.reduction(converter)
+            contrib = clause.reductions(converter)
             for key,value in contrib.items():
                 if not key in result:
                     result[key] = []
@@ -458,7 +458,7 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
             privateVars = self.privateVars() 
             if len(privateVars):
                 result += " private("+",".join(privateVars)+")" 
-        reduction = self.reduction(makeFStr)
+        reductions = self.reductions(makeFStr)
         if len(reduction):
             for op,values in reduction.items():
                 result += " reduction("+op+":"+",".join(values)+")" 

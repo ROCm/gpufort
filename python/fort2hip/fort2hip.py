@@ -234,12 +234,14 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
         dimensions = kernelParseResult.numDimensions()
         cKernelDict["size"]  = convertDim3(kernelParseResult.problemSize(),dimensions,doFilter=False)
         cKernelDict["grid"]  = convertDim3(kernelParseResult.numGangsTeamsBlocks(),dimensions)
-        cKernelDict["block"] = convertDim3(kernelParseResult.numThreadsInBlock(),dimensions)
-        if not len(cKernelDict["block"]):
-            defaultBlockSize = { 1 : [128], 2 : [128,1,1], 3: [128,1,1] }
-            cKernelDict["block"] = convertDim3(defaultBlockSize[dimensions],dimensions)
-        cKernelDict["gridDims"  ]  = [ "{}_grid{}".format(kernelName,x["dim"]) for x in cKernelDict["block"] ] # grid might not be always defined
-        cKernelDict["blockDims"  ] = [ "{}_block{}".format(kernelName,x["dim"]) for x in cKernelDict["block"] ]
+        block = convertDim3(kernelParseResult.numThreadsInBlock(),dimensions)
+        if not len(block):
+            defaultBlockSize = DEFAULT_BLOCK_SIZES 
+            block = convertDim3(defaultBlockSize[dimensions],dimensions)
+        cKernelDict["block"]        = block
+        cKernelDict["launchBounds"] = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS)
+        cKernelDict["gridDims"  ]   = [ "{}_grid{}".format(kernelName,x["dim"])  for x in block ] # grid might not be always defined
+        cKernelDict["blockDims"  ]  = [ "{}_block{}".format(kernelName,x["dim"]) for x in block ]
 
         cKernelDict["kernelName"]         = kernelName
         cKernelDict["macros"]             = macros

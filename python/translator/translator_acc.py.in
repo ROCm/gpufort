@@ -459,8 +459,8 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
             if len(privateVars):
                 result += " private("+",".join(privateVars)+")" 
         reductions = self.reductions(makeFStr)
-        if len(reduction):
-            for op,values in reduction.items():
+        if len(reductions):
+            for op,values in reductions.items():
                 result += " reduction("+op+":"+",".join(values)+")" 
         if self._loopHandlesMutualClauses:
             return self._format(result)

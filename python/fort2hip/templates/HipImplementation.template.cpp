@@ -78,7 +78,7 @@
   */
 {{kernel.interfaceComment | indent(2, True)}}
 
-__global__ void {{krnlPrefix}}({{kernel.kernelArgs | join(",")}}) {
+__global__ void {{kernel.launchBounds}} {{krnlPrefix}}({{kernel.kernelArgs | join(",")}}) {
 {% for def in kernel.macros %}{{def.expr}}
 {% endfor %}
 {% for var in kernel.kernelLocalVars %}{{var | indent(2, True)}};

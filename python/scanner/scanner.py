@@ -38,7 +38,7 @@ def checkDestinationDialect(destinationDialect):
         msg = "scanner: destination dialect '{}' is not supported. Must be one of: {}".format(\
                 destinationDialect,", ".join(SUPPORTED_DESTINATION_DIALECTS))
         logging.getLogger("").error(msg)
-        sys.abort(SCANNER_ERROR_CODE)
+        sys.exit(SCANNER_ERROR_CODE)
 
 def accRuntimeModuleName():
     global DESTINATION_DIALECT

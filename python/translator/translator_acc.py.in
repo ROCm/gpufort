@@ -87,7 +87,7 @@ class TTAccClauseDefault(TTNode):
 class TTAccClauseReduction(TTNode):
     def _assignFields(self,tokens):
         self._operator, self._vars = tokens
-    def reductionVars(self,converter=makeFStr):
+    def reduction(self,converter=makeFStr):
         result          = {}
         op              = converter(self._operator)
         if converter is makeCStr:
@@ -423,10 +423,10 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
         """ Always assume data independent if no seq clause is used """
         clause = findFirstMatching(self._clauses,lambda x: x=="seq")
         return True if clause is None else False
-    def reductionVars(self,converter=makeFStr):
+    def reduction(self,converter=makeFStr):
         result = {}
         for clause in findAll(self._clauses,TTAccClauseReduction):
-            contrib = clause.reductionVars(converter)
+            contrib = clause.reduction(converter)
             for key,value in contrib.items():
                 if not key in result:
                     result[key] = []
@@ -458,9 +458,9 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
             privateVars = self.privateVars() 
             if len(privateVars):
                 result += " private("+",".join(privateVars)+")" 
-        reductionVars = self.reductionVars(makeFStr)
-        if len(reductionVars):
-            for op,values in reductionVars.items():
+        reduction = self.reduction(makeFStr)
+        if len(reduction):
+            for op,values in reduction.items():
                 result += " reduction("+op+":"+",".join(values)+")" 
         if self._loopHandlesMutualClauses:
             return self._format(result)

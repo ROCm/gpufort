@@ -104,10 +104,10 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
         result += "// - Shared Memory: {}\n".format(makeFStr(self._sharedMem))
         result += "// - Stream: {}\n".format(makeFStr(self._stream))
         return result
-    def ompFStr(self,arraysInBody=set(),inoutArraysInBody=set(),reductionVars={},depend={},loopType="do"):
+    def ompFStr(self,arraysInBody=set(),inoutArraysInBody=set(),reduction={},depend={},loopType="do"):
         result = "!$omp target teams distribute parallel "+loopType  
         # reduction vars
-        for kind,variables in reductionVars.items():
+        for kind,variables in reduction.items():
             result += " reduction({0}:{1})".format(kind,",".join(variables))
         # if, async
         if len(self.stream()):

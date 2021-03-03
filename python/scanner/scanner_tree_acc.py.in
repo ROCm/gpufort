@@ -1,7 +1,9 @@
 exec(open("{0}/acc_backends/scanner_tree_acc2hipgpufortrt.py.in".format(scannerDir)).read())
 exec(open("{0}/acc_backends/scanner_tree_acc2omp.py.in".format(scannerDir)).read())
 
-class STAccDirective(STDirective,Acc2HipGpufortRT,Acc2Omp):
+class STAccDirective(STDirective,\
+        Acc2HipGpufortRT,\
+        Acc2Omp):
     """
     This class has the functionality of a kernel if the stored lines 
     contain a parallel or kernels directive.
@@ -85,15 +87,16 @@ class STAccDirective(STDirective,Acc2HipGpufortRT,Acc2Omp):
          isParallelLoopDirective=self.isParallelLoopDirective()
          ).strip().replace("\n","")
     __repr__ = __str__ 
-    def gpufortFStr(self,destinationDialect=""):
-        checkedDialect = checkDestinationDialect(\
-            DESTINATION_DIALECT if not len(destinationDialect) else destinationDialect)
+    def gpufortFStr(self):
+        checkedDialect = checkDestinationDialect(DESTINATION_DIALECT)
         if checkedDialect == "hip-gpufort-rt":
             return Acc2HipGpufortRT.gpufortFStr(self)
         else:
             return Acc2Omp.gpufortFStr(self)
 
-class STAccLoopKernel(STAccDirective,STLoopKernel,Acc2HipGpufortRTLoopKernel,Acc2OmpLoopKernel):
+class STAccLoopKernel(STAccDirective,STLoopKernel,\
+        Acc2HipGpufortRTLoopKernel,\
+        Acc2OmpLoopKernel):
     def __init__(self,parent,lineno,lines,directiveNo):
         STAccDirective.__init__(self,parent,lineno,lines,directiveNo)
         STLoopKernel.__init__(self,parent,lineno,lines)
@@ -103,6 +106,10 @@ class STAccLoopKernel(STAccDirective,STLoopKernel,Acc2HipGpufortRTLoopKernel,Acc
         """
         return self._lines
     def gpufortFStr(self,destinationDialect=""):
+        """
+        :param destinationDialect: allows to override default if this kernel
+                                   should be exported to another backend.
+        """
         checkedDialect = checkDestinationDialect(\
             DESTINATION_DIALECT if not len(destinationDialect) else destinationDialect)
         if checkedDialect == "hip-gpufort-rt":

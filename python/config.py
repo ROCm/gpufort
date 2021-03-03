@@ -20,6 +20,7 @@ LOG_LEVEL = logging.INFO
 
 scanner.SOURCE_DIALECTS     = ["cuf","acc"] # one of ["acc","cuf","omp"]
 scanner.DESTINATION_DIALECT = "hip-gpufort-rt"   # one of ["omp","hip-gpufort-rt"]
+#scanner.DESTINATION_DIALECT = "omp"   # one of ["omp","hip-gpufort-rt"]
 
 scanner.CONVERT_TO_HIP      = [] # list of kernels to convert to HIP. Is ignored if Destination DIALECT is hip.  
 

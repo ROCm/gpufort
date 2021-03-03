@@ -18,12 +18,12 @@
 #include <iostream>
 #include <algorithm>
 
-{% include 'templates/preamble.cpp-template' %}
+{% include 'templates/preamble.template.cpp' %}
 
 {%- macro make_block(kernel) -%}
 {% set krnlPrefix = kernel.kernelName %}
 {% set ifacePrefix = kernel.interfaceName %}
-{% for blockDim in kernel.block %}  const unsigned int {{krnlPrefix}}_block{{blockDim.dim}} = {{blockDim.value}};
+{% for blockDim in kernel.block %}  const int {{krnlPrefix}}_block{{blockDim.dim}} = {{blockDim.value}};
 {% endfor %}
   dim3 block({{ kernel.blockDims | join(",") }});
 {%- endmacro -%}
@@ -31,14 +31,14 @@
 {%- macro make_grid(kernel) -%}
 {% set krnlPrefix = kernel.kernelName %}
 {% set ifacePrefix = kernel.interfaceName %}
-{% for sizeDim in kernel.size %}  const unsigned int {{krnlPrefix}}_N{{sizeDim.dim}} = {{sizeDim.value}};
+{% for sizeDim in kernel.size %}  const int {{krnlPrefix}}_N{{sizeDim.dim}} = {{sizeDim.value}};
 {% endfor %}
 
 {% if kernel.grid|length > 0 %}
-{% for gridDim in kernel.grid %}  const unsigned int {{krnlPrefix}}_grid{{gridDim.dim}} = {{gridDim.value}};
+{% for gridDim in kernel.grid %}  const int {{krnlPrefix}}_grid{{gridDim.dim}} = {{gridDim.value}};
   dim3 grid({% for gridDim in kernel.grid -%}{{krnlPrefix}}_grid{{gridDim.dim}}{{ "," if not loop.last }}{%- endfor %});
 {% endfor %}{% else %}
-{% for blockDim in kernel.block %}  const unsigned int {{krnlPrefix}}_grid{{blockDim.dim}} = divideAndRoundUp( {{krnlPrefix}}_N{{blockDim.dim}}, {{krnlPrefix}}_block{{blockDim.dim}} );
+{% for blockDim in kernel.block %}  const int {{krnlPrefix}}_grid{{blockDim.dim}} = divideAndRoundUp( {{krnlPrefix}}_N{{blockDim.dim}}, {{krnlPrefix}}_block{{blockDim.dim}} );
 {% endfor %}
   dim3 grid({% for blockDim in kernel.block -%}{{krnlPrefix}}_grid{{blockDim.dim}}{{ "," if not loop.last }}{%- endfor %});
 {% endif %}

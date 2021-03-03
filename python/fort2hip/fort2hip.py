@@ -21,7 +21,7 @@ def convertDim3(dim3,dimensions,doFilter=True):
      result = []
      specified = dim3
      if doFilter:
-         specified = [ x for x in dim3 if x not in [str(CLAUSE_NOT_FOUND),str(CLAUSE_VALUE_NOT_SPECIFIED)]]
+         specified = [ x for x in dim3 if x not in [CLAUSE_NOT_FOUND,CLAUSE_VALUE_NOT_SPECIFIED]]
      for i,value in enumerate(specified):
           if i >= dimensions:
               break
@@ -190,8 +190,6 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
         # translate and analyze kernels
         kernelParseResult = translator.parseLoopKernel(fSnippet,filteredIndex)
 
-        print(kernelParseResult.identifiersInBody())
-        
         kernelArgs, cKernelLocalVars, macros, localCpuRoutineArgs =\
           deriveKernelArguments(index,\
             kernelParseResult.identifiersInBody(),\
@@ -236,10 +234,9 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
         dimensions = kernelParseResult.numDimensions()
         cKernelDict["size"]  = convertDim3(kernelParseResult.problemSize(),dimensions,doFilter=False)
         cKernelDict["grid"]  = convertDim3(kernelParseResult.numGangsTeamsBlocks(),dimensions)
-        # TODO Fix blocks
         cKernelDict["block"] = convertDim3(kernelParseResult.numThreadsInBlock(),dimensions)
         if not len(cKernelDict["block"]):
-            defaultBlockSize = { 1 : [256], 2 : [16,16], 3: [16,16,1] }
+            defaultBlockSize = { 1 : [128], 2 : [128,1,1], 3: [128,1,1] }
             cKernelDict["block"] = convertDim3(defaultBlockSize[dimensions],dimensions)
         cKernelDict["gridDims"  ]  = [ "{}_grid{}".format(kernelName,x["dim"]) for x in cKernelDict["block"] ] # grid might not be always defined
         cKernelDict["blockDims"  ] = [ "{}_block{}".format(kernelName,x["dim"]) for x in cKernelDict["block"] ]

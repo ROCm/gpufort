@@ -33,12 +33,12 @@ def render(templateName, outputFilePath, context):
 
 class HipImplementationModel():
     def generateCode(self,outputFilePath,context):
-        return render("templates/HipImplementation.cpp-template", outputFilePath, context)
+        return render("templates/HipImplementation.template.cpp", outputFilePath, context)
 
 class InterfaceModuleModel():
     def generateCode(self,outputFilePath,context):
-        return render("templates/InterfaceModule.f03-template", outputFilePath, context)
+        return render("templates/InterfaceModule.template.f03", outputFilePath, context)
 
 class InterfaceModuleTestModel():
     def generateCode(self,outputFilePath,context):
-        return render("templates/InterfaceModuleTest.f03-template", outputFilePath, context) 
+        return render("templates/InterfaceModuleTest.template.f03", outputFilePath, context) 

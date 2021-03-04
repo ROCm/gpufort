@@ -33,7 +33,7 @@ def convertDim3(dim3,dimensions,doFilter=True):
 
 # arg for kernel generator
 # array is split into multiple args
-def initArg(argName,fType,kind,qualifiers=[],cType=""):
+def initArg(argName,fType,kind,qualifiers=[],cType="",isArray=False):
     fTypeFinal = fType
     if len(kind):
         fTypeFinal += "({})".format(kind)
@@ -46,6 +46,7 @@ def initArg(argName,fType,kind,qualifiers=[],cType=""):
       "cType"           : cType,
       "cSize"           : "",
       "cValue"          : "",
+      "cSuffix"         : "[]" if isArray else "",
       "reductionOp"     : "",
       "bytesPerElement" : translator.bytes(fType,kind,default="-1")
     }
@@ -62,7 +63,7 @@ def createArgumentContext(indexedVariable,argName,isLoopKernelArg=False,cudaFort
     :return: a dicts containing Fortran `type` and `qualifiers` (`type`, `qualifiers`), C type (`cType`), and `name` of the argument
     :rtype: dict
     """
-    arg = initArg(argName,indexedVariable["fType"],indexedVariable["kind"],[ "value" ])
+    arg = initArg(argName,indexedVariable["fType"],indexedVariable["kind"],[ "value" ],"",indexedVariable["rank"]>0)
     if indexedVariable["parameter"] and not indexedVariable["value"] is None:
         arg["cValue"] = indexedVariable["value"] 
     lowerBoundArgs = []  # additional arguments that we introduce if variable is an array
@@ -79,11 +80,11 @@ def createArgumentContext(indexedVariable,argName,isLoopKernelArg=False,cudaFort
         arg["qualifiers"] = [ "value" ]
         for d in range(1,rank+1):
              # lower bounds
-             boundArg = initArg("{}_lb{}".format(argName,d),"integer","c_int",["value", "intent(in)"],"const int")
+             boundArg = initArg("{}_lb{}".format(argName,d),"integer","c_int",["value","intent(in)"],"const int")
              boundArg["callArgName"] = "lbound({},{})".format(argName,d)
              lowerBoundArgs.append(boundArg)
              # number of elements per dimensions
-             countArg = initArg("{}_n{}".format(argName,d),"integer","c_int",["value", "intent(in)"],"const int")
+             countArg = initArg("{}_n{}".format(argName,d),"integer","c_int",["value","intent(in)"],"const int")
              countArg["callArgName"] = "size({},{})".format(argName,d)
              countArgs.append(countArg)
         # create macro expression
@@ -201,11 +202,11 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
         kernelName         = stkernel.kernelName()
         kernelLauncherName = stkernel.kernelLauncherName()
    
-        # treat reduction vars / acc default(present) vars
+        # treat reductionVars vars / acc default(present) vars
         cContext["haveReductions"] = False # |= len(reductionOps)
         kernelCallArgNames = []
-        reductions    = kernelParseResult.gangTeamReductions(translator.makeCStr)
-        reduction = []
+        reductions = kernelParseResult.gangTeamReductions(translator.makeCStr)
+        reductionVars = []
         for arg in kernelArgs:
             name  = arg["name"]
             cType = arg["cType"]
@@ -215,10 +216,10 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
                     # modify argument
                     arg["qualifiers"].remove("value")
                     arg["cType"] = cType + "*"
-                    # reduction buffer var
+                    # reductionVars buffer var
                     bufferName = "_d_" + name
                     var = { "buffer": bufferName, "name" : name, "type" : cType, "op" : op }
-                    reduction.append(var)
+                    reductionVars.append(var)
                     # call args
                     kernelCallArgNames.append(bufferName)
                     isReductionVar = True
@@ -229,27 +230,26 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
                         stkernel.appendDefaultPresentVar(name)
             cContext["haveReductions"] |= isReductionVar
         # C LoopKernel
-        cKernelDict = {}
-        cKernelDict["isLoopKernel"] = True
-        dimensions = kernelParseResult.numDimensions()
-        cKernelDict["size"]  = convertDim3(kernelParseResult.problemSize(),dimensions,doFilter=False)
-        cKernelDict["grid"]  = convertDim3(kernelParseResult.numGangsTeamsBlocks(),dimensions)
+        dimensions  = kernelParseResult.numDimensions()
         block = convertDim3(kernelParseResult.numThreadsInBlock(),dimensions)
         if not len(block):
             defaultBlockSize = DEFAULT_BLOCK_SIZES 
             block = convertDim3(defaultBlockSize[dimensions],dimensions)
-        cKernelDict["block"]        = block
-        cKernelDict["launchBounds"] = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS)
-        cKernelDict["gridDims"  ]   = [ "{}_grid{}".format(kernelName,x["dim"])  for x in block ] # grid might not be always defined
-        cKernelDict["blockDims"  ]  = [ "{}_block{}".format(kernelName,x["dim"]) for x in block ]
-
+        cKernelDict = {}
+        cKernelDict["isLoopKernel"]       = True
+        cKernelDict["size"]               = convertDim3(kernelParseResult.problemSize(),dimensions,doFilter=False)
+        cKernelDict["grid"]               = convertDim3(kernelParseResult.numGangsTeamsBlocks(),dimensions)
+        cKernelDict["block"]              = block
+        cKernelDict["launchBounds"]       = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS)
+        cKernelDict["gridDims"  ]         = [ "{}_grid{}".format(kernelName,x["dim"])  for x in block ] # grid might not be always defined
+        cKernelDict["blockDims"  ]        = [ "{}_block{}".format(kernelName,x["dim"]) for x in block ]
         cKernelDict["kernelName"]         = kernelName
         cKernelDict["macros"]             = macros
         cKernelDict["cBody"]              = kernelParseResult.cStr()
         cKernelDict["fBody"]              = utils.prettifyFCode(fSnippet)
-        cKernelDict["kernelArgs"]         = ["{} {}{}".format(a["cType"],a["name"],a["cSize"]) for a in kernelArgs]
+        cKernelDict["kernelArgs"]         = ["{} {}{}{}".format(a["cType"],a["name"],a["cSize"],a["cSuffix"]) for a in kernelArgs]
         cKernelDict["kernelCallArgNames"] = kernelCallArgNames
-        cKernelDict["reduction"]      = reduction
+        cKernelDict["reductions"]         = reductionVars
         cKernelDict["kernelLocalVars"]    = ["{} {}{}".format(a["cType"],a["name"],a["cSize"]) for a in cKernelLocalVars]
         cKernelDict["interfaceName"]      = kernelLauncherName
         cKernelDict["interfaceComment"]   = "" # kernelLaunchInfo.cStr()

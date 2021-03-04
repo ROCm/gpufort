@@ -150,7 +150,7 @@ def parseCommandLineArguments():
     parser.add_argument('-w,--wrap-in-ifdef',dest="wrapInIfdef",action="store_true",help="Wrap converted lines into ifdef in host code.")
     parser.add_argument('-k,--only-generate-kernels',dest="onlyGenerateKernels",action="store_true",help="Only generate kernels; do not modify host code.")
     parser.add_argument('-m,--only-modify-host-code',dest="onlyModifyHostCode",action="store_true",help="Only modify host code; do not generate kernels.")
-    parser.add_argument('-x,--destination-dialect',dest="destinationDialect",type=str,help="One of: {}".format(scanner.DESTINATION_DIALECT_2_RUNTIME_MODULE.keys()))
+    parser.add_argument('-E,--destination-dialect',dest="destinationDialect",type=str,help="One of: {}".format(scanner.DESTINATION_DIALECT_2_RUNTIME_MODULE.keys()))
     parser.add_argument('--log-level',dest="logLevel",required=False,type=str,default="",help="Set log level. Overrides config value.")
     parser.add_argument('--cublas-v2',dest="cublasV2",action="store_true",help="Assume cublas v2 function signatures that use a handle. Overrides config value.")
     parser.set_defaults(overwriteExisting=True,wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyHostCode=False)

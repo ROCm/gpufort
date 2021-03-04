@@ -443,7 +443,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                             var._reductionIndex = tidx
         reductionPreamble = ""
         # 2.1. Add init preamble for reduced variables
-        for kind,reducedVariables in self.gangTeamReductions().items():
+        for kind,reducedVariables in self.gangTeamReductions(makeCStr).items():
             for var in reducedVariables: 
                 reductionPreamble += "reduce_op_{kind}::init({var}[{tidx}]);\n".format(kind=kind,var=var,tidx=tidx)
         # 3. collapse and transform do-loops

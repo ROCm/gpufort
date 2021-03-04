@@ -6,7 +6,7 @@
 {#                 -[kernelArgs:dict]                    #}
 {#                 -[kernelCallArgNames:str]             #}
 {#                 -[interfaceArgs:dict]                 #}
-{#                 -[reduction:dict]                 #}
+{#                 -[reductions:dict]                    #}
 {#                 -[cBody:str]                          #}
 {#                 -[fBody:str]                          #}
 
@@ -49,8 +49,8 @@
 {%- macro reductions_prepare(kernel,star) -%}
 {%- set krnlPrefix = kernel.kernelName -%}
 {%- set ifacePrefix = kernel.interfaceName -%}
-{%- if kernel.reduction|length > 0 -%}
-{%- for var in kernel.reduction %} 
+{%- if kernel.reductions|length > 0 -%}
+{%- for var in kernel.reductions %} 
   {{ var.type }}* {{ var.buffer }};
   HIP_CHECK(hipMalloc((void **)&{{ var.buffer }}, __total_threads(({{star}}grid),({{star}}block)) * sizeof({{ var.type }} )));
 {% endfor -%}
@@ -58,8 +58,8 @@
 {%- endmacro -%}
 
 {%- macro reductions_finalize(kernel,star) -%}
-{% if kernel.reduction|length > 0 -%}
-{%- for var in kernel.reduction -%} 
+{% if kernel.reductions|length > 0 -%}
+{%- for var in kernel.reductions -%} 
   reduce<{{ var.type }}, reduce_op_{{ var.op }}>({{ var.buffer }}, __total_threads(({{star}}grid),({{star}}block)), {{ var.name }});
   HIP_CHECK(hipFree({{ var.buffer }}));
 {% endfor -%}

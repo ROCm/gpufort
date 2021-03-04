@@ -244,7 +244,7 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
         if not self.presentByDefault():
             toList     += [el for el in inArraysInBody    if el not in alreadyConsidered]  # note: {val} - {val,otherVal} = empty set
             tofromList += [el for el in inoutArraysInBody if el not in alreadyConsidered]
-        result = prefix+" "
+        result = prefix
         if len(toList):
             result += " map(to:"+",".join(toList)+")"
         if len(fromList):

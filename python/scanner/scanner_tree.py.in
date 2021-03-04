@@ -150,7 +150,7 @@ class STNode():
         them at an appropriate location.
         """
         return "\n".join([el.rstrip() for el in self._epilog])
-    def transformFSnippet(self,fSnippet):
+    def transformFSnippet(self,fSnippet,indexHints=[]):
         """
         :param line: An excerpt from a Fortran file, possibly multiple lines
         :type line: str
@@ -185,7 +185,7 @@ class STUseStatement(STNode):
         self._name = None
     def name(self):
         return self._name
-    def gpufortFStr(self,indent=""):
+    def gpufortFStr(self,indexHints=[],indent=""):
         indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
         result = "".join(self._lines).lower()
         useCuda = False
@@ -211,7 +211,7 @@ class STPlaceHolder(STNode):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
         self._name = None
-    def gpufortFStr(self,indent=""):
+    def gpufortFStr(self,indexHints=[],indent=""):
         return self._lines[0], False
     def considerInSource2SourceTranslation(self):
         return STNode.considerInSource2SourceTranslation(self) or\
@@ -241,10 +241,10 @@ class STSubroutine(STProcedure):
         return self.findAll(filter=lambda child : type(child) is STDeclaration, recursively=False)
     def considerInSource2SourceTranslation(self):
         return self._considerInSource2SourceTranslation
-    def transformFSnippet(self,fSnippet):
+    def transformFSnippet(self,fSnippet,indexHints=[]):
         indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
         return "{0}! extracted to HIP C++ file".format(indent), True
-    def gpufortFStr(self,):
+    def gpufortFStr(self,indexHints=[]):
         return self.transformFSnippet("")
 
 class STFunction(STProcedure):
@@ -300,15 +300,15 @@ class STLoopKernel(STNode):
         return "krnl_{0}_{1}".format(self.hashBody(),self._lineno)
     def kernelLauncherName(self):
         return "launch_{}".format(self.kernelName())
-    def transformFSnippet(self,fSnippet):
+    def transformFSnippet(self,fSnippet,indexHints=[]):
         indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
         stream = "c_null_ptr" if self._stream == "0" else self._stream
         result="""{4}! extracted to HIP C++ file
 {4}! TODO(gpufort) fix arguments
 {4}CALL {0}_auto({1},{2},{3})""".format(self.kernelLauncherName(),self._sharedMem,stream,",".join(self._kernelArgNames),indent)
         return result, True
-    def gpufortFStr(self):
-        return self.transformFSnippet("".join(self._lines))
+    def gpufortFStr(self,indexHints=[]):
+        return self.transformFSnippet("".join(self._lines),indexHints)
 
 class STCufLoopKernel(STDirective,STLoopKernel):
     def __init__(self,parent,lineno,lines):
@@ -443,7 +443,7 @@ class STDeclaration(STNode,Attributed):
             return False
     def createCodegenContext(self):
         return translator.createCodegenContextFromDeclaration(self._parseResult)
-    def gpufortFStr(self):
+    def gpufortFStr(self,indexHints=[]):
         # TODO(dominic) rewrite docu
         """
         """
@@ -533,7 +533,7 @@ class MemOperation(): #TODO give better name
 class STNonZeroCheck(STNode,MemOperation):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
-    def transformFSnippet(self,fSnippet): # TODO
+    def transformFSnippet(self,fSnippet,indexHints=[]): # TODO
         result = fSnippet
         transformed = False
         for tokens,start,end in translator.nonZeroCheck.scanString(result):
@@ -549,7 +549,7 @@ class STNonZeroCheck(STNode,MemOperation):
 class STAllocated(STNode,MemOperation):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
-    def transformFSnippet(self,fSnippet): # TODO
+    def transformFSnippet(self,fSnippet,indexHints=[]): # TODO
         def repl(parseResult):
             varName = parseResult.varName()
             bpe,onDevice,qualifier,indexMacro,boundVariableNames = self.lookupArrayDeclaration(varName)
@@ -561,7 +561,7 @@ class STAllocated(STNode,MemOperation):
 class STAllocate(STNode,MemOperation):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
-    def transformFSnippet(self,fSnippet): # TODO
+    def transformFSnippet(self,fSnippet,indexHints=[]): # TODO
         def repl(parseResult):
             transformed     = False
             vars            = [name.lower() for name in parseResult.variableNames()]
@@ -579,7 +579,7 @@ class STAllocate(STNode,MemOperation):
 class STDeallocate(STNode,MemOperation):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
-    def transformFSnippet(self,fSnippet): # TODO
+    def transformFSnippet(self,fSnippet,indexHints=[]): # TODO
         """
         :note: `wrapInIfDef` can be deactivated if a higher level function
         embeds the outcome already in an `ifdef`.
@@ -599,7 +599,7 @@ class STDeallocate(STNode,MemOperation):
 class STMemcpy(STNode,MemOperation):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
-    def transformFSnippet(self,fSnippet): # TODO
+    def transformFSnippet(self,fSnippet,indexHints=[]): # TODO
         def replMemcpy(parseResult):
             destName = parseResult.destNameFStr()
             srcName  = parseResult.srcNameFStr()
@@ -632,7 +632,7 @@ class STCudaLibCall(STNode,MemOperation):
         :rtype: bool
         """
         return self._hasCublas
-    def transformFSnippet(self,fSnippet):
+    def transformFSnippet(self,fSnippet,indexHints=[]):
         global CUBLAS_VERSION 
         global KEEP_CUDA_LIB_NAMES
         oldfSnippet = fSnippet
@@ -676,7 +676,7 @@ class STCudaLibCall(STNode,MemOperation):
 class STCudaKernelCall(STNode):
     """TODO(gpufort): Fix
     """
-    def transformFSnippet(self,fSnippet):
+    def transformFSnippet(self,fSnippet,indexHints=[]):
         #TODO(gpufort): Check variables, check which ones are array variables and replace with additional information such as size per dimension and lower bound,  _ni and _lbi.
         for tokens,start,end in translator.cudaKernelCall.scanString(fSnippet):
             parseResult = tokens[0]

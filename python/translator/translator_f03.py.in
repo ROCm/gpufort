@@ -380,7 +380,7 @@ class TTComplexArithmeticExpression(TTNode):
 class TTPower(TTNode):
     def _assignFields(self,tokens):
         self._base, self._exp = tokens
-    def gpufortFStr(self):
+    def gpufortFStr(self,indexHints=[]):
         sign = ""
         base = self._base
         if type(self._base) is TTRValue:

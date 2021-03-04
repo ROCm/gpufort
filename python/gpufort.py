@@ -34,7 +34,7 @@ def createIndex(searchDirs,filePath,indexFile):
         context = indexer.scanSearchDirs(cleanedSearchDirs,optionsAsStr="")
         return indexer.resolveDependencies(context,searchedFiles=[ filePath ])
 
-def translateFortranSource(fortranFilePath,stree,wrapInIfdef):
+def translateFortranSource(fortranFilePath,stree,index,wrapInIfdef):
     """
     Generate an object tree (OT). 
     """
@@ -42,7 +42,7 @@ def translateFortranSource(fortranFilePath,stree,wrapInIfdef):
     groups = scanner.groupObjects(stree)
     # first pass to update some scanner tree nodes
     for group in groups.values():
-        group.generateCode(wrapInIfdef)
+        group.generateCode(index,wrapInIfdef)
     # post process before grouping again
     basename      = os.path.basename(fortranFilePath).split(".")[0]
     hipModuleName = basename.replace(".","_").replace("-","_") + "_kernels"
@@ -58,7 +58,7 @@ def translateFortranSource(fortranFilePath,stree,wrapInIfdef):
         lines = scanner.handleIncludeStatements(fortranFilePath,fortranFile.readlines())
         for lineno,line in enumerate(lines):
             if lineno in groups:
-                lines, linesToSkip = groups[lineno].generateCode(wrapInIfdef)
+                lines, linesToSkip = groups[lineno].generateCode(index,wrapInIfdef)
                 nextLinesToSkip = linesToSkip 
                 outputLines += lines
             elif nextLinesToSkip > 0:
@@ -94,7 +94,7 @@ def parseConfig():
     global configAfterCommandLineParsing
 
     # DEFAULTS:
-    scanner.GPUFORT_IFDEF           = "__HIP" 
+    scanner.GPUFORT_IFDEF       = "__HIP" 
     scanner.CUF_IFDEF           = "CUDA"
     # cublas_v1 routines do not have an handle. cublas v2 routines do
     scanner.CUBLAS_VERSION      = 1
@@ -236,7 +236,7 @@ if __name__ == "__main__":
     # could be done in parallel again:
     # modify original file
     if not args.onlyGenerateKernels:
-        translateFortranSource(inputFilePath,stree,wrapInIfdef=args.wrapInIfdef) 
+        translateFortranSource(inputFilePath,stree,index,args.wrapInIfdef) 
  
     # shutdown logging
     logging.shutdown()

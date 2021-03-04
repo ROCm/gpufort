@@ -87,12 +87,12 @@ class STAccDirective(STDirective,\
          isParallelLoopDirective=self.isParallelLoopDirective()
          ).strip().replace("\n","")
     __repr__ = __str__ 
-    def gpufortFStr(self):
+    def gpufortFStr(self,indexHints=[]):
         checkedDialect = checkDestinationDialect(DESTINATION_DIALECT)
         if checkedDialect == "hip-gpufort-rt":
-            return Acc2HipGpufortRT.gpufortFStr(self)
+            return Acc2HipGpufortRT.gpufortFStr(self,indexHints)
         else:
-            return Acc2Omp.gpufortFStr(self)
+            return Acc2Omp.gpufortFStr(self,indexHints)
 
 class STAccLoopKernel(STAccDirective,STLoopKernel,\
         Acc2HipGpufortRTLoopKernel,\
@@ -105,7 +105,7 @@ class STAccLoopKernel(STAccDirective,STLoopKernel,\
         :note: used for grouping scanner tree objects
         """
         return self._lines
-    def gpufortFStr(self,destinationDialect=""):
+    def gpufortFStr(self,indexHints=[],destinationDialect=""):
         """
         :param destinationDialect: allows to override default if this kernel
                                    should be exported to another backend.
@@ -113,6 +113,6 @@ class STAccLoopKernel(STAccDirective,STLoopKernel,\
         checkedDialect = checkDestinationDialect(\
             DESTINATION_DIALECT if not len(destinationDialect) else destinationDialect)
         if checkedDialect == "hip-gpufort-rt":
-            return Acc2HipGpufortRTLoopKernel.gpufortFStr(self)
+            return Acc2HipGpufortRTLoopKernel.gpufortFStr(self,indexHints)
         else:
-            return Acc2OmpLoopKernel.gpufortFStr(self)
+            return Acc2OmpLoopKernel.gpufortFStr(self,indexHints)

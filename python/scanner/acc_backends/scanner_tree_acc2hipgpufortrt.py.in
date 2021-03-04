@@ -161,7 +161,7 @@ class Acc2HipGpufortRT:
         for parseResult in translator.acc_clause_if.searchString(self.singleLineStatement(),1):
             condition = parseResult[0].condition()
         return condition
-    def gpufortFStr(self,handleIf=True):
+    def gpufortFStr(self,indexHints=[],handleIf=True):
         """
         :param line: An excerpt from a Fortran file, possibly multiple lines
         :type line: str
@@ -269,12 +269,12 @@ class Acc2HipGpufortRT:
         return result, len(result)
 
 class Acc2HipGpufortRTLoopKernel:
-    def gpufortFStr(self):
+    def gpufortFStr(self,indexHints=[]):
         result = ""
         if self.isParallelLoopDirective() or self.isKernelsLoopDirective():
-            partialResult, _ = Acc2HipGpufortRT.gpufortFStr(self,handleIf=False) 
+            partialResult, _ = Acc2HipGpufortRT.gpufortFStr(self,indexHints,handleIf=False) 
             result = partialResult
-        partialResult, _ = STLoopKernel.gpufortFStr(self) 
+        partialResult, _ = STLoopKernel.gpufortFStr(self,indexHints) 
         result += partialResult
         if self.isParallelLoopDirective() or self.isKernelsLoopDirective():
            result += "\n"+tAccExitRegion

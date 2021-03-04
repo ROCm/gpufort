@@ -11,6 +11,6 @@ build: codegen
 	hipfc $(TEST_NAME).hipified.f90 -o $(TEST_NAME) $(TEST_NAME).kernels.o $(TEST_NAME).kernels.hip.o $(FOPTS) $(ACC_INC) $(ACC_LIB)
 
 codegen:
-	../../../hipfortify.py -w $(TEST_SRC) --log-level debug
+	gpufort -w $(TEST_SRC) --log-level debug
 clean:
 	rm -f *.hipified.f90 *kernels.f08 *kernels.hip.cpp *.o *.mod $(TEST_NAME)

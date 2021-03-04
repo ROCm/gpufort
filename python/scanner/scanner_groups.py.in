@@ -50,7 +50,7 @@ class STGroup():
         except:
            result = result2
         return result
-    def generateCode(self,wrapInIfdef=False):
+    def generateCode(self,indexHints,wrapInIfdef):
         """
         Generates code from all objects in the group.
         If the original code is modified,
@@ -59,7 +59,7 @@ class STGroup():
         assert False
 
 class MatchAllGroup(STGroup):
-    def generateCode(self,wrapInIfdef=False):
+    def generateCode(self,indexHints,wrapInIfdef):
         """
         Generates code from all objects in the group.
         If the original code is modified,
@@ -78,7 +78,7 @@ class MatchAllGroup(STGroup):
         for stnode in self._objects:
             #print(stnode)
             if not typeHasAlreadyBeenProcessed(stnode):
-                result, transformed = stnode.transformFSnippet(result) # TODO
+                result, transformed = stnode.transformFSnippet(result,indexHints) # TODO
                 performedTransformation |= transformed
                 if len(stnode.preamble()): 
                     preamble += stnode.preamble().rstrip("\n")+"\n"
@@ -101,7 +101,7 @@ class MatchAllGroup(STGroup):
             return self._lines, linesToSkip
 
 class OneByOneGroup(STGroup):
-    def generateCode(self,wrapInIfdef=False):
+    def generateCode(self,indexHints,wrapInIfdef):
         """
         Generates code from all objects in the group.
         If the original code is modified,
@@ -113,7 +113,7 @@ class OneByOneGroup(STGroup):
         preamble = ""
         epilog   = ""
         for stnode in self._objects:
-            fStr, transformed = stnode.gpufortFStr() # TODO
+            fStr, transformed = stnode.gpufortFStr(indexHints) # TODO
             result += fStr.rstrip("\n")+"\n"
             performedTransformation |= transformed
             if len(stnode.preamble()): 
@@ -142,8 +142,8 @@ def groupObjects(stree):
     Groups object tree nodes and puts each group into a map that is indexed by the line number of the first node in a group.
     :return: a dict mapping line numbers to groups
     :rtype: dict
-    :note: Must be called before declarations from other modules are loaded
-    """
+    :note: Must be called before declarations from other modules are loaded T
+    """ # TODO comment still valid?
     def transformOneByOne(stnode):
         return type(stnode) in  [STDeclaration,STUseStatement,STPlaceHolder,STSubroutine,STAccDirective] or isinstance(stnode,STLoopKernel)
     groups = [ MatchAllGroup() ]

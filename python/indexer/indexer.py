@@ -203,10 +203,10 @@ def __parseFile(fileLines,filePath):
     def tryToParseString(expressionName,expression):
         try:
            expression.parseString(currentLine)
-           logging.getLogger("").debug("modscan:\tFOUND expression '{}' in line: '{}'".format(expressionName,currentLine))
+           logging.getLogger("").debug("indexer:\tFOUND expression '{}' in line: '{}'".format(expressionName,currentLine))
            return True
         except ParseBaseException as e: 
-           logging.getLogger("").debug2("modscan:\tdid not find expression '{}' in line '{}'".format(expressionName,currentLine))
+           logging.getLogger("").debug2("indexer:\tdid not find expression '{}' in line '{}'".format(expressionName,currentLine))
            logging.getLogger("").debug3(str(e))
            return False
 
@@ -250,15 +250,20 @@ def scanSearchDirs(searchDirs,optionsAsStr):
     index = []
     inputFiles = []
     for searchDir in searchDirs:
-         inputFiles += __discoverInputFiles(searchDir)
+        print(searchDir)
+        if os.path.exists(searchDir):
+            inputFiles += __discoverInputFiles(searchDir)
+        else:
+            msg = "indexer: include directory '{}' does not exist. Is ignored.".format(searchDir)
+            logging.getLogger("").warn(msg); print("WARNING: "+msg,file=sys.stderr)
     partialResults = []
     with Pool(processes=len(inputFiles)) as pool: #untuned
-         fileLines = [__readFortranFile(inputFile,optionsAsStr) for i,inputFile in enumerate(inputFiles)]
-         partialResults = [pool.apply_async(__parseFile, (fileLines[i],inputFile,)) for i,inputFile in enumerate(inputFiles)]
-         pool.close()
-         pool.join()
+        fileLines = [__readFortranFile(inputFile,optionsAsStr) for i,inputFile in enumerate(inputFiles)]
+        partialResults = [pool.apply_async(__parseFile, (fileLines[i],inputFile,)) for i,inputFile in enumerate(inputFiles)]
+        pool.close()
+        pool.join()
     for p in partialResults:
-       index += p.get()
+        index += p.get()
     return index
 
 def dependencyGraphs(index):

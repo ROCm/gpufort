@@ -496,6 +496,7 @@ class STAttributes(STNode,Attributed):
     def considerInSource2SourceTranslation(self):
         return False
 
+# TODO use index here
 class MemOperation(): #TODO give better name
     def lookupArrayDeclaration(self,arrayName):
         """

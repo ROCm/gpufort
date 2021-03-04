@@ -180,7 +180,7 @@ def initLogging(inputFilePath):
     #shutil.rmtree(logDir,ignore_errors=True)
     os.makedirs(logDir,exist_ok=True)
     
-    FORMAT = "hipfortify:%(levelname)s:{0}: %(message)s".format(inputFilePath)
+    FORMAT = "gpufort:%(levelname)s:{0}: %(message)s".format(inputFilePath)
     FILE="{0}/log-{1}.log".format(logDir,inputFilePathHash)
     logging.basicConfig(format=FORMAT,filename=FILE,filemode="w", level=LOG_LEVEL)
    
@@ -209,7 +209,7 @@ if __name__ == "__main__":
     # parse file and create index in parallel
     stree = None
     index = []
-    with multiprocessing.Pool(processes=1) as pool: 
+    with multiprocessing.Pool(processes=2) as pool: 
         handle = pool.apply_async(\
            scanner.parseFile, (inputFilePath,))
         index = createIndex(args.searchDirs,inputFilePath,args.index)
@@ -217,14 +217,6 @@ if __name__ == "__main__":
         pool.join()
         stree = handle.get()
    
-    # WHICH information do I need to introduce to the tree?
-    # - allocate, copy intrinsices                             - if variable is on the device | (CUF,ACC)->HIP, CUF->OMP
-    # - place holders if device pointers need to be introduced - if we need a variable        | (CUF,ACC)->HIP
-    # - device variables/subroutines if we need to declare them on the device                 | CUF -> OMP
-    # What is needed only for ACC -> OMP?
-    # - for some directives, only source2source
-    # - OpenACC implicitly assumes that scalars are private -> need to know what is a scalar
-
     # extract kernels
     if not args.onlyModifyHostCode:
        kernelsToConvertToHip = ["*"] # all of them

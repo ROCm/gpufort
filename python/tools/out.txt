@@ -1,4 +1,4 @@
-log file:   /home/amd/dominic/gpufort/tools/hipfortify/tools/log/log.log (log level: DEBUG2) 
+log file:   /home/amd/dominic/gpufort/tools/gpufort/tools/log/log.log (log level: DEBUG2) 
 [
   {
     "name": "etat0_dcmip2016_supercell_mod",

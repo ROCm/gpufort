@@ -1,0 +1,301 @@
+# init shutdown
+HIP_GCC_RT_ACC_INIT     = "acc_init({devicetype})"
+HIP_GCC_RT_ACC_SHUTDOWN = "acc_shutdown({devicetype})"
+
+# update host
+HIP_GCC_RT_ACC_UPDATE_SELF         = "acc_update_self({var})"
+HIP_GCC_RT_ACC_UPDATE_SELF_ASYNC   = "acc_update_self_async({var}{async})"
+HIP_GCC_RT_ACC_UPDATE_DEVICE       = "acc_update_device({var})"
+HIP_GCC_RT_ACC_UPDATE_DEVICE_ASYNC = "acc_update_device_async({var}{async})"
+HIP_GCC_RT_ACC_UPDATE_MAP = { # [self][async]
+  False: { False: HIP_GCC_RT_ACC_UPDATE_DEVICE, True: HIP_GCC_RT_ACC_UPDATE_DEVICE_ASYNC },
+  True:  { False: HIP_GCC_RT_ACC_SELF,          True: HIP_GCC_RT_ACC_SELF_ASYNC          }
+}
+# wait
+HIP_GCC_RT_ACC_WAIT_ALL          = "acc_wait_all()"
+HIP_GCC_RT_ACC_WAIT_ALL_AYNC     = "acc_wait_all_async({async})"
+HIP_GCC_RT_ACC_WAIT              = "acc_wait({arg})"
+HIP_GCC_RT_ACC_WAIT_ASYNC        = "acc_wait_async({arg}{async})"
+#HIP_GCC_RT_ACC_WAIT_DEVICE       = "call acc_wait_device({arg}{device})"
+#HIP_GCC_RT_ACC_WAIT_DEVICE_ASYNC = "call acc_wait_device({arg}{async}{device})"
+HIP_GCC_RT_ACC_WAIT_MAP = { # [arg][async]
+  False: { False: HIP_GCC_RT_ACC_WAIT_ALL,     True: HIP_GCC_RT_ACC_WAIT_ALL_ASYNC },
+  True:  { False: HIP_GCC_RT_ACC_WAIT,         True: HIP_GCC_RT_ACC_WAIT_ASYNC     }
+}
+# delete
+HIP_GCC_RT_ACC_DELETE                = "acc_delete({var})"
+HIP_GCC_RT_ACC_DELETE_ASYNC          = "acc_delete_async({var}{async})"
+HIP_GCC_RT_ACC_DELETE_FINALIZE       = "acc_delete_finalize({var})"
+HIP_GCC_RT_ACC_DELETE_FINALIZE_ASYNC = "acc_delete_finalize_async({var}{async})"
+HIP_GCC_RT_ACC_DELETE_MAP = { # [finalize][async]
+  False: { False: HIP_GCC_RT_ACC_DELETE,          True: HIP_GCC_RT_ACC_DELETE_ASYNC          },
+  True:  { False: HIP_GCC_RT_ACC_DELETE_FINALIZE, True: HIP_GCC_RT_ACC_DELETE_FINALIZE_ASYNC }
+}
+# acc_deviceptr
+HIP_GCC_RT_ACC_DEVICEPTR = "acc_deviceptr({var})" # usually not available in openacc.f90
+# GCC LIBGOMP specific internal routines for /acc enter/exit data and acc data
+HIP_GCC_RT_GOACC_ENTER_EXIT_DATA = "goacc_enter_exit_data({device}{mappings}{async}{wait})"
+HIP_GCC_RT_GOACC_START_DATA      = "goacc_data_start({device}{mappings}{async})"
+HIP_GCC_RT_GOACC_END_DATA        = "goacc_data_end()"
+# GCC LIBGOMP specific helper functions
+HIP_GCC_RT_MAP_CREATE    = "map_create({var})"
+HIP_GCC_RT_MAP_NO_CREATE = "map_no_create({var})"
+HIP_GCC_RT_MAP_DELETE    = "map_delete({var}{finalize})"
+HIP_GCC_RT_MAP_COPYIN    = "map_copyin({var}{async})"
+HIP_GCC_RT_MAP_COPY      = "map_copy({var}{async})"
+HIP_GCC_RT_MAP_COPYOUT   = "map_copyout({var}{async})"
+HIP_GCC_RT_MAP_PRESENT   = "map_present({var})"
+
+class Acc2HipGccRT:
+    # clauses 
+    def _handleAsync(self,queue=None,prefix=",async="):
+        """
+        :return: Empty string if no queue was found
+        :rtype: str
+        """
+        result = ""
+        if queue is None:
+            for parseResult in translator.acc_clause_async.searchString(queue,1):
+                #print(parseResult)
+                # TODO find ...
+                result = parseResult[0].queue()
+        if len(result):
+           result = prefix + result
+        return result
+    def _handleFinalize(self):
+        """
+        :return: If a finalize clause is present
+        :rtype: bool
+        """
+        return len(translator.acc_clause_finalize.searchString(self.singleLineStatement(),1))
+    def _handleSimpleMapping(self,expression,template):
+        """
+        """
+        result = ""
+        tempVars = set()
+        #
+        for parseResult in expression.scanString(self.singleLineStatement()):
+            clause = parseResult[0][0]
+            varNames       = clause.varNames()
+            varExpressions = clause.varExpressions()
+            for i,varExpr in enumerate(varExpressions):
+                deviceptr = devVarName(varNames[i])
+                result += template.format(var=varExpr,devVar=deviceptr,async=self._handleAsync())
+                tempVars.add(deviceptr)
+        return result, len(result), tempVars
+    def _handlePresent(self):
+        return self._handleSimpleMapping(translator.acc_clause_present,HIP_GCC_RT_MAP_PRESENT)
+    def _handleCreate(self):
+        return self._handleSimpleMapping(translator.acc_clause_create,HIP_GCC_RT_MAP_CREATE)
+    def _handleNoCreate(self):
+        return self._handleSimpleMapping(translator.acc_clause_no_create,HIP_GCC_RT_MAP_NO_CREATE)
+    def _handleDelete(self):
+        return self._handleSimpleMapping(translator.acc_clause_delete,HIP_GCC_RT_MAP_DELETE)
+    def _handleCopy(self):
+        return self._handleSimpleMapping(translator.acc_clause_copy,HIP_GCC_RT_MAP_COPY)
+    def _handleCopyin(self):
+        return self._handleSimpleMapping(translator.acc_clause_copyin,HIP_GCC_RT_MAP_COPY)
+    def _handleCopyout(self):
+        return self._handleSimpleMapping(translator.acc_clause_copyout,HIP_GCC_RT_MAP_COPYOUT)
+    def _handleDefault(self):
+        """
+        Emits a acc_clause_present command for every variable in the list
+        """
+        result = ""
+        tempVars = set()
+        template = HIP_GCC_RT_ACC_PRESENT
+        for parseResult in translator.acc_clause_default.scanString(self.singleLineStatement(),1):
+            value = str(parseResult[0][0]).lower()
+            #print(value)
+            if value == "present":
+                for varExpr in self._defaultPresentVars:
+                    deviceptr = devVarName(varExpr)
+                    tempVars.add(deviceptr)
+                    result += template.format(var=varExpr,devVar=deviceptr)
+        return result, len(result), tempVars
+    def _handleUpdate(self):
+        """
+        Emits a acc_clause_copy command for every variable in the list
+        """
+        result = ""
+        tempVars = set()
+        # update host
+        #for parseResult in translator.acc_clause_update.scanString(self.singleLineStatement()):
+        #    #print(parseResult[0][0])
+        #    #print(parseResult[0][1])
+        #    async=self._handleAsync(parseResult[0][1])
+        #    #print(async)
+        #    for dest in parseResult[0][0]:
+        #        #print(dest)
+        #        template = HIP_GCC_RT_ACC_UPDATE_HOST
+        #        if dest[0]: # -> device
+        #           template = HIP_GCC_RT_ACC_UPDATE_DEVICE
+        #        #print(dest[0])
+        #        #print(dest[1])
+        #        for rvalue in dest[1]:
+        #            #print(rvalue)
+        #            varExpr = rvalue.fStr()
+        #            deviceptr = devVarName(varExpr)
+        #            result += template.format(var=varExpr,devVar=deviceptr,async=async)
+        return result, len(result), tempVars
+    def _handleWait(self):
+        """
+        Emits a acc_clause_wait command for every variable in the list
+        """
+        result = ""
+        tempVars = set()
+        # wait
+        template = HIP_GCC_RT_ACC_WAIT
+        for parseResult in translator.acc_clause_wait.scanString(self.singleLineStatement()):
+            queueList=[]
+            asyncList=[]
+            for rvalue in parseResult[0][0]: # queue ids
+                queueList.append(rvalue.varName())
+            for rvalue in parseResult[0][1]: # async queue ids
+                asyncList.append(rvalue.varName())
+            queue=""
+            async=""
+            if len(queueList):
+                queue = ",[{}]".format(",".join(queueList))
+            if len(asyncList):
+                async = ",[{}]".format(",".join(asyncList))
+            result += template.format(queue=queue,async=async)
+        return result, len(result), tempVars
+    def _handleIf(self):
+        """
+        :return: Empty string if no if was found
+        :rtype: str
+        """
+        condition = ""
+        for parseResult in translator.acc_clause_if.searchString(self.singleLineStatement(),1):
+            condition = parseResult[0].condition()
+        return condition
+    def gpufortFStr(self,indexHints=[],handleIf=True):
+        """
+        :param line: An excerpt from a Fortran file, possibly multiple lines
+        :type line: str
+        :return: If the text was changed at all
+        :rtype: bool
+        """
+        result = ""
+        allTempVars = set()
+        
+        ## Init 
+        if self.isInitDirective():
+            result += HIP_GCC_RT_ACC_INIT
+        
+        ## Enter region commands must come first
+        emitEnterRegion = self.isEnterDirective()
+        emitEnterRegion = emitEnterRegion or self.isDataDirective()
+        emitEnterRegion = emitEnterRegion or self.isParallelDirective()
+        emitEnterRegion = emitEnterRegion or self.isParallelLoopDirective() 
+        emitEnterRegion = emitEnterRegion or self.isKernelsDirective()
+        if emitEnterRegion:
+            result += HIP_GCC_RT_ACC_ENTER_REGION 
+
+        ## Other directives/clauses
+        # create
+        partialResult, transformed, tempVars = self._handleCreate()
+        if transformed:
+            result += partialResult
+            allTempVars.update(tempVars)
+        # no_create
+        partialResult, transformed, tempVars = self._handleNoCreate()
+        if transformed:
+            result += partialResult
+            allTempVars.update(tempVars)
+        # present
+        partialResult, transformed, tempVars = self._handlePresent()
+        if transformed:
+            result += partialResult
+            allTempVars.update(tempVars)
+        # default
+        partialResult, transformed, tempVars = self._handleDefault()
+        if transformed:
+            result += partialResult
+            allTempVars.update(tempVars)
+        # delete
+        partialResult, transformed, tempVars = self._handleDelete()
+        if transformed:
+            result += partialResult
+            allTempVars.update(tempVars)
+        # copy
+        partialResult, transformed, tempVars = self._handleCopy()
+        if transformed:
+            result += partialResult
+            allTempVars.update(tempVars)
+        # copyin
+        partialResult, transformed, tempVars = self._handleCopyin()
+        if transformed:
+            result += partialResult
+            allTempVars.update(tempVars)
+        # copyout
+        partialResult, transformed, tempVars = self._handleCopyout()
+        if transformed:
+            result += partialResult
+            allTempVars.update(tempVars)
+        
+        # update directive
+        partialResult, transformed, tempVars = self._handleUpdate()
+        if transformed:
+            result += partialResult
+            allTempVars.update(tempVars)
+        
+        ## wait
+        partialResult, transformed, _ = self._handleWait()
+        if transformed:
+            result += partialResult
+        
+        ## Exit region commands must come last
+        emitExitRegion = self.isExitDirective()
+        emitExitRegion = emitExitRegion or (self.isEndDirective() and self.findSubstring("kernels") and not self.findSubstring("loop"))
+        emitExitRegion = emitExitRegion or (self.isEndDirective() and self.findSubstring("parallel") and not self.findSubstring("loop"))
+        emitExitRegion = emitExitRegion or (self.isEndDirective() and self.findSubstring("data"))
+        if emitExitRegion:
+            result += HIP_GCC_RT_ACC_EXIT_REGION
+        if self.isShutdownDirective():
+            result += HIP_GCC_RT_ACC_SHUTDOWN
+       
+        # handle if 
+        condition = self._handleIf()
+        if len(condition) and handleIf:
+            result = "if ( {condition} ) then\n{result}\n endif".format(\
+                    condition=condition, result=result.rstrip("\n"))
+       
+        # introduce the new variables 
+        if len(allTempVars):
+            begin = self._parent.findLast(filter=lambda child : not child._included and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
+            if not begin is None:
+                indent = " "*(len(begin._lines[0]) - len(begin._lines[0].lstrip()))
+                for var in allTempVars:
+                     begin._epilog.add("{indent}type(c_ptr) :: {name}\n".format(indent=indent,name=var))
+            else:
+                indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
+                self._preamble.add("! TODO(gpufort): move declarations and use statement to appropriate place\n")
+                for var in allTempVars:
+                    self._preamble.add("{indent}type(c_ptr) :: {name}\n".format(indent=indent,name=var))
+
+        return result, len(result)
+
+class Acc2HipGccRTLoopKernel:
+    def gpufortFStr(self,indexHints=[]):
+        result = ""
+        if self.isParallelLoopDirective() or self.isKernelsLoopDirective():
+            partialResult, _ = Acc2HipGccRT.gpufortFStr(self,indexHints,handleIf=False) 
+            result = partialResult
+        partialResult, _ = STLoopKernel.gpufortFStr(self,indexHints) 
+        result += partialResult
+        if self.isParallelLoopDirective() or self.isKernelsLoopDirective():
+           result += "\n"+HIP_GCC_RT_ACC_EXIT_REGION
+       
+        # add wait call if necessary
+        queue = self._handleAsync(None,"")
+        if not len(queue):
+            result += "\n" + HIP_GCC_RT_ACC_WAIT.format(queue=queue,async="")
+
+        # wrap in ifdef if necessary
+        condition = self._handleIf()
+        if len(condition):
+            result = "if ( {condition} ) then\n{result}\nelse\n {original}\n endif".format(\
+                    condition=condition, result=result.rstrip("\n"), original="".join(self._lines).rstrip("\n"))
+        return result, len(result)

@@ -1,9 +1,28 @@
+class AccBackendBase():
+    def __init__(self,stnode):
+        self._stnode = stnode
+    def gpufortFStr():
+        assert False, "Not implemented!"
+
+ACC_BACKENDS             = {} 
+ACC_LOOP_KERNEL_BACKENDS = {} 
+
+def registerAccBackend(name,directiveGeneratorClass,loopKernelGeneratorClass,runtimeModuleName):
+    global SUPPORTED_DESTINATION_DIALECTS
+    global RUNTIME_MODULE_NAMES
+    global ACC_BACKENDS
+    global ACC_LOOP_KERNEL_BACKENDS
+    
+    if not name in SUPPORTED_DESTINATION_DIALECTS:
+        SUPPORTED_DESTINATION_DIALECTS.append(name)
+    RUNTIME_MODULE_NAMES[name]     = runtimeModuleName
+    ACC_BACKENDS[name]             = directiveGeneratorClass 
+    ACC_LOOP_KERNEL_BACKENDS[name] = loopKernelGeneratorClass
+
 exec(open("{0}/acc_backends/scanner_tree_acc2hipgpufortrt.py.in".format(scannerDir)).read())
 exec(open("{0}/acc_backends/scanner_tree_acc2omp.py.in".format(scannerDir)).read())
 
-class STAccDirective(STDirective,\
-        Acc2HipGpufortRT,\
-        Acc2Omp):
+class STAccDirective(STDirective):
     """
     This class has the functionality of a kernel if the stored lines 
     contain a parallel or kernels directive.
@@ -89,14 +108,9 @@ class STAccDirective(STDirective,\
     __repr__ = __str__ 
     def gpufortFStr(self,indexHints=[]):
         checkedDialect = checkDestinationDialect(DESTINATION_DIALECT)
-        if checkedDialect == "hip-gpufort-rt":
-            return Acc2HipGpufortRT.gpufortFStr(self,indexHints)
-        else:
-            return Acc2Omp.gpufortFStr(self,indexHints)
+        return ACC_BACKENDS[checkedDialect](self).gpufortFStr(indexHints)
 
-class STAccLoopKernel(STAccDirective,STLoopKernel,\
-        Acc2HipGpufortRTLoopKernel,\
-        Acc2OmpLoopKernel):
+class STAccLoopKernel(STAccDirective,STLoopKernel):
     def __init__(self,parent,lineno,lines,directiveNo):
         STAccDirective.__init__(self,parent,lineno,lines,directiveNo)
         STLoopKernel.__init__(self,parent,lineno,lines)
@@ -108,11 +122,8 @@ class STAccLoopKernel(STAccDirective,STLoopKernel,\
     def gpufortFStr(self,indexHints=[],destinationDialect=""):
         """
         :param destinationDialect: allows to override default if this kernel
-                                   should be exported to another backend.
+                                   should be translated by another backend.
         """
         checkedDialect = checkDestinationDialect(\
             DESTINATION_DIALECT if not len(destinationDialect) else destinationDialect)
-        if checkedDialect == "hip-gpufort-rt":
-            return Acc2HipGpufortRTLoopKernel.gpufortFStr(self,indexHints)
-        else:
-            return Acc2OmpLoopKernel.gpufortFStr(self,indexHints)
+        return ACC_LOOP_KERNEL_BACKENDS[checkedDialect](self).gpufortFStr(indexHints)

@@ -53,7 +53,7 @@ class TTAccClauseCopyout(TTSimpleMapping):
     pass
 class TTAccClauseCreate(TTSimpleMapping):
     pass
-class TTAccClauseNoCreate(TTSimpleMapping):
+class TTAccClauseNo_create(TTSimpleMapping):
     pass
 class TTAccClausePresent(TTSimpleMapping):
     pass
@@ -118,7 +118,7 @@ class TTAccClauseWait(TTNode):
     def _assignFields(self,tokens):
         self._expressions = list(tokens[0])
     def expressions(self):
-        return makeFStr(self._expressions)
+        return [makeFStr(expr) for expr in self._expressions]
 class TTAccClauseAsync(TTNode):
     def _assignFields(self,tokens):
         self._expression = tokens[0]
@@ -179,7 +179,7 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
     def createAllocVars(self):
         return self._handleSimpleMapping(TTAccClauseCreate)
     def no_createVars(self):
-        return self._handleSimpleMapping(TTAccClauseNoCreate)
+        return self._handleSimpleMapping(TTAccClauseNo_create)
     def presentVars(self):
         return self._handleSimpleMapping(TTAccClausePresent)
     def copyMapToFromVars(self):
@@ -550,7 +550,7 @@ acc_clause_copyin.setParseAction(TTAccClauseCopyin)
 acc_clause_copyout.setParseAction(TTAccClauseCopyout)
 
 acc_clause_create.setParseAction(TTAccClauseCreate)
-acc_clause_no_create.setParseAction(TTAccClauseNoCreate)
+acc_clause_no_create.setParseAction(TTAccClauseNo_create)
 acc_clause_present.setParseAction(TTAccClausePresent)
 acc_clause_deviceptr.setParseAction(TTAccClauseDeviceptr)
 acc_clause_attach.setParseAction(TTAccClauseAttach)

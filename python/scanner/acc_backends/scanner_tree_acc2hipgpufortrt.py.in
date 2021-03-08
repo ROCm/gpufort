@@ -268,7 +268,7 @@ class Acc2HipGpufortRT:
 
         return result, len(result)
 
-class Acc2HipGpufortRTLoopKernel:
+class AccLoopKernel2HipGpufortRT:
     def gpufortFStr(self,indexHints=[]):
         result = ""
         if self.isParallelLoopDirective() or self.isKernelsLoopDirective():
@@ -290,3 +290,5 @@ class Acc2HipGpufortRTLoopKernel:
             result = "if ( {condition} ) then\n{result}\nelse\n {original}\n endif".format(\
                     condition=condition, result=result.rstrip("\n"), original="".join(self._lines).rstrip("\n"))
         return result, len(result)
+
+registerAccBackend("hip-gpufort-rt",AccLoopKernel2HipGpufortRT,AccLoopKernel2HipGpufortRT,"openacc_gomp")

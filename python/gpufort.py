@@ -35,9 +35,6 @@ def createIndex(searchDirs,filePath,indexFile):
         return indexer.resolveDependencies(context,searchedFiles=[ filePath ])
 
 def translateFortranSource(fortranFilePath,stree,index,wrapInIfdef):
-    """
-    Generate an object tree (OT). 
-    """
     # derive code line groups from original tree
     groups = scanner.groupObjects(stree)
     # first pass to update some scanner tree nodes
@@ -75,10 +72,9 @@ def translateFortranSource(fortranFilePath,stree,index,wrapInIfdef):
     logger = logging.getLogger('')
     logger.info(msg) ; print(msg)
 
-# just include the config to overwrite defaults (python file too)
 def configAddCommandLineArguments(parser):
     """
-    The user can add arguments to the parser here.
+    The user can add arguments to the command line argument parser here.
     """
     pass
 
@@ -141,18 +137,18 @@ def parseCommandLineArguments():
     global LOG_LEVEL
     
     # parse command line arguments
-    parser = argparse.ArgumentParser(description='Extract HIP kernels from Fortran + CUF/OpenACC code.')
+    parser = argparse.ArgumentParser(description="S2S translation tool for CUDA Fortran and Fortran+X")
     
-    parser.add_argument('input', help="The input file.", type=argparse.FileType("r"))
-    parser.add_argument('-o,--output', help="The output file. Interface module and HIP C++ implementation are named accordingly", default=sys.stdout, required=False, type=argparse.FileType("w"))
-    parser.add_argument('-d,--search-dirs', dest="searchDirs", help="Module search dir", nargs="*",  required=False, default=[], type=str)
-    parser.add_argument('-i,--index', dest="index", help="Pregenerated JSON index file. If this option is used, the '-d,--search-dirs' switch is ignored.", required=False, default=None, type=argparse.FileType("r"))
-    parser.add_argument('-w,--wrap-in-ifdef',dest="wrapInIfdef",action="store_true",help="Wrap converted lines into ifdef in host code.")
-    parser.add_argument('-k,--only-generate-kernels',dest="onlyGenerateKernels",action="store_true",help="Only generate kernels; do not modify host code.")
-    parser.add_argument('-m,--only-modify-host-code',dest="onlyModifyHostCode",action="store_true",help="Only modify host code; do not generate kernels.")
-    parser.add_argument('-E,--destination-dialect',dest="destinationDialect",type=str,help="One of: {}".format(scanner.DESTINATION_DIALECT_2_RUNTIME_MODULE.keys()))
-    parser.add_argument('--log-level',dest="logLevel",required=False,type=str,default="",help="Set log level. Overrides config value.")
-    parser.add_argument('--cublas-v2',dest="cublasV2",action="store_true",help="Assume cublas v2 function signatures that use a handle. Overrides config value.")
+    parser.add_argument("input", help="The input file.", type=argparse.FileType("r"))
+    parser.add_argument("-o,--output", help="The output file. Interface module and HIP C++ implementation are named accordingly", default=sys.stdout, required=False, type=argparse.FileType("w"))
+    parser.add_argument("-d,--search-dirs", dest="searchDirs", help="Module search dir", nargs="*",  required=False, default=[], type=str)
+    parser.add_argument("-i,--index", dest="index", help="Pregenerated JSON index file. If this option is used, the '-d,--search-dirs' switch is ignored.", required=False, default=None, type=argparse.FileType("r"))
+    parser.add_argument("-w,--wrap-in-ifdef",dest="wrapInIfdef",action="store_true",help="Wrap converted lines into ifdef in host code.")
+    parser.add_argument("-k,--only-generate-kernels",dest="onlyGenerateKernels",action="store_true",help="Only generate kernels; do not modify host code.")
+    parser.add_argument("-m,--only-modify-host-code",dest="onlyModifyHostCode",action="store_true",help="Only modify host code; do not generate kernels.")
+    parser.add_argument("-E,--destination-dialect",dest="destinationDialect",default=None,type=str,help="One of: {}".format(", ".join(scanner.SUPPORTED_DESTINATION_DIALECTS)))
+    parser.add_argument("--log-level",dest="logLevel",required=False,type=str,default="",help="Set log level. Overrides config value.")
+    parser.add_argument("--cublas-v2",dest="cublasV2",action="store_true",help="Assume cublas v2 function signatures that use a handle. Overrides config value.")
     parser.set_defaults(overwriteExisting=True,wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyHostCode=False)
     configAddCommandLineArguments(parser)
     args = parser.parse_args()
@@ -196,17 +192,15 @@ if __name__ == "__main__":
     # read config and command line arguments
     parseConfig()
     args = parseCommandLineArguments()
-    scanner.DESTINATION_DIALECT = \
-      scanner.checkDestinationDialect(args.destinationDialect)
-    
-    inputFilePath    = os.path.abspath(args.input.name)
-    outputFilePrefix = ".".join(inputFilePath.split(".")[:-1])
-    basename         =  os.path.basename(outputFilePrefix)
+    inputFilePath = os.path.abspath(args.input.name)
     
     # init logging
     initLogging(inputFilePath)
 
     # parse file and create index in parallel
+    if args.destinationDialect is not None:
+        scanner.DESTINATION_DIALECT = \
+          scanner.checkDestinationDialect(args.destinationDialect)
     stree = None
     index = []
     with multiprocessing.Pool(processes=2) as pool: 
@@ -219,13 +213,14 @@ if __name__ == "__main__":
    
     # extract kernels
     if not args.onlyModifyHostCode:
-       kernelsToConvertToHip = ["*"] # all of them
-       if "omp" in scanner.DESTINATION_DIALECT: 
-           kernelsToConvertToHip = [] # empty list means none
-           kernelsToConvertToHip += scanner.KERNELS_TO_CONVERT_TO_HIP
+       outputFilePrefix = ".".join(inputFilePath.split(".")[:-1])
+       basename         =  os.path.basename(outputFilePrefix)
+       if "hip" in scanner.DESTINATION_DIALECT: 
+           kernelsToConvertToHip = ["*"]
+       else:
+           kernelsToConvertToHip = scanner.KERNELS_TO_CONVERT_TO_HIP
        fort2hip.generateHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename)
 
-    # could be done in parallel again:
     # modify original file
     if not args.onlyGenerateKernels:
         translateFortranSource(inputFilePath,stree,index,args.wrapInIfdef) 

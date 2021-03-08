@@ -18,8 +18,9 @@ import pyparsingtools
 
 SCANNER_ERROR_CODE = 1000
 #SUPPORTED_DESTINATION_DIALECTS = ["omp","hip-gpufort-rt","hip-gcc-rt","hip-hpe-rt","hip"]
-SUPPORTED_DESTINATION_DIALECTS = ["omp","hip-gpufort-rt"]
-    
+SUPPORTED_DESTINATION_DIALECTS = []
+RUNTIME_MODULE_NAMES = {}
+
 # dirty hack that allows us to load independent versions of the grammar module
 #from grammar import *
 CASELESS    = True
@@ -39,11 +40,6 @@ def checkDestinationDialect(destinationDialect):
                 destinationDialect,", ".join(SUPPORTED_DESTINATION_DIALECTS))
         logging.getLogger("").error(msg)
         sys.exit(SCANNER_ERROR_CODE)
-
-def accRuntimeModuleName():
-    global DESTINATION_DIALECT
-    global DESTINATION_DIALECT_2_RUNTIME_MODULE
-    return DESTINATION_DIALECT_2_RUNTIME_MODULE[DESTINATION_DIALECT]
 
 def handleIncludeStatements(fortranFilePath,lines):
     """
@@ -421,13 +417,18 @@ def postProcessAcc(stree,hipModuleName):
     Add use statements as well as handles plus their creation and destruction for certain
     math libraries.
     """
+    global DESTINATION_DIALECT
+    global RUNTIME_MODULE_NAMES
+    
     # acc detection
     directives = stree.findAll(filter=lambda node: isinstance(node,STAccDirective), recursively=True)
     for directive in directives:
          stnode = directive._parent.findFirst(filter=lambda child : type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
          if not stnode is None:
              indent = " "*(len(stnode.lines()[0]) - len(stnode.lines()[0].lstrip()))
-             stnode._preamble.add("{0}use iso_c_binding\n{0}use {1}\n".format(indent,accRuntimeModuleName()))
+             accRuntimeModuleName = RUNTIME_MODULE_NAMES[DESTINATION_DIALECT]
+             if accRuntimeModuleName is not None and len(accRuntimeModuleName):
+                 stnode._preamble.add("{0}use iso_c_binding\n{0}use {1}\n".format(indent,accRuntimeModuleName))
     
 def postProcessCuf(stree,hipModuleName):
     """

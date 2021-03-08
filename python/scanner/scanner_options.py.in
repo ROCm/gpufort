@@ -2,13 +2,6 @@
 SOURCE_DIALECTS     = ["cuf","acc"] # one of ["acc","cuf","omp"]
 DESTINATION_DIALECT = "omp"         # one of ["omp","hip-runtime-rt"]
 
-DESTINATION_DIALECT_2_RUNTIME_MODULE = {
-      "omp" : None,
-      "hip-gpufort-rt" : "gpufort_acc_runtime",
-      "hip-gcc-rt"     : "openacc_gomp",
-      "hip"            : "hipfort"
-    }
-
 KERNELS_TO_CONVERT_TO_HIP = [] # add line number here (might change if snippets are included included); check log to find actual line number
 
 LOOP_VARIABLES="integer :: {}".format(",".join(["_"+chr(ord("a")+i) for i in range(0,20) ])) # integer :: _a,_b,_c,_d,...

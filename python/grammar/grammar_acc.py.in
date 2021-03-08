@@ -48,7 +48,7 @@ acc_clause_collapse         = COLLAPSE        + LPAR + integer + RPAR
 acc_clause_self             = SELF            + LPAR + arithmeticLogicalExpression + RPAR
 acc_clause_bind             = BIND            + LPAR + identifier + RPAR
 acc_clause_tile             = TILE            + LPAR + Group(integer + Suppress(",") + integer) + RPAR
-acc_clause_wait             = WAIT            + Optional(accVarList, default=[])
+acc_clause_wait             = WAIT            + Optional(delimitedList(arithmeticExpression), default=[])
 acc_clause_async            = ASYNC           + Optional(LPAR + rvalue + RPAR, default = CLAUSE_VALUE_NOT_SPECIFIED) 
 
 acc_clause_seq,acc_clause_auto,acc_clause_independent,acc_clause_read,acc_clause_write,acc_clause_capture,acc_clause_nohost,acc_clause_finalize,acc_clause_if_present = makeCaselessLiteral("seq,auto,independent,read,write,capture,nohost,finalize,if_present",suppress=False)

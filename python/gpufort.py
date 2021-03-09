@@ -139,7 +139,7 @@ def parseCommandLineArguments():
     # parse command line arguments
     parser = argparse.ArgumentParser(description="S2S translation tool for CUDA Fortran and Fortran+X")
     
-    parser.add_argument("input",help="The input file.",type=argparse.FileType("r"))
+    parser.add_argument("input",help="The input file.",type=argparse.FileType("r"),nargs="?",default=None)
     parser.add_argument("-o,--output", help="The output file. Interface module and HIP C++ implementation are named accordingly", default=sys.stdout, required=False, type=argparse.FileType("w"))
     parser.add_argument("-d,--search-dirs", dest="searchDirs", help="Module search dir", nargs="*",  required=False, default=[], type=str)
     parser.add_argument("-i,--index", dest="index", help="Pregenerated JSON index file. If this option is used, the '-d,--search-dirs' switch is ignored.", required=False, default=None, type=argparse.FileType("r"))
@@ -189,6 +189,10 @@ def parseCommandLineArguments():
     if args.cublasV2:
         scanner.CUBLAS_VERSION = 2
         translator.CUBLAS_VERSION = 2
+
+    if args.input is None:
+        print("ERROR: no input file",file=sys.stderr)
+        sys.exit(2)
     return args
 
 def initLogging(inputFilePath):

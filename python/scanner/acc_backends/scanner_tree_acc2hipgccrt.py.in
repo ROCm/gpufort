@@ -9,11 +9,11 @@ HIP_GCC_RT_ACC_UPDATE_DEVICE       = "acc_update_device({var})"
 HIP_GCC_RT_ACC_UPDATE_DEVICE_ASYNC = "acc_update_device_async({var}{async})"
 HIP_GCC_RT_ACC_UPDATE_MAP = { # [self][async]
   False: { False: HIP_GCC_RT_ACC_UPDATE_DEVICE, True: HIP_GCC_RT_ACC_UPDATE_DEVICE_ASYNC },
-  True:  { False: HIP_GCC_RT_ACC_SELF,          True: HIP_GCC_RT_ACC_SELF_ASYNC          }
+  True:  { False: HIP_GCC_RT_ACC_UPDATE_SELF,   True: HIP_GCC_RT_ACC_UPDATE_SELF_ASYNC   }
 }
 # wait
 HIP_GCC_RT_ACC_WAIT_ALL          = "acc_wait_all()"
-HIP_GCC_RT_ACC_WAIT_ALL_AYNC     = "acc_wait_all_async({async})"
+HIP_GCC_RT_ACC_WAIT_ALL_ASYNC    = "acc_wait_all_async({async})"
 HIP_GCC_RT_ACC_WAIT              = "acc_wait({arg})"
 HIP_GCC_RT_ACC_WAIT_ASYNC        = "acc_wait_async({arg}{async})"
 #HIP_GCC_RT_ACC_WAIT_DEVICE       = "call acc_wait_device({arg}{device})"
@@ -35,41 +35,41 @@ HIP_GCC_RT_ACC_DELETE_MAP = { # [finalize][async]
 HIP_GCC_RT_ACC_DEVICEPTR         = "acc_deviceptr({var})" # usually not available in openacc.f90
 # GCC LIBGOMP specific internal routines for /acc enter/exit data and acc data
 HIP_GCC_RT_GOACC_ENTER_EXIT_DATA = "goacc_enter_exit_data({device}{mappings}{async}{wait})"
-HIP_GCC_RT_GOACC_START_DATA      = "goacc_data_start({device}{mappings}{async})"
-HIP_GCC_RT_GOACC_END_DATA        = "goacc_data_end()"
+HIP_GCC_RT_GOACC_DATA_START      = "goacc_data_start({device}{mappings}{async})"
+HIP_GCC_RT_GOACC_DATA_END        = "goacc_data_end()"
 # GCC LIBGOMP specific helper functions
-HIP_GCC_RT_MAP_CREATE            = "map_create({var})"
-HIP_GCC_RT_MAP_NO_CREATE         = "map_no_create({var})"
-HIP_GCC_RT_MAP_DELETE            = "map_delete({var})"
-HIP_GCC_RT_MAP_COPYIN            = "map_copyin({var})"
-HIP_GCC_RT_MAP_COPY              = "map_copy({var})"
-HIP_GCC_RT_MAP_COPYOUT           = "map_copyout({var})"
-HIP_GCC_RT_MAP_PRESENT           = "map_present({var})"
+HIP_GCC_RT_MAP_CREATE            = "goacc_map_create({var})"
+HIP_GCC_RT_MAP_NO_CREATE         = "goacc_map_no_create({var})"
+HIP_GCC_RT_MAP_DELETE            = "goacc_map_delete({var})"
+HIP_GCC_RT_MAP_COPYIN            = "goacc_map_copyin({var})"
+HIP_GCC_RT_MAP_COPY              = "goacc_map_copy({var})"
+HIP_GCC_RT_MAP_COPYOUT           = "goacc_map_copyout({var})"
+HIP_GCC_RT_MAP_PRESENT           = "goacc_map_present({var})"
 
-class Acc2HipGccRT:
-    def createMappings(self,parseResult):
+class Acc2HipGccRT(AccBackendBase):
+    def _createMappings(self,parseResult,prefix=",mappings="):
         mappings=[]
         for clause in translator.findAll(parseResult,translator.TTAccClausePresent):
-            mappings += [HIP_GCC_RT_MAP_PRESENT.format(var=expr) for expr in clause.expressions()]
-        for clause in translator.findAll(parseResult,TTAccClauseCreate):
-            mappings += [HIP_GCC_RT_MAP_CREATE.format(var=expr) for expr in clause.expressions()]
-        for clause in translator.findAll(parseResult,TTAccClauseNo_create):
-            mappings += [HIP_GCC_RT_MAP_NO_CREATE.format(var=expr) for expr in clause.expressions()]
-        for clause in translator.findAll(parseResult,TTAccClauseDelete):
-            mappings += [HIP_GCC_RT_MAP_DELETE.format(var=expr) for expr in clause.expressions()]
-        for clause in translator.findAll(parseResult,TTAccClauseCopy):
-            mappings += [HIP_GCC_RT_MAP_COPY.format(var=expr) for expr in clause.expressions()]
-        for clause in translator.findAll(parseResult,TTAccClauseCopyin):
-            mappings += [HIP_GCC_RT_MAP_COPYIN.format(var=expr) for expr in clause.expressions()]
-        for clause in translator.findAll(parseResult,TTAccClauseCopyout):
-            mappings += [HIP_GCC_RT_MAP_COPYOUT.format(var=expr) for expr in clause.expressions()]
-        for clause in translator.findAll(parseResult,TTAccClausePresent):
-            mappings += [HIP_GCC_RT_MAP_PRESENT.format(var=expr) for expr in clause.expressions()]
+            mappings += [HIP_GCC_RT_MAP_PRESENT.format(var=expr) for expr in clause.varExpressions()]
+        for clause in translator.findAll(parseResult,translator.TTAccClauseCreate):
+            mappings += [HIP_GCC_RT_MAP_CREATE.format(var=expr) for expr in clause.varExpressions()]
+        for clause in translator.findAll(parseResult,translator.TTAccClauseNo_create):
+            mappings += [HIP_GCC_RT_MAP_NO_CREATE.format(var=expr) for expr in clause.varExpressions()]
+        for clause in translator.findAll(parseResult,translator.TTAccClauseDelete):
+            mappings += [HIP_GCC_RT_MAP_DELETE.format(var=expr) for expr in clause.varExpressions()]
+        for clause in translator.findAll(parseResult,translator.TTAccClauseCopy):
+            mappings += [HIP_GCC_RT_MAP_COPY.format(var=expr) for expr in clause.varExpressions()]
+        for clause in translator.findAll(parseResult,translator.TTAccClauseCopyin):
+            mappings += [HIP_GCC_RT_MAP_COPYIN.format(var=expr) for expr in clause.varExpressions()]
+        for clause in translator.findAll(parseResult,translator.TTAccClauseCopyout):
+            mappings += [HIP_GCC_RT_MAP_COPYOUT.format(var=expr) for expr in clause.varExpressions()]
+        for clause in translator.findAll(parseResult,translator.TTAccClausePresent):
+            mappings += [HIP_GCC_RT_MAP_PRESENT.format(var=expr) for expr in clause.varExpressions()]
         if len(mappings):
-            return "mappings=["+",".join(mappings)+"]"
+            return prefix+"["+",".join(mappings)+"]"
         else:
             return ""
-    def handleAsync(self,parseResult,prefix="async="):
+    def _handleAsync(self,parseResult,prefix=",async="):
         clause = translator.findFirst(parseResult,translator.TTAccClauseAsync)
         if clause is not None:
             value = clause.expression()
@@ -79,7 +79,7 @@ class Acc2HipGccRT:
                 return prefix+value
         else:
             return ""
-    def handleWait(self,parseResult,prefix="wait=",wrapInBrackets=True):
+    def _handleWait(self,parseResult,prefix=",wait=",wrapInBrackets=True):
         clause = translator.findFirst(parseResult,translator.TTAccClauseWait)
         if clause is not None:
             result = ",".join(clause.expressions())
@@ -88,7 +88,7 @@ class Acc2HipGccRT:
             return prefix+result
         else:
             return ""
-    def handleDevice(self,parseResult):
+    def _handleDevice(self,parseResult):
         clause = translator.findFirst(parseResult,translator.TTAccClauseDevice)
         if clause is not None:
             result = ",".join(clause.expressions())
@@ -98,70 +98,73 @@ class Acc2HipGccRT:
         else:
             return ""
     def gpufortFStr(self,indexHints=[]):
-        fSnippet = "".join(self._lines)
+        fSnippet = "".join(self._stnode._lines)
         result = ""
         try:
            accDirective = translator.acc_data | translator.acc_enter_data | translator.acc_exit_data | translator.acc_update |\
-             translator.acc_routine | translator.acc_declare | translator.ACC_END_DATA
-           parseResult = accDirective.parseString(self._lines)[0]
-           if   type(parseResult) is TTAccData:
-              result = HIP_GCC_RT_GOACC_START_DATA.format(\
-                device  = "acc_device_default",\
-                mappings= self.createMappings(parseResult),\
-                async   = self.handleAsync(parseResult))
-           elif type(parseResult) is TTAccEnterData or\
-                type(parseResult) is TTAccExitData: 
+             translator.acc_routine | translator.acc_declare | translator.ACC_END_DATA |\
+             translator.acc_kernels | translator.acc_parallel | translator.acc_kernels_loop | translator.acc_parallel_loop
+           parseResult = accDirective.parseString(fSnippet)[0]
+           #
+           if   type(parseResult) in [translator.TTAccData,\
+                   translator.TTAccParallel,translator.TTAccParallelLoop,
+                   translator.TTAccKernels,translator.TTAccKernelsLoop]:
+              result = HIP_GCC_RT_GOACC_DATA_START.format(\
+                device   = "acc_device_default",\
+                mappings = self._createMappings(parseResult),\
+                async    = self._handleAsync(parseResult))
+           elif type(parseResult) in [translator.TTAccEnterData,translator.TTAccExitData]: 
               result = HIP_GCC_RT_GOACC_ENTER_EXIT_DATA.format(\
                 device   = "acc_device_default",\
-                mappings = self.createMappings(parseResult),\
-                async    = self.handleAsync(parseResult),\
-                wait     = self.handleWait(parseResult))
-           elif type(parseResult) is TTAccEndData: 
-              result = HIP_GCC_RT_GOACC_END_DATA
-           elif type(parseResult) is TTAccWait:
-              arg   = self.handleWait(parseResult,"",False)
-              async = self.handleAsync(parseResult,"")
+                mappings = self._createMappings(parseResult),\
+                async    = self._handleAsync(parseResult),\
+                wait     = self._handleWait(parseResult))
+           elif type(parseResult) is translator.TTAccEndData: 
+              result = HIP_GCC_RT_GOACC_DATA_END
+           elif type(parseResult) is translator.TTAccWait:
+              arg   = self._handleWait(parseResult,"",False)
+              async = self._handleAsync(parseResult)
               result = HIP_GCC_RT_ACC_WAIT_MAP[len(arg)][len(async)].format(\
                 arg=arg,async=async)
               pass
-           elif type(parseResult) is TTAccUpdate: 
-              self   = self.handleSelf(parseResult)
-              device = self.handleDevice(parseResult) 
-              async = self.handleAsync(parseResult,"")
-              result = HIP_GCC_RT_ACC_UPDATE_MAP[len(self)][len(async)].format(\
+           elif type(parseResult) is translator.TTAccUpdate: 
+              host   = self._handleSelf(parseResult)
+              device = self._handleDevice(parseResult) 
+              async  = self._handleAsync(parseResult,"")
+              result = HIP_GCC_RT_ACC_UPDATE_MAP[len(host)][len(async)].format(\
                 arg=arg,async=async)
-           elif type(parseResult) is TTAccRoutine: 
+           elif type(parseResult) is translator.TTAccRoutine: 
               pass
-           elif type(parseResult) is TTAccDeclare:
+           elif type(parseResult) is translator.TTAccDeclare:
               pass
-           return "call "+result"\n", True 
+           return "call "+result+"\n", True 
         except Exception as e:
            print("failed: "+fSnippet) #TODO
            raise e
            return "", False 
 
-class AccLoopKernel2HipGccRT:
+class AccLoopKernel2HipGccRT(Acc2HipGccRT):
     def gpufortFStr(self,indexHints=[]):
-        #result = ""
-        #if self.isParallelLoopDirective() or self.isKernelsLoopDirective():
-        #    partialResult, _ = Acc2HipGccRT.gpufortFStr(self,indexHints,handleIf=False) 
-        #    result = partialResult
-        #partialResult, _ = STLoopKernel.gpufortFStr(self,indexHints) 
-        #result += partialResult
-        #if self.isParallelLoopDirective() or self.isKernelsLoopDirective():
-        #   result += "\n"+HIP_GCC_RT_ACC_EXIT_REGION
+        result = ""
+        stnode = self._stnode
+        if stnode.isParallelLoopDirective() or stnode.isKernelsLoopDirective():
+            partialResult, _ = Acc2HipGccRT.gpufortFStr(self,indexHints) #,handleIf=False) 
+            result = partialResult
+        partialResult, _ = STLoopKernel.gpufortFStr(stnode,indexHints) 
+        result += partialResult
+        if stnode.isParallelLoopDirective() or stnode.isKernelsLoopDirective():
+           result += "\n"+HIP_GCC_RT_GOACC_DATA_END
        
-        ## add wait call if necessary
+        # add wait call if necessary
         #queue = self._handleAsync(None,"")
         #if not len(queue):
-        #    result += "\n" + HIP_GCC_RT_ACC_WAIT.format(queue=queue,async="")
+        #    result += "\n" + HIP_GPUFORT_RT_ACC_WAIT.format(queue=queue,async="")
 
-        ## wrap in ifdef if necessary
+        # wrap in ifdef if necessary
         #condition = self._handleIf()
         #if len(condition):
         #    result = "if ( {condition} ) then\n{result}\nelse\n {original}\n endif".format(\
-        #            condition=condition, result=result.rstrip("\n"), original="".join(self._lines).rstrip("\n"))
+        #            condition=condition, result=result.rstrip("\n"), original="".join(stnode._lines).rstrip("\n"))
         return result, len(result)
-        return "", False
 
-registerAccBackend("hip-gcc-rt",AccLoopKernel2HipGccRT,AccLoopKernel2HipGccRT,"openacc_gomp")
+registerAccBackend("hip-gcc-rt",Acc2HipGccRT,AccLoopKernel2HipGccRT,"openacc_gomp")

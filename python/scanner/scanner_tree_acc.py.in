@@ -19,8 +19,10 @@ def registerAccBackend(name,directiveGeneratorClass,loopKernelGeneratorClass,run
     ACC_BACKENDS[name]             = directiveGeneratorClass 
     ACC_LOOP_KERNEL_BACKENDS[name] = loopKernelGeneratorClass
 
-exec(open("{0}/acc_backends/scanner_tree_acc2hipgpufortrt.py.in".format(scannerDir)).read())
 exec(open("{0}/acc_backends/scanner_tree_acc2omp.py.in".format(scannerDir)).read())
+
+exec(open("{0}/acc_backends/scanner_tree_acc2hipgpufortrt.py.in".format(scannerDir)).read())
+exec(open("{0}/acc_backends/scanner_tree_acc2hipgccrt.py.in".format(scannerDir)).read())
 
 class STAccDirective(STDirective):
     """

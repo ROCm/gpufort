@@ -29,7 +29,7 @@ exec(open("{0}/grammar.py".format(GRAMMAR_DIR)).read())
 scannerDir = os.path.dirname(__file__)
 exec(open("{0}/scanner_options.py.in".format(scannerDir)).read())
 exec(open("{0}/scanner_tree.py.in".format(scannerDir)).read())
-exec(open("{0}/scanner_tree_acc.py.in".format(scannerDir)).read())
+exec(open("{0}/openacc/scanner_tree_acc.py.in".format(scannerDir)).read())
 exec(open("{0}/scanner_groups.py.in".format(scannerDir)).read())
 
 def checkDestinationDialect(destinationDialect):

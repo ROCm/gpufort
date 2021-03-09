@@ -1,4 +1,4 @@
-class AccBackendBase():
+class AccBackendBase:
     def __init__(self,stnode):
         self._stnode = stnode
     def gpufortFStr():
@@ -19,10 +19,9 @@ def registerAccBackend(name,directiveGeneratorClass,loopKernelGeneratorClass,run
     ACC_BACKENDS[name]             = directiveGeneratorClass 
     ACC_LOOP_KERNEL_BACKENDS[name] = loopKernelGeneratorClass
 
-exec(open("{0}/acc_backends/scanner_tree_acc2omp.py.in".format(scannerDir)).read())
-
-exec(open("{0}/acc_backends/scanner_tree_acc2hipgpufortrt.py.in".format(scannerDir)).read())
-exec(open("{0}/acc_backends/scanner_tree_acc2hipgccrt.py.in".format(scannerDir)).read())
+exec(open("{0}/openacc/scanner_tree_acc2omp.py.in".format(scannerDir)).read())
+exec(open("{0}/openacc/scanner_tree_acc2hipgpufortrt.py.in".format(scannerDir)).read())
+exec(open("{0}/openacc/scanner_tree_acc2hipgccrt.py.in".format(scannerDir)).read())
 
 class STAccDirective(STDirective):
     """
@@ -124,7 +123,7 @@ class STAccLoopKernel(STAccDirective,STLoopKernel):
     def gpufortFStr(self,indexHints=[],destinationDialect=""):
         """
         :param destinationDialect: allows to override default if this kernel
-                                   should be translated by another backend.
+                                   should be translated via another backend.
         """
         checkedDialect = checkDestinationDialect(\
             DESTINATION_DIALECT if not len(destinationDialect) else destinationDialect)

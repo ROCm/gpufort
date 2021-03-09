@@ -15,11 +15,9 @@ def flattenList(items):
 
 # Object representation
 
-# We create an object tree because we want to preserve the scopes.
-# This allows us to lookup if a device variable
-# was defined in a higher-level scope
+# We create an object tree because we want to preserve scope.
 
-class Tagged():
+class Tagged:
     def tag(self):
         """
         Construct a tag that can be used to search the index.
@@ -33,7 +31,7 @@ class Tagged():
         recursiveParentLookup(self._parent)        
         return result
 
-class STNode():
+class STNode:
     def __init__(self,parent,lineno,lines=[]):
         self._lineno     = lineno
         self._lines      = lines

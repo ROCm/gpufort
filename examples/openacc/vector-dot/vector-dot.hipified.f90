@@ -1,8 +1,8 @@
 program main
 #ifdef __GPUFORT
-   use vector_dot_kernels
    use iso_c_binding
    use gpufort_acc_runtime
+   use vector_dot_kernels
    implicit none
 #else
    implicit none
@@ -11,8 +11,8 @@ program main
    integer :: i
 #ifdef __GPUFORT
    integer(4) :: x(N), y(N), res
-   type(c_ptr) :: x_d
    type(c_ptr) :: y_d
+   type(c_ptr) :: x_d
 
 #else
    integer(4) :: x(N), y(N), res

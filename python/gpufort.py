@@ -72,64 +72,24 @@ def translateFortranSource(fortranFilePath,stree,index,wrapInIfdef):
     logger = logging.getLogger('')
     logger.info(msg) ; print(msg)
 
-def configAddCommandLineArguments(parser):
-    """
-    The user can add arguments to the command line argument parser here.
-    """
-    pass
-
-def configAfterCommandLineParsing(args):
-    """
-    The user can work with parsed command line options here.
-    """
-    pass
-
-def parseConfig():
+def parseConfig(configFilePath):
     global LOG_LEVEL
-    global configAddCommandLineArguments
-    global configAfterCommandLineParsing
 
-    # DEFAULTS:
-    scanner.GPUFORT_IFDEF       = "__HIP" 
-    scanner.CUF_IFDEF           = "CUDA"
-    # cublas_v1 routines do not have an handle. cublas v2 routines do
-    scanner.CUBLAS_VERSION      = 1
-    translator.CUBLAS_VERSION   = 1
-    # look for integer (array) with this name; disable: leave empty string or comment out
-    translator.HINT_CUFFT_PLAN  = r"cufft_plan\w+"
-    # look for integer (array) with this name; disable: leave empty string or comment out
-    translator.HINT_CUDA_STREAM = r"stream|strm"
-    # logging
-    # Use one of 'FATAL','CRITICAL','ERROR','WARNING','WARN','INFO','DEBUG','DEBUG2','DEBUG3','NOTSET' 
-    LOG_LEVEL = logging.INFO
-    
-    # CUF options
-    scanner.HIP_MODULE_NAME="hipfort"
-    scanner.HIP_MATH_MODULE_PREFIX=scanner.HIP_MODULE_NAME+"_"
-
-    # ACC options
-    scanner.ACC_USE_COUNTERS=False
-    scanner.ACC_DEV_PREFIX=""
-    scanner.ACC_DEV_SUFFIX="_d"
-    
+    prolog = "global LOG_LEVEL"
+    epilog = ""
     try:
-        prolog="""global LOG_LEVEL
-global configAddCommandLineArguments
-global configAfterCommandLineParsing
-"""
-        epilog="""
-configAddCommandLineArguments = config_add_cl_arguments
-configAfterCommandLineParsing = config_after_cl_parsing
-"""
-        CONFIG_FILE=os.path.dirname(os.path.realpath(__file__))+"/config.py"
+        if configFilePath.strip()[0]=="/":
+            CONFIG_FILE = configFilePath
+        else:
+            CONFIG_FILE=os.path.dirname(os.path.realpath(__file__))+"/"+configFilePath
         exec(prolog + open(CONFIG_FILE).read()+ epilog)
         msg = "config file '{}' found and successfully parsed".format(CONFIG_FILE)
         logging.getLogger("").info(msg) ; print(msg)
     except FileNotFoundError:
-        msg = "no 'config.py' file found" 
+        msg = "no '{}' file found. Use defaults.".format(CONFIG_FILE)
         logging.warn(msg)
     except Exception as e:
-        msg = "failed to parse config file 'config.py'. REASON: {} (NOTE: prolog lines: {}). ABORT".format(str(e),len(prolog.split("\n")))
+        msg = "failed to parse config file '{}'. REASON: {} (NOTE: prolog lines: {}). ABORT".format(CONFIG_FILE,str(e),len(prolog.split("\n")))
         logging.getLogger("").error(msg) 
         sys.exit(1)
 
@@ -222,8 +182,8 @@ def initLogging(inputFilePath):
 
 if __name__ == "__main__":
     # read config and command line arguments
-    parseConfig()
     args = parseCommandLineArguments()
+    parseConfig(args.configFile.name)
     inputFilePath = os.path.abspath(args.input.name)
     
     # init logging

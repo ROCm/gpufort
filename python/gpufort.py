@@ -111,11 +111,9 @@ def parseCommandLineArguments():
     parser.add_argument("--cublas-v2",dest="cublasV2",action="store_true",help="Assume cublas v2 function signatures that use a handle. Overrides config value.")
     parser.add_argument("--print-config-defaults",dest="printConfigDefaults",action="store_true",help="Print config defaults. "+\
             "Config values can be overriden by providing a config file. A number of config values can be overwritten via this CLI.")
-    parser.add_argument("--config-file",type=argparse.FileType("r"),dest="configFile",help="Provide a config file.")
+    parser.add_argument("--config-file",default=None,type=argparse.FileType("r"),dest="configFile",help="Provide a config file.")
     parser.set_defaults(printConfigDefaults=False,overwriteExisting=True,wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyHostCode=False)
-    configAddCommandLineArguments(parser)
     args = parser.parse_args()
-    configAfterCommandLineParsing(args)
 
     if args.printConfigDefaults:
         gpufortPythonDir=os.path.dirname(os.path.realpath(__file__))
@@ -183,7 +181,8 @@ def initLogging(inputFilePath):
 if __name__ == "__main__":
     # read config and command line arguments
     args = parseCommandLineArguments()
-    parseConfig(args.configFile.name)
+    if args.configFile is not None:
+        parseConfig(args.configFile.name)
     inputFilePath = os.path.abspath(args.input.name)
     
     # init logging

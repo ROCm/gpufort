@@ -139,7 +139,7 @@ def parseCommandLineArguments():
     # parse command line arguments
     parser = argparse.ArgumentParser(description="S2S translation tool for CUDA Fortran and Fortran+X")
     
-    parser.add_argument("input", help="The input file.", type=argparse.FileType("r"))
+    parser.add_argument("input",help="The input file.",type=argparse.FileType("r"))
     parser.add_argument("-o,--output", help="The output file. Interface module and HIP C++ implementation are named accordingly", default=sys.stdout, required=False, type=argparse.FileType("w"))
     parser.add_argument("-d,--search-dirs", dest="searchDirs", help="Module search dir", nargs="*",  required=False, default=[], type=str)
     parser.add_argument("-i,--index", dest="index", help="Pregenerated JSON index file. If this option is used, the '-d,--search-dirs' switch is ignored.", required=False, default=None, type=argparse.FileType("r"))
@@ -149,11 +149,36 @@ def parseCommandLineArguments():
     parser.add_argument("-E,--destination-dialect",dest="destinationDialect",default=None,type=str,help="One of: {}".format(", ".join(scanner.SUPPORTED_DESTINATION_DIALECTS)))
     parser.add_argument("--log-level",dest="logLevel",required=False,type=str,default="",help="Set log level. Overrides config value.")
     parser.add_argument("--cublas-v2",dest="cublasV2",action="store_true",help="Assume cublas v2 function signatures that use a handle. Overrides config value.")
-    parser.set_defaults(overwriteExisting=True,wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyHostCode=False)
+    parser.add_argument("--print-config-defaults",dest="printConfigDefaults",action="store_true",help="Print config defaults. "+\
+            "Config values can be overriden by providing a config file. A number of config values can be overwritten via this CLI.")
+    parser.add_argument("--config-file",type=argparse.FileType("r"),dest="configFile",help="Provide a config file.")
+    parser.set_defaults(printConfigDefaults=False,overwriteExisting=True,wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyHostCode=False)
     configAddCommandLineArguments(parser)
     args = parser.parse_args()
     configAfterCommandLineParsing(args)
 
+    if args.printConfigDefaults:
+        gpufortPythonDir=os.path.dirname(os.path.realpath(__file__))
+        optionsFiles = [
+          "scanner/scanner_options.py.in",
+          "translator/translator_options.py.in",
+          "fort2hip/fort2hip_options.py.in",
+          "indexer/indexer_options.py.in",
+          "indexer/indexertools_options.py.in"
+        ]
+        print("\nCONFIGURABLE GPUFORT OPTIONS (DEFAULT VALUES):\n")
+        for optionsFile in optionsFiles:
+            prefix = optionsFile.split("/")[1].split("_")[0]
+            print("\n---- "+prefix+" -----------------------------")
+            with open(gpufortPythonDir+"/"+optionsFile) as f:
+                for line in f.readlines():
+                   if len(line.strip()):
+                       if line[0] not in [" ","#","}","]"]:
+                           print(prefix+"."+line,end="")
+                       else:
+                           print(line,end="")
+        print("\n\nEND OF CONFIGURABLE GPUFORT OPTIONS\n\n")
+        sys.exit(0)
     # mutually exclusive arguments
     if args.onlyGenerateKernels and args.onlyModifyHostCode:
         logging.getLogger("").error("switches '--only-generate-kernels' and 'only-modify-host-code' cannot be used at the same time.") 

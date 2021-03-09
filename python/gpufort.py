@@ -175,7 +175,7 @@ def parseCommandLineArguments():
                    if len(line.strip()):
                        if line[0] not in [" ","#","}","]"] and "=" in line:
                            parts = line.split("=")
-                           key   = prefix+"."+parts[0].rstrip().ljust(28)
+                           key   = (prefix+"."+parts[0].rstrip()).ljust(36)
                            value = parts[1].lstrip()
                            print(key+"= "+value,end="")
                        else:

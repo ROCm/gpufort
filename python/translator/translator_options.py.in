@@ -67,7 +67,6 @@ FORTRAN_TYPE_2_BYTES_MAP = {
   }
 }
 
-# one of "collapse", "collapse-always", "grid"
 LOOP_COLLAPSE_STRATEGY="collapse" # One of "collapse","collapse-always","grid"
 
 # options for CUF

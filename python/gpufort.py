@@ -166,18 +166,21 @@ def parseCommandLineArguments():
           "indexer/indexer_options.py.in",
           "indexer/indexertools_options.py.in"
         ]
-        print("\nCONFIGURABLE GPUFORT OPTIONS (DEFAULT VALUES):\n")
+        print("\nCONFIGURABLE GPUFORT OPTIONS (DEFAULT VALUES):")
         for optionsFile in optionsFiles:
             prefix = optionsFile.split("/")[1].split("_")[0]
             print("\n---- "+prefix+" -----------------------------")
             with open(gpufortPythonDir+"/"+optionsFile) as f:
                 for line in f.readlines():
                    if len(line.strip()):
-                       if line[0] not in [" ","#","}","]"]:
-                           print(prefix+"."+line,end="")
+                       if line[0] not in [" ","#","}","]"] and "=" in line:
+                           parts = line.split("=")
+                           key   = prefix+"."+parts[0].rstrip().ljust(28)
+                           value = parts[1].lstrip()
+                           print(key+"= "+value,end="")
                        else:
                            print(line,end="")
-        print("\n\nEND OF CONFIGURABLE GPUFORT OPTIONS\n\n")
+        print("")
         sys.exit(0)
     # mutually exclusive arguments
     if args.onlyGenerateKernels and args.onlyModifyHostCode:
@@ -189,7 +192,7 @@ def parseCommandLineArguments():
     if args.cublasV2:
         scanner.CUBLAS_VERSION = 2
         translator.CUBLAS_VERSION = 2
-
+    # check if input is set
     if args.input is None:
         print("ERROR: no input file",file=sys.stderr)
         sys.exit(2)

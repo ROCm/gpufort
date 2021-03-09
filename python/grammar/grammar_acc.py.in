@@ -122,9 +122,9 @@ acc_parallel_loop_region = acc_parallel_loop + annotatedDoLoop + Optional(ACC_EN
 acc_kernels_loop_region  = acc_kernels_loop  + annotatedDoLoop + Optional(ACC_END_KERNELS_LOOP)
 
 # manual grouping
-accDirective = acc_kernels_loop | acc_parallel_loop | acc_kernels | acc_parallel | acc_wait | acc_host_data | acc_data | acc_enter_data | acc_exit_data | acc_loop | acc_routine | acc_atomic | acc_update | acc_serial | acc_cache | acc_declare
-
 accSimpleDirective = acc_host_data | acc_data | acc_enter_data | acc_exit_data | acc_loop | acc_routine | acc_declare | ACC_END_DATA # TBC
+
+accHostDirective = acc_kernels_loop | acc_parallel_loop | acc_kernels | acc_parallel | accSimpleDirective | ACC_END_DATA | ACC_END_HOST_DATA
 
 accKernelBodyDirective = acc_loop | acc_serial_region | acc_atomic_region | acc_cache
 

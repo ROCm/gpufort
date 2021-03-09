@@ -16,8 +16,8 @@ HIP_GCC_RT_ACC_WAIT_ALL          = "acc_wait_all()"
 HIP_GCC_RT_ACC_WAIT_ALL_ASYNC    = "acc_wait_all_async({async})"
 HIP_GCC_RT_ACC_WAIT              = "acc_wait({arg})"
 HIP_GCC_RT_ACC_WAIT_ASYNC        = "acc_wait_async({arg}{async})"
-#HIP_GCC_RT_ACC_WAIT_DEVICE       = "call acc_wait_device({arg}{device})"
-#HIP_GCC_RT_ACC_WAIT_DEVICE_ASYNC = "call acc_wait_device({arg}{async}{device})"
+#HIP_GCC_RT_ACC_WAIT_DEVICE       = "acc_wait_device({arg}{device})"
+#HIP_GCC_RT_ACC_WAIT_DEVICE_ASYNC = "acc_wait_device({arg}{async}{device})"
 HIP_GCC_RT_ACC_WAIT_MAP = { # [arg][async]
   False: { False: HIP_GCC_RT_ACC_WAIT_ALL, True: HIP_GCC_RT_ACC_WAIT_ALL_ASYNC },
   True:  { False: HIP_GCC_RT_ACC_WAIT,     True: HIP_GCC_RT_ACC_WAIT_ASYNC     }
@@ -97,14 +97,17 @@ class Acc2HipGccRT(AccBackendBase):
             return prefix+result
         else:
             return ""
-    def gpufortFStr(self,indexHints=[]):
+    def _handleIf(self,parseResult):
+        clause = translator.findFirst(parseResult,translator.TTAccClauseIf)
+        if clause is not None:
+            return clause.condition()
+        else:
+            return ""
+    def gpufortFStr(self,indexHints=[],handleIf=False):
         fSnippet = "".join(self._stnode._lines)
         result = ""
         try:
-           accDirective = translator.acc_data | translator.acc_enter_data | translator.acc_exit_data | translator.acc_update |\
-             translator.acc_routine | translator.acc_declare | translator.ACC_END_DATA |\
-             translator.acc_kernels | translator.acc_parallel | translator.acc_kernels_loop | translator.acc_parallel_loop
-           parseResult = accDirective.parseString(fSnippet)[0]
+           parseResult = translator.accHostDirective.parseString(fSnippet)[0]
            #
            if   type(parseResult) in [translator.TTAccData,\
                    translator.TTAccParallel,translator.TTAccParallelLoop,
@@ -137,34 +140,38 @@ class Acc2HipGccRT(AccBackendBase):
               pass
            elif type(parseResult) is translator.TTAccDeclare:
               pass
+           else:
+              print("failed: "+fSnippet) #TODO
+              return fSnippet, False 
            return "call "+result+"\n", True 
         except Exception as e:
            print("failed: "+fSnippet) #TODO
-           raise e
-           return "", False 
+           return fSnippet, False 
 
 class AccLoopKernel2HipGccRT(Acc2HipGccRT):
     def gpufortFStr(self,indexHints=[]):
-        result = ""
         stnode = self._stnode
+        indent = " "*(len(stnode.lines()[0]) - len(stnode.lines()[0].lstrip()))
+        result = ""
         if stnode.isParallelLoopDirective() or stnode.isKernelsLoopDirective():
-            partialResult, _ = Acc2HipGccRT.gpufortFStr(self,indexHints) #,handleIf=False) 
+            partialResult, _ = Acc2HipGccRT.gpufortFStr(self,indexHints,handleIf=False) 
             result = partialResult
         partialResult, _ = STLoopKernel.gpufortFStr(stnode,indexHints) 
         result += partialResult
-        if stnode.isParallelLoopDirective() or stnode.isKernelsLoopDirective():
-           result += "\n"+HIP_GCC_RT_GOACC_DATA_END
-       
         # add wait call if necessary
-        #queue = self._handleAsync(None,"")
-        #if not len(queue):
-        #    result += "\n" + HIP_GPUFORT_RT_ACC_WAIT.format(queue=queue,async="")
+        arg = self._handleAsync(None,"")
+        if not len(arg):
+            result += "\n" + indent + "call " + HIP_GCC_RT_ACC_WAIT_ALL.format(arg=arg,async="")+"\n"
+        if stnode.isParallelLoopDirective() or stnode.isKernelsLoopDirective():
+           result += indent + "call " + HIP_GCC_RT_GOACC_DATA_END+"\n"
 
         # wrap in ifdef if necessary
-        #condition = self._handleIf()
-        #if len(condition):
-        #    result = "if ( {condition} ) then\n{result}\nelse\n {original}\n endif".format(\
-        #            condition=condition, result=result.rstrip("\n"), original="".join(stnode._lines).rstrip("\n"))
+        fSnippet = "".join(stnode._lines)
+        parseResult = translator.accHostDirective.parseString(fSnippet)[0]
+        condition = self._handleIf(parseResult)
+        if len(condition):
+            result = "if ( {condition} ) then\n{result}\nelse\n {original}\n endif".format(\
+                    condition=condition, result=result.rstrip("\n"), original="".join(stnode._lines).rstrip("\n"))
         return result, len(result)
 
 registerAccBackend("hip-gcc-rt",Acc2HipGccRT,AccLoopKernel2HipGccRT,"openacc_gomp")

@@ -37,7 +37,7 @@ def devVarName(var):
     result = result.replace("$","_")
     return ACC_DEV_PREFIX + result + ACC_DEV_SUFFIX
 
-class Acc2HipGpufortRT:
+class Acc2HipGpufortRT(AccBackendBase):
     # clauses 
     def _handleAsync(self,queue=None,prefix=",async="):
         """
@@ -65,7 +65,7 @@ class Acc2HipGpufortRT:
         result = ""
         tempVars = set()
         #
-        for parseResult in expression.scanString(self.singleLineStatement()):
+        for parseResult in expression.scanString(self._stnode.singleLineStatement()):
             clause = parseResult[0][0]
             varNames       = clause.varNames()
             varExpressions = clause.varExpressions()
@@ -95,7 +95,7 @@ class Acc2HipGpufortRT:
         result = ""
         tempVars = set()
         template = HIP_GPUFORT_RT_ACC_PRESENT
-        for parseResult in translator.acc_clause_default.scanString(self.singleLineStatement(),1):
+        for parseResult in translator.acc_clause_default.scanString(self._stnode.singleLineStatement(),1):
             value = str(parseResult[0][0]).lower()
             #print(value)
             if value == "present":
@@ -137,7 +137,7 @@ class Acc2HipGpufortRT:
         tempVars = set()
         # wait
         template = HIP_GPUFORT_RT_ACC_WAIT
-        for parseResult in translator.acc_clause_wait.scanString(self.singleLineStatement()):
+        for parseResult in translator.acc_clause_wait.scanString(self._stnode.singleLineStatement()):
             queueList=[]
             asyncList=[]
             for rvalue in parseResult[0][0]: # queue ids
@@ -158,7 +158,7 @@ class Acc2HipGpufortRT:
         :rtype: str
         """
         condition = ""
-        for parseResult in translator.acc_clause_if.searchString(self.singleLineStatement(),1):
+        for parseResult in translator.acc_clause_if.searchString(self._stnode.singleLineStatement(),1):
             condition = parseResult[0].condition()
         return condition
     def gpufortFStr(self,indexHints=[],handleIf=True):
@@ -172,15 +172,16 @@ class Acc2HipGpufortRT:
         allTempVars = set()
         
         ## Init 
-        if self.isInitDirective():
+        stnode = self._stnode
+        if stnode.isInitDirective():
             result += HIP_GPUFORT_RT_ACC_INIT
         
         ## Enter region commands must come first
-        emitEnterRegion = self.isEnterDirective()
-        emitEnterRegion = emitEnterRegion or self.isDataDirective()
-        emitEnterRegion = emitEnterRegion or self.isParallelDirective()
-        emitEnterRegion = emitEnterRegion or self.isParallelLoopDirective() 
-        emitEnterRegion = emitEnterRegion or self.isKernelsDirective()
+        emitEnterRegion = stnode.isEnterDirective()
+        emitEnterRegion = emitEnterRegion or stnode.isDataDirective()
+        emitEnterRegion = emitEnterRegion or stnode.isParallelDirective()
+        emitEnterRegion = emitEnterRegion or stnode.isParallelLoopDirective() 
+        emitEnterRegion = emitEnterRegion or stnode.isKernelsDirective()
         if emitEnterRegion:
             result += HIP_GPUFORT_RT_ACC_ENTER_REGION 
 
@@ -238,13 +239,13 @@ class Acc2HipGpufortRT:
             result += partialResult
         
         ## Exit region commands must come last
-        emitExitRegion = self.isExitDirective()
-        emitExitRegion = emitExitRegion or (self.isEndDirective() and self.findSubstring("kernels") and not self.findSubstring("loop"))
-        emitExitRegion = emitExitRegion or (self.isEndDirective() and self.findSubstring("parallel") and not self.findSubstring("loop"))
-        emitExitRegion = emitExitRegion or (self.isEndDirective() and self.findSubstring("data"))
+        emitExitRegion = stnode.isExitDirective()
+        emitExitRegion = emitExitRegion or (stnode.isEndDirective() and stnode.findSubstring("kernels") and not stnode.findSubstring("loop"))
+        emitExitRegion = emitExitRegion or (stnode.isEndDirective() and stnode.findSubstring("parallel") and not stnode.findSubstring("loop"))
+        emitExitRegion = emitExitRegion or (stnode.isEndDirective() and stnode.findSubstring("data"))
         if emitExitRegion:
             result += HIP_GPUFORT_RT_ACC_EXIT_REGION
-        if self.isShutdownDirective():
+        if stnode.isShutdownDirective():
             result += HIP_GPUFORT_RT_ACC_SHUTDOWN
        
         # _handle if 
@@ -255,28 +256,29 @@ class Acc2HipGpufortRT:
        
         # introduce the new variables 
         if len(allTempVars):
-            begin = self._parent.findLast(filter=lambda child : not child._included and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
+            begin = stnode._parent.findLast(filter=lambda child : not child._included and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
             if not begin is None:
                 indent = " "*(len(begin._lines[0]) - len(begin._lines[0].lstrip()))
                 for var in allTempVars:
                      begin._epilog.add("{indent}type(c_ptr) :: {name}\n".format(indent=indent,name=var))
             else:
-                indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
-                self._preamble.add("! TODO(gpufort): move declarations and use statement to appropriate place\n")
+                indent = " "*(len(stnode._lines[0]) - len(stnode._lines[0].lstrip()))
+                stnode._preamble.add("! TODO(gpufort): move declarations and use statement to appropriate place\n")
                 for var in allTempVars:
-                    self._preamble.add("{indent}type(c_ptr) :: {name}\n".format(indent=indent,name=var))
+                    stnode._preamble.add("{indent}type(c_ptr) :: {name}\n".format(indent=indent,name=var))
 
         return result, len(result)
 
-class AccLoopKernel2HipGpufortRT:
+class AccLoopKernel2HipGpufortRT(Acc2HipGpufortRT):
     def gpufortFStr(self,indexHints=[]):
         result = ""
-        if self.isParallelLoopDirective() or self.isKernelsLoopDirective():
+        stnode = self._stnode
+        if stnode.isParallelLoopDirective() or stnode.isKernelsLoopDirective():
             partialResult, _ = Acc2HipGpufortRT.gpufortFStr(self,indexHints,handleIf=False) 
             result = partialResult
-        partialResult, _ = STLoopKernel.gpufortFStr(self,indexHints) 
+        partialResult, _ = STLoopKernel.gpufortFStr(stnode,indexHints) 
         result += partialResult
-        if self.isParallelLoopDirective() or self.isKernelsLoopDirective():
+        if stnode.isParallelLoopDirective() or stnode.isKernelsLoopDirective():
            result += "\n"+HIP_GPUFORT_RT_ACC_EXIT_REGION
        
         # add wait call if necessary
@@ -288,7 +290,7 @@ class AccLoopKernel2HipGpufortRT:
         condition = self._handleIf()
         if len(condition):
             result = "if ( {condition} ) then\n{result}\nelse\n {original}\n endif".format(\
-                    condition=condition, result=result.rstrip("\n"), original="".join(self._lines).rstrip("\n"))
+                    condition=condition, result=result.rstrip("\n"), original="".join(stnode._lines).rstrip("\n"))
         return result, len(result)
 
-registerAccBackend("hip-gpufort-rt",AccLoopKernel2HipGpufortRT,AccLoopKernel2HipGpufortRT,"openacc_gomp")
+registerAccBackend("hip-gpufort-rt",Acc2HipGpufortRT,AccLoopKernel2HipGpufortRT,"gpufort_acc_runtime")

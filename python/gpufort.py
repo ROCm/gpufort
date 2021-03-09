@@ -212,15 +212,15 @@ if __name__ == "__main__":
         stree = handle.get()
    
     # extract kernels
-    if not args.onlyModifyHostCode:
-       outputFilePrefix = ".".join(inputFilePath.split(".")[:-1])
-       basename         =  os.path.basename(outputFilePrefix)
-       if "hip" in scanner.DESTINATION_DIALECT: 
-           kernelsToConvertToHip = ["*"]
-       else:
-           kernelsToConvertToHip = scanner.KERNELS_TO_CONVERT_TO_HIP
-       fort2hip.generateHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename)
-
+    outputFilePrefix = ".".join(inputFilePath.split(".")[:-1])
+    basename         =  os.path.basename(outputFilePrefix)
+    if "hip" in scanner.DESTINATION_DIALECT: 
+        kernelsToConvertToHip = ["*"]
+    else:
+        kernelsToConvertToHip = scanner.KERNELS_TO_CONVERT_TO_HIP
+    fort2hip.createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename,\
+            generateCode=not args.onlyModifyHostCode)
+    
     # modify original file
     if not args.onlyGenerateKernels:
         translateFortranSource(inputFilePath,stree,index,args.wrapInIfdef) 

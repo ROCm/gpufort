@@ -176,7 +176,7 @@ def deriveKernelArguments(index, identifiers, localVars, loopVars, whiteList=[],
 
     return kernelArgs, cKernelLocalVars, macros, localCpuRoutineArgs
     
-def extractLoopKernels(loopKernels,index,cContext,fContext):
+def updateContextFromLoopKernels(loopKernels,index,cContext,fContext):
     """
     loopKernels is a list of STCufLoopKernel objects.
     cContext, fContext are inout arguments for generating C/Fortran files, respectively.
@@ -286,10 +286,10 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
         fInterfaceDictManual["cName"] = kernelLauncherName
         fInterfaceDictManual["fName"] = kernelLauncherName
         fInterfaceDictManual["args"] = [
-            {"type" : "type(dim3)", "qualifiers" : ["intent(in)"], "name" : "grid", "cSize": ""},
-            {"type" : "type(dim3)", "qualifiers" : ["intent(in)"], "name" : "block", "cSize": ""},
-            {"type" : "integer(c_int)", "qualifiers" : ["intent(in)"],         "name" : "sharedMem", "cSize" : "" },
-            {"type" : "type(c_ptr)"   , "qualifiers" : ["value", "intent(in)"], "name" : "stream",   "cSize": ""},
+          {"type" : "type(dim3)", "qualifiers" : ["intent(in)"], "name" : "grid", "cSize": ""},
+          {"type" : "type(dim3)", "qualifiers" : ["intent(in)"], "name" : "block", "cSize": ""},
+          {"type" : "integer(c_int)", "qualifiers" : ["intent(in)"],         "name" : "sharedMem", "cSize" : "" },
+          {"type" : "type(c_ptr)"   , "qualifiers" : ["value", "intent(in)"], "name" : "stream",   "cSize": ""},
         ]
         fInterfaceDictManual["args"]    += kernelArgs
         fInterfaceDictManual["argNames"] = [arg["name"] for arg in fInterfaceDictManual["args"]]
@@ -298,11 +298,11 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
         # CPU routine
         fRoutineDict = copy.deepcopy(fInterfaceDictAuto)
         fRoutineDict["fName"] = kernelLauncherName + "_cpu"
+        
         # rename copied modified args
-        #print(localCpuRoutineArrayNames)
         for i,val in enumerate(fRoutineDict["args"]):
             varName = val["name"]
-            if len(val["cSize"]): # is array
+            if val.get("cSuffix","")=="[]": # is array
                 fRoutineDict["args"][i]["name"] = "d_{}".format(varName)
 
         fRoutineDict["argNames"] = [a["name"] for a in fRoutineDict["args"]]
@@ -327,7 +327,7 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
         fContext["routines"].append(fRoutineDict)
 
 # TODO check if this can be combined with other routine
-def extractAcceleratorRoutine(acceleratorRoutines,cContext,fContext):
+def updateContextFromAcceleratorRoutines(acceleratorRoutines,cContext,fContext):
     """
     acceleratorRoutines is a list of STSubroutine objects.
     cContext, fContext are inout arguments for generating C/Fortran files, respectively.
@@ -456,7 +456,14 @@ def renderTemplates(outputFilePrefix,cContext,fContext):
        logger.info(msg)
        print(msg)
 
-def generateHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename):
+def createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename,generateCode):
+    """
+    :param stree:        [inout] the scanner tree holds nodes that store the Fortran code lines of the kernels
+    :param generateCode: generate code or just feed kernel signature information
+                         back to the scanner tree.
+    :note The signatures of the identified kernels must be fed back to the 
+          scanner tree even when no kernel files are written.
+    """
     global FORTRAN_MODULE_PREAMBLE
     if not len(kernelsToConvertToHip):
         return
@@ -488,6 +495,7 @@ def generateHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basena
     acceleratorRoutines = stree.findAll(filter=lambda child : type(child) is scanner.STSubroutine and child.isAcceleratorRoutine() and select(child), recursively=True)
 
     if (len(loopKernels) or len(acceleratorRoutines)):
-        extractLoopKernels(loopKernels,index,cContext,fContext)
-        #extractAcceleratorRoutine(acceleratorRoutines,cContext,fContext)
-        renderTemplates(outputFilePrefix,cContext,fContext)
+        updateContextFromLoopKernels(loopKernels,index,cContext,fContext)
+        #updateContextFromAcceleratorRoutines(acceleratorRoutines,cContext,fContext)
+        if generateCode:
+            renderTemplates(outputFilePrefix,cContext,fContext)

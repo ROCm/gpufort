@@ -51,7 +51,7 @@ class GpufortReductionsHeaderModel():
     def generateCode(self,outputFilePath,context={}):
         return render("templates/GpufortReductions.template.h", outputFilePath, context) 
 
-model = GpufortHeaderModel()
-model.generateCode("gpufort.h")
-model = GpufortReductionsHeaderModel()
-model.generateCode("gpufort_reductions.h")
+#model = GpufortHeaderModel()
+#model.generateCode("gpufort.h")
+#model = GpufortReductionsHeaderModel()
+#model.generateCode("gpufort_reductions.h")

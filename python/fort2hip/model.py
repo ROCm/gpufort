@@ -42,3 +42,16 @@ class InterfaceModuleModel():
 class InterfaceModuleTestModel():
     def generateCode(self,outputFilePath,context):
         return render("templates/InterfaceModuleTest.template.f03", outputFilePath, context) 
+
+class GpufortHeaderModel():
+    def generateCode(self,outputFilePath,context={}):
+        return render("templates/Gpufort.template.h", outputFilePath, context) 
+
+class GpufortReductionsHeaderModel():
+    def generateCode(self,outputFilePath,context={}):
+        return render("templates/GpufortReductions.template.h", outputFilePath, context) 
+
+model = GpufortHeaderModel()
+model.generateCode("gpufort.h")
+model = GpufortReductionsHeaderModel()
+model.generateCode("gpufort_reductions.h")

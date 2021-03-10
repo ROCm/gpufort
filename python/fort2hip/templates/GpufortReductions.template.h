@@ -1,54 +1,13 @@
-#ifndef _GPUFORT_H_
-#define _GPUFORT_H_
+#ifndef _GPUFORT_REDUCTIONS_H_
+#define _GPUFORT_REDUCTIONS_H_
 
-{% if haveReductions %}  
+// requires that gpufort.h is included beforehand
+
+#include "hip/hip_runtime_api.h"
+#include "hip/hip_runtime.h"
 #include "hipcub/hipcub.hpp"
 #include <limits>
-{% endif %}
 
-#define HIP_CHECK(condition)         \
-  {                                  \
-    hipError_t error = condition;    \
-    if(error != hipSuccess){         \
-        std::cout << "HIP error: " << error << " line: " << __LINE__ << std::endl; \
-        exit(error); \
-    } \
-  }
-
-// global thread indices for various dimensions
-#define __gidx(idx) (threadIdx.idx + blockIdx.idx * blockDim.idx) 
-#define __gidx1 __gidx(x)
-#define __gidx2 (__gidx(x) + gridDim.x*blockDim.x*__gidx(y))
-#define __gidx3 (__gidx(x) + gridDim.x*blockDim.x*__gidx(y) + gridDim.x*blockDim.x*gridDim.y*blockDim.y*__gidx(z))
-#define __total_threads(grid,block) ( (grid).x*(grid).y*(grid).z * (block).x*(block).y*(block).z )
-
-namespace {
-  template <typename I, typename E, typename S> __device__ __forceinline__ bool loop_cond(I idx,E end,S stride) {
-    return (stride>0) ? ( idx <= end ) : ( -idx <= -end );     
-  }
-
-{% for floatType in ["float", "double"] %}  // make {{floatType}}
-{% for type in ["short int",  "unsigned short int",  "unsigned int",  "int",  "long int",  "unsigned long int",  "long long int",  "unsigned long long int",  "signed char",  "unsigned char",  "float",  "double",  "long double"] %} __device__ __forceinline__ {{floatType}} make_{{floatType}}(const {{type}}& a) {
-    return static_cast<{{floatType}}>(a);
-  }
-{% endfor %}{% for type in ["hipFloatComplex", "hipDoubleComplex" ] %} __device__ __forceinline__ {{floatType}} make_{{floatType}}(const {{type}}& a) {
-    return static_cast<{{floatType}}>(a.x);
-  }
-{% endfor %}
-{% endfor %} // conjugate complex type
-  __device__ __forceinline__ hipFloatComplex conj(const hipFloatComplex& c) {
-    return hipConjf(c);
-  }
-  __device__ __forceinline__ hipDoubleComplex conj(const hipDoubleComplex& z) {
-    return hipConj(z);
-  }
-
-  // TODO Add the following functions:
-  // - sign(x,y) = sign(y) * |x| - sign transfer function
-  // ...
-} 
-
-{% if haveReductions %}  
 // reductions
 namespace {
   struct reduce_op_mult {
@@ -102,7 +61,7 @@ namespace {
   template <typename T, typename ReduceOpT>
   void reduce(const T *const d_in, const int &NX, const T *h_out) {
     T *d_out = nullptr;
-    hipMalloc((void **)&d_out, sizeof(T));
+    HIP_CHECK(hipMalloc((void **)&d_out, sizeof(T)));
     // Determine temporary device storage requirements
     void *temp_storage = nullptr;
     size_t temp_storage_bytes = 0;
@@ -110,16 +69,15 @@ namespace {
     hipcub::DeviceReduce::Reduce(temp_storage, temp_storage_bytes, d_in, d_out, NX,
                                  ReduceOpT(), ReduceOpT::template ival<T>());
     // Allocate temporary storage
-    hipMalloc(&temp_storage, temp_storage_bytes);
+    HIP_CHECK(hipMalloc(&temp_storage, temp_storage_bytes));
     // Run reduction
     hipcub::DeviceReduce::Reduce(temp_storage, temp_storage_bytes, d_in, d_out, NX,
                                  ReduceOpT(), ReduceOpT::template ival<T>());
-    hipMemcpy((void *)h_out, d_out, sizeof(T), hipMemcpyDeviceToHost);
+    HIP_CHECK(hipMemcpy((void *)h_out, d_out, sizeof(T), hipMemcpyDeviceToHost));
     // Clean up
-    hipFree(d_out);
-    hipFree(temp_storage);
+    HIP_CHECK(hipFree(d_out));
+    HIP_CHECK(hipFree(temp_storage));
   }
 }
-{% endif %}
 
-#endif
+#endif // _GPUFORT_REDUCTIONS_H_

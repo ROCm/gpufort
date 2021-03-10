@@ -18,7 +18,10 @@
 #include <iostream>
 #include <algorithm>
 
-{% include 'templates/preamble.template.cpp' %}
+#include "gpufort.h"
+{%- if haveReductions -%}
+#include "gpufort_reductions.h"
+{%- endif -%}
 
 {%- macro make_block(kernel) -%}
 {% set krnlPrefix = kernel.kernelName %}
@@ -65,8 +68,6 @@
 {% endfor -%}
 {%- endif -%}
 {%- endmacro %}
-
-#define divideAndRoundUp(x,y) ((x)/(y) + ((x) % (y) != 0))
 
 {% for kernel in kernels %}
 {% set krnlPrefix = kernel.kernelName %}

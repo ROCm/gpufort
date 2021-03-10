@@ -20,15 +20,22 @@
 {%- endif -%}
 {%- endif -%}
 {{ result }}
-{%- endmacro %}
+{%- endmacro -%}
 
 {%- macro binop(op,n) -%}
 #define {{op}}{{n}}({{ binop_internal(op,n,result,"",1) }}) {{ binop_internal(op,n,result,"",0) }}
-{%- endmacro %}
+{%- endmacro -%}
 
 {# template body #}
 #ifndef _GPUFORT_H_
 #define _GPUFORT_H_
+
+#include "hip/math_functions.h"
+#include <cstdio>
+#include <iostream>
+#include <algorithm>
+#include <utility>
+#include <cstring>
 
 #define HIP_CHECK(condition)         \
   {                                  \
@@ -39,12 +46,29 @@
     } \
   }
 
+#define PRINT_ARGS(...) show(std::cout, #__VA_ARGS__, __VA_ARGS__)
+
+namespace {
+  template<typename H1> std::ostream& show(std::ostream& out, const char* label, H1&& value) {
+    return out << label << "=" << std::forward<H1>(value) << '\n';
+  }
+  
+  template<typename H1, typename ...T> std::ostream& show(std::ostream& out, const char* label, H1&& value, T&&... rest) {
+    const char* pcomma = strchr(label, ',');
+    return show(out.write(label, pcomma - label) << "=" << std::forward<H1>(value) << ',',
+  	      pcomma + 1,
+  	      std::forward<T>(rest)...);
+  }
+}
+
 // global thread indices for various dimensions
 #define __gidx(idx) (threadIdx.idx + blockIdx.idx * blockDim.idx) 
 #define __gidx1 __gidx(x)
 #define __gidx2 (__gidx(x) + gridDim.x*blockDim.x*__gidx(y))
 #define __gidx3 (__gidx(x) + gridDim.x*blockDim.x*__gidx(y) + gridDim.x*blockDim.x*gridDim.y*blockDim.y*__gidx(z))
 #define __total_threads(grid,block) ( (grid).x*(grid).y*(grid).z * (block).x*(block).y*(block).z )
+
+#define divideAndRoundUp(x, y) ((x) / (y) + ((x) % (y) != 0))
 
 namespace {
   template <typename I, typename E, typename S> __device__ __forceinline__ bool loop_cond(I idx,E end,S stride) {
@@ -77,4 +101,4 @@ namespace {
 {% endfor %}
 {% endfor %}
 } 
-#endif
+#endif // _GPUFORT_H_

@@ -176,12 +176,12 @@ def deriveKernelArguments(index, identifiers, localVars, loopVars, whiteList=[],
 
     return kernelArgs, cKernelLocalVars, macros, localCpuRoutineArgs
     
-def updateContextFromLoopKernels(loopKernels,index,cContext,fContext):
+def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
     """
     loopKernels is a list of STCufLoopKernel objects.
-    cContext, fContext are inout arguments for generating C/Fortran files, respectively.
+    hipContext, fContext are inout arguments for generating C/Fortran files, respectively.
     """
-    cContext["haveReductions"] = False
+    hipContext["haveReductions"] = False
     for stkernel in loopKernels:
         parentTag     = stkernel._parent.tag()
         filteredIndex = indexertools.filterIndexByTag(index,parentTag)
@@ -203,7 +203,7 @@ def updateContextFromLoopKernels(loopKernels,index,cContext,fContext):
         kernelLauncherName = stkernel.kernelLauncherName()
    
         # treat reductionVars vars / acc default(present) vars
-        cContext["haveReductions"] = False # |= len(reductionOps)
+        hipContext["haveReductions"] = False # |= len(reductionOps)
         kernelCallArgNames = []
         reductions = kernelParseResult.gangTeamReductions(translator.makeCStr)
         reductionVars = []
@@ -228,7 +228,7 @@ def updateContextFromLoopKernels(loopKernels,index,cContext,fContext):
                 if type(stkernel) is scanner.STAccLoopKernel:
                     if len(arg["cSize"]):
                         stkernel.appendDefaultPresentVar(name)
-            cContext["haveReductions"] |= isReductionVar
+            hipContext["haveReductions"] |= isReductionVar
         # C LoopKernel
         dimensions  = kernelParseResult.numDimensions()
         block = convertDim3(kernelParseResult.numThreadsInBlock(),dimensions)
@@ -255,7 +255,7 @@ def updateContextFromLoopKernels(loopKernels,index,cContext,fContext):
         cKernelDict["interfaceComment"]   = "" # kernelLaunchInfo.cStr()
         cKernelDict["interfaceArgs"]      = cKernelDict["kernelArgs"]
         cKernelDict["interfaceArgNames"]  = [arg["name"] for arg in kernelArgs] # excludes the stream;
-        cContext["kernels"].append(cKernelDict)
+        hipContext["kernels"].append(cKernelDict)
 
         # Fortran interface with automatic derivation of stkernel launch parameters
         fInterfaceDictAuto = {}
@@ -327,10 +327,10 @@ def updateContextFromLoopKernels(loopKernels,index,cContext,fContext):
         fContext["routines"].append(fRoutineDict)
 
 # TODO check if this can be combined with other routine
-def updateContextFromAcceleratorRoutines(acceleratorRoutines,cContext,fContext):
+def updateContextFromAcceleratorRoutines(acceleratorRoutines,hipContext,fContext):
     """
     acceleratorRoutines is a list of STSubroutine objects.
-    cContext, fContext are inout arguments for generating C/Fortran files, respectively.
+    hipContext, fContext are inout arguments for generating C/Fortran files, respectively.
     """
     for stroutine in acceleratorRoutines:
         fSnippet = "".join(stroutine._lines)
@@ -422,20 +422,33 @@ def updateContextFromAcceleratorRoutines(acceleratorRoutines,cContext,fContext):
         fRoutineDict["body"] = prolog + fBody + epilog
 
         # Add all definitions to context
-        cContext["kernels"].append(cKernelDict)
+        hipContext["kernels"].append(cKernelDict)
         fContext["interfaces"].append(fInterfaceDictManual)
         fContext["routines"].append(fRoutineDict)
 
-def renderTemplates(outputFilePrefix,cContext,fContext):
+def renderTemplates(outputFilePrefix,hipContext,fContext):
     # HIP kernel file
-    #pprint.pprint(cContext)
-    cCodeGenerator = model.HipImplementationModel()
+    #pprint.pprint(hipContext)
+    hipCodeGenerator = model.HipImplementationModel()
     hipImplementationFilePath = "{0}.kernels.hip.cpp".format(outputFilePrefix)
-    cCodeGenerator.generateCode(hipImplementationFilePath,cContext)
+    hipCodeGenerator.generateCode(hipImplementationFilePath,hipContext)
     utils.prettifyCFile(hipImplementationFilePath)
     msg = "created HIP C++ implementation file: {}".format(hipImplementationFilePath)
     logger = logging.getLogger('')
     logger.info(msg) ; print(msg)
+
+    # header files
+    outputDir = os.path.dirname(hipImplementationFilePath)
+    gpufortHeaderFilePath = outputDir + "/gpufort.h"
+    hipCodeGenerator = model.GpufortHeaderModel()
+    msg = "created gpufort main header: {}".format(gpufortHeaderFilePath)
+    logger = logging.getLogger('')
+    logger.info(msg) ; print(msg)
+    if hipContext["haveReductions"]:
+        gpufortReductionsHeaderFilePath = outputDir + "/gpufort_reductions.h"
+        msg = "created gpufort reductions header file: {}".format(gpufortReductionsHeaderFilePath)
+        logger = logging.getLogger('')
+        logger.info(msg) ; print(msg)
 
     # Fortran interface/testing module
     fCodeGenerator = model.InterfaceModuleModel()
@@ -477,9 +490,9 @@ def createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename
                    kernel.kernelName() in kernelsToConvertToHip
 
     # Context for HIP implementation
-    cContext = {}
-    cContext["includes"] = [ "hip/hip_runtime.h", "hip/hip_complex.h" ]
-    cContext["kernels"] = []
+    hipContext = {}
+    hipContext["includes"] = [ "hip/hip_runtime.h", "hip/hip_complex.h" ]
+    hipContext["kernels"] = []
     
     # Context for Fortran interface/implementation
     fContext = {}
@@ -495,7 +508,7 @@ def createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename
     acceleratorRoutines = stree.findAll(filter=lambda child : type(child) is scanner.STSubroutine and child.isAcceleratorRoutine() and select(child), recursively=True)
 
     if (len(loopKernels) or len(acceleratorRoutines)):
-        updateContextFromLoopKernels(loopKernels,index,cContext,fContext)
-        #updateContextFromAcceleratorRoutines(acceleratorRoutines,cContext,fContext)
+        updateContextFromLoopKernels(loopKernels,index,hipContext,fContext)
+        #updateContextFromAcceleratorRoutines(acceleratorRoutines,hipContext,fContext)
         if generateCode:
-            renderTemplates(outputFilePrefix,cContext,fContext)
+            renderTemplates(outputFilePrefix,hipContext,fContext)

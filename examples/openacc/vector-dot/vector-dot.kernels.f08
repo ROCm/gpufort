@@ -7,6 +7,8 @@ module vector_dot_kernels
   implicit none
 
   
+  #define rstd 8
+          
 
  
   interface

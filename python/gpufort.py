@@ -19,19 +19,18 @@ import indexer.indexer as indexer
 import translator.translator as translator
 import fort2hip.fort2hip as fort2hip
 
-# GLOBAL VARS
-LOG_LEVEL = logging.INFO
+exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "gpufort_options.py.in")).read())
 
 # arg for kernel generator
 # array is split into multiple args
 
-def createIndex(searchDirs,filePath,indexFile):
+def createIndex(searchDirs,defines,filePath,indexFile):
     if indexFile is not None:
         return json.load(indexFile)
     else: 
         searchDirs.insert(0,os.path.dirname(filePath))
         cleanedSearchDirs = list(set([os.path.abspath(s) for s in searchDirs]))
-        context = indexer.scanSearchDirs(cleanedSearchDirs,optionsAsStr="")
+        context = indexer.scanSearchDirs(cleanedSearchDirs,optionsAsStr=" ".join(defines))
         return indexer.resolveDependencies(context,searchedFiles=[ filePath ])
 
 def translateFortranSource(fortranFilePath,stree,index,wrapInIfdef):
@@ -69,10 +68,36 @@ def translateFortranSource(fortranFilePath,stree,index,wrapInIfdef):
               outfile.write(line.strip("\n") + "\n")
     utils.prettifyFFile(modifiedFortranFilePath)
     msg = "created hipified input file:         {}".format(modifiedFortranFilePath)
-    logger = logging.getLogger('')
+    logger = logging.getLogger("")
     logger.info(msg) ; print(msg)
 
+def parseRawCommandLineArguments():
+    """
+    Parse command line arguments before using argparse.
+    Allows the loaded config file to modify
+    the argparse switches and help information.
+    Further transform some arguments.
+    """
+    configFilePath = None
+    includeDirs    = []
+    defines        = []
+    options = sys.argv[1:]
+    for i,opt in enumerate(list(options)):
+        if opt == "--config-file":
+            if i+1 < len(options):
+                configFilePath = options[i+1]
+        elif opt.startswith("-I"):
+            includeDirs.append(opt[2:])
+            sys.argv.remove(opt)
+        elif opt.startswith("-D"):
+            defines.append(opt)
+            sys.argv.remove(opt)
+    return configFilePath, includeDirs, defines 
+
 def parseConfig(configFilePath):
+    """
+    Load user-supplied config fule.
+    """
     global LOG_LEVEL
 
     prolog = "global LOG_LEVEL"
@@ -89,11 +114,14 @@ def parseConfig(configFilePath):
         msg = "no '{}' file found. Use defaults.".format(CONFIG_FILE)
         logging.warn(msg)
     except Exception as e:
-        msg = "failed to parse config file '{}'. REASON: {} (NOTE: prolog lines: {}). ABORT".format(CONFIG_FILE,str(e),len(prolog.split("\n")))
+        msg = "failed to parse config file '{}'. REASON: {} (NOTE: num prolog lines: {}). ABORT".format(CONFIG_FILE,str(e),len(prolog.split("\n")))
         logging.getLogger("").error(msg) 
         sys.exit(1)
 
 def parseCommandLineArguments():
+    """
+    Parse command line arguments after all changes and argument transformations by the config file have been applied.
+    """
     global LOG_LEVEL
     
     # parse command line arguments
@@ -109,15 +137,18 @@ def parseCommandLineArguments():
     parser.add_argument("-E,--destination-dialect",dest="destinationDialect",default=None,type=str,help="One of: {}".format(", ".join(scanner.SUPPORTED_DESTINATION_DIALECTS)))
     parser.add_argument("--log-level",dest="logLevel",required=False,type=str,default="",help="Set log level. Overrides config value.")
     parser.add_argument("--cublas-v2",dest="cublasV2",action="store_true",help="Assume cublas v2 function signatures that use a handle. Overrides config value.")
+    # shadow arguments that are actually taken care of by raw argument parsing
     parser.add_argument("--print-config-defaults",dest="printConfigDefaults",action="store_true",help="Print config defaults. "+\
             "Config values can be overriden by providing a config file. A number of config values can be overwritten via this CLI.")
     parser.add_argument("--config-file",default=None,type=argparse.FileType("r"),dest="configFile",help="Provide a config file.")
+    
     parser.set_defaults(printConfigDefaults=False,overwriteExisting=True,wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyHostCode=False)
-    args = parser.parse_args()
+    args, unknownArgs = parser.parse_known_args()
 
     if args.printConfigDefaults:
         gpufortPythonDir=os.path.dirname(os.path.realpath(__file__))
         optionsFiles = [
+          "./gpufort_options.py.in",
           "scanner/scanner_options.py.in",
           "translator/translator_options.py.in",
           "fort2hip/fort2hip_options.py.in",
@@ -133,7 +164,10 @@ def parseCommandLineArguments():
                    if len(line.strip()):
                        if line[0] not in [" ","#","}","]"] and "=" in line:
                            parts = line.split("=")
-                           key   = (prefix+"."+parts[0].rstrip()).ljust(36)
+                           if prefix == "gpufort":
+                               key   = (parts[0].rstrip()).ljust(36)
+                           else:
+                               key   = (prefix+"."+parts[0].rstrip()).ljust(36)
                            value = parts[1].lstrip()
                            print(key+"= "+value,end="")
                        else:
@@ -152,9 +186,13 @@ def parseCommandLineArguments():
         translator.CUBLAS_VERSION = 2
     # check if input is set
     if args.input is None:
-        print("ERROR: no input file",file=sys.stderr)
+        msg = "no input file"
+        logging.getLogger("").error(msg) ; print("ERROR: "+msg,file=sys.stderr)
         sys.exit(2)
-    return args
+    if len(unknownArgs):
+        msg = "unrecognized arguments (might be used by registered action): {}".format(" ".join(unknownArgs))
+        logging.getLogger("").warn(msg) ; print("WARNING: "+msg,file=sys.stderr)
+    return args, unknownArgs
 
 def initLogging(inputFilePath):
     global LOG_LEVEL
@@ -170,7 +208,7 @@ def initLogging(inputFilePath):
     FILE="{0}/log-{1}.log".format(logDir,inputFilePathHash)
     logging.basicConfig(format=FORMAT,filename=FILE,filemode="w", level=LOG_LEVEL)
    
-    logger = logging.getLogger('')
+    logger = logging.getLogger("")
     #logger.handlers = []
  
     msg = "input file: {0} (log id: {1})".format(inputFilePath,inputFilePathHash)
@@ -180,9 +218,17 @@ def initLogging(inputFilePath):
 
 if __name__ == "__main__":
     # read config and command line arguments
-    args = parseCommandLineArguments()
-    if args.configFile is not None:
-        parseConfig(args.configFile.name)
+    configFilePath, includeDirs, defines = parseRawCommandLineArguments()
+    if configFilePath is not None:
+        parseConfig(configFilePath)
+    args, unknownArgs = parseCommandLineArguments()
+    if len(POST_CLI_ACTIONS):
+        msg = "run registered actions"
+        logging.getLogger("").info(msg) ; print(msg,file=sys.stderr)
+        for action in POST_CLI_ACTIONS:
+            if callable(action):
+                action(args,unknownArgs)
+    args.searchDirs += includeDirs
     inputFilePath = os.path.abspath(args.input.name)
     
     # init logging
@@ -197,7 +243,7 @@ if __name__ == "__main__":
     with multiprocessing.Pool(processes=2) as pool: 
         handle = pool.apply_async(\
            scanner.parseFile, (inputFilePath,))
-        index = createIndex(args.searchDirs,inputFilePath,args.index)
+        index = createIndex(args.searchDirs,defines,inputFilePath,args.index)
         pool.close()
         pool.join()
         stree = handle.get()

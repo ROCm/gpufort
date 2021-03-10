@@ -41,22 +41,4 @@ fi
 
 # all dependencies are met and we can continue
 
-# Separate -I<dir> args from the parameter list
-args=("${@}")
-
-searchDirs=""
-passThroughArgs=""
-
-for ((i=0; i<"${#args[@]}"; ++i)); do
-  if [[ ${args[i]} == "-I"* ]]; then
-    searchDirs=${searchDirs}" "${args[i]};
-  else
-    passThroughArgs=${passThroughArgs}" "${args[i]}
-  fi
-done
-
-if [[ -n "$searchDirs" ]]; then
-  searchDirs="-d "${searchDirs//-I/}
-fi
-
-python3 $GPUFORT_BIN_DIR/../python/gpufort.py ${passThroughArgs} ${searchDirs}
+python3 $GPUFORT_BIN_DIR/../python/gpufort.py "${@}"

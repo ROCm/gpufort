@@ -4,6 +4,9 @@
 
 # Use one of 'FATAL','CRITICAL','ERROR','WARNING','WARN','INFO','DEBUG','DEBUG2','DEBUG3','NOTSET' 
 LOG_LEVEL = logging.INFO
+def testFun(args,unknownArgs):
+    print("input file is: "+args.input.name)
+POST_CLI_ACTIONS.append(testFun)
 
 scanner.SOURCE_DIALECTS     = ["cuf","acc"] # one of ["acc","cuf","omp"]
 scanner.DESTINATION_DIALECT = "hip-gpufort-rt"   # one of ["omp","hip-gpufort-rt"]

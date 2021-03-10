@@ -1,0 +1,2 @@
+LOG_LEVEL        = logging.INFO # log level
+POST_CLI_ACTIONS = [] # register functions with parameters (args,unknownArgs) (see: argparse.parse_known_args)

@@ -187,5 +187,5 @@ def postprocessCSnippet(cSnippet):
        "sign"      : "copysign",
     })
     for key,subst in toHip.items():
-        cSnippet = re.subst(r"\b"+key+r"\b",subst)
+        cSnippet = re.sub(r"\b"+key+r"\b",subst,cSnippet)
     return cSnippet

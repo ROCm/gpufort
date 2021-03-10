@@ -99,12 +99,13 @@ def parseRawCommandLineArguments():
         msg = "working directory '{}' cannot be found".format(workingDirPath)
         print("ERROR: "+msg,file=sys.stderr)
         sys.exit(2)
-    if configFilePath[0] != "/":
-        configFilePath = workingDirPath + "/" + configFilePath 
-    if not os.path.exists(configFilePath):
-        msg = "config file '{}' cannot be found".format(configFilePath)
-        print("ERROR: "+msg,file=sys.stderr)
-        sys.exit(2)
+    if configFilePath is not None: 
+        if configFilePath[0] != "/":
+          configFilePath = workingDirPath + "/" + configFilePath 
+        if not os.path.exists(configFilePath):
+            msg = "config file '{}' cannot be found".format(configFilePath)
+            print("ERROR: "+msg,file=sys.stderr)
+            sys.exit(2)
     return configFilePath, includeDirs, defines 
 
 def parseConfig(configFilePath):

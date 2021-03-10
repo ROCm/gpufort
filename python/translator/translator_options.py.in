@@ -1,6 +1,8 @@
 # general options
 COMMENT = r"(!|^\s*[\*cCdD])[^\$].+"
-GPUFORT_CPP_ROUTINES = { "__pow" : "pow" }
+GPUFORT_CPP_ROUTINES = { 
+  "__pow" : "pow"
+}
 
 MAX_DIRECTIVE_LINE_WIDTH = 80
 

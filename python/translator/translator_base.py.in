@@ -184,7 +184,8 @@ def postprocessCSnippet(cSnippet):
        "atomicinc" : "atomicInc",
        "atomicdec" : "atomicDec",
        "atomiccas" : "atomicCas",
+       "sign"      : "copysign",
     })
     for key,subst in toHip.items():
-        cSnippet = cSnippet.replace(key,subst)
+        cSnippet = re.subst(r"\b"+key+r"\b",subst)
     return cSnippet

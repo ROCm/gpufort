@@ -48,7 +48,7 @@ def filterIndexByTag(index,tag,errorHandling=ERROR_HANDLING):
             sys.exit(1001)
         else:
             logging.getLogger("").warn(msg)
-            return [ indexer.EMPTY ]
+            return [ EMPTY ]
     else:
         msg = "'{}' entries found for tag '{}'".format(len(resultSet),tag)
         logging.getLogger("").debug2(msg)

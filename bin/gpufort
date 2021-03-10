@@ -41,4 +41,4 @@ fi
 
 # all dependencies are met and we can continue
 
-python3 $GPUFORT_BIN_DIR/../python/gpufort.py "${@}"
+python3 $GPUFORT_BIN_DIR/../python/gpufort.py --working-dir $(pwd) "${@}"

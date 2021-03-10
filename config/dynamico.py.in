@@ -4,9 +4,9 @@
 
 # Use one of 'FATAL','CRITICAL','ERROR','WARNING','WARN','INFO','DEBUG','DEBUG2','DEBUG3','NOTSET' 
 LOG_LEVEL = logging.INFO
-def testFun(args,unknownArgs):
-    print("input file is: "+args.input.name)
-POST_CLI_ACTIONS.append(testFun)
+#def testFun(args,unknownArgs):
+#    print("input file is: "+args.input.name)
+#POST_CLI_ACTIONS.append(testFun)
 
 scanner.SOURCE_DIALECTS     = ["cuf","acc"] # one of ["acc","cuf","omp"]
 scanner.DESTINATION_DIALECT = "hip-gpufort-rt"   # one of ["omp","hip-gpufort-rt"]
@@ -33,7 +33,7 @@ scanner.ACC_DEV_SUFFIX="_d"
 
 translator.FORTRAN_2_C_TYPE_MAP["complex"]["cstd"] = "hipDoubleComplex"
 translator.FORTRAN_2_C_TYPE_MAP["complex"]["rstd"] = "hipDoubleComplex"
-translator.FORTRAN_2_C_TYPE_MAP["real"]["rstd"] = "double"
+translator.FORTRAN_2_C_TYPE_MAP["real"]["rstd"]    = "double"
 translator.FORTRAN_2_C_TYPE_MAP["complex"]["istd"] = "int"
 
 translator.LOOP_COLLAPSE_STRATEGY="collapse-always"

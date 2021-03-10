@@ -252,7 +252,7 @@ def parseFile(fortranFilePath):
         new = STAccDirective(current,currentLineno,currentLines,directiveNo)
         directiveNo = directiveNo + 1
         msg = "scanner: {}: found acc construct:\t'{}'".format(currentLineno,new.singleLineStatement())
-        logging.getLogger("").info(msg) ; print(msg)
+        logging.getLogger("").debug(msg) ; # print(msg)
         # if end directive ascend
         if new.isEndDirective() and\
            type(current) is STAccDirective and current.isKernelsDirective():

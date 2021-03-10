@@ -1,2 +1,7 @@
-LOG_LEVEL        = logging.INFO # log level
+# logging
+LOG_LEVEL      = logging.INFO   # log level
+LOG_DIR        = "/tmp/gpufort" # directory for storing log files
+LOG_DIR_CREATE = True           # create log dir if it does not exist
+
+# actions to run after the command line argument parse
 POST_CLI_ACTIONS = [] # register functions with parameters (args,unknownArgs) (see: argparse.parse_known_args)

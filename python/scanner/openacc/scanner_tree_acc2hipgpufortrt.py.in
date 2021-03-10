@@ -278,13 +278,12 @@ class AccLoopKernel2HipGpufortRT(Acc2HipGpufortRT):
             result = partialResult
         partialResult, _ = STLoopKernel.gpufortFStr(stnode,indexHints) 
         result += partialResult
-        if stnode.isParallelLoopDirective() or stnode.isKernelsLoopDirective():
-           result += "\n"+HIP_GPUFORT_RT_ACC_EXIT_REGION
-       
         # add wait call if necessary
         queue = self._handleAsync(None,"")
         if not len(queue):
             result += "\n" + HIP_GPUFORT_RT_ACC_WAIT.format(queue=queue,async="")
+        if stnode.isParallelLoopDirective() or stnode.isKernelsLoopDirective():
+           result += "\n"+HIP_GPUFORT_RT_ACC_EXIT_REGION
 
         # wrap in ifdef if necessary
         condition = self._handleIf()

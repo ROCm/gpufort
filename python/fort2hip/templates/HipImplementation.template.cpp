@@ -89,18 +89,34 @@ __global__ void {{kernel.launchBounds}} {{krnlPrefix}}({{kernel.kernelArgs | joi
 }
 
 extern "C" void {{ifacePrefix}}(dim3* grid, dim3* block, const int sharedMem, hipStream_t stream,{{kernel.interfaceArgs | join(",")}}) {
+  #if defined(PRINT_KERNEL_ARGS_ALL) || defined(PRINT_KERNEL_ARGS_{{krnlPrefix}})
+  PRINT_ARGS("{{krnlPrefix}}",(*grid).x,(*grid).y,(*grid).z,(*block).x,(*block).y,(*block).z,sharedMem,stream,{{kernel.kernelCallArgNames | join(",")}});
+  #endif
 {{ reductions_prepare(kernel,"*") }}
   // launch kernel
   hipLaunchKernelGGL(({{krnlPrefix}}), *grid, *block, sharedMem, stream, {{kernel.kernelCallArgNames | join(",")}});
 {{ reductions_finalize(kernel,"*") }}
+  #if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_{{krnlPrefix}})
+  HIP_CHECK(hipStreamSynchronize(stream));
+  #elif defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_{{krnlPrefix}})
+  HIP_CHECK(hipDeviceSynchronize());
+  #endif
 }
 {% if kernel.isLoopKernel %}extern "C" void {{ifacePrefix}}_auto(const int sharedMem, hipStream_t stream,{{kernel.interfaceArgs | join(",")}}) {
 {{ make_block(kernel) }}
 {{ make_grid(kernel) }}   
+  #if defined(PRINT_KERNEL_ARGS_ALL) || defined(PRINT_KERNEL_ARGS_{{krnlPrefix}})
+  PRINT_ARGS("{{krnlPrefix}}",grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedMem,stream,{{kernel.kernelCallArgNames | join(",")}});
+  #endif
 {{ reductions_prepare(kernel,"") }}
   // launch kernel
   hipLaunchKernelGGL(({{krnlPrefix}}), grid, block, sharedMem, stream, {{kernel.kernelCallArgNames | join(",")}});
 {{ reductions_finalize(kernel,"") }}
+  #if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_{{krnlPrefix}})
+  HIP_CHECK(hipStreamSynchronize(stream));
+  #elif defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_{{krnlPrefix}})
+  HIP_CHECK(hipDeviceSynchronize());
+  #endif
 }
 {% endif %}// END {{krnlPrefix}}
 

@@ -55,8 +55,8 @@
   #endif
 {%- endmacro -%}
 
-{%- macro print_array(krnlPrefix,inout,array,rank) -%}
-  GPUFORT_PRINT_ARRAY{{rank}}("{{krnlPrefix}}:{{inout}}:",{{array}},
+{%- macro print_array(krnlPrefix,inout,print_values,print_norms,array,rank) -%}
+  GPUFORT_PRINT_ARRAY{{rank}}("{{krnlPrefix}}:{{inout}}:",{{print_values}},{{print_norms}},{{array}},
     {%- for i in range(1,rank+1) -%}{{array}}_n{{i}},{%- endfor -%}
     {%- for i in range(1,rank+1) -%}{{array}}_lb{{i}}{{"," if not loop.last}}{%- endfor -%});
 {%- endmacro -%}
@@ -103,15 +103,20 @@ __global__ void {{kernel.launchBounds}} {{krnlPrefix}}({{kernel.kernelArgs | joi
 }
 
 extern "C" void {{ifacePrefix}}(dim3* grid, dim3* block, const int sharedMem, hipStream_t stream,{{kernel.interfaceArgs | join(",")}}) {
+{{ reductions_prepare(kernel,"*") }}
   #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{krnlPrefix}})
-  GPUFORT_PRINT_ARGS("{{krnlPrefix}}",(*grid).x,(*grid).y,(*grid).z,(*block).x,(*block).y,(*block).z,sharedMem,stream,{{kernel.kernelCallArgNames | join(",")}});
+  std::cout << "{{krnlPrefix}}:args:";
+  GPUFORT_PRINT_ARGS((*grid).x,(*grid).y,(*grid).z,(*block).x,(*block).y,(*block).z,sharedMem,stream,{{kernel.kernelCallArgNames | join(",")}});
   #endif
   #if defined(GPUFORT_PRINT_INPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAYS_{{krnlPrefix}})
   {% for array in kernel.inputArrays %}
-  {{ print_array(krnlPrefix,"in",array.name,array.rank) }}
+  {{ print_array(krnlPrefix,"in","true","true",array.name,array.rank) }}
+  {% endfor %}
+  #elif defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_{{krnlPrefix}})
+  {% for array in kernel.inputArrays %}
+  {{ print_array(krnlPrefix,"in","false","true",array.name,array.rank) }}
   {% endfor %}
   #endif
-{{ reductions_prepare(kernel,"*") }}
   // launch kernel
   hipLaunchKernelGGL(({{krnlPrefix}}), *grid, *block, sharedMem, stream, {{kernel.kernelCallArgNames | join(",")}});
 {{ reductions_finalize(kernel,"*") }}
@@ -119,7 +124,11 @@ extern "C" void {{ifacePrefix}}(dim3* grid, dim3* block, const int sharedMem, hi
 {{ synchronize(krnlPrefix) }}
   #if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_{{krnlPrefix}})
   {% for array in kernel.outputArrays %}
-  {{ print_array(krnlPrefix,"out",array.name,array.rank) }}
+  {{ print_array(krnlPrefix,"out","true","true",array.name,array.rank) }}
+  {% endfor %}
+  #elif defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_{{krnlPrefix}})
+  {% for array in kernel.outputArrays %}
+  {{ print_array(krnlPrefix,"out","false","true",array.name,array.rank) }}
   {% endfor %}
   #endif
 }
@@ -127,15 +136,20 @@ extern "C" void {{ifacePrefix}}(dim3* grid, dim3* block, const int sharedMem, hi
 extern "C" void {{ifacePrefix}}_auto(const int sharedMem, hipStream_t stream,{{kernel.interfaceArgs | join(",")}}) {
 {{ make_block(kernel) }}
 {{ make_grid(kernel) }}   
+{{ reductions_prepare(kernel,"") }}
   #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{krnlPrefix}})
-  GPUFORT_PRINT_ARGS("{{krnlPrefix}}",grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedMem,stream,{{kernel.kernelCallArgNames | join(",")}});
+  std::cout << "{{krnlPrefix}}:args:";
+  GPUFORT_PRINT_ARGS(grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedMem,stream,{{kernel.kernelCallArgNames | join(",")}});
   #endif
   #if defined(GPUFORT_PRINT_INPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAYS_{{krnlPrefix}})
   {% for array in kernel.inputArrays %}
-  {{ print_array(krnlPrefix,"in",array.name,array.rank) }}
+  {{ print_array(krnlPrefix,"in","true","true",array.name,array.rank) }}
+  {% endfor %}
+  #elif defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_{{krnlPrefix}})
+  {% for array in kernel.inputArrays %}
+  {{ print_array(krnlPrefix,"in","false","true",array.name,array.rank) }}
   {% endfor %}
   #endif
-{{ reductions_prepare(kernel,"") }}
   // launch kernel
   hipLaunchKernelGGL(({{krnlPrefix}}), grid, block, sharedMem, stream, {{kernel.kernelCallArgNames | join(",")}});
 {{ reductions_finalize(kernel,"") }}
@@ -143,7 +157,11 @@ extern "C" void {{ifacePrefix}}_auto(const int sharedMem, hipStream_t stream,{{k
 {{ synchronize(krnlPrefix) }}
   #if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_{{krnlPrefix}})
   {% for array in kernel.outputArrays %}
-  {{ print_array(krnlPrefix,"out",array.name,array.rank) }}
+  {{ print_array(krnlPrefix,"out","true","true",array.name,array.rank) }}
+  {% endfor %}
+  #elif defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_{{krnlPrefix}})
+  {% for array in kernel.outputArrays %}
+  {{ print_array(krnlPrefix,"out","false","true",array.name,array.rank) }}
   {% endfor %}
   #endif
 }

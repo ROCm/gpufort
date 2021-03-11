@@ -82,23 +82,44 @@ namespace {
 
 {% set maxRank = 7 -%}
 {%- for rank in range(1,maxRank) -%}
-#define GPUFORT_PRINT_ARRAY{{rank}}(prefix,A,{{ print_array_arglist("",rank) }}) gpufort_print_array{{rank}}(std::cout, prefix, #A, A, {{ print_array_arglist("",rank) }})
+#define GPUFORT_PRINT_ARRAY{{rank}}(prefix,print_values,print_norms,A,{{ print_array_arglist("",rank) }}) gpufort_print_array{{rank}}(std::cout, prefix, print_values, print_norms, #A, A, {{ print_array_arglist("",rank) }})
 {% endfor -%}
 
 namespace {
   {% for rank in range(1,maxRank+1) %}
   template<typename T>
-  void gpufort_print_array{{rank}}(std::ostream& out, const char* prefix, const char* label, T A[], {{ print_array_arglist("int ",rank) }}) {
+  void gpufort_print_array{{rank}}(std::ostream& out, const char* prefix, const bool print_values, const bool print_norms, const char* label, T A[], {{ print_array_arglist("int ",rank) }}) {
     int n = {%- for col in range(1,rank+1) -%}n{{col}}{{ "*" if not loop.last }}{%- endfor -%};
     std::vector<T> A_h(n);
     out << prefix << label << ":" << "\n";
-    HIP_CHECK(hipMemcpy(A_h.data(), A, n*sizeof(T), hipMemcpyDeviceToHost));
-  {% for col in range(1,rank+1) %}
+    HIP_CHECK(hipMemcpy(A_h.data(), A, n*sizeof(T), hipMemcpyDeviceToHost)); 
+    T min = +std::numeric_limits<T>::max();
+    T max = -std::numeric_limits<T>::max();
+    T sum = 0;
+    T l1  = 0;
+    T l2  = 0;
+{% for col in range(1,rank+1) %}
     for ( int i{{rank+1-col}} = 0; i{{rank+1-col}} < n{{rank+1-col}}; i{{rank+1-col}}++ ) {
-  {% endfor %}
+{% endfor %}
       T value = A_h[{{ linearized_index(rank) }}];
-      out << prefix << label << "(" << {% for col in range(1,rank+1) -%}(lb{{col}}+i{{col}}) << {{ "\",\" <<" |safe if not loop.last }} {% endfor -%} ") = " << std::setprecision(6) << value << "\n";
+      if ( print_norms ) {
+	min  = std::min(value,min);
+	max  = std::max(value,max);
+	sum += value;
+	l1  += std::abs(value);
+	l2  += value*value;
+      }
+      if ( print_values ) {
+        out << prefix << label << "(" << {% for col in range(1,rank+1) -%}(lb{{col}}+i{{col}}) << {{ "\",\" <<" |safe if not loop.last }} {% endfor -%} ") = " << std::setprecision(6) << value << "\n";
+      }
     {%+ for col in range(1,rank+1) -%}}{%- endfor %} // for loops
+    if ( print_norms ) {
+      out << prefix << label << ":" << "min=" << min << "\n";
+      out << prefix << label << ":" << "max=" << max << "\n";
+      out << prefix << label << ":" << "sum=" << sum << "\n";
+      out << prefix << label << ":" << "l1="  << l1  << "\n";
+      out << prefix << label << ":" << "l2="  << std::sqrt(l2) << "\n";
+    }
   }{{"\n" if not loop.last}}{% endfor %}
 }
 

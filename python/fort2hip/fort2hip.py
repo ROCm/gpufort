@@ -434,9 +434,8 @@ def updateContextFromAcceleratorRoutines(acceleratorRoutines,hipContext,fContext
 def renderTemplates(outputFilePrefix,hipContext,fContext):
     # HIP kernel file
     #pprint.pprint(hipContext)
-    hipCodeGenerator = model.HipImplementationModel()
     hipImplementationFilePath = "{0}.kernels.hip.cpp".format(outputFilePrefix)
-    hipCodeGenerator.generateCode(hipImplementationFilePath,hipContext)
+    model.HipImplementationModel().generateCode(hipImplementationFilePath,hipContext)
     utils.prettifyCFile(hipImplementationFilePath)
     msg = "created HIP C++ implementation file: ".ljust(40) + hipImplementationFilePath
     logger = logging.getLogger("")
@@ -457,9 +456,8 @@ def renderTemplates(outputFilePrefix,hipContext,fContext):
         logger.info(msg) ; print(msg)
 
     # Fortran interface/testing module
-    fCodeGenerator = model.InterfaceModuleModel()
     moduleFilePath = "{0}.kernels.f08".format(outputFilePrefix)
-    fCodeGenerator.generateCode(moduleFilePath,fContext)
+    model.InterfaceModuleModel().generateCode(moduleFilePath,fContext)
     #utils.prettifyFFile(moduleFilePath)
     msg = "created interface/testing module: ".ljust(40) + moduleFilePath
     logger.info(msg) ; print(msg)
@@ -467,9 +465,8 @@ def renderTemplates(outputFilePrefix,hipContext,fContext):
     # TODO disable tests for now
     if False:
        # Fortran test program
-       fTestGenerator = model.InterfaceModuleTestModel()
        testFilePath = "{0}.kernels.TEST.f08".format(outputFilePrefix)
-       fTestGenerator.generateCode(testFilePath,fContext)
+       model.InterfaceModuleTestModel().generateCode(testFilePath,fContext)
        #utils.prettifyFFile(testFilePath)
        msg = "created interface module test file: ".ljust(40) + testFilePath
        logger.info(msg)

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 # We can base our work on this grammar if we want to ensure that clauses are legal in later versions of gpufort
 # Should probably be done on the translator level in
 # order to generate better error messages

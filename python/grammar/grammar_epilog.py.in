@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 # Combine expressions from all grammar definitions
 loopAnnotation = acc_parallel_loop | acc_kernels_loop | acc_loop | cuf_kernel_do
 annotatedDoLoop <<= Optional( loopAnnotation, default=None) +\

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 import os, sys, traceback
 import subprocess
 import copy, shutil
@@ -178,7 +180,9 @@ def parseCommandLineArguments():
             print("\n---- "+prefix+" -----------------------------")
             with open(gpufortPythonDir+"/"+optionsFile) as f:
                 for line in f.readlines():
-                   if len(line.strip()):
+                   if len(line.strip()) and\
+                     "# SPDX-License-Identifier:" not in line and\
+                     "# Copyright (c)" not in line:
                        if line[0] not in [" ","#","}","]"] and "=" in line:
                            parts = line.split("=")
                            if prefix == "gpufort":

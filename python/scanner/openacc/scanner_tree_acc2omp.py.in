@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 class Acc2Omp(AccBackendBase):
     def gpufortFStr(self,indexHints=[]):
         fSnippet = "".join(self._stnode._lines)

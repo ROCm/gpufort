@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 FORTRAN_MODULE_PREAMBLE=""
 
 DEFAULT_BLOCK_SIZES = { 1 : [128], 2 : [128,1,1], 3: [128,1,1] }

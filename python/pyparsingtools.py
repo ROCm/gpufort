@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 def replaceAll(fSnippet,ppexpression,repl=lambda parseResult: ("",False),stripSearchString=True):
     """
     Replaces all matches for the given pyparsing expression with

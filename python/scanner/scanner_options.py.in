@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 # Scanner options
 SOURCE_DIALECTS     = ["cuf","acc"] # one of ["acc","cuf","omp"]
 DESTINATION_DIALECT = "omp"         # one of ["omp","hip-runtime-rt"]

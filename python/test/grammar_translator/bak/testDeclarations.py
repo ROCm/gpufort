@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 import sys
 sys.path.append("../..")
 from kernelconverter.grammar import * 

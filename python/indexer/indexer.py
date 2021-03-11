@@ -250,7 +250,6 @@ def scanSearchDirs(searchDirs,optionsAsStr):
     index = []
     inputFiles = []
     for searchDir in searchDirs:
-        print(searchDir)
         if os.path.exists(searchDir):
             inputFiles += __discoverInputFiles(searchDir)
         else:

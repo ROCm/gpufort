@@ -132,8 +132,8 @@ namespace {
     return hipConj(z);
   }
 
-  __device__ __forceinline__ float copysign(const floatA, const floatB) {
-    return copysignf(floatA, floatB);
+  __device__ __forceinline__ float copysign(const float& a, const float& b) {
+    return copysignf(a, b);
   }
 
 {% for op in ["min","max"] %}

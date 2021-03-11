@@ -19,7 +19,7 @@
 #include <algorithm>
 
 #include "gpufort.h"
-{%- if haveReductions -%}
+{% if haveReductions -%}
 #include "gpufort_reductions.h"
 {%- endif -%}
 

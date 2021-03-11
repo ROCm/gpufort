@@ -26,7 +26,7 @@ def convertDim3(dim3,dimensions,doFilter=True):
           if i >= dimensions:
               break
           el = {}
-          el["dim"]   = chr(ord('X')+i)
+          el["dim"]   = chr(ord("X")+i)
           el["value"] = value
           result.append(el)
      return result
@@ -438,21 +438,22 @@ def renderTemplates(outputFilePrefix,hipContext,fContext):
     hipImplementationFilePath = "{0}.kernels.hip.cpp".format(outputFilePrefix)
     hipCodeGenerator.generateCode(hipImplementationFilePath,hipContext)
     utils.prettifyCFile(hipImplementationFilePath)
-    msg = "created HIP C++ implementation file: {}".format(hipImplementationFilePath)
-    logger = logging.getLogger('')
+    msg = "created HIP C++ implementation file: ".ljust(40) + hipImplementationFilePath
+    logger = logging.getLogger("")
     logger.info(msg) ; print(msg)
 
     # header files
     outputDir = os.path.dirname(hipImplementationFilePath)
     gpufortHeaderFilePath = outputDir + "/gpufort.h"
-    hipCodeGenerator = model.GpufortHeaderModel()
-    msg = "created gpufort main header: {}".format(gpufortHeaderFilePath)
-    logger = logging.getLogger('')
+    model.GpufortHeaderModel().generateCode(gpufortHeaderFilePath)
+    msg = "created gpufort main header: ".ljust(40) + gpufortHeaderFilePath
+    logger = logging.getLogger("")
     logger.info(msg) ; print(msg)
     if hipContext["haveReductions"]:
         gpufortReductionsHeaderFilePath = outputDir + "/gpufort_reductions.h"
-        msg = "created gpufort reductions header file: {}".format(gpufortReductionsHeaderFilePath)
-        logger = logging.getLogger('')
+        model.GpufortReductionsHeaderModel().generateCode(gpufortReductionsHeaderFilePath)
+        msg = "created gpufort reductions header file: ".ljust(40) + gpufortReductionsHeaderFilePath
+        logger = logging.getLogger("")
         logger.info(msg) ; print(msg)
 
     # Fortran interface/testing module
@@ -460,7 +461,7 @@ def renderTemplates(outputFilePrefix,hipContext,fContext):
     moduleFilePath = "{0}.kernels.f08".format(outputFilePrefix)
     fCodeGenerator.generateCode(moduleFilePath,fContext)
     #utils.prettifyFFile(moduleFilePath)
-    msg = "created interface/testing module:    {}".format(moduleFilePath)
+    msg = "created interface/testing module: ".ljust(40) + moduleFilePath
     logger.info(msg) ; print(msg)
 
     # TODO disable tests for now
@@ -470,7 +471,7 @@ def renderTemplates(outputFilePrefix,hipContext,fContext):
        testFilePath = "{0}.kernels.TEST.f08".format(outputFilePrefix)
        fTestGenerator.generateCode(testFilePath,fContext)
        #utils.prettifyFFile(testFilePath)
-       msg = "created interface module test file:  {}".format(testFilePath)
+       msg = "created interface module test file: ".ljust(40) + testFilePath
        logger.info(msg)
        print(msg)
 

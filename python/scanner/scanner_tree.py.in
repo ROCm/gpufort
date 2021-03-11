@@ -295,7 +295,7 @@ class STLoopKernel(STNode):
         
         We hash the body because we will use different block sizes and shmem anyway in HIP.
         """
-        return "krnl_{0}_{1}".format(self.hashBody(),self._lineno)
+        return KERNEL_NAME_TEMPLATE.format(parent=self._parent._name.lower(),lineno=self._lineno+1,hash=self.hashBody())
     def kernelLauncherName(self):
         return "launch_{}".format(self.kernelName())
     def transformFSnippet(self,fSnippet,indexHints=[]):

@@ -7,6 +7,9 @@ KERNELS_TO_CONVERT_TO_HIP = [] # add line number here (might change if snippets 
 LOOP_VARIABLES="integer :: {}".format(",".join(["_"+chr(ord("a")+i) for i in range(0,20) ])) # integer :: _a,_b,_c,_d,...
 GLOBAL_DECLARATIONS=[ LOOP_VARIABLES ] # TODO check if this still works
 
+KERNEL_NAME_TEMPLATE   = "{parent}_{lineno}_{hash}" # parent: name of parent module,program,subroutine (lower case)
+                                                    # lineno: line number
+                                                    # hash: Hash of the kernel (whitespaces are removed beforehand)
 HIP_MODULE_NAME        = "hipfort"
 HIP_MATH_MODULE_PREFIX = HIP_MODULE_NAME+"_"
 

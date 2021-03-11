@@ -1,7 +1,8 @@
 FC     ?= gfortran
 CFLAGS ?= -std=f2008 -ffree-line-length-none -D__GPUFORT
 
-HIPCC ?= hipcc -fPIC
+HIPCC ?= hipcc -fPIC 
+HIPCC += -DGPUFORT_PRINT_INPUT_ARRAYS_ALL
 HIPFC ?= hipfc
 
 OMPFC        ?= /opt/rocm/llvm/bin/flang

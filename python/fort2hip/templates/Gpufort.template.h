@@ -28,7 +28,7 @@
 
 {%- macro linearized_index(rank) -%}
 {%- if rank == 1 -%}
-lb{{rank}}+i{{rank}}
+lb{{rank}}+i{{rank}}-1
 {%- else -%}
 {%- for c in range(1,rank) -%}n{{c}}{{ "*" if not loop.last }}{%- endfor -%}*(lb{{rank}}+i{{rank}})+{{ linearized_index(rank-1) }}
 {%- endif -%}

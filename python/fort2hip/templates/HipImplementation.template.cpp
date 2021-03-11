@@ -58,7 +58,7 @@
 {%- macro print_array(krnlPrefix,inout,array,rank) -%}
   GPUFORT_PRINT_ARRAY{{rank}}("{{krnlPrefix}}:{{inout}}:",{{array}},
     {%- for i in range(1,rank+1) -%}{{array}}_n{{i}},{%- endfor -%}
-    {%- for i in range(1,rank+1) -%}{{array}}_lb{{i}}{{"," if not loop.last}}{%- endfor -%})
+    {%- for i in range(1,rank+1) -%}{{array}}_lb{{i}}{{"," if not loop.last}}{%- endfor -%});
 {%- endmacro -%}
 
 {# REDUCTION MACROS #}

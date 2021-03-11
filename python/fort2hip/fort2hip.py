@@ -104,6 +104,7 @@ def deriveKernelArguments(index, identifiers, localVars, loopVars, whiteList=[],
     macros              = []
     localArgs           = []
     localCpuRoutineArgs = []
+    inputArrays         = []
 
     def includeArgument(name):
         nameLower = name.lower().strip()
@@ -141,6 +142,7 @@ def deriveKernelArguments(index, identifiers, localVars, loopVars, whiteList=[],
                 else:
                     rank = indexedVariable["rank"]
                     if rank > 0: # specific for cufLoopKernel
+                        inputArrays.append({ "name" : name, "rank" : rank })
                         arg["cSize"]    = ""
                         dimensions = "dimension({0})".format(",".join([":"]*rank))
                         # Fortran size expression for allocate
@@ -174,7 +176,7 @@ def deriveKernelArguments(index, identifiers, localVars, loopVars, whiteList=[],
         if append:
             kernelArgs.append(unkernelArg)
 
-    return kernelArgs, cKernelLocalVars, macros, localCpuRoutineArgs
+    return kernelArgs, cKernelLocalVars, macros, inputArrays, localCpuRoutineArgs
     
 def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
     """
@@ -191,7 +193,7 @@ def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         # translate and analyze kernels
         kernelParseResult = translator.parseLoopKernel(fSnippet,filteredIndex)
 
-        kernelArgs, cKernelLocalVars, macros, localCpuRoutineArgs =\
+        kernelArgs, cKernelLocalVars, macros, inputArrays, localCpuRoutineArgs =\
           deriveKernelArguments(index,\
             kernelParseResult.identifiersInBody(),\
             kernelParseResult.localScalars(),\
@@ -235,27 +237,31 @@ def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         if not len(block):
             defaultBlockSize = DEFAULT_BLOCK_SIZES 
             block = convertDim3(defaultBlockSize[dimensions],dimensions)
-        cKernelDict = {}
-        cKernelDict["isLoopKernel"]       = True
-        cKernelDict["size"]               = convertDim3(kernelParseResult.problemSize(),dimensions,doFilter=False)
-        cKernelDict["grid"]               = convertDim3(kernelParseResult.numGangsTeamsBlocks(),dimensions)
-        cKernelDict["block"]              = block
-        cKernelDict["launchBounds"]       = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS)
-        cKernelDict["gridDims"  ]         = [ "{}_grid{}".format(kernelName,x["dim"])  for x in block ] # grid might not be always defined
-        cKernelDict["blockDims"  ]        = [ "{}_block{}".format(kernelName,x["dim"]) for x in block ]
-        cKernelDict["kernelName"]         = kernelName
-        cKernelDict["macros"]             = macros
-        cKernelDict["cBody"]              = kernelParseResult.cStr()
-        cKernelDict["fBody"]              = utils.prettifyFCode(fSnippet)
-        cKernelDict["kernelArgs"]         = ["{} {}{}{}".format(a["cType"],a["name"],a["cSize"],a["cSuffix"]) for a in kernelArgs]
-        cKernelDict["kernelCallArgNames"] = kernelCallArgNames
-        cKernelDict["reductions"]         = reductionVars
-        cKernelDict["kernelLocalVars"]    = ["{} {}{}".format(a["cType"],a["name"],a["cSize"]) for a in cKernelLocalVars]
-        cKernelDict["interfaceName"]      = kernelLauncherName
-        cKernelDict["interfaceComment"]   = "" # kernelLaunchInfo.cStr()
-        cKernelDict["interfaceArgs"]      = cKernelDict["kernelArgs"]
-        cKernelDict["interfaceArgNames"]  = [arg["name"] for arg in kernelArgs] # excludes the stream;
-        hipContext["kernels"].append(cKernelDict)
+        hipKernelDict = {}
+        hipKernelDict["isLoopKernel"]       = True
+        hipKernelDict["size"]               = convertDim3(kernelParseResult.problemSize(),dimensions,doFilter=False)
+        hipKernelDict["grid"]               = convertDim3(kernelParseResult.numGangsTeamsBlocks(),dimensions)
+        hipKernelDict["block"]              = block
+        hipKernelDict["launchBounds"]       = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS)
+        hipKernelDict["gridDims"  ]         = [ "{}_grid{}".format(kernelName,x["dim"])  for x in block ] # grid might not be always defined
+        hipKernelDict["blockDims"  ]        = [ "{}_block{}".format(kernelName,x["dim"]) for x in block ]
+        hipKernelDict["kernelName"]         = kernelName
+        hipKernelDict["macros"]             = macros
+        hipKernelDict["cBody"]              = kernelParseResult.cStr()
+        hipKernelDict["fBody"]              = utils.prettifyFCode(fSnippet)
+        hipKernelDict["kernelArgs"]         = ["{} {}{}{}".format(a["cType"],a["name"],a["cSize"],a["cSuffix"]) for a in kernelArgs]
+        hipKernelDict["kernelCallArgNames"] = kernelCallArgNames
+        hipKernelDict["reductions"]         = reductionVars
+        hipKernelDict["kernelLocalVars"]    = ["{} {}{}".format(a["cType"],a["name"],a["cSize"]) for a in cKernelLocalVars]
+        hipKernelDict["interfaceName"]      = kernelLauncherName
+        hipKernelDict["interfaceComment"]   = "" # kernelLaunchInfo.cStr()
+        hipKernelDict["interfaceArgs"]      = hipKernelDict["kernelArgs"]
+        hipKernelDict["interfaceArgNames"]  = [arg["name"] for arg in kernelArgs] # excludes the stream;
+        hipKernelDict["inputArrays"]        = inputArrays
+        #inoutArraysInBody                   = [name.lower for name in kernelParseResult.inoutArraysInBody()]
+        #hipKernelDict["outputArrays"]       = [array for array in inputArrays if array.lower() in inoutArraysInBody]
+        hipKernelDict["outputArrays"]       = inputArrays
+        hipContext["kernels"].append(hipKernelDict)
 
         # Fortran interface with automatic derivation of stkernel launch parameters
         fInterfaceDictAuto = {}
@@ -366,20 +372,19 @@ def updateContextFromAcceleratorRoutines(acceleratorRoutines,hipContext,fContext
         fBody = utils.prettifyFCode(fBody)
 
         # C  routine and C stroutine launcher
-        cKernelDict = {}
-        cKernelDict["isLoopKernel"]     = False
-        cKernelDict["kernelName"]       = kernelName
-        cKernelDict["macros"]           = macros
-        cKernelDict["cBody"]            = cBody
-        cKernelDict["fBody"]            = fBody
-        cKernelDict["kernelArgs"]       = ["{} {}".format(a["cType"],a["name"]) for a in kernelArgs]
-        cKernelDict["kernelLocalVars"]  = ["{0} {1}{2} {3}".format(a["cType"],a["name"],a["cSize"],"= " + a["cValue"] if "cValue" in a else "") for a in cKernelLocalVars]
-        cKernelDict["interfaceName"]    = kernelLauncherName
-        cKernelDict["interfaceArgs"]    = cKernelDict["kernelArgs"]
-        cKernelDict["interfaceComment"] = ""
-        cKernelDict["interfaceArgNames"] = [arg["name"] for arg in kernelArgs]
-        cKernelDict["kernelArgs"] = ["{} {}".format(a["cType"],a["name"]) for a in kernelArgs]
-
+        hipKernelDict = {}
+        hipKernelDict["isLoopKernel"]     = False
+        hipKernelDict["kernelName"]       = kernelName
+        hipKernelDict["macros"]           = macros
+        hipKernelDict["cBody"]            = cBody
+        hipKernelDict["fBody"]            = fBody
+        hipKernelDict["kernelArgs"]       = ["{} {}".format(a["cType"],a["name"]) for a in kernelArgs]
+        hipKernelDict["kernelLocalVars"]  = ["{0} {1}{2} {3}".format(a["cType"],a["name"],a["cSize"],"= " + a["cValue"] if "cValue" in a else "") for a in cKernelLocalVars]
+        hipKernelDict["interfaceName"]    = kernelLauncherName
+        hipKernelDict["interfaceArgs"]    = hipKernelDict["kernelArgs"]
+        hipKernelDict["interfaceComment"] = ""
+        hipKernelDict["interfaceArgNames"] = [arg["name"] for arg in kernelArgs]
+        hipKernelDict["kernelArgs"] = ["{} {}".format(a["cType"],a["name"]) for a in kernelArgs]
         # Fortran interface with manual specification of kernel launch parameters
         fInterfaceDictManual = {}
         fInterfaceDictManual["cName"]       = kernelLauncherName
@@ -422,7 +427,7 @@ def updateContextFromAcceleratorRoutines(acceleratorRoutines,hipContext,fContext
         fRoutineDict["body"] = prolog + fBody + epilog
 
         # Add all definitions to context
-        hipContext["kernels"].append(cKernelDict)
+        hipContext["kernels"].append(hipKernelDict)
         fContext["interfaces"].append(fInterfaceDictManual)
         fContext["routines"].append(fRoutineDict)
 

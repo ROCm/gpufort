@@ -47,6 +47,20 @@
 {% endif %}
 {%- endmacro -%}
 
+{%- macro synchronize(krnlPrefix) -%}
+  #if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_{{krnlPrefix}})
+  HIP_CHECK(hipStreamSynchronize(stream));
+  #elif defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_{{krnlPrefix}})
+  HIP_CHECK(hipDeviceSynchronize());
+  #endif
+{%- endmacro -%}
+
+{%- macro print_array(krnlPrefix,inout,array,rank) -%}
+  GPUFORT_PRINT_ARRAY{{rank}}("{{krnlPrefix}}:{{inout}}:",{{array}},
+    {%- for i in range(1,rank+1) -%}{{array}}_n{{i}},{%- endfor -%}
+    {%- for i in range(1,rank+1) -%}{{array}}_lb{{i}}{{"," if not loop.last}}{%- endfor -%})
+{%- endmacro -%}
+
 {# REDUCTION MACROS #}
 
 {%- macro reductions_prepare(kernel,star) -%}
@@ -89,36 +103,50 @@ __global__ void {{kernel.launchBounds}} {{krnlPrefix}}({{kernel.kernelArgs | joi
 }
 
 extern "C" void {{ifacePrefix}}(dim3* grid, dim3* block, const int sharedMem, hipStream_t stream,{{kernel.interfaceArgs | join(",")}}) {
-  #if defined(PRINT_KERNEL_ARGS_ALL) || defined(PRINT_KERNEL_ARGS_{{krnlPrefix}})
-  PRINT_ARGS("{{krnlPrefix}}",(*grid).x,(*grid).y,(*grid).z,(*block).x,(*block).y,(*block).z,sharedMem,stream,{{kernel.kernelCallArgNames | join(",")}});
+  #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{krnlPrefix}})
+  GPUFORT_PRINT_ARGS("{{krnlPrefix}}",(*grid).x,(*grid).y,(*grid).z,(*block).x,(*block).y,(*block).z,sharedMem,stream,{{kernel.kernelCallArgNames | join(",")}});
+  #endif
+  #if defined(GPUFORT_PRINT_INPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAYS_{{krnlPrefix}})
+  {% for array in kernel.inputArrays %}
+  {{ print_array(krnlPrefix,"in",array.name,array.rank) }}
+  {% endfor %}
   #endif
 {{ reductions_prepare(kernel,"*") }}
   // launch kernel
   hipLaunchKernelGGL(({{krnlPrefix}}), *grid, *block, sharedMem, stream, {{kernel.kernelCallArgNames | join(",")}});
 {{ reductions_finalize(kernel,"*") }}
-  #if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_{{krnlPrefix}})
-  HIP_CHECK(hipStreamSynchronize(stream));
-  #elif defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_{{krnlPrefix}})
-  HIP_CHECK(hipDeviceSynchronize());
+
+{{ synchronize(krnlPrefix) }}
+  #if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_{{krnlPrefix}})
+  {% for array in kernel.outputArrays %}
+  {{ print_array(krnlPrefix,"out",array.name,array.rank) }}
+  {% endfor %}
   #endif
 }
-{% if kernel.isLoopKernel %}extern "C" void {{ifacePrefix}}_auto(const int sharedMem, hipStream_t stream,{{kernel.interfaceArgs | join(",")}}) {
+{% if kernel.isLoopKernel %}
+extern "C" void {{ifacePrefix}}_auto(const int sharedMem, hipStream_t stream,{{kernel.interfaceArgs | join(",")}}) {
 {{ make_block(kernel) }}
 {{ make_grid(kernel) }}   
-  #if defined(PRINT_KERNEL_ARGS_ALL) || defined(PRINT_KERNEL_ARGS_{{krnlPrefix}})
-  PRINT_ARGS("{{krnlPrefix}}",grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedMem,stream,{{kernel.kernelCallArgNames | join(",")}});
+  #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{krnlPrefix}})
+  GPUFORT_PRINT_ARGS("{{krnlPrefix}}",grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedMem,stream,{{kernel.kernelCallArgNames | join(",")}});
+  #endif
+  #if defined(GPUFORT_PRINT_INPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAYS_{{krnlPrefix}})
+  {% for array in kernel.inputArrays %}
+  {{ print_array(krnlPrefix,"in",array.name,array.rank) }}
+  {% endfor %}
   #endif
 {{ reductions_prepare(kernel,"") }}
   // launch kernel
   hipLaunchKernelGGL(({{krnlPrefix}}), grid, block, sharedMem, stream, {{kernel.kernelCallArgNames | join(",")}});
 {{ reductions_finalize(kernel,"") }}
-  #if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_{{krnlPrefix}})
-  HIP_CHECK(hipStreamSynchronize(stream));
-  #elif defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_{{krnlPrefix}})
-  HIP_CHECK(hipDeviceSynchronize());
+
+{{ synchronize(krnlPrefix) }}
+  #if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_{{krnlPrefix}})
+  {% for array in kernel.outputArrays %}
+  {{ print_array(krnlPrefix,"out",array.name,array.rank) }}
+  {% endfor %}
   #endif
 }
 {% endif %}// END {{krnlPrefix}}
 
- 
 {% endfor %}{# kernels #}

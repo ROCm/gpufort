@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 def bytes(fType,kind,default=None,floatComplex=FLOAT_COMPLEX,doubleComplex=DOUBLE_COMPLEX):
     assert type(fType) is str
     assert type(kind) is str
@@ -11,13 +13,14 @@ KEYWORDS = KEYWORDS.lower().split(" ")
 ## Define actions
 class TTNode(object):
     def __init__(self, s, loc, tokens):
+       self._input    = s
        self._location = loc
-       self.assignFields(tokens)
+       self._assignFields(tokens)
     def __str__(self):
        return self.__class__.__name__ + ':' + str(self.__dict__)
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         pass
-    def cStr(self): # TODO: Rename to flatten
+    def cStr(self):
         pass
     #__repr__ = __str__
 
@@ -148,7 +151,6 @@ def convertToCType(fType,kind,default=None):
     kindLower = kind.lower()
     return FORTRAN_2_C_TYPE_MAP.get(fType.lower(),{ kindLower : default }).get(kindLower, "UNKNOWN")
 
-COMMENT = r"(!|^\s*[\*cCdD])[^\$].+"
 pIgnore = re.compile(COMMENT+"|\&")
 pElseIf = re.compile(r"elseif", re.IGNORECASE)
 
@@ -163,8 +165,6 @@ def prepareFortranSnippet(fortranSnippet):
     # replace power (**) expression by func call expression
     result = power.transformString(result)
     return result
-
-GPUFORT_CPP_ROUTINES = { "__pow" : "pow" }
 
 def postprocessCSnippet(cSnippet):
     toHip = GPUFORT_CPP_ROUTINES 
@@ -186,7 +186,8 @@ def postprocessCSnippet(cSnippet):
        "atomicinc" : "atomicInc",
        "atomicdec" : "atomicDec",
        "atomiccas" : "atomicCas",
+       "sign"      : "copysign",
     })
     for key,subst in toHip.items():
-        cSnippet = cSnippet.replace(key,subst)
+        cSnippet = re.sub(r"\b"+key+r"\b",subst,cSnippet)
     return cSnippet

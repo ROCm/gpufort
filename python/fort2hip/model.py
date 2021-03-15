@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 import os
 import pprint
 import logging
@@ -33,12 +35,25 @@ def render(templateName, outputFilePath, context):
 
 class HipImplementationModel():
     def generateCode(self,outputFilePath,context):
-        return render("templates/HipImplementation.cpp-template", outputFilePath, context)
+        return render("templates/HipImplementation.template.cpp", outputFilePath, context)
 
 class InterfaceModuleModel():
     def generateCode(self,outputFilePath,context):
-        return render("templates/InterfaceModule.f03-template", outputFilePath, context)
+        return render("templates/InterfaceModule.template.f03", outputFilePath, context)
 
 class InterfaceModuleTestModel():
     def generateCode(self,outputFilePath,context):
-        return render("templates/InterfaceModuleTest.f03-template", outputFilePath, context) 
+        return render("templates/InterfaceModuleTest.template.f03", outputFilePath, context) 
+
+class GpufortHeaderModel():
+    def generateCode(self,outputFilePath,context={}):
+        return render("templates/Gpufort.template.h", outputFilePath, context) 
+
+class GpufortReductionsHeaderModel():
+    def generateCode(self,outputFilePath,context={}):
+        return render("templates/GpufortReductions.template.h", outputFilePath, context) 
+
+#model = GpufortHeaderModel()
+#model.generateCode("gpufort.h")
+#model = GpufortReductionsHeaderModel()
+#model.generateCode("gpufort_reductions.h")

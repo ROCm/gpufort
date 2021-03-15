@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+###############################################################################
+# config file for dynamico (python script)
+###############################################################################
+
+# Use one of 'FATAL','CRITICAL','ERROR','WARNING','WARN','INFO','DEBUG','DEBUG2','DEBUG3','NOTSET' 
+LOG_LEVEL = logging.INFO
+#def testFun(args,unknownArgs):
+#    print("input file is: "+args.input.name)
+#POST_CLI_ACTIONS.append(testFun)
+
+scanner.SOURCE_DIALECTS     = ["cuf","acc"] # one of ["acc","cuf","omp"]
+scanner.DESTINATION_DIALECT = "hip-gpufort-rt"   # one of ["omp","hip-gpufort-rt"]
+#scanner.DESTINATION_DIALECT = "omp"   # one of ["omp","hip-gpufort-rt"]
+
+scanner.GPUFORT_IFDEF       = "__GPUFORT" 
+scanner.CUF_IFDEF           = "CUDA"
+
+# cublas_v1 routines do not have an handle. cublas v2 routines do
+#scanner.CUBLAS_VERSION      = 1
+#translator.CUBLAS_VERSION   = scanner.CUBLAS_VERSION
+## look for integer (array) with this name; disable: leave empty string or comment out
+#translator.HINT_CUFFT_PLAN  = r"cufft_plan\w+"
+## look for integer (array) with this name; disable: leave empty string or comment out
+#translator.HINT_CUDA_STREAM = r"stream|strm"
+
+# CUF options
+scanner.HIP_MODULE_NAME        = "hipfort"
+scanner.HIP_MATH_MODULE_PREFIX = scanner.HIP_MODULE_NAME+"_"
+
+# ACC options
+scanner.ACC_DEV_PREFIX=""
+scanner.ACC_DEV_SUFFIX="_d"
+
+translator.FORTRAN_2_C_TYPE_MAP["complex"]["cstd"] = "hipDoubleComplex"
+translator.FORTRAN_2_C_TYPE_MAP["complex"]["rstd"] = "hipDoubleComplex"
+translator.FORTRAN_2_C_TYPE_MAP["real"]["rstd"]    = "double"
+translator.FORTRAN_2_C_TYPE_MAP["complex"]["istd"] = "int"
+
+translator.LOOP_COLLAPSE_STRATEGY="collapse-always"
+
+fort2hip.FORTRAN_MODULE_PREAMBLE="""
+#define rstd 8
+        """

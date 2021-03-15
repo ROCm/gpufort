@@ -1,39 +1,5 @@
-#!/usr/bin/env python3
-import sys
-
-# third-party modules
-from pyparsing import *
-
-# local modules
-from grammar.cudafor import *
-
-if CASELESS:
-    CASELESS_LITERAL = CaselessLiteral
-else:
-    CASELESS_LITERAL = Literal
-
-# Performance Tips:
-# - try using enablePackrat()
-# - use MatchFirst(|) instead of Or(^)
-def makeCaselessLiteral(commaSeparatedList,suppress=False):
-     result1 = map(CASELESS_LITERAL, commaSeparatedList.split(","))
-     if suppress:
-        result2 = []
-        for element in result1:
-             result2.append(element.suppress())
-        return result2
-     else:
-        return result1
-
-def separatedSequence(tokens,separator=Suppress(",")):
-    result = tokens[0]
-    for token in tokens[1:]:
-         result += separator + token
-    return result
-
-ParserElement.setDefaultWhitespaceChars("\r\n\t &;")
-ParserElement.enablePackrat() 
-
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 LPAR,RPAR = map(Suppress, "()")
 EQ,ELEM,COMMA,DOT,UNDERSCORE = map(Suppress, "=%,._")
 PEQ=Suppress("=>")
@@ -52,20 +18,20 @@ character  = QuotedString('"', escQuote='\\') | QuotedString("'", escQuote="\\")
 OPTSIGN    = Optional(Regex("[-+]") | CASELESS_LITERAL(".not."),default="")
 
 # arithmetic logical expressions and assignments
-funcRvalue = Forward()
+funcRValue = Forward()
 
 funcKind = COMMA + ( KIND + EQ + Regex(r"[0-9]+|([sSdDqQ][pP])") ) | Regex(r"[sSdDqQ][pP]") # ! emits one token
-argList = Group(delimitedList(Group(~funcKind + funcRvalue)))
+argList = Group(delimitedList(Group(~funcKind + funcRValue)))
 funcCall = identifier + LPAR + Optional(argList, default=[]) + RPAR # emits 2 tokens: *,*,*
 
 # conversion functions
 # TODO check type of variable when translating
 # see http://userweb.eng.gla.ac.uk/peter.smart/com/com/f77-conv.htm
 # for now, always assume conversion between complex and float types 
-conversionRvalue = Forward()
+conversionRValue = Forward()
 REAL,DBLE,CMPLX,DCMPLX,AIMAG,CONJG,DCONJG = makeCaselessLiteral("real,dble,cmplx,dcmplx,aimag,conjg,dconjg",suppress=True)
-singleArgPlusKind = LPAR + (~funcKind+conversionRvalue) + Optional(funcKind,default=None) + RPAR # emits 2 tokens: *,*,*
-doubleArgPlusKind = LPAR + (~funcKind+conversionRvalue) + Optional(COMMA + (~funcKind+conversionRvalue),default="0") +\
+singleArgPlusKind = LPAR + (~funcKind+conversionRValue) + Optional(funcKind,default=None) + RPAR # emits 2 tokens: *,*,*
+doubleArgPlusKind = LPAR + (~funcKind+conversionRValue) + Optional(COMMA + (~funcKind+conversionRValue),default="0") +\
                            Optional(funcKind,default=None) + RPAR # emits 2 tokens: *,*,*
 
 convertToExtractReal   = REAL   + singleArgPlusKind # emits 2 tokens,
@@ -78,17 +44,17 @@ conjugateDoubleComplex = DCONJG + singleArgPlusKind # emits 1 tokens, op: x+iy -
 
 conversions = convertToExtractReal | convertToDouble | convertToComplex | convertToDoubleComplex | extractImag | conjugate | conjugateDoubleComplex
 
-# structs
-simpleStructRvalue = Forward()
-simpleStructElem   = identifier + ELEM + simpleStructRvalue
-simpleStructRvalue <<= simpleStructElem | identifier
+# derivedTypes
+simpleStructRValue = Forward()
+simpleDerivedTypeMember   = identifier + ELEM + simpleStructRValue
+simpleStructRValue <<= simpleDerivedTypeMember | identifier
 #
-structRvalue = Forward()
-structElem = (( funcCall | identifier ) + ELEM + structRvalue )
-structRvalue <<= funcCall | structElem | identifier
+derivedTypeRValue = Forward()
+derivedTypeElem = (( funcCall | identifier ) + ELEM + derivedTypeRValue )
+derivedTypeRValue <<= funcCall | derivedTypeElem | identifier
 
 complexArithmeticExpression = Forward()
-rvalue = OPTSIGN + (conversions | complexArithmeticExpression | structElem | funcCall | identifier | logical | character | number)  # |: ordered OR, order is important
+rvalue = OPTSIGN + (conversions | complexArithmeticExpression | derivedTypeElem | funcCall | identifier | logical | character | number)  # |: ordered OR, order is important
 subroutineCall = CALL + funcCall
 
 # assignments
@@ -108,20 +74,20 @@ arithmeticLogicalExpression = infixNotation(rvalue, #NOTE: Slower because of the
 )
 
 # use in preprocessing step
-powerValue1 = OPTSIGN + (conversions | structElem | funcCall | identifier | number)
+powerValue1 = OPTSIGN + (conversions | derivedTypeElem | funcCall | identifier | number)
 powerValue2 = LPAR + arithmeticExpression + RPAR
 powerValue  = powerValue2 | powerValue1
-power = powerValue + Suppress("**") + powerValue
+power       = powerValue + Suppress("**") + powerValue
 
-lvalue = structElem | funcCall | identifier
-lvalueList = Group(delimitedList(lvalue))
+lvalue          = derivedTypeElem | funcCall | identifier
+lvalueList      = Group(delimitedList(lvalue))
 assignmentBegin = lvalue + EQ
-assignment = lvalue + EQ + arithmeticExpression # ! emits 2 tokens: *,*
-MATLPAR = Regex(r"\(\/|\[").suppress()
-MATRPAR = Regex(r"\/\)|\]").suppress()
+assignment      = lvalue + EQ + arithmeticExpression # ! emits 2 tokens: *,*
 
+MATLPAR                    = Regex(r"\(\/|\[").suppress()
+MATRPAR                    = Regex(r"\/\)|\]").suppress()
 matrixArithmeticExpression = MATLPAR + Group(delimitedList(arithmeticExpression)) + MATRPAR
-matrixAssignment = lvalue + EQ + matrixArithmeticExpression
+matrixAssignment           = lvalue + EQ + matrixArithmeticExpression
 
 complexArithmeticExpression <<= LPAR + Group(arithmeticExpression + COMMA + arithmeticExpression) + RPAR 
 complexAssignment = lvalue + EQ + complexArithmeticExpression
@@ -132,10 +98,10 @@ matrixRange0  = singleColon.copy().setParseAction(lambda tokens: [None,None])
 matrixRange1a = (arithmeticExpression + singleColon).setParseAction(lambda tokens: [None,tokens[0]]) 
 matrixRange1b = (singleColon + arithmeticExpression).setParseAction(lambda tokens: [tokens[0],None])
 matrixRange2  = (arithmeticExpression + singleColon + arithmeticExpression)
-matrixRange = (matrixRange2 | matrixRange1b | matrixRange1a | matrixRange0) + Optional(stride,default=None)
+matrixRange   = (matrixRange2 | matrixRange1b | matrixRange1a | matrixRange0) + Optional(stride,default=None)
 # define forward declared tokens
-funcRvalue <<= matrixRange | arithmeticLogicalExpression
-conversionRvalue <<= arithmeticExpression
+funcRValue       <<= matrixRange | arithmeticLogicalExpression
+conversionRValue <<= arithmeticExpression
 
 ## Condition
 ### If statement
@@ -147,7 +113,7 @@ ENDDO     = END + DO.copy()
 ENDSELECT = END + SELECT.copy()
 
 singleLineIfBody = Forward()
-executionStatement = Forward() # forward declaration
+block = Forward() # forward declaration
 
 # Example:
 #
@@ -172,9 +138,9 @@ singleLineIf = IF + LPAR + arithmeticLogicalExpression + RPAR + ~THEN + singleLi
 ifElseIf = Optional(ELSE,default="") + IF + LPAR + arithmeticLogicalExpression + RPAR + THEN
 ifElseBlock = ifElseIf | ELSE | ENDIF
 
-ifBranch     = Group(IF + LPAR + arithmeticLogicalExpression + RPAR + THEN + executionStatement)
-elseIfBranch = Group(ELSE.suppress() + IF + LPAR + arithmeticLogicalExpression + RPAR + THEN + executionStatement)
-elseBranch   = Group(ELSE.suppress() + executionStatement)
+ifBranch     = Group(IF + LPAR + arithmeticLogicalExpression + RPAR + THEN + block)
+elseIfBranch = Group(ELSE.suppress() + IF + LPAR + arithmeticLogicalExpression + RPAR + THEN + block)
+elseBranch   = Group(ELSE.suppress() + block)
 ifElseBlock = ifBranch +\
      Optional(Group(OneOrMore(elseIfBranch)),default=[]) +\
      Optional(elseBranch,default=None) +\
@@ -194,30 +160,30 @@ selectExpression = logical | number | character | identifier | arithmeticLogical
 selectExpression
 selectCaseBlock = Optional(identifier) + Group(SELECT + CASE + LPAR + selectExpression + RPAR) +\
      OneOrMore(CASE + LPAR + (logical | number | character) + RPAR +\
-         executionStatement) +\
+         block) +\
      Group(Optional(CASE + DEFAULT) +\
-         executionStatement ) +\
+         block ) +\
      ENDSELECT
 
 ## Do Loop
-doLoop = DO + assignment + COMMA + arithmeticExpression + Optional(COMMA + arithmeticExpression,default="1") + executionStatement + ENDDO 
-whileLoop = DO + WHILE + LPAR + arithmeticLogicalExpression + RPAR + executionStatement + ENDDO 
+doLoop = DO + assignment + COMMA + arithmeticExpression + Optional(COMMA + arithmeticExpression,default="1") + block + ENDDO 
+whileLoop = DO + WHILE + LPAR + arithmeticLogicalExpression + RPAR + block + ENDDO 
 
 # TODO Dominic: Simplify
 ## Declaration  // example: "real(kind=8), device, host, parameter :: rhx, rhy"
 TYPE,CHARACTER,INTEGER,LOGICAL,REAL,COMPLEX,DOUBlE,PRECISION = makeCaselessLiteral(\
   "type,character,integer,logical,real,complex,double,precision")
 MULT=Literal("*")
-kindRvalue = MULT | integer | ( ~LEN + identifier )
+kindRValue = MULT | integer | ( ~LEN + identifier )
 kindList =\
       LPAR +\
-        Optional(( KIND + EQ + kindRvalue) |\
-        ( KIND + LPAR + kindRvalue + RPAR) |\
-        kindRvalue,default=None) +\
+        Optional(( KIND + EQ + kindRValue) |\
+        ( KIND + LPAR + kindRValue + RPAR) |\
+        kindRValue,default=None) +\
         OPTCOMMA +\
-        Optional(LEN + EQ + kindRvalue,default=None) +\
+        Optional(LEN + EQ + kindRValue,default=None) +\
       RPAR  # emits 2 tokens [kind,len]
-multType = ( MULT.suppress() + Optional(LPAR) + kindRvalue + Optional(RPAR)).setParseAction(lambda tokens: [tokens[0],tokens[0]]) # emits 2 tokens
+multType = ( MULT.suppress() + Optional(LPAR) + kindRValue + Optional(RPAR)).setParseAction(lambda tokens: [tokens[0],tokens[0]]) # emits 2 tokens
 
 sizeOf = Optional( Group(multType) | Group(kindList), default = [None,None] )
 
@@ -257,15 +223,11 @@ declaration = declarationLhs + Group(delimitedList(declaredVariable))   # ! emit
 #precisionDeclaredVariable = identifier + EQ + CASELESS_LITERAL("selected_kind").suppress() + LPAR + integer + COMMA + integer + RPAR # ! emits [*,[*],*]
 #precisionDeclaration      = integerType + COMMA + qualifierList + COLONS + Group(delimitedList(precisionDeclaredVariableVariable))   # ! emits *,[*],[*]
 
-# Define forward-declared executionStatement
-comment = Combine(Literal("!") + ~(~White()+Literal("$")) + restOfLine())
-printStatement = Combine(oneOf("print write read format",caseless=CASELESS) + restOfLine)
-returnStatement = CASELESS_LITERAL("return")
+# Define forward-declared block
+comment           = Combine(Literal("!") + ~(~White()+Literal("$")) + restOfLine())
+printStatement    = Combine(oneOf("print write read format",caseless=CASELESS) + restOfLine)
+returnStatement   = CASELESS_LITERAL("return")
 controlStatements = returnStatement
-
-singleExecutionStatement = comment | printStatement | controlStatements | subroutineCall | ifElseBlock | singleLineIf | selectCaseBlock | doLoop | whileLoop | matrixAssignment | complexAssignment | assignment | funcCall 
-executionStatement <<= Group(ZeroOrMore(singleExecutionStatement))
-singleLineIfBody <<= comment | printStatement | controlStatements | subroutineCall | matrixAssignment | complexAssignment | assignment | funcCall 
 
 ## Attributes // example: attributes
 attributes=CASELESS_LITERAL("attributes").suppress() + LPAR + qualifierList + RPAR + COLONS + Group(delimitedList(identifier))
@@ -289,7 +251,7 @@ NONSTRUCTURE = DO|IF|SELECT|WHERE|FORALL|FOREACH|TYPE|INTERFACE
 only = Group(identifier + Optional(PEQ + identifier,default=None))
 use = USE + Optional(COMMA + INTRINSIC,default=None) + identifier + Optional(COMMA + ONLY + singleColon.suppress() + Group(delimitedList(only)),default=[]) # emits 3 tokens; [*,*,[*]] 
 implicit = IMPLICIT + NONE # TODO no complete description
-subroutineBody = Group(ZeroOrMore(use | implicit | declaration | attributes | singleExecutionStatement))
+subroutineBody = Group(ZeroOrMore(use | implicit | declaration | attributes | block))
 
 subroutineStart = Optional(ATTRIBUTES + LPAR + identifier + RPAR,default="host") + SUBROUTINE + identifier +\
         Optional(LPAR + Group(delimitedList(identifier)) + RPAR, default=[]) # emits 3 tokens -> *,*,[*]

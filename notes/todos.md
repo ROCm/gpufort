@@ -48,3 +48,15 @@ for tokens,start,end in expr.scanString(string):
 for tokens,start,end in expr.scanString(string):
     tokens[0].configure(extra="50")
     print(string.replace(string[start:end],tokens[0].__str__()))
+
+
+# Revision
+
+ WHICH information do I need to introduce to the tree?
+ - allocate, copy intrinsices                             - if variable is on the device | (CUF,ACC)->HIP, CUF->OMP
+ - place holders if device pointers need to be introduced - if we need a variable        | (CUF,ACC)->HIP
+ - device variables/subroutines if we need to declare them on the device                 | CUF -> OMP
+ What is needed only for ACC -> OMP?
+ - for some directives, only source2source
+ - OpenACC implicitly assumes that scalars are private -> need to know what is a scalar
+

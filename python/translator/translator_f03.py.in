@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 #import utils
 #from translator.translator_base import *
 
@@ -16,7 +18,7 @@ def flattenArithmeticExpression(expr,converter=makeCStr):
     return descend(expr)       
 
 class TTSimpleToken(TTNode):
-      def assignFields(self,tokens):
+      def _assignFields(self,tokens):
           self._text = " ".join(tokens)
       def cStr(self):
           return "{};".format(self._text.lower())
@@ -24,7 +26,7 @@ class TTSimpleToken(TTNode):
           return str(self._text)
 
 class TTCommentedOut(TTNode):
-      def assignFields(self,tokens):
+      def _assignFields(self,tokens):
           self._text = " ".join(tokens)
       def cStr(self):
           return "// {}\n".format(self._text)
@@ -34,7 +36,7 @@ class TTIgnore(TTNode):
           return ""
 
 class TTLogical(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._value = tokens[0]
     def cStr(self):
         return "true" if self._value.lower() == ".true." else "false"
@@ -42,7 +44,7 @@ class TTLogical(TTNode):
         return self._value
 
 class TTNumber(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._value = tokens[0]
     def cStr(self):
         parts = self._value.replace("d","e").split("_")
@@ -56,7 +58,7 @@ class TTNumber(TTNode):
 
 class TTDatatype_Comment(TTNode):
     # generates object Datatype{'type' : '...', 'kind' : '...'}
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._type   = tokens[0]
         self._kind   = tokens[1][0]
         self._length = tokens[1][1]
@@ -94,7 +96,7 @@ class TTDatatype_Comment(TTNode):
 
 class TTDatatype_Convert(TTNode):
     # generates object Datatype{'type' : '...', 'kind' : '...'}
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._type   = tokens[0]
         self._kind   = tokens[1][0]
         self._length = tokens[1][1]
@@ -133,7 +135,7 @@ class TTDatatype_Convert(TTNode):
         return result            
 
 class TTIdentifier(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._name = tokens[0]
     def fStr(self):
         return str(self._name)
@@ -142,62 +144,8 @@ class TTIdentifier(TTNode):
     def name(self,mangleName=False): # argument is never used as we have already an identifier
         return self.fStr()
 
-class Value:
-    def isIdentifier(self):
-        return type(self._value) is TTIdentifier      
-    def name(self):
-        if type(self._value) is TTFunctionCallOrTensorAccess:
-            return self._value.name(False)
-        elif type(self._value) is TTStructElem:
-            return self._value.name(True)
-        else:
-            return self._value.name(False)
-    def hasMatrixRangeArgs(self):
-        """
-        Functionality for scanner.
-        """
-        if type(self._value) is TTFunctionCallOrTensorAccess:
-            return self._value.hasMatrixRangeArgs()
-        elif type(self._value) is TTStructElem:
-            return self._value.lastElementHasMatrixRangeArgs()
-        else:
-            return False
-    def matrixRangeArgs(self):
-        if type(self._value) is TTFunctionCallOrTensorAccess:
-            return self._value.matrixRangeArgs()
-        elif type(self._value) is TTStructElem:
-            return self._value.lastElementMatrixRangeArgs()
-        else:
-            return []
-
-class TTRvalue(TTNode,Value):
-    def assignFields(self,tokens):
-        self._sign = tokens[0]
-        self._value = tokens[1]
-        self._reductionIndex = ""
-        #print("{0}: {1}".format(self.cStr(),self.location))
-    def fStr(self):
-        return self._sign + makeFStr(self._value)
-    def cStr(self):
-        result = self._sign + makeCStr(self._value)
-        if len(self._reductionIndex):
-            result += "[{idx}]".format(idx=self._reductionIndex) 
-        return result
-class TTLvalue(TTNode,Value):
-    def assignFields(self,tokens):
-        self._value = tokens[0]
-        self._reductionIndex = ""
-        #print("{0}: {1}".format(self.cStr(),self.location))
-    def fStr(self):
-        return makeFStr(self._value)
-    def cStr(self):
-        result = makeCStr(self._value)
-        if len(self._reductionIndex):
-            result += "[{idx}]".format(idx=self._reductionIndex) 
-        return result
-
 class TTFunctionCallOrTensorAccess(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._name = tokens[0]
         self._args = tokens[1]
     def matrixRangeArgs(self):
@@ -238,8 +186,61 @@ class TTFunctionCallOrTensorAccess(TTNode):
         name = makeFStr(self._name)
         return "{0}({1})".format(name,",".join([makeFStr(s) for s in self._args]))
 
+class IValue:
+    def isIdentifier(self):
+        return type(self._value) is TTIdentifier      
+    def name(self):
+        if type(self._value) is TTFunctionCallOrTensorAccess:
+            return self._value.name(False)
+        elif type(self._value) is TTDerivedTypeMember:
+            return self._value.name(False)
+        else:
+            return self._value.name(False)
+    def hasMatrixRangeArgs(self):
+        """
+        Functionality for scanner.
+        """
+        if type(self._value) is TTFunctionCallOrTensorAccess:
+            return self._value.hasMatrixRangeArgs()
+        elif type(self._value) is TTDerivedTypeMember:
+            return self._value.lastElementHasMatrixRangeArgs()
+        else:
+            return False
+    def matrixRangeArgs(self):
+        if type(self._value) is TTFunctionCallOrTensorAccess:
+            return self._value.matrixRangeArgs()
+        elif type(self._value) is TTDerivedTypeMember:
+            return self._value.lastElementMatrixRangeArgs()
+        else:
+            return []
+class TTRValue(TTNode,IValue):
+    def _assignFields(self,tokens):
+        self._sign           = tokens[0]
+        self._value          = tokens[1]
+        self._reductionIndex = ""
+        #print("{0}: {1}".format(self.cStr(),self.location))
+    def fStr(self):
+        return self._sign + makeFStr(self._value)
+    def cStr(self):
+        result = self._sign + makeCStr(self._value)
+        if len(self._reductionIndex):
+            result += "[{idx}]".format(idx=self._reductionIndex) 
+        return result
+class TTLValue(TTNode,IValue):
+    def _assignFields(self,tokens):
+        self._value          = tokens[0]
+        self._reductionIndex = ""
+        #print("{0}: {1}".format(self.cStr(),self.location))
+    def fStr(self):
+        return makeFStr(self._value)
+    def cStr(self):
+        result = makeCStr(self._value)
+        if len(self._reductionIndex):
+            result += "[{idx}]".format(idx=self._reductionIndex) 
+        return result
+
 class TTConvertToExtractReal (TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._ref, self._kind = tokens
     def cStr(self):
         cType = convertToCType("real",self._kind).replace(" ","_") # TODO check if his anything else than double or float
@@ -251,7 +252,7 @@ class TTConvertToExtractReal (TTNode):
         return result + ")"
 
 class TTConvertToDouble(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._ref, self._kind = tokens
     def cStr(self):
         return "make_double({0})".format(makeCStr(self._ref)) # rely on C++ compiler to make the correct type conversion
@@ -259,7 +260,7 @@ class TTConvertToDouble(TTNode):
         return "DBLE({0})".format(makeFStr(self._ref)) # rely on C++ compiler to make the correct type conversion
 
 class TTConvertToComplex(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._x, self._y, self._kind = tokens
     def cStr(self):
         cType = convertToCType("complex",self._kind,default=None,floatComplex="floatComplex",doubleComplex="doubleComplex")
@@ -271,7 +272,7 @@ class TTConvertToComplex(TTNode):
         return result + ")"
 
 class TTConvertToDoubleComplex(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._x, self._y, self._kind = tokens
     def cStr(self):
         cType="doubleComplex"
@@ -281,19 +282,19 @@ class TTConvertToDoubleComplex(TTNode):
         return result + ")"
 
 class TTExtractImag(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._ref, self._kind = tokens
     def cStr(self):
         return "{0}._y".format(makeCStr(self._ref))
 
 class TTConjugate(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._ref, self._kind = tokens
     def cStr(self):
         return "conj({0})".format(makeCStr(self._ref))
 
-class TTStructElem(TTNode):
-    def assignFields(self,tokens):
+class TTDerivedTypeMember(TTNode):
+    def _assignFields(self,tokens):
         self._type, self._element = tokens
         #print(self._type)
     def lastElementMatrixRangeArgs(self):
@@ -302,7 +303,7 @@ class TTStructElem(TTNode):
         """
         result = []
         current = self._element
-        while type(current) is TTStructElem:
+        while type(current) is TTDerivedTypeMember:
             current = current._element
         if type(current) is TTFunctionCallOrTensorAccess:
             return current.matrixRangeArgs()
@@ -314,7 +315,7 @@ class TTStructElem(TTNode):
         """
         result = []
         current = self._element
-        while type(current) is TTStructElem:
+        while type(current) is TTDerivedTypeMember:
             current = current._element
         if type(current) is TTFunctionCallOrTensorAccess:
             return current.hasMatrixRangeArgs()
@@ -330,13 +331,13 @@ class TTStructElem(TTNode):
         return makeFStr(self._type) + "%" + makeFStr(self._element)
 
 class TTSubroutineCall(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._subroutine=tokens[0]
     def cStr(self):
         return self._subroutine.cStr(isDefinitivelyFunction=True)
 
 class TTOperator(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._name = tokens[0]
     def cStr(self):
         f2c = {
@@ -359,7 +360,7 @@ class TTOperator(TTNode):
         return str(self._name)
 
 class TTArithmeticExpression(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._expr = tokens
     def cStr(self):
         return flattenArithmeticExpression(self._expr)
@@ -367,7 +368,7 @@ class TTArithmeticExpression(TTNode):
         return flattenArithmeticExpression(self._expr,makeFStr)
 
 class TTComplexArithmeticExpression(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._real, self._imag = tokens[0]
     def cStr(self):
         return "make_hipComplex({real},{imag})".format(\
@@ -379,26 +380,26 @@ class TTComplexArithmeticExpression(TTNode):
                 imag=flattenArithmeticExpression(self._imag,makeFStr))
 
 class TTPower(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._base, self._exp = tokens
-    def hipFStr(self):
+    def gpufortFStr(self,indexHints=[]):
         sign = ""
         base = self._base
-        if type(self._base) is TTRvalue:
+        if type(self._base) is TTRValue:
             base = self._base._value
             sign = self._base._sign
         return "{sign}__pow({base},{exp})".format(\
             sign=makeFStr(sign),base=makeFStr(base),
             exp=makeFStr(self._exp))
     
-    __str__ = hipFStr
+    __str__ = gpufortFStr
     
     def fStr(self):
         return "({base})**({exp})".format(\
             base=makeCStr(self._base),exp=makeCStr(self._exp))
 
 class TTAssignment(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._lhs, self._rhs = tokens
     def convertToDoLoopNestIfNecessary(self):
         """
@@ -429,7 +430,7 @@ class TTAssignment(TTNode):
             loopNestEnd   = "end do\n" + loopNestEnd 
         if len(loopNestStart):
             # TODO put into options
-            for rvalue in findAll(self._rhs,searchedType=TTRvalue):
+            for rvalue in findAll(self._rhs,searchedType=TTRValue):
                 for i,matrixRange in enumerate(rvalue.matrixRangeArgs()):
                  loopVarName = "_"+chr(ord('a')+i) # Fortran names cannot start with "_"
                  matrixRange.setLoopVar(loopVarName)
@@ -457,7 +458,7 @@ class TTAssignment(TTNode):
            return self._lhs.fStr() + "=" + flattenArithmeticExpression(self._rhs,converter=makeFStr) + ";\n"
 
 class TTRange(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._begin, self._end = tokens
         del self._tokens
     def fStr(self):
@@ -466,7 +467,7 @@ class TTRange(TTNode):
         return self.fStr()
 
 class TTComplexAssignment(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._lhs, self._rhs = tokens
         
     def cStr(self):
@@ -479,7 +480,7 @@ class TTComplexAssignment(TTNode):
         return result
 
 class TTMatrixAssignment(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._lhs, self._rhs = tokens
         
     def cStr(self):
@@ -493,7 +494,7 @@ class TTMatrixAssignment(TTNode):
         return result
 
 class TTIntentQualifier(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         #print("found intentQualifier")
         #print(tokens[0])
         self._intent = tokens[0][0]
@@ -504,7 +505,7 @@ class TTIntentQualifier(TTNode):
         return "intent({0})".format(self._intent)
 
 class TTMatrixRange(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._lbound, self._ubound, self._stride = tokens 
         self._loopVar = ""
     def setLoopVar(self,name):
@@ -568,7 +569,7 @@ class TTBounds(TTNode):
     dimensionValue = ( matrixRange | arithmeticExpression | Literal("*"))
     ```
     """
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._bounds = []
         if tokens != None:
             self._bounds = tokens[0]
@@ -716,7 +717,7 @@ class TTBounds(TTNode):
         return "({0})".format(",".join(makeFStr(el) for el in self._bounds)) 
 
 class TTDimensionQualifier(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._bounds = tokens[0][0]
     def cStr(self):
         return makeCStr(self._bounds) 
@@ -731,7 +732,7 @@ class TTDeclaredVariable(TTNode):
     declarationVariable = Group( identifier + Optional(LPAR + dimensionList + RPAR,default=[]) + Optional(EQ + ( matrixArithmeticExpression | complexArithmeticExpression | arithmeticExpression ), default=None)) # ! emits [*,[*],*]
     ```
     """
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._name   = tokens[0][0]
         self._bounds = tokens[0][1]
         self._rhs    = tokens[0][2]
@@ -801,7 +802,7 @@ class TTDeclaration(TTNode,Attributed):
     declaration = datatype + Optional(COMMA + qualifierList,default=[]) + COLONS + Group(delimitedList(declarationVariable))   # ! emits *,[*],[*]
     ```
     """
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         #declaration = datatype + Optional(COMMA + attributeList,default=[]) + COLONS + Group(delimitedList(declarationVariable))   # ! emits *,[*],[*]
         self._datatype, self._qualifiers, self._rhs = tokens
         self._ignoreList = []
@@ -1005,7 +1006,7 @@ class TTDeclaration(TTNode,Attributed):
             return result.rstrip(",")
 
 class TTAttributes(TTNode,Attributed):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         #print(tokens)
         self._qualifiers, self._rhs = tokens
         self._ignore = False
@@ -1024,64 +1025,12 @@ class TTAttributes(TTNode,Attributed):
         else:
             return ""
 
-class TTDo(TTNode):
-    def assignFields(self,tokens):
-        # Assignment, number | variable
-        self._begin, self._end, self._step, self._body = tokens
-        self._threadIndex = None # "z","y","x"
-    def loopVarCStr():
-        return makeCStr(self._begin._lhs)
-    def setThreadIndex(self,name):
-        self._threadIndex = name
-    def hipThreadIndexCStr(self):
-        indexVar = self.loopVarCStr()
-        begin    = makeCStr(self._begin._rhs) # array indexing is corrected in index macro
-        step     = makeCStr(self._step)
-        return "int {var} = {begin} + ({step})*(threadIdx.{idx} + blockIdx.{idx} * blockDim.{idx});\n".format(\
-                var=indexVar,begin=begin,idx=self._threadIndex,step=step)
-    def collapsedLoopIndexCStr(self,denominator):
-        indexVar = self.loopVarCStr()
-        tid      = self._threadIndex
-        assert not tid is None
-        begin    = makeCStr(self._begin._rhs)
-        size     = self.problemSizeCStr()
-        step     = makeCStr(self._step)
-        # int i<n> = begin<n> + step<n>*(i<denominator<n>> % size<n>)
-        return "int {var} = {begin} + ({step})*({tid}{denom} % {size});\n".format(\
-                var=indexVar,begin=begin,tid=tid,denom=denominator,size=size,step=step)
-    def problemSizeCStr(self):
-        if self._step == "1":
-            return "(1 + (({end}) - ({begin})))".format(\
-                begin=makeCStr(self._begin._rhs),end=makeCStr(self._end),step=makeCStr(self._step) )
-        else:
-            return "(1 + (({end}) - ({begin}))/({step}))".format(\
-                begin=makeCStr(self._begin._rhs),end=makeCStr(self._end),step=makeCStr(self._step))
-    def hipThreadBoundCStr(self) :
-        indexVar = self.loopVarCStr()
-        begin    = makeCStr(self._begin._rhs)
-        end      = makeCStr(self._end)
-        step     = makeCStr(self._step)
-        return "loop_cond({0},{1},{2})".format(indexVar, end, step)
-    def cStr(self):
-        indexVar    = self.loopVarCStr()
-        begin       = makeCStr(self._begin._rhs) # array indexing is corrected in index macro
-        end         = makeCStr(self._end)
-        step        = makeCStr(self._step)
-        bodyContent = flattenBody(self._body) 
-        if self._threadIndex == None:
-            #print(self._body)
-            return "for (int {0}={1}; {0} <= {2}; {0} += {3}) {{\n  {4}\n}}".format(indexVar, begin, end, step, bodyContent)
-        else:
-            return bodyContent
-    def loopVarCStr(self):
-        return makeCStr(self._begin._lhs)
-
-class TTSingleExecutionStatement(TTNode):
+class TTStatement(TTNode):
     """
     Mainly used for searching expressions and replacing them in the translator AST.
     One example is converting to colon operations to do loops.
     """
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._statement = tokens
     def cStr(self):
         return makeCStr(self._statement)
@@ -1089,7 +1038,7 @@ class TTSingleExecutionStatement(TTNode):
         return makeFStr(self._statement)
 
 class TTSingleLineIf(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._condition, self._body, self._semicolon= tokens
     def cStr(self):
         bodyContent = flattenBody(self._body) 
@@ -1105,7 +1054,7 @@ class TTSingleLineIf(TTNode):
         return self.multilineIfFStr()
 
 class TTIfElseBlock(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._ifBlock, self._elseIfBlocks, self._elseBlock = tokens
     def cStr(self):
         condition = self._ifBlock[0]
@@ -1121,7 +1070,7 @@ class TTIfElseBlock(TTNode):
         return cStr
 
 class TTIfElseIf(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._else      = tokens[0]
         self._condition = tokens[2]
     def cStr(self):
@@ -1132,19 +1081,19 @@ class TTIfElseIf(TTNode):
             return "if ({0}) {{\n".format(makeCStr(condition))
 
 class TTElse(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         pass
     def cStr(self):
         return "} else {\n"
 
 class TTEndIf(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         pass
     def cStr(self):
         return "}\n"
 
 class TTWhile(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._condition, self._body = tokens
         
     def cStr(self):    
@@ -1154,7 +1103,7 @@ class TTWhile(TTNode):
         return cStr
 
 class TTSubroutine(TTNode):
-    def assignFields(self,tokens):
+    def _assignFields(self,tokens):
         self._qualifier = tokens[0]
         self._name      = tokens[1]
         self._args      = tokens[2]
@@ -1186,176 +1135,6 @@ class TTSubroutine(TTNode):
              node._ignoreList = ignoredVars
         return makeCStr(self._body)
 
-# extensions for directive-based programming
-
-class LaunchInfo():
-    def __init__(self):
-        self._numLoopsToMap = 1 
-        self._grid        = ["-1"]*3
-        self._block       = ["-1"]*3
-        self._sharedMem   = 0
-        self._stream      = 0
-    def streamFStr(self):
-        return makeFStr(self._stream)
-    def sharedMemFStr(self):
-        return makeFStr(self._sharedMem)
-    def cStr(self):
-        result  = "// NOTE: The following information was given in the orignal Cuf kernel pragma:\n"
-        result += "// - Nested outer-most do-loops that are directly mapped to threads: {}\n".format(makeCStr(self._numLoopsToMap))
-        result += "// - Number of blocks (CUDA): {}. ('-1' means not specified)\n".format(makeCStr(self._grid))
-        result += "// - Threads per block (CUDA): {}. ('-1' means not specified)\n".format(makeCStr(self._block))
-        result += "// - Shared Memory: {}\n".format(makeFStr(self._sharedMem))
-        result += "// - Stream: {}\n".format(makeFStr(self._stream))
-        return result
-    def useDefaultStream(self):
-        return self._stream == "0"
-    def dimensions(self):
-        """
-        Get the number of grid and block dimensions.
-        This might differ from the number of nested loops.
-        """
-        if LOOP_COLLAPSE_STRATEGY=="grid":
-            return int(self._numLoopsToMap)
-        else:
-            return 1
-
-class TTLoopKernel(TTNode):
-    def kernelLaunchInfo(self) :
-        return self._launchInfo
-    def loopVars(self):
-        identifierNames = []
-        doLoops  = findAll(self._body,TTDo)
-        for loop in doLoops:
-             identifierNames.append(loop.loopVarCStr())
-        return identifierNames
-    def allIdentifiers(self):
-        identifierNames = []
-        myList = findAll(self._body,TTIdentifier) # includes the identifiers of the function calls
-        for ident in myList:
-            name = makeCStr(ident._name)
-            if not name.lower() in KEYWORDS and\
-               not name.lower() in GPUFORT_CPP_ROUTINES:
-                   identifierNames.append(name)
-        return set(identifierNames)
-    def allLocalLvalues(self):
-        """
-        We focus on scalar identifiers here, i.e. the left-hand side must not contain any index operator evaluations
-        or be a struct.
-        NOTE: The loop variables need to be removed from this result when rendering the corresponding C kernel.
-        NOTE: When rendering the kernel, it is best to exclude all variables for which an array declaration has been found,
-        from the result list. TTCufLoopKernel instances do not know of the type of the variables.
-
-        """
-        # TODO(gpufort): Rewrite to go through all assignments one by one: 
-        # get list of assignments
-        # lvLastRead     = {}
-        # lvLastAssigned = {}
-        # for i,assignment in enumerate(list)
-        #     get lhs, get rvalue in lhs
-        #     if lhs in rvalue list
-        #     lvLastRead[lhs.name()] = 
-        #     ...
-        # Use findFirstMatching routine
-        identifierNames = []
-        #reductionCandidates = []
-        lvalues = list(filter(lambda x: x.isIdentifier(), findAll(self._body,TTLvalue))) # excludes array assignments, where brackets are used
-        rvalues = list(filter(lambda x: x.isIdentifier(), findAll(self._body,TTRvalue))) 
-        for lvalue in lvalues:
-             lvName = makeCStr(lvalue._value)
-             readBeforeAssignment = False
-             readAfterAssignment  = False
-             for rvalue in rvalues:
-                 if lvName == makeCStr(rvalue._value):
-                    if rvalue._location < lvalue._location: # rvalue occurred before
-                        readBeforeAssignment = True
-                    #if rvalue._location > lvalue._location: # rvalue occurred before
-                    #    readAfterAssignment = True
-             if not readBeforeAssignment and not lvName in self._reductionVars: 
-                identifierNames.append(lvName)
-             #if readAfterAssignment:
-             #   reductionCandidates.append(lvName)
-        return set(identifierNames)
-    def problemSize(self):
-        numLoopsToMap = int(self._launchInfo._numLoopsToMap)
-        if LOOP_COLLAPSE_STRATEGY == "grid" or numLoopsToMap == 1:
-            numLoopsToMap = min(3,numLoopsToMap)
-            result = ["-1"]*numLoopsToMap
-            doLoops = findAll(self._body,TTDo)
-            for i,loop in enumerate(doLoops):
-                if i < numLoopsToMap:
-                    result[i] = loop.problemSizeCStr()
-            return result
-        else: # "collapse"
-            result = ""
-            doLoops = findAll(self._body,TTDo)
-            for loop in reversed(doLoops[0:numLoopsToMap]):
-                if len(result):
-                    result += "*"
-                result += loop.problemSizeCStr()
-            if len(result):
-                return [result]
-            else:
-                return ["-1"]
-    def reductionVars(self):
-        return self._reductionVars
-    def privateGangVars(self):
-        return self._privateGangVars
-    def cStr(self):
-        numLoopsToMap = int(self._launchInfo._numLoopsToMap)
-        if LOOP_COLLAPSE_STRATEGY == "grid" and numLoopsToMap <= 3:
-            dim=numLoopsToMap
-        else: # "collapse" or numLoopsToMap > 3
-            dim=1
-        tidx = "__gidx{dim}".format(dim=dim)
-        # 1. unpack colon (":") expressions 
-        for expr in findAll(self._body,TTSingleExecutionStatement): 
-            if type(expr._statement[0]) is TTAssignment:
-                expr._statement[0] = expr._statement[0].convertToDoLoopNestIfNecessary()
-        # 2. Identify reduction variables
-        for expr in findAll(self._body,TTAssignment):
-            for var in findAllMatching(expr,lambda x: isinstance(x,Value)):
-                if type(var._value) in [TTStructElem,TTIdentifier]:
-                    if var.name().lower() in self._reductionVars.keys():
-                        var._reductionIndex = tidx
-        reductionPreamble = ""
-        for var,op in self._reductionVars.items():
-            reductionPreamble += "reduce_op_{op}::init({var}[{tidx}]);\n".format(op=op,var=var,tidx=tidx)
-        # 3. collapse and transform do-loops
-        doLoops = findAll(self._body,TTDo)
-        numLoopsToMap = int(self._launchInfo._numLoopsToMap)
-        if numLoopsToMap is 1 or (LOOP_COLLAPSE_STRATEGY == "grid" and numLoopsToMap <= 3):
-            if numLoopsToMap > 3:
-                logging.getLogger("").warn("loop collapse strategy grid chosen with nested loops > 3")
-            numLoopsToMap = min(3,numLoopsToMap)
-            threadIndices = ["x","y","z"]
-            for i in range(0,3-numLoopsToMap):
-                threadIndices.pop()
-            indices    = ""
-            conditions = []
-            for loop in doLoops:
-                if not len(threadIndices):
-                    break
-                loop.setThreadIndex(threadIndices.pop())
-                indices   += loop.hipThreadIndexCStr()
-                conditions.append(loop.hipThreadBoundCStr()) 
-        else: # "collapse" or numLoopsToMap > 3
-            indices    = ""
-            conditions = []
-            denominatorFactors = []
-            for loop in reversed(doLoops[0:numLoopsToMap]):
-                loop.setThreadIndex(tidx)
-                # denominator1 = "" 
-                # denominator2 = "/" + "(end1 - begin1 + 1)"
-                # denominator3 = "/" + "(end1 - begin1 + 1)*(end1 - begin1 + 1)"
-                if len(denominatorFactors):
-                    indices += loop.collapsedLoopIndexCStr("/("+"*".join(denominatorFactors)+")")
-                else:
-                    indices += loop.collapsedLoopIndexCStr("")
-                denominatorFactors.append(loop.problemSizeCStr())
-                conditions.append(loop.hipThreadBoundCStr()) 
-        return "{0}{2}if ({1}) {{\n{3}}}".format(\
-            indices,"&&".join(conditions),reductionPreamble,makeCStr(self._body))
-
 ## Link actions
 #printStatement.setParseAction(TTCommentedOut)
 comment.setParseAction(TTCommentedOut)
@@ -1367,10 +1146,10 @@ lArithOperator.setParseAction(TTOperator)
 #rArithOperator.setParseAction(TTOperator)
 conditionOp.setParseAction(TTOperator)
 identifier.setParseAction(TTIdentifier)
-rvalue.setParseAction(TTRvalue)
-lvalue.setParseAction(TTLvalue)
-simpleStructElem.setParseAction(TTStructElem)
-structElem.setParseAction(TTStructElem)
+rvalue.setParseAction(TTRValue)
+lvalue.setParseAction(TTLValue)
+simpleDerivedTypeMember.setParseAction(TTDerivedTypeMember)
+derivedTypeElem.setParseAction(TTDerivedTypeMember)
 funcCall.setParseAction(TTFunctionCallOrTensorAccess)
 subroutineCall.setParseAction(TTSubroutineCall)
 
@@ -1396,22 +1175,21 @@ declaration.setParseAction(TTDeclaration)
 arithmeticExpression.setParseAction(TTArithmeticExpression)
 arithmeticLogicalExpression.setParseAction(TTArithmeticExpression)
 complexArithmeticExpression.setParseAction(TTComplexArithmeticExpression)
-powerValue1.setParseAction(TTRvalue)
+powerValue1.setParseAction(TTRValue)
 power.setParseAction(TTPower)
 assignment.setParseAction(TTAssignment)
 matrixAssignment.setParseAction(TTMatrixAssignment)
 complexAssignment.setParseAction(TTComplexAssignment)
 attributes.setParseAction(TTAttributes)
 
-doLoop.setParseAction(TTDo)
 whileLoop.setParseAction(TTWhile)
 singleLineIf.setParseAction(TTSingleLineIf)
 ifElseBlock.setParseAction(TTIfElseBlock)
 #ifElseIf.setParseAction(TTIfElseIf)
 #ELSE.setParseAction(TTElse)
 #ENDIF.setParseAction(TTEndIf)
-singleLineIfBody.setParseAction(TTSingleExecutionStatement)
-singleExecutionStatement.setParseAction(TTSingleExecutionStatement)
+singleLineIfBody.setParseAction(TTStatement)
+statement.setParseAction(TTStatement)
 
 use.setParseAction(TTIgnore)
 returnStatement.setParseAction(TTSimpleToken)

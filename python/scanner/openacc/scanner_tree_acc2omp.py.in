@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+class Acc2Omp(AccBackendBase):
+    def gpufortFStr(self,indexHints=[]):
+        fSnippet = "".join(self._stnode._lines)
+        try:
+           def repl(parseResult):
+                return parseResult.ompFStr(), True
+           result,_ = pyparsingtools.replaceFirst(fSnippet,\
+                    translator.accSimpleDirective,\
+                    repl)
+           return result, True 
+        except Exception as e:
+           print("failed: "+fSnippet) #TODO
+           raise e
+           return "", False 
+
+class AccLoopKernel2Omp(AccBackendBase):
+    def gpufortFStr(self,indexHints=[]):
+        fSnippet = "".join(self._stnode._lines)
+        try:
+           parseResult = translator.loopKernel.parseString(fSnippet)[0]
+           return parseResult.ompFStr(fSnippet), True 
+        except Exception as e:
+           print("failed: "+fSnippet) #TODO
+           raise e
+           return "", False 
+
+registerAccBackend("omp",Acc2Omp,AccLoopKernel2Omp,None)

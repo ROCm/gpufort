@@ -1,6 +1,16 @@
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 # general options
+COMMENT = r"(!|^\s*[\*cCdD])[^\$].+"
+GPUFORT_CPP_ROUTINES = { 
+  "__pow" : "pow"
+}
+
+MAX_DIRECTIVE_LINE_WIDTH = 80
 
 UNCONVERTED = "TODO(gpufort) UNCONVERTED - Please adjust yourself!"
+DEPEND_TODO = "TODO(gpufort) - specify depend inputs"
+
 FLOAT_COMPLEX="hipFloatComplex"
 DOUBLE_COMPLEX="hipDoubleComplex"
 FORTRAN_2_C_TYPE_MAP = { 
@@ -61,9 +71,7 @@ FORTRAN_TYPE_2_BYTES_MAP = {
   }
 }
 
-# one of "collapse", "collapse-always", "grid"
-LOOP_COLLAPSE_STRATEGY="collapse"
-LOOP_COLLAPSE_STRATEGY_OPTIONS=["collapse","collapse-always","grid"]
+LOOP_COLLAPSE_STRATEGY="collapse" # One of "collapse","collapse-always","grid"
 
 # options for CUF
 CUBLAS_VERSION = 1

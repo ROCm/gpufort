@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 import os
 import utils
 import copy
@@ -7,28 +9,33 @@ import addtoplevelpath
 import fort2hip.model as model
 import translator.translator as translator
 import indexer.indexer as indexer
+import indexer.indexertools as indexertools
 import scanner.scanner as scanner
 
 fort2hipDir = os.path.dirname(__file__)
 exec(open("{0}/fort2hip_options.py.in".format(fort2hipDir)).read())
 
+# must be synced with grammar
+CLAUSE_NOT_FOUND           = -2
+CLAUSE_VALUE_NOT_SPECIFIED = -1
+
 def convertDim3(dim3,dimensions,doFilter=True):
      result = []
      specified = dim3
      if doFilter:
-         specified = [ x for x in dim3 if x != "-1" ]
+         specified = [ x for x in dim3 if x not in [CLAUSE_NOT_FOUND,CLAUSE_VALUE_NOT_SPECIFIED]]
      for i,value in enumerate(specified):
           if i >= dimensions:
               break
           el = {}
-          el["dim"]   = chr(ord('X')+i)
+          el["dim"]   = chr(ord("X")+i)
           el["value"] = value
           result.append(el)
      return result
 
 # arg for kernel generator
 # array is split into multiple args
-def initArg(argName,fType,kind,qualifiers=[],cType=""):
+def initArg(argName,fType,kind,qualifiers=[],cType="",isArray=False):
     fTypeFinal = fType
     if len(kind):
         fTypeFinal += "({})".format(kind)
@@ -41,6 +48,7 @@ def initArg(argName,fType,kind,qualifiers=[],cType=""):
       "cType"           : cType,
       "cSize"           : "",
       "cValue"          : "",
+      "cSuffix"         : "[]" if isArray else "",
       "reductionOp"     : "",
       "bytesPerElement" : translator.bytes(fType,kind,default="-1")
     }
@@ -57,7 +65,7 @@ def createArgumentContext(indexedVariable,argName,isLoopKernelArg=False,cudaFort
     :return: a dicts containing Fortran `type` and `qualifiers` (`type`, `qualifiers`), C type (`cType`), and `name` of the argument
     :rtype: dict
     """
-    arg = initArg(argName,indexedVariable["fType"],indexedVariable["kind"],[ "value" ])
+    arg = initArg(argName,indexedVariable["fType"],indexedVariable["kind"],[ "value" ],"",indexedVariable["rank"]>0)
     if indexedVariable["parameter"] and not indexedVariable["value"] is None:
         arg["cValue"] = indexedVariable["value"] 
     lowerBoundArgs = []  # additional arguments that we introduce if variable is an array
@@ -74,11 +82,11 @@ def createArgumentContext(indexedVariable,argName,isLoopKernelArg=False,cudaFort
         arg["qualifiers"] = [ "value" ]
         for d in range(1,rank+1):
              # lower bounds
-             boundArg = initArg("{}_lb{}".format(argName,d),"integer","c_int",["value", "intent(in)"],"const int")
+             boundArg = initArg("{}_lb{}".format(argName,d),"integer","c_int",["value","intent(in)"],"const int")
              boundArg["callArgName"] = "lbound({},{})".format(argName,d)
              lowerBoundArgs.append(boundArg)
              # number of elements per dimensions
-             countArg = initArg("{}_n{}".format(argName,d),"integer","c_int",["value", "intent(in)"],"const int")
+             countArg = initArg("{}_n{}".format(argName,d),"integer","c_int",["value","intent(in)"],"const int")
              countArg["callArgName"] = "size({},{})".format(argName,d)
              countArgs.append(countArg)
         # create macro expression
@@ -98,6 +106,7 @@ def deriveKernelArguments(index, identifiers, localVars, loopVars, whiteList=[],
     macros              = []
     localArgs           = []
     localCpuRoutineArgs = []
+    inputArrays         = []
 
     def includeArgument(name):
         nameLower = name.lower().strip()
@@ -114,7 +123,7 @@ def deriveKernelArguments(index, identifiers, localVars, loopVars, whiteList=[],
     for name in identifiers: # TODO does not play well with structs
         if includeArgument(name):
             foundDeclaration = name in loopVars # TODO rename loop variables to local variables; this way we can filter out local subroutine variables
-            indexedVariable,discovered = indexer.searchIndexForVariable(index,name) # TODO treat implicit here
+            indexedVariable,discovered = indexertools.searchIndexForVariable(index,name) # TODO treat implicit here
             argName = name
             if not discovered:
                  arg = initArg(name,"TODO declaration not found","",[],"TODO declaration not found")
@@ -135,6 +144,7 @@ def deriveKernelArguments(index, identifiers, localVars, loopVars, whiteList=[],
                 else:
                     rank = indexedVariable["rank"]
                     if rank > 0: # specific for cufLoopKernel
+                        inputArrays.append({ "name" : name, "rank" : rank })
                         arg["cSize"]    = ""
                         dimensions = "dimension({0})".format(",".join([":"]*rank))
                         # Fortran size expression for allocate
@@ -168,94 +178,92 @@ def deriveKernelArguments(index, identifiers, localVars, loopVars, whiteList=[],
         if append:
             kernelArgs.append(unkernelArg)
 
-    return kernelArgs, cKernelLocalVars, macros, localCpuRoutineArgs
+    return kernelArgs, cKernelLocalVars, macros, inputArrays, localCpuRoutineArgs
     
-def extractLoopKernels(loopKernels,index,cContext,fContext):
+def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
     """
-    loopLoopKernels is a list of STCufLoopKernel objects.
-    cContext, fContext are inout arguments for generating C/Fortran files, respectively.
+    loopKernels is a list of STCufLoopKernel objects.
+    hipContext, fContext are inout arguments for generating C/Fortran files, respectively.
     """
-    cContext["haveReductions"] = False
+    hipContext["haveReductions"] = False
     for stkernel in loopKernels:
         parentTag     = stkernel._parent.tag()
-        filteredIndex = indexer.filterIndexByTag(index,parentTag)
+        filteredIndex = indexertools.filterIndexByTag(index,parentTag)
        
-        fSnippet = "\n".join([line.strip("\n") for line in (stkernel.directiveLines() + stkernel.bodyLines())])
-        fBody   = "\n".join([line.strip() for line in stkernel.bodyLines()])
-        fBody = utils.prettifyFCode(fBody)
+        fSnippet = "".join(stkernel.lines())
 
         # translate and analyze kernels
-        if type(stLoopKernel) is scanner.STCufLoopKernel:
-            cSnippet, problemSize, kernelLaunchInfo,\
-            identifiers, localLvalues, loopVars,\
-            reductionOps\
-                = translator.convertCufLoopKernel(fSnippet,filteredIndex[0])
-            #deviceVarsInScope = stkernel.deviceVarsInScope() # TODO only printed in testComment
-        elif type(stLoopKernel) is scanner.STAccLoopKernel:
-            #deviceVarsInScope = stkernel.arraysInScope() + stkernel.scalarsInScope() # TODO only printed in testComment
-            cSnippet, problemSize, kernelLaunchInfo,\
-            identifiers, localLvalues, loopVars,\
-            reductionOps\
-                = translator.convertAccLoopLoopKernel(fSnippet,filteredIndex[0])
+        kernelParseResult = translator.parseLoopKernel(fSnippet,filteredIndex)
 
-        kernelArgs, cKernelLocalVars, macros, localCpuRoutineArgs =\
-          deriveLoopKernelArguments(index, identifiers, localLvalues, loopVars, [], True, type(stLoopKernel) is scanner.STCufLoopKernel)
+        kernelArgs, cKernelLocalVars, macros, inputArrays, localCpuRoutineArgs =\
+          deriveKernelArguments(index,\
+            kernelParseResult.identifiersInBody(),\
+            kernelParseResult.localScalars(),\
+            kernelParseResult.loopVars(),\
+            [], True, type(stkernel) is scanner.STCufLoopKernel)
 
         # general
         kernelName         = stkernel.kernelName()
         kernelLauncherName = stkernel.kernelLauncherName()
-
-        # treat reduction vars / acc default(present) vars
-        cContext["haveReductions"] |= len(reductionOps)
+   
+        # treat reductionVars vars / acc default(present) vars
+        hipContext["haveReductions"] = False # |= len(reductionOps)
         kernelCallArgNames = []
-        reductionVars      = []
+        reductions = kernelParseResult.gangTeamReductions(translator.makeCStr)
+        reductionVars = []
         for arg in kernelArgs:
             name  = arg["name"]
             cType = arg["cType"]
-            if name in reductionOps:
-                # modify argument
-                arg["qualifiers"].remove("value")
-                arg["cType"] = cType + "*"
-                # reduction buffer var
-                bufferName = "_d_" + name
-                var = { "buffer": bufferName, "name" : name, "type" : cType, "op" : reductionOps[name] }
-                reductionVars.append(var)
-                # call args
-                kernelCallArgNames.append(bufferName)
-            else:
+            isReductionVar = False
+            for op,variables in reductions.items():
+                if name.lower() in [var.lower() for var in variables]:
+                    # modify argument
+                    arg["qualifiers"].remove("value")
+                    arg["cType"] = cType + "*"
+                    # reductionVars buffer var
+                    bufferName = "_d_" + name
+                    var = { "buffer": bufferName, "name" : name, "type" : cType, "op" : op }
+                    reductionVars.append(var)
+                    # call args
+                    kernelCallArgNames.append(bufferName)
+                    isReductionVar = True
+            if not isReductionVar:
                 kernelCallArgNames.append(name)
-                if type(stLoopKernel) is scanner.STAccLoopKernel:
+                if type(stkernel) is scanner.STAccLoopKernel:
                     if len(arg["cSize"]):
                         stkernel.appendDefaultPresentVar(name)
-        def argNames(args):
-            return [arg["name"] for arg in args]
-
+            hipContext["haveReductions"] |= isReductionVar
         # C LoopKernel
-        cKernelDict = {}
-        cLoopKernelDict["isLoopLoopKernel"] = True
-        dimensions = kernelLaunchInfo.dimensions()
-        cKernelDict["size"]  = convertDim3(problemSize,dimensions,doFilter=False)
-        cKernelDict["grid"]  = convertDim3(kernelLaunchInfo._grid ,dimensions)
-        cKernelDict["block"] = convertDim3(kernelLaunchInfo._block,dimensions)
-        if not len(cKernelDict["block"]):
-            defaultBlockSize = { 1 : [256], 2 : [16,16], 3: [16,16,1] }
-            cKernelDict["block"] = convertDim3(defaultBlockSize[dimensions],dimensions)
-        cKernelDict["gridDims"  ]  = [ "{}_grid{}".format(kernelName,x["dim"]) for x in cKernelDict["block"] ] # grid might not be always defined
-        cKernelDict["blockDims"  ] = [ "{}_block{}".format(kernelName,x["dim"]) for x in cKernelDict["block"] ]
-
-        cKernelDict["kernelName"]         = kernelName
-        cKernelDict["macros"]             = macros
-        cKernelDict["cBody"]              = cSnippet
-        cKernelDict["fBody"]              = utils.prettifyFCode(fSnippet)
-        cKernelDict["kernelArgs"]         = ["{} {}{}".format(a["cType"],a["name"],a["cSize"]) for a in kernelArgs]
-        cKernelDict["kernelCallArgNames"] = kernelCallArgNames
-        cKernelDict["reductionVars"]      = reductionVars
-        cKernelDict["kernelLocalVars"]    = ["{} {}{}".format(a["cType"],a["name"],a["cSize"]) for a in cKernelLocalVars]
-        cKernelDict["interfaceName"]      = kernelLauncherName
-        cKernelDict["interfaceComment"]   = kernelLaunchInfo.cStr()
-        cKernelDict["interfaceArgs"]      = cKernelDict["kernelArgs"]
-        cKernelDict["interfaceArgNames"]  = argNames(kernelArgs) # excludes the stream;
-        cContext["kernels"].append(cKernelDict)
+        dimensions  = kernelParseResult.numDimensions()
+        block = convertDim3(kernelParseResult.numThreadsInBlock(),dimensions)
+        if not len(block):
+            defaultBlockSize = DEFAULT_BLOCK_SIZES 
+            block = convertDim3(defaultBlockSize[dimensions],dimensions)
+        hipKernelDict = {}
+        hipKernelDict["isLoopKernel"]       = True
+        hipKernelDict["size"]               = convertDim3(kernelParseResult.problemSize(),dimensions,doFilter=False)
+        hipKernelDict["grid"]               = convertDim3(kernelParseResult.numGangsTeamsBlocks(),dimensions)
+        hipKernelDict["block"]              = block
+        hipKernelDict["launchBounds"]       = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS)
+        hipKernelDict["gridDims"  ]         = [ "{}_grid{}".format(kernelName,x["dim"])  for x in block ] # grid might not be always defined
+        hipKernelDict["blockDims"  ]        = [ "{}_block{}".format(kernelName,x["dim"]) for x in block ]
+        hipKernelDict["kernelName"]         = kernelName
+        hipKernelDict["macros"]             = macros
+        hipKernelDict["cBody"]              = kernelParseResult.cStr()
+        hipKernelDict["fBody"]              = utils.prettifyFCode(fSnippet)
+        hipKernelDict["kernelArgs"]         = ["{} {}{}{}".format(a["cType"],a["name"],a["cSize"],a["cSuffix"]) for a in kernelArgs]
+        hipKernelDict["kernelCallArgNames"] = kernelCallArgNames
+        hipKernelDict["reductions"]         = reductionVars
+        hipKernelDict["kernelLocalVars"]    = ["{} {}{}".format(a["cType"],a["name"],a["cSize"]) for a in cKernelLocalVars]
+        hipKernelDict["interfaceName"]      = kernelLauncherName
+        hipKernelDict["interfaceComment"]   = "" # kernelLaunchInfo.cStr()
+        hipKernelDict["interfaceArgs"]      = hipKernelDict["kernelArgs"]
+        hipKernelDict["interfaceArgNames"]  = [arg["name"] for arg in kernelArgs] # excludes the stream;
+        hipKernelDict["inputArrays"]        = inputArrays
+        #inoutArraysInBody                   = [name.lower for name in kernelParseResult.inoutArraysInBody()]
+        #hipKernelDict["outputArrays"]       = [array for array in inputArrays if array.lower() in inoutArraysInBody]
+        hipKernelDict["outputArrays"]       = inputArrays
+        hipContext["kernels"].append(hipKernelDict)
 
         # Fortran interface with automatic derivation of stkernel launch parameters
         fInterfaceDictAuto = {}
@@ -267,42 +275,42 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
           {"type" : "type(c_ptr)"   , "qualifiers" : ["value", "intent(in)"], "name" : "stream",   "cSize": ""},
         ]
         fInterfaceDictAuto["args"]    += kernelArgs
-        fInterfaceDictAuto["argNames"] = argNames(fInterfaceDictAuto["args"])
+        fInterfaceDictAuto["argNames"] = [arg["name"] for arg in fInterfaceDictAuto["args"]]
 
         # for test
         fInterfaceDictAuto["doTest"]   = False # True
-        fInterfaceDictAuto["testComment"] = ["Fortran implementation:"] + fBody.split("\n")
+        fInterfaceDictAuto["testComment"] = ["Fortran implementation:"] + fSnippet.split("\n")
         #fInterfaceDictAuto["testComment"] = ["","Hints:","Device variables in scope:"] + ["".join(declared._lines).lower() for declared in deviceVarsInScope]
 
         #######################################################################
         # Feed argument names back to STLoopKernel for host code modification
         #######################################################################
         stkernel._kernelArgNames = [arg["callArgName"] for arg in kernelArgs]
-        stkernel._stream         = kernelLaunchInfo.streamFStr()
-        stkernel._sharedMem      = kernelLaunchInfo.sharedMemFStr()
+        stkernel._stream         = kernelParseResult.stream()
+        stkernel._sharedMem      = kernelParseResult.sharedMem()
 
         # Fortran interface with manual specification of stkernel launch parameters
         fInterfaceDictManual = copy.deepcopy(fInterfaceDictAuto)
         fInterfaceDictManual["cName"] = kernelLauncherName
         fInterfaceDictManual["fName"] = kernelLauncherName
         fInterfaceDictManual["args"] = [
-            {"type" : "type(dim3)", "qualifiers" : ["intent(in)"], "name" : "grid", "cSize": ""},
-            {"type" : "type(dim3)", "qualifiers" : ["intent(in)"], "name" : "block", "cSize": ""},
-            {"type" : "integer(c_int)", "qualifiers" : ["intent(in)"],         "name" : "sharedMem", "cSize" : "" },
-            {"type" : "type(c_ptr)"   , "qualifiers" : ["value", "intent(in)"], "name" : "stream",   "cSize": ""},
+          {"type" : "type(dim3)", "qualifiers" : ["intent(in)"], "name" : "grid", "cSize": ""},
+          {"type" : "type(dim3)", "qualifiers" : ["intent(in)"], "name" : "block", "cSize": ""},
+          {"type" : "integer(c_int)", "qualifiers" : ["intent(in)"],         "name" : "sharedMem", "cSize" : "" },
+          {"type" : "type(c_ptr)"   , "qualifiers" : ["value", "intent(in)"], "name" : "stream",   "cSize": ""},
         ]
         fInterfaceDictManual["args"]    += kernelArgs
-        fInterfaceDictManual["argNames"] = argNames(fInterfaceDictManual["args"])
+        fInterfaceDictManual["argNames"] = [arg["name"] for arg in fInterfaceDictManual["args"]]
         fInterfaceDictManual["doTest"]   = False
 
         # CPU routine
         fRoutineDict = copy.deepcopy(fInterfaceDictAuto)
         fRoutineDict["fName"] = kernelLauncherName + "_cpu"
+        
         # rename copied modified args
-        #print(localCpuRoutineArrayNames)
         for i,val in enumerate(fRoutineDict["args"]):
             varName = val["name"]
-            if len(val["cSize"]): # is array
+            if val.get("cSuffix","")=="[]": # is array
                 fRoutineDict["args"][i]["name"] = "d_{}".format(varName)
 
         fRoutineDict["argNames"] = [a["name"] for a in fRoutineDict["args"]]
@@ -319,7 +327,7 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
                # host to device
                epilog += "CALL hipCheck(hipMemcpy(d_{var},c_loc({var}),{bpe}_8*SIZE({var}),hipMemcpyHostToDevice))\n".format(var=localArray,bpe=arg["bytesPerElement"])
                epilog += "deallocate({var})\n".format(var=localArray)
-        fRoutineDict["body"] = prolog + fBody + epilog
+        fRoutineDict["body"] = prolog + fSnippet + epilog
 
         # Add all definitions to context
         fContext["interfaces"].append(fInterfaceDictManual)
@@ -327,10 +335,10 @@ def extractLoopKernels(loopKernels,index,cContext,fContext):
         fContext["routines"].append(fRoutineDict)
 
 # TODO check if this can be combined with other routine
-def extractAcceleratorRoutine(acceleratorRoutines,cContext,fContext):
+def updateContextFromAcceleratorRoutines(acceleratorRoutines,hipContext,fContext):
     """
     acceleratorRoutines is a list of STSubroutine objects.
-    cContext, fContext are inout arguments for generating C/Fortran files, respectively.
+    hipContext, fContext are inout arguments for generating C/Fortran files, respectively.
     """
     for stroutine in acceleratorRoutines:
         fSnippet = "".join(stroutine._lines)
@@ -338,16 +346,16 @@ def extractAcceleratorRoutine(acceleratorRoutines,cContext,fContext):
 
         kernelName, argNames, cBody = translator.convertAcceleratorRoutine(fSnippet)
         kernelLauncherName = "launch_{}".format(kernelName)
-        loopVars = []; localLvalues = []
+        loopVars = []; localLValues = []
         
-        filteredIndex = indexer.filterIndexByTag(index,stroutine.tag())
+        filteredIndex = indexertools.filterIndexByTag(index,stroutine.tag())
 
         identifiers = [] # TODO identifiers not the best name # TODO this is redundant with the ignore list
         for declaration in declaredVars:
              identifiers += declaration._vars
 
         kernelArgs, cKernelLocalVars, macros, localCpuRoutineArgs, localCpuRoutineArrayNames =\
-               deriveKernelArguments(filteredIndex,identifiers,localLvalues,loopVars,argNames,False,cudaFortran=True)
+          deriveKernelArguments(filteredIndex,identifiers,localLValues,loopVars,argNames,False,cudaFortran=True)
         #print(argNames)
 
         def beginOfBody(lines):
@@ -365,23 +373,20 @@ def extractAcceleratorRoutine(acceleratorRoutines,cContext,fContext):
         fBody = "".join(stroutine._lines[beginOfBody(stroutine._lines):endOfBody(stroutine._lines)])
         fBody = utils.prettifyFCode(fBody)
 
-        # C stroutine and C stroutine launcher
-        def argNames(args):
-            return [arg["name"] for arg in args]
-        cKernelDict = {}
-        cLoopKernelDict["isLoopLoopKernel"]     = False
-        cKernelDict["kernelName"]       = kernelName
-        cKernelDict["macros"]           = macros
-        cKernelDict["cBody"]            = cBody
-        cKernelDict["fBody"]            = fBody
-        cKernelDict["kernelArgs"]       = ["{} {}".format(a["cType"],a["name"]) for a in kernelArgs]
-        cKernelDict["kernelLocalVars"]  = ["{0} {1}{2} {3}".format(a["cType"],a["name"],a["cSize"],"= " + a["cValue"] if "cValue" in a else "") for a in cKernelLocalVars]
-        cKernelDict["interfaceName"]    = kernelLauncherName
-        cKernelDict["interfaceArgs"]    = cKernelDict["kernelArgs"]
-        cKernelDict["interfaceComment"] = ""
-        cKernelDict["interfaceArgNames"] = argNames(kernelArgs)
-        cKernelDict["kernelArgs"] = ["{} {}".format(a["cType"],a["name"]) for a in kernelArgs]
-
+        # C  routine and C stroutine launcher
+        hipKernelDict = {}
+        hipKernelDict["isLoopKernel"]     = False
+        hipKernelDict["kernelName"]       = kernelName
+        hipKernelDict["macros"]           = macros
+        hipKernelDict["cBody"]            = cBody
+        hipKernelDict["fBody"]            = fBody
+        hipKernelDict["kernelArgs"]       = ["{} {}".format(a["cType"],a["name"]) for a in kernelArgs]
+        hipKernelDict["kernelLocalVars"]  = ["{0} {1}{2} {3}".format(a["cType"],a["name"],a["cSize"],"= " + a["cValue"] if "cValue" in a else "") for a in cKernelLocalVars]
+        hipKernelDict["interfaceName"]    = kernelLauncherName
+        hipKernelDict["interfaceArgs"]    = hipKernelDict["kernelArgs"]
+        hipKernelDict["interfaceComment"] = ""
+        hipKernelDict["interfaceArgNames"] = [arg["name"] for arg in kernelArgs]
+        hipKernelDict["kernelArgs"] = ["{} {}".format(a["cType"],a["name"]) for a in kernelArgs]
         # Fortran interface with manual specification of kernel launch parameters
         fInterfaceDictManual = {}
         fInterfaceDictManual["cName"]       = kernelLauncherName
@@ -394,9 +399,9 @@ def extractAcceleratorRoutine(acceleratorRoutines,cContext,fContext):
             {"type" : "integer(c_int)", "qualifiers" : ["value", "intent(in)"], "name" : "sharedMem"},
             {"type" : "type(c_ptr)", "qualifiers" : ["value", "intent(in)"], "name" : "stream"},
         ]
-        fInterfaceDictManual["args"] += kernelArgs
-        fInterfaceDictManual["argNames"] = argNames(fInterfaceDictManual["args"])
-        fInterfaceDictManual["doTest"] = True
+        fInterfaceDictManual["args"]    += kernelArgs
+        fInterfaceDictManual["argNames"] = [arg["name"] for arg in fInterfaceDictManual["args"]]
+        fInterfaceDictManual["doTest"]   = True
 
         # CPU routine
         fRoutineDict = copy.deepcopy(fInterfaceDictManual)
@@ -424,57 +429,76 @@ def extractAcceleratorRoutine(acceleratorRoutines,cContext,fContext):
         fRoutineDict["body"] = prolog + fBody + epilog
 
         # Add all definitions to context
-        cContext["kernels"].append(cKernelDict)
+        hipContext["kernels"].append(hipKernelDict)
         fContext["interfaces"].append(fInterfaceDictManual)
         fContext["routines"].append(fRoutineDict)
 
-def renderTemplates(outputFilePrefix,cContext,fContext):
+def renderTemplates(outputFilePrefix,hipContext,fContext):
     # HIP kernel file
-    #pprint.pprint(cContext)
-    cCodeGenerator = model.HipImplementationModel()
+    #pprint.pprint(hipContext)
     hipImplementationFilePath = "{0}.kernels.hip.cpp".format(outputFilePrefix)
-    cCodeGenerator.generateCode(hipImplementationFilePath,cContext)
+    model.HipImplementationModel().generateCode(hipImplementationFilePath,hipContext)
     utils.prettifyCFile(hipImplementationFilePath)
-    msg = "created HIP C++ implementation file: {}".format(hipImplementationFilePath)
-    logger = logging.getLogger('')
+    msg = "created HIP C++ implementation file: ".ljust(40) + hipImplementationFilePath
+    logger = logging.getLogger("")
     logger.info(msg) ; print(msg)
 
+    # header files
+    outputDir = os.path.dirname(hipImplementationFilePath)
+    gpufortHeaderFilePath = outputDir + "/gpufort.h"
+    model.GpufortHeaderModel().generateCode(gpufortHeaderFilePath)
+    msg = "created gpufort main header: ".ljust(40) + gpufortHeaderFilePath
+    logger = logging.getLogger("")
+    logger.info(msg) ; print(msg)
+    if hipContext["haveReductions"]:
+        gpufortReductionsHeaderFilePath = outputDir + "/gpufort_reductions.h"
+        model.GpufortReductionsHeaderModel().generateCode(gpufortReductionsHeaderFilePath)
+        msg = "created gpufort reductions header file: ".ljust(40) + gpufortReductionsHeaderFilePath
+        logger = logging.getLogger("")
+        logger.info(msg) ; print(msg)
+
     # Fortran interface/testing module
-    fCodeGenerator = model.InterfaceModuleModel()
     moduleFilePath = "{0}.kernels.f08".format(outputFilePrefix)
-    fCodeGenerator.generateCode(moduleFilePath,fContext)
+    model.InterfaceModuleModel().generateCode(moduleFilePath,fContext)
     #utils.prettifyFFile(moduleFilePath)
-    msg = "created interface/testing module:    {}".format(moduleFilePath)
+    msg = "created interface/testing module: ".ljust(40) + moduleFilePath
     logger.info(msg) ; print(msg)
 
     # TODO disable tests for now
     if False:
        # Fortran test program
-       fTestGenerator = model.InterfaceModuleTestModel()
        testFilePath = "{0}.kernels.TEST.f08".format(outputFilePrefix)
-       fTestGenerator.generateCode(testFilePath,fContext)
+       model.InterfaceModuleTestModel().generateCode(testFilePath,fContext)
        #utils.prettifyFFile(testFilePath)
-       msg = "created interface module test file:  {}".format(testFilePath)
+       msg = "created interface module test file: ".ljust(40) + testFilePath
        logger.info(msg)
        print(msg)
 
-def generateHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename):
+def createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename,generateCode):
+    """
+    :param stree:        [inout] the scanner tree holds nodes that store the Fortran code lines of the kernels
+    :param generateCode: generate code or just feed kernel signature information
+                         back to the scanner tree.
+    :note The signatures of the identified kernels must be fed back to the 
+          scanner tree even when no kernel files are written.
+    """
     global FORTRAN_MODULE_PREAMBLE
-    if type(kernelsToConvertToHip) is list and not len(kernelsToConvertToHip):
+    if not len(kernelsToConvertToHip):
         return
     
     def select(kernel):
         nonlocal kernelsToConvertToHip
-        if kernelsToConvertToHip == "*":
-            return True
-        else:
-            return kernel._lineno in kernelsToConvertToHip or\
-                   kernel.kernelName() in kernelsToConvertToHip
+        condition1 = not kernel._ignoreInS2STranslation
+        condition2 = \
+                kernelsToConvertToHip[0] == "*" or\
+                kernel._lineno in kernelsToConvertToHip or\
+                kernel.kernelName() in kernelsToConvertToHip
+        return condition1 and condition2
 
     # Context for HIP implementation
-    cContext = {}
-    cContext["includes"] = [ "hip/hip_runtime.h", "hip/hip_complex.h" ]
-    cContext["kernels"] = []
+    hipContext = {}
+    hipContext["includes"] = [ "hip/hip_runtime.h", "hip/hip_complex.h" ]
+    hipContext["kernels"] = []
     
     # Context for Fortran interface/implementation
     fContext = {}
@@ -486,12 +510,11 @@ def generateHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basena
     fContext["routines"]   = []
 
     # extract kernels
-    loopLoopKernels         = stree.findAll(filter=lambda child : isinstance(child, scanner.STLoopKernel) and select(child), recursively=True)
+    loopKernels         = stree.findAll(filter=lambda child : isinstance(child, scanner.STLoopKernel) and select(child), recursively=True)
     acceleratorRoutines = stree.findAll(filter=lambda child : type(child) is scanner.STSubroutine and child.isAcceleratorRoutine() and select(child), recursively=True)
 
     if (len(loopKernels) or len(acceleratorRoutines)):
-        extractLoopKernels(loopKernels,index,cContext,fContext)
-        #extractAcceleratorRoutine(acceleratorRoutines,cContext,fContext)
-        renderTemplates(outputFilePrefix,cContext,fContext)
-
-
+        updateContextFromLoopKernels(loopKernels,index,hipContext,fContext)
+        #updateContextFromAcceleratorRoutines(acceleratorRoutines,hipContext,fContext)
+        if generateCode:
+            renderTemplates(outputFilePrefix,hipContext,fContext)

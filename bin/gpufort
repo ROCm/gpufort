@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT                                                 
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 # check if required software installed
 GPUFORT_BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -41,4 +43,4 @@ fi
 
 # all dependencies are met and we can continue
 
-python3 $GPUFORT_BIN_DIR/../python/gpufort.py "$@" 
+python3 $GPUFORT_BIN_DIR/../python/gpufort.py --working-dir $(pwd) "${@}"

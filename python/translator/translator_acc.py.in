@@ -1,188 +1,598 @@
-# local imports
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+
 #from translator.translator_f03 import *
 #import utils
 
-# clauses
-
-class TTAccCollapse(TTNode):
-    def assignFields(self,tokens):
+class TTAccClauseGang(TTNode):
+    def _assignFields(self,tokens):
+        self._value = tokens[0]
+    def value(self):
+        return self._value
+class TTAccClauseWorker(TTNode):
+    def _assignFields(self,tokens):
+        self._value = tokens[0]
+    def value(self):
+        return self._value
+class TTAccClauseVector(TTNode):
+    def _assignFields(self,tokens):
+        self._value = tokens[0]
+    def value(self):
+        return self._value
+class TTAccClauseNumGangs(TTAccClauseGang):
+    pass
+class TTAccClauseNumWorkers(TTAccClauseWorker):
+    pass
+class TTAccClauseVectorLength(TTAccClauseVector):
+    pass
+class TTAccClauseDeviceType(TTNode):
+    def _assignFields(self,tokens):
+        self._deviceTypes = tokens
+    def deviceTypes(self):
+        return self._deviceTypes
+class TTAccClauseIf(TTNode):
+    def _assignFields(self,tokens):
+        self._condition = tokens[0]
+    def condition(self):
+        return makeFStr(self._condition)
+class TTAccClauseSelf(TTNode):
+    def _assignFields(self,tokens):
+        self._condition = tokens[0]
+    def condition(self):
+        return makeFStr(self._condition)
+class TTSimpleMapping(TTNode):
+    def _assignFields(self,tokens):
+        self._varList = tokens[0].asList()
+    def varNames(self,converter=makeFStr):
+        return [ var.varName(converter) for var in self._varList ]
+    def varExpressions(self,converter=makeFStr):
+        return [ converter(var) for var in self._varList ]
+class TTAccClauseCopy(TTSimpleMapping):
+    pass
+class TTAccClauseCopyin(TTSimpleMapping):
+    pass
+class TTAccClauseCopyout(TTSimpleMapping):
+    pass
+class TTAccClauseCreate(TTSimpleMapping):
+    pass
+class TTAccClauseNo_create(TTSimpleMapping):
+    pass
+class TTAccClausePresent(TTSimpleMapping):
+    pass
+class TTAccClauseDeviceptr(TTSimpleMapping):
+    pass
+class TTAccClauseAttach(TTSimpleMapping):
+    pass
+class TTAccClauseDetach(TTSimpleMapping):
+    pass
+class TTAccClausePrivate(TTSimpleMapping):
+    pass
+class TTAccClauseFirstprivate(TTSimpleMapping):
+    pass
+class TTAccClauseUseDevice(TTSimpleMapping):
+    pass
+class TTAccClauseDevice(TTSimpleMapping):
+    pass
+class TTAccClauseHost(TTSimpleMapping):
+    pass
+class TTAccClauseLink(TTSimpleMapping):
+    pass
+class TTAccClauseDelete(TTSimpleMapping):
+    pass
+class TTAccClauseDeviceResident(TTSimpleMapping):
+    pass
+class TTAccClauseDefault(TTNode):
+    def _assignFields(self,tokens):
+        self._value = tokens
+    def value(self):
+        return self._value
+class TTAccClauseReduction(TTNode):
+    def _assignFields(self,tokens):
+        self._operator, self._vars = tokens
+    def reductions(self,converter=makeFStr):
+        result          = {}
+        op              = converter(self._operator)
+        if converter == makeCStr:
+            # post-process
+            op = op.replace(".","")
+            op = op.replace("+","add")
+            op = op.replace("*","mult")
+            # "+" "*" "max" "min" "iand" "ior" "ieor" ".and." ".or." ".eqv." ".neqv."
+        result[op] = [makeFStr(var) for var in self._vars] 
+        return result
+class TTAccClauseRoutine(TTNode):
+    def _assignFields(self,tokens):
+        pass
+class TTAccClauseBind(TTNode):
+    def _assignFields(self,tokens):
+        pass
+class TTAccClauseTile(TTNode):
+    def _assignFields(self,tokens):
+        self._tilesPerDim = tokens[0]
+    def values():
+        return self._tilesPerDim
+class TTAccClauseCollapse(TTNode):
+    def _assignFields(self,tokens):
         self._value = tokens[0]
     def value(self):
         return int(self._value._value)
-class TTAccIf(TTNode):
-    def assignFields(self,tokens):
-        self._condition = tokens[0]
-    def condition(self):
-        return self._condition.fStr()
-class TTAccGang(TTNode):
-    def assignFields(self,tokens):
-        self._value = tokens[0]
-    def value(self):
-        return self._value
-class TTAccWorker(TTNode):
-    def assignFields(self,tokens):
-        self._value = tokens[0]
-    def value(self):
-        return self._value
-class TTAccVector(TTNode):
-    """
-    should be aligned with warp size
-    """
-    def assignFields(self,tokens):
-        self._value = tokens[0]
-    def value(self):
-        return self._value
-class TTAccNumGangs(TTAccGang):
-    pass
-class TTAccNumWorkers(TTAccWorker):
-    pass
+class TTAccClauseWait(TTNode):
+    def _assignFields(self,tokens):
+        self._expressions = list(tokens[0])
+    def expressions(self):
+        return [makeFStr(expr) for expr in self._expressions]
+class TTAccClauseAsync(TTNode):
+    def _assignFields(self,tokens):
+        self._expression = tokens[0]
+    def expression(self):
+        return makeFStr(self._expression)
 
-class TTAccAsync(TTNode):
-    def assignFields(self,tokens):
-        self._queue = tokens[0]
-    def queue(self):
-        return self._queue
+#
+# Directives
+#
 
-class TTAccReductionVar(TTNode):
-    def assignFields(self,tokens):
-        self._operator, self._var = tokens
-        # post-process
-        # "+" "*" "max" "min" "iand" "ior" "ieor" ".and." ".or." ".eqv." ".neqv."
-        self._operator = self._operator.replace(".","")
-        self._operator = self._operator.replace("+","add")
-        self._operator = self._operator.replace("*","mult")
-class TTAccReduction(TTNode):
-    def assignFields(self,tokens):
-        self._reductions = findAll(tokens[0],TTAccReductionVar)
-    def reductionVars(self):
-        result = {}
-        for red in self._reductions:
-            varName = makeCStr(red._var).lower()
-            result[varName] = makeCStr(red._operator).lower() 
+class TTAccDirectiveBase(TTNode):
+    def _assignFields(self,tokens):
+        self._clauses = tokens
+    def _handleSimpleMapping(self,clauseType,converter=makeFStr):
+        result = []
+        for clause in findAll(self._clauses,clauseType):
+            result += clause.varExpressions()
+        return result
+    def _format(self,fSnippet):
+        return formatDirective(fSnippet,80) 
+    def ompFStr(self):
+        assert False, "Not implemented"     
+
+
+# TODO add host data
+
+class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
+    """
+    Abstract class that handles the following clauses
+      if( condition )
+      copy( var-list )
+      copyin( [readonly:]var-list )
+      copyout( var-list )
+      create( var-list )
+      no_create( var-list )
+      present( var-list )
+      deviceptr( var-list )
+      attach( var-list )
+      default( none | present )
+    which are common to data to parallel, kernels and data directives.
+    
+    Further handles the following additional clauses
+    that can appear with 'data', 'enter data' and 'exit data'
+    directives:
+      if( condition )  
+      async [( int-expr )]
+      wait [( wait-argument )]
+      finalize
+    """
+    def asyncNowait(self): 
+        clause = findFirst(self._clauses,TTAccClauseAsync)
+        if not clause is None:
+            return makeFStr(clause.expression())
+        else:
+            return CLAUSE_NOT_FOUND
+    def deviceptrs(self):
+        return self._handleSimpleMapping(TTAccClauseDeviceptr)
+    def createAllocVars(self):
+        return self._handleSimpleMapping(TTAccClauseCreate)
+    def no_createVars(self):
+        return self._handleSimpleMapping(TTAccClauseNo_create)
+    def presentVars(self):
+        return self._handleSimpleMapping(TTAccClausePresent)
+    def copyMapToFromVars(self):
+        return self._handleSimpleMapping(TTAccClauseCopy)
+    def copyinMapToVars(self):
+        return self._handleSimpleMapping(TTAccClauseCopyin)
+    def copyoutMapFromVars(self):
+        return self._handleSimpleMapping(TTAccClauseCopyout)
+    def attachVars(self):
+        return self._handleSimpleMapping(TTAccClauseAttach)
+    def detachVars(self):
+        return self._handleSimpleMapping(TTAccClauseDetach)
+    def deleteReleaseVars(self):
+        return self._handleSimpleMapping(TTAccClauseDelete)
+    def ifCondition(self):
+        clause = findFirst(self._clauses,TTAccClauseIf)
+        if not clause is None:
+            return [makeFStr(e) for e in clause.expression()]
+        else:
+            return ""
+    def selfCondition(self):
+        clause = findFirst(self._clauses,TTAccClauseSelf)
+        if not clause is None:
+            return [makeFStr(e) for e in clause.expression()]
+        else:
+            return ""
+    def presentByDefault(self):
+        clause = findFirst(self._clauses,TTAccClauseDefault)
+        if not clause is None:
+            return clause.value() == "present"
+        else:
+            return True
+    def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={},prefix=""):
+        # TODO split in frontend and backend?
+        """
+        :param: arraysInBody      all array lvalues and rvalues
+        :param: inoutArraysInBody all used in embedded regions whose elements appear as lvalues
+        :return: 'prefix' [mapped-clauses]
+        
+        where the clauses are mapped as follows:
+        
+        attach,copyin:  "map(to: var-list)"
+        detach,copyout: "map(from: var-list)"
+        copy:           "map(tofrom: var-list)"
+        create:         "map(alloc: var-list)"
+        delete:         "map(release: var-list)"
+        present:        "" 
+        no_create:      ""
+        """
+   
+        toList         = self.copyinMapToVars()+self.attachVars()
+        fromList       = self.copyoutMapFromVars()+self.detachVars()
+        tofromList     = self.copyMapToFromVars()
+        allocList      = self.createAllocVars()
+        allocList     += self.no_createVars() # TODO not sure about this
+        releaseList    = self.deleteReleaseVars()       
+        deviceptrList  = self.deviceptrs()
+        presentList    = self.presentVars() 
+
+        inArraysInBody    = [el for el in arraysInBody if el not in inoutArraysInBody]
+        alreadyConsidered = [el.lower() for el in (toList+fromList+tofromList+allocList+deviceptrList+presentList)]
+        if not self.presentByDefault():
+            toList     += [el for el in inArraysInBody    if el not in alreadyConsidered]  # note: {val} - {val,otherVal} = empty set
+            tofromList += [el for el in inoutArraysInBody if el not in alreadyConsidered]
+        result = prefix
+        if len(toList):
+            result += " map(to:"+",".join(toList)+")"
+        if len(fromList):
+            result += " map(from:"+",".join(fromList)+")"
+        if len(tofromList):
+            result += " map(tofrom:"+",".join(tofromList)+")"
+        if len(allocList):
+            result += " map(alloc:"+",".join(allocList)+")"
+        if len(releaseList):
+            result += " map(release:"+",".join(releaseList)+")"
+        if len(deviceptrList):
+            result += " use_device_ptr("+",".join(deviceptrList)+")"
+        # if, async
+        if self.asyncNowait() != CLAUSE_NOT_FOUND:
+            result += " nowait"
+            if len(depend):
+                for kind,variables in depend.items():
+                    result += " depend("+kind+":"+",".join(variables)+")"
+            else: 
+                if len(inArraysInBody):
+                    result += " depend(to:"+",".join(inArraysInBody)+")"
+                if len(inoutArraysInBody):
+                    result += " depend(tofrom:"+",".join(inoutArraysInBody)+")"
+                    
+        ifCondition = self.ifCondition()
+        if len(ifCondition):
+            result += " if ("+ifCondition+")" 
         return result
 
-class TTAccPrivate(TTNode):
-    def assignFields(self,tokens):
-        self._threadPrivateVars = tokens[0]
-    def threadPrivateVarNames(self):
-        return [ var.varName().lower() for var in self._threadPrivateVars ]
+class TTAccData(TTAccDataManagementDirectiveBase):
+    """
+    possible clauses:
+      clauses of TTAccDataManagementDirectiveBase
+      if( condition )
+    """
+    def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={}):
+        return self._format(TTAccDataManagementDirectiveBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"!$omp target data"))
 
-class TTAccLoopKernel(TTLoopKernel):
-    def assignFields(self,tokens):
-        self._mainAccDirective, self._body = tokens
-        self._launchInfo = LaunchInfo()
-        self._launchInfo._numLoopsToMap = 1
-        self._reductionVars = {}
-        self._threadPrivateVars = []
-        #print(self._mainAccDirective)
-        
-        # handle clauses
-        self.handleCollapse()
-        self.handleReduction()
-        self.handlePrivate()
+class TTAccEnterData(TTAccDataManagementDirectiveBase):
+    """
+    possible clauses:
+      clauses of TTAccData
+    """
+    def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={}):
+        return self._format(TTAccDataManagementDirectiveBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"!$omp target enter data"))
+
+class TTAccExitData(TTAccDataManagementDirectiveBase):
+    """
+    possible clauses:
+      clauses of TTAccData
+      async [( int-expr )]
+      wait [( wait-argument )]
+    """
+    def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={}):
+        return self._format(TTAccDataManagementDirectiveBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"!$omp target exit data"))
     
-    def handleGang(self):
-        # acc collapse(int)
-        expr = findFirstMatching(self._mainAccDirective,lambda x: isinstance(x,TTAccGang))
-        if not expr is None:
-            self._launchInfo._grid[0] = expr.value()
-    def handleAsync(self):
-        # acc collapse(int)
-        expr = findFirst(self._mainAccDirective,TTAccAsync)
-        if not expr is None:
-            self._launchInfo._stream = "gpufort_acc_get_stream({0})".format(expr.queue())
-    def handleCollapse(self):
-        # acc collapse(int)
-        expr = findFirst(self._mainAccDirective,TTAccCollapse)
-        if not expr is None:
-            self._launchInfo._numLoopsToMap = expr.value()
-    def handleReduction(self):
-        # acc collapse(int)
-        expr = findFirst(self._mainAccDirective,TTAccReduction)
-        if not expr is None:
-            self._reductionVars = expr.reductionVars()
-    def handlePrivate(self):
-        # acc collapse(int)
-        private = findFirst(self._mainAccDirective,TTAccPrivate)
-        if not private is None:
-            self._threadPrivateVars += private.threadPrivateVarNames()
-    def threadPrivateVars(self):
-        return self._threadPrivateVars
-
-acc_gang.setParseAction(TTAccGang)
-acc_worker.setParseAction(TTAccWorker)
-acc_vector.setParseAction(TTAccVector)
-acc_num_gangs.setParseAction(TTAccNumGangs)
-acc_num_workers.setParseAction(TTAccNumWorkers)
-acc_vector_length.setParseAction(TTAccVector)
-
-acc_async.setParseAction(TTAccAsync)
-acc_private.setParseAction(TTAccPrivate)
-acc_if.setParseAction(TTAccIf)
-acc_collapse.setParseAction(TTAccCollapse)
-accReductionVar.setParseAction(TTAccReductionVar)
-acc_reduction.setParseAction(TTAccReduction)
-accLoopLoopKernel.setParseAction(TTAccLoopKernel)
-
-recursionsLeft=0
-def convertAccLoopLoopKernel(fortranSnippet,maxRecursions=30):
+class TTAccDeclare(TTAccDirectiveBase):
+    """ NOTE: In contrast to OMP, '!$acc declare' is only applied to global variables.
+    There is '!$acc routine' for routines.
     """
-    Return a csnippet equivalent to the original Fortran code.
-    """
-    global KEYWORDS 
+    def ompFStr(self):
+        toList =\
+          self._handleSimpleMapping(TTAccClauseCreate) +\
+          self._handleSimpleMapping(TTAccClauseCopy) +\
+          self._handleSimpleMapping(TTAccClauseCopyin) +\
+          self._handleSimpleMapping(TTAccClauseAttach) +\
+          self._handleSimpleMapping(TTAccClauseCopyout) +\
+          self._handleSimpleMapping(TTAccClauseDetach)
+    
+        # TODO: not sure about this mapping       
+        toList += self._handleSimpleMapping(TTAccClauseDeviceResident)
 
-    def convertAccKernelRecursively(fortranSnippet,recursionsToGo):
-        global recursionsLeft
-        recursionsLeft = recursionsToGo
-        try:
-            return accLoopLoopKernel.parseString(fortranSnippet)[0]
-        except ParseBaseException as pbe:
-            if recursionsToGo <= 0:
-                raise pbe
-            else:
-                lineno = pbe.__getattr__("lineno")
-                lines = fortranSnippet.split("\n")
-                lines[lineno-1] = "! TODO could not parse: {}".format(lines[lineno-1])
-                modifiedFortranSnippet = "\n".join(lines)
-                #print(modifiedFortranSnippet)
-                return convertAccKernelRecursively(modifiedFortranSnippet,recursionsToGo-1)
-        except Exception as e:
-            raise e        
-   
-    fortranSnippet = prepareFortranSnippet(fortranSnippet)
-    try:
-        result           = convertAccKernelRecursively(fortranSnippet,maxRecursions)
-        cSnippet         = utils.prettifyCCode(result.cStr())
+        linkList = self._handleSimpleMapping(TTAccClauseLink)
         
-        kernelLaunchInfo = result.kernelLaunchInfo()
-        identifierNames  = result.allIdentifiers()
-        loopVars         = result.loopVars()
-        localLvalues     = list(filter(lambda x: x not in loopVars, result.allLocalLvalues())) 
-        localLvalues     += result.threadPrivateVars()
-        reductionVars    = result.reductionVars()
-        problemSize      = result.problemSize()
-        #print(recursionsLeft)
-        if recursionsLeft < maxRecursions:
-            body = "\n".join(fortranSnippet.split("\n")[1:])
-            identifierNames = list(set(filter(lambda x: x.lower() not in KEYWORDS,[makeFStr(ident) for ident in identifier.searchString(body)])))
-            #print(identifierNames) 
-        cSnippet = postprocessCSnippet(cSnippet)
-    except Exception as e:
-        raise e
-        logger = logging.getLogger('') 
-        logger.error("failed to convert kernel:\n{}".format(fortranSnippet))
-        logger.error(str(e))
-        cSnippet = "" 
-        pragmaLine = fortranSnippet.split("\n")[0]
-        body = "\n".join(fortranSnippet.split("\n")[1:])
-        #kernelLaunchInfo = acc.parseString(pragmaLine)[0] 
-        kernelLaunchInfo = LaunchInfo()
-        #print(body)
-        identifierNames = list(set(filter(lambda x: x.lower() not in KEYWORDS,[makeFStr(ident) for ident in identifier.searchString(body)])))
-        numLoopsToMap     = int(kernelLaunchInfo._numLoopsToMap)
-        loopVars        = []
-        localLvalues    = []
-        reductionVars   = []
-        problemSize     = ["TODO unknown"]*numLoopsToMap
-        #print(type(e))
-    return cSnippet, problemSize, kernelLaunchInfo, identifierNames, localLvalues, loopVars, reductionVars
+        result = "!$omp target declare"
+        if len(toList):
+            result += " to("+",".join(toList)+")"
+        if len(linkList):
+            result += " link("+",".join(linkList)+")"
+        return self._format(result)
+
+class TTAccRoutine(TTAccDirectiveBase):
+    def _assignFields(self,tokens):
+        self._id, self._clauses = tokens
+    def ompFStr(self,additions=""):
+        """ additions can be used to pass 'notinbranch' 'inbranch'"""
+        result = "!$omp target declare"
+        #if findFirst(self._clauses,TTAccClauseGang) is not None:
+        #    pass
+        #elif findFirst(self._clauses,TTAccClauseWorker) is not None:
+        #    pass
+        if findFirst(self._clauses,TTAccClauseVector) is not None:
+            if self._id is not None:
+                result += " simd("+makeFStr(self._id)+")"
+            else:
+                result += " simd "
+        #if not "device_type" in additions:
+        #    result += " device_type(any)"
+        if len(additions):
+            result += " "+additions
+        return self._format(result)
+
+class TTAccUpdate(TTAccDirectiveBase):
+    def ompFStr(self):
+        result = "!$omp target update"
+        hostClause   = findFirst(self._clauses,TTAccClauseHost)
+        deviceClause = findFirst(self._clauses,TTAccClauseDevice)
+        if hostClause is not None:
+            result += " to("+",".join(hostClause.varNames())+")"
+        if deviceClause is not None:
+            result += " from("+",".join(deviceClause.varNames())+")"
+        return self._format(result)
+
+class TTAccWait(TTAccDirectiveBase):
+    def waitArgs(self):
+        """ Can be used to deduce task dependencies """
+        clause = findFirst(self._clauses,TTAccClauseWait)
+        if clause is None:
+            return None
+        else:
+            return clause.expressions()
+    def asyncQueue(self):
+        assert False, "Not implemented!"
+    def ompFStr(self,dependStr=""):
+        """ :param dependStr: Append depend clauses """
+        result = "!$omp taskwait"
+        if len(dependStr):
+            result += " "+dependStr
+        else:
+            waitArgs = self.waitArgs()
+            if len(waitArgs):
+                result += " depend("+DEPEND_TODO+")"
+        return self._format(result)
+
+class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
+    """
+    possible clauses:
+      collapse( n )
+      gang [( gang-arg-list )]
+      worker [( [num:]int-expr )]
+      vector [( [length:]int-expr )]
+      seq
+      auto
+      tile( size-expr-list )
+      device_type( device-type-list )
+      independent
+      private( var-list )
+      reduction( operator:var-list )
+    """
+    def _assignFields(self,tokens):
+        TTAccDirectiveBase._assignFields(self,tokens)
+        self._loopHandlesMutualClauses = True    # can be unset by TTAccParallelLoop or TTAccKernelsLoop
+    def numCollapse(self):
+        clause = findFirst(self._clauses,TTAccClauseCollapse)
+        return 1 if clause is None else clause.value()
+    def tileSizes(self):
+        assert False, "Not implemented!"
+        return [1]
+    def numGangsTeamsBlocks(self):
+        clauses = findAllMatching(self._clauses,lambda x: isinstance(x,TTAccClauseGang),2)
+        return [CLAUSE_NOT_FOUND] if clause is None else [max([c.value() for c in clauses])]
+    def numWorkers(self):
+        clauses = findAllMatching(self._clauses,lambda x: isinstance(x,TTAccClauseWorker),2)
+        return CLAUSE_NOT_FOUND if clause is None else max([c.value() for c in clauses])
+    def simdlenVectorLength(self):
+        clauses = findAllMatching(self._clauses,lambda x: isinstance(x,TTAccClauseVector),2)
+        return CLAUSE_NOT_FOUND if clause is None else max([c.value() for c in clauses])
+    def numThreadsInBlock(self):
+        workers   = self.numWorkers()
+        vectorLen = self.lenSimdVector()
+        if workers[0] < 1 or vectorLen[0] < 1:
+            return [CLAUSE_NOT_FOUND]
+        else:
+            return [workers[0] * vectorLen[0]]
+    def dataIndependentIterations(self):
+        """ Always assume data independent if no seq clause is used """
+        clause = findFirstMatching(self._clauses,lambda x: x=="seq")
+        return True if clause is None else False
+    def reductions(self,converter=makeFStr):
+        result = {}
+        for clause in findAll(self._clauses,TTAccClauseReduction):
+            contrib = clause.reductions(converter)
+            for key,value in contrib.items():
+                if not key in result:
+                    result[key] = []
+                result[key] += value
+        return result
+    def privateVars(self,converter=makeFStr):
+        return self._handleSimpleMapping(TTAccClausePrivate,converter)
+    def ompFStr(self,loopType="do",parallelRegion="",prefix="!$omp"):
+        result = prefix
+        def parallelismClause(clause):
+            return type(clause) is TTAccClauseGang or\
+                   type(clause) is TTAccClauseWorker or\
+                   type(clause) is TTAccClauseVector
+        if self._loopHandlesMutualClauses:
+            for clause in findAllMatching(self._clauses,parallelismClause):
+                if type(clause) is TTAccClauseGang:
+                    result += " teams distribute"
+        if len(parallelRegion):
+            result += " "+parallelRegion
+        result += " "+loopType
+        for clause in findAllMatching(self._clauses,parallelismClause):
+            if type(clause) is TTAccClauseWorker: # TODO not sure about this
+                pass
+            elif type(clause) is TTAccClauseVector:
+                result += " simd"
+                if clause.value() > 0:
+                    result += " simd simdlen("+str(clause.value())+")"
+        if self._loopHandlesMutualClauses:
+            privateVars = self.privateVars() 
+            if len(privateVars):
+                result += " private("+",".join(privateVars)+")" 
+        reductions = self.reductions(makeFStr)
+        if len(reductions):
+            for op,values in reductions.items():
+                result += " reduction("+op+":"+",".join(values)+")" 
+        if self._loopHandlesMutualClauses:
+            return self._format(result)
+        else:
+            return result
+
+class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase,IComputeConstruct):
+    """
+    possible clauses:
+      async [( int-expr )]
+      wait [( int-expr-list )]
+      num_gangs( int-expr )
+      num_workers( int-expr )
+      vector_length( int-expr )
+      device_type( device-type-list )
+      if( condition )
+      self [( condition )]
+      reduction( operator:var-list )
+      copy( var-list )
+      copyin( [readonly:]var-list )
+      copyout( var-list )
+      create( var-list )
+      no_create( var-list )
+      present( var-list )
+      deviceptr( var-list )
+      attach( var-list )
+      private( var-list )
+      firstprivate( var-list )
+      default( none | present )
+    """
+    def privateVars(self,converter=makeFStr):
+        return self._handleSimpleMapping(TTAccClausePrivate,converter)
+    def firstprivateVars(self,converter=makeFStr):
+        return self._handleSimpleMapping(TTAccClauseFirstprivate,converter)
+    def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={},prefix="!$omp target"):
+        result   = prefix
+        dataPart = " "+TTAccDataManagementDirectiveBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"")
+        return result + dataPart
+
+class TTAccParallel(TTAccComputeConstructBase):
+    def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={},prefix="!$omp target"):
+        return self._format(TTAccComputeConstructBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,prefix))
+
+class TTAccParallelLoop(TTAccParallel,TTAccLoop):
+    def _assignFields(self,tokens):
+        TTAccDirectiveBase._assignFields(self,tokens)
+        self._loopHandlesMutualClauses = False
+    def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={},loopType="do"):
+        """
+        :note: loopType may be changed later if there is a target 'workshare' construct
+               in the OpenMP standard. Then, matrix assignments can be mapped
+               with such a construct.
+        """
+        result       = "!$omp target teams distribute"
+        parallelPart = TTAccParallel.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"")
+        loopPart     = TTAccLoop.ompFStr(self,loopType,"parallel","")
+        return self._format(result + " " + loopPart.lstrip() + " " + parallelPart.strip())
+
+class TTAccKernels(TTAccParallel):
+    pass
+class TTAccKernelsLoop(TTAccParallelLoop):
+    pass
+
+# end directives
+class TTAccEndData(TTAccDirectiveBase):
+    def _assignFields(self,tokens):
+        pass
+    def ompFStr(self):
+        return self._format("!$omp end target data")
+
+#
+# Connect actions with grammar
+#
+
+acc_clause_gang.setParseAction(TTAccClauseGang)
+acc_clause_worker.setParseAction(TTAccClauseWorker)
+acc_clause_vector.setParseAction(TTAccClauseVector)
+acc_clause_num_gangs.setParseAction(TTAccClauseNumGangs)
+acc_clause_num_workers.setParseAction(TTAccClauseNumWorkers)
+acc_clause_vector_length.setParseAction(TTAccClauseVectorLength)
+
+acc_clause_device_type.setParseAction(TTAccClauseDeviceType)
+acc_clause_if.setParseAction(TTAccClauseIf)
+
+acc_clause_copy.setParseAction(TTAccClauseCopy)
+acc_clause_copyin.setParseAction(TTAccClauseCopyin)
+acc_clause_copyout.setParseAction(TTAccClauseCopyout)
+
+acc_clause_create.setParseAction(TTAccClauseCreate)
+acc_clause_no_create.setParseAction(TTAccClauseNo_create)
+acc_clause_present.setParseAction(TTAccClausePresent)
+acc_clause_deviceptr.setParseAction(TTAccClauseDeviceptr)
+acc_clause_attach.setParseAction(TTAccClauseAttach)
+acc_clause_detach.setParseAction(TTAccClauseDetach)
+acc_clause_default.setParseAction(TTAccClauseDefault)
+acc_clause_use_device.setParseAction(TTAccClauseUseDevice)
+acc_clause_private.setParseAction(TTAccClausePrivate)
+acc_clause_reduction.setParseAction(TTAccClauseReduction)
+acc_clause_delete.setParseAction(TTAccClauseDelete)
+acc_clause_private.setParseAction(TTAccClausePrivate)
+acc_clause_first_private.setParseAction(TTAccClauseFirstprivate)
+acc_clause_collapse.setParseAction(TTAccClauseCollapse)
+acc_clause_host.setParseAction(TTAccClauseHost)
+acc_clause_self.setParseAction(TTAccClauseSelf)
+acc_clause_bind.setParseAction(TTAccClauseBind)
+acc_clause_device_resident.setParseAction(TTAccClauseDeviceResident)
+acc_clause_link.setParseAction(TTAccClauseLink)
+acc_clause_tile.setParseAction(TTAccClauseTile)
+acc_clause_wait.setParseAction(TTAccClauseWait)
+acc_clause_async.setParseAction(TTAccClauseAsync)
+
+# directive action
+acc_update.setParseAction(TTAccUpdate) 
+acc_wait.setParseAction(TTAccWait)
+#acc_host_data #TODO
+acc_data.setParseAction(TTAccData)    
+acc_enter_data.setParseAction(TTAccEnterData)
+acc_exit_data.setParseAction(TTAccExitData)
+acc_routine.setParseAction(TTAccRoutine) 
+acc_declare.setParseAction(TTAccDeclare)
+#acc_atomic #TODO
+#acc_cache  #TODO
+
+acc_loop.setParseAction(TTAccLoop) 
+
+# kernels / parallels
+#acc_serial #TODO 
+acc_kernels.setParseAction(TTAccKernels)   
+acc_parallel.setParseAction(TTAccParallel)
+acc_parallel_loop.setParseAction(TTAccParallelLoop)
+acc_kernels_loop.setParseAction(TTAccKernelsLoop)
+
+ACC_END_DATA.setParseAction(TTAccEndData)

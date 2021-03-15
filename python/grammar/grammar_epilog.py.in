@@ -1,4 +1,19 @@
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 # Combine expressions from all grammar definitions
-singleExecutionStatement = accKernelBodyDirective | comment | printStatement | controlStatements | subroutineCall | ifElseBlock | singleLineIf | selectCaseBlock | doLoop | whileLoop | matrixAssignment | complexAssignment | assignment | funcCall
+loopAnnotation = acc_parallel_loop | acc_kernels_loop | acc_loop | cuf_kernel_do
+annotatedDoLoop <<= Optional( loopAnnotation, default=None) +\
+    doLoop +\
+  Optional(ACC_END_PARALLEL_LOOP | ACC_END_KERNELS_LOOP) # will be consumed but suppressed
 
-executionStatement <<= Group(ZeroOrMore(singleExecutionStatement))
+statement = accKernelBodyDirective | comment | printStatement | controlStatements | subroutineCall | ifElseBlock | singleLineIf | selectCaseBlock | annotatedDoLoop | whileLoop | matrixAssignment | complexAssignment | assignment | funcCall
+
+block <<= Group(ZeroOrMore(statement))
+
+# reduced number of possible statements in "body" of single-line if statement
+singleLineIfBody <<= comment | printStatement | controlStatements | subroutineCall | matrixAssignment | complexAssignment | assignment | funcCall 
+
+parallelRegionStart = acc_parallel | acc_kernels
+
+loopKernel = Optional( parallelRegionStart, default=None ) + ( annotatedDoLoop | assignment )
+

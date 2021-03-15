@@ -1,16 +1,26 @@
-# Scanner options
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+TRANSLATION_ENABLED_BY_DEFAULT = True
+
 SOURCE_DIALECTS     = ["cuf","acc"] # one of ["acc","cuf","omp"]
-DESTINATION_DIALECT = "omp"   # one of ["omp","hip"]
+DESTINATION_DIALECT = "omp"         # one of ["omp","hip-runtime-rt"]
 
 KERNELS_TO_CONVERT_TO_HIP = [] # add line number here (might change if snippets are included included); check log to find actual line number
 
-LOOP_VARIABLES="integer :: {}".format(",".join(["_"+chr(ord("a")+i) for i in range(0,20) ])) # integer :: a,b,c,d,...
-GLOBAL_DECLARATIONS=[ LOOP_VARIABLES ]
+LOOP_VARIABLES="integer :: {}".format(",".join(["_"+chr(ord("a")+i) for i in range(0,20) ])) # integer :: _a,_b,_c,_d,...
+GLOBAL_DECLARATIONS=[ LOOP_VARIABLES ] # TODO check if this still works
 
-HIP_MODULE_NAME="hipfort"
-HIP_MATH_MODULE_PREFIX=HIP_MODULE_NAME+"_"
+KERNEL_NAME_TEMPLATE   = "{parent}_{lineno}_{hash}" # parent: name of parent module,program,subroutine (lower case)
+                                                    # lineno: line number
+                                                    # hash: Hash of the kernel (whitespaces are removed beforehand)
+HIP_MODULE_NAME        = "hipfort"
+HIP_MATH_MODULE_PREFIX = HIP_MODULE_NAME+"_"
 
-HIP_IFDEF = "__HIP"
-CUDA_IFDEF = "CUDA"
-CUBLAS_VERSION = 1
+GPUFORT_IFDEF        = "__GPUFORT"
+CUDA_IFDEF           = "CUDA"
+CUBLAS_VERSION       = 1
 KEEP_CUDA_LIB_NAMES = False
+
+ACC_DEV_PREFIX="dev_"
+ACC_DEV_SUFFIX=""
+

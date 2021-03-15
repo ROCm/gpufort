@@ -35,13 +35,16 @@ class STAccDirective(STDirective):
     def __init__(self,parent,lineno,lines,directiveNo):
         STDirective.__init__(self,parent,lineno,lines,directiveNo,sentinel="!$acc")
         self._defaultPresentVars = []
-    def considerInSource2SourceTranslation(self):
+    def considerInS2STranslation(self):
         """
         Consider this object when transforming host code.
         :return: The default implementation returns False if the parent
                  of the object is a device subroutine.
         """
-        return not isinstance(self._parent, STAccDirective) or not self._parent.isParallelLoopDirective()
+        if STDirective.considerInS2STranslation(self):
+            return not isinstance(self._parent, STAccDirective) or not self._parent.isParallelLoopDirective()
+        else:
+            return False
     def findSubstring(self,token):
         return token in self.singleLineStatement()
     def findAnySubstring(self,tokens):

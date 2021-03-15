@@ -488,11 +488,12 @@ def createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename
     
     def select(kernel):
         nonlocal kernelsToConvertToHip
-        if kernelsToConvertToHip[0] == "*":
-            return True
-        else:
-            return kernel._lineno in kernelsToConvertToHip or\
-                   kernel.kernelName() in kernelsToConvertToHip
+        condition1 = not kernel._ignoreInS2STranslation
+        condition2 = \
+                kernelsToConvertToHip[0] == "*" or\
+                kernel._lineno in kernelsToConvertToHip or\
+                kernel.kernelName() in kernelsToConvertToHip
+        return condition1 and condition2
 
     # Context for HIP implementation
     hipContext = {}

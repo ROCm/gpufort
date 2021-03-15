@@ -258,7 +258,7 @@ class Acc2HipGpufortRT(AccBackendBase):
        
         # introduce the new variables 
         if len(allTempVars):
-            begin = stnode._parent.findLast(filter=lambda child : not child._included and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
+            begin = stnode._parent.findLast(filter=lambda child : not child._ignoreInS2STranslation and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
             if not begin is None:
                 indent = " "*(len(begin._lines[0]) - len(begin._lines[0].lstrip()))
                 for var in allTempVars:

@@ -1,0 +1,1 @@
+gpufort_control = CaselessLiteral("!$gpufort").suppress() + pyparsing_common.identifier

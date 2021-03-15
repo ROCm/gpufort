@@ -6,7 +6,9 @@ TEST_NAME = $(TEST_SRC:.f90=)
 .PHONY: build.hip build.omp codegen.hip codegen.omp clean
 
 codegen.hip:
-	gpufort -w $(TEST_SRC) -E hip-gpufort-rt
+	gpufort -w $(TEST_SRC) -E hip-gpufort-rt --log-level DEBUG
+codegen.hip-gcc:
+	gpufort -w $(TEST_SRC) -E hip-gcc-rt
 codegen.omp:
 	gpufort -w $(TEST_SRC) -E omp
 build.hip: codegen.hip

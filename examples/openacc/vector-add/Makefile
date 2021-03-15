@@ -7,6 +7,8 @@ TEST_NAME = $(TEST_SRC:.f90=)
 
 codegen.hip:
 	gpufort -w $(TEST_SRC) -E hip-gpufort-rt
+codegen.hip-gcc:
+	gpufort -w $(TEST_SRC) -E hip-gcc-rt
 codegen.omp:
 	gpufort -w $(TEST_SRC) -E omp
 build.hip: codegen.hip

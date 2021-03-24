@@ -110,7 +110,7 @@ gpufort
 * OpenACC interfaces and runtime for Fortran:
 
 ```bash
-GIT_SSH_COMMAND='ssh -i <private_key_file> -o IdenitiesOnly=yes' git clone git@github.com:RocmSoftwarePlatform/openacc-fortran-interfaces.git
+git clone git@github.com:RocmSoftwarePlatform/openacc-fortran-interfaces.git
 ```
 
 ```
@@ -135,21 +135,9 @@ openacc-fortran-interfaces/
 └── README.md
 ```
 
-#### Download from public respositories
-
-```bash
-git clone git@github.com:RocmSoftwarePlatform/gpufort.git
-```
-
-```bash
-git clone git@github.com:RocmSoftwarePlatform/openacc-fortran-interfaces.git
-```
-
-> SHOW TREES OF 
-
 #### Download from private repositories
 
-Until both repositories are public, we need to use the following 
+As long as both repositories are private, we need to use the following 
 git clone commands:
 
 ```bash

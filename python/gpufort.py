@@ -6,7 +6,7 @@ import subprocess
 import copy, shutil
 import argparse
 import hashlib
-from collections import Iterable # < py38
+from collections.abc import Iterable # < py38
 import pprint    
 import logging
 

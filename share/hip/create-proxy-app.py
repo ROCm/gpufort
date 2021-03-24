@@ -159,7 +159,7 @@ for kernelsFile in clArgs.input:
     
     for l in launcherContext:
         for arg in l["args"][2:]: # skip sharedMem and stream arg
-            if arg["dims"] is 0:
+            if arg["dims"] == 0:
                 if arg["name"] not in scalarNames:
                     if arg["array_bound_variable"]:
                         arrayBoundVariables.append(arg)

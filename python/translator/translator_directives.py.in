@@ -450,7 +450,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 reductionPreamble += "reduce_op_{kind}::init({var}[{tidx}]);\n".format(kind=kind,var=var,tidx=tidx)
         # 3. collapse and transform do-loops
         doLoops = findAll(self._body,TTDoLoop)
-        if numOuterLoopsToMap is 1 or (LOOP_COLLAPSE_STRATEGY == "grid" and numOuterLoopsToMap <= 3):
+        if numOuterLoopsToMap == 1 or (LOOP_COLLAPSE_STRATEGY == "grid" and numOuterLoopsToMap <= 3):
             if numOuterLoopsToMap > 3:
                 logging.getLogger("").warn("loop collapse strategy grid chosen with nested loops > 3")
             numOuterLoopsToMap = min(3,numOuterLoopsToMap)

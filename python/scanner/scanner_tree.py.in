@@ -27,7 +27,7 @@ class Tagged:
         result = self._name.lower()
         def recursiveParentLookup(curr):
             nonlocal result
-            if type(curr) is not STRoot:
+            if type(curr) != STRoot:
                 result = curr._name.lower() + ":" + result
                 recursiveParentLookup(curr._parent)
         recursiveParentLookup(self._parent)        

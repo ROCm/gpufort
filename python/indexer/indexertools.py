@@ -42,7 +42,7 @@ def filterIndexByTag(index,tag,errorHandling=ERROR_HANDLING):
     a certain tag.
     """
     resultSet = [structure for structure in index if structure["tag"] == tag]
-    if len(resultSet) is not 1:
+    if len(resultSet) != 1:
         msg = "'{}' entries found for tag '{}'. Expected to find a single entry.".format(len(resultSet),tag)
         if errorHandling == "strict":
             logging.getLogger("").error(msg)

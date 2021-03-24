@@ -54,7 +54,7 @@ def readCFileWithoutComments(filepath,unifdefArgs=""):
     try: 
        output = subprocess.check_output(command,shell=True).decode('UTF-8')
     except subprocess.CalledProcessError as cpe:
-       if not cpe.returncode is 1: # see https://linux.die.net/man/1/unifdef
+       if not cpe.returncode == 1: # see https://linux.die.net/man/1/unifdef
            raise cpe
        else:
            output = cpe.output.decode("UTF-8")
@@ -70,7 +70,7 @@ def readCFile(filepath,unifdefArgs=""):
     try: 
        output = subprocess.check_output(command,shell=True).decode('UTF-8')
     except subprocess.CalledProcessError as cpe:
-       if not cpe.returncode is 1: # see https://linux.die.net/man/1/unifdef
+       if not cpe.returncode == 1: # see https://linux.die.net/man/1/unifdef
            raise cpe
        else:
            output = cpe.output.decode("UTF-8")

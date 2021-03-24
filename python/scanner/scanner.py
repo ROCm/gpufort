@@ -481,7 +481,7 @@ def postProcessAcc(stree,hipModuleName):
          if not stnode is None:
              indent = " "*(len(stnode.lines()[0]) - len(stnode.lines()[0].lstrip()))
              accRuntimeModuleName = RUNTIME_MODULE_NAMES[DESTINATION_DIALECT]
-             if accRuntimeModuleName is not None and len(accRuntimeModuleName):
+             if accRuntimeModuleName != None and len(accRuntimeModuleName):
                  stnode._preamble.add("{0}use iso_c_binding\n{0}use {1}\n".format(indent,accRuntimeModuleName))
     
 def postProcessCuf(stree,hipModuleName):
@@ -491,7 +491,7 @@ def postProcessCuf(stree,hipModuleName):
     """
     global CUBLAS_VERSION 
     # cublas_v1 detection
-    if CUBLAS_VERSION is 1:
+    if CUBLAS_VERSION == 1:
         def hasCublasCall(child):
             return type(child) is STCudaLibCall and child.hasCublas()
         cublasCalls = stree.findAll(filter=hasCublasCall, recursively=True)

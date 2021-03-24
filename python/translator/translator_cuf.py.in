@@ -32,7 +32,7 @@ class TTCudaKernelCall(TTNode):
         def postprocessDim3(dim3):
             try:
                 intVal = int(dim3)
-                isOne = intVal is 1
+                isOne = intVal == 1
             except:
                 isOne = False
             if isOne:
@@ -514,7 +514,7 @@ class TTCufCublasCall(TTNode):
         global CUBLAS_VERSION 
         api = "hipblas" + makeFStr(self._api)
         args = []
-        if CUBLAS_VERSION is 1:
+        if CUBLAS_VERSION == 1:
             args.append("hipblasHandle")
         else:
             api = api.split("_")[0] # remove _v2 if present

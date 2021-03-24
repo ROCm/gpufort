@@ -81,7 +81,7 @@ def changeKind(varContext,kind):
      varContext["kind"]                 = kind
      varContext["bytesPerElement"]      = bpe 
      varContext["cType"]                = convertToCType(fType,kind,"TODO unknown")
-     if varContext["rank"] is 0:
+     if varContext["rank"] == 0:
        varContext["fInterfaceType"] = varContext["cType"]
      #
      varContext["totalBytes"] = None if bpe is None else bpe+"*("+varContext["totalCount"]+")"

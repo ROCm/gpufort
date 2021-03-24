@@ -27,7 +27,7 @@ exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "gpufort_opti
 # array is split into multiple args
 
 def createIndex(searchDirs,defines,filePath,indexFile):
-    if indexFile is not None:
+    if indexFile != None:
         return json.load(indexFile)
     else: 
         searchDirs.insert(0,os.path.dirname(filePath))
@@ -101,7 +101,7 @@ def parseRawCommandLineArguments():
         msg = "working directory '{}' cannot be found".format(workingDirPath)
         print("ERROR: "+msg,file=sys.stderr)
         sys.exit(2)
-    if configFilePath is not None: 
+    if configFilePath != None: 
         if configFilePath[0] != "/":
           configFilePath = workingDirPath + "/" + configFilePath 
         if not os.path.exists(configFilePath):
@@ -250,7 +250,7 @@ def initLogging(inputFilePath):
 if __name__ == "__main__":
     # read config and command line arguments
     configFilePath, includeDirs, defines = parseRawCommandLineArguments()
-    if configFilePath is not None:
+    if configFilePath != None:
         parseConfig(configFilePath)
     args, unknownArgs = parseCommandLineArguments()
     if len(POST_CLI_ACTIONS):
@@ -277,7 +277,7 @@ if __name__ == "__main__":
     initLogging(inputFilePath)
 
     # parse file and create index in parallel
-    if args.destinationDialect is not None:
+    if args.destinationDialect != None:
         scanner.DESTINATION_DIALECT = \
           scanner.checkDestinationDialect(args.destinationDialect)
     stree = None

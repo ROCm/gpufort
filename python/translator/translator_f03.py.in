@@ -160,7 +160,7 @@ class TTFunctionCallOrTensorAccess(TTNode):
         return not findFirst(self._args,searchedType=TTMatrixRange) is None
     def isFunction(self,isDefinitivelyFunction=False): 
         name = makeCStr(self._name).lower()
-        return len(self._args) is 0 or\
+        return len(self._args) == 0 or\
           isDefinitivelyFunction or\
           name in GPUFORT_CPP_ROUTINES or\
           name in ALL_HOST_ROUTINES or\

@@ -27,7 +27,7 @@ pAntiFilter   = re.compile(ANTIFILTER)
 
 def __readFortranFile(filepath,compilerOptions):
     def considerLine(strippedLine):
-        return (pFilter.match(strippedLine) is not None) and (pAntiFilter.match(strippedLine) is None)
+        return (pFilter.match(strippedLine) != None) and (pAntiFilter.match(strippedLine) is None)
 
     """
     Read and preprocess a Fortran file. Make all
@@ -225,7 +225,7 @@ def __resolveDependencies_body(i,index):
             name = used["name"]
             only = used["only"]
             usedModule = next((m for m in index if m["name"] == name),None)
-            if usedModule is not None:
+            if usedModule != None:
                 ascend(usedModule)
                 if len(only):
                     variables = []

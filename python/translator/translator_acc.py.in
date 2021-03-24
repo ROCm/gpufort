@@ -334,12 +334,12 @@ class TTAccRoutine(TTAccDirectiveBase):
     def ompFStr(self,additions=""):
         """ additions can be used to pass 'notinbranch' 'inbranch'"""
         result = "!$omp target declare"
-        #if findFirst(self._clauses,TTAccClauseGang) is not None:
+        #if findFirst(self._clauses,TTAccClauseGang) != None:
         #    pass
-        #elif findFirst(self._clauses,TTAccClauseWorker) is not None:
+        #elif findFirst(self._clauses,TTAccClauseWorker) != None:
         #    pass
-        if findFirst(self._clauses,TTAccClauseVector) is not None:
-            if self._id is not None:
+        if findFirst(self._clauses,TTAccClauseVector) != None:
+            if self._id != None:
                 result += " simd("+makeFStr(self._id)+")"
             else:
                 result += " simd "
@@ -354,9 +354,9 @@ class TTAccUpdate(TTAccDirectiveBase):
         result = "!$omp target update"
         hostClause   = findFirst(self._clauses,TTAccClauseHost)
         deviceClause = findFirst(self._clauses,TTAccClauseDevice)
-        if hostClause is not None:
+        if hostClause != None:
             result += " to("+",".join(hostClause.varNames())+")"
-        if deviceClause is not None:
+        if deviceClause != None:
             result += " from("+",".join(deviceClause.varNames())+")"
         return self._format(result)
 

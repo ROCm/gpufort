@@ -519,7 +519,7 @@ def postProcess(stree,hipModuleName):
         # insert use kernel statements at appropriate point
         def isLoopKernel(child):
             return isinstance(child,STLoopKernel) or\
-                   (type(child) is STSubroutine and child.isDeviceSubroutine())
+                   (type(child) is STSubroutine and child.isAcceleratorRoutine())
         kernels = stree.findAll(filter=isLoopKernel, recursively=True)
         for kernel in kernels:
             if "hip" in DESTINATION_DIALECT or\

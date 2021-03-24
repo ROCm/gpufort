@@ -3,31 +3,36 @@
 ## Scenario
 
 We have an OpenACC application that can be built with 
-NVIDIA's HPC toolkit.
-Our aim is to port this code to port this Fortran + HIP C++.
-In this report, we consider the code DYNAMICO.
+NVIDIA's HPC Fortran compiler.
+In this guide, our goal is to port the
+open-source HPC application Dynamico to 
+Fortran + HIP (C++), where the host-side
+of the code should be written in Fortran and the device-side
+computations should be written in HIP C++.
 
-## Installation of GPUFORT
+## Installing GPUFORT
 
-GPUFORT is a python tool. It depends on a number of python packages.
-Applications ported with GPUFORT have a number of dependencies
-that must be installed on the host system. One
-of the dependencies is HIPFORT. 
+GPUFORT itself is a python3 tool with a bash frontend. It depends on a number of third-party python packages
+that can usually be installed via the python package installer `pip` 
+on most operating systems. We will revisit this later.
+GPUFORT *applications* that are ported to Fortran + HIP have a number of other dependencies
+that must be installed on the system running the applications.
+Before we discuss how to install GPUFORT itself, we
+will show how the dependencies are installed. 
 
 ### Install latest HIPFORT
 
-To install HIPFORT, we first need to download the latest hipfort (main or development branch).
+The first dependency we install is HIPFORT.
+HIPFORT provides Fortran interfaces to the HIP runtime
+as well as to the HIP and ROCm math libraries.
+This is if an application is compiled for AMD GPUs.
+If the application is compiled for NVIDIA GPUs, HIPFORT
+delegates to the CUDA runtime and CUDA math libraries. 
 
-* Main branch:
+To install HIPFORT, we first download the sources via:
 
 ```bash
 git clone git@github.com:RocmSoftwarePlatform/hipfort.git
-```
-
-* Development branch:
-
-```bash
-git clone git@github.com:RocmSoftwarePlatform/hipfort.git -b develop
 ```
 
 Next we install HIPFORT to `/opt/rocm/hipfort` (recommended) via `cmake`.
@@ -38,7 +43,7 @@ cd hipfort
 mkdir build
 ```
 
-This will result in the following HIPFORT directory structure:
+The HIPFORT installation will then have the following directory structure:
 
 ```
 hipfort/
@@ -69,49 +74,50 @@ Finally, we add the HIPFORT **installation's** `bin` directory to the `PATH`:
 export PATH=$PATH:/opt/rocm/hipfort/bin
 ```
 
-We can test the `PATH` setting via, e.g.:
+We can test the `PATH` setting via:
 
 ```bash
 hipfc -h
 ```
 
-You can test HIPFORT itself by following the steps in
+We can test HIPFORT itself by following the steps in
+
 https://github.com/ROCmSoftwarePlatform/hipfort/blob/master/README.md
 
-## Install GPUFORT and OpenACC interfaces
+## Install extended OpenACC Fortran interfaces
 
-When GPUFORT is publicly available, you can use the following
-commands to donwload GPUFORT and the OpenACC runtime interfaces:
-
-* Download GPUFORT:
-
-```bash
-git clone git@github.com:RocmSoftwarePlatform/gpufort.git
-```
-
-```
-gpufort
-├── bin
-│   ├── gpufort
-│   └── gpufort-indexer
-├── config
-│   └── dynamico.py.in
-├── examples
-...
-├── LICENSE
-├── os-requirements.txt
-├── python
-...
-├── python3-requirements.txt
-├── README.md
-...
-```
-
-* OpenACC interfaces and runtime for Fortran:
+The OpenACC programming model requires that any CPU thread can map host arrays
+to the device to run certain computations on the device and vice versa. 
+Such a mapping might be, e.g., an allocation of device array with the
+same shape of the host array or a copy of the host array. This list
+is not complete.
+Therefore, GPUFORT generally needs a runtime to port OpenACC applications
+to HIP C++. One example runtime that can be used for this purpose is 
+GCC's LIBGOMP.
+Unfortunately, available OpenACC runtimes, such as LIBGOMP, do often not expose all needed functionality
+to GPUFORT.
+While the OpenACC standard defines runtime routines that can be mapped directly to
+many OpenACC directives and constructs, it does not so for data constructs and directives such
+as such as `acc data`, `acc enter data`, and `acc exit data`.
+In addition, there are functions such as `acc_deviceptr` that are only available to C programmers
+but not to Fortran programmers.
+In order to make GPUFORT and other Fortran programmers or tools still rely on this 'hidden' runtime functionality, 
+we built interfaces to internal/non-exposed routines of OpenACC runtimes such as LIBGOMP. 
+We further implemented a simple runtime ourself, which we will use in this guide as runtime for the ported
+HPC application.
+The interfaces and the simple runtime can be obtained via:
 
 ```bash
 git clone git@github.com:RocmSoftwarePlatform/openacc-fortran-interfaces.git
 ```
+
+> NOTE: As long as the repository remains private, AMD single-sign-on users need to clone the repository via:
+
+```bash
+GIT_SSH_COMMAND='ssh -i <private_key_file> -o IdenitiesOnly=yes' git clone git@github.com:RocmSoftwarePlatform/openacc-fortran-interfaces.git
+```
+
+After downloading the 
 
 ```
 openacc-fortran-interfaces/
@@ -144,9 +150,30 @@ git clone commands:
 GIT_SSH_COMMAND='ssh -i <private_key_file> -o IdenitiesOnly=yes' git clone git@github.com:RocmSoftwarePlatform/gpufort.git
 ```
 
+* Download GPUFORT
+
 ```bash
-GIT_SSH_COMMAND='ssh -i <private_key_file> -o IdenitiesOnly=yes' git clone git@github.com:RocmSoftwarePlatform/openacc-fortran-interfaces.git
+git clone git@github.com:RocmSoftwarePlatform/gpufort.git
 ```
+
+```
+gpufort
+├── bin
+│   ├── gpufort
+│   └── gpufort-indexer
+├── config
+│   └── dynamico.py.in
+├── examples
+...
+├── LICENSE
+├── os-requirements.txt
+├── python
+...
+├── python3-requirements.txt
+├── README.md
+...
+```
+
 
 #### Installing GPUFORT dependencies
 

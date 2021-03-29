@@ -1,5 +1,23 @@
 # 1. Porting Fortran OpenACC applications to Fortran + HIP with GPUFORT
 
+<!-- TOC -->
+
+- [1. Porting Fortran OpenACC applications to Fortran + HIP with GPUFORT](#1-porting-fortran-openacc-applications-to-fortran--hip-with-gpufort)
+  - [1.1. Scenario](#11-scenario)
+  - [1.2. Installing GPUFORT](#12-installing-gpufort)
+    - [1.2.1. Install latest HIPFORT](#121-install-latest-hipfort)
+    - [1.2.2. Install extended OpenACC Fortran interfaces](#122-install-extended-openacc-fortran-interfaces)
+    - [1.2.3. Installing GPUFORT](#123-installing-gpufort)
+      - [1.2.3.1. GPUFORT components and dependencies](#1231-gpufort-components-and-dependencies)
+  - [1.3. Using GPUFORT](#13-using-gpufort)
+    - [1.3.1. Basic Usage](#131-basic-usage)
+  - [1.4. Setting up Dynamico](#14-setting-up-dynamico)
+  - [1.5. Using GPUFORT](#15-using-gpufort)
+    - [1.5.1. Discover files that contain OpenACC code](#151-discover-files-that-contain-openacc-code)
+    - [1.5.2. Run](#152-run)
+
+<!-- /TOC -->
+
 ## 1.1. Scenario
 
 We have an OpenACC application that can be built with 

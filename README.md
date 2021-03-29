@@ -1,6 +1,6 @@
-# Porting Fortran OpenACC applications to Fortran + HIP with GPUFORT
+# 1. Porting Fortran OpenACC applications to Fortran + HIP with GPUFORT
 
-## Scenario
+## 1.1. Scenario
 
 We have an OpenACC application that can be built with 
 NVIDIA's HPC Fortran compiler.
@@ -10,17 +10,19 @@ Fortran + HIP (C++), where the host-side
 of the code should be written in Fortran and the device-side
 computations should be written in HIP C++.
 
-## Installing GPUFORT
+## 1.2. Installing GPUFORT
+
+> **Required time:** 5-10 minutes
 
 GPUFORT itself is a python3 tool with a bash frontend. It depends on a number of third-party python packages
 that can usually be installed via the python package installer `pip` 
-on most operating systems. We will revisit this later.
+on mo st operating systems. We will revisit this later.
 GPUFORT *applications* that are ported to Fortran + HIP have a number of other dependencies
 that must be installed on the system running the applications.
 Before we discuss how to install GPUFORT itself, we
 will show how the dependencies are installed. 
 
-### Install latest HIPFORT
+### 1.2.1. Install latest HIPFORT
 
 The first dependency we install is HIPFORT.
 HIPFORT provides Fortran interfaces to the HIP runtime
@@ -28,6 +30,11 @@ as well as to the HIP and ROCm math libraries.
 This is if an application is compiled for AMD GPUs.
 If the application is compiled for NVIDIA GPUs, HIPFORT
 delegates to the CUDA runtime and CUDA math libraries. 
+
+> **NOTE:** The HIPFORT master branch is usually a little further ahead than
+the packages from the ROCm package repositories. Moreover, the format of the Fortran module files shipped with the latter packages might not be 
+compatible with your preferred Fortran compiler.
+Currently, we thus recommended to download and build HIPFORT yourself.
 
 To install HIPFORT, we first download the sources via:
 
@@ -84,7 +91,7 @@ We can test HIPFORT itself by following the steps in
 
 https://github.com/ROCmSoftwarePlatform/hipfort/blob/master/README.md
 
-## Install extended OpenACC Fortran interfaces
+### 1.2.2. Install extended OpenACC Fortran interfaces
 
 The OpenACC programming model requires that any CPU thread can map host arrays
 to the device to run certain computations on the device and vice versa. 
@@ -111,13 +118,13 @@ The interfaces and the simple runtime can be obtained via:
 git clone git@github.com:RocmSoftwarePlatform/openacc-fortran-interfaces.git
 ```
 
-> NOTE: As long as the repository remains private, AMD single-sign-on users need to clone the repository via:
+> **NOTE:** As long as the repository remains private, AMD single-sign-on users need to clone the repository via:
 
 ```bash
 GIT_SSH_COMMAND='ssh -i <private_key_file> -o IdenitiesOnly=yes' git clone git@github.com:RocmSoftwarePlatform/openacc-fortran-interfaces.git
 ```
 
-After downloading the 
+The cloned repository has the following structure:
 
 ```
 openacc-fortran-interfaces/
@@ -141,20 +148,40 @@ openacc-fortran-interfaces/
 └── README.md
 ```
 
-#### Download from private repositories
+The folder `openacc_gomp` contains the sources and Makefile to build extended
+interfaces to GCC's LIBGOMP. 
+The folder `gpufort` contains a self-written runtime.
+Both can be build by changing into the subfolder and calling `make`.
+(Do not specify `-j` option!)
+The `rules.mk` can be adapted to switch on debug compiler flags
+and additional debugging features of the respective runtime.
 
-As long as both repositories are private, we need to use the following 
-git clone commands:
+### 1.2.3. Installing GPUFORT
+
+Finally, we install GPUFORT itself. To this end, we clone the repository to our preferred installation folder:
+
+```bash
+git clone git@github.com:RocmSoftwarePlatform/gpufort.git
+```
+
+> **NOTE:** As long as the repository remains private, AMD single-sign-on users need to clone the repository via:
 
 ```bash
 GIT_SSH_COMMAND='ssh -i <private_key_file> -o IdenitiesOnly=yes' git clone git@github.com:RocmSoftwarePlatform/gpufort.git
 ```
 
-* Download GPUFORT
-
-```bash
-git clone git@github.com:RocmSoftwarePlatform/gpufort.git
+Installation is completed by pointing the `PATH` environment variable
+to GPUFORT's `bin/` subfolder. For example via:
 ```
+export PATH=$PATH:<gpufort_install_dir>/bin
+```
+If you don't want to run this command everytime, add it to a startup script
+such as `/home/<user>/.bashrc`.
+
+
+#### 1.2.3.1. GPUFORT components and dependencies
+
+The essential parts of the GPUFORT directory are displayed below:
 
 ```
 gpufort
@@ -165,7 +192,6 @@ gpufort
 │   └── dynamico.py.in
 ├── examples
 ...
-├── LICENSE
 ├── os-requirements.txt
 ├── python
 ...
@@ -174,26 +200,85 @@ gpufort
 ...
 ```
 
+The `bin/` subfolder contains the two main GPUFORT tools:
 
-#### Installing GPUFORT dependencies
+| Name                  | Description |
+|-----------------------|-------------|
+| `gpufort`             | The main GPUFORT tool, the source-to-source translator. |
+| `gpufort-indexer`     | A separate indexer tool for discovering accelerator code/directives in Fortran files. Its output can be used by `gpufort`. |
 
+All system and `python3` requirements are listed in the files
+`os-requirements.txt` and `python3-requirements.txt`, respectively.
+In particular, GPUFORT users must have  `bash`, `python3` (>= 3.6), `gfortran`, and `clang-format` (> version 6.0) installed on their machine. They further need to install the `python3` packages: `jinja2` , `pyparsing`,
+and `fprettify`.
 
+> **NOTE:** The tools in the `bin/` folder check if all GPUFORT dependencies are installed and will tell you which ones are missing as error message. They also suggest installation commands for missing `python3` modules.
 
-#### Building OpenACC Fortran interfaces
+* The `examples/` subfolder contains OpenACC (`openacc`) and CUDA Fortran (`cuf`)
+examples, which demonstrate how to use the GPUFORT tools.
+* The `python` subfolder contains: 
+  * The `pyparsing` Fortran 2003, CUDA Fortran, and OpenACC grammar in the `grammar` subdirectory. 
+  * `translator` contains the `python3` sources for the
+translatior (abstract syntax) tree (*TT*). This tree is used
+to analyze Fortran constructs and directives. Furthmore,
+it is used to generate (HIP) C++ code from the parsed Fortran
+code blocks.
+  * The `scanner` subfolder contains a separate less sophisticated 
+parser for detecting code lines in the translation source
+that are considered interesting for the translation process
+because they must be translated or they contain information
+that is interesting for the translation of other code lines.
+  * The `indexer` subfolder contains a slimmed down version of the `scanner`
+for discovering interesting declarations and directives in 
+Fortran source directories provided by the user. The discovery relies internally on `gfortran`. Arguments such as `-Dsymbol=definition` are forwarded to this backend, i.e specific compilation paths can be understood.
 
-It is essential that we 
+All three `scanner`, `translator` and `indexer` are built on top of the
+`pyparsing` `grammar`. Modules `indexer` and `scanner` rely on module `translator` for in-depth analysis of discovered code lines.
 
-## Setting up Dynamico
+## 1.3. Using GPUFORT
+
+### 1.3.1. Basic Usage
+
+You can call `gpufort` as follows if you agree with the default
+configuration:
+
+```
+gpufort <fortran_file>
+```
+
+Typically this will not be the case. 
+Fortunately, `gpufort` provides multiple ways to change the default behaviour:
+
+* You can supply a `python3` configuration file,
+* you can use a number command line arguments,
+* you can register a source-2-source translation backend,
+* you can edit the `jinja2` code generation templates
+  when generating HIP C++ code from, or
+* you can edit the python sources.
+
+The default configuration parameters can be printed out as follows:
+
+```
+gpufort --print-config-defaults
+```
+
+Sample output (shortened):
+
+```
+
+```
+
+## 1.4. Setting up Dynamico
 
 > TBA
 
 > SHOW TREE
 
 
-## Using GPUFORT
+## 1.5. Using GPUFORT
 
-### 1. Discover files that contain OpenACC code
+### 1.5.1. Discover files that contain OpenACC code
 
 This can be done via grep, e.g. via:
 
-### 2. Run 
+### 1.5.2. Run 

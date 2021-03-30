@@ -1,4 +1,4 @@
-# GPUFORT installation and basic usage
+#  GPUFORT installation and basic usage
 
 - [GPUFORT installation and basic usage](#gpufort-installation-and-basic-usage)
   - [1. GPUFORT installation](#1-gpufort-installation)
@@ -6,12 +6,12 @@
     - [1.2. Install extended OpenACC Fortran interfaces](#12-install-extended-openacc-fortran-interfaces)
     - [1.3. Install GPUFORT tools](#13-install-gpufort-tools)
       - [1.3.1. GPUFORT components and dependencies](#131-gpufort-components-and-dependencies)
-- [Using and configuring GPUFORT](#using-and-configuring-gpufort)
-  - [1. Command line options](#1-command-line-options)
-  - [2. Configuration files](#2-configuration-files)
-  - [3. Change source and destination dialects](#3-change-source-and-destination-dialects)
-  - [4. Only modify host file or only regenerate kernels](#4-only-modify-host-file-or-only-regenerate-kernels)
-  - [5. Control S2S translation via GPUFORT directives](#5-control-s2s-translation-via-gpufort-directives)
+  - [2. Using and configuring GPUFORT](#2-using-and-configuring-gpufort)
+    - [2.1. Command line options](#21-command-line-options)
+    - [2.2. Configuration files](#22-configuration-files)
+    - [2.3. Change source and destination dialects](#23-change-source-and-destination-dialects)
+    - [2.4. Only modify host file or only generate kernels](#24-only-modify-host-file-or-only-generate-kernels)
+    - [2.5. Control S2S translation via GPUFORT directives](#25-control-s2s-translation-via-gpufort-directives)
 
 ## 1. GPUFORT installation
 
@@ -234,7 +234,7 @@ Fortran source directories provided by the user. The discovery relies internally
 All three `scanner`, `translator` and `indexer` are built on top of the
 `pyparsing` `grammar`. Modules `indexer` and `scanner` rely on module `translator` for in-depth analysis of discovered code lines.
 
-#  Using and configuring GPUFORT
+## 2. Using and configuring GPUFORT
 
 You can call `gpufort` as follows if you agree with the default
 configuration:
@@ -253,7 +253,7 @@ Fortunately, `gpufort` provides multiple ways to change the default behaviour:
    when generating HIP C++ code.
 5. You can edit the python sources.
 
-## 1. Command line options
+### 2.1. Command line options
 
 You can list command line options via `-h` or `--help`:
 
@@ -298,7 +298,7 @@ optional arguments:
 
 ```
 
-## 2. Configuration files
+### 2.2. Configuration files
 
 You can configure many global variables 
 that `gpufort` uses internally via a config file.
@@ -371,7 +371,7 @@ def myAction(args,unknownArgs):
 POST_CLI_ACTIONS.append(myAction)
 ```
 
-## 3. Change source and destination dialects
+### 2.3. Change source and destination dialects
 
 The Fortran source dialect**s** (CUDA Fortran, Fortran+OpenACC, ...) that `GPUFORT` should consider when parsing the translation source can be specified via a configuration file.
 For the destination dialect (Fortran+OpenMP, Fortran+HIP C++, ...),
@@ -384,7 +384,7 @@ scanner.SOURCE_DIALECTS             = ["cuf","acc"] # list containing "acc" and/
 scanner.DESTINATION_DIALECT         = "omp"         # one of: "omp", "hip-gcc-rt", or "hip-gpufort-rt"
 ```
 
-## 4. Only modify host file or only regenerate kernels
+### 2.4. Only modify host file or only generate kernels
 
 When converting a code to `Fortran+C++`, you can tell `gpufort` 
 to only generate kernels form the source
@@ -398,7 +398,7 @@ following command line arguments:
   Only modify host code; do not generate kernels.
 ```
 
-## 5. Control S2S translation via GPUFORT directives
+### 2.5. Control S2S translation via GPUFORT directives
 
 Currently `gpufort` supports only the following directives
 for turning translation on and of locally

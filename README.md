@@ -1,60 +1,40 @@
-# 1. Porting Fortran OpenACC applications to Fortran + HIP with GPUFORT
+# GPUFORT installation and basic usage
 
-<!-- TOC -->
+- [GPUFORT installation and basic usage](#gpufort-installation-and-basic-usage)
+  - [1. GPUFORT installation](#1-gpufort-installation)
+    - [1.1. Install latest HIPFORT](#11-install-latest-hipfort)
+    - [1.2. Install extended OpenACC Fortran interfaces](#12-install-extended-openacc-fortran-interfaces)
+    - [1.3. Install GPUFORT tools](#13-install-gpufort-tools)
+      - [1.3.1. GPUFORT components and dependencies](#131-gpufort-components-and-dependencies)
+- [Using and configuring GPUFORT](#using-and-configuring-gpufort)
+  - [1. Command line options](#1-command-line-options)
+  - [2. Configuration files](#2-configuration-files)
+  - [3. Change source and destination dialects](#3-change-source-and-destination-dialects)
+  - [4. Only modify host file or only regenerate kernels](#4-only-modify-host-file-or-only-regenerate-kernels)
+  - [5. Control S2S translation via GPUFORT directives](#5-control-s2s-translation-via-gpufort-directives)
 
-- [1. Porting Fortran OpenACC applications to Fortran + HIP with GPUFORT](#1-porting-fortran-openacc-applications-to-fortran--hip-with-gpufort)
-  - [1.1. Scenario](#11-scenario)
-  - [1.2. Installing GPUFORT](#12-installing-gpufort)
-    - [1.2.1. Install latest HIPFORT](#121-install-latest-hipfort)
-    - [1.2.2. Install extended OpenACC Fortran interfaces](#122-install-extended-openacc-fortran-interfaces)
-    - [1.2.3. Installing GPUFORT](#123-installing-gpufort)
-      - [1.2.3.1. GPUFORT components and dependencies](#1231-gpufort-components-and-dependencies)
-  - [1.3. Using GPUFORT](#13-using-gpufort)
-    - [1.3.1. Basic Usage](#131-basic-usage)
-  - [1.4. Setting up Dynamico](#14-setting-up-dynamico)
-  - [1.5. Using GPUFORT](#15-using-gpufort)
-    - [1.5.1. Discover files that contain OpenACC code](#151-discover-files-that-contain-openacc-code)
-    - [1.5.2. Run](#152-run)
-
-<!-- /TOC -->
-
-## 1.1. Scenario
-
-We have an OpenACC application that can be built with 
-NVIDIA's HPC Fortran compiler.
-In this guide, our goal is to port the
-open-source HPC application Dynamico to 
-Fortran + HIP (C++), where the host-side
-of the code should be written in Fortran and the device-side
-computations should be written in HIP C++.
-
-## 1.2. Installing GPUFORT
+## 1. GPUFORT installation
 
 > **Required time:** 5-10 minutes
 
-GPUFORT itself is a python3 tool with a bash frontend. It depends on a number of third-party python packages
-that can usually be installed via the python package installer `pip` 
-on mo st operating systems. We will revisit this later.
-GPUFORT *applications* that are ported to Fortran + HIP have a number of other dependencies
-that must be installed on the system running the applications.
-Before we discuss how to install GPUFORT itself, we
-will show how the dependencies are installed. 
+GPUFORT itself is a `python3` tool (collection) with a bash frontend. It depends on a number of third-party `python3` packages that can usually be installed via the `python` / `python3` package installer `pip`. 
+*Applications* that are ported to Fortran + HIP via GPUFORT, in contrast, have a number of additional dependencies that must be installed on the system running those applications.
+We will discuss how the dependencies are installed. 
 
-### 1.2.1. Install latest HIPFORT
+### 1.1. Install latest HIPFORT
 
-The first dependency we install is HIPFORT.
+The first dependency that we install is HIPFORT.
 HIPFORT provides Fortran interfaces to the HIP runtime
-as well as to the HIP and ROCm math libraries.
-This is if an application is compiled for AMD GPUs.
-If the application is compiled for NVIDIA GPUs, HIPFORT
-delegates to the CUDA runtime and CUDA math libraries. 
+and the HIP and ROCm math libraries.
+(If the application is compiled to run on NVIDIA GPUs, HIPFORT
+delegates to the CUDA runtime and math libraries.)
 
-> **NOTE:** The HIPFORT master branch is usually a little further ahead than
+> **NOTE:** The HIPFORT master branch is often a little further ahead than
 the packages from the ROCm package repositories. Moreover, the format of the Fortran module files shipped with the latter packages might not be 
 compatible with your preferred Fortran compiler.
 Currently, we thus recommended to download and build HIPFORT yourself.
 
-To install HIPFORT, we first download the sources via:
+To install HIPFORT, we first download the sources:
 
 ```bash
 git clone git@github.com:RocmSoftwarePlatform/hipfort.git
@@ -68,7 +48,7 @@ cd hipfort
 mkdir build
 ```
 
-The HIPFORT installation will then have the following directory structure:
+The HIPFORT installation will have the structure:
 
 ```
 hipfort/
@@ -84,7 +64,7 @@ hipfort/
     └── f2008
 ```
 
-We enter the `build` subfolder and install HIPFORT via:
+We enter the `build` subfolder and install HIPFORT:
 
 ```bash
 cd build
@@ -105,11 +85,12 @@ We can test the `PATH` setting via:
 hipfc -h
 ```
 
-We can test HIPFORT itself by following the steps in
+We can test HIPFORT itself by following the steps in the HIPFORT 
+`README.md` file:
 
 https://github.com/ROCmSoftwarePlatform/hipfort/blob/master/README.md
 
-### 1.2.2. Install extended OpenACC Fortran interfaces
+### 1.2. Install extended OpenACC Fortran interfaces
 
 The OpenACC programming model requires that any CPU thread can map host arrays
 to the device to run certain computations on the device and vice versa. 
@@ -174,7 +155,7 @@ Both can be build by changing into the subfolder and calling `make`.
 The `rules.mk` can be adapted to switch on debug compiler flags
 and additional debugging features of the respective runtime.
 
-### 1.2.3. Installing GPUFORT
+### 1.3. Install GPUFORT tools
 
 Finally, we install GPUFORT itself. To this end, we clone the repository to our preferred installation folder:
 
@@ -197,9 +178,9 @@ If you don't want to run this command everytime, add it to a startup script
 such as `/home/<user>/.bashrc`.
 
 
-#### 1.2.3.1. GPUFORT components and dependencies
+#### 1.3.1. GPUFORT components and dependencies
 
-The essential parts of the GPUFORT directory are displayed below:
+The essential parts of the GPUFORT directory are shown below:
 
 ```
 gpufort
@@ -253,9 +234,7 @@ Fortran source directories provided by the user. The discovery relies internally
 All three `scanner`, `translator` and `indexer` are built on top of the
 `pyparsing` `grammar`. Modules `indexer` and `scanner` rely on module `translator` for in-depth analysis of discovered code lines.
 
-## 1.3. Using GPUFORT
-
-### 1.3.1. Basic Usage
+#  Using and configuring GPUFORT
 
 You can call `gpufort` as follows if you agree with the default
 configuration:
@@ -267,14 +246,65 @@ gpufort <fortran_file>
 Typically this will not be the case. 
 Fortunately, `gpufort` provides multiple ways to change the default behaviour:
 
-* You can supply a `python3` configuration file,
-* you can use a number command line arguments,
-* you can register a source-2-source translation backend,
-* you can edit the `jinja2` code generation templates
-  when generating HIP C++ code from, or
-* you can edit the python sources.
+1. You can use a number of command line arguments.
+2. You can supply a `python3` configuration file.
+3. You can register a source-2-source translation backend.
+4. You can edit the `jinja2` code generation templates.
+   when generating HIP C++ code.
+5. You can edit the python sources.
 
-The default configuration parameters can be printed out as follows:
+## 1. Command line options
+
+You can list command line options via `-h` or `--help`:
+
+```
+gpufort -h
+```
+
+Output:
+```
+usage: gpufort.py [-h] [-o,--output O,__OUTPUT] [-d,--search-dirs [SEARCHDIRS [SEARCHDIRS ...]]] [-i,--index INDEX] [-w,--wrap-in-ifdef] [-k,--only-generate-kernels]
+                  [-m,--only-modify-host-code] [-E,--destination-dialect DESTINATIONDIALECT] [--log-level LOGLEVEL] [--cublas-v2] [--working-dir WORKINGDIR] [--print-config-defaults]
+                  [--config-file CONFIGFILE]
+                  [input]
+
+S2S translation tool for CUDA Fortran and Fortran+X
+
+positional arguments:
+  input                 The input file.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -o,--output O,__OUTPUT
+                        The output file. Interface module and HIP C++ implementation are named accordingly
+  -d,--search-dirs [SEARCHDIRS [SEARCHDIRS ...]]
+                        Module search dir
+  -i,--index INDEX      Pregenerated JSON index file. If this option is used, the '-d,--search-dirs' switch is ignored.
+  -w,--wrap-in-ifdef    Wrap converted lines into ifdef in host code.
+  -k,--only-generate-kernels
+                        Only generate kernels; do not modify host code.
+  -m,--only-modify-host-code
+                        Only modify host code; do not generate kernels.
+  -E,--destination-dialect DESTINATIONDIALECT
+                        One of: omp, hip-gpufort-rt, hip-gcc-rt
+  --log-level LOGLEVEL  Set log level. Overrides config value.
+  --cublas-v2           Assume cublas v2 function signatures that use a handle. Overrides config value.
+  --working-dir WORKINGDIR
+                        Set working directory.
+  --print-config-defaults
+                        Print config defaults. Config values can be overriden by providing a config file. A number of config values can be overwritten via this CLI.
+  --config-file CONFIGFILE
+                        Provide a config file.
+
+```
+
+## 2. Configuration files
+
+You can configure many global variables 
+that `gpufort` uses internally via a config file.
+To get an overview of what you can modify and how, 
+`gpufort` has a switch to print out the default values
+of these variables:
 
 ```
 gpufort --print-config-defaults
@@ -282,21 +312,104 @@ gpufort --print-config-defaults
 
 Sample output (shortened):
 
+```python
+---- gpufort -----------------------------
+# logging
+LOG_LEVEL                           = logging.INFO   # log level
+LOG_DIR                             = "/tmp/gpufort" # directory for storing log files
+LOG_DIR_CREATE                      = True           # create log dir if it does not exist
+# actions to run after the command line argument parse
+POST_CLI_ACTIONS                    = [] # register functions with parameters (args,unknownArgs) (see: argparse.parse_known_args)
+# ...
+---- translator -----------------------------
+# ...
+translator.FORTRAN_2_C_TYPE_MAP     = { 
+  "complex" : { 
+     "": FLOAT_COMPLEX,
+     "16": None,
+     "8": DOUBLE_COMPLEX,
+     "4": FLOAT_COMPLEX,
+     "2": None,
+     "1": None,
+  },
+  #...
+  "logical" : { 
+    "": "bool"
+  }
+}
+# ...
+---- fort2hip -----------------------------
+fort2hip.FORTRAN_MODULE_PREAMBLE    = ""
+fort2hip.DEFAULT_BLOCK_SIZES        = { 1 : [128], 2 : [128,1,1], 3: [128,1,1] }
+fort2hip.DEFAULT_LAUNCH_BOUNDS      = "128,1"
+...
 ```
 
+Users can modify these global variables directly via a config file that
+they supply to the `gpufort` tool via the `--config-file CONFIGFILE`
+switch. They can further append post-CLI actions and
+append them to the `POST_CLI_ACTIONS` list.
+Post-CLI actions are executed after all command line arguments
+have been parsed. This allows to modify global
+variables depending on these command line arguments.
+All unrecognized arguments are further forwarded to these
+actions too.
+
+A sample config file that demonstrates modification of global variables as well as post-CLI action definition and registration is shown below:
+
+```python
+# file: myconfig.py.in 
+translator.FORTRAN_2_C_TYPE_MAP["complex"]["rstd"] = "hipFloatComplex"
+translator.FORTRAN_2_C_TYPE_MAP["complex"]["cstd"] = "hipDoubleComplex"
+
+# create action
+def myAction(args,unknownArgs):
+    if "my_special_file.f90" in args.input.name:
+        print("hello world!")
+
+# register
+POST_CLI_ACTIONS.append(myAction)
 ```
 
-## 1.4. Setting up Dynamico
+## 3. Change source and destination dialects
 
-> TBA
+The Fortran source dialect**s** (CUDA Fortran, Fortran+OpenACC, ...) that `GPUFORT` should consider when parsing the translation source can be specified via a configuration file.
+For the destination dialect (Fortran+OpenMP, Fortran+HIP C++, ...),
 
-> SHOW TREE
+Relevant global variables:
 
+```
+scanner.SOURCE_DIALECTS             = ["cuf","acc"] # list containing "acc" and/or "cuf"
 
-## 1.5. Using GPUFORT
+scanner.DESTINATION_DIALECT         = "omp"         # one of: "omp", "hip-gcc-rt", or "hip-gpufort-rt"
+```
 
-### 1.5.1. Discover files that contain OpenACC code
+## 4. Only modify host file or only regenerate kernels
 
-This can be done via grep, e.g. via:
+When converting a code to `Fortran+C++`, you can tell `gpufort` 
+to only generate kernels form the source
+or to only modify the host code via the
+following command line arguments:
 
-### 1.5.2. Run 
+```
+-k,--only-generate-kernels
+  Only generate kernels; do not modify host code.
+-m,--only-modify-host-code
+  Only modify host code; do not generate kernels.
+```
+
+## 5. Control S2S translation via GPUFORT directives
+
+Currently `gpufort` supports only the following directives
+for turning translation on and of locally
+
+| Directive | Description |
+|------|----|
+| `!$gpufort on`  | Turn S2S translation on |
+| `!$gpufort off` | Turn S2S translation off |
+
+The default initial state can be configured via the config option:
+
+```python
+scanner.TRANSLATION_ENABLED_BY_DEFAULT = True
+```

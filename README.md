@@ -12,6 +12,11 @@
     - [2.3. Change source and destination dialects](#23-change-source-and-destination-dialects)
     - [2.4. Only modify host file or only generate kernels](#24-only-modify-host-file-or-only-generate-kernels)
     - [2.5. Control S2S translation via GPUFORT directives](#25-control-s2s-translation-via-gpufort-directives)
+  - [3. Debugging and optimizing GPUFORT HIP C++ kernels](#3-debugging-and-optimizing-gpufort-hip-c-kernels)
+    - [3.1. Synchronize all or only particular kernels](#31-synchronize-all-or-only-particular-kernels)
+    - [3.2. Print input argument values](#32-print-input-argument-values)
+    - [3.3. Print device array elements and metrics](#33-print-device-array-elements-and-metrics)
+    - [3.4. An kernel optimizing workflow](#34-an-kernel-optimizing-workflow)
 
 ## 1. GPUFORT installation
 
@@ -109,7 +114,7 @@ In addition, there are functions such as `acc_deviceptr` that are only available
 but not to Fortran programmers.
 In order to make GPUFORT and other Fortran programmers or tools still rely on this 'hidden' runtime functionality, 
 we built interfaces to internal/non-exposed routines of OpenACC runtimes such as LIBGOMP. 
-We further implemented a simple runtime ourself, which we will use in this guide as runtime for the ported
+We further implemented a simple runtime ourselves, which we will use in this guide as runtime for the ported
 HPC application.
 The interfaces and the simple runtime can be obtained via:
 
@@ -174,7 +179,7 @@ to GPUFORT's `bin/` subfolder. For example via:
 ```
 export PATH=$PATH:<gpufort_install_dir>/bin
 ```
-If you don't want to run this command everytime, add it to a startup script
+If you don't want to run this command every time, add it to a startup script
 such as `/home/<user>/.bashrc`.
 
 
@@ -218,8 +223,8 @@ examples, which demonstrate how to use the GPUFORT tools.
 * The `python` subfolder contains: 
   * The `pyparsing` Fortran 2003, CUDA Fortran, and OpenACC grammar in the `grammar` subdirectory. 
   * `translator` contains the `python3` sources for the
-translatior (abstract syntax) tree (*TT*). This tree is used
-to analyze Fortran constructs and directives. Furthmore,
+translator (abstract syntax) tree (*TT*). This tree is used
+to analyze Fortran constructs and directives. Furthermore,
 it is used to generate (HIP) C++ code from the parsed Fortran
 code blocks.
   * The `scanner` subfolder contains a separate less sophisticated 
@@ -244,7 +249,7 @@ gpufort <fortran_file>
 ```
 
 Typically this will not be the case. 
-Fortunately, `gpufort` provides multiple ways to change the default behaviour:
+Fortunately, `gpufort` provides multiple ways to change the default behavior:
 
 1. You can use a number of command line arguments.
 2. You can supply a `python3` configuration file.
@@ -279,7 +284,7 @@ optional arguments:
                         The output file. Interface module and HIP C++ implementation are named accordingly
   -d,--search-dirs [SEARCHDIRS [SEARCHDIRS ...]]
                         Module search dir
-  -i,--index INDEX      Pregenerated JSON index file. If this option is used, the '-d,--search-dirs' switch is ignored.
+  -i,--index INDEX      Pre-generated JSON index file. If this option is used, the '-d,--search-dirs' switch is ignored.
   -w,--wrap-in-ifdef    Wrap converted lines into ifdef in host code.
   -k,--only-generate-kernels
                         Only generate kernels; do not modify host code.
@@ -292,11 +297,16 @@ optional arguments:
   --working-dir WORKINGDIR
                         Set working directory.
   --print-config-defaults
-                        Print config defaults. Config values can be overriden by providing a config file. A number of config values can be overwritten via this CLI.
+                        Print config defaults. Config values can be overridden by providing a config file. A number of config values can be overwritten via this CLI.
   --config-file CONFIGFILE
                         Provide a config file.
 
 ```
+
+> **NOTE**: The `--config-file` switch is parsed before
+the other command line switches. If command line switches
+and config parameters modify the same global `gpufort` variables,
+the command line parameters overrule the config parameters.
 
 ### 2.2. Configuration files
 
@@ -375,6 +385,12 @@ POST_CLI_ACTIONS.append(myAction)
 
 The Fortran source dialect**s** (CUDA Fortran, Fortran+OpenACC, ...) that `GPUFORT` should consider when parsing the translation source can be specified via a configuration file.
 For the destination dialect (Fortran+OpenMP, Fortran+HIP C++, ...),
+you can additionally use the command line switch:
+
+```
+-E,--destination-dialect DESTINATIONDIALECT
+                        One of: omp, hip-gpufort-rt, hip-gcc-rt
+```
 
 Relevant global variables:
 
@@ -413,3 +429,129 @@ The default initial state can be configured via the config option:
 ```python
 scanner.TRANSLATION_ENABLED_BY_DEFAULT = True
 ```
+
+## 3. Debugging and optimizing GPUFORT HIP C++ kernels
+
+HIP C++ kernel files generated with `gpufort` always
+include a header file `gpufort.h`.
+This header file defines a number of device functions
+and various debugging routines.
+The `gpufort` tool generates multiple debugging mechanisms
+into the kernel launch routines that rely on the latter
+routines. In this section, we discuss how you 
+can debug or optimize your kernels without breaking
+the existing implementation.
+
+### 3.1. Synchronize all or only particular kernels
+
+When generating HIP C++ kernels the `gpufort` tool generates
+the following preprocessor constructs into the kernel launcher
+functions:
+
+```C++
+#if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_<kernel_name>)
+HIP_CHECK(hipStreamSynchronize(stream));
+#elif defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_<kernel_name>)
+HIP_CHECK(hipDeviceSynchronize());
+#endif
+```
+
+Therefore, you can synchronize all kernels at once or only the kernel with
+name `<kernel_name>`.
+
+### 3.2. Print input argument values
+
+The `gpufort` tool uses the following macro to print out the values of
+HIP C++ kernel arguments and launch parameters:
+
+```C++
+#define GPUFORT_PRINT_ARGS(...)
+```
+
+In the 
+-generated kernel launch functions, they are guarded by the following preprocessor
+construct:
+
+```C++
+#if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_<kernel_name>
+// ... 
+#endif
+```
+
+You can thus enable argument printing for all kernels at once or only for the particular
+kernel `<kernel_name>` you are interested in.
+
+### 3.3. Print device array elements and metrics
+
+You can use the following macros to print out device arrays:
+
+```C++
+#define GPUFORT_PRINT_ARRAY1(prefix,print_values,print_norms,A,n1,lb1) // ...
+#define GPUFORT_PRINT_ARRAY2(prefix,print_values,print_norms,A,n1,n2,lb1,lb2) // ...
+#define GPUFORT_PRINT_ARRAY3(prefix,print_values,print_norms,A,n1,n2,n3,lb1,lb2,lb3) // ...
+// ...
+#define GPUFORT_PRINT_ARRAY7(prefix,print_values,print_norms,A,n1,n2,n3,n4,n5,n6,n7,lb1,lb2,lb3,lb4,lb5,lb6,lb7) // ...
+```
+
+The device array (`A`) will be downloaded to the host and you can print out:
+
+* all elements (line by line) via `print_values` and/or 
+* a number of metrics/norms such as `l_1`, `l_2`, `sum`, `min`, `max` via `print_norms`.
+
+The parameters `lb<i>` and `n<i>` denote the lower bound and number of elements of array dimension `<i>`, respectively.
+You can further append a prefix to the front of the output in case you
+want to tag it for further post-processing.
+
+The `gpufort`tool 
+matically generates such macros for input and output arrays into the
+
+-generated kernel launchers. They are guarded by the following preprocessor construct:
+
+```C++
+#if defined(GPUFORT_PRINT_INPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAYS_<kernel_name>)
+// print arrays and norms
+#elif defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_<kernel_name>)
+// print only norms
+#endif
+```
+
+For output arrays, the construct looks like:
+
+```C++
+#if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_<kernel_name>)
+// print arrays and norms
+#elif defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_<kernel_name>)
+// print only norms
+#endif
+```
+
+Thus, you can enable input and output array printing for all kernels at once or only for the particular
+kernel `<kernel_name>` you are interested in.
+
+> **NOTE:** Of course, you can modify the generated code yourself too and place array printing
+calls wherever you want.
+
+### 3.4. An kernel optimizing / debugging workflow
+
+Having the kernel extracted from the original source allows us
+to debug and optimize it quite easily with the help of the `gpufort.h` debugging macros.
+The principal workflow looks as follows:
+
+1. Run the original application and print out:
+   1. Input argument values of a selected kernel
+   2. Input and output array elements and norms of the same kernel
+2. Create a `hip.cpp` file with a `main` function.
+   1. Copy the non-
+ kernel launcher signature from the HIP C++ kernel file into this file and
+      change it to a function call.
+   2. Copy the argument types and names of the launcher to the top of the `main` function
+      and change them to local variables. Remove all `const` modifiers.
+   3. Duplicate the array pointers and create both a device and a host pointer `host_<array_name>`.
+   4. Copy the input values you recorded previously below the local variables and convert them to assignments.
+   5. Create a `hipMalloc` and `hipHostMalloc` call per host and device array after the variable assignments. Use the `n<i>` array dimension variables and `sizeof(<datatype>)` to determine a proper size.
+   6. Populate the kernels on the host with application values or other values and use `hipMemcpy`to upload them to the device
+   6. Use the `GPUFORT_PRINT_ARRAY` macros to print out the norms of the arrays after the launch. This way you can easily check if your optimizations changed the code. 
+   7. Clean up all allocations at the end of the `main` function.
+
+> **NOTE** Parts of this workflow can be 
+mated. However, GPUFORT does not do this yet.

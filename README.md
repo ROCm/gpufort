@@ -553,5 +553,4 @@ The principal workflow looks as follows:
    6. Use the `GPUFORT_PRINT_ARRAY` macros to print out the norms of the arrays after the launch. This way you can easily check if your optimizations changed the code. 
    7. Clean up all allocations at the end of the `main` function.
 
-> **NOTE** Parts of this workflow can be 
-mated. However, GPUFORT does not do this yet.
+> **NOTE** Parts of this workflow can be automated. However, GPUFORT does not do this yet.

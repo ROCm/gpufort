@@ -8,10 +8,10 @@
 CUF,KERNEL,STREAM = makeCaselessLiteral("cuf,kernel,stream",suppress=True)
 
 dim3        = LPAR + delimitedList(arithmeticExpression) + RPAR
-grid        = Literal("*") | dim3 
-threadBlock = grid.copy()
+grid        = Literal("*") | dim3 | rvalue
+threadBlock = grid
 streamType  = ( derivedTypeElem | funcCall | identifier | number )
-streamArg   = Optional(STREAM + EQ) + Optional(streamType,default="0")
+streamArg   = Optional(STREAM + EQ) + Optional(streamType,default=CLAUSE_NOT_FOUND)
 kernelLaunchArgs = Group(Suppress("<<<") + \
   Optional(grid,default="*")  + COMMA + \
   Optional(threadBlock,default="*") + OPTCOMMA + \

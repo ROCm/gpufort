@@ -287,7 +287,8 @@ class TTLoopKernel(TTNode,IComputeConstruct):
     def reductionCandidates(self,indexHints=[]):
         if len(indexHints):
             self._indexHints = indexHints
-        return self.__localScalarsAndReductionCandidates(self._indexHints)
+        _,reductionCandidates = self.__localScalarsAndReductionCandidates(self._indexHints)
+        return reductionCandidates
     def problemSize(self):
         numOuterLoopsToMap = int(self._parentDirective.numCollapse())
         if LOOP_COLLAPSE_STRATEGY == "grid" or numOuterLoopsToMap == 1:
@@ -373,17 +374,15 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         # TODO preprocess Fortran colon expressions
         inoutArraysInBody = self.inoutArraysInBody()
         arraysInBody      = self.arraysInBody()
-        reduction     = self.gangTeamReductions()
+        reduction         = self.gangTeamReductions()
         depend            = self.depend()
 
-        # TODO preprocess loop statements outside
-        # of this routine if needed
         if type(self._parentDirective) is TTCufKernelDo:
             def cufKernelDoRepl(parseResult):
                 nonlocal arraysInBody
                 nonlocal inoutArraysInBody
                 nonlocal reduction
-                return parseResult.ompFStr(arraysInBody,inoutArraysInBody,reduction,depend)+"\n", True
+                return parseResult.ompFStr(arraysInBody,inoutArraysInBody,reduction,depend), True
             
             result,_ = pyparsingtools.replaceFirst(fSnippet,\
                 cuf_kernel_do,\

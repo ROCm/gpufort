@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+class CufLoopKernel2Omp(CufBackendBase):
+    def gpufortFStr(self,indexHints=[]):
+        fSnippet = "".join(self._stnode._lines)
+        try:
+           parseResult = translator.loopKernel.parseString(fSnippet)[0]
+           return parseResult.ompFStr(fSnippet), True 
+        except Exception as e:
+           print("failed: "+fSnippet) #TODO
+           raise e
+           return "", False 
+
+registerCufBackend("omp",CufLoopKernel2Omp,None)

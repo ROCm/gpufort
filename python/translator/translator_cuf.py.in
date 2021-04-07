@@ -62,6 +62,7 @@ class TTCudaKernelCall(TTNode):
 
 class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
     def _assignFields(self,tokens):
+        self._parentDirective    = None
         self._numOuterLoopsToMap = int(tokens[0])
         self._grid               = tokens[1][0]
         self._block              = tokens[1][1]
@@ -91,11 +92,23 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
     def numGangsTeamsBlocks(self,converter=makeFStr):
         if self._grid == "*":
             return [CLAUSE_NOT_FOUND]*self._numOuterLoopsToMap
+        elif isinstance(self._block,IValue):
+            # TODO Check if IValue is actually a dim3 or not
+            result = []
+            for i in range(0,self._numOuterLoopsToMap):
+                result.append( converter(self._grid) + "%" + chr(ord('x') + i))
+            return result
         else:
             return [converter(gridDim) for gridDim in self._grid]
     def numThreadsInBlock(self,converter=makeFStr):
         if self._block == "*":
             return [CLAUSE_NOT_FOUND]*self._numOuterLoopsToMap
+        elif isinstance(self._block,IValue):
+            # TODO Check if IValue is actually a dim3 or not
+            result = []
+            for i in range(0,self._numOuterLoopsToMap):
+                result.append( converter(self._block) + "%" + chr(ord('x') + i))
+            return result
         else:
             return [converter(blockDim) for blockDim in self._block]
     def cStr(self):
@@ -108,27 +121,42 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
         return result
     def ompFStr(self,arraysInBody=set(),inoutArraysInBody=set(),reduction={},depend={},loopType="do"):
         result = "!$omp target teams distribute parallel "+loopType  
+
+        grid  = self.numGangsTeamsBlocks()
+        block = self.numThreadsInBlock()
+        numTeams   = "" 
+        threadLimit = ""
+        first = True
+        for val in grid:
+            if val != CLAUSE_NOT_FOUND:
+                numTeams = "*"+val if not first else val
+                first = False
+        first = True
+        for val in block:
+            if val != CLAUSE_NOT_FOUND:
+                threadLimit = "*"+val if not first else val
+                first = False
+        if len(numTeams):
+            result += " num_teams("+numTeams+")"
+        if len(threadLimit):
+            result += " thread_limit("+threadLimit+")"
         # reduction vars
         for kind,variables in reduction.items():
-            result += " reduction({0}:{1})".format(kind,",".join(variables))
+            if len(variables):
+                result += " reduction({0}:{1})".format(kind,",".join(variables))
         # if, async
-        if len(self.stream()):
+        if self.stream() != str(CLAUSE_NOT_FOUND):
             result += " nowait"
             if len(depend):
                 for kind,variables in depend.items():
                     result += " depend("+kind+":"+",".join(variables)+")"
             else: 
+                inArraysInBody = [el for el in arraysInBody if el not in inoutArraysInBody]
                 if len(inArraysInBody):
                     result += " depend("+kind+":"+",".join(inArraysInBody)+")"
                 if len(inoutArraysInBody):
                     result += " depend("+kind+":"+",".join(inoutArraysInBody)+")"
         return result
-
-class TTCufKernelDo(TTLoopKernel,ILoopAnnotation):
-    def _assignFields(self,tokens):
-        self._launchInfo, self._body  = tokens
-    def kernelLaunchInfo(self):
-        return self._launchInfo
 
 class TTAllocateRValue(TTNode):
     def _assignFields(self,tokens):

@@ -311,11 +311,6 @@ class STLoopKernel(STNode):
     def gpufortFStr(self,indexHints=[]):
         return self.transformFSnippet("".join(self._lines),indexHints)
 
-class STCufLoopKernel(STDirective,STLoopKernel):
-    def __init__(self,parent,lineno,lines):
-        STDirective.__init__(self,parent,lineno,lines)
-        STLoopKernel.__init__(self,parent,lineno,lines)
-
 class Attributed():
     def hasAllocatable(self):
         return self._parseResult.hasStringQualifier("allocatable")
@@ -448,38 +443,39 @@ class STDeclaration(STNode,Attributed):
         # TODO(dominic) rewrite docu
         """
         """
-        indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
-        if self.hasDevice() or self._madeDevice or self.hasPinned() or self.isStream():
-            devicePtr = copy.deepcopy(self._ttdeclaration)
-            # TODO Only make a pointer if this an input argument of a subroutine
-            # TODO extend subroutine / function objects to return dummy variable list
-            # in order to check what qualifiers should be selected
-            for q in ["device","pinned","allocatable"]:
-                qualifiersLower = [x.lower() for x in devicePtr._qualifiers if type(x) is str]
-                if q in qualifiersLower:
-                    index = qualifiersLower.index(q)
-                    devicePtr._qualifiers.pop(index)
-                print(qualifiersLower)
-            if not "pointer" in devicePtr._qualifiers:
-                for varName in self._ttdeclaration.arrayVariableNames():
-                    # TODO : fix this !!!
-                    if isinstance(self._parent, STProcedure):
-                        if not "target" in devicePtr._qualifiers:
-                           devicePtr._qualifiers.append("target")
-                    else:
-                       devicePtr._qualifiers.append("pointer")
-            #devicePtr.convertToCptr()
-            result = "{1}{0}\n".format(devicePtr.fStr(),indent)
-        elif self.isStream():
-            devicePtr = copy.deepcopy(self._ttdeclaration)
-            devicePtr.convertToCptr()
-        else:
-            if not self.hasPointer() and self._madeTarget:
-                targetArray = copy.deepcopy(self._ttdeclaration)
-                targetArray._qualifiers.append("target")
-                return "{1}{0}".format(targetArray.fStr(),indent), True
-            else:
-                return "".join(self._lines), False
+        # TODO indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
+        # TODO if self.hasDevice() or self._madeDevice or self.hasPinned() or self.isStream():
+        # TODO     devicePtr = copy.deepcopy(self._ttdeclaration)
+        # TODO     # TODO Only make a pointer if this an input argument of a subroutine
+        # TODO     # TODO extend subroutine / function objects to return dummy variable list
+        # TODO     # in order to check what qualifiers should be selected
+        # TODO     for q in ["device","pinned","allocatable"]:
+        # TODO         qualifiersLower = [x.lower() for x in devicePtr._qualifiers if type(x) is str]
+        # TODO         if q in qualifiersLower:
+        # TODO             index = qualifiersLower.index(q)
+        # TODO             devicePtr._qualifiers.pop(index)
+        # TODO         print(qualifiersLower)
+        # TODO     if not "pointer" in devicePtr._qualifiers:
+        # TODO         for varName in self._ttdeclaration.arrayVariableNames():
+        # TODO             # TODO : fix this !!!
+        # TODO             if isinstance(self._parent, STProcedure):
+        # TODO                 if not "target" in devicePtr._qualifiers:
+        # TODO                    devicePtr._qualifiers.append("target")
+        # TODO             else:
+        # TODO                devicePtr._qualifiers.append("pointer")
+        # TODO     #devicePtr.convertToCptr()
+        # TODO     result = "{1}{0}\n".format(devicePtr.fStr(),indent)
+        # TODO elif self.isStream():
+        # TODO     devicePtr = copy.deepcopy(self._ttdeclaration)
+        # TODO     devicePtr.convertToCptr()
+        # TODO else:
+        # TODO     if not self.hasPointer() and self._madeTarget:
+        # TODO         targetArray = copy.deepcopy(self._ttdeclaration)
+        # TODO         targetArray._qualifiers.append("target")
+        # TODO         return "{1}{0}".format(targetArray.fStr(),indent), True
+        # TODO     else:
+        # TODO         return "".join(self._lines), False
+        return "".join(self._lines), False
 
 class STAttributes(STNode,Attributed):
     def __init__(self,parent,lineno,lines):
@@ -602,25 +598,26 @@ class STMemcpy(STNode,MemOperation):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
     def transformFSnippet(self,fSnippet,indexHints=[]): # TODO
-        def replMemcpy(parseResult):
-            destName = parseResult.destNameFStr()
-            srcName  = parseResult.srcNameFStr()
-            destBpe,destOnDevice,qualifier,destIndexMacro,boundVariableNames = self.lookupArrayDeclaration(destName)
-            srcBpe,srcOnDevice,qualifier,srcIndexMacro,boundVariableNames    = self.lookupArrayDeclaration(srcName)
-            if srcBpe == "-1":
-                bpe = destBpe
-            else:
-                bpe = srcBpe
-            if destOnDevice and parseResult.destHasArgs():
-                self._preamble.add(destIndexMacro)
-            if srcOnDevice and parseResult.srcHasArgs():
-                self._preamble.add(srcIndexMacro)
-            if destOnDevice or srcOnDevice:
-                subst       = parseResult.fStr(destOnDevice,srcOnDevice,bpe)
-                return (subst,True)
-            else:
-                return ("",False) # no transformation; will not be considered
-        fSnippet,transformed = pyparsingtools.replaceAll(fSnippet,translator.memcpy,replMemcpy)
+        # TODOdef replMemcpy(parseResult):
+        # TODO    destName = parseResult.destNameFStr()
+        # TODO    srcName  = parseResult.srcNameFStr()
+        # TODO    destBpe,destOnDevice,qualifier,destIndexMacro,boundVariableNames = self.lookupArrayDeclaration(destName)
+        # TODO    srcBpe,srcOnDevice,qualifier,srcIndexMacro,boundVariableNames    = self.lookupArrayDeclaration(srcName)
+        # TODO    if srcBpe == "-1":
+        # TODO        bpe = destBpe
+        # TODO    else:
+        # TODO        bpe = srcBpe
+        # TODO    if destOnDevice and parseResult.destHasArgs():
+        # TODO        self._preamble.add(destIndexMacro)
+        # TODO    if srcOnDevice and parseResult.srcHasArgs():
+        # TODO        self._preamble.add(srcIndexMacro)
+        # TODO    if destOnDevice or srcOnDevice:
+        # TODO        subst       = parseResult.fStr(destOnDevice,srcOnDevice,bpe)
+        # TODO        return (subst,True)
+        # TODO    else:
+        # TODO        return ("",False) # no transformation; will not be considered
+        # TODOfSnippet,transformed = pyparsingtools.replaceAll(fSnippet,translator.memcpy,replMemcpy)
+        transformed = False
         return fSnippet, transformed
 
 class STCudaLibCall(STNode,MemOperation):

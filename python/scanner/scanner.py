@@ -32,6 +32,7 @@ scannerDir = os.path.dirname(__file__)
 exec(open("{0}/scanner_options.py.in".format(scannerDir)).read())
 exec(open("{0}/scanner_tree.py.in".format(scannerDir)).read())
 exec(open("{0}/openacc/scanner_tree_acc.py.in".format(scannerDir)).read())
+exec(open("{0}/cudafortran/scanner_tree_cuf.py.in".format(scannerDir)).read())
 exec(open("{0}/scanner_groups.py.in".format(scannerDir)).read())
 
 def checkDestinationDialect(destinationDialect):
@@ -168,18 +169,6 @@ def parseFile(fortranFilePath):
                 current._lines += currentLines
                 ascend()
                 keepRecording = False
-    def CufLoopKernel(tokens):
-        nonlocal doLoopCtr
-        nonlocal current
-        nonlocal translationEnabled
-        nonlocal currentLineno
-        nonlocal currentLines
-        nonlocal keepRecording
-        new = STCufLoopKernel(parent=current,lineno=currentLineno,lines=currentLines)
-        new._ignoreInS2STranslation = not translationEnabled
-        new._doLoopCtrMemorised=doLoopCtr
-        descend(new) 
-        keepRecording = True
     def Declaration(tokens):
         nonlocal current
         nonlocal translationEnabled
@@ -312,6 +301,20 @@ def parseFile(fortranFilePath):
         else:
            # append new directive
            current.append(new)
+    def CufLoopKernel(tokens):
+        nonlocal doLoopCtr
+        nonlocal current
+        nonlocal translationEnabled
+        nonlocal currentLineno
+        nonlocal currentLines
+        nonlocal keepRecording
+        nonlocal directiveNo
+        new = STCufLoopKernel(current,currentLineno,[],directiveNo)
+        new._ignoreInS2STranslation = not translationEnabled
+        new._doLoopCtrMemorised=doLoopCtr
+        directiveNo += 1
+        descend(new) 
+        keepRecording = True
     def Assignment(tokens):
         nonlocal current
         nonlocal translationEnabled

@@ -118,7 +118,7 @@ def parseConfig(configFilePath):
     global LOG_DIR
     global LOG_DIR_CREATE
 
-    prolog = "global LOG_LEVEL\nglobal LOG_DIR\nglobal LOG_DIR_CREATE"
+    prolog = "global LOG_LEVEL\nglobal LOG_DIR\nglobal LOG_DIR_CREATE\n"
     epilog = ""
     try:
         if configFilePath.strip()[0]=="/":

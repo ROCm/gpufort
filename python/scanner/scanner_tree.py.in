@@ -298,15 +298,15 @@ class STLoopKernel(STNode):
         
         We hash the body because we will use different block sizes and shmem anyway in HIP.
         """
-        return KERNEL_NAME_TEMPLATE.format(parent=self._parent._name.lower(),lineno=self._lineno+1,hash=self.hashBody())
+        return LOOP_KERNEL_NAME_TEMPLATE.format(parent=self._parent._name.lower(),lineno=self._lineno+1,hash=self.hashBody())
     def kernelLauncherName(self):
         return "launch_{}".format(self.kernelName())
     def transformFSnippet(self,fSnippet,indexHints=[]):
         indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
         stream = "c_null_ptr" if self._stream == "0" else self._stream
         result="""{4}! extracted to HIP C++ file
-{4}! TODO(gpufort) fix arguments
-{4}CALL {0}_auto({1},{2},{3})""".format(self.kernelLauncherName(),self._sharedMem,stream,",".join(self._kernelArgNames),indent)
+{4}CALL {0}_{5}({1},{2},{3})""".format(self.kernelLauncherName(),self._sharedMem,stream,\
+          ",".join(self._kernelArgNames),indent,LOOP_KERNEL_DEFAULT_LAUNCHER)
         return result, True
     def gpufortFStr(self,indexHints=[]):
         return self.transformFSnippet("".join(self._lines),indexHints)

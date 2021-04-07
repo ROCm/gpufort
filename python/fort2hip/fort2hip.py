@@ -306,18 +306,25 @@ def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         fInterfaceDictManual["argNames"] = [arg["name"] for arg in fInterfaceDictManual["args"]]
         fInterfaceDictManual["doTest"]   = False
 
-        # CPU routine
-        fRoutineDict = copy.deepcopy(fInterfaceDictAuto)
-        fRoutineDict["fName"] = kernelLauncherName + "_cpu"
+        # External CPU interface
+        fCPUInterfaceDict = copy.deepcopy(fInterfaceDictAuto)
+        fCPUInterfaceDict["fName"] = kernelLauncherName + "_cpu" 
+        fCPUInterfaceDict["cName"] = kernelLauncherName + "_cpu"
+        fCPUInterfaceDict["doTest"] = False
+
+        # Internal CPU routine
+        fCPURoutineDict = copy.deepcopy(fInterfaceDictAuto)
+        fCPURoutineDict["fName"]    = kernelLauncherName + "_cpu1" 
+        fCPURoutineDict["cName"]    = kernelLauncherName + "_cpu1"
         
         # rename copied modified args
-        for i,val in enumerate(fRoutineDict["args"]):
+        for i,val in enumerate(fCPURoutineDict["args"]):
             varName = val["name"]
             if val.get("isArray",False):
-                fRoutineDict["args"][i]["name"] = "d_{}".format(varName)
+                fCPURoutineDict["args"][i]["name"] = "d_{}".format(varName)
 
-        fRoutineDict["argNames"] = [a["name"] for a in fRoutineDict["args"]]
-        fRoutineDict["args"]    += localCpuRoutineArgs # ordering important
+        fCPURoutineDict["argNames"] = [a["name"] for a in fCPURoutineDict["args"]]
+        fCPURoutineDict["args"]    += localCpuRoutineArgs # ordering important
         # add mallocs, memcpys , frees
         prolog = ""
         epilog = ""
@@ -330,12 +337,13 @@ def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
                # host to device
                epilog += "CALL hipCheck(hipMemcpy(d_{var},c_loc({var}),{bpe}_8*SIZE({var}),hipMemcpyHostToDevice))\n".format(var=localArray,bpe=arg["bytesPerElement"])
                epilog += "deallocate({var})\n".format(var=localArray)
-        fRoutineDict["body"] = prolog + fSnippet + epilog
+        fCPURoutineDict["body"] = prolog + fSnippet + epilog
 
         # Add all definitions to context
         fContext["interfaces"].append(fInterfaceDictManual)
         fContext["interfaces"].append(fInterfaceDictAuto)
-        fContext["routines"].append(fRoutineDict)
+        fContext["interfaces"].append(fCPUInterfaceDict)
+        fContext["routines"].append(fCPURoutineDict)
 
 # TODO check if this can be combined with other routine
 def updateContextFromAcceleratorRoutines(acceleratorRoutines,hipContext,fContext):
@@ -405,21 +413,29 @@ def updateContextFromAcceleratorRoutines(acceleratorRoutines,hipContext,fContext
         fInterfaceDictManual["args"]    += kernelArgs
         fInterfaceDictManual["argNames"] = [arg["name"] for arg in fInterfaceDictManual["args"]]
         fInterfaceDictManual["doTest"]   = True
+        
+        # External CPU interface
+        fCPUInterfaceDict = copy.deepcopy(fInterfaceDictManual)
+        fCPUInterfaceDict["fName"]  = kernelLauncherName + "_cpu" 
+        fCPUInterfaceDict["cName"]  = kernelLauncherName + "_cpu"
+        fCPURoutineDict["args"]     = kernelArgs
+        fCPUInterfaceDict["doTest"] = False
 
-        # CPU routine
-        fRoutineDict = copy.deepcopy(fInterfaceDictManual)
-        fRoutineDict["fName"]    = kernelLauncherName + "_cpu" # no cName here
-        fRoutineDict["args"]     = kernelArgs
-        fRoutineDict["argNames"] = argNames(fRoutineDict["args"])
+        # Internal CPU routine
+        fCPURoutineDict = copy.deepcopy(fInterfaceDictManual)
+        fCPURoutineDict["fName"]    = kernelLauncherName + "_cpu1" 
+        fCPURoutineDict["cName"]    = kernelLauncherName + "_cpu1"
+        fCPURoutineDict["args"]     = kernelArgs
+        fCPURoutineDict["argNames"] = argNames(fCPURoutineDict["args"])
         # rename copied modified args
         #print(localCpuRoutineArrayNames)
-        for i,val in enumerate(fRoutineDict["args"]):
+        for i,val in enumerate(fCPURoutineDict["args"]):
             varName = val["name"]
             #print(varName)
             if varName in localCpuRoutineArrayNames:
-                fRoutineDict["args"][i]["name"] = "_{}".format(varName)
-        fRoutineDict["argNames"] = ["{}".format(a["name"]) for a in fRoutineDict["args"]]
-        fRoutineDict["args"]  += localCpuRoutineArgs # ordering important
+                fCPURoutineDict["args"][i]["name"] = "_{}".format(varName)
+        fCPURoutineDict["argNames"] = ["{}".format(a["name"]) for a in fCPURoutineDict["args"]]
+        fCPURoutineDict["args"]  += localCpuRoutineArgs # ordering important
         # add memcpys
         prolog = ""
         epilog = ""
@@ -429,12 +445,13 @@ def updateContextFromAcceleratorRoutines(acceleratorRoutines,hipContext,fContext
              prolog += "CALL hipCheck(hipMemcpy(c_loc({0}),_{0},C_SIZEOF({0}),hipMemcpyDeviceToHost))\n".format(localCpuRoutineArray)
              # host to device
              epilog += "CALL hipCheck(hipMemcpy(_{0},c_loc({0}),C_SIZEOF({0}),hipMemcpyHostToDevice))\n".format(localCpuRoutineArray)
-        fRoutineDict["body"] = prolog + fBody + epilog
+        fCPURoutineDict["body"] = prolog + fBody + epilog
 
         # Add all definitions to context
         hipContext["kernels"].append(hipKernelDict)
         fContext["interfaces"].append(fInterfaceDictManual)
-        fContext["routines"].append(fRoutineDict)
+        fContext["interfaces"].append(fCPUInterfaceDict)
+        fContext["routines"].append(fCPURoutineDict)
 
 def renderTemplates(outputFilePrefix,hipContext,fContext):
     # HIP kernel file

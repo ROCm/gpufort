@@ -53,7 +53,7 @@ module {{name}}
 {% if routines is defined and routines|length > 0 %}  contains
 
 {% for routine in routines %}
-    {{routine.type}} {{routine.fName}}({{routine.argNames | join(",&\n        ") }})
+    {{routine.type}} {{routine.fName}}({{routine.argNames | join(",&\n        ") }}) bind(c, name="{{routine.cName}}")
       use iso_c_binding
 {% for module in used %}      use {{module}}
 {% endfor %}

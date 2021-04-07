@@ -23,6 +23,7 @@ def createCodegenContextFromDeclaration(ttdeclaration):
         varContext["cType"]                      = convertToCType(fType,kind,"TODO unknown")
         varContext["fInterfaceType"]             = varContext["cType"]
         varContext["fInterfaceQualifiers"]       = [ "value" ] # assume pass by value by default
+        # TODO pack into single variable
         varContext["parameter"]                  = ttdeclaration.hasParameter()
         varContext["pointer"]                    = ttdeclaration.hasStringQualifier("pointer")
         # CUF
@@ -34,13 +35,13 @@ def createCodegenContextFromDeclaration(ttdeclaration):
         varContext["declaredOnTarget"]           = False
         # arrays
         varContext["rank"]                       = 0
-        varContext["unspecifiedBounds"]          = True
-        varContext["lbounds"]                    = []
-        varContext["counts"]                     = []
-        varContext["totalCount"]                 = "1" 
-        varContext["totalBytes"]                 = bpe
-        varContext["indexMacro"]                 = "_idx_{}(a) (a)".format(varName) 
-        varContext["indexMacroWithPlaceHolders"] = varContext["indexMacro"]
+        #varContext["unspecifiedBounds"]          = True
+        #varContext["lbounds"]                    = []
+        #varContext["counts"]                     = []
+        #varContext["totalCount"]                 = "1" 
+        #varContext["totalBytes"]                 = bpe
+        #varContext["indexMacro"]                 = "_idx_{}(a) (a)".format(varName) 
+        #varContext["indexMacroWithPlaceHolders"] = varContext["indexMacro"]
         dimensionQualifier = findAll(ttdeclaration._qualifiers,TTDimensionQualifier)
         if ttdeclaredvariable.hasBounds() or len(dimensionQualifier):
             varContext["fInterfaceType"] = "type(c_ptr)"

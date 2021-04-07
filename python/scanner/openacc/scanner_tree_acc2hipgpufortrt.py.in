@@ -48,7 +48,7 @@ class Acc2HipGpufortRT(AccBackendBase):
         """
         result = ""
         if queue is None:
-            for parseResult in translator.acc_clause_asyncr.searchString(queue,1):
+            for parseResult in translator.acc_clause_async.searchString(queue,1):
                 #print(parseResult)
                 # TODO find ...
                 result = parseResult[0].queue()

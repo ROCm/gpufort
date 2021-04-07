@@ -48,12 +48,15 @@ def initArg(argName,fType,kind,qualifiers=[],cType="",isArray=False):
       "cType"           : cType,
       "cSize"           : "",
       "cValue"          : "",
-      "cSuffix"         : "[]" if isArray else "",
+      "cSuffix"         : "", # TODO still needed?
+      "isArray"         : isArray,
       "reductionOp"     : "",
       "bytesPerElement" : translator.bytes(fType,kind,default="-1")
     }
     if not len(cType):
         arg["cType"] = translator.convertToCType(fType,kind,"void")
+    if isArray:
+        arg["cType"] += " * __restrict__"
     return arg
 
 def createArgumentContext(indexedVariable,argName,isLoopKernelArg=False,cudaFortran=False):
@@ -310,7 +313,7 @@ def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         # rename copied modified args
         for i,val in enumerate(fRoutineDict["args"]):
             varName = val["name"]
-            if val.get("cSuffix","")=="[]": # is array
+            if val.get("isArray",False):
                 fRoutineDict["args"][i]["name"] = "d_{}".format(varName)
 
         fRoutineDict["argNames"] = [a["name"] for a in fRoutineDict["args"]]

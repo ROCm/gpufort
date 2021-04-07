@@ -772,15 +772,6 @@ class Attributed():
         for q in self._qualifiers:
             result |= type(q) is str and q.lower() == name.lower()
         return result
-    #def getStandardFortranStringQualifiers(self):
-    #    """
-    #    :param name: lower case string qualifier, i.e. no more complex qualifier such as 'dimension' or 'intent'.
-    #    """
-    #    result = []
-    #    for q in [q.lower() for q in self._qualifiers]:
-    #        if type(q) is str and q not in ["parameter","allocatable","pointer","device","pinned","managed"]:
-    #            result.append(q) 
-    #    return result
     def isDevicePointer(self):
         return self.hasStringQualifier("device") and\
                self.hasStringQualifier("pointer")

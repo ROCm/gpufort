@@ -5,26 +5,25 @@ import subprocess
 import logging
 
 #CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140}\""
-CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140, BinPackArguments: false, BinPackParameters: false, AllowAllArgumentsOnNextLine: false, AllowAllParametersOfDeclarationOnNextLine: false}\""
 
-def prettifyCCode(cCode):
+def prettifyCCode(cCode,style):
     """
     Requires clang-format 7.0+.
     
     Use e.g. the one coming with ROCm:
     /opt/rocm-<suffix>/hcc/bin/clang-format"
     """
-    command = "printf \"{0}\" | clang-format -style={1}".format(cCode.replace("%","%%"),CLANG_FORMAT_STYLE)
+    command = "printf \"{0}\" | clang-format -style={1}".format(cCode.replace("%","%%"),style)
     return subprocess.check_output(command,shell=True).decode('ascii')
 
-def prettifyCFile(cPath):
+def prettifyCFile(cPath,style):
     """
     Requires clang-format 7.0+
     
     Use e.g. the one coming with ROCm:
     /opt/rocm-<suffix>/hcc/bin/clang-format"
     """
-    command = "clang-format -i -style={1} {0}".format(cPath,CLANG_FORMAT_STYLE) # writes inplace
+    command = "clang-format -i -style={1} {0}".format(cPath,style) # writes inplace
     subprocess.check_output(command,shell=True).decode('ascii')
 
 def prettifyFCode(fCode):

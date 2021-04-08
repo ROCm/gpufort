@@ -458,7 +458,7 @@ def renderTemplates(outputFilePrefix,hipContext,fContext):
     #pprint.pprint(hipContext)
     hipImplementationFilePath = "{0}.kernels.hip.cpp".format(outputFilePrefix)
     model.HipImplementationModel().generateCode(hipImplementationFilePath,hipContext)
-    utils.prettifyCFile(hipImplementationFilePath)
+    utils.prettifyCFile(hipImplementationFilePath,CLANG_FORMAT_STYLE)
     msg = "created HIP C++ implementation file: ".ljust(40) + hipImplementationFilePath
     logger = logging.getLogger("")
     logger.info(msg) ; print(msg)

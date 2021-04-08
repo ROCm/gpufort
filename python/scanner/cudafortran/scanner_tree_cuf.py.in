@@ -19,6 +19,7 @@ def registerCufBackend(name,loopKernelGeneratorClass,runtimeModuleName):
     CUF_LOOP_KERNEL_BACKENDS[name] = loopKernelGeneratorClass
 
 exec(open("{0}/cudafortran/scanner_tree_cuf2omp.py.in".format(scannerDir)).read())
+exec(open("{0}/cudafortran/scanner_tree_cuf2hip.py.in".format(scannerDir)).read())
 
 class STCufDirective(STDirective):
     """

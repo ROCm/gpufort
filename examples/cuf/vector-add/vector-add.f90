@@ -5,6 +5,7 @@ program testSaxpy
   real :: x(N), y(N), a
   real, device :: x_d(N), y_d(N)
   type(dim3) :: grid, tBlock
+  integer :: i
 
   tBlock = dim3(256,1,1)
   grid = dim3(ceiling(real(N)/tBlock%x),1,1)

@@ -68,10 +68,10 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
         self._block              = tokens[1][1]
         self._sharedMem          = tokens[1][2]
         self._stream             = tokens[1][3]
-    def stream(self):
-        return makeFStr(self._stream)
-    def sharedMem(self):
-        return makeFStr(self._sharedMem)
+    def stream(self,converter=makeFStr):
+        return converter(self._stream)
+    def sharedMem(self,converter=makeFStr):
+        return converter(self._sharedMem)
     def useDefaultStream(self):
         return self._stream == "0"
     def numDimensions(self):

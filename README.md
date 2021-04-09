@@ -125,7 +125,7 @@ git clone git@github.com:RocmSoftwarePlatform/openacc-fortran-interfaces.git
 > **NOTE:** As long as the repository remains private, AMD single-sign-on users need to clone the repository via:
 
 ```bash
-GIT_SSH_COMMAND='ssh -i <private_key_file> -o IdenitiesOnly=yes' git clone git@github.com:RocmSoftwarePlatform/openacc-fortran-interfaces.git
+GIT_SSH_COMMAND='ssh -i <private_key_file> -o IdentitiesOnly=yes' git clone git@github.com:RocmSoftwarePlatform/openacc-fortran-interfaces.git
 ```
 
 The cloned repository has the following structure:
@@ -171,7 +171,7 @@ git clone git@github.com:RocmSoftwarePlatform/gpufort.git
 > **NOTE:** As long as the repository remains private, AMD single-sign-on users need to clone the repository via:
 
 ```bash
-GIT_SSH_COMMAND='ssh -i <private_key_file> -o IdenitiesOnly=yes' git clone git@github.com:RocmSoftwarePlatform/gpufort.git
+GIT_SSH_COMMAND='ssh -i <private_key_file> -o IdentitiesOnly=yes' git clone git@github.com:RocmSoftwarePlatform/gpufort.git
 ```
 
 Installation is completed by pointing the `PATH` environment variable

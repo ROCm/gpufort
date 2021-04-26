@@ -73,7 +73,10 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
     def sharedMem(self,converter=makeFStr):
         return converter(self._sharedMem)
     def useDefaultStream(self):
-        return self._stream == "0"
+        try:
+            return int(self._stream) < 1
+        except:
+            return False
     def numDimensions(self):
         """
         Get the number of grid and block dimensions.
@@ -89,6 +92,12 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
         return True
     def numCollapse(self):
         return self._numOuterLoopsToMap
+    def gridExpressionFStr(self):
+        """ only CUF """
+        return makeFStr(self._grid)
+    def blockExpressionFStr(self):
+        """ only CUF """
+        return makeFStr(self._block)
     def numGangsTeamsBlocks(self,converter=makeFStr):
         if self._grid == "*":
             return [CLAUSE_NOT_FOUND]*self._numOuterLoopsToMap

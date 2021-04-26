@@ -77,9 +77,6 @@ class STNode:
                  of the object is a device subroutine.
         """
         return not self._ignoreInS2STranslation
-              # and\
-              # not isinstance(self._parent, STLoopKernel) and\
-              # (not type(self._parent) is STSubroutine or not self._parent.isAcceleratorRoutine())
     def append(self,child):
         self._children.append(child)
     def listOfParents(self):
@@ -273,11 +270,13 @@ class STDirective(STNode):
 class STLoopKernel(STNode):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
-        self._doLoopCtrMemorised  = -1
-        self._singleLineStatement = None
-        self._sharedMem           = "0" # set from extraction routine
-        self._stream              = "c_null_ptr" # set from extraction routine
-        self._kernelArgNames = [] # set from extraction routine
+        self._doLoopCtrMemorised     = -1
+        self._singleLineStatement    = None
+        self._gridFStr               = None
+        self._blockFStr              = None
+        self._sharedMemFStr          = "0" # set from extraction routine
+        self._streamFStr             = "c_null_ptr" # set from extraction routine
+        self._kernelArgNames         = [] # set from extraction routine
     def stripLines(self,lines):
         """Remove whitespace characters and comments."""
         result = ""
@@ -303,10 +302,20 @@ class STLoopKernel(STNode):
         return "launch_{}".format(self.kernelName())
     def transformFSnippet(self,fSnippet,indexHints=[]):
         indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
-        stream = "c_null_ptr" if self._stream == "0" else self._stream
-        result="""{4}! extracted to HIP C++ file
-{4}CALL {0}_{5}({1},{2},{3})""".format(self.kernelLauncherName(),self._sharedMem,stream,\
-          ",".join(self._kernelArgNames),indent,LOOP_KERNEL_DEFAULT_LAUNCHER)
+        try:
+          streamAsInt = int(self._streamFStr)
+          stream = "c_null_ptr" if streamAsInt < 1 else self._streamFStr
+        except:
+          stream = self._streamFStr
+        if self._gridFStr == None or self._blockFStr == None or LOOP_KERNEL_DEFAULT_LAUNCHER == "cpu": # use auto or cpu launcher 
+          result="""{indent}! extracted to HIP C++ file
+  {indent}CALL {0}_{launcher}({1},{2},{3})""".format(self.kernelLauncherName(),self._sharedMemFStr,stream,\
+            ",".join(self._kernelArgNames),indent=indent,launcher=LOOP_KERNEL_DEFAULT_LAUNCHER)
+        else:
+          result="""{indent}! extracted to HIP C++ file
+  {indent}CALL {0}({1},{2},{3},{4},{5})""".format(self.kernelLauncherName(),self._gridFStr,self._blockFStr,self._sharedMemFStr,stream,\
+            ",".join(self._kernelArgNames),indent=indent)
+          
         return result, True
     def gpufortFStr(self,indexHints=[]):
         return self.transformFSnippet("".join(self._lines),indexHints)

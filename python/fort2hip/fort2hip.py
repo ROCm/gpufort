@@ -289,8 +289,11 @@ def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         # Feed argument names back to STLoopKernel for host code modification
         #######################################################################
         stkernel._kernelArgNames = [arg["callArgName"] for arg in kernelArgs]
-        stkernel._stream         = kernelParseResult.stream()
-        stkernel._sharedMem      = kernelParseResult.sharedMem()
+        stkernel._gridFStr       = kernelParseResult.gridExpressionFStr()
+        stkernel._blockFStr      = kernelParseResult.blockExpressionFStr()
+        # TODO use indexer to check if block and dim expressions are actually dim3 types or introduce overloaded make_dim3 interface to hipfort
+        stkernel._streamFStr     = kernelParseResult.stream()    # TODO consistency
+        stkernel._sharedMemFstr  = kernelParseResult.sharedMem() # TODO consistency
 
         # Fortran interface with manual specification of stkernel launch parameters
         fInterfaceDictManual = copy.deepcopy(fInterfaceDictAuto)

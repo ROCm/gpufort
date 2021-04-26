@@ -7,6 +7,12 @@ class ILoopAnnotation():
         return CLAUSE_NOT_FOUND
     def tileSizes(self):
         return [CLAUSE_NOT_FOUND]
+    def gridExpressionFStr(self):
+        """ only CUF """
+        return ""
+    def blockExpressionFStr(self):
+        """ only CUF """
+        return ""
     def numGangsTeamsBlocks(self):
         return [CLAUSE_NOT_FOUND]
     def numThreadsInBlock(self):
@@ -90,6 +96,12 @@ class IComputeConstruct():
         return CLAUSE_NOT_FOUND
     def numDimensions(self):
         return 1
+    def gridExpressionFStr(self):
+        """ only CUF """
+        return None
+    def blockExpressionFStr(self):
+        """ only CUF """
+        return None
     def numGangsTeamsBlocks(self):
         return [CLAUSE_NOT_FOUND]
     def numThreadsInBlock(self):
@@ -199,8 +211,29 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             identifierNames.append(loop.loopVar(makeFStr))
         return identifierNames
     def __searchValueInBody(self,searchFilter,indexHints,minRank=-1e20):
+        #TODO exclude other annotations as well from this search
+        def findAllMatchingExcludeDirectives(body,filterExpr=lambda x: True,N=-1):
+            """
+            Find all nodes in tree of type 'searchedType'.
+            """
+            result = []
+            def descend(curr):
+                if (N > 0 and len(result) > N) or isinstance(curr,ILoopAnnotation):
+                    return
+                if filterExpr(curr):
+                    result.append(curr)
+                if isinstance(curr,ParseResults) or\
+                   isinstance(curr,list):
+                    for el in curr:
+                        descend(el)
+                elif isinstance(curr,TTNode):
+                    for value in curr.__dict__.values():
+                        descend(value)
+            descend(body)
+            return result
+        
         identifierNames = [] 
-        for valueType in findAllMatching(self._body,searchFilter): # includes the identifiers of the function calls
+        for valueType in findAllMatchingExcludeDirectives(self._body,searchFilter): # includes the identifiers of the function calls
             name = makeFStr(valueType.name())
             nameLower = name.lower()
             definition,foundInIndex = indexertools.searchIndexForVariable(indexHints,nameLower)
@@ -343,6 +376,12 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         return self._parentDirective.detachVars()
     def presentByDefault(self):
         return self._parentDirective.detachVars()
+    def gridExpressionFStr(self):
+        """ only CUF """
+        return self._firstLoopAnnotation.gridExpressionFStr()
+    def blockExpressionFStr(self):
+        """ only CUF """
+        return self._firstLoopAnnotation.blockExpressionFStr()
     def gangTeamPrivateVars(self,converter=makeFStr): 
         return self._parentDirective.gangTeamPrivateVars(converter)
     def gangTeamFirstprivateVars(self,converter=makeFStr): 

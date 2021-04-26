@@ -173,7 +173,7 @@ extern "C" void {{ifacePrefix}}_cpu1(const int sharedMem, hipStream_t stream,{{k
 extern "C" void {{ifacePrefix}}_cpu(const int sharedMem, hipStream_t stream,{{kernel.interfaceArgs | join(",")}}) {
   #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{krnlPrefix}})
   std::cout << "{{krnlPrefix}}:cpu:args:";
-  GPUFORT_PRINT_ARGS(sharedMem,stream,{{kernel.kernelCallArgNames | join(",")}});
+  GPUFORT_PRINT_ARGS(sharedMem,stream,{{kernel.cpuKernelCallArgNames | join(",")}});
   #endif
   #if defined(GPUFORT_PRINT_INPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAYS_{{krnlPrefix}})
   {% for array in kernel.inputArrays %}
@@ -185,7 +185,7 @@ extern "C" void {{ifacePrefix}}_cpu(const int sharedMem, hipStream_t stream,{{ke
   {% endfor %}
   #endif
   // launch kernel
-  {{ifacePrefix}}_cpu1(sharedMem, stream, {{kernel.kernelCallArgNames | join(",")}});
+  {{ifacePrefix}}_cpu1(sharedMem, stream, {{kernel.cpuKernelCallArgNames | join(",")}});
 
   #if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_{{krnlPrefix}})
   {% for array in kernel.outputArrays %}

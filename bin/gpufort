@@ -43,4 +43,25 @@ fi
 
 # all dependencies are met and we can continue
 
-python3 $GPUFORT_BIN_DIR/../python/gpufort.py --working-dir $(pwd) "${@}"
+for a in "$@"; do
+  if [ "$a" == "--print-grammar" ]; then
+    printf "\n-------------------\n"
+    printf "BEGIN GPUFORT GRAMMAR"
+    printf "\n-------------------\n\n"
+    GRAMMAR_DIR=${GPUFORT_BIN_DIR}/../python/grammar
+    cat ${GRAMMAR_DIR}/grammar_f03.py.in
+    cat ${GRAMMAR_DIR}/grammar_directives.py.in
+    cat ${GRAMMAR_DIR}/grammar_cuf.py.in
+    cat ${GRAMMAR_DIR}/grammar_acc.py.in
+    cat ${GRAMMAR_DIR}/grammar_gpufort_control.py.in
+    cat ${GRAMMAR_DIR}/grammar_epilog.py.in
+    printf "\n-------------------\n"
+    printf "END GPUFORT GRAMMAR"
+    printf "\n-------------------\n"
+    USED_DEVELOPER_TOOL=1
+  fi
+done 
+
+if [ -z ${USED_DEVELOPER_TOOL} ]; then
+  python3 $GPUFORT_BIN_DIR/../python/gpufort.py --working-dir $(pwd) "${@}"
+fi

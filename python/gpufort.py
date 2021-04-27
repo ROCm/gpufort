@@ -43,7 +43,7 @@ def translateFortranSource(fortranFilePath,stree,index,wrapInIfdef):
     # post process before grouping again
     basename      = os.path.basename(fortranFilePath).split(".")[0]
     hipModuleName = basename.replace(".","_").replace("-","_") + "_kernels"
-    scanner.postProcess(stree,hipModuleName)
+    scanner.postprocess(stree,hipModuleName)
     
     # group again with updated tree
     groups = scanner.groupObjects(stree)
@@ -160,8 +160,10 @@ def parseCommandLineArguments():
     parser.add_argument("--print-config-defaults",dest="printConfigDefaults",action="store_true",help="Print config defaults. "+\
             "Config values can be overriden by providing a config file. A number of config values can be overwritten via this CLI.")
     parser.add_argument("--config-file",default=None,type=argparse.FileType("r"),dest="configFile",help="Provide a config file.")
+    parser.add_argument("--dump-index",dest="dumpIndex",action="store_true",help="Dump the index.")
     
-    parser.set_defaults(printConfigDefaults=False,overwriteExisting=True,wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyHostCode=False)
+    parser.set_defaults(printConfigDefaults=False,dumpIndex=False,\
+        wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyHostCode=False)
     args, unknownArgs = parser.parse_known_args()
 
     if args.printConfigDefaults:
@@ -303,6 +305,13 @@ if __name__ == "__main__":
     # modify original file
     if not args.onlyGenerateKernels:
         translateFortranSource(inputFilePath,stree,index,args.wrapInIfdef) 
- 
+
+    # dump index
+    if args.dumpIndex:
+        indexFilePath = outputFilePrefix + ".index.json"
+        indexFile = open(indexFilePath, "w")
+        json.dump(index, indexFile, indent=2)
+        msg = "saved index to file:".ljust(40) + indexFilePath
+        logging.getLogger("").info(msg) ; print(msg)
     # shutdown logging
     logging.shutdown()

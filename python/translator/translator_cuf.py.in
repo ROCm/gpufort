@@ -68,6 +68,8 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
         self._block              = tokens[1][1]
         self._sharedMem          = tokens[1][2]
         self._stream             = tokens[1][3]
+    def allArraysAreOnDevice(self):
+        return True
     def stream(self,converter=makeFStr):
         return converter(self._stream)
     def sharedMem(self,converter=makeFStr):
@@ -188,25 +190,31 @@ class TTAllocateRValue(TTNode):
         else:
             # TODO(gpufort): Add Warning
             return "TODO(gpufort): UNKNOWN"
-    
     def size(self,bytesPerElement=1,converter=makeCStr):
         if self._bounds != None:
             return self._bounds.size(bytesPerElement,converter)
         else:
             # TODO(gpufort): Add Warning
             return "TODO(gpufort): UNKNOWN"
-    def makeHipDeviceFStr(self,bytesPerElement):
-        # Offsets are known
+    def countsFStr(self):
         if self._bounds != None:
-            name = makeFStr(self._var)
-            unprefixedName = name.split("%")[-1]
-            #args = ",".join(self._bounds.specifiedLowerBounds(makeFStr))
-            # TODO(gpufort): Replace by something better
-            args = makeFStr(self._bounds)
-            offsetInBytes  = "_idx_{0}{1}*({2})".format(unprefixedName,args,bytesPerElement)
-            return "inc_c_ptr({0},{1})".format(name,offsetInBytes)
+            return self._bounds.specifiedCounts(makeFStr)
         else:
-            return self.fStr()
+            # TODO(gpufort): Add Warning
+            return "TODO(gpufort): UNKNOWN"
+    # TODO outdated
+    #def makeHipDeviceFStr(self,bytesPerElement):
+    #    # Offsets are known
+    #    if self._bounds != None:
+    #        name = makeFStr(self._var)
+    #        unprefixedName = name.split("%")[-1]
+    #        #args = ",".join(self._bounds.specifiedLowerBounds(makeFStr))
+    #        # TODO(gpufort): Replace by something better
+    #        args = makeFStr(self._bounds)
+    #        offsetInBytes  = "_idx_{0}{1}*({2})".format(unprefixedName,args,bytesPerElement)
+    #        return "inc_c_ptr({0},{1})".format(name,offsetInBytes)
+    #    else:
+    #        return self.fStr()
     def cStr(self):
         return "{0}{1}".format(makeFStr(self._var),makeFStr(self._bounds))
     def fStr(self):
@@ -214,27 +222,37 @@ class TTAllocateRValue(TTNode):
 
 class TTCufAllocated(TTNode):
     """
-    For `type(c_ptr)` variables the standard `allocated` check
-    do not work. We need to replace this by `c_associated(var)`.
+     
+    For `type(c_ptr)` variables the `allocated` check
+    does not work. We need to use `c_associated` instead.
+    
+    For Fortran pointer variables, we need the `associated(<var>)`
+    intrinsic to check if they are associated with any memory.
     """
     def _assignFields(self,tokens):
         self._var = tokens[0]
     def varName(self):
         return self._var.varName()
-    def fStr(self):
-        return "c_associated({0})".format(makeFStr(self._var))
+    def fStr(self,varIsCPtr=False):
+        if varIsCPtr:
+            return "c_associated({0})".format(makeFStr(self._var))
+        else:
+            return "associated({0})".format(makeFStr(self._var))
 
 class TTCufNonZeroCheck(TTNode):
     """
-    For `type(c_ptr)` variables that replace CUDA Fortran stream and , the standard `allocated` check
-    do not work. We need to replace this by `c_associated(var)`.d
+    For `type(c_ptr)` variables that replace CUDA Fortran stream and , the standard non-zero check
+    does not work. We need to replace this by `c_associated(var)`.
     """
     def _assignFields(self,tokens):
         self._lhs = tokens
     def lhsFStr(self):
         return makeFStr(self._lhs)
-    def fStr(self):
-        return "c_associated({0})".format(makeFStr(self._lhs))
+    def fStr(self,lhsIsCPtr=False):
+        if lhsIsCPtr:
+            return "c_associated({0})".format(makeFStr(self._lhs))
+        else:
+            return "associated({0})".format(makeFStr(self._lhs))
 
 class TTCufPointerAssignment(TTNode):
     """
@@ -250,29 +268,22 @@ class TTCufPointerAssignment(TTNode):
         return makeFStr(self._lhs)
     def rhsFStr(self):
         return makeFStr(self._rhs)
-    def fStr(self,lhsBoundVariableNames=[]):
-        lhsName = self.lhsFStr()
-        rhsName = self.rhsFStr()
-        boundVariableAssignments = "\n".join(["{0} = {1}".format(el,el.replace(lhsName,rhsName)) for el in lhsBoundVariableNames])
-        return "{0} = {1}\n{2}".format(lhsName,rhsName,boundVariableAssignments)
+    def fStr(self,varsAreCPtrs=False,lhsBoundVariableNames=[]):
+        if varsAreCPtrs:
+            lhsName = self.lhsFStr()
+            rhsName = self.rhsFStr()
+            boundVariableAssignments = "\n".join(["{0} = {1}".format(el,el.replace(lhsName,rhsName)) for el in lhsBoundVariableNames])
+            return "{0} = {1}\n{2}".format(lhsName,rhsName,boundVariableAssignments)
+        else:
+            return "{0} => {1}\n{2}".format(lhsName,rhsName)
+             
 
-class TTCufAllocate(TTNode):
+class TTCufAllocate(TTNode): # TODO not specific to CUF
     """
     This statement has nearly no context except the bounds (in elements, not bytes)
     of the array that is allocated.
     Most information needs to be provided from calling function in order
     to convert this call to a hip malloc.
-
-    Spawned from grammar:
-
-    ```python
-    ```
-
-    where
-    
-    ```python
-    allocateRValue = ( identifier | simpleDerivedTypeMember ) + Optional(LPAR + bounds + RPAR,default=[])
-    ```
     """
     def _assignFields(self,tokens):
         self._vars = tokens
@@ -282,14 +293,15 @@ class TTCufAllocate(TTNode):
         :return type: list of str
         """
         return [array.varName() for array in self._vars] 
-    def fStr(self,bytesPerElement,arrayQualifiers,indent=""):
+    def ompFStr(self,bytesPerElement,arrayQualifiers,indent="",varsAreCPtrs=False):
+        assert False, "Not implemented!" # TODO omp target alloc
+    def hipFStr(self,bytesPerElement,arrayQualifiers,indent="",varsAreCPtrs=False):
         """
         Generate HIP ISO C Fortran expression for all
         device and pinned host allocations.
         Use standard allocate for all other allocations.
 
-        :param arrayQualifiers: List storing per variable, one of 'managed', 'constant', 'shared', 'pinned', 'texture', 'device', None
-        or no entry at all.
+        :param arrayQualifiers: List storing per variable, one of 'managed', 'constant', 'shared', 'pinned', 'texture', 'device' or None.
 
         :see: variableNames(self) 
         """
@@ -298,39 +310,31 @@ class TTCufAllocate(TTNode):
         result       = []
         otherArrays  = []
         for i,array in enumerate(self._vars):
-            sizeBytes = array.size(bytesPerElement[i],makeFStr)
+            if varsAreCPtrs: 
+                size = array.size(bytesPerElement[i],makeFStr) # total size in bytes
+            else:
+                size = ",".join(array.countsFStr())            # element counts per dimension
             if arrayQualifiers[i] == "device":
-                line = "{2}CALL hipCheck(hipMalloc({0}, {1}))".format(array.varName(),sizeBytes,indent)
+                line = "{2}CALL hipCheck(hipMalloc({0}, {1}))".format(array.varName(),size,indent)
                 result.append(line)
             elif arrayQualifiers[i] == "pinned":
-                line = "{2}CALL hipCheck(hipHostMalloc({0}, {1}, hipHostMallocDefault))".format(array.varName(),sizeBytes,indent)
+                line = "{2}CALL hipCheck(hipHostMalloc({0}, {1}, 0))".format(array.varName(),size,indent)
                 result.append(line)
             else:
                 otherArrays.append(makeFStr(array)) 
-            if arrayQualifiers[i] in ["device","pinned"]:
+            if varsAreCPtrs and not arrayQualifiers[i] in ["pinned","device"]:
                 result += array.boundVariableAssignments(array.varName())
         if len(otherArrays):
             line = "{1}ALLOCATE({0})".format(",".join(otherArrays),indent)
             result.append(line)
         return "\n".join(result)
 
-class TTCufDeallocate(TTNode):
+class TTCufDeallocate(TTNode): # TODO not specific to CUF
     """
     This statement has nearly no context except the bounds (in elements, not bytes)
     of the array that is allocated.
     Most information needs to be provided from calling function in order
     to convert this call to a hip malloc.
-
-    Spawned from grammar:
-
-    ```python
-    ```
-
-    where
-    
-    ```python
-    allocateRValue = ( identifier | simpleDerivedTypeMember ) + Optional(LPAR + bounds + RPAR,default=[])
-    ```
     """
     def _assignFields(self,tokens):
         self._vars             = tokens
@@ -342,7 +346,9 @@ class TTCufDeallocate(TTNode):
         :return type: list of str
         """
         return [array.varName() for array in self._vars] 
-    def fStr(self,arrayQualifiers,indent=""):
+    def ompFStr(self,arrayQualifiers,indent="",varsAreCPtrs=False):
+        assert False, "Not implemented!" # TODO omp target free
+    def hipfortFStr(self,arrayQualifiers,indent=""):
         """
         Generate HIP ISO C Fortran expression for all
         device and pinned host allocations.
@@ -458,7 +464,7 @@ class TTCufMemcpyIntrinsic(TTNode,CufMemcpyBase):
         self._src        = tokens[1]
         self._bounds     = tokens[0]._bounds
         self._memcpyKind = ""
-    def fStr(self,destOnDevice,srcOnDevice,bytesPerElement=1,indent=""):
+    def fStr(self,destOnDevice,srcOnDevice,varsAreCPtrs=True,bytesPerElement=1,indent=""): # TODO backend specific
         api = "hipMemcpy"
         if self._bounds != None:
             size = self._bounds.size(bytesPerElement,makeFStr)

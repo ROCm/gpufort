@@ -36,6 +36,9 @@ class ILoopAnnotation():
     def sharedVars(self,converter=makeFStr): 
         """ only OMP """
         return []
+    def allArraysAreOnDevice(self):
+        """ only True for CUF kernel do directive """
+        return False
 
 class TTDoLoop(TTNode):
     def _assignFields(self,tokens):
@@ -140,7 +143,7 @@ class IComputeConstruct():
     def selfCondition(self): 
         """ OMP,ACC: run on current CPU / device (and do not offload) """
         return ""
-    def deviceptrs(self):
+    def deviceptrs(self,indexHints=[]):
         return []
     def createAllocVars(self):
         return []
@@ -354,8 +357,11 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         return self._parentDirective.ifCondition()
     def selfCondition(self): 
         return self._parentDirective.selfCondition
-    def deviceptrs(self):
-        return self._parentDirective.deviceptrs()
+    def deviceptrs(self,indexHints=[]):
+        if self._parentDirective.allArraysAreOnDevice():
+            return self.arraysInBody(indexHints)
+        else:
+            return self._parentDirective.deviceptrs()
     def createAllocVars(self):
         return self._parentDirective.createAllocVars()
     def no_createVars(self):

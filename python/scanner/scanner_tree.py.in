@@ -502,42 +502,7 @@ class STAttributes(STNode,Attributed):
     def considerInS2STranslation(self):
         return False
 
-# TODO use index here
-class MemOperation(): #TODO give better name
-    def lookupArrayDeclaration(self,arrayName):
-        """
-        :note: Adds target qualifier to host arrays
-        :return: Bytes per element of this array and device specific qualifier
-        """
-        mappedArrayName = self.mapNameToDerivedType(arrayName)
-        #print(mappedArrayName)
-        #print(arrayName)
-        qualifier = ""
-        bytesPerElement = "-1"
-        onDevice = False
-        indexMacro = ""
-        boundVariableNames = []
-        for stdeclaration in self.arraysInScope():
-            # names may be prefixed by type0%type1%...
-            #print(mappedArrayName  + " vs " + str(stdeclaration._arrayVars))
-            if mappedArrayName.lower() in stdeclaration._arrayVars:
-                bytesPerElement    = stdeclaration.bytesPerElement()  
-                indexMacro         = stdeclaration.arrayVariableIndexMacroCStr(mappedArrayName)
-                boundVariableNames = [el.replace(mappedArrayName,arrayName) for el in stdeclaration.arrayBoundVariableNamesFStr(mappedArrayName)]
-                # side effect:
-                if not stdeclaration.hasDevice():
-                    stdeclaration.makeTarget()              
-  
-                if stdeclaration.hasDevice() or stdeclaration._madeDevice:
-                    qualifier = "device"
-                    onDevice  = True
-                elif stdeclaration.hasPinned():
-                    qualifier = "pinned"
-                elif stdeclaration.hasManaged():
-                    qualifier = "managed"
-        return bytesPerElement, onDevice, qualifier, indexMacro, boundVariableNames
-
-class STNonZeroCheck(STNode,MemOperation):
+class STNonZeroCheck(STNode):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
     def transformFSnippet(self,fSnippet,indexHints=[]): # TODO
@@ -545,45 +510,53 @@ class STNonZeroCheck(STNode,MemOperation):
         transformed = False
         for tokens,start,end in translator.nonZeroCheck.scanString(result):
             parseResult = tokens[0]
-            lhsName = parseResult.lhsFStr()
-            bpe,onDevice,qualifier,indexMacro,boundVariableNames = self.lookupArrayDeclaration(lhsName)
+            lhsName     = parseResult.lhsFStr()
+            indexedVar  = indexertools.searchIndexForVariable(indexHints,lhsName)
+            onDevice    = indexedVar["hasDevice"] == True or indexedVar["declaredOnTarget"] == True
             transformed |= onDevice
             if onDevice:
-                subst = parseResult.fStr()
+                subst = parseResult.fStr() # TODO backend specific
                 result = result.replace(result[start:end],subst)
         return result, transformed
 
-class STAllocated(STNode,MemOperation):
+class STAllocated(STNode):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
     def transformFSnippet(self,fSnippet,indexHints=[]): # TODO
         def repl(parseResult):
             varName = parseResult.varName()
-            bpe,onDevice,qualifier,indexMacro,boundVariableNames = self.lookupArrayDeclaration(varName)
-            return (parseResult.fStr(), onDevice)
+            indexedVar  = indexertools.searchIndexForVariable(indexHints,varName)
+            onDevice    = indexedVar["hasDevice"] == True or indexedVar["declaredOnTarget"] == True
+            return (parseResult.fStr(), onDevice) # TODO backend specific
         result, transformed = pyparsingtools.replaceAll(fSnippet,translator.allocated,repl)
         assert result != None
         return result, transformed
 
-class STAllocate(STNode,MemOperation):
+class STAllocate(STNode):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
     def transformFSnippet(self,fSnippet,indexHints=[]): # TODO
         def repl(parseResult):
             transformed     = False
-            vars            = [name.lower() for name in parseResult.variableNames()]
             bytesPerElement = []
             arrayQualifiers = []
-            for arrayName in vars:
-                bpe,onDevice,qualifier,indexMacro,boundVariableNames = self.lookupArrayDeclaration(arrayName)
-                bytesPerElement.append(bpe)
-                arrayQualifiers.append(qualifier)
-                transformed |= qualifier.lower() in ["pinned","device"]
-            subst = parseResult.fStr(bytesPerElement,arrayQualifiers,indent="")
+            for arrayName in parseResult.variableNames():
+                indexedVar = indexertools.searchIndexForVariable(indexHints,arrayName)[0]
+                bytesPerElement.append(indexedVar["bytesPerElement"])
+                onDevice   = indexedVar["device"] == True or indexedVar["declaredOnTarget"] == True
+                pinned     = indexedVar["pinned"] == True
+                if onDevice: 
+                    arrayQualifiers.append("device")
+                elif pinned: 
+                    arrayQualifiers.append("pinned")
+                else:
+                    arrayQualifiers.append(None)
+                transformed |= onDevice | pinned
+            subst = parseResult.hipFStr(bytesPerElement,arrayQualifiers,indent="")
             return (subst, transformed)
         return pyparsingtools.replaceAll(fSnippet,translator.allocate,repl)
              
-class STDeallocate(STNode,MemOperation):
+class STDeallocate(STNode):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
     def transformFSnippet(self,fSnippet,indexHints=[]): # TODO
@@ -603,7 +576,7 @@ class STDeallocate(STNode,MemOperation):
             return (subst, transformed)
         return pyparsingtools.replaceAll(fSnippet,translator.deallocate,repl)
          
-class STMemcpy(STNode,MemOperation):
+class STMemcpy(STNode):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
     def transformFSnippet(self,fSnippet,indexHints=[]): # TODO
@@ -629,7 +602,7 @@ class STMemcpy(STNode,MemOperation):
         transformed = False
         return fSnippet, transformed
 
-class STCudaLibCall(STNode,MemOperation):
+class STCudaLibCall(STNode):
     def __init__(self,parent,lineno):
         STNode.__init__(self,parent,lineno)
         self._cudaApi = ""

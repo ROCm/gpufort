@@ -59,28 +59,28 @@ def initArg(argName,fType,kind,qualifiers=[],cType="",isArray=False):
         arg["cType"] += " * __restrict__"
     return arg
 
-def createArgumentContext(indexedVariable,argName,isLoopKernelArg=False,cudaFortran=False):
+def createArgumentContext(indexedVar,argName,deviceptrNames=[],isLoopKernelArg=False):
     """
     Create an argument context dictionary based on a indexed variable.
 
-    :param indexedVariable: A variable description provided by the indexer.
-    :type indexedVariable: STDeclaration
+    :param indexedVar: A variable description provided by the indexer.
+    :type indexedVar: STDeclaration
     :return: a dicts containing Fortran `type` and `qualifiers` (`type`, `qualifiers`), C type (`cType`), and `name` of the argument
     :rtype: dict
     """
-    arg = initArg(argName,indexedVariable["fType"],indexedVariable["kind"],[ "value" ],"",indexedVariable["rank"]>0)
-    if indexedVariable["parameter"] and not indexedVariable["value"] is None:
-        arg["cValue"] = indexedVariable["value"] 
+    arg = initArg(argName,indexedVar["fType"],indexedVar["kind"],[ "value" ],"",indexedVar["rank"]>0)
+    if indexedVar["parameter"] and not indexedVar["value"] is None:
+        arg["cValue"] = indexedVar["value"] 
     lowerBoundArgs = []  # additional arguments that we introduce if variable is an array
     countArgs      = []
     macro          = None
     # treat arrays
-    rank = indexedVariable["rank"] 
+    rank = indexedVar["rank"] 
     if rank > 0:
-        if cudaFortran:
-            arg["callArgName"] = "c_loc({})".format(argName) # TODO
-        else: # acc
-            arg["callArgName"] = scanner.devVarName(argName) # TODO
+        if argName in deviceptrNames:
+            arg["callArgName"] = "c_loc({})".format(argName)
+        else: 
+            arg["callArgName"] = scanner.devVarName(argName)
         arg["type"]       = "type(c_ptr)"
         arg["qualifiers"] = [ "value" ]
         for d in range(1,rank+1):
@@ -93,13 +93,13 @@ def createArgumentContext(indexedVariable,argName,isLoopKernelArg=False,cudaFort
              countArg["callArgName"] = "size({},{})".format(argName,d)
              countArgs.append(countArg)
         # create macro expression
-        if isLoopKernelArg and not indexedVariable["unspecifiedBounds"]:
-            macro = { "expr" : indexedVariable["indexMacro"] }
+        if isLoopKernelArg and not indexedVar["unspecifiedBounds"]:
+            macro = { "expr" : indexedVar["indexMacro"] }
         else:
-            macro = { "expr" : indexedVariable["indexMacroWithPlaceHolders"] }
+            macro = { "expr" : indexedVar["indexMacroWithPlaceHolders"] }
     return arg, lowerBoundArgs, countArgs, macro
 
-def deriveKernelArguments(index, identifiers, localVars, loopVars, whiteList=[], isLoopKernelArg=False, cudaFortran=False):
+def deriveKernelArguments(globalIndex, identifiers, localVars, loopVars, whiteList=[], isLoopKernelArg=False, deviceptrNames=[]):
     """
     #TODO how to handle struct members?
     """
@@ -125,14 +125,14 @@ def deriveKernelArguments(index, identifiers, localVars, loopVars, whiteList=[],
     #print(identifiers) # TODO check; should be all lower case
     for name in identifiers: # TODO does not play well with structs
         if includeArgument(name):
-            foundDeclaration = name in loopVars # TODO rename loop variables to local variables; this way we can filter out local subroutine variables
-            indexedVariable,discovered = indexertools.searchIndexForVariable(index,name) # TODO treat implicit here
+            #foundDeclaration = name in loopVars # TODO rename loop variables to local variables; this way we can filter out local subroutine variables
+            indexedVar,discovered = indexertools.searchIndexForVariable(globalIndex,name) # TODO treat implicit here
             argName = name
             if not discovered:
                  arg = initArg(name,"TODO declaration not found","",[],"TODO declaration not found")
                  unknownArgs.append(arg)
             else:
-                arg, lowerBoundArgs, countArgs, macro = createArgumentContext(indexedVariable,name,cudaFortran)
+                arg, lowerBoundArgs, countArgs, macro = createArgumentContext(indexedVar,name,deviceptrNames)
                 argName = name.lower().replace("%","_") # TODO
                 # modify argument
                 if argName in loopVars: # specific for loop kernels
@@ -140,12 +140,12 @@ def deriveKernelArguments(index, identifiers, localVars, loopVars, whiteList=[],
                     localCpuRoutineArgs.append(arg)
                 elif argName in localVars:
                     arg["qualifiers"]=[]
-                    if indexedVariable["rank"] > 0:
-                        arg["cSize"] = indexedVariable["totalCount"]
+                    if indexedVar["rank"] > 0:
+                        arg["cSize"] = indexedVar["totalCount"]
                     localCpuRoutineArgs.append(arg)
                     cKernelLocalVars.append(arg)
                 else:
-                    rank = indexedVariable["rank"]
+                    rank = indexedVar["rank"]
                     if rank > 0: # specific for cufLoopKernel
                         inputArrays.append({ "name" : name, "rank" : rank })
                         arg["cSize"]    = ""
@@ -183,7 +183,7 @@ def deriveKernelArguments(index, identifiers, localVars, loopVars, whiteList=[],
 
     return kernelArgs, cKernelLocalVars, macros, inputArrays, localCpuRoutineArgs
     
-def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
+def updateContextFromLoopKernels(loopKernels,globalIndex,hipContext,fContext):
     """
     loopKernels is a list of STCufLoopKernel objects.
     hipContext, fContext are inout arguments for generating C/Fortran files, respectively.
@@ -191,7 +191,7 @@ def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
     hipContext["haveReductions"] = False
     for stkernel in loopKernels:
         parentTag     = stkernel._parent.tag()
-        filteredIndex = indexertools.filterIndexByTag(index,parentTag)
+        filteredIndex = indexertools.filterIndexByTag(globalIndex,parentTag)
        
         fSnippet = "".join(stkernel.lines())
 
@@ -199,11 +199,11 @@ def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         kernelParseResult = translator.parseLoopKernel(fSnippet,filteredIndex)
 
         kernelArgs, cKernelLocalVars, macros, inputArrays, localCpuRoutineArgs =\
-          deriveKernelArguments(index,\
+          deriveKernelArguments(globalIndex,\
             kernelParseResult.identifiersInBody(),\
             kernelParseResult.localScalars(),\
             kernelParseResult.loopVars(),\
-            [], True, type(stkernel) is scanner.STCufLoopKernel)
+            [], True, kernelParseResult.deviceptrs())
 
         # general
         kernelName         = stkernel.kernelName()
@@ -365,14 +365,14 @@ def updateContextFromAcceleratorRoutines(acceleratorRoutines,hipContext,fContext
         kernelLauncherName = "launch_{}".format(kernelName)
         loopVars = []; localLValues = []
         
-        filteredIndex = indexertools.filterIndexByTag(index,stroutine.tag())
+        filteredIndex = indexertools.filterIndexByTag(globalIndex,stroutine.tag())
 
         identifiers = [] # TODO identifiers not the best name # TODO this is redundant with the ignore list
-        for declaration in declaredVars:
+        for declaration in declaredVars: # TODO not working
              identifiers += declaration._vars
 
         kernelArgs, cKernelLocalVars, macros, localCpuRoutineArgs, localCpuRoutineArrayNames =\
-          deriveKernelArguments(filteredIndex,identifiers,localLValues,loopVars,argNames,False,cudaFortran=True)
+          deriveKernelArguments(filteredIndex,identifiers,localLValues,loopVars,argNames,False,deviceptrNames=[])
         #print(argNames)
 
         def beginOfBody(lines):
@@ -500,7 +500,7 @@ def renderTemplates(outputFilePrefix,hipContext,fContext):
        logger.info(msg)
        print(msg)
 
-def createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename,generateCode):
+def createHipKernels(stree,globalIndex,kernelsToConvertToHip,outputFilePrefix,basename,generateCode):
     """
     :param stree:        [inout] the scanner tree holds nodes that store the Fortran code lines of the kernels
     :param generateCode: generate code or just feed kernel signature information
@@ -540,7 +540,7 @@ def createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename
     acceleratorRoutines = stree.findAll(filter=lambda child : type(child) is scanner.STSubroutine and child.isAcceleratorRoutine() and select(child), recursively=True)
 
     if (len(loopKernels) or len(acceleratorRoutines)):
-        updateContextFromLoopKernels(loopKernels,index,hipContext,fContext)
+        updateContextFromLoopKernels(loopKernels,globalIndex,hipContext,fContext)
         #updateContextFromAcceleratorRoutines(acceleratorRoutines,hipContext,fContext)
         if generateCode:
             renderTemplates(outputFilePrefix,hipContext,fContext)

@@ -566,13 +566,19 @@ class STDeallocate(STNode):
         """
         def repl(parseResult):
             transformed     = False
-            vars            = [name.lower() for name in parseResult.variableNames()]
             arrayQualifiers = []
-            for arrayName in vars:
-                bpe,onDevice,qualifier,indexMacro,boundVariableNames = self.lookupArrayDeclaration(arrayName)
-                arrayQualifiers.append(qualifier)
-                transformed |= qualifier.lower() in ["pinned","device"]
-            subst = parseResult.fStr(arrayQualifiers,indent="")
+            for arrayName in parseResult.variableNames():
+                indexedVar = indexertools.searchIndexForVariable(indexHints,arrayName)[0]
+                onDevice   = indexedVar["device"] == True or indexedVar["declaredOnTarget"] == True
+                pinned     = indexedVar["pinned"] == True
+                if onDevice: 
+                    arrayQualifiers.append("device")
+                elif pinned: 
+                    arrayQualifiers.append("pinned")
+                else:
+                    arrayQualifiers.append(None)
+                transformed |= onDevice | pinned
+            subst = parseResult.hipFStr(arrayQualifiers,indent="")
             return (subst, transformed)
         return pyparsingtools.replaceAll(fSnippet,translator.deallocate,repl)
          

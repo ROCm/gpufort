@@ -348,7 +348,7 @@ class TTCufDeallocate(TTNode): # TODO not specific to CUF
         return [array.varName() for array in self._vars] 
     def ompFStr(self,arrayQualifiers,indent="",varsAreCPtrs=False):
         assert False, "Not implemented!" # TODO omp target free
-    def hipfortFStr(self,arrayQualifiers,indent=""):
+    def hipFStr(self,arrayQualifiers,indent=""):
         """
         Generate HIP ISO C Fortran expression for all
         device and pinned host allocations.
@@ -361,6 +361,8 @@ class TTCufDeallocate(TTNode): # TODO not specific to CUF
         """
         result       = []
         otherArrays  = []
+        
+        print(arrayQualifiers)
         for i,array in enumerate(self._vars):
             if arrayQualifiers[i] == "device":
                 line =  "{1}CALL hipCheck(hipFree({0}))".format(array.varName(),indent)

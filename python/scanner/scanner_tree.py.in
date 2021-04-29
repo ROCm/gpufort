@@ -512,7 +512,7 @@ class STNonZeroCheck(STNode):
             parseResult = tokens[0]
             lhsName     = parseResult.lhsFStr()
             indexedVar  = indexertools.searchIndexForVariable(indexHints,lhsName)
-            onDevice    = indexedVar["hasDevice"] == True or indexedVar["declaredOnTarget"] == True
+            onDevice    = indexedVar["device"] == True or indexedVar["declaredOnTarget"] == True
             transformed |= onDevice
             if onDevice:
                 subst = parseResult.fStr() # TODO backend specific
@@ -526,7 +526,7 @@ class STAllocated(STNode):
         def repl(parseResult):
             varName = parseResult.varName()
             indexedVar  = indexertools.searchIndexForVariable(indexHints,varName)
-            onDevice    = indexedVar["hasDevice"] == True or indexedVar["declaredOnTarget"] == True
+            onDevice    = indexedVar["device"] == True or indexedVar["declaredOnTarget"] == True
             return (parseResult.fStr(), onDevice) # TODO backend specific
         result, transformed = pyparsingtools.replaceAll(fSnippet,translator.allocated,repl)
         assert result != None
@@ -586,26 +586,20 @@ class STMemcpy(STNode):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
     def transformFSnippet(self,fSnippet,indexHints=[]): # TODO
-        # TODOdef replMemcpy(parseResult):
-        # TODO    destName = parseResult.destNameFStr()
-        # TODO    srcName  = parseResult.srcNameFStr()
-        # TODO    destBpe,destOnDevice,qualifier,destIndexMacro,boundVariableNames = self.lookupArrayDeclaration(destName)
-        # TODO    srcBpe,srcOnDevice,qualifier,srcIndexMacro,boundVariableNames    = self.lookupArrayDeclaration(srcName)
-        # TODO    if srcBpe == "-1":
-        # TODO        bpe = destBpe
-        # TODO    else:
-        # TODO        bpe = srcBpe
-        # TODO    if destOnDevice and parseResult.destHasArgs():
-        # TODO        self._preamble.add(destIndexMacro)
-        # TODO    if srcOnDevice and parseResult.srcHasArgs():
-        # TODO        self._preamble.add(srcIndexMacro)
-        # TODO    if destOnDevice or srcOnDevice:
-        # TODO        subst       = parseResult.fStr(destOnDevice,srcOnDevice,bpe)
-        # TODO        return (subst,True)
-        # TODO    else:
-        # TODO        return ("",False) # no transformation; will not be considered
-        # TODOfSnippet,transformed = pyparsingtools.replaceAll(fSnippet,translator.memcpy,replMemcpy)
-        transformed = False
+        def replMemcpy(parseResult):
+            destName = parseResult.destNameFStr()
+            srcName  = parseResult.srcNameFStr()
+            destIndexedVar = indexertools.searchIndexForVariable(indexHints,destName)[0]
+            srcIndexedVar  = indexertools.searchIndexForVariable(indexHints,srcName)[0]
+            destOnDevice = destIndexedVar["device"] == True or destIndexedVar["declaredOnTarget"] == True
+            srcOnDevice  = srcIndexedVar["device"] == True or srcIndexedVar["declaredOnTarget"] == True
+            bytesPerElement = destIndexedVar["bytesPerElement"]
+            if destOnDevice or srcOnDevice:
+                subst = parseResult.hipFStr(destOnDevice,srcOnDevice)
+                return (subst,True)
+            else:
+                return ("",False) # no transformation; will not be considered
+        fSnippet, transformed = pyparsingtools.replaceAll(fSnippet,translator.memcpy,replMemcpy)
         return fSnippet, transformed
 
 class STCudaLibCall(STNode):

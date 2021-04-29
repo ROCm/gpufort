@@ -126,9 +126,9 @@ def __parseFile(fileLines,filePath):
             subroutine["tag"] = current._data["name"] + ":" + tokens[1]
         else:
             subroutine["tag"] = tokens[1]
-        subroutine["hasHost"]     = "host" in tokens[0]
-        subroutine["hasDevice"]   = "device" in tokens[0]
-        subroutine["hasGlobal"]   = "global" in tokens[0]
+        subroutine["host"]     = "host" in tokens[0]
+        subroutine["device"]   = "device" in tokens[0]
+        subroutine["global"]   = "global" in tokens[0]
         subroutine["dummyArgs"]   = list(tokens[2])
         subroutine["file"]        = filePath
         subroutine["types"]       = []
@@ -148,9 +148,9 @@ def __parseFile(fileLines,filePath):
             function["tag"] = current._data["name"] + ":" + tokens[1]
         else:
             function["tag"] = tokens[1]
-        function["hasHost"]     = "host" in tokens[0]
-        function["hasDevice"]   = "device" in tokens[0]
-        function["hasGlobal"]   = "global" in tokens[0]
+        function["host"]     = "host" in tokens[0]
+        function["device"]   = "device" in tokens[0]
+        function["global"]   = "global" in tokens[0]
         function["dummyArgs"]   = list(tokens[2])
         function["resultName"]  = tokens[1] if tokens[3] is None else tokens[3]
         function["file"]        = filePath

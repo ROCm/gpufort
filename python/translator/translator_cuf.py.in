@@ -202,23 +202,16 @@ class TTAllocateRValue(TTNode):
         else:
             # TODO(gpufort): Add Warning
             return "TODO(gpufort): UNKNOWN"
-    # TODO outdated
-    #def makeHipDeviceFStr(self,bytesPerElement):
-    #    # Offsets are known
-    #    if self._bounds != None:
-    #        name = makeFStr(self._var)
-    #        unprefixedName = name.split("%")[-1]
-    #        #args = ",".join(self._bounds.specifiedLowerBounds(makeFStr))
-    #        # TODO(gpufort): Replace by something better
-    #        args = makeFStr(self._bounds)
-    #        offsetInBytes  = "_idx_{0}{1}*({2})".format(unprefixedName,args,bytesPerElement)
-    #        return "inc_c_ptr({0},{1})".format(name,offsetInBytes)
-    #    else:
-    #        return self.fStr()
     def cStr(self):
-        return "{0}{1}".format(makeFStr(self._var),makeFStr(self._bounds))
+        if self._bounds != None:
+            return makeCStr(self._var) + "(" + makeCStr(self._bounds) + ")"
+        else:
+            return makeCStr(self._var)
     def fStr(self):
-        return "{0}{1}".format(makeFStr(self._var),makeFStr(self._bounds))
+        if self._bounds != None:
+            return makeFStr(self._var) + "(" + makeFStr(self._bounds) + ")"
+        else:
+            return makeFStr(self._var)
 
 class TTCufAllocated(TTNode):
     """
@@ -362,7 +355,6 @@ class TTCufDeallocate(TTNode): # TODO not specific to CUF
         result       = []
         otherArrays  = []
         
-        print(arrayQualifiers)
         for i,array in enumerate(self._vars):
             if arrayQualifiers[i] == "device":
                 line =  "{1}CALL hipCheck(hipFree({0}))".format(array.varName(),indent)
@@ -384,38 +376,16 @@ class CufMemcpyBase():
     """
     def hipAPI(self):
         return "hip" + self._api[4:].title().replace("async","Async")
-    def hipDestFStr(self,onDevice,bytesPerElement):
+    def destFStr(self,onDevice,bytesPerElement):
         """
         :return: simply returns the Fortran pointer representation of the destination. 
         """
         return makeFStr(self._dest)  
-        #"""
-        #:return: expression for HIP/ISO C destination pointer; may contain '%' if derived type member.
-        #:note: do not confuse with destNameFStr method, which gives the name of the variable.
-        #"""
-        #memcpyKind = str(self._memcpyKind).lower()
-        #if "tohost" in memcpyKind:
-        #    return "c_loc({0})".format(makeFStr(self._dest))
-        #elif "todevice" in memcpyKind:
-        #    return self._dest.makeHipDeviceFStr(bytesPerElement)
-        #else:
-        #    return self._dest.makeHipDeviceFStr(bytesPerElement) if onDevice else "c_loc({0})".format(makeFStr(self._dest))
-    def hipSrcFStr(self,onDevice,bytesPerElement):
+    def srcFStr(self,onDevice,bytesPerElement):
         """
         :return: the Fortran pointer representation of the source.
         """
         return makeFStr(self._src)  
-        #"""
-        #:return: expression for HIP/ISO C source pointer; may contain '%' if derived type member.
-        #:note: do not confuse with destNameFStr method, which gives the name of the variable.
-        #"""
-        #memcpyKind = str(self._memcpyKind).lower()
-        #if "cudamemcpyhost" in memcpyKind:
-        #    return "c_loc({0})".format(makeFStr(self._src))
-        #elif "cudamemcpydevice" in memcpyKind:
-        #    return self._src.makeHipDeviceFStr(bytesPerElement)
-        #else:
-        #    return self._src.makeHipDeviceFStr(bytesPerElement) if onDevice else "c_loc({0})".format(makeFStr(self._src))
     def destNameFStr(self):
         """
         :return: name of destination variable; may contain '%' if derived type member.
@@ -465,16 +435,16 @@ class TTCufMemcpyIntrinsic(TTNode,CufMemcpyBase):
         self._dest       = tokens[0]
         self._src        = tokens[1]
         self._bounds     = tokens[0]._bounds
-        self._memcpyKind = ""
-    def fStr(self,destOnDevice,srcOnDevice,varsAreCPtrs=True,bytesPerElement=1,indent=""): # TODO backend specific
+        self._memcpyKind = None
+    def hipFStr(self,destOnDevice,srcOnDevice,bytesPerElement=1,varsAreCPtrs=False,indent=""): # TODO backend specific
         api = "hipMemcpy"
-        if self._bounds != None:
+        if varsAreCPtrs and self._bounds != None:
             size = self._bounds.size(bytesPerElement,makeFStr)
         args = []
-        args.append(self.hipDestFStr(destOnDevice,bytesPerElement))
-        args.append(self.hipSrcFStr(srcOnDevice,bytesPerElement))
+        args.append(self.destFStr(destOnDevice,bytesPerElement))
+        args.append(self.srcFStr(srcOnDevice,bytesPerElement))
         args.append(self.memcpyKind(destOnDevice,srcOnDevice))
-        return "{2}{0}( {1} )".format(api,", ".join(args),indent) 
+        return "{indent}CALL hipCheck({api}({args}))".format(api=api,args=", ".join(args),indent=indent) 
 
 #class TTCufCudaMemcpy(TTNode,CufMemcpyBase):
 #    # dest,src,count,[,stream] # kind is inferred from dest and src

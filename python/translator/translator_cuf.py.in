@@ -414,7 +414,11 @@ class CufMemcpyBase():
         """
         assert name in self.__dict__
         size = makeFStr(self.__dict__[name])
-        return "1_8 * ({0}) * ({1})".format(size,bytesPerElement)
+        if bytesPerElement != 1:
+            return "1_8 * ({0}) * ({1})".format(size,bytesPerElement)
+        else:
+            return size
+            
     def memcpyKind(self,destOnDevice,srcOnDevice):
         if self._memcpyKind != None:
             return self._memcpyKind
@@ -436,96 +440,94 @@ class TTCufMemcpyIntrinsic(TTNode,CufMemcpyBase):
         self._src        = tokens[1]
         self._bounds     = tokens[0]._bounds
         self._memcpyKind = None
-    def hipFStr(self,destOnDevice,srcOnDevice,bytesPerElement=1,varsAreCPtrs=False,indent=""): # TODO backend specific
+    def hipFStr(self,destOnDevice,srcOnDevice,bytesPerElement=1,indent=""): # TODO backend specific
         api = "hipMemcpy"
-        if varsAreCPtrs and self._bounds != None:
-            size = self._bounds.size(bytesPerElement,makeFStr)
         args = []
         args.append(self.destFStr(destOnDevice,bytesPerElement))
         args.append(self.srcFStr(srcOnDevice,bytesPerElement))
         args.append(self.memcpyKind(destOnDevice,srcOnDevice))
         return "{indent}CALL hipCheck({api}({args}))".format(api=api,args=", ".join(args),indent=indent) 
 
-#class TTCufCudaMemcpy(TTNode,CufMemcpyBase):
-#    # dest,src,count,[,stream] # kind is inferred from dest and src
-#    def _assignFields(self,tokens):
-#        #print(tokens)
-#        self._api        = tokens[0] 
-#        self._dest       = tokens[1]
-#        self._src        = tokens[2]
-#        self._count      = tokens[3]
-#        self._memcpyKind = tokens[4]
-#        self._stream     = tokens[5]
-#    def fStr(self,destOnDevice,srcOnDevice,bytesPerElement=1,indent=""):
-#        api = self.hipAPI()
-#        args = []
-#        args.append(self.hipDestFStr(destOnDevice,bytesPerElement))
-#        args.append(self.hipSrcFStr(srcOnDevice,bytesPerElement))
-#        args.append(self.sizeFStr("_count", bytesPerElement)) 
-#        args.append(self.memcpyKind(destOnDevice,srcOnDevice))
-#        if "Async" in api:
-#             args.append(makeFStr(self._stream))
-#        return "{2}{0}( {1} )".format(api,", ".join(args),indent) 
-#
-#class TTCufCudaMemcpy2D(TTNode,CufMemcpyBase):
-#    # dest,dpitch(count),src,spitch(count),width(count),height(count)[,stream] # kind is inferred from dest and src
-#    def _assignFields(self,tokens):
-#        self._api        = tokens[0]
-#        self._dest       = tokens[1]
-#        self._dpitch     = tokens[2]
-#        self._src        = tokens[3]
-#        self._spitch     = tokens[4]
-#        self._width      = tokens[5]
-#        self._height     = tokens[6]
-#        self._memcpyKind = tokens[7]
-#        self._stream     = tokens[8]
-#    def fStr(self,destOnDevice,srcOnDevice,bytesPerElement=1,indent=""):
-#        api = self.hipAPI()
-#        args = []
-#        args.append(self.hipDestFStr(destOnDevice,bytesPerElement))
-#        args.append(self.sizeFStr("_dpitch", bytesPerElement))
-#        args.append(self.hipSrcFStr(srcOnDevice,bytesPerElement))
-#        args.append(self.sizeFStr("_spitch", bytesPerElement))
-#        args.append(self.sizeFStr("_width", bytesPerElement)) 
-#        args.append(self.sizeFStr("_height", 1))
-#        args.append(self.memcpyKind(destOnDevice,srcOnDevice))
-#        if "Async" in api:
-#            args.append(self.hipStreamFStr())
-#        return "{2}{0}({1})".format(api,",".join(args),indent)
-#
-#class TTCufCudaMemcpy3D(TTNode,CufMemcpyBase):
-#    # dest,dpitch(count),src,spitch(count),width(count),height(count),depth(count),[,stream] # kind is inferred from dest and src
-#    def _assignFields(self,tokens):
-#        self._api        = tokens[0]
-#        self._dest       = tokens[1]
-#        self._dpitch     = tokens[2]
-#        self._src        = tokens[3]
-#        self._spitch     = tokens[4]
-#        self._width      = tokens[5]
-#        self._height     = tokens[6]
-#        self._depth      = tokens[7]
-#        self._memcpyKind = tokens[8]
-#        self._stream     = tokens[9]
-#    def fStr(self,destOnDevice,srcOnDevice,bytesPerElement=1,indent=""):
-#        api = self.hipAPI()
-#        args = []
-#        args.append(self.hipDestFStr(destOnDevice,bytesPerElement))
-#        args.append(self.sizeFStr("_dpitch", bytesPerElement))
-#        args.append(self.hipSrcFStr(srcOnDevice,bytesPerElement))
-#        args.append(self.sizeFStr("_spitch", bytesPerElement))
-#        args.append(self.sizeFStr("_width", bytesPerElement)) 
-#        args.append(self.sizeFStr("_height", 1))
-#        args.append(self.sizeFStr("_depth", 1)) 
-#        args.append(self.memcpyKind(destOnDevice,srcOnDevice))
-#        if "Async" in api:
-#            args.append(self.hipStreamFStr())
-#        return "{2}{0}({1})".format(api,",".join(args),indent)
+class TTCufCudaMemcpy(TTNode,CufMemcpyBase):
+    # dest,src,count,[,stream] # kind is inferred from dest and src
+    def _assignFields(self,tokens):
+        #print(tokens)
+        self._api        = tokens[0] 
+        self._dest       = tokens[1]
+        self._src        = tokens[2]
+        self._count      = tokens[3]
+        self._memcpyKind = tokens[4]
+        self._stream     = tokens[5]
+    def hipFStr(self,destOnDevice,srcOnDevice,bytesPerElement=1):
+        api = self.hipAPI()
+        args = []
+        args.append(self.destFStr(destOnDevice,bytesPerElement))
+        args.append(self.srcFStr(srcOnDevice,bytesPerElement))
+        args.append(self.sizeFStr("_count", bytesPerElement)) 
+        args.append(self.memcpyKind(destOnDevice,srcOnDevice))
+        if "Async" in api:
+             args.append(makeFStr(self._stream))
+        return "{api}({args})".format(api=api,args=",".join(args))
+
+class TTCufCudaMemcpy2D(TTNode,CufMemcpyBase):
+    # dest,dpitch(count),src,spitch(count),width(count),height(count)[,stream] # kind is inferred from dest and src
+    def _assignFields(self,tokens):
+        self._api        = tokens[0]
+        self._dest       = tokens[1]
+        self._dpitch     = tokens[2]
+        self._src        = tokens[3]
+        self._spitch     = tokens[4]
+        self._width      = tokens[5]
+        self._height     = tokens[6]
+        self._memcpyKind = tokens[7]
+        self._stream     = tokens[8]
+    def hipFStr(self,destOnDevice,srcOnDevice,bytesPerElement=1):
+        api = self.hipAPI()
+        args = []
+        args.append(self.destFStr(destOnDevice,bytesPerElement))
+        args.append(self.sizeFStr("_dpitch", bytesPerElement))
+        args.append(self.srcFStr(srcOnDevice,bytesPerElement))
+        args.append(self.sizeFStr("_spitch", bytesPerElement))
+        args.append(self.sizeFStr("_width", bytesPerElement)) 
+        args.append(self.sizeFStr("_height", 1))
+        args.append(self.memcpyKind(destOnDevice,srcOnDevice))
+        if "Async" in api:
+            args.append(self.hipStreamFStr())
+        return "{api}({args})".format(api=api,args=",".join(args))
+
+class TTCufCudaMemcpy3D(TTNode,CufMemcpyBase):
+    # dest,dpitch(count),src,spitch(count),width(count),height(count),depth(count),[,stream] # kind is inferred from dest and src
+    def _assignFields(self,tokens):
+        self._api        = tokens[0]
+        self._dest       = tokens[1]
+        self._dpitch     = tokens[2]
+        self._src        = tokens[3]
+        self._spitch     = tokens[4]
+        self._width      = tokens[5]
+        self._height     = tokens[6]
+        self._depth      = tokens[7]
+        self._memcpyKind = tokens[8]
+        self._stream     = tokens[9]
+    def fStr(self,destOnDevice,srcOnDevice,bytesPerElement=1,indent=""):
+        api = self.hipAPI()
+        args = []
+        args.append(self.destFStr(destOnDevice,bytesPerElement))
+        args.append(self.sizeFStr("_dpitch", bytesPerElement))
+        args.append(self.srcFStr(srcOnDevice,bytesPerElement))
+        args.append(self.sizeFStr("_spitch", bytesPerElement))
+        args.append(self.sizeFStr("_width", bytesPerElement)) 
+        args.append(self.sizeFStr("_height", 1))
+        args.append(self.sizeFStr("_depth", 1)) 
+        args.append(self.memcpyKind(destOnDevice,srcOnDevice))
+        if "Async" in api:
+            args.append(self.hipStreamFStr())
+        return "{api}({args})".format(api=api,args=",".join(args))
 
 class TTCufCublasCall(TTNode):
     def _assignFields(self,tokens):
         self._api    = tokens[0] # does not include cublas
         self._args   = tokens[1]
-    def fStr(self,indent=""):
+    def hipFStr(self,indent=""):
         global CUBLAS_VERSION 
         api = "hipblas" + makeFStr(self._api)
         args = []
@@ -554,9 +556,9 @@ memcpy.setParseAction(TTCufMemcpyIntrinsic)
 nonZeroCheck.setParseAction(TTCufNonZeroCheck)
 #pointerAssignment.setParseAction(TTCufPointerAssignment)
 
-#cufCudaMemcpy.setParseAction(TTCufCudaMemcpy)
-#cufCudaMemcpy2D.setParseAction(TTCufCudaMemcpy2D)
-#cufCudaMemcpy3D.setParseAction(TTCufCudaMemcpy3D)
+cufCudaMemcpy.setParseAction(TTCufCudaMemcpy)
+cufCudaMemcpy2D.setParseAction(TTCufCudaMemcpy2D)
+cufCudaMemcpy3D.setParseAction(TTCufCudaMemcpy3D)
 
 cublasCall.setParseAction(TTCufCublasCall)
 cudaKernelCall.setParseAction(TTCudaKernelCall)

@@ -603,8 +603,8 @@ class STMemcpy(STNode):
         return fSnippet, transformed
 
 class STCudaLibCall(STNode):
-    def __init__(self,parent,lineno):
-        STNode.__init__(self,parent,lineno)
+    def __init__(self,parent,lineno,lines):
+        STNode.__init__(self,parent,lineno,lines)
         self._cudaApi = ""
         self._hasCublas = False
     def hasCublas(self):
@@ -623,20 +623,13 @@ class STCudaLibCall(STNode):
             def replMemcpy(parseResult):
                 destName = parseResult.destNameFStr()
                 srcName  = parseResult.srcNameFStr()
-                destBpe,destOnDevice,qualifier,destIndexMacro,boundVariableNames = self.lookupArrayDeclaration(destName)
-                srcBpe,srcOnDevice,qualifier,srcIndexMacro,boundVariableNames    = self.lookupArrayDeclaration(srcName)
-                if srcBpe == "-1":
-                    bpe = destBpe
-                else:
-                    bpe = srcBpe
-                subst = parseResult.fStr(destOnDevice,srcOnDevice,bpe,indent)
-                if destOnDevice and parseResult.destHasArgs():
-                    self._preamble.add(destIndexMacro)
-                if srcOnDevice and parseResult.srcHasArgs():
-                    self._preamble.add(srcIndexMacro)
+                destIndexedVar = indexertools.searchIndexForVariable(indexHints,destName)[0]
+                srcIndexedVar  = indexertools.searchIndexForVariable(indexHints,srcName)[0]
+                destOnDevice = destIndexedVar["device"] == True or destIndexedVar["declaredOnTarget"] == True
+                srcOnDevice  = srcIndexedVar["device"] == True or srcIndexedVar["declaredOnTarget"] == True
+                subst = parseResult.hipFStr(destOnDevice,srcOnDevice)
                 return (subst, True)
             fSnippet,_ = pyparsingtools.replaceAll(fSnippet,translator.cufCudaMemcpyVariant,replMemcpy)
-        # place C_LOC
         def replCublas(parseResult):
             subst = parseResult.fStr(indent)
             return (subst, True)

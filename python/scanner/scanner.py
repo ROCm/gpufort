@@ -247,6 +247,7 @@ def parseFile(fortranFilePath):
         #TODO scan for cudaMemcpy calls
         nonlocal current
         nonlocal translationEnabled
+        nonlocal currentLineno
         nonlocal currentLines
         nonlocal keepRecording
         cudaApi, args, finishesOnFirstLine = tokens 

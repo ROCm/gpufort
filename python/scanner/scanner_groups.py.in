@@ -147,7 +147,7 @@ def groupObjects(stree):
     :note: Must be called before declarations from other modules are loaded T
     """ # TODO comment still valid?
     def transformOneByOne(stnode):
-        return type(stnode) in  [STDeclaration,STUseStatement,STPlaceHolder,STSubroutine,STAccDirective] or isinstance(stnode,STLoopKernel)
+        return type(stnode) in  [STAttributes,STDeclaration,STUseStatement,STPlaceHolder,STSubroutine,STAccDirective] or isinstance(stnode,STLoopKernel)
     groups = [ MatchAllGroup() ]
     def descend(curr):
         for stnode in curr._children:

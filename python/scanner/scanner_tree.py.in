@@ -400,8 +400,6 @@ class STDeclaration(STNode,Attributed):
         return self._ttdeclaration.numElements(varName)
     def isStream(self):
         return self.fType().lower() == "integer" and self.kind().lower() == "cuda_stream_kind"
-    def makeTarget(self):
-        self._madeTarget = True
     def makeDevice(self):
         self._madeDevice = True
     def arrayBoundVariableNamesFStr(self,varName):
@@ -487,20 +485,14 @@ class STDeclaration(STNode,Attributed):
         return "".join(self._lines), False
 
 class STAttributes(STNode,Attributed):
+    """
+    CUDA Fortran specific intrinsic that needs to be removed/commented out
+    in any case.
+    """
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
-        self._parseResult = translator.attributes.parseString(self._lines[0])[0] # ! Must be parsed and analysed at creation time
-        self._vars        = [name.lower() for name in self._parseResult.variableNames()]
-        # Add device qualifier
-        if self.hasDevice():
-            for arraydecl in self.arraysInScope():
-                if len(set(self._vars) & set(arraydecl._vars)):
-                    arraydecl.makeDevice()
-                    #print(self._vars)
-                
-        #print(self._vars)
-    def considerInS2STranslation(self):
-        return False
+    def gpufortFStr(self,indexHints=[],indent=""):
+        return "", True
 
 class STNonZeroCheck(STNode):
     def __init__(self,parent,lineno,lines):

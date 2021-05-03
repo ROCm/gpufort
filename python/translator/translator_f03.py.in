@@ -963,27 +963,34 @@ class TTDeclaration(TTNode,Attributed):
         qualifiersStr = ", " if len(self._qualifiers) else ""
         qualifiersStr += ", ".join([makeFStr(q) for q in self._qualifiers])
         result = "{0}{1} :: ".format(makeFStr(self._datatype),qualifiersStr)
+        ignoredVars = 0
         for ttdeclaredvariable in self._rhs:
-            if not ttdeclaredvariable.name(makeFStr) in ignoreList:
+            if not ttdeclaredvariable.name(makeFStr).lower() in ignoreList:
+                ignoredVars += 1
                 result += "{0},".format(ttdeclaredvariable.fStr(includeBounds,includeRhs))
-        return result.rstrip(",")
+        if ignoredVars == len(self._rhs):
+            return ""
+        else:
+            return result.rstrip(",")
     def cStr(self,extraIgnoreList=[],isFunctionArgument=False,includeBounds=True,includeRhs=True):
         """
         The ignore list can be used to filter out some
         variables, e._g. if these are parameters of a subroutine
         that we want to convert.
         """
-        ignoreList = map(str.lower, self._ignoreList + extraIgnoreList)
-        result  = ""
-        comment = ""
+        ignoreList      = map(str.lower, self._ignoreList + extraIgnoreList)
+        result          = ""
+        comment         = ""
         dimensionBounds = ""
+        ignoredVars     = 0
         if len(self._qualifiers):
            dimensionQualifier = findAll(self._qualifiers,TTDimensionQualifier)
            if len(dimensionQualifier):
                 dimensionBounds = makeCStr(dimensionQualifier[0])
            comment = " /* Fortran qualifiers: {0} */".format(",".join([makeFStr(el) for el in self._qualifiers]))
         for ttdeclaredvariable in self._rhs:
-            if not ttdeclaredvariable.name(makeCStr) in ignoreList: 
+            if not ttdeclaredvariable.name(makeCStr).lower() in ignoreList: 
+                ignoredVars += 1
                 if isFunctionArgument:
                     result += "{0} {1},".format(makeCStr(self._datatype),ttdeclaredvariable.cStr(includeBounds,includeRhs),comment)
                 else:
@@ -991,10 +998,13 @@ class TTDeclaration(TTNode,Attributed):
                     if self.hasStringQualifier("shared"):
                         datatype = "__shared__ " + datatype
                     result += "{0} {1}{2};{3}\n".format(datatype,ttdeclaredvariable.cStr(includeBounds,includeRhs),dimensionBounds,comment) 
-        if isFunctionArgument:
-            return result
+        if ignoredVars == len(self._rhs):
+            if isFunctionArgument:
+                return result
+            else:
+                return result.rstrip(",")
         else:
-            return result.rstrip(",")
+            return ""
 
 class TTAttributes(TTNode,Attributed):
     def _assignFields(self,tokens):

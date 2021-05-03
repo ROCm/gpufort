@@ -117,7 +117,7 @@ def parseFile(fortranFilePath):
         nonlocal current
         nonlocal translationEnabled
         nonlocal keepRecording
-        new = STFunction(qualifier=tokens[0],name=tokens[1],dummyVars=tokens[2],\
+        new = STFunction(qualifier=tokens[0],name=tokens[1],dummyArgs=tokens[2],\
                 parent=current,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         if new.qualifier.lower() in ["global","device","host,device"]:
@@ -127,7 +127,7 @@ def parseFile(fortranFilePath):
         nonlocal current
         nonlocal translationEnabled
         nonlocal keepRecording
-        new = STSubroutine(qualifier=tokens[0],name=tokens[1],dummyVars=tokens[2],\
+        new = STSubroutine(qualifier=tokens[0],name=tokens[1],dummyArgs=tokens[2],\
                 parent=current,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         if new._qualifier.lower() in ["global","device"]:

@@ -87,7 +87,7 @@ def __parseFile(fileLines,filePath):
     current = root
     currentLine = None
 
-    def createBaseEntry_(typeName,name,tag,filePath)
+    def createBaseEntry_(typeName,name,tag,filePath):
         entry = {}
         entry["type"]                            = typeName
         entry["name"]                            = name
@@ -95,7 +95,6 @@ def __parseFile(fileLines,filePath):
         entry["file"]                            = filePath
         entry["types"]                           = []
         entry["variables"]                       = []
-        entry["attributes"]                      = []
         entry["usedModulesOrParentSubprograms"]  = []
         return entry
 
@@ -170,7 +169,7 @@ def __parseFile(fileLines,filePath):
         nonlocal current
         nonlocal currentLine
         #print(currentLine)
-        attribute, modifiedVars = 
+        attribute, modifiedVars = \
             translator.parseAttributes(translator.attributes.parseString(currentLine)[0])
         for varContext in current._data["variables"]:
             if varContext["name"] in modifiedVars and attribute in varContext:
@@ -198,7 +197,7 @@ def __parseFile(fileLines,filePath):
 
     declarationLhs.setParseAction(Declaration)
     use.setParseAction(Use)
-    attributes.setParseAction(Attributes)
+    attributesLhs.setParseAction(Attributes)
     # TODO openacc pragmas
 
     def tryToParseString(expressionName,expression):
@@ -212,8 +211,8 @@ def __parseFile(fileLines,filePath):
            return False
 
     for currentLine in fileLines:
-        tryToParseString("structureEnd|typeEnd|declaration|use|typeStart|moduleStart|programStart|functionStart|subroutineStart",\
-            typeEnd|structureEnd|declarationLhs|use|typeStart|moduleStart|programStart|functionStart|subroutineStart)
+        tryToParseString("structureEnd|typeEnd|declaration|use|attributes|typeStart|moduleStart|programStart|functionStart|subroutineStart",\
+            typeEnd|structureEnd|declarationLhs|use|attributesLhs|typeStart|moduleStart|programStart|functionStart|subroutineStart)
     return index
 
 def __resolveDependencies_body(i,index):

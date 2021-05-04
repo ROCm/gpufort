@@ -35,7 +35,7 @@ class STAccDirective(STDirective):
     def __init__(self,parent,lineno,lines,directiveNo):
         STDirective.__init__(self,parent,lineno,lines,directiveNo,sentinel="!$acc")
         self._defaultPresentVars = []
-    def considerInS2STranslation(self):
+    def considerInS2STranslation(self,indexHints=[]):
         """
         Consider this object when transforming host code.
         :return: The default implementation returns False if the parent

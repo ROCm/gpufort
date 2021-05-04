@@ -70,7 +70,7 @@ class STNode:
         result = commentCopy.transformString(result)
         result = amperSand.transformString(result)
         return result
-    def considerInS2STranslation(self):
+    def considerInS2STranslation(self,indexHints=[]):
         """
         Consider this object when transforming host code.
         :return: The default implementation returns False if the parent
@@ -161,21 +161,21 @@ class STNode:
 class STRoot(STNode):
     def __init__(self):
         STNode.__init__(self,None,-1)
-    def considerInS2STranslation(self):
+    def considerInS2STranslation(self,indexHints=[]):
         return False
 
 class STModule(STNode,Tagged):
     def __init__(self,name,parent,lineno):
         STNode.__init__(self,parent,lineno)
         self._name = name.lower()
-    def considerInS2STranslation(self):
+    def considerInS2STranslation(self,indexHints=[]):
         return False
 
 class STProgram(STNode,Tagged):
     def __init__(self,name,parent,lineno):
         STNode.__init__(self,parent,lineno)
         self._name = name.lower()
-    def considerInS2STranslation(self):
+    def considerInS2STranslation(self,indexHints=[]):
         return False
 
 class STUseStatement(STNode):
@@ -196,7 +196,7 @@ class STUseStatement(STNode):
                 if libLower == "cudafor":
                     result = result.rstrip("\n")+"\n" + "{0}use iso_c_binding".format(indent) 
         return result, useCuda
-    def considerInS2STranslation(self):
+    def considerInS2STranslation(self,indexHints=[]):
         if not STNode.considerInS2STranslation(self):
             return False
         else:
@@ -212,7 +212,7 @@ class STPlaceHolder(STNode):
         self._name = None
     def gpufortFStr(self,indexHints=[],indent=""):
         return self._lines[0], False
-    def considerInS2STranslation(self):
+    def considerInS2STranslation(self,indexHints=[]):
         return STNode.considerInS2STranslation(self) and\
                (len(self._preamble) or len(self._epilog))
 
@@ -237,7 +237,7 @@ class STSubroutine(STProcedure):
         return False
     def declarationsInBody(self):
         return self.findAll(filter=lambda child : type(child) is STDeclaration, recursively=False)
-    def considerInS2STranslation(self):
+    def considerInS2STranslation(self,indexHints=[]):
         return STNode.considerInS2STranslation(self) and self.isAcceleratorRoutine()
     def transformFSnippet(self,fSnippet,indexHints=[]):
         indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
@@ -246,7 +246,7 @@ class STSubroutine(STProcedure):
         return self.transformFSnippet("")
 
 class STFunction(STProcedure):
-    def considerInS2STranslation(self):
+    def considerInS2STranslation(self,indexHints=[]):
         return False
 
 class STDirective(STNode):
@@ -333,15 +333,24 @@ class STDeclaration(STNode):
         self._vars            = [name.lower() for name in self._ttdeclaration.variableNames()]
     def createCodegenContext(self):
         return translator.createCodegenContextFromDeclaration(self._ttdeclaration)
-    def considerInS2STranslation(self):
+    def considerInS2STranslation(self,indexHints=[]):
+        interestingQualifiers = ["device","pinned","managed"]
         if not self._ignoreInS2STranslation:
             if len(self._preamble) or len(self._epilog):
                 return True
             for l in self._lines:
                 lineLower = l.lower()
-                for q in ["device","pinned"]:
+                for q in interestingQualifiers:
                     if q in lineLower:
                         return True
+            if len(indexHints):
+                filteredIndex = indexertools.filterIndexByTag(indexHints,self._parent.tag())
+                for varName in self._vars:
+                    indexedVar,discovered = indexertools.searchIndexForVariable(filteredIndex,varName)
+                    if discovered:
+                        for q in interestingQualifiers:
+                            if indexedVar[q] == True:
+                                return True
         return False 
     def gpufortFStr(self,indexHints=[]):
         """
@@ -372,7 +381,7 @@ class STDeclaration(STNode):
         else:
             argNames = []
         result = ""
-        for i,varName in enumerate(self._vars):
+        for varName in self._vars:
              indexedVar,discovered = indexertools.searchIndexForVariable(filteredIndex,varName)
              rank           = indexedVar["rank"]
              hasDevice      = indexedVar["device"] == True

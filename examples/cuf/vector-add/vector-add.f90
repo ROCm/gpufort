@@ -3,11 +3,14 @@ program testSaxpy
   implicit none
   integer, parameter :: N = 40000
   real :: x(N), y(N), a
-  real, device, allocatable :: x_d(:), y_d(:)
+  real, device, allocatable :: x_d(:)
+  real, allocatable :: y_d(:)
   !real, device :: x_d(N), y_d(N) ! fixed-size arrays are not fully 
                        ! supported yet as alloc/dealloc are not generated yet
   type(dim3) :: grid, tBlock
   integer :: i
+
+  attributes(device) :: y_d
 
   tBlock = dim3(256,1,1)
   grid = dim3(ceiling(real(N)/tBlock%x),1,1)

@@ -36,17 +36,17 @@ def createIndex(searchDirs,defines,filePath,indexFile):
 
 def translateFortranSource(fortranFilePath,stree,index,wrapInIfdef):
     # derive code line groups from original tree
-    groups = scanner.groupObjects(stree)
+    groups = scanner.groupObjects(stree,index)
     # first pass to update some scanner tree nodes
     for group in groups.values():
         group.generateCode(index,wrapInIfdef)
     # post process before grouping again
     basename      = os.path.basename(fortranFilePath).split(".")[0]
     hipModuleName = basename.replace(".","_").replace("-","_") + "_kernels"
-    scanner.postprocess(stree,hipModuleName)
+    scanner.postprocess(stree,hipModuleName,index)
     
     # group again with updated tree
-    groups = scanner.groupObjects(stree)
+    groups = scanner.groupObjects(stree,index)
 
     # now process file
     outputLines = []

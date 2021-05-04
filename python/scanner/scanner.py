@@ -515,7 +515,7 @@ def postprocessCuf(stree,hipModuleName):
             indent = " "*(len(last.lines()[0]) - len(last.lines()[0].lstrip()))
             last._epilog.add("{0}hipblasDestroy(hipblasHandle)\n".format(indent))
 
-def postprocess(stree,hipModuleName):
+def postprocess(stree,hipModuleName,index):
     """
     Add use statements as well as handles plus their creation and destruction for certain
     math libraries.

@@ -305,7 +305,7 @@ def updateContextFromLoopKernels(loopKernels,globalIndex,hipContext,fContext):
         fInterfaceDictManual["args"] = [
           {"type" : "type(dim3)", "qualifiers" : ["intent(in)"], "name" : "grid", "cSize": ""},
           {"type" : "type(dim3)", "qualifiers" : ["intent(in)"], "name" : "block", "cSize": ""},
-          {"type" : "integer(c_int)", "qualifiers" : ["intent(in)"],         "name" : "sharedMem", "cSize" : "" },
+          {"type" : "integer(c_int)", "qualifiers" : ["value", "intent(in)"], "name" : "sharedMem", "cSize" : "" },
           {"type" : "type(c_ptr)"   , "qualifiers" : ["value", "intent(in)"], "name" : "stream",   "cSize": ""},
         ]
         fInterfaceDictManual["args"]    += kernelArgs

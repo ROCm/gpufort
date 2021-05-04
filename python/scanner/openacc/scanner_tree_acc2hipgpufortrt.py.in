@@ -13,19 +13,19 @@ HIP_GPUFORT_RT_ACC_NO_CREATE = "{devVar} = gpufort_acc_no_create({var})\n"
 # delete
 HIP_GPUFORT_RT_ACC_DELETE = "call gpufort_acc_delete({var}{finalize})\n"
 # copyin
-HIP_GPUFORT_RT_ACC_COPYIN = "{devVar} = gpufort_acc_copyin({var}{async})\n"
+HIP_GPUFORT_RT_ACC_COPYIN = "{devVar} = gpufort_acc_copyin({var}{asyncr})\n"
 # copy
-HIP_GPUFORT_RT_ACC_COPY = "{devVar} = gpufort_acc_copy({var}{async})\n"
+HIP_GPUFORT_RT_ACC_COPY = "{devVar} = gpufort_acc_copy({var}{asyncr})\n"
 # copyout
-HIP_GPUFORT_RT_ACC_COPYOUT = "{devVar} = gpufort_acc_copyout({var}{async})\n"
+HIP_GPUFORT_RT_ACC_COPYOUT = "{devVar} = gpufort_acc_copyout({var}{asyncr})\n"
 # update host
-HIP_GPUFORT_RT_ACC_UPDATE_HOST = "call gpufort_acc_update_host({var}{async})\n"
+HIP_GPUFORT_RT_ACC_UPDATE_HOST = "call gpufort_acc_update_host({var}{asyncr})\n"
 # update device
-HIP_GPUFORT_RT_ACC_UPDATE_DEVICE = "call gpufort_acc_update_device({var}{async})\n"
+HIP_GPUFORT_RT_ACC_UPDATE_DEVICE = "call gpufort_acc_update_device({var}{asyncr})\n"
 # present
 HIP_GPUFORT_RT_ACC_PRESENT = "{devVar} = gpufort_acc_present({var})\n"
 # wait
-HIP_GPUFORT_RT_ACC_WAIT = "call gpufort_acc_wait({queue}{async})\n"
+HIP_GPUFORT_RT_ACC_WAIT = "call gpufort_acc_wait({queue}{asyncr})\n"
 
 def devVarName(var):
     #tokens = var.split("%")
@@ -41,7 +41,7 @@ def devVarName(var):
 
 class Acc2HipGpufortRT(AccBackendBase):
     # clauses 
-    def _handleAsync(self,queue=None,prefix=",async="):
+    def _handleAsync(self,queue=None,prefix=",asyncr="):
         """
         :return: Empty string if no queue was found
         :rtype: str
@@ -73,7 +73,7 @@ class Acc2HipGpufortRT(AccBackendBase):
             varExpressions = clause.varExpressions()
             for i,varExpr in enumerate(varExpressions):
                 deviceptr = devVarName(varNames[i])
-                result += template.format(var=varExpr,devVar=deviceptr,async=self._handleAsync())
+                result += template.format(var=varExpr,devVar=deviceptr,asyncr=self._handleAsync())
                 tempVars.add(deviceptr)
         return result, len(result), tempVars
     def _handlePresent(self):
@@ -116,8 +116,8 @@ class Acc2HipGpufortRT(AccBackendBase):
         #for parseResult in translator.acc_clause_update.scanString(self.singleLineStatement()):
         #    #print(parseResult[0][0])
         #    #print(parseResult[0][1])
-        #    async=self._handleAsync(parseResult[0][1])
-        #    #print(async)
+        #    asyncr=self._handleAsync(parseResult[0][1])
+        #    #print(asyncr)
         #    for dest in parseResult[0][0]:
         #        #print(dest)
         #        template = HIP_GPUFORT_RT_ACC_UPDATE_HOST
@@ -129,7 +129,7 @@ class Acc2HipGpufortRT(AccBackendBase):
         #            #print(rvalue)
         #            varExpr = rvalue.fStr()
         #            deviceptr = devVarName(varExpr)
-        #            result += template.format(var=varExpr,devVar=deviceptr,async=async)
+        #            result += template.format(var=varExpr,devVar=deviceptr,asyncr=asyncr)
         return result, len(result), tempVars
     def _handleWait(self):
         """
@@ -141,18 +141,18 @@ class Acc2HipGpufortRT(AccBackendBase):
         template = HIP_GPUFORT_RT_ACC_WAIT
         for parseResult in translator.acc_clause_wait.scanString(self._stnode.singleLineStatement()):
             queueList=[]
-            asyncList=[]
+            asyncrList=[]
             for rvalue in parseResult[0][0]: # queue ids
                 queueList.append(rvalue.varName())
-            for rvalue in parseResult[0][1]: # async queue ids
-                asyncList.append(rvalue.varName())
+            for rvalue in parseResult[0][1]: # asyncr queue ids
+                asyncrList.append(rvalue.varName())
             queue=""
-            async=""
+            asyncr=""
             if len(queueList):
                 queue = ",[{}]".format(",".join(queueList))
-            if len(asyncList):
-                async = ",[{}]".format(",".join(asyncList))
-            result += template.format(queue=queue,async=async)
+            if len(asyncrList):
+                asyncr = ",[{}]".format(",".join(asyncrList))
+            result += template.format(queue=queue,asyncr=asyncr)
         return result, len(result), tempVars
     def _handleIf(self):
         """
@@ -283,7 +283,7 @@ class AccLoopKernel2HipGpufortRT(Acc2HipGpufortRT):
         # add wait call if necessary
         queue = self._handleAsync(None,"")
         if not len(queue):
-            result += "\n" + HIP_GPUFORT_RT_ACC_WAIT.format(queue=queue,async="")
+            result += "\n" + HIP_GPUFORT_RT_ACC_WAIT.format(queue=queue,asyncr="")
         if stnode.isParallelLoopDirective() or stnode.isKernelsLoopDirective():
            result += "\n"+HIP_GPUFORT_RT_ACC_EXIT_REGION
 

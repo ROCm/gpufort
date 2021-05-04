@@ -7,6 +7,12 @@ class ILoopAnnotation():
         return CLAUSE_NOT_FOUND
     def tileSizes(self):
         return [CLAUSE_NOT_FOUND]
+    def gridExpressionFStr(self):
+        """ only CUF """
+        return ""
+    def blockExpressionFStr(self):
+        """ only CUF """
+        return ""
     def numGangsTeamsBlocks(self):
         return [CLAUSE_NOT_FOUND]
     def numThreadsInBlock(self):
@@ -30,6 +36,9 @@ class ILoopAnnotation():
     def sharedVars(self,converter=makeFStr): 
         """ only OMP """
         return []
+    def allArraysAreOnDevice(self):
+        """ only True for CUF kernel do directive """
+        return False
 
 class TTDoLoop(TTNode):
     def _assignFields(self,tokens):
@@ -90,6 +99,12 @@ class IComputeConstruct():
         return CLAUSE_NOT_FOUND
     def numDimensions(self):
         return 1
+    def gridExpressionFStr(self):
+        """ only CUF """
+        return None
+    def blockExpressionFStr(self):
+        """ only CUF """
+        return None
     def numGangsTeamsBlocks(self):
         return [CLAUSE_NOT_FOUND]
     def numThreadsInBlock(self):
@@ -128,7 +143,7 @@ class IComputeConstruct():
     def selfCondition(self): 
         """ OMP,ACC: run on current CPU / device (and do not offload) """
         return ""
-    def deviceptrs(self):
+    def deviceptrs(self,indexHints=[]):
         return []
     def createAllocVars(self):
         return []
@@ -199,8 +214,29 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             identifierNames.append(loop.loopVar(makeFStr))
         return identifierNames
     def __searchValueInBody(self,searchFilter,indexHints,minRank=-1e20):
+        #TODO exclude other annotations as well from this search
+        def findAllMatchingExcludeDirectives(body,filterExpr=lambda x: True,N=-1):
+            """
+            Find all nodes in tree of type 'searchedType'.
+            """
+            result = []
+            def descend(curr):
+                if (N > 0 and len(result) > N) or isinstance(curr,ILoopAnnotation):
+                    return
+                if filterExpr(curr):
+                    result.append(curr)
+                if isinstance(curr,ParseResults) or\
+                   isinstance(curr,list):
+                    for el in curr:
+                        descend(el)
+                elif isinstance(curr,TTNode):
+                    for value in curr.__dict__.values():
+                        descend(value)
+            descend(body)
+            return result
+        
         identifierNames = [] 
-        for valueType in findAllMatching(self._body,searchFilter): # includes the identifiers of the function calls
+        for valueType in findAllMatchingExcludeDirectives(self._body,searchFilter): # includes the identifiers of the function calls
             name = makeFStr(valueType.name())
             nameLower = name.lower()
             definition,foundInIndex = indexertools.searchIndexForVariable(indexHints,nameLower)
@@ -287,7 +323,8 @@ class TTLoopKernel(TTNode,IComputeConstruct):
     def reductionCandidates(self,indexHints=[]):
         if len(indexHints):
             self._indexHints = indexHints
-        return self.__localScalarsAndReductionCandidates(self._indexHints)
+        _,reductionCandidates = self.__localScalarsAndReductionCandidates(self._indexHints)
+        return reductionCandidates
     def problemSize(self):
         numOuterLoopsToMap = int(self._parentDirective.numCollapse())
         if LOOP_COLLAPSE_STRATEGY == "grid" or numOuterLoopsToMap == 1:
@@ -320,8 +357,11 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         return self._parentDirective.ifCondition()
     def selfCondition(self): 
         return self._parentDirective.selfCondition
-    def deviceptrs(self):
-        return self._parentDirective.deviceptrs()
+    def deviceptrs(self,indexHints=[]):
+        if self._parentDirective.allArraysAreOnDevice():
+            return self.arraysInBody(indexHints)
+        else:
+            return self._parentDirective.deviceptrs()
     def createAllocVars(self):
         return self._parentDirective.createAllocVars()
     def no_createVars(self):
@@ -342,6 +382,12 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         return self._parentDirective.detachVars()
     def presentByDefault(self):
         return self._parentDirective.detachVars()
+    def gridExpressionFStr(self):
+        """ only CUF """
+        return self._firstLoopAnnotation.gridExpressionFStr()
+    def blockExpressionFStr(self):
+        """ only CUF """
+        return self._firstLoopAnnotation.blockExpressionFStr()
     def gangTeamPrivateVars(self,converter=makeFStr): 
         return self._parentDirective.gangTeamPrivateVars(converter)
     def gangTeamFirstprivateVars(self,converter=makeFStr): 
@@ -373,17 +419,15 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         # TODO preprocess Fortran colon expressions
         inoutArraysInBody = self.inoutArraysInBody()
         arraysInBody      = self.arraysInBody()
-        reduction     = self.gangTeamReductions()
+        reduction         = self.gangTeamReductions()
         depend            = self.depend()
 
-        # TODO preprocess loop statements outside
-        # of this routine if needed
         if type(self._parentDirective) is TTCufKernelDo:
             def cufKernelDoRepl(parseResult):
                 nonlocal arraysInBody
                 nonlocal inoutArraysInBody
                 nonlocal reduction
-                return parseResult.ompFStr(arraysInBody,inoutArraysInBody,reduction,depend)+"\n", True
+                return parseResult.ompFStr(arraysInBody,inoutArraysInBody,reduction,depend), True
             
             result,_ = pyparsingtools.replaceFirst(fSnippet,\
                 cuf_kernel_do,\
@@ -450,7 +494,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 reductionPreamble += "reduce_op_{kind}::init({var}[{tidx}]);\n".format(kind=kind,var=var,tidx=tidx)
         # 3. collapse and transform do-loops
         doLoops = findAll(self._body,TTDoLoop)
-        if numOuterLoopsToMap is 1 or (LOOP_COLLAPSE_STRATEGY == "grid" and numOuterLoopsToMap <= 3):
+        if numOuterLoopsToMap == 1 or (LOOP_COLLAPSE_STRATEGY == "grid" and numOuterLoopsToMap <= 3):
             if numOuterLoopsToMap > 3:
                 logging.getLogger("").warn("loop collapse strategy grid chosen with nested loops > 3")
             numOuterLoopsToMap = min(3,numOuterLoopsToMap)

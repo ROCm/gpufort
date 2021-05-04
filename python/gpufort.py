@@ -6,7 +6,7 @@ import subprocess
 import copy, shutil
 import argparse
 import hashlib
-from collections import Iterable # < py38
+from collections.abc import Iterable # < py38
 import pprint    
 import logging
 
@@ -27,7 +27,7 @@ exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "gpufort_opti
 # array is split into multiple args
 
 def createIndex(searchDirs,defines,filePath,indexFile):
-    if indexFile is not None:
+    if indexFile != None:
         return json.load(indexFile)
     else: 
         searchDirs.insert(0,os.path.dirname(filePath))
@@ -43,7 +43,7 @@ def translateFortranSource(fortranFilePath,stree,index,wrapInIfdef):
     # post process before grouping again
     basename      = os.path.basename(fortranFilePath).split(".")[0]
     hipModuleName = basename.replace(".","_").replace("-","_") + "_kernels"
-    scanner.postProcess(stree,hipModuleName)
+    scanner.postprocess(stree,hipModuleName)
     
     # group again with updated tree
     groups = scanner.groupObjects(stree)
@@ -101,7 +101,7 @@ def parseRawCommandLineArguments():
         msg = "working directory '{}' cannot be found".format(workingDirPath)
         print("ERROR: "+msg,file=sys.stderr)
         sys.exit(2)
-    if configFilePath is not None: 
+    if configFilePath != None: 
         if configFilePath[0] != "/":
           configFilePath = workingDirPath + "/" + configFilePath 
         if not os.path.exists(configFilePath):
@@ -118,7 +118,7 @@ def parseConfig(configFilePath):
     global LOG_DIR
     global LOG_DIR_CREATE
 
-    prolog = "global LOG_LEVEL\nglobal LOG_DIR\nglobal LOG_DIR_CREATE"
+    prolog = "global LOG_LEVEL\nglobal LOG_DIR\nglobal LOG_DIR_CREATE\n"
     epilog = ""
     try:
         if configFilePath.strip()[0]=="/":
@@ -160,8 +160,10 @@ def parseCommandLineArguments():
     parser.add_argument("--print-config-defaults",dest="printConfigDefaults",action="store_true",help="Print config defaults. "+\
             "Config values can be overriden by providing a config file. A number of config values can be overwritten via this CLI.")
     parser.add_argument("--config-file",default=None,type=argparse.FileType("r"),dest="configFile",help="Provide a config file.")
+    parser.add_argument("--dump-index",dest="dumpIndex",action="store_true",help="Dump the index.")
     
-    parser.set_defaults(printConfigDefaults=False,overwriteExisting=True,wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyHostCode=False)
+    parser.set_defaults(printConfigDefaults=False,dumpIndex=False,\
+        wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyHostCode=False)
     args, unknownArgs = parser.parse_known_args()
 
     if args.printConfigDefaults:
@@ -236,11 +238,16 @@ def initLogging(inputFilePath):
         print("ERROR: "+msg)
         sys.exit(2)
     os.makedirs(logDir,exist_ok=True)
-    
-    FORMAT = "gpufort:%(levelname)s:{0}: %(message)s".format(inputFilePath)
-    FILE="{0}/log-{1}.log".format(logDir,inputFilePathHash)
-    logging.basicConfig(format=FORMAT,filename=FILE,filemode="w", level=LOG_LEVEL)
    
+    try:
+        FORMAT = "gpufort:%(levelname)s:{0}: %(message)s".format(inputFilePath)
+        FILE="{0}/log-{1}.log".format(logDir,inputFilePathHash)
+        logging.basicConfig(format=FORMAT,filename=FILE,filemode="w", level=LOG_LEVEL)
+    except:
+        msg = "directoy for storing log files '{}' cannot be accessed".format(logDir)
+        print("ERROR: "+msg,file=sys.stderr)
+        sys.exit(2)
+
     logger = logging.getLogger("")
     msg = "input file: {0} (log id: {1})".format(inputFilePath,inputFilePathHash)
     logger.info(msg) ; print(msg)
@@ -250,7 +257,7 @@ def initLogging(inputFilePath):
 if __name__ == "__main__":
     # read config and command line arguments
     configFilePath, includeDirs, defines = parseRawCommandLineArguments()
-    if configFilePath is not None:
+    if configFilePath != None:
         parseConfig(configFilePath)
     args, unknownArgs = parseCommandLineArguments()
     if len(POST_CLI_ACTIONS):
@@ -277,7 +284,7 @@ if __name__ == "__main__":
     initLogging(inputFilePath)
 
     # parse file and create index in parallel
-    if args.destinationDialect is not None:
+    if args.destinationDialect != None:
         scanner.DESTINATION_DIALECT = \
           scanner.checkDestinationDialect(args.destinationDialect)
     stree = None
@@ -303,6 +310,13 @@ if __name__ == "__main__":
     # modify original file
     if not args.onlyGenerateKernels:
         translateFortranSource(inputFilePath,stree,index,args.wrapInIfdef) 
- 
+
+    # dump index
+    if args.dumpIndex:
+        indexFilePath = outputFilePrefix + ".index.json"
+        indexFile = open(indexFilePath, "w")
+        json.dump(index, indexFile, indent=2)
+        msg = "saved index to file:".ljust(40) + indexFilePath
+        logging.getLogger("").info(msg) ; print(msg)
     # shutdown logging
     logging.shutdown()

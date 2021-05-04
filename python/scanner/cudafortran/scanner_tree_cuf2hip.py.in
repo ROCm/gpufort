@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+
+class CufLoopKernel2Hip(CufBackendBase):
+    def gpufortFStr(self,indexHints=[]):
+        return STLoopKernel.gpufortFStr(self._stnode,indexHints) 
+
+registerCufBackend("hip",CufLoopKernel2Hip,None)

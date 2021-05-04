@@ -27,7 +27,7 @@ pAntiFilter   = re.compile(ANTIFILTER)
 
 def __readFortranFile(filepath,compilerOptions):
     def considerLine(strippedLine):
-        return (pFilter.match(strippedLine) is not None) and (pAntiFilter.match(strippedLine) is None)
+        return (pFilter.match(strippedLine) != None) and (pAntiFilter.match(strippedLine) is None)
 
     """
     Read and preprocess a Fortran file. Make all
@@ -121,9 +121,9 @@ def __parseFile(fileLines,filePath):
         subroutine = createBaseEntry_("subroutine",name,name,filePath)
         if current != root:
             subroutine["tag"] = current._data["name"] + ":" + name
-        subroutine["hasHost"]     = "host" in tokens[0]
-        subroutine["hasDevice"]   = "device" in tokens[0]
-        subroutine["hasGlobal"]   = "global" in tokens[0]
+        subroutine["host"]     = "host" in tokens[0]
+        subroutine["device"]   = "device" in tokens[0]
+        subroutine["global"]   = "global" in tokens[0]
         subroutine["dummyArgs"]   = list(tokens[2])
         if current._name not in ["root","module"]:
             subroutine["usedModulesOrParentSubprograms"].append({ "name": current._data["name"], "only": []})
@@ -136,9 +136,9 @@ def __parseFile(fileLines,filePath):
         function = createBaseEntry_("function",name,name,filePath)
         if current != root:
             function["tag"] = current._data["name"] + ":" + name
-        function["hasHost"]     = "host" in tokens[0]
-        function["hasDevice"]   = "device" in tokens[0]
-        function["hasGlobal"]   = "global" in tokens[0]
+        function["host"]     = "host" in tokens[0]
+        function["device"]   = "device" in tokens[0]
+        function["global"]   = "global" in tokens[0]
         function["dummyArgs"]   = list(tokens[2])
         function["resultName"]  = name if tokens[3] is None else tokens[3]
         if current._name not in ["root","module"]:
@@ -224,7 +224,7 @@ def __resolveDependencies_body(i,index):
             name = used["name"]
             only = used["only"]
             usedModule = next((m for m in index if m["name"] == name),None)
-            if usedModule is not None:
+            if usedModule != None:
                 ascend(usedModule)
                 if len(only):
                     variables  = []

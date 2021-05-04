@@ -8,10 +8,10 @@
 CUF,KERNEL,STREAM = makeCaselessLiteral("cuf,kernel,stream",suppress=True)
 
 dim3        = LPAR + delimitedList(arithmeticExpression) + RPAR
-grid        = Literal("*") | dim3 
-threadBlock = grid.copy()
+grid        = Literal("*") | dim3 | rvalue
+threadBlock = grid
 streamType  = ( derivedTypeElem | funcCall | identifier | number )
-streamArg   = Optional(STREAM + EQ) + Optional(streamType,default="0")
+streamArg   = Optional(STREAM + EQ) + Optional(streamType,default=CLAUSE_NOT_FOUND)
 kernelLaunchArgs = Group(Suppress("<<<") + \
   Optional(grid,default="*")  + COMMA + \
   Optional(threadBlock,default="*") + OPTCOMMA + \
@@ -24,12 +24,14 @@ numLoopsToMapArg = Optional(LPAR + pyparsing_common.integer + RPAR,default=1)
 cuf_kernel_do = PRAGMA + CUF + KERNEL + DO + numLoopsToMapArg + Optional(kernelLaunchArgs,default=["*","*",0,"0"])
 
 # scanner/analysis
-ALLOCATE,ALLOCATED,DEALLOCATE = makeCaselessLiteral("allocate,allocated,deallocate",suppress=True)
+ALLOCATE   = Regex(r"\b[aA][lL][lL][oO][cC][aA][tT][eE]\b").suppress()
+ALLOCATED  = Regex(r"\b[aA][lL][lL][oO][cC][aA][tT][eE][dD]\b").suppress()
+DEALLOCATE = Regex(r"\b[dD][eE][aA][lL][lL][oO][cC][aA][tT][eE]\b").suppress()
 allocateRValue                =  (( derivedTypeElem | identifier ) + bounds) | derivedTypeElem | identifier # TODO check if this can be generalized
 allocateRValueList            = delimitedList(allocateRValue)
 
-allocate                         = ALLOCATE + LPAR + allocateRValueList + RPAR
-allocated                        = ALLOCATED + LPAR + allocateRValue + RPAR
+allocate                         = ALLOCATE   + LPAR + allocateRValueList + RPAR
+allocated                        = ALLOCATED  + LPAR + allocateRValue     + RPAR
 deallocate                       = DEALLOCATE + LPAR + allocateRValueList + RPAR
 memCpyValue                      = allocateRValue.copy() # TODO check if duplicate
 memcpy                           = memCpyValue + EQ + memCpyValue + ( Suppress(";") | LineEnd() )

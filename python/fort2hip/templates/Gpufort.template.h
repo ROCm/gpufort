@@ -30,9 +30,9 @@
 
 {%- macro linearized_index(rank) -%}
 {%- if rank == 1 -%}
-lb{{rank}}+i{{rank}}-1
+i{{rank}}
 {%- else -%}
-{%- for c in range(1,rank) -%}n{{c}}{{ "*" if not loop.last }}{%- endfor -%}*(lb{{rank}}+i{{rank}})+{{ linearized_index(rank-1) }}
+{%- for c in range(1,rank) -%}n{{c}}{{ "*" if not loop.last }}{%- endfor -%}*i{{rank}}+{{ linearized_index(rank-1) }}
 {%- endif -%}
 {%- endmacro -%}
 
@@ -49,6 +49,7 @@ lb{{rank}}+i{{rank}}-1
 #ifndef _GPUFORT_H_
 #define _GPUFORT_H_
 
+#include "hip/hip_complex.h"
 #include "hip/math_functions.h"
 #include <cstdio>
 #include <cstring>
@@ -83,7 +84,7 @@ namespace {
 }
 
 {% set maxRank = 7 -%}
-{%- for rank in range(1,maxRank) -%}
+{%- for rank in range(1,maxRank+1) -%}
 #define GPUFORT_PRINT_ARRAY{{rank}}(prefix,print_values,print_norms,A,{{ print_array_arglist("",rank) }}) gpufort_print_array{{rank}}(std::cout, prefix, print_values, print_norms, #A, A, {{ print_array_arglist("",rank) }})
 {% endfor -%}
 
@@ -159,8 +160,10 @@ namespace {
     return copysignf(a, b);
   }
 
+#define sign(a,b) copysign(a,b)
+
 {% for op in ["min","max"] %}
-{% for n in range(2,16) %}
+{% for n in range(2,15+1) %}
   {{ binop(op,n) }}
 {% endfor %}
 {% endfor %}

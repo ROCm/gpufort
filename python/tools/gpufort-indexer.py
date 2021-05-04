@@ -37,7 +37,7 @@ def parseCommandLineArguments():
              if end < 0:
                  end = i
              current = args["searchedTags"]
-         if current is not None:
+         if current != None:
              current.append(opt)
     if end > 0:
         args["options"] = sys.argv[1:end]

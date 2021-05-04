@@ -16,6 +16,7 @@ import re
 # local includes
 import addtoplevelpath
 import translator.translator as translator
+import indexer.indexertools as indexertools
 import pyparsingtools
 
 SCANNER_ERROR_CODE = 1000
@@ -32,6 +33,7 @@ scannerDir = os.path.dirname(__file__)
 exec(open("{0}/scanner_options.py.in".format(scannerDir)).read())
 exec(open("{0}/scanner_tree.py.in".format(scannerDir)).read())
 exec(open("{0}/openacc/scanner_tree_acc.py.in".format(scannerDir)).read())
+exec(open("{0}/cudafortran/scanner_tree_cuf.py.in".format(scannerDir)).read())
 exec(open("{0}/scanner_groups.py.in".format(scannerDir)).read())
 
 def checkDestinationDialect(destinationDialect):
@@ -115,7 +117,7 @@ def parseFile(fortranFilePath):
         nonlocal current
         nonlocal translationEnabled
         nonlocal keepRecording
-        new = STFunction(qualifier=tokens[0],name=tokens[1],dummyVars=tokens[2],\
+        new = STFunction(qualifier=tokens[0],name=tokens[1],dummyArgs=tokens[2],\
                 parent=current,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         if new.qualifier.lower() in ["global","device","host,device"]:
@@ -125,7 +127,7 @@ def parseFile(fortranFilePath):
         nonlocal current
         nonlocal translationEnabled
         nonlocal keepRecording
-        new = STSubroutine(qualifier=tokens[0],name=tokens[1],dummyVars=tokens[2],\
+        new = STSubroutine(qualifier=tokens[0],name=tokens[1],dummyArgs=tokens[2],\
                 parent=current,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         if new._qualifier.lower() in ["global","device"]:
@@ -168,18 +170,6 @@ def parseFile(fortranFilePath):
                 current._lines += currentLines
                 ascend()
                 keepRecording = False
-    def CufLoopKernel(tokens):
-        nonlocal doLoopCtr
-        nonlocal current
-        nonlocal translationEnabled
-        nonlocal currentLineno
-        nonlocal currentLines
-        nonlocal keepRecording
-        new = STCufLoopKernel(parent=current,lineno=currentLineno,lines=currentLines)
-        new._ignoreInS2STranslation = not translationEnabled
-        new._doLoopCtrMemorised=doLoopCtr
-        descend(new) 
-        keepRecording = True
     def Declaration(tokens):
         nonlocal current
         nonlocal translationEnabled
@@ -257,6 +247,7 @@ def parseFile(fortranFilePath):
         #TODO scan for cudaMemcpy calls
         nonlocal current
         nonlocal translationEnabled
+        nonlocal currentLineno
         nonlocal currentLines
         nonlocal keepRecording
         cudaApi, args, finishesOnFirstLine = tokens 
@@ -312,6 +303,20 @@ def parseFile(fortranFilePath):
         else:
            # append new directive
            current.append(new)
+    def CufLoopKernel(tokens):
+        nonlocal doLoopCtr
+        nonlocal current
+        nonlocal translationEnabled
+        nonlocal currentLineno
+        nonlocal currentLines
+        nonlocal keepRecording
+        nonlocal directiveNo
+        new = STCufLoopKernel(current,currentLineno,[],directiveNo)
+        new._ignoreInS2STranslation = not translationEnabled
+        new._doLoopCtrMemorised=doLoopCtr
+        directiveNo += 1
+        descend(new) 
+        keepRecording = True
     def Assignment(tokens):
         nonlocal current
         nonlocal translationEnabled
@@ -350,9 +355,9 @@ def parseFile(fortranFilePath):
     
     declaration.setParseAction(Declaration)
     attributes.setParseAction(Attributes)
-    allocated.setParseAction(Allocated)
-    allocate.setParseAction(Allocate)
-    deallocate.setParseAction(Deallocate)
+    ALLOCATED.setParseAction(Allocated)
+    ALLOCATE.setParseAction(Allocate)
+    DEALLOCATE.setParseAction(Deallocate)
     memcpy.setParseAction(Memcpy)
     #pointerAssignment.setParseAction(PointerAssignment)
     nonZeroCheck.setParseAction(NonZeroCheck)
@@ -444,9 +449,9 @@ def parseFile(fortranFilePath):
                 # scan for more complex expressions first      
                 scanString("assignmentBegin",assignmentBegin)
                 scanString("memcpy",memcpy)
-                scanString("allocated",allocated)
-                scanString("deallocate",deallocate) 
-                scanString("allocate",deallocate) 
+                scanString("allocated",ALLOCATED)
+                scanString("deallocate",DEALLOCATE) 
+                scanString("allocate",ALLOCATE) 
                 scanString("nonZeroCheck",nonZeroCheck)
                 #scanString("cpp_ifdef",cpp_ifdef)
                 #scanString("cpp_defined",cpp_defined)
@@ -466,7 +471,7 @@ def parseFile(fortranFilePath):
     assert type(current) is STRoot
     return current
 
-def postProcessAcc(stree,hipModuleName):
+def postprocessAcc(stree,hipModuleName):
     """
     Add use statements as well as handles plus their creation and destruction for certain
     math libraries.
@@ -481,17 +486,17 @@ def postProcessAcc(stree,hipModuleName):
          if not stnode is None:
              indent = " "*(len(stnode.lines()[0]) - len(stnode.lines()[0].lstrip()))
              accRuntimeModuleName = RUNTIME_MODULE_NAMES[DESTINATION_DIALECT]
-             if accRuntimeModuleName is not None and len(accRuntimeModuleName):
+             if accRuntimeModuleName != None and len(accRuntimeModuleName):
                  stnode._preamble.add("{0}use iso_c_binding\n{0}use {1}\n".format(indent,accRuntimeModuleName))
     
-def postProcessCuf(stree,hipModuleName):
+def postprocessCuf(stree,hipModuleName):
     """
     Add use statements as well as handles plus their creation and destruction for certain
     math libraries.
     """
     global CUBLAS_VERSION 
     # cublas_v1 detection
-    if CUBLAS_VERSION is 1:
+    if CUBLAS_VERSION == 1:
         def hasCublasCall(child):
             return type(child) is STCudaLibCall and child.hasCublas()
         cublasCalls = stree.findAll(filter=hasCublasCall, recursively=True)
@@ -510,7 +515,7 @@ def postProcessCuf(stree,hipModuleName):
             indent = " "*(len(last.lines()[0]) - len(last.lines()[0].lstrip()))
             last._epilog.add("{0}hipblasDestroy(hipblasHandle)\n".format(indent))
 
-def postProcess(stree,hipModuleName):
+def postprocess(stree,hipModuleName):
     """
     Add use statements as well as handles plus their creation and destruction for certain
     math libraries.
@@ -519,7 +524,7 @@ def postProcess(stree,hipModuleName):
         # insert use kernel statements at appropriate point
         def isLoopKernel(child):
             return isinstance(child,STLoopKernel) or\
-                   (type(child) is STSubroutine and child.isDeviceSubroutine())
+                   (type(child) is STSubroutine and child.isAcceleratorRoutine())
         kernels = stree.findAll(filter=isLoopKernel, recursively=True)
         for kernel in kernels:
             if "hip" in DESTINATION_DIALECT or\
@@ -531,7 +536,7 @@ def postProcess(stree,hipModuleName):
                 stnode._preamble.add("{0}use {1}\n".format(indent,hipModuleName))
    
     if "cuf" in SOURCE_DIALECTS:
-         postProcessCuf(stree,hipModuleName)
+         postprocessCuf(stree,hipModuleName)
     
     if "acc" in SOURCE_DIALECTS:
-         postProcessAcc(stree,hipModuleName)
+         postprocessAcc(stree,hipModuleName)

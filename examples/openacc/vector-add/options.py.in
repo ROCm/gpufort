@@ -1,0 +1,4 @@
+scanner.DESTINATION_DIALECT="hip-gpufort-rt"
+scanner.LOOP_KERNEL_DEFAULT_LAUNCHER="auto"
+
+LOG_DIR="log"

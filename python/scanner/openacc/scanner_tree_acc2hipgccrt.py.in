@@ -6,38 +6,38 @@ HIP_GCC_RT_ACC_SHUTDOWN = "acc_shutdown({devicetype})"
 
 # update host
 HIP_GCC_RT_ACC_UPDATE_SELF         = "acc_update_self({var})"
-HIP_GCC_RT_ACC_UPDATE_SELF_ASYNC   = "acc_update_self_async({var}{async})"
+HIP_GCC_RT_ACC_UPDATE_SELF_ASYNC   = "acc_update_self_async({var}{asyncr})"
 HIP_GCC_RT_ACC_UPDATE_DEVICE       = "acc_update_device({var})"
-HIP_GCC_RT_ACC_UPDATE_DEVICE_ASYNC = "acc_update_device_async({var}{async})"
-HIP_GCC_RT_ACC_UPDATE_MAP = { # [self][async]
+HIP_GCC_RT_ACC_UPDATE_DEVICE_ASYNC = "acc_update_device_async({var}{asyncr})"
+HIP_GCC_RT_ACC_UPDATE_MAP = { # [self][asyncr]
   False: { False: HIP_GCC_RT_ACC_UPDATE_DEVICE, True: HIP_GCC_RT_ACC_UPDATE_DEVICE_ASYNC },
   True:  { False: HIP_GCC_RT_ACC_UPDATE_SELF,   True: HIP_GCC_RT_ACC_UPDATE_SELF_ASYNC   }
 }
 # wait
 HIP_GCC_RT_ACC_WAIT_ALL          = "acc_wait_all()"
-HIP_GCC_RT_ACC_WAIT_ALL_ASYNC    = "acc_wait_all_async({async})"
+HIP_GCC_RT_ACC_WAIT_ALL_ASYNC    = "acc_wait_all_async({asyncr})"
 HIP_GCC_RT_ACC_WAIT              = "acc_wait({arg})"
-HIP_GCC_RT_ACC_WAIT_ASYNC        = "acc_wait_async({arg}{async})"
+HIP_GCC_RT_ACC_WAIT_ASYNC        = "acc_wait_async({arg}{asyncr})"
 #HIP_GCC_RT_ACC_WAIT_DEVICE       = "acc_wait_device({arg}{device})"
-#HIP_GCC_RT_ACC_WAIT_DEVICE_ASYNC = "acc_wait_device({arg}{async}{device})"
-HIP_GCC_RT_ACC_WAIT_MAP = { # [arg][async]
+#HIP_GCC_RT_ACC_WAIT_DEVICE_ASYNC = "acc_wait_device({arg}{asyncr}{device})"
+HIP_GCC_RT_ACC_WAIT_MAP = { # [arg][asyncr]
   False: { False: HIP_GCC_RT_ACC_WAIT_ALL, True: HIP_GCC_RT_ACC_WAIT_ALL_ASYNC },
   True:  { False: HIP_GCC_RT_ACC_WAIT,     True: HIP_GCC_RT_ACC_WAIT_ASYNC     }
 }
 # delete
 HIP_GCC_RT_ACC_DELETE                = "acc_delete({var})"
-HIP_GCC_RT_ACC_DELETE_ASYNC          = "acc_delete_async({var}{async})"
+HIP_GCC_RT_ACC_DELETE_ASYNC          = "acc_delete_async({var}{asyncr})"
 HIP_GCC_RT_ACC_DELETE_FINALIZE       = "acc_delete_finalize({var})"
-HIP_GCC_RT_ACC_DELETE_FINALIZE_ASYNC = "acc_delete_finalize_async({var}{async})"
-HIP_GCC_RT_ACC_DELETE_MAP = { # [finalize][async]
+HIP_GCC_RT_ACC_DELETE_FINALIZE_ASYNC = "acc_delete_finalize_async({var}{asyncr})"
+HIP_GCC_RT_ACC_DELETE_MAP = { # [finalize][asyncr]
   False: { False: HIP_GCC_RT_ACC_DELETE,          True: HIP_GCC_RT_ACC_DELETE_ASYNC          },
   True:  { False: HIP_GCC_RT_ACC_DELETE_FINALIZE, True: HIP_GCC_RT_ACC_DELETE_FINALIZE_ASYNC }
 }
 # acc_deviceptr
 HIP_GCC_RT_ACC_DEVICEPTR         = "acc_deviceptr({var})" # usually not available in openacc.f90
 # GCC LIBGOMP specific internal routines for /acc enter/exit data and acc data
-HIP_GCC_RT_GOACC_ENTER_EXIT_DATA = "goacc_enter_exit_data({device}{mappings}{async}{wait})"
-HIP_GCC_RT_GOACC_DATA_START      = "goacc_data_start({device}{mappings}{async})"
+HIP_GCC_RT_GOACC_ENTER_EXIT_DATA = "goacc_enter_exit_data({device}{mappings}{asyncr}{wait})"
+HIP_GCC_RT_GOACC_DATA_START      = "goacc_data_start({device}{mappings}{asyncr})"
 HIP_GCC_RT_GOACC_DATA_END        = "goacc_data_end()"
 # GCC LIBGOMP specific helper functions
 HIP_GCC_RT_MAP_CREATE            = "goacc_map_create({var})"
@@ -71,9 +71,9 @@ class Acc2HipGccRT(AccBackendBase):
             return prefix+"["+",".join(mappings)+"]"
         else:
             return ""
-    def _handleAsync(self,parseResult,prefix=",async="):
+    def _handleAsync(self,parseResult,prefix=",asyncr="):
         clause = translator.findFirst(parseResult,translator.TTAccClauseAsync)
-        if clause is not None:
+        if clause != None:
             value = clause.expression()
             if str(value) == str(CLAUSE_VALUE_NOT_SPECIFIED):
                 return prefix+"acc_async_noval"
@@ -83,7 +83,7 @@ class Acc2HipGccRT(AccBackendBase):
             return ""
     def _handleWait(self,parseResult,prefix=",wait=",wrapInBrackets=True):
         clause = translator.findFirst(parseResult,translator.TTAccClauseWait)
-        if clause is not None:
+        if clause != None:
             result = ",".join(clause.expressions())
             if wrapInBrackets:
                 result = "[" + result + "]"
@@ -92,7 +92,7 @@ class Acc2HipGccRT(AccBackendBase):
             return ""
     def _handleDevice(self,parseResult):
         clause = translator.findFirst(parseResult,translator.TTAccClauseDevice)
-        if clause is not None:
+        if clause != None:
             result = ",".join(clause.expressions())
             if wrapInBrackets:
                 result = "[" + result + "]"
@@ -101,7 +101,7 @@ class Acc2HipGccRT(AccBackendBase):
             return ""
     def _handleIf(self,parseResult):
         clause = translator.findFirst(parseResult,translator.TTAccClauseIf)
-        if clause is not None:
+        if clause != None:
             return clause.condition()
         else:
             return ""
@@ -117,27 +117,27 @@ class Acc2HipGccRT(AccBackendBase):
               result = HIP_GCC_RT_GOACC_DATA_START.format(\
                 device   = "acc_device_default",\
                 mappings = self._createMappings(parseResult),\
-                async    = self._handleAsync(parseResult))
+                asyncr    = self._handleAsync(parseResult))
            elif type(parseResult) in [translator.TTAccEnterData,translator.TTAccExitData]: 
               result = HIP_GCC_RT_GOACC_ENTER_EXIT_DATA.format(\
                 device   = "acc_device_default",\
                 mappings = self._createMappings(parseResult),\
-                async    = self._handleAsync(parseResult),\
+                asyncr    = self._handleAsync(parseResult),\
                 wait     = self._handleWait(parseResult))
            elif type(parseResult) is translator.TTAccEndData: 
               result = HIP_GCC_RT_GOACC_DATA_END
            elif type(parseResult) is translator.TTAccWait:
               arg   = self._handleWait(parseResult,"",False)
-              async = self._handleAsync(parseResult)
-              result = HIP_GCC_RT_ACC_WAIT_MAP[len(arg)][len(async)].format(\
-                arg=arg,async=async)
+              asyncr = self._handleAsync(parseResult)
+              result = HIP_GCC_RT_ACC_WAIT_MAP[len(arg)][len(asyncr)].format(\
+                arg=arg,asyncr=asyncr)
               pass
            elif type(parseResult) is translator.TTAccUpdate: 
               host   = self._handleSelf(parseResult)
               device = self._handleDevice(parseResult) 
-              async  = self._handleAsync(parseResult,"")
-              result = HIP_GCC_RT_ACC_UPDATE_MAP[len(host)][len(async)].format(\
-                arg=arg,async=async)
+              asyncr  = self._handleAsync(parseResult,"")
+              result = HIP_GCC_RT_ACC_UPDATE_MAP[len(host)][len(asyncr)].format(\
+                arg=arg,asyncr=asyncr)
            elif type(parseResult) is translator.TTAccRoutine: 
               pass
            elif type(parseResult) is translator.TTAccDeclare:
@@ -163,7 +163,7 @@ class AccLoopKernel2HipGccRT(Acc2HipGccRT):
         # add wait call if necessary
         arg = self._handleAsync(None,"")
         if not len(arg):
-            result += "\n" + indent + "call " + HIP_GCC_RT_ACC_WAIT_ALL.format(arg=arg,async="")+"\n"
+            result += "\n" + indent + "call " + HIP_GCC_RT_ACC_WAIT_ALL.format(arg=arg,asyncr="")+"\n"
         if stnode.isParallelLoopDirective() or stnode.isKernelsLoopDirective():
            result += indent + "call " + HIP_GCC_RT_GOACC_DATA_END+"\n"
 

@@ -160,7 +160,7 @@ class TTFunctionCallOrTensorAccess(TTNode):
         return not findFirst(self._args,searchedType=TTMatrixRange) is None
     def isFunction(self,isDefinitivelyFunction=False): 
         name = makeCStr(self._name).lower()
-        return len(self._args) is 0 or\
+        return len(self._args) == 0 or\
           isDefinitivelyFunction or\
           name in GPUFORT_CPP_ROUTINES or\
           name in ALL_HOST_ROUTINES or\
@@ -630,7 +630,7 @@ class TTBounds(TTNode):
         (Number of bytes requires knowledge of datatype too.)
         """
         result = "*".join(["({0})".format(dim) for dim in self.specifiedCounts(converter)])
-        if not bytesPerElement is "1":
+        if bytesPerElement != "1":
             result = "("+bytesPerElement+")*" + result
         if converter is makeFStr:
             result = "1_8*" + result
@@ -772,15 +772,6 @@ class Attributed():
         for q in self._qualifiers:
             result |= type(q) is str and q.lower() == name.lower()
         return result
-    #def getStandardFortranStringQualifiers(self):
-    #    """
-    #    :param name: lower case string qualifier, i.e. no more complex qualifier such as 'dimension' or 'intent'.
-    #    """
-    #    result = []
-    #    for q in [q.lower() for q in self._qualifiers]:
-    #        if type(q) is str and q not in ["parameter","allocatable","pointer","device","pinned","managed"]:
-    #            result.append(q) 
-    #    return result
     def isDevicePointer(self):
         return self.hasStringQualifier("device") and\
                self.hasStringQualifier("pointer")
@@ -972,27 +963,34 @@ class TTDeclaration(TTNode,Attributed):
         qualifiersStr = ", " if len(self._qualifiers) else ""
         qualifiersStr += ", ".join([makeFStr(q) for q in self._qualifiers])
         result = "{0}{1} :: ".format(makeFStr(self._datatype),qualifiersStr)
+        ignoredVars = 0
         for ttdeclaredvariable in self._rhs:
-            if not ttdeclaredvariable.name(makeFStr) in ignoreList:
+            if not ttdeclaredvariable.name(makeFStr).lower() in ignoreList:
+                ignoredVars += 1
                 result += "{0},".format(ttdeclaredvariable.fStr(includeBounds,includeRhs))
-        return result.rstrip(",")
+        if ignoredVars == len(self._rhs):
+            return ""
+        else:
+            return result.rstrip(",")
     def cStr(self,extraIgnoreList=[],isFunctionArgument=False,includeBounds=True,includeRhs=True):
         """
         The ignore list can be used to filter out some
         variables, e._g. if these are parameters of a subroutine
         that we want to convert.
         """
-        ignoreList = map(str.lower, self._ignoreList + extraIgnoreList)
-        result  = ""
-        comment = ""
+        ignoreList      = map(str.lower, self._ignoreList + extraIgnoreList)
+        result          = ""
+        comment         = ""
         dimensionBounds = ""
+        ignoredVars     = 0
         if len(self._qualifiers):
            dimensionQualifier = findAll(self._qualifiers,TTDimensionQualifier)
            if len(dimensionQualifier):
                 dimensionBounds = makeCStr(dimensionQualifier[0])
            comment = " /* Fortran qualifiers: {0} */".format(",".join([makeFStr(el) for el in self._qualifiers]))
         for ttdeclaredvariable in self._rhs:
-            if not ttdeclaredvariable.name(makeCStr) in ignoreList: 
+            if not ttdeclaredvariable.name(makeCStr).lower() in ignoreList: 
+                ignoredVars += 1
                 if isFunctionArgument:
                     result += "{0} {1},".format(makeCStr(self._datatype),ttdeclaredvariable.cStr(includeBounds,includeRhs),comment)
                 else:
@@ -1000,10 +998,13 @@ class TTDeclaration(TTNode,Attributed):
                     if self.hasStringQualifier("shared"):
                         datatype = "__shared__ " + datatype
                     result += "{0} {1}{2};{3}\n".format(datatype,ttdeclaredvariable.cStr(includeBounds,includeRhs),dimensionBounds,comment) 
-        if isFunctionArgument:
-            return result
+        if ignoredVars == len(self._rhs):
+            if isFunctionArgument:
+                return result
+            else:
+                return result.rstrip(",")
         else:
-            return result.rstrip(",")
+            return ""
 
 class TTStatement(TTNode):
     """

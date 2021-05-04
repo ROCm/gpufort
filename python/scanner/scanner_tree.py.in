@@ -27,7 +27,7 @@ class Tagged:
         result = self._name.lower()
         def recursiveParentLookup(curr):
             nonlocal result
-            if type(curr) is not STRoot:
+            if type(curr) != STRoot:
                 result = curr._name.lower() + ":" + result
                 recursiveParentLookup(curr._parent)
         recursiveParentLookup(self._parent)        
@@ -77,9 +77,6 @@ class STNode:
                  of the object is a device subroutine.
         """
         return not self._ignoreInS2STranslation
-              # and\
-              # not isinstance(self._parent, STLoopKernel) and\
-              # (not type(self._parent) is STSubroutine or not self._parent.isDeviceSubroutine())
     def append(self,child):
         self._children.append(child)
     def listOfParents(self):
@@ -220,21 +217,20 @@ class STPlaceHolder(STNode):
                (len(self._preamble) or len(self._epilog))
 
 class STProcedure(STNode,Tagged):
-    def __init__(self,name,parent,lineno,lines):
-        STNode.__init__(self,qualifier,name,dummyVars,parent,lineno)
+    def __init__(self,qualifier,name,dummyArgs,parent,lineno,lines):
+        STNode.__init__(self,parent,lineno,lines)
         self._qualifier = qualifier
         self._name = name
-        self._dummyVars = dummyVars
+        self._dummyArgs = dummyArgs
         self._lines = []
-        self._considerInS2STranslation
     def dummyArgumentNames(self):
         """
         :return: the list of procedure arguments.
         """
-        return self._dummyVars
+        return self._dummyArgs
 
 class STSubroutine(STProcedure):
-    def isDeviceSubroutine(self):
+    def isAcceleratorRoutine(self):
         for keyword in ["device","global"]:
              if keyword in self._qualifier.lower():
                  return True
@@ -242,7 +238,7 @@ class STSubroutine(STProcedure):
     def declarationsInBody(self):
         return self.findAll(filter=lambda child : type(child) is STDeclaration, recursively=False)
     def considerInS2STranslation(self):
-        return STNode.considerInS2STranslation(self) and self.isDeviceSubroutine()
+        return STNode.considerInS2STranslation(self) and self.isAcceleratorRoutine()
     def transformFSnippet(self,fSnippet,indexHints=[]):
         indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
         return "{0}! extracted to HIP C++ file".format(indent), True
@@ -274,11 +270,13 @@ class STDirective(STNode):
 class STLoopKernel(STNode):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
-        self._doLoopCtrMemorised  = -1
-        self._singleLineStatement = None
-        self._sharedMem           = "0" # set from extraction routine
-        self._stream              = "c_null_ptr" # set from extraction routine
-        self._kernelArgNames = [] # set from extraction routine
+        self._doLoopCtrMemorised     = -1
+        self._singleLineStatement    = None
+        self._gridFStr               = None
+        self._blockFStr              = None
+        self._sharedMemFStr          = "0" # set from extraction routine
+        self._streamFStr             = "c_null_ptr" # set from extraction routine
+        self._kernelArgNames         = [] # set from extraction routine
     def stripLines(self,lines):
         """Remove whitespace characters and comments."""
         result = ""
@@ -299,39 +297,30 @@ class STLoopKernel(STNode):
         
         We hash the body because we will use different block sizes and shmem anyway in HIP.
         """
-        return KERNEL_NAME_TEMPLATE.format(parent=self._parent._name.lower(),lineno=self._lineno+1,hash=self.hashBody())
+        return LOOP_KERNEL_NAME_TEMPLATE.format(parent=self._parent._name.lower(),lineno=self._lineno+1,hash=self.hashBody())
     def kernelLauncherName(self):
         return "launch_{}".format(self.kernelName())
     def transformFSnippet(self,fSnippet,indexHints=[]):
         indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
-        stream = "c_null_ptr" if self._stream == "0" else self._stream
-        result="""{4}! extracted to HIP C++ file
-{4}! TODO(gpufort) fix arguments
-{4}CALL {0}_auto({1},{2},{3})""".format(self.kernelLauncherName(),self._sharedMem,stream,",".join(self._kernelArgNames),indent)
+        try:
+          streamAsInt = int(self._streamFStr)
+          stream = "c_null_ptr" if streamAsInt < 1 else self._streamFStr
+        except:
+          stream = self._streamFStr
+        if self._gridFStr == None or self._blockFStr == None or LOOP_KERNEL_DEFAULT_LAUNCHER == "cpu": # use auto or cpu launcher 
+          result="""{indent}! extracted to HIP C++ file
+  {indent}CALL {0}_{launcher}({1},{2},{3})""".format(self.kernelLauncherName(),self._sharedMemFStr,stream,\
+            ",".join(self._kernelArgNames),indent=indent,launcher=LOOP_KERNEL_DEFAULT_LAUNCHER)
+        else:
+          result="""{indent}! extracted to HIP C++ file
+  {indent}CALL {0}({1},{2},{3},{4},{5})""".format(self.kernelLauncherName(),self._gridFStr,self._blockFStr,self._sharedMemFStr,stream,\
+            ",".join(self._kernelArgNames),indent=indent)
+          
         return result, True
     def gpufortFStr(self,indexHints=[]):
         return self.transformFSnippet("".join(self._lines),indexHints)
 
-class STCufLoopKernel(STDirective,STLoopKernel):
-    def __init__(self,parent,lineno,lines):
-        STDirective.__init__(self,parent,lineno,lines)
-        STLoopKernel.__init__(self,parent,lineno,lines)
-
-class Attributed():
-    def hasAllocatable(self):
-        return self._parseResult.hasStringQualifier("allocatable")
-    def hasPointer(self):
-        return self._parseResult.hasStringQualifier("pointer")
-    def hasDimension(self):
-        return self._parseResult.hasDimension()
-    def hasDevice(self):
-        return self._parseResult.hasStringQualifier("device")
-    def hasPinned(self):
-        return self._parseResult.hasStringQualifier("pinned")
-    def hasManaged(self):
-        return self._parseResult.hasStringQualifier("managed")
-
-class STDeclaration(STNode,Attributed):
+class STDeclaration(STNode):
     """
     Works with Fortran declarations such as
     ```Fortran
@@ -340,200 +329,93 @@ class STDeclaration(STNode,Attributed):
     """
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
-        self._prefix          = ""
-        self._ttdeclaration   = translator.declaration.parseString(self._lines[0])[0] # ! Must be parsed and analysed at creation time
-        self._parseResult     = self._ttdeclaration
-        self._vars            = [self._prefix+name.lower() for name in self._ttdeclaration.variableNames()]
-        self._arrayVars       = [self._prefix+name.lower() for name in self._ttdeclaration.arrayVariableNames()]
-        self._unprefixedVars  = [name.lower() for name in self._ttdeclaration.variableNames()]
-        #print(self._ttdeclaration._qualifiers)
-        self._madeTarget = False 
-        self._madeDevice = False 
-    def fType(self):
-        """
-        :return: Fortran datatype of the variable, e.g 'integer'.
-        :rtype: str
-        """
-        return self._ttdeclaration.fType()
-    def isDerivedType(self):
-        """
-        :return: If the datatype is a derived Fortran type.
-        :note: kind() function then returns the name of the derived type.
-        """
-        return self._ttdeclaration.isDerivedType();
-    def kind(self):
-        """
-        :return: kind of the variable's datatype, e.g. '4' if 32-bit integer. Number of bytes may differ
-        :rtype: str
-        :see: bytesPerElement
-        """
-        return self._ttdeclaration.kind()
-    def cType(self):
-        """
-        :return: C/C++ datatype of the variable, e.g 'size_t'
-        :rtype: str
-        """
-        return translator.convertToCType(self.fType(),self.kind(),"void")
-    def bytesPerElement(self):
-        """
-        :return: the bytes per element of this datatype.
-        :rtype: str
-        """
-        return self._ttdeclaration.bytesPerElement()
-    def isArray(self,varName):
-        """
-        :note: Can also be used to check if declaration declares this array variable.
-        """
-        return varName.lower() in self._arrayVars
-    def isAllocatableArray(self,varName):
-        """
-        :note: Can also be used to check if declaration declares this array variable.
-        """
-        return self.hasAllocatable() and varName.lower() in self._arrayVars
-    def numElements(self,varName):
-        """
-        Get the number of elements an array variable stores.
-        """
-        return self._ttdeclaration.numElements(varName)
-    def isStream(self):
-        return self.fType().lower() == "integer" and self.kind().lower() == "cuda_stream_kind"
-    def makeTarget(self):
-        self._madeTarget = True
-    def makeDevice(self):
-        self._madeDevice = True
-    def arrayBoundVariableNamesFStr(self,varName):
-        """
-        :param varName: Name of a variable, possibly prefixed if member of a derived type.
-        :return: Returns identifiers for array bound variables (all lower bound).
-        :rtype: list 
-        """
-        unprefixedName = removeTypePrefix(varName) 
-        return self._ttdeclaration.arrayBoundVariableNamesFStr(unprefixedName)
-    def arrayVariableIndexStr(self,arrayName):
-        """
-        :return: An index macro for the variable.
-        :rtype: str
-        """
-        unprefixedName = removeTypePrefix(varName) 
-        return self._ttdeclaration.arrayVariableIndexStr(unprefixedName)
-    def arrayVariableIndexMacroCStr(self,arrayName):
-        """
-        :return: An index macro for the variable.
-        :rtype: str
-        """
-        unprefixedName = removeTypePrefix(arrayName) 
-        return self._ttdeclaration.arrayVariableIndexMacroCStr(unprefixedName,usePlaceHolders=True)
-    def arrayVariableIndexMacroFStr(self,arrayName):
-        """
-        :return: An index macro for the variable.
-        :rtype: str
-        """
-        unprefixedName = removeTypePrefix(arrayName) 
-        return self._ttdeclaration.arrayVariableIndexMacroFStr(unprefixedName,usePlaceHolders=True)
-    def rhsCStr(self,varName):
-        """
-        :param varName: Name of a variable, possibly prefixed if member of a derived type.
-        :return: C expression for the right-hand side if present. Otherwise an empty string `''`.
-        :rtype: str
-        """
-        unprefixedName = removeTypePrefix(varName) 
-        return self._ttdeclaration.rhsCStr(unprefixedName)
-    def considerInS2STranslation(self):
-        if STNode.considerInS2STranslation(self):
-            return len(self._preamble) or len(self._epilog) or self.hasDevice() or self._madeDevice or self.hasPinned() or self.hasManaged() or self._madeTarget or self.isStream()
-        else:
-            return False
+        self._ttdeclaration   = translator.declaration.parseString(self._lines[0])[0]
+        self._vars            = [name.lower() for name in self._ttdeclaration.variableNames()]
     def createCodegenContext(self):
-        return translator.createCodegenContextFromDeclaration(self._parseResult)
+        return translator.createCodegenContextFromDeclaration(self._ttdeclaration)
+    def considerInS2STranslation(self):
+        if not self._ignoreInS2STranslation:
+            if len(self._preamble) or len(self._epilog):
+                return True
+            for l in self._lines:
+                lineLower = l.lower()
+                for q in ["device","pinned"]:
+                    if q in lineLower:
+                        return True
+        return False 
     def gpufortFStr(self,indexHints=[]):
-        # TODO(dominic) rewrite docu
         """
+        if device and allocatable, remove device, add pointer
+        if device and fixed size array, remove device, add pointer, replace fixed bounds by other bounds
+           find first code line and add allocation to preamble if no dummy argument. Do similar things
+           with deallocation -> double pass
+        if pinned and allocatable, add pointer
+        if pinned and fixed size array, remove pinned, add pointer, replace fixed bounds by other bounds
+           find first code line and add allocation to preamble if no dummy argument -> double pass
+        if integer with stream kind, 
         """
-        indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
-        if self.hasDevice() or self._madeDevice or self.hasPinned() or self.isStream():
-            devicePtr = copy.deepcopy(self._ttdeclaration)
-            # TODO Only make a pointer if this an input argument of a subroutine
-            # TODO extend subroutine / function objects to return dummy variable list
-            # in order to check what qualifiers should be selected
-            for q in ["device","pinned","allocatable"]:
-                qualifiersLower = [x.lower() for x in devicePtr._qualifiers if type(x) is str]
-                if q in qualifiersLower:
-                    index = qualifiersLower.index(q)
-                    devicePtr._qualifiers.pop(index)
-                print(qualifiersLower)
-            if not "pointer" in devicePtr._qualifiers:
-                for varName in self._ttdeclaration.arrayVariableNames():
-                    # TODO : fix this !!!
-                    if isinstance(self._parent, STProcedure):
-                        if not "target" in devicePtr._qualifiers:
-                           devicePtr._qualifiers.append("target")
-                    else:
-                       devicePtr._qualifiers.append("pointer")
-            #devicePtr.convertToCptr()
-            result = "{1}{0}\n".format(devicePtr.fStr(),indent)
-        elif self.isStream():
-            devicePtr = copy.deepcopy(self._ttdeclaration)
-            devicePtr.convertToCptr()
+        if len(indexHints):
+            filteredIndex = indexertools.filterIndexByTag(indexHints,self._parent.tag())
         else:
-            if not self.hasPointer() and self._madeTarget:
-                targetArray = copy.deepcopy(self._ttdeclaration)
-                targetArray._qualifiers.append("target")
-                return "{1}{0}".format(targetArray.fStr(),indent), True
-            else:
-                return "".join(self._lines), False
+            filteredIndex = indexertools.EMPTY
+            filteredIndex["variables"] = self.createCodegenContext()
+        originalDatatype          = translator.makeFStr(self._ttdeclaration._datatype)
+        originalQualifiers        = [translator.makeFStr(q).lower() for q in self._ttdeclaration._qualifiers]
+        unchangedVariables        = []  
+        newDevicePointerVariables = []
+        newHostPointerVariables   = []
+        
+        indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
+        # argument names if declared in procedure
+        if isinstance(self._parent, STProcedure):
+            argNames = [makeFStr(n).lower() for n in self.parent._dummyArgs]
+        else:
+            argNames = []
+        result = ""
+        for i,varName in enumerate(self._vars):
+             indexedVar,discovered = indexertools.searchIndexForVariable(filteredIndex,varName)
+             rank           = indexedVar["rank"]
+             hasDevice      = indexedVar["device"] == True
+             hasPinned      = indexedVar["pinned"] == True
+             hasAllocatable = indexedVar["allocatable"] == True  
+             # clean qualifiers
+             newQualifiers = []
+             for q in originalQualifiers:
+                if not q in ["target","pinned","device","allocatable"] and not q.startswith("dimension"):
+                    newQualifiers.append(q)
+             if varName in argNames: 
+                 newQualifiers.append("target")
+             else:
+                 newQualifiers.append("pointer")
+             if rank > 0:
+                 newQualifiers.append("dimension(:"+",:"*(rank-1)+")")
+             if hasDevice and rank > 0:
+                 newDevicePointerVariables.append(varName)
+                 result += "\n" + indent + originalDatatype + "," + ",".join(newQualifiers) + " :: " + varName
+             elif hasPinned:
+                 newHostPointerVariables.append(varName)
+                 result += "\n" + indent + originalDatatype + "," + ",".join(newQualifiers) + " :: " + varName
 
-class STAttributes(STNode,Attributed):
+        # TODO handle side effects if no allocatable present
+        if len(newDevicePointerVariables) + len(newHostPointerVariables) < len(self._ttdeclaration._rhs): 
+            result = indent + self._ttdeclaration.fStr(extraIgnoreList=newDevicePointerVariables+newHostPointerVariables) +\
+                     result
+        if len(newDevicePointerVariables) or len(newHostPointerVariables):
+            return result.lstrip("\n"), True
+        else:
+            return "".join(self._lines), False
+
+class STAttributes(STNode):
+    """
+    CUDA Fortran specific intrinsic that needs to be removed/commented out
+    in any case.
+    """
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
-        self._parseResult = translator.attributes.parseString(self._lines[0])[0] # ! Must be parsed and analysed at creation time
-        self._vars        = [name.lower() for name in self._parseResult.variableNames()]
-        # Add device qualifier
-        if self.hasDevice():
-            for arraydecl in self.arraysInScope():
-                if len(set(self._vars) & set(arraydecl._vars)):
-                    arraydecl.makeDevice()
-                    #print(self._vars)
-                
-        #print(self._vars)
-    def considerInS2STranslation(self):
-        return False
+    def gpufortFStr(self,indexHints=[],indent=""):
+        return "", True
 
-# TODO use index here
-class MemOperation(): #TODO give better name
-    def lookupArrayDeclaration(self,arrayName):
-        """
-        :note: Adds target qualifier to host arrays
-        :return: Bytes per element of this array and device specific qualifier
-        """
-        mappedArrayName = self.mapNameToDerivedType(arrayName)
-        #print(mappedArrayName)
-        #print(arrayName)
-        qualifier = ""
-        bytesPerElement = "-1"
-        onDevice = False
-        indexMacro = ""
-        boundVariableNames = []
-        for stdeclaration in self.arraysInScope():
-            # names may be prefixed by type0%type1%...
-            #print(mappedArrayName  + " vs " + str(stdeclaration._arrayVars))
-            if mappedArrayName.lower() in stdeclaration._arrayVars:
-                bytesPerElement    = stdeclaration.bytesPerElement()  
-                indexMacro         = stdeclaration.arrayVariableIndexMacroCStr(mappedArrayName)
-                boundVariableNames = [el.replace(mappedArrayName,arrayName) for el in stdeclaration.arrayBoundVariableNamesFStr(mappedArrayName)]
-                # side effect:
-                if not stdeclaration.hasDevice():
-                    stdeclaration.makeTarget()              
-  
-                if stdeclaration.hasDevice() or stdeclaration._madeDevice:
-                    qualifier = "device"
-                    onDevice  = True
-                elif stdeclaration.hasPinned():
-                    qualifier = "pinned"
-                elif stdeclaration.hasManaged():
-                    qualifier = "managed"
-        return bytesPerElement, onDevice, qualifier, indexMacro, boundVariableNames
-
-class STNonZeroCheck(STNode,MemOperation):
+class STNonZeroCheck(STNode):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
     def transformFSnippet(self,fSnippet,indexHints=[]): # TODO
@@ -541,45 +423,53 @@ class STNonZeroCheck(STNode,MemOperation):
         transformed = False
         for tokens,start,end in translator.nonZeroCheck.scanString(result):
             parseResult = tokens[0]
-            lhsName = parseResult.lhsFStr()
-            bpe,onDevice,qualifier,indexMacro,boundVariableNames = self.lookupArrayDeclaration(lhsName)
+            lhsName     = parseResult.lhsFStr()
+            indexedVar  = indexertools.searchIndexForVariable(indexHints,lhsName)
+            onDevice    = indexedVar["device"] == True or indexedVar["declaredOnTarget"] == True
             transformed |= onDevice
             if onDevice:
-                subst = parseResult.fStr()
+                subst = parseResult.fStr() # TODO backend specific
                 result = result.replace(result[start:end],subst)
         return result, transformed
 
-class STAllocated(STNode,MemOperation):
+class STAllocated(STNode):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
     def transformFSnippet(self,fSnippet,indexHints=[]): # TODO
         def repl(parseResult):
             varName = parseResult.varName()
-            bpe,onDevice,qualifier,indexMacro,boundVariableNames = self.lookupArrayDeclaration(varName)
-            return (parseResult.fStr(), onDevice)
+            indexedVar  = indexertools.searchIndexForVariable(indexHints,varName)
+            onDevice    = indexedVar["device"] == True or indexedVar["declaredOnTarget"] == True
+            return (parseResult.fStr(), onDevice) # TODO backend specific
         result, transformed = pyparsingtools.replaceAll(fSnippet,translator.allocated,repl)
         assert result != None
         return result, transformed
 
-class STAllocate(STNode,MemOperation):
+class STAllocate(STNode):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
     def transformFSnippet(self,fSnippet,indexHints=[]): # TODO
         def repl(parseResult):
             transformed     = False
-            vars            = [name.lower() for name in parseResult.variableNames()]
             bytesPerElement = []
             arrayQualifiers = []
-            for arrayName in vars:
-                bpe,onDevice,qualifier,indexMacro,boundVariableNames = self.lookupArrayDeclaration(arrayName)
-                bytesPerElement.append(bpe)
-                arrayQualifiers.append(qualifier)
-                transformed |= qualifier.lower() in ["pinned","device"]
-            subst = parseResult.fStr(bytesPerElement,arrayQualifiers,indent="")
+            for arrayName in parseResult.variableNames():
+                indexedVar = indexertools.searchIndexForVariable(indexHints,arrayName)[0]
+                bytesPerElement.append(indexedVar["bytesPerElement"])
+                onDevice   = indexedVar["device"] == True or indexedVar["declaredOnTarget"] == True
+                pinned     = indexedVar["pinned"] == True
+                if onDevice: 
+                    arrayQualifiers.append("device")
+                elif pinned: 
+                    arrayQualifiers.append("pinned")
+                else:
+                    arrayQualifiers.append(None)
+                transformed |= onDevice | pinned
+            subst = parseResult.hipFStr(bytesPerElement,arrayQualifiers,indent="")
             return (subst, transformed)
         return pyparsingtools.replaceAll(fSnippet,translator.allocate,repl)
              
-class STDeallocate(STNode,MemOperation):
+class STDeallocate(STNode):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
     def transformFSnippet(self,fSnippet,indexHints=[]): # TODO
@@ -589,44 +479,45 @@ class STDeallocate(STNode,MemOperation):
         """
         def repl(parseResult):
             transformed     = False
-            vars            = [name.lower() for name in parseResult.variableNames()]
             arrayQualifiers = []
-            for arrayName in vars:
-                bpe,onDevice,qualifier,indexMacro,boundVariableNames = self.lookupArrayDeclaration(arrayName)
-                arrayQualifiers.append(qualifier)
-                transformed |= qualifier.lower() in ["pinned","device"]
-            subst = parseResult.fStr(arrayQualifiers,indent="")
+            for arrayName in parseResult.variableNames():
+                indexedVar = indexertools.searchIndexForVariable(indexHints,arrayName)[0]
+                onDevice   = indexedVar["device"] == True or indexedVar["declaredOnTarget"] == True
+                pinned     = indexedVar["pinned"] == True
+                if onDevice: 
+                    arrayQualifiers.append("device")
+                elif pinned: 
+                    arrayQualifiers.append("pinned")
+                else:
+                    arrayQualifiers.append(None)
+                transformed |= onDevice | pinned
+            subst = parseResult.hipFStr(arrayQualifiers,indent="")
             return (subst, transformed)
         return pyparsingtools.replaceAll(fSnippet,translator.deallocate,repl)
          
-class STMemcpy(STNode,MemOperation):
+class STMemcpy(STNode):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
     def transformFSnippet(self,fSnippet,indexHints=[]): # TODO
         def replMemcpy(parseResult):
             destName = parseResult.destNameFStr()
             srcName  = parseResult.srcNameFStr()
-            destBpe,destOnDevice,qualifier,destIndexMacro,boundVariableNames = self.lookupArrayDeclaration(destName)
-            srcBpe,srcOnDevice,qualifier,srcIndexMacro,boundVariableNames    = self.lookupArrayDeclaration(srcName)
-            if srcBpe == "-1":
-                bpe = destBpe
-            else:
-                bpe = srcBpe
-            if destOnDevice and parseResult.destHasArgs():
-                self._preamble.add(destIndexMacro)
-            if srcOnDevice and parseResult.srcHasArgs():
-                self._preamble.add(srcIndexMacro)
+            destIndexedVar = indexertools.searchIndexForVariable(indexHints,destName)[0]
+            srcIndexedVar  = indexertools.searchIndexForVariable(indexHints,srcName)[0]
+            destOnDevice = destIndexedVar["device"] == True or destIndexedVar["declaredOnTarget"] == True
+            srcOnDevice  = srcIndexedVar["device"] == True or srcIndexedVar["declaredOnTarget"] == True
+            bytesPerElement = destIndexedVar["bytesPerElement"]
             if destOnDevice or srcOnDevice:
-                subst       = parseResult.fStr(destOnDevice,srcOnDevice,bpe)
+                subst = parseResult.hipFStr(destOnDevice,srcOnDevice)
                 return (subst,True)
             else:
                 return ("",False) # no transformation; will not be considered
-        fSnippet,transformed = pyparsingtools.replaceAll(fSnippet,translator.memcpy,replMemcpy)
+        fSnippet, transformed = pyparsingtools.replaceAll(fSnippet,translator.memcpy,replMemcpy)
         return fSnippet, transformed
 
-class STCudaLibCall(STNode,MemOperation):
-    def __init__(self,parent,lineno):
-        STNode.__init__(self,parent,lineno)
+class STCudaLibCall(STNode):
+    def __init__(self,parent,lineno,lines):
+        STNode.__init__(self,parent,lineno,lines)
         self._cudaApi = ""
         self._hasCublas = False
     def hasCublas(self):
@@ -645,20 +536,13 @@ class STCudaLibCall(STNode,MemOperation):
             def replMemcpy(parseResult):
                 destName = parseResult.destNameFStr()
                 srcName  = parseResult.srcNameFStr()
-                destBpe,destOnDevice,qualifier,destIndexMacro,boundVariableNames = self.lookupArrayDeclaration(destName)
-                srcBpe,srcOnDevice,qualifier,srcIndexMacro,boundVariableNames    = self.lookupArrayDeclaration(srcName)
-                if srcBpe == "-1":
-                    bpe = destBpe
-                else:
-                    bpe = srcBpe
-                subst = parseResult.fStr(destOnDevice,srcOnDevice,bpe,indent)
-                if destOnDevice and parseResult.destHasArgs():
-                    self._preamble.add(destIndexMacro)
-                if srcOnDevice and parseResult.srcHasArgs():
-                    self._preamble.add(srcIndexMacro)
+                destIndexedVar = indexertools.searchIndexForVariable(indexHints,destName)[0]
+                srcIndexedVar  = indexertools.searchIndexForVariable(indexHints,srcName)[0]
+                destOnDevice = destIndexedVar["device"] == True or destIndexedVar["declaredOnTarget"] == True
+                srcOnDevice  = srcIndexedVar["device"] == True or srcIndexedVar["declaredOnTarget"] == True
+                subst = parseResult.hipFStr(destOnDevice,srcOnDevice)
                 return (subst, True)
             fSnippet,_ = pyparsingtools.replaceAll(fSnippet,translator.cufCudaMemcpyVariant,replMemcpy)
-        # place C_LOC
         def replCublas(parseResult):
             subst = parseResult.fStr(indent)
             return (subst, True)

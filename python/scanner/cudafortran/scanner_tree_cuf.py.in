@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+class CufBackendBase:
+    def __init__(self,stnode):
+        self._stnode = stnode
+    def gpufortFStr():
+        assert False, "Not implemented!"
+
+CUF_LOOP_KERNEL_BACKENDS = {} 
+
+def registerCufBackend(name,loopKernelGeneratorClass,runtimeModuleName):
+    global SUPPORTED_DESTINATION_DIALECTS
+    global RUNTIME_MODULE_NAMES
+    global CUF_LOOP_KERNEL_BACKENDS
+    
+    if not name in SUPPORTED_DESTINATION_DIALECTS:
+        SUPPORTED_DESTINATION_DIALECTS.append(name)
+    RUNTIME_MODULE_NAMES[name]     = runtimeModuleName
+    CUF_LOOP_KERNEL_BACKENDS[name] = loopKernelGeneratorClass
+
+exec(open("{0}/cudafortran/scanner_tree_cuf2omp.py.in".format(scannerDir)).read())
+exec(open("{0}/cudafortran/scanner_tree_cuf2hip.py.in".format(scannerDir)).read())
+
+class STCufDirective(STDirective):
+    """
+    This class has the functionality of a kernel if the stored lines 
+    contain a parallel or kernels directive.
+    
+    https://www.openacc.org/sites/default/files/inline-files/OpenCUF.2.7.pdf)
+    """
+    def __init__(self,parent,lineno,lines,directiveNo):
+        STDirective.__init__(self,parent,lineno,lines,directiveNo,sentinel="!$cuf")
+        self._defaultPresentVars = []
+    def considerInS2STranslation(self):
+        """
+        Consider this object when transforming host code.
+        :return: The default implementation returns False if the parent
+                 of the object is a device subroutine.
+        """
+        return True
+    def gpufortFStr(self,indexHints=[]):
+        assert False, "Currently, there are only CUF parallel directives"
+
+class STCufLoopKernel(STCufDirective,STLoopKernel):
+    def __init__(self,parent,lineno,lines,directiveNo):
+        STCufDirective.__init__(self,parent,lineno,lines,directiveNo)
+        STLoopKernel.__init__(self,parent,lineno,lines)
+    def lines(self):
+        """
+        :note: used for grouping scanner tree objects
+        """
+        return self._lines
+    def gpufortFStr(self,indexHints=[],destinationDialect=""):
+        """
+        :param destinationDialect: allows to override default if this kernel
+                                   should be translated via another backend.
+        """
+        checkedDialect = checkDestinationDialect(\
+            DESTINATION_DIALECT if not len(destinationDialect) else destinationDialect)
+        return CUF_LOOP_KERNEL_BACKENDS[checkedDialect](self).gpufortFStr(indexHints)

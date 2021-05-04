@@ -19,12 +19,12 @@ EMPTY_VARIABLE = {
   "cType"                      : "UNKNOWN",
   "fInterfaceType"             : "UNKNOWN",
   "fInterfaceQualifiers"       : "UNKNOWN",
-  "hasParameter"               : "UNKNOWN",
-  "hasPointer"                 : "UNKNOWN",
-  "hasDevice"                  : "UNKNOWN",
-  "hasPinned"                  : "UNKNOWN",
-  "hasManaged"                 : "UNKNOWN",
-  "hasAllocatable"             : "UNKNOWN",
+  "parameter"                  : "UNKNOWN",
+  "pointer"                    : "UNKNOWN",
+  "device"                     : "UNKNOWN",
+  "pinned"                     : "UNKNOWN",
+  "managed"                    : "UNKNOWN",
+  "allocatable"                : "UNKNOWN",
   "declaredOnTarget"           : "UNKNOWN",
   "rank"                       : -1,
   "unspecifiedBounds"          : "UNKNOWN",
@@ -42,7 +42,7 @@ def filterIndexByTag(index,tag,errorHandling=ERROR_HANDLING):
     a certain tag.
     """
     resultSet = [structure for structure in index if structure["tag"] == tag]
-    if len(resultSet) is not 1:
+    if len(resultSet) != 1:
         msg = "'{}' entries found for tag '{}'. Expected to find a single entry.".format(len(resultSet),tag)
         if errorHandling == "strict":
             logging.getLogger("").error(msg)

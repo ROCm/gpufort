@@ -38,6 +38,10 @@ to code formats that are well supported by AMD's ROCm ecosystem.
 The development of `gpufort` is steered by the requirements
 of these applications.
 
+## Installation and usage
+
+Please take a look at the [user guide](https://bookish-adventure-5c5886a5.pages.github.io/).
+
 ## Outlook
 
 One future goal of the project is that both translation 

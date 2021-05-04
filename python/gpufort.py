@@ -238,11 +238,16 @@ def initLogging(inputFilePath):
         print("ERROR: "+msg)
         sys.exit(2)
     os.makedirs(logDir,exist_ok=True)
-    
-    FORMAT = "gpufort:%(levelname)s:{0}: %(message)s".format(inputFilePath)
-    FILE="{0}/log-{1}.log".format(logDir,inputFilePathHash)
-    logging.basicConfig(format=FORMAT,filename=FILE,filemode="w", level=LOG_LEVEL)
    
+    try:
+        FORMAT = "gpufort:%(levelname)s:{0}: %(message)s".format(inputFilePath)
+        FILE="{0}/log-{1}.log".format(logDir,inputFilePathHash)
+        logging.basicConfig(format=FORMAT,filename=FILE,filemode="w", level=LOG_LEVEL)
+    except:
+        msg = "directoy for storing log files '{}' cannot be accessed".format(logDir)
+        print("ERROR: "+msg,file=sys.stderr)
+        sys.exit(2)
+
     logger = logging.getLogger("")
     msg = "input file: {0} (log id: {1})".format(inputFilePath,inputFilePathHash)
     logger.info(msg) ; print(msg)

@@ -20,7 +20,7 @@ program testSaxpy
   
   !$cuf kernel do(1) <<<grid, tBlock>>>
   do i=1,N
-    y(i) = y(i) + a*x(i)
+    y_d(i) = y_d(i) + a*x_d(i)
   end do
 
   y = y_d
@@ -28,4 +28,4 @@ program testSaxpy
   deallocate(x_d,y_d)
 
   write(*,*) 'Max error: ', maxval(abs(y-4.0))
-end program testSaxp
+end program testSaxpy

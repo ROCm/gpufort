@@ -27,6 +27,12 @@ class TTCppDefined(TTNode):
     def fStr(self,hipVar):
         return "( defined({0}) || defined({1}) )".format(self._ppVar,hipVar)
 
+class TTAttributes(TTNode,Attributed):
+    def _assignFields(self,tokens):
+        self._qualifiers, self._rhs = tokens
+    def cStr(self):
+        return ""
+
 class TTCudaKernelCall(TTNode):
     def _assignFields(self,tokens):
         def postprocessDim3(dim3):
@@ -528,6 +534,8 @@ class TTCufCublasCall(TTNode):
 # CUDA Fortran
 cuf_kernel_do.setParseAction(TTCufKernelDo)
 #cufLoopKernel.setParseAction(TTCufKernelDo)
+
+attributes.setParseAction(TTAttributes)
 
 allocateRValue.setParseAction(TTAllocateRValue)
 memCpyValue.setParseAction(TTAllocateRValue)

@@ -76,12 +76,18 @@ def createCodegenContextFromDeclaration(ttdeclaration):
     return context
 
 def changeKind(varContext,kind):
-     fType = varContext["fType"]
-     bpe   = bytes(fType,kind,default=None)
-     varContext["kind"]                 = kind
-     varContext["bytesPerElement"]      = bpe 
-     varContext["cType"]                = convertToCType(fType,kind,"TODO unknown")
-     if varContext["rank"] is 0:
-       varContext["fInterfaceType"] = varContext["cType"]
-     #
-     varContext["totalBytes"] = None if bpe is None else bpe+"*("+varContext["totalCount"]+")"
+    fType = varContext["fType"]
+    bpe   = bytes(fType,kind,default=None)
+    varContext["kind"]                 = kind
+    varContext["bytesPerElement"]      = bpe 
+    varContext["cType"]                = convertToCType(fType,kind,"TODO unknown")
+    if varContext["rank"] is 0:
+      varContext["fInterfaceType"] = varContext["cType"]
+    #
+    varContext["totalBytes"] = None if bpe is None else bpe+"*("+varContext["totalCount"]+")"
+
+def parseAttributes(ttattributes):
+    attribute    = makeFStr(ttattributes._qualifiers[0]).lower()
+    modifiedVars = [makeFStr(var).lower() for var in ttattributes._rhs]
+    return attribute, modifiedVars 
+ 

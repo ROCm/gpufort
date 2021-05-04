@@ -87,53 +87,44 @@ def __parseFile(fileLines,filePath):
     current = root
     currentLine = None
 
+    def createBaseEntry_(typeName,name,tag,filePath)
+        entry = {}
+        entry["type"]                            = typeName
+        entry["name"]                            = name
+        entry["tag"]                             = tag
+        entry["file"]                            = filePath
+        entry["types"]                           = []
+        entry["variables"]                       = []
+        entry["attributes"]                      = []
+        entry["usedModulesOrParentSubprograms"]  = []
+        return entry
+
     def End(tokens):
         nonlocal current
         current = current._parent
     def ModuleStart(tokens):
         nonlocal current
         name = tokens[0]
-        module = {}
-        module["type"]        = "module"
-        module["name"]        = name
-        module["tag"]         = name
-        module["file"]        = filePath
-        module["types"]       = []
-        module["variables"]   = []
-        module["usedModulesOrParentSubprograms"] = []
+        module = createBaseEntry_("module",name,name,filePath)
         root._data.append(module)
         current = __Node("module",data=module,parent=current)
     def ProgramStart(tokens):
         nonlocal current
-        name = tokens[0]
-        program = {}
-        program["type"]        = "program"
-        program["name"]        = name
-        program["tag"]         = name
-        program["file"]        = filePath
-        program["types"]       = []
-        program["variables"]   = []
-        program["usedModulesOrParentSubprograms"] = []
+        name    = tokens[0]
+        program = createBaseEntry_("program",name,name,filePath)
         root._data.append(program)
         current = __Node("program",data=program,parent=current)
     #host|device,name,[args]
     def SubroutineStart(tokens):
         nonlocal current
-        subroutine = {}
-        subroutine["type"] = "subroutine"
-        subroutine["name"] = tokens[1]
+        name = tokens[1]
+        subroutine = createBaseEntry_("subroutine",name,name,filePath)
         if current != root:
-            subroutine["tag"] = current._data["name"] + ":" + tokens[1]
-        else:
-            subroutine["tag"] = tokens[1]
+            subroutine["tag"] = current._data["name"] + ":" + name
         subroutine["hasHost"]     = "host" in tokens[0]
         subroutine["hasDevice"]   = "device" in tokens[0]
         subroutine["hasGlobal"]   = "global" in tokens[0]
         subroutine["dummyArgs"]   = list(tokens[2])
-        subroutine["file"]        = filePath
-        subroutine["types"]       = []
-        subroutine["variables"]   = []
-        subroutine["usedModulesOrParentSubprograms"] = []
         if current._name not in ["root","module"]:
             subroutine["usedModulesOrParentSubprograms"].append({ "name": current._data["name"], "only": []})
         root._data.append(subroutine)
@@ -141,22 +132,15 @@ def __parseFile(fileLines,filePath):
     #host|device,name,[args],result
     def FunctionStart(tokens):
         nonlocal current
-        function = {}
-        function["type"]        = "function"
-        function["name"]        = tokens[1]
+        name = tokens[1]
+        function = createBaseEntry_("function",name,name,filePath)
         if current != root:
-            function["tag"] = current._data["name"] + ":" + tokens[1]
-        else:
-            function["tag"] = tokens[1]
+            function["tag"] = current._data["name"] + ":" + name
         function["hasHost"]     = "host" in tokens[0]
         function["hasDevice"]   = "device" in tokens[0]
         function["hasGlobal"]   = "global" in tokens[0]
         function["dummyArgs"]   = list(tokens[2])
-        function["resultName"]  = tokens[1] if tokens[3] is None else tokens[3]
-        function["file"]        = filePath
-        function["types"]       = []
-        function["variables"]   = []
-        function["usedModulesOrParentSubprograms"] = []
+        function["resultName"]  = name if tokens[3] is None else tokens[3]
         if current._name not in ["root","module"]:
             function["usedModulesOrParentSubprograms"].append({ "name": current._data["name"], "only": []})
         root._data.append(function)
@@ -177,6 +161,20 @@ def __parseFile(fileLines,filePath):
         current._data["variables"] +=\
           translator.createCodegenContextFromDeclaration(\
             translator.declaration.parseString(currentLine)[0])
+    def Attributes(s,loc,tokens):
+        """
+        Add attributes to previously declared variables in same scope.
+        Does not modify scope of other variables.
+        """
+        # TODO investigate if target of attribute must be in same scope or not!
+        nonlocal current
+        nonlocal currentLine
+        #print(currentLine)
+        attribute, modifiedVars = 
+            translator.parseAttributes(translator.attributes.parseString(currentLine)[0])
+        for varContext in current._data["variables"]:
+            if varContext["name"] in modifiedVars and attribute in varContext:
+                varContext[attribute] = True
     # 'use kinds, only: dp, sp => sp2' --> [None, 'kinds', [['dp', None], ['sp', 'sp2']]]
     def Use(tokens):
         nonlocal current
@@ -200,6 +198,7 @@ def __parseFile(fileLines,filePath):
 
     declarationLhs.setParseAction(Declaration)
     use.setParseAction(Use)
+    attributes.setParseAction(Attributes)
     # TODO openacc pragmas
 
     def tryToParseString(expressionName,expression):
@@ -228,8 +227,8 @@ def __resolveDependencies_body(i,index):
             if usedModule is not None:
                 ascend(usedModule)
                 if len(only):
-                    variables = []
-                    types     = []
+                    variables  = []
+                    types      = []
                     for var in usedModule["variables"]:
                         if var["name"] in only:
                             var["name"] = only[var["name"]]

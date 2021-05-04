@@ -1005,26 +1005,6 @@ class TTDeclaration(TTNode,Attributed):
         else:
             return result.rstrip(",")
 
-class TTAttributes(TTNode,Attributed):
-    def _assignFields(self,tokens):
-        #print(tokens)
-        self._qualifiers, self._rhs = tokens
-        self._ignore = False
-        #print(self._qualifiers)
-        #print(self._rhs)
-    def variableNames(self):
-        """
-        The names of any variables defined by this declaration.
-        """
-        return [variable.name() for variable in self._rhs]
-    def cStr(self):
-        if not self._ignore:
-            #return "/*{0}: {0}*/\n".format(UNCONVERTED,str(self._match))
-            #return "/*{0}: {1}*/\n".format(UNCONVERTED,self._match)
-            return ""
-        else:
-            return ""
-
 class TTStatement(TTNode):
     """
     Mainly used for searching expressions and replacing them in the translator AST.
@@ -1180,7 +1160,6 @@ power.setParseAction(TTPower)
 assignment.setParseAction(TTAssignment)
 matrixAssignment.setParseAction(TTMatrixAssignment)
 complexAssignment.setParseAction(TTComplexAssignment)
-attributes.setParseAction(TTAttributes)
 
 whileLoop.setParseAction(TTWhile)
 singleLineIf.setParseAction(TTSingleLineIf)

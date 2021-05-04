@@ -57,10 +57,13 @@ class TTCudaKernelCall(TTNode):
     def blockFStr(self):
         return makeFStr(self._block)
     def useDefaultStream(self):
-        return self._stream == "0"
+        try:
+            return int(self._stream) < 1
+        except:
+            return False
     def streamFStr(self):
         if self.useDefaultStream():
-            return "hipDefaultStream"
+            return "c_null_ptr"
         else:
             return makeFStr(self._stream)
     def sharedMemFStr(self):

@@ -86,6 +86,11 @@ def parseFile(fortranFilePath):
     currentLines  = []
     directiveNo   = 0
 
+    def appendIfNotRecording(new):
+        nonlocal current
+        nonlocal keepRecording 
+        if not keepRecording:
+            current.append(new)
     def descend(new):
         nonlocal current
         current.append(new)
@@ -177,7 +182,7 @@ def parseFile(fortranFilePath):
         nonlocal currentLines
         new = STDeclaration(parent=current,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
-        current.append(new)
+        appendIfNotRecording(new)
     def Attributes(tokens):
         nonlocal current
         nonlocal translationEnabled
@@ -193,7 +198,7 @@ def parseFile(fortranFilePath):
         new = STUseStatement(parent=current,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         new._name = translator.makeFStr(tokens[1]) # just get the name, ignore specific includes
-        current.append(new)
+        appendIfNotRecording(new)
     def PlaceHolder(tokens):
         nonlocal current
         nonlocal translationEnabled
@@ -201,7 +206,7 @@ def parseFile(fortranFilePath):
         nonlocal currentLines
         new = STPlaceHolder(current,currentLineno,currentLines)
         new._ignoreInS2STranslation = not translationEnabled
-        current.append(new)
+        appendIfNotRecording(new)
     def NonZeroCheck(tokens):
         nonlocal current
         nonlocal translationEnabled
@@ -209,7 +214,7 @@ def parseFile(fortranFilePath):
         nonlocal currentLines
         new=STNonZeroCheck(parent=current,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
-        current.append(new)
+        appendIfNotRecording(new)
     def Allocated(tokens):
         nonlocal current
         nonlocal translationEnabled
@@ -217,7 +222,7 @@ def parseFile(fortranFilePath):
         nonlocal currentLines
         new=STAllocated(parent=current,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
-        current.append(new)
+        appendIfNotRecording(new)
     def Allocate(tokens):
         nonlocal current
         nonlocal translationEnabled
@@ -225,7 +230,7 @@ def parseFile(fortranFilePath):
         nonlocal currentLines
         new=STAllocate(parent=current,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
-        current.append(new)
+        appendIfNotRecording(new)
     def Deallocate(tokens):
         nonlocal current
         nonlocal translationEnabled
@@ -234,7 +239,7 @@ def parseFile(fortranFilePath):
         # TODO filter variable, replace with hipFree
         new = STDeallocate(parent=current,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
-        current.append(new)
+        appendIfNotRecording(new)
     def Memcpy(tokens):
         nonlocal current
         nonlocal translationEnabled
@@ -242,7 +247,7 @@ def parseFile(fortranFilePath):
         nonlocal currentLines
         new = STMemcpy(parent=current,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
-        current.append(new)
+        appendIfNotRecording(new)
     def CudaLibCall(tokens):
         #TODO scan for cudaMemcpy calls
         nonlocal current
@@ -258,7 +263,7 @@ def parseFile(fortranFilePath):
             #print("finishesOnFirstLine={}".format(finishesOnFirstLine))
             assert type(new._parent) in [STModule,STFunction,STSubroutine,STProgram], type(new._parent)
             new._lines = currentLines
-            current.append(new)
+            appendIfNotRecording(new)
     def CudaKernelCall(tokens):
         nonlocal current
         nonlocal translationEnabled
@@ -269,7 +274,7 @@ def parseFile(fortranFilePath):
         new = STCudaKernelCall(parent=current,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         new._lines = currentLines
-        current.append(new)
+        appendIfNotRecording(new)
     def AccDirective(tokens):
         nonlocal current
         nonlocal translationEnabled
@@ -302,7 +307,7 @@ def parseFile(fortranFilePath):
             #print("descending into kernels or parallel construct")
         else:
            # append new directive
-           current.append(new)
+           appendIfNotRecording(new)
     def CufLoopKernel(tokens):
         nonlocal doLoopCtr
         nonlocal current
@@ -329,7 +334,7 @@ def parseFile(fortranFilePath):
             if not lvalue is None and lvalue.hasMatrixRangeArgs():
                 new  = STAccLoopKernel(parent=current,lineno=currentLineno,lines=currentLines)
                 new._ignoreInS2STranslation = not translationEnabled
-                current.append(new)
+                appendIfNotRecording(new)
     def GpufortControl(tokens):
         nonlocal singleLineStatement
         nonlocal translationEnabled

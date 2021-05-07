@@ -254,7 +254,7 @@ use = USE + Optional(COMMA + INTRINSIC,default=None) + identifier + Optional(COM
 implicit = IMPLICIT + NONE # TODO no complete description
 subroutineBody = Group(ZeroOrMore(use | implicit | declaration | attributes | block))
 
-subroutineStart = Optional(ATTRIBUTES + LPAR + identifier + RPAR,default="host") + SUBROUTINE + identifier +\
+subroutineStart = Optional(ATTRIBUTES + LPAR + delimitedList(identifier) + RPAR,default="host") + SUBROUTINE + identifier +\
         Optional(LPAR + Group(delimitedList(identifier)) + RPAR, default=[]) # emits 3 tokens -> *,*,[*]
 subroutineEnd = END + ~(NONSTRUCTURE|FUNCTION) + Optional(SUBROUTINE) + Optional(LPAR + identifier.suppress() + RPAR)
 subroutine = subroutineStart + subroutineBody + subroutineEnd

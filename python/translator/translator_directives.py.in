@@ -531,48 +531,6 @@ class TTLoopKernel(TTNode,IComputeConstruct):
 annotatedDoLoop.setParseAction(TTDoLoop)
 loopKernel.setParseAction(TTLoopKernel)
 
-# TODO parsing and translation is similar but analysis differs between the different kernel
-# types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)
-# while they are specified with ACC,OMP.
-def parseLoopKernel(fortranSnippet,indexHints=[],maxRecursions=30):
-    """
-    Return a csnippet equivalent to the original Fortran code.
-    """
-    global KEYWORDS 
-
-    recursionsLeft=0
-    def simplifyLoopKernelUntilItCanGetParsed(fortranSnippet,recursionsToGo):
-        nonlocal recursionsLeft
-        recursionsLeft = recursionsToGo
-        try:
-            return loopKernel.parseString(fortranSnippet)[0]
-        except ParseBaseException as pbe:
-            if recursionsToGo <= 0:
-                raise pbe
-            else:
-                lineno = pbe.__getattr__("lineno")
-                lines = fortranSnippet.split("\n")
-                lines[lineno-1] = "! TODO could not parse: {}".format(lines[lineno-1])
-                modifiedFortranSnippet = "\n".join(lines)
-                #print(modifiedFortranSnippet)
-                return simplifyLoopKernelUntilItCanGetParsed(modifiedFortranSnippet,recursionsToGo-1)
-        except Exception as e:
-            raise e        
-   
-    fortranSnippet = prepareFortranSnippet(fortranSnippet)
-    try:
-        computeConstruct = simplifyLoopKernelUntilItCanGetParsed(fortranSnippet,maxRecursions)
-        computeConstruct.setIndexHints(indexHints)
-        if recursionsLeft < maxRecursions:
-            body = "\n".join(fortranSnippet.split("\n")[1:])
-        return computeConstruct
-    except Exception as e:
-        #raise e
-        logger = logging.getLogger('') 
-        logger.error("failed to convert kernel:\n{}".format(fortranSnippet))
-        logger.error(str(e))
-        return EmptyComputeConstruct(fsnippet)
-
 def formatDirective(directiveLine,maxLineWidth):
     result   = ""
     line     = ""

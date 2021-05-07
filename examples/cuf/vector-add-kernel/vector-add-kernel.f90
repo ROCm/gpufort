@@ -35,7 +35,7 @@ contains
     real :: x(N), y(N), a
     integer :: N
     integer :: i
-    i = treadidx%x
+    i = threadidx%x
     if (i < N) then
       y_d(i) = y_d(i) + a*x_d(i)
     endif

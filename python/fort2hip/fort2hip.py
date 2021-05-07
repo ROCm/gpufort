@@ -107,6 +107,8 @@ def deriveKernelArguments(globalIndex, identifiers, localVars, loopVars, whiteLi
     localCpuRoutineArgs = []
     inputArrays         = []
 
+    print(whiteList)
+
     def includeArgument(name):
         nameLower = name.lower().strip()
         if len(whiteList):
@@ -124,6 +126,7 @@ def deriveKernelArguments(globalIndex, identifiers, localVars, loopVars, whiteLi
             #foundDeclaration = name in loopVars # TODO rename loop variables to local variables; this way we can filter out local subroutine variables
             indexedVar,discovered = indexertools.searchIndexForVariable(globalIndex,name) # TODO treat implicit here
             argName = name
+            print(argName)
             if not discovered:
                  arg = initArg(name,"TODO declaration not found","",[],"TODO declaration not found")
                  unknownArgs.append(arg)
@@ -368,6 +371,8 @@ def updateContextFromAcceleratorRoutines(acceleratorRoutines,globalIndex,hipCont
              identifiers.append(indexedVar["name"])
         print(identifiers)
 
+        print(filteredIndex[0]["variables"][7])
+
         kernelArgs, cKernelLocalVars, macros, inputArrays, localCpuRoutineArgs =\
           deriveKernelArguments(filteredIndex,identifiers,localLValues,loopVars,argNames,False,deviceptrNames=[])
         #print(argNames)
@@ -393,6 +398,8 @@ def updateContextFromAcceleratorRoutines(acceleratorRoutines,globalIndex,hipCont
             return lineno
         fBody = "".join(stroutine._lines[beginOfBody(stroutine._lines):endOfBody(stroutine._lines)])
         fBody = utils.prettifyFCode(fBody)
+
+        print(kernelArgs)
 
         # C routine and C stroutine launcher
         hipKernelDict = {}

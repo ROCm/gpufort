@@ -225,7 +225,8 @@ class TTRValue(TTNode,IValue):
         result = self._sign + makeCStr(self._value)
         if len(self._reductionIndex):
             result += "[{idx}]".format(idx=self._reductionIndex) 
-        return result
+        return result.lower()
+
 class TTLValue(TTNode,IValue):
     def _assignFields(self,tokens):
         self._value          = tokens[0]
@@ -1091,14 +1092,14 @@ class TTSubroutine(TTNode):
         self._body      = tokens[3]
     def nameCStr(self):
         """
-        Returns the name of the subroutine.
+        Returns the name of the subroutine in lower case.
         """
-        return makeCStr(self._name) 
+        return makeCStr(self._name).lower() 
     def argNamesCStr(self):
         """
-        Returns the arguments of the subroutine.
+        Returns the arguments of the subroutine in lower case.
         """
-        return [makeCStr(ident) for ident in self._args]
+        return [makeCStr(ident).lower() for ident in self._args]
     def bodyCStr(self,ignoreDeclarationsAttributes=False):
         """
         Returns the body of the subroutine.

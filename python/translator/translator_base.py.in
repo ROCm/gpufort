@@ -88,7 +88,7 @@ def makeCStr(obj):
     if obj is None:
       return ""
     try:
-        return obj.cStr()
+        return obj.cStr().lower()
     except Exception as e:
         if isinstance(obj,ParseResults) or\
            isinstance(obj,list):
@@ -97,7 +97,7 @@ def makeCStr(obj):
                 result += makeCStr(child)
             return result
         elif type(obj) in [bool,int,float,str]:
-            return str(obj)
+            return str(obj).lower()
         else:
             raise e
 

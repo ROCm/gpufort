@@ -239,8 +239,12 @@ def __resolveDependencies_body(i,index):
                 else:
                     variables = usedModule["variables"]
                     types     = usedModule["types"]
-                index[i]["variables"] = variables + index[i]["variables"]
-                index[i]["types"]     = types     + index[i]["types"]  
+                localVarNames  = [var["name"] for var in index[i]["variables"]]
+                localTypeNames = [typ["name"] for typ in index[i]["types"]]
+                index[i]["variables"] = [var for var in variables if var["name"] not in localVarNames]  +\
+                   index[i]["variables"]
+                index[i]["types"]     = [typ for typ in types     if typ["type"] not in localTypeNames] +\
+                   index[i]["types"]  
     ascend(index[i])
     # resolve dependencies
     return i,index[i]

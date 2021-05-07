@@ -15,15 +15,11 @@ import scanner.scanner as scanner
 fort2hipDir = os.path.dirname(__file__)
 exec(open("{0}/fort2hip_options.py.in".format(fort2hipDir)).read())
 
-# must be synced with grammar
-CLAUSE_NOT_FOUND           = -2
-CLAUSE_VALUE_NOT_SPECIFIED = -1
-
 def convertDim3(dim3,dimensions,doFilter=True):
      result = []
      specified = dim3
      if doFilter:
-         specified = [ x for x in dim3 if x not in [CLAUSE_NOT_FOUND,CLAUSE_VALUE_NOT_SPECIFIED]]
+         specified = [ x for x in dim3 if type(x) != int or x < 1 ]
      for i,value in enumerate(specified):
           if i >= dimensions:
               break
@@ -369,7 +365,8 @@ def updateContextFromAcceleratorRoutines(acceleratorRoutines,globalIndex,hipCont
 
         identifiers = [] # TODO identifiers not the best name # TODO this is redundant with the ignore list
         for indexedVar in filteredIndex[0]["variables"]: # TODO not working
-             identifiers += indexedVar["name"]
+             identifiers.append(indexedVar["name"])
+        print(identifiers)
 
         kernelArgs, cKernelLocalVars, macros, inputArrays, localCpuRoutineArgs =\
           deriveKernelArguments(filteredIndex,identifiers,localLValues,loopVars,argNames,False,deviceptrNames=[])

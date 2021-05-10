@@ -53,14 +53,31 @@ We are currently investigating what workarounds could be automatically applied b
 that should be translated with GPUFORT must be aware of the above limitation and employ manual
 workarounds.
 
+## Currently supported features:
+
+* ACC:
+   * ACC2OMP & ACC2HIP
+   * Translation of data directives: `!$acc enter data`, `!$acc exit data`, `!$acc data`
+   * Synchronization directives: `!$acc wait, !$acc update self/host/device`
+   * Kernel and loop constructs `!$acc kernels`, `!$acc kernels loop`, `!$acc parallel`, `!$acc parallel loop`, `!$acc loop`
+* CUF:
+   * CUF2HIP
+     * Majority of CUDA libary functionality via HIPFORT
+     * Kernel and loop constructs: `!$cuf kernel do`
+     * Overloaded intrinsics: `allocate`, `allocated`, `deallocate`, `deallocated`, `=`
+
+(List is not commplete ...)
+
 ## Planned features
 
 * Expected 06/01/2021:
   * ACC:
-    * Initial support of `!$acc routine`
-    * Initial support of `!$acc declare` 
+    * Initial support for `!$acc routine`
+    * Initial support for `!$acc declare` 
+    * Improved support for `!$acc kernels (loop)` 
+    * Improved support for`!$acc parallel (loop)` 
   * CUF:
-    * Initial support of CUDA Fortran `attributes(global)`, `attributes(host,device)`, `attributes(device)` procedures
+    * Initial support for CUDA Fortran `attributes(global)`, `attributes(host,device)`, `attributes(device)` procedures
 
 ## Installation and usage
 

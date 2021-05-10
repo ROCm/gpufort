@@ -1,4 +1,4 @@
-# gpufort
+# GPUFORT
 
 This project develops a source to source translation tool that is able to convert:
 
@@ -18,25 +18,49 @@ An overview of the different translation processes is shown below:
 
 ## Limitations
 
-* `gpufort` is not a compiler (yet)
+* GPUFORT is not a compiler (yet)
 
-`gpufort` is not intended to be a compiler.
+GPUFORT is not intended to be a compiler.
 It's main purpose is to be a translator that allows
 an experienced user to fix and tune the outcomes
 of the translation process. 
-However, we believe `gpufort` can develop into an 
+However, we believe GPUFORT can develop into an 
 early-outlining compiler if enough effort 
 is put into the project.
 Given that all code and especially the grammar is
-written in python3, `gpufort` can be developed at a quick 
+written in python3, GPUFORT can be developed at a quick 
 pace.
 
-* `gpufort` does not implement the full OpenACC standard (yet)
+* GPUFORT does not implement the full OpenACC standard (yet)
 
-`gpufort` was developed to translate a number of HPC apps
+GPUFORT was developed to translate a number of HPC apps
 to code formats that are well supported by AMD's ROCm ecosystem.
-The development of `gpufort` is steered by the requirements
+The development of GPUFORT is steered by the requirements
 of these applications.
+
+### Fortran-C Interoperablity Limitations
+
+GPUFORT relies on the `iso_c_binding` interoperability mechanisms that were added to the Fortran language with 
+the Fortran 2003 standard. Please be aware that the interoperability of C structs and Fortran derived types is quite limited
+till this date. 
+
+* "Derived types with the C binding attribute shall not have the sequence attribute, type parameters, the extends attribute, nor type-bound procedures."
+* "Every component must be of interoperable type and kind and may not have the **pointer** or **allocatable** attribute. The names of the components are irrelevant for interoperability."
+
+(source: https://gcc.gnu.org/onlinedocs/gfortran/Derived-Types-and-struct.html)
+
+We are currently investigating what workarounds could be automatically applied but currently codes
+that should be translated with GPUFORT must be aware of the above limitation and employ manual
+workarounds.
+
+## Planned features
+
+* Expected 06/01/2021:
+  * ACC:
+    * Initial support of `!$acc routine`
+    * Initial support of `!$acc declare` 
+  * CUF:
+    * Initial support of CUDA Fortran `attributes(global)`, `attributes(host,device)`, `attributes(device)` procedures
 
 ## Installation and usage
 
@@ -53,7 +77,7 @@ directives should be translated to OpenMP.
 
 ### Key ingredient: pyparsing grammars and parse actions
 
-The fundamental ingredient of `gpufort` is its pyparsing grammar that (currently) covers a subset of the Fortran
+The fundamental ingredient of GPUFORT is its pyparsing grammar that (currently) covers a subset of the Fortran
 language that plays a role in computations. This grammar is extended by additional grammar that describes
 the structure of CUDA Fortran and OpenACC directives.
 

@@ -120,9 +120,7 @@ def __parseFile(fileLines,filePath):
         subroutine = createBaseEntry_("subroutine",name,name,filePath)
         if current != root:
             subroutine["tag"] = current._data["name"] + ":" + name
-        subroutine["host"]     = "host" in tokens[0]
-        subroutine["device"]   = "device" in tokens[0]
-        subroutine["global"]   = "global" in tokens[0]
+        subroutine["attributes"]  = [q.lower() for q in tokens[0]]
         subroutine["dummyArgs"]   = list(tokens[2])
         if current._name not in ["root","module"]:
             subroutine["usedModulesOrParentSubprograms"].append({ "name": current._data["name"], "only": []})
@@ -135,9 +133,7 @@ def __parseFile(fileLines,filePath):
         function = createBaseEntry_("function",name,name,filePath)
         if current != root:
             function["tag"] = current._data["name"] + ":" + name
-        function["host"]     = "host" in tokens[0]
-        function["device"]   = "device" in tokens[0]
-        function["global"]   = "global" in tokens[0]
+        function["attributes"]  = [q.lower() for q in tokens[0]]
         function["dummyArgs"]   = list(tokens[2])
         function["resultName"]  = name if tokens[3] is None else tokens[3]
         if current._name not in ["root","module"]:
@@ -158,7 +154,7 @@ def __parseFile(fileLines,filePath):
         nonlocal currentLine
         #print(currentLine)
         current._data["variables"] +=\
-          translator.createCodegenContextFromDeclaration(\
+          translator.createIndexRecordsFromDeclaration(\
             translator.declaration.parseString(currentLine)[0])
     def Attributes(s,loc,tokens):
         """

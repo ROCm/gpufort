@@ -72,16 +72,16 @@ def handleIncludeStatements(fortranFilePath,lines):
     return result
 
 # Pyparsing Actions that create scanner tree (ST)
-def parseFile(fortranFilePath):
+def parseFile(fortranFilePath,index):
     """
     Generate an object tree (OT). 
     """
     translationEnabled = TRANSLATION_ENABLED_BY_DEFAULT
     
     current=STRoot()
-    doLoopCtr = 0     
+    doLoopCtr     = 0     
     keepRecording = False
-    currentFile = str(fortranFilePath)
+    currentFile   = str(fortranFilePath)
     currentLineno = -1
     currentLines  = []
     directiveNo   = 0
@@ -122,27 +122,27 @@ def parseFile(fortranFilePath):
         nonlocal current
         nonlocal translationEnabled
         nonlocal keepRecording
-        new = STFunction(qualifier=tokens[0],name=tokens[1],dummyArgs=tokens[2],\
-                parent=current,lineno=currentLineno,lines=currentLines)
+        nonlocal index
+        new = STProcedure(name=tokens[1],index,\
+          parent=current,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
-        if new.qualifier.lower() in ["global","device","host,device"]:
-            keepRecording = True
+        keepRecording = new.keepRecording()
         descend(new)
     def Subroutine_visit(tokens):
         nonlocal current
         nonlocal translationEnabled
         nonlocal keepRecording
-        new = STSubroutine(qualifier=tokens[0],name=tokens[1],dummyArgs=tokens[2],\
-                parent=current,lineno=currentLineno,lines=currentLines)
+        nonlocal index
+        new = STProcedure(name=tokens[1],index,\
+          parent=current,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
-        if new._qualifier.lower() in ["global","device"]:
-            keepRecording = True
+        keepRecording = new.keepRecording()
         descend(new)
     def Structure_leave(tokens):
         nonlocal current
         nonlocal keepRecording
-        assert type(current) in [STModule,STProgram,STSubroutine,STFunction], "In file {}: line {}: type is {}".format(currentFile, currentLineno, type(current))
-        if type(current) in [STSubroutine,STFunction] and current._qualifier.lower() in ["global","device"]:
+        assert type(current) in [STModule,STProgram,STProcedure], "In file {}: line {}: type is {}".format(currentFile, currentLineno, type(current))
+        if type(current) is STProcedure and current._qualifier.lower() in ["global","device"]:
             current._lines += currentLines
             keepRecording = False
         ascend()
@@ -261,7 +261,7 @@ def parseFile(fortranFilePath):
             new._ignoreInS2STranslation = not translationEnabled
             new.cudaApi  = cudaApi
             #print("finishesOnFirstLine={}".format(finishesOnFirstLine))
-            assert type(new._parent) in [STModule,STFunction,STSubroutine,STProgram], type(new._parent)
+            assert type(new._parent) in [STModule,STProcedure,STProgram], type(new._parent)
             new._lines = currentLines
             appendIfNotRecording(new)
     def CudaKernelCall(tokens):
@@ -270,7 +270,7 @@ def parseFile(fortranFilePath):
         nonlocal currentLines
         nonlocal keepRecording
         kernelName, kernelLaunchArgs, args, finishesOnFirstLine = tokens 
-        assert type(current) in [STModule,STFunction,STSubroutine,STProgram], "type is: "+str(type(current))
+        assert type(current) in [STModule,STProcedure,STProgram], "type is: "+str(type(current))
         new = STCudaKernelCall(parent=current,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         new._lines = currentLines
@@ -529,7 +529,7 @@ def postprocess(stree,hipModuleName,index):
         # insert use kernel statements at appropriate point
         def isLoopKernel(child):
             return isinstance(child,STLoopKernel) or\
-                   (type(child) is STSubroutine and child.isAcceleratorRoutine())
+                   (type(child) is STProcedure and child.isKernelSubroutine())
         kernels = stree.findAll(filter=isLoopKernel, recursively=True)
         for kernel in kernels:
             if "hip" in DESTINATION_DIALECT or\

@@ -95,7 +95,7 @@
   */
 {{kernel.interfaceComment | indent(2, True)}}
 
-__global__ void {{kernel.launchBounds}} {{krnlPrefix}}({{kernel.kernelArgs | join(",")}}) {
+{{kernel.modifier}} {{kernel.returnType}} {{kernel.launchBounds}} {{krnlPrefix}}({{kernel.kernelArgs | join(",")}}) {
 {% for def in kernel.macros %}{{def.expr}}
 {% endfor %}
 {% for var in kernel.kernelLocalVars %}{{var | indent(2, True)}};
@@ -104,6 +104,7 @@ __global__ void {{kernel.launchBounds}} {{krnlPrefix}}({{kernel.kernelArgs | joi
 {{kernel.cBody | indent(2, True)}}
 }
 
+{% if kernel.generateLauncher -%}
 extern "C" void {{ifacePrefix}}(dim3* grid, dim3* block, const int sharedMem, hipStream_t stream,{{kernel.interfaceArgs | join(",")}}) {
 {{ reductions_prepare(kernel,"*") }}
   #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{krnlPrefix}})
@@ -196,7 +197,7 @@ extern "C" void {{ifacePrefix}}_cpu(const int sharedMem, hipStream_t stream,{{ke
   {{ print_array(krnlPrefix+":cpu","out","false","true",array.name,array.rank) }}
   {% endfor %}
   #endif
-}
+}{% endif %}
 // END {{krnlPrefix}}
 
 {% endfor %}{# kernels #}

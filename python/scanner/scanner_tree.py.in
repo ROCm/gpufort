@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+pAttributes = re.compile(r"attributes\s*\(\s*\w+\s*(,\s*\w+)?\s*\)\s*")
+
 def removeTypePrefix(varName):
     return varName.split("%")[-1]
 
@@ -217,37 +219,58 @@ class STPlaceHolder(STNode):
                (len(self._preamble) or len(self._epilog))
 
 class STProcedure(STNode,Tagged):
-    def __init__(self,qualifier,name,dummyArgs,parent,lineno,lines):
+    def __init__(self,name,index,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
-        self._qualifier = qualifier
-        self._name = name
-        self._dummyArgs = dummyArgs
-        self._lines = []
-    def dummyArgumentNames(self):
+        self._name        = name
+        # check attributes
+        self._indexRecord = indexertools.filterIndexByTag(index,self.tag())[0]
+        if self._indexRecord == indexertools.EMPTY:
+            msg = "scanner: could not find index entry for procedure with tag '"+self.tag()+"'"
+            logging.getLogger("").error(msg)
+            print("ERROR: " + msg, file=sys.stderr)
+            sys.exit(SCANNER_ERROR_CODE)
+    def hasAttribute(self,attribute):
+        return attribute in self._indexRecord["attributes"]
+    def mustBeAvailableOnDevice(self):
+        return self.hasAttribute("device") or
+               self.hasAttribute("global")
+    def __mustBeAvailableOnHost(self):
+        return not len(self._indexRecord["attributes"]) or\
+               "host" in self._indexRecord["attributes"]
+    def __attributesPresent(self):
+        return len(self._indexRecord["attributes"])
+    def keepRecording(self):
         """
-        :return: the list of procedure arguments.
+        No recording if the function needs to be kept only on the host.
         """
-        return self._dummyArgs
+        return self.__mustBeAvailableOnDevice(self._indexRecord)
+    def considerInS2STranslation(self,index=[]):
+        return self.__attributesPresent() or
+               self.__mustBeAvailableOnDevice()
+    def transformFSnippet(self,fSnippet,index=[]):
+        """
+        Treats CUF and OpenACC subroutines/functions that carry CUF-specific attributes
+        or require a device version as specified in a directive.
 
-class STSubroutine(STProcedure):
-    def isAcceleratorRoutine(self):
-        for keyword in ["device","global"]:
-             if keyword in self._qualifier.lower():
-                 return True
-        return False
-    def declarationsInBody(self):
-        return self.findAll(filter=lambda child : type(child) is STDeclaration, recursively=False)
-    def considerInS2STranslation(self,indexHints=[]):
-        return STNode.considerInS2STranslation(self) and self.isAcceleratorRoutine()
-    def transformFSnippet(self,fSnippet,indexHints=[]):
-        indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
-        return "{0}! extracted to HIP C++ file".format(indent), True
-    def gpufortFStr(self,indexHints=[]):
+        :note: Removes 'attributes(...)' objects from the procedure header
+        when encountering a CUF device procedure that
+        needs to be kept on the host too.
+        """
+        attributesPresent       = self.__attributesPresent()
+        mustBeAvailableOnDevice = self.__mustBeAvailableOnDevice()
+        mustBeAvailableOnHost   = self.__mustBeAvailableOnHost()
+
+        original = "".join(self._lines)
+        if attributesPresent: # CUF case
+             if mustBeAvailableOnHost:
+                 return pAttributes.sub("", original, flags=re.IGNORECASE), True
+             elif mustBeAvailableOnDevice: # and not mustBeAvailableOnHost
+                 indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
+                 return "{0}! extracted to HIP C++ file".format(indent), True
+        else: 
+                 return original, False
+    def gpufortFStr(self,index=[]):
         return self.transformFSnippet("")
-
-class STFunction(STProcedure):
-    def considerInS2STranslation(self,indexHints=[]):
-        return False
 
 class STDirective(STNode):
     def __init__(self,parent,lineno,lines,directiveNo,sentinel="!$cuf"):
@@ -332,7 +355,7 @@ class STDeclaration(STNode):
         self._ttdeclaration   = translator.declaration.parseString(self._lines[0])[0]
         self._vars            = [name.lower() for name in self._ttdeclaration.variableNames()]
     def createCodegenContext(self):
-        return translator.createCodegenContextFromDeclaration(self._ttdeclaration)
+        return translator.createIndexRecordsFromDeclaration(self._ttdeclaration)
     def considerInS2STranslation(self,indexHints=[]):
         interestingQualifiers = ["device","pinned","managed"]
         if not self._ignoreInS2STranslation:

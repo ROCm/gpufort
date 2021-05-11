@@ -9,6 +9,7 @@ OPTCOMMA = Optional(COMMA)
 CALL,ATTRIBUTES,LEN,KIND = makeCaselessLiteral("call,attributes,len,kind",suppress=True)
 
 # basic
+
 identifier = pyparsing_common.identifier.copy()
 integer    = pyparsing_common.integer.copy()
 #number     = Regex(r"[+-]?(?:\.|\d+\.?)\d*([dDeE][+-]?\d+)?(_\w+)?\b") # \b necessary?
@@ -252,21 +253,26 @@ NONSTRUCTURE = DO|IF|SELECT|WHERE|FORALL|FOREACH|TYPE|INTERFACE
 only = Group(identifier + Optional(PEQ + identifier,default=None))
 use = USE + Optional(COMMA + INTRINSIC,default=None) + identifier + Optional(COMMA + ONLY + singleColon.suppress() + Group(delimitedList(only)),default=[]) # emits 3 tokens; [*,*,[*]] 
 implicit = IMPLICIT + NONE # TODO no complete description
-subroutineBody = Group(ZeroOrMore(use | implicit | declaration | attributes | block))
 
-subroutineStart = Optional(ATTRIBUTES + LPAR + delimitedList(identifier) + RPAR,default="host") + SUBROUTINE + identifier +\
-        Optional(LPAR + Group(delimitedList(identifier)) + RPAR, default=[]) # emits 3 tokens -> *,*,[*]
+declarationSectionEntry = use | implicit | declaration | attributes 
+procedureBody = Group(ZeroOrMore(declarationSectionEntry | block))
+
+rawIdentifier     = pyparsing_common.identifier.copy() # produces a string instead of a identifier translator tree node
+rawIdentifierList = delimitedList(rawIdentifier) 
+
+subroutineStart = Optional(ATTRIBUTES + LPAR + rawIdentifierList + RPAR,default=[]) + SUBROUTINE + identifier +\
+        Optional(LPAR + Group(rawIdentifierList) + RPAR, default=[]) # emits 3 tokens -> *,*,[*]
 subroutineEnd = END + ~(NONSTRUCTURE|FUNCTION) + Optional(SUBROUTINE) + Optional(LPAR + identifier.suppress() + RPAR)
-subroutine = subroutineStart + subroutineBody + subroutineEnd
+#subroutine = subroutineStart + procedureBody + subroutineEnd
 
 PURE,RECURSIVE,RESULT = makeCaselessLiteral("pure,recursive,result",suppress=True)
 #funtionResult = function func(i) result(j)
-functionStart = Optional(PURE | RECURSIVE) + Optional(ATTRIBUTES + LPAR + identifier + RPAR,default="host") +\
+functionStart = Optional(PURE | RECURSIVE) + Optional(ATTRIBUTES + LPAR + rawIdentifierList + RPAR,default=[]) +\
                 Optional(datatype).suppress() +\
-                FUNCTION + identifier + Optional(LPAR + Group(delimitedList(identifier)) + RPAR, default=[]) +\
+                FUNCTION + identifier + Optional(LPAR + Group(rawIdentifierList) + RPAR, default=[]) +\
                 Optional(RESULT + LPAR + identifier + RPAR,default=None) # ! emits 4  tokens -> *,*,[*],*
 functionEnd = END + ~(NONSTRUCTURE|SUBROUTINE) + Optional(FUNCTION) + Optional(identifier.suppress()) # ! emits 0 tokens
-function = functionStart + subroutineBody + functionEnd
+#function = functionStart + procedureBody + functionEnd
 
 ###
 ###

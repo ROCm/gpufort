@@ -287,16 +287,10 @@ if __name__ == "__main__":
     if args.destinationDialect != None:
         scanner.DESTINATION_DIALECT = \
           scanner.checkDestinationDialect(args.destinationDialect)
-    stree = None
-    index = []
-    with multiprocessing.Pool(processes=2) as pool: 
-        handle = pool.apply_async(\
-           scanner.parseFile, (inputFilePath,))
-        index = createIndex(args.searchDirs,defines,inputFilePath,args.index)
-        pool.close()
-        pool.join()
-        stree = handle.get()
-   
+    # scanner must be invoked after index creation
+    index = createIndex(args.searchDirs,defines,inputFilePath,args.index)
+    stree = scanner.parseFile(inputFilePath,index)    
+ 
     # extract kernels
     outputFilePrefix = ".".join(inputFilePath.split(".")[:-1])
     basename         =  os.path.basename(outputFilePrefix)

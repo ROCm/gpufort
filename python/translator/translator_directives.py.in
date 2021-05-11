@@ -470,6 +470,15 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         """
         This routine generates an HIP kernel body.
         """
+        # 0. Clarify types of function calls / tensor access that are not 
+        # members of a struct
+        for expr in findAll(self._body,IValue):
+             if type(expr._value) is TTFunctionCallOrTensorAccess:
+                 _, discovered = indexertools.searchIndexForVariable(self._indexHints,expr.name())
+                 if discovered:
+                     expr._value._isTensorAccess = True3
+        # TODO look up correct signature of called device functions from index
+        # 1.1 Collapsing
         numOuterLoopsToMap = int(self._parentDirective.numCollapse())
         if LOOP_COLLAPSE_STRATEGY == "grid" and numOuterLoopsToMap <= 3:
             dim=numOuterLoopsToMap
@@ -480,13 +489,15 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         for expr in findAll(self._body,TTStatement): 
             if type(expr._statement[0]) is TTAssignment:
                 expr._statement[0] = expr._statement[0].convertToDoLoopNestIfNecessary()
-        # 2. Identifiy reduced variables
+        # 2. Identify reduced variables
         for expr in findAll(self._body,TTAssignment):
             for var in findAllMatching(expr,lambda x: isinstance(x,IValue)):
                 if type(var._value) in [TTDerivedTypeMember,TTIdentifier]:
                     for op,reducedVariables in self.gangTeamReductions().items():
                         if var.name().lower() in [el.lower() for el in reducedVariables]:
                             var._reductionIndex = tidx
+            # TODO identify what operation is performed on the highest level to 
+            # identify reduction op
         reductionPreamble = ""
         # 2.1. Add init preamble for reduced variables
         for kind,reducedVariables in self.gangTeamReductions(makeCStr).items():

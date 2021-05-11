@@ -2,10 +2,7 @@
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 
 # API
-def convertArithmeticExpression(fortranSnippet):
-    return ( matrixArithmeticExpression | complexArithmeticExpression | arithmeticExpression ).parseString(fortranSnippet)[0].cStr()
-
-def createCodegenContextFromDeclaration(ttdeclaration):
+def createIndexRecordsFromDeclaration(ttdeclaration):
     """
     Per declared variable in the declaration, creates
     a context dictionary that can be easily piped
@@ -92,53 +89,13 @@ def changeKind(varContext,kind):
     #
     varContext["totalBytes"] = None if bpe is None else bpe+"*("+varContext["totalCount"]+")"
 
+def convertArithmeticExpression(fortranSnippet):
+    return ( matrixArithmeticExpression | complexArithmeticExpression | arithmeticExpression ).parseString(fortranSnippet)[0].cStr()
+
 def parseAttributes(ttattributes):
     attribute    = makeFStr(ttattributes._qualifiers[0]).lower()
     modifiedVars = [makeFStr(var).lower() for var in ttattributes._rhs]
     return attribute, modifiedVars 
-
-def parseAcceleratorRoutine(fortranSnippet,indexHints=[],maxRecursions=10):
-    """
-    :return: C snippet equivalent to the original Fortran snippet.
-    
-    """
-    global KEYWORDS 
-
-    recursionsLeft=0
-    def simplifyAcceleratorRoutineUntilItCanGetParsed(fortranSnippet,recursionsToGo):
-        nonlocal recursionsLeft
-        recursionsLeft = recursionsToGo
-        try:
-            return subroutine.parseString(fortranSnippet)[0]
-        except ParseBaseException as pbe:
-            if recursionsToGo <= 0:
-                raise pbe
-            else:
-                lineno = pbe.__getattr__("lineno")
-                lines = fortranSnippet.split("\n")
-                lines[lineno-1] = "! TODO could not parse: {}".format(lines[lineno-1])
-                modifiedFortranSnippet = "\n".join(lines)
-                #print(modifiedFortranSnippet)
-                return simplifyAcceleratorRoutineUntilItCanGetParsed(modifiedFortranSnippet,recursionsToGo-1)
-        except Exception as e:
-            raise e 
- 
-    fortranSnippet = prepareFortranSnippet(fortranSnippet)
-    #print("prepared::::: "+fortranSnippet)
-    try:
-        result   = simplifyAcceleratorRoutineUntilItCanGetParsed(fortranSnippet,maxRecursions)
-        #cBody    = utils.prettifyCCode(result.bodyCStr())
-        cBody    = result.bodyCStr()
-        name     = result.nameCStr()
-        argNames = result.argNamesCStr()
-    except Exception as e:
-        cBody = ""
-        name = None
-        argNames = [] 
-        #print(type(e))
-        raise e        
-    cBody = postprocessCSnippet(cBody)
-    return name,argNames,cBody
 
 # TODO parsing and translation is similar but analysis differs between the different kernel
 # types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)
@@ -171,7 +128,7 @@ def parseLoopKernel(fortranSnippet,indexHints=[],maxRecursions=30):
     fortranSnippet = prepareFortranSnippet(fortranSnippet)
     try:
         computeConstruct = simplifyLoopKernelUntilItCanGetParsed(fortranSnippet,maxRecursions)
-        computeConstruct.setIndexHints(indexHints)
+        computeConstruct._indexHints = indexHints
         if recursionsLeft < maxRecursions:
             body = "\n".join(fortranSnippet.split("\n")[1:])
         return computeConstruct
@@ -181,3 +138,45 @@ def parseLoopKernel(fortranSnippet,indexHints=[],maxRecursions=30):
         logger.error("failed to convert kernel:\n{}".format(fortranSnippet))
         logger.error(str(e))
         return EmptyComputeConstruct(fsnippet)
+
+class EmptyProcedureBody():
+    def cStr(self):
+        return "" 
+
+def parseProcedureBody(fortranSnippet,indexRecord={},resultName="",maxRecursions=10):
+    """
+    Parse a function/subroutine body.
+    """
+    global KEYWORDS 
+
+    recursionsLeft=0
+    def simplifyProcedureBodyUntilItCanGetParsed(fortranSnippet,recursionsToGo):
+        nonlocal recursionsLeft
+        recursionsLeft = recursionsToGo
+        try:
+            return procedureBody.parseString(fortranSnippet)[0]
+        except ParseBaseException as pbe:
+            if recursionsToGo <= 0:
+                raise pbe
+            else:
+                lineno = pbe.__getattr__("lineno")
+                lines = fortranSnippet.split("\n")
+                lines[lineno-1] = "! TODO(gpufort) could not parse: {}".format(lines[lineno-1])
+                modifiedFortranSnippet = "\n".join(lines)
+                return simplifyProcedureBodyUntilItCanGetParsed(modifiedFortranSnippet,recursionsToGo-1)
+        except Exception as e:
+            raise e 
+ 
+    fortranSnippet = prepareFortranSnippet(fortranSnippet)
+    try:
+        parseResult = simplifyProcedureBodyUntilItCanGetParsed(fortranSnippet,maxRecursions)
+        parseResult._indexHints   = [ indexRecord ] 
+        parseResult._resultName   = resultName
+        parseResult._ignoredVars += indexRecord["dummyArgs"]
+    except Exception as e:
+        #raise e
+        logger = logging.getLogger('') 
+        logger.error("failed to convert kernel:\n{}".format(fortranSnippet))
+        logger.error(str(e))
+        return EmptyProcedureBody()
+    return parseResult

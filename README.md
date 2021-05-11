@@ -42,16 +42,15 @@ of these applications.
 
 GPUFORT relies on the `iso_c_binding` interoperability mechanisms that were added to the Fortran language with 
 the Fortran 2003 standard. Please be aware that the interoperability of C structs and Fortran derived types is quite limited
-till this date. 
+till this date:
 
 * "Derived types with the C binding attribute shall not have the sequence attribute, type parameters, the extends attribute, nor type-bound procedures."
 * "Every component must be of interoperable type and kind and may not have the **pointer** or **allocatable** attribute. The names of the components are irrelevant for interoperability."
 
-(source: https://gcc.gnu.org/onlinedocs/gfortran/Derived-Types-and-struct.html)
+(Source: https://gcc.gnu.org/onlinedocs/gfortran/Derived-Types-and-struct.html)
 
-We are currently investigating what workarounds could be automatically applied but currently codes
-that should be translated with GPUFORT must be aware of the above limitation and employ manual
-workarounds.
+We are currently investigating what workarounds could be automatically applied.
+Until then, you have to modify your code manually to circumvent the above limitations.
 
 ## Currently supported features:
 
@@ -66,7 +65,7 @@ workarounds.
      * Kernel and loop constructs: `!$cuf kernel do`
      * Overloaded intrinsics: `allocate`, `allocated`, `deallocate`, `deallocated`, `=`
 
-(List is not commplete ...)
+(List is not complete ...)
 
 ## Planned features
 

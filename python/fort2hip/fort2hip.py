@@ -109,8 +109,6 @@ def deriveKernelArguments(index, identifiers, localVars, loopVars, whiteList=[],
     localCpuRoutineArgs = []
     inputArrays         = []
 
-    print(whiteList)
-
     def includeArgument(name):
         nameLower = name.lower().strip()
         if len(whiteList):
@@ -128,7 +126,6 @@ def deriveKernelArguments(index, identifiers, localVars, loopVars, whiteList=[],
             #foundDeclaration = name in loopVars # TODO rename loop variables to local variables; this way we can filter out local subroutine variables
             indexedVar,discovered = indexertools.searchIndexForVariable(index,name) # TODO treat implicit here
             argName = name
-            print(argName)
             if not discovered:
                  arg = initArg(name,"TODO declaration not found","",[],"TODO declaration not found")
                  unknownArgs.append(arg)
@@ -249,7 +246,7 @@ def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         hipKernelDict["isLoopKernel"]          = True
         hipKernelDict["modifier"]              = "__global__"
         hipKernelDict["returnType"]           = "void"
-        hipKernelDict["generateLauncher"]      = fort2hip.GENERATE_KERNEL_LAUNCHER
+        hipKernelDict["generateLauncher"]      = GENERATE_KERNEL_LAUNCHER
         hipKernelDict["launchBounds"]          = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS)
         hipKernelDict["size"]                  = convertDim3(kernelParseResult.problemSize(),dimensions,doFilter=False)
         hipKernelDict["grid"]                  = convertDim3(kernelParseResult.numGangsTeamsBlocks(),dimensions)
@@ -275,7 +272,7 @@ def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         hipKernelDict["outputArrays"]          = inputArrays
         hipContext["kernels"].append(hipKernelDict)
 
-        generateLauncher   = fort2hip.GENERATE_KERNEL_LAUNCHER
+        generateLauncher   = GENERATE_KERNEL_LAUNCHER
         if generateLauncher:
             # Fortran interface with automatic derivation of stkernel launch parameters
             fInterfaceDictAuto = {}
@@ -387,27 +384,27 @@ def updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext
         isFunction  = indexRecord["type"] == "function"
         
         fBody  = "".join(stprocedure._lines[beginOfBody_(stprocedure._lines):endOfBody_(stprocedure._lines)])
-        fBody  = utils.prettifyFCode(fBody)
+        #fBody  = utils.prettifyFCode(fBody)
         
         if isFunction:
             resultName = indexValue["resultName"]
             resultVar = next([var for var in indexRecord["variables"] if var["name"] == indexValue["resultName"]],None)
             if resultVar != None:
                 resultType = resultVar["cType"]
-                parseResult = translator.parseProcedureBody(fSnippet,indexRecord,resultVar["name"])
+                parseResult = translator.parseProcedureBody(fBody,indexRecord,resultVar["name"])
             else:
                 msg = "could not identify return value for function ''"
                 logging.getLogger("").error(msg) ; print("ERROR: "+msg,file=sys.stderr)
                 sys.exit(INDEXER_ERROR_CODE)
         else:
             resultType = "void"
-            parseResult = translator.parseProcedureBody(fSnippet,indexRecord,None)
+            parseResult = translator.parseProcedureBody(fBody,indexRecord)
 
         # TODO: look up functions and subroutines called internally and supply to parseResult before calling cStr()
         cBody = parseResult.cStr()
     
         ## general
-        generateLauncher   = fort2hip.GENERATE_KERNEL_LAUNCHER and "global" in indexRecord["attributes"]
+        generateLauncher   = GENERATE_KERNEL_LAUNCHER and stprocedure.isKernelSubroutine()
         kernelName         = indexRecord["name"]
         kernelLauncherName = "launch_" + kernelName
         loopVars = []; localLValues = []
@@ -417,19 +414,15 @@ def updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext
              identifiers.append(indexedVar["name"])
         argNames = indexRecord["dummyArgs"]
         kernelArgs, cKernelLocalVars, macros, inputArrays, localCpuRoutineArgs =\
-          deriveKernelArguments(indexRecord,identifiers,localLValues,loopVars,argNames,False,deviceptrNames=[])
+          deriveKernelArguments([ indexRecord ],identifiers,localLValues,loopVars,argNames,False,deviceptrNames=[])
         #print(argNames)
-
-        print(kernelArgs)
 
         # C routine and C stprocedure launcher
         hipKernelDict = {}
         hipKernelDict["launchBounds"]          = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS)
         hipKernelDict["generateLauncher"]      = generateLauncher
-        hipKernelDict["isLoopKernel"]          = True
-        hipKernelDict["modifier"]              = "__global__"
+        hipKernelDict["modifier"]              = "__global__" if stprocedure.isKernelSubroutine() else "__device__"
         hipKernelDict["returnType"]            = resultType
-        hipKernelDict["generateLauncher"]      = fort2hip.GENERATE_KERNEL_LAUNCHER
         hipKernelDict["launchBounds"]          = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS)
         hipKernelDict["isLoopKernel"]          = False
         hipKernelDict["kernelName"]            = kernelName

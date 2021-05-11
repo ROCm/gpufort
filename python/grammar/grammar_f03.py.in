@@ -258,10 +258,10 @@ declarationSectionEntry = use | implicit | declaration | attributes
 procedureBody = Group(ZeroOrMore(declarationSectionEntry | block))
 
 rawIdentifier     = pyparsing_common.identifier.copy() # produces a string instead of a identifier translator tree node
-rawIdentifierList = delimitedList(rawIdentifier) 
+rawIdentifierList = Group(delimitedList(rawIdentifier))
 
 subroutineStart = Optional(ATTRIBUTES + LPAR + rawIdentifierList + RPAR,default=[]) + SUBROUTINE + identifier +\
-        Optional(LPAR + Group(rawIdentifierList) + RPAR, default=[]) # emits 3 tokens -> *,*,[*]
+        Optional(LPAR + rawIdentifierList + RPAR, default=[]) # emits 3 tokens -> *,*,[*]
 subroutineEnd = END + ~(NONSTRUCTURE|FUNCTION) + Optional(SUBROUTINE) + Optional(LPAR + identifier.suppress() + RPAR)
 #subroutine = subroutineStart + procedureBody + subroutineEnd
 
@@ -269,7 +269,7 @@ PURE,RECURSIVE,RESULT = makeCaselessLiteral("pure,recursive,result",suppress=Tru
 #funtionResult = function func(i) result(j)
 functionStart = Optional(PURE | RECURSIVE) + Optional(ATTRIBUTES + LPAR + rawIdentifierList + RPAR,default=[]) +\
                 Optional(datatype).suppress() +\
-                FUNCTION + identifier + Optional(LPAR + Group(rawIdentifierList) + RPAR, default=[]) +\
+                FUNCTION + identifier + Optional(LPAR + rawIdentifierList + RPAR, default=[]) +\
                 Optional(RESULT + LPAR + identifier + RPAR,default=None) # ! emits 4  tokens -> *,*,[*],*
 functionEnd = END + ~(NONSTRUCTURE|SUBROUTINE) + Optional(FUNCTION) + Optional(identifier.suppress()) # ! emits 0 tokens
 #function = functionStart + procedureBody + functionEnd

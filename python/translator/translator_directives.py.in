@@ -380,8 +380,8 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         return self._parentDirective.attachVars()
     def detachVars(self):
         return self._parentDirective.detachVars()
-    def presentByDefault(self):
-        return self._parentDirective.detachVars()
+    def presentByDefault(self): 
+        return self._parentDirective.presentByDefault()
     def gridExpressionFStr(self):
         """ only CUF """
         return self._firstLoopAnnotation.gridExpressionFStr()

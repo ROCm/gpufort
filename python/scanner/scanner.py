@@ -123,26 +123,30 @@ def parseFile(fortranFilePath,index):
         nonlocal translationEnabled
         nonlocal keepRecording
         nonlocal index
-        new = STProcedure(name=tokens[1],index,\
+        new = STProcedure(tokens[1],index,\
           parent=current,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         keepRecording = new.keepRecording()
+        if keepRecording:
+            new._lines = []
         descend(new)
     def Subroutine_visit(tokens):
         nonlocal current
         nonlocal translationEnabled
         nonlocal keepRecording
         nonlocal index
-        new = STProcedure(name=tokens[1],index,\
+        new = STProcedure(tokens[1],index,\
           parent=current,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         keepRecording = new.keepRecording()
+        if keepRecording:
+            new._lines = []
         descend(new)
     def Structure_leave(tokens):
         nonlocal current
         nonlocal keepRecording
         assert type(current) in [STModule,STProgram,STProcedure], "In file {}: line {}: type is {}".format(currentFile, currentLineno, type(current))
-        if type(current) is STProcedure and current._qualifier.lower() in ["global","device"]:
+        if type(current) is STProcedure and current.mustBeAvailableOnDevice():
             current._lines += currentLines
             keepRecording = False
         ascend()

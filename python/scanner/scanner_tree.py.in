@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
-pAttributes = re.compile(r"attributes\s*\(\s*\w+\s*(,\s*\w+)?\s*\)\s*")
+pAttributes = re.compile(r"attributes\s*\(\s*\w+\s*(,\s*\w+)?\s*\)\s*", flags=re.IGNORECASE)
 
 def removeTypePrefix(varName):
     return varName.split("%")[-1]
@@ -231,8 +231,10 @@ class STProcedure(STNode,Tagged):
             sys.exit(SCANNER_ERROR_CODE)
     def hasAttribute(self,attribute):
         return attribute in self._indexRecord["attributes"]
+    def isKernelSubroutine(self):
+        return self.hasAttribute("global")
     def mustBeAvailableOnDevice(self):
-        return self.hasAttribute("device") or
+        return self.hasAttribute("device") or\
                self.hasAttribute("global")
     def __mustBeAvailableOnHost(self):
         return not len(self._indexRecord["attributes"]) or\
@@ -243,11 +245,11 @@ class STProcedure(STNode,Tagged):
         """
         No recording if the function needs to be kept only on the host.
         """
-        return self.__mustBeAvailableOnDevice(self._indexRecord)
+        return self.mustBeAvailableOnDevice()
     def considerInS2STranslation(self,index=[]):
-        return self.__attributesPresent() or
-               self.__mustBeAvailableOnDevice()
-    def transformFSnippet(self,fSnippet,index=[]):
+        return self.__attributesPresent() or\
+               self.mustBeAvailableOnDevice()
+    def gpufortFStr(self,index=[]):
         """
         Treats CUF and OpenACC subroutines/functions that carry CUF-specific attributes
         or require a device version as specified in a directive.
@@ -257,20 +259,18 @@ class STProcedure(STNode,Tagged):
         needs to be kept on the host too.
         """
         attributesPresent       = self.__attributesPresent()
-        mustBeAvailableOnDevice = self.__mustBeAvailableOnDevice()
+        mustBeAvailableOnDevice = self.mustBeAvailableOnDevice()
         mustBeAvailableOnHost   = self.__mustBeAvailableOnHost()
 
         original = "".join(self._lines)
         if attributesPresent: # CUF case
              if mustBeAvailableOnHost:
-                 return pAttributes.sub("", original, flags=re.IGNORECASE), True
+                 return pAttributes.sub("", original), True
              elif mustBeAvailableOnDevice: # and not mustBeAvailableOnHost
                  indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
                  return "{0}! extracted to HIP C++ file".format(indent), True
         else: 
                  return original, False
-    def gpufortFStr(self,index=[]):
-        return self.transformFSnippet("")
 
 class STDirective(STNode):
     def __init__(self,parent,lineno,lines,directiveNo,sentinel="!$cuf"):

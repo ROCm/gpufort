@@ -1001,7 +1001,7 @@ class TTDeclaration(TTNode,Attributed):
         variables, e._g. if these are parameters of a subroutine
         that we want to convert.
         """
-        ignoreList      = map(str.lower, self._ignoreList + extraIgnoreList)
+        ignoreList      = map(makeCStr, self._ignoreList + extraIgnoreList)
         result          = ""
         comment         = ""
         dimensionBounds = ""
@@ -1134,13 +1134,11 @@ class TTProcedureBody(TTNode):
         # from body before converting body to C code.
         declarations = findAll(self._body,TTDeclaration)
         #declarations += findAll(self._body,TTAttributes)
-        ignoredVars = list(self._ignoredVars)
         for ttdeclaration in declarations:
-             for name in ttdeclaration.variableNames():
-                  if "selected_real_kind" in ttdeclaration.rhsCStr(name).lower():
-                      ignoredVars.append(name)
-        for node in declarations:
-             node._ignoreList = ignoredVars
+            ttdeclaration._ignoreList = list(self._ignoredVars)
+            for name in ttdeclaration.variableNames():
+                if "selected_real_kind" in ttdeclaration.rhsCStr(name).lower():
+                    ttdeclaration.append(name)
         # 2. Propagate result variable name to return statements
         if len(self._resultName):
             for expr in findAll(self._body,TTReturn):

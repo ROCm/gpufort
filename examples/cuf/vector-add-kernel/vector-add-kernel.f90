@@ -30,6 +30,16 @@ program testSaxpy
   write(*,*) 'Max error: ', maxval(abs(y-4.0))
 
 contains 
+   
+   attributes(device) subroutine deviceFun(a,x,y,N)
+    real :: x(N), y(N), a
+    integer :: N
+    integer :: i
+    i = threadidx%x
+    if (i < N) then
+      y(i) = y(i) + a*x(i)
+    endif
+   end subroutine
 
    attributes(global) subroutine gpuKernel(a,x,y,N)
     real :: x(N), y(N), a
@@ -37,7 +47,7 @@ contains
     integer :: i
     i = threadidx%x
     if (i < N) then
-      y_d(i) = y_d(i) + a*x_d(i)
+      y(i) = y(i) + a*x(i)
     endif
    end subroutine
 end program testSaxpy

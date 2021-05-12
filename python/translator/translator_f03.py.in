@@ -184,7 +184,7 @@ class TTFunctionCallOrTensorAccess(TTNode):
     def isTensor(self):
         if self._isTensorAccess == True3:
             return True
-        elif not self._isTensorAccess == False3:
+        elif self._isTensorAccess == False3:
             return False
         else:
             return self.hasMatrixRangeArgs() or\
@@ -356,8 +356,8 @@ class TTSubroutineCall(TTNode):
     def _assignFields(self,tokens):
         self._subroutine=tokens[0]
     def cStr(self):
-        self._subroutine._isTensorAccess = UNKNOWN
-        return self._subroutine.cStr()
+        self._subroutine._isTensorAccess = False3
+        return self._subroutine.cStr()+";"
 
 class TTOperator(TTNode):
     def _assignFields(self,tokens):
@@ -1125,7 +1125,7 @@ class TTProcedureBody(TTNode):
         # 0. Clarify types of function calls / tensor access that are not 
         # members of a struct
         if len(self._indexHints):
-            for expr in findAll(self._body,IValue):
+            for expr in findAllMatching(self._body,filterExpr=lambda x: isinstance(x,IValue)):
                  if type(expr._value) is TTFunctionCallOrTensorAccess:
                      _, discovered = indexertools.searchIndexForVariable(self._indexHints,expr.name())
                      if discovered:
@@ -1133,7 +1133,6 @@ class TTProcedureBody(TTNode):
         # 1. Remove function argument definitions and precision definitions
         # from body before converting body to C code.
         declarations = findAll(self._body,TTDeclaration)
-        #declarations += findAll(self._body,TTAttributes)
         for ttdeclaration in declarations:
             ttdeclaration._ignoreList = list(self._ignoredVars)
             for name in ttdeclaration.variableNames():

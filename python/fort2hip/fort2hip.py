@@ -245,7 +245,7 @@ def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         hipKernelDict = {}
         hipKernelDict["isLoopKernel"]          = True
         hipKernelDict["modifier"]              = "__global__"
-        hipKernelDict["returnType"]           = "void"
+        hipKernelDict["returnType"]            = "void"
         hipKernelDict["generateLauncher"]      = GENERATE_KERNEL_LAUNCHER
         hipKernelDict["launchBounds"]          = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS)
         hipKernelDict["size"]                  = convertDim3(kernelParseResult.problemSize(),dimensions,doFilter=False)
@@ -409,27 +409,38 @@ def updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext
         kernelLauncherName = "launch_" + kernelName
         loopVars = []; localLValues = []
 
-        identifiers = [] # TODO identifiers not the best name
-        for indexedVar in indexRecord["variables"]: # TODO not working
-             identifiers.append(indexedVar["name"])
-        argNames = indexRecord["dummyArgs"]
+        # sort identifiers: put dummy args first
+        # TODO(dominic): More detailed analysis what to do with non-dummy args
+        dummyArgs = indexRecord["dummyArgs"]
+        nonDummyArgs = []
+        for indexedVar in indexRecord["variables"]:
+            if indexedVar["name"] not in dummyArgs:  
+                nonDummyArgs.append(indexedVar["name"])
+        identifiers = dummyArgs + nonDummyArgs
+
         kernelArgs, cKernelLocalVars, macros, inputArrays, localCpuRoutineArgs =\
-          deriveKernelArguments([ indexRecord ],identifiers,localLValues,loopVars,argNames,False,deviceptrNames=[])
+          deriveKernelArguments([ indexRecord ],identifiers,localLValues,loopVars,dummyArgs,False,deviceptrNames=[])
         #print(argNames)
 
         # C routine and C stprocedure launcher
         hipKernelDict = {}
-        hipKernelDict["launchBounds"]          = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS)
         hipKernelDict["generateLauncher"]      = generateLauncher
         hipKernelDict["modifier"]              = "__global__" if stprocedure.isKernelSubroutine() else "__device__"
+        hipKernelDict["launchBounds"]          = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS) if stprocedure.isKernelSubroutine() else ""
         hipKernelDict["returnType"]            = resultType
-        hipKernelDict["launchBounds"]          = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS)
         hipKernelDict["isLoopKernel"]          = False
         hipKernelDict["kernelName"]            = kernelName
         hipKernelDict["macros"]                = macros
         hipKernelDict["cBody"]                 = cBody
         hipKernelDict["fBody"]                 = "".join(stprocedure._lines)
-        hipKernelDict["kernelArgs"]            = ["{} {}".format(a["cType"],a["name"]) for a in kernelArgs]
+        hipKernelDict["kernelArgs"] = []
+        # device procedures take all C args as reference or pointer
+        # kernel proceduers take all C args as value or (device) pointer
+        for arg in kernelArgs:
+            cType = arg["cType"]
+            if not stprocedure.isKernelSubroutine() and not arg["isArray"]:
+                cType += "&"
+            hipKernelDict["kernelArgs"].append(cType + " " + arg["name"])
         hipKernelDict["kernelLocalVars"]       = ["{0} {1}{2} {3}".format(a["cType"],a["name"],a["cSize"],"= " + a["cValue"] if "cValue" in a else "") for a in cKernelLocalVars]
         hipKernelDict["interfaceName"]         = kernelLauncherName
         hipKernelDict["interfaceArgs"]         = hipKernelDict["kernelArgs"]
@@ -439,10 +450,9 @@ def updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext
         #inoutArraysInBody                   = [name.lower for name in kernelParseResult.inoutArraysInBody()]
         #hipKernelDict["outputArrays"]       = [array for array in inputArrays if array.lower() in inoutArraysInBody]
         hipKernelDict["outputArrays"]          = inputArrays
-        hipKernelDict["kernelCallArgNames"]    = hipKernelDict["interfaceArgNames"] 
+        hipKernelDict["kernelCallArgNames"]    = hipKernelDict["interfaceArgNames"] # TODO(05/12/21): Normally this information must be passed to other kernels
         hipKernelDict["cpuKernelCallArgNames"] = hipKernelDict["interfaceArgNames"] 
         hipKernelDict["reductions"]            = []
-        hipKernelDict["kernelArgs"]            = ["{} {}".format(a["cType"],a["name"]) for a in kernelArgs]
         hipContext["kernels"].append(hipKernelDict)
 
         if generateLauncher:

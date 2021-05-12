@@ -247,6 +247,7 @@ def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         hipKernelDict["modifier"]              = "__global__"
         hipKernelDict["returnType"]            = "void"
         hipKernelDict["generateLauncher"]      = GENERATE_KERNEL_LAUNCHER
+        hipKernelDict["generateCPULauncher"]   = GENERATE_KERNEL_LAUNCHER and GENERATE_CPU_KERNEL_LAUNCHER
         hipKernelDict["launchBounds"]          = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS)
         hipKernelDict["size"]                  = convertDim3(kernelParseResult.problemSize(),dimensions,doFilter=False)
         hipKernelDict["grid"]                  = convertDim3(kernelParseResult.numGangsTeamsBlocks(),dimensions)
@@ -425,6 +426,7 @@ def updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext
         # C routine and C stprocedure launcher
         hipKernelDict = {}
         hipKernelDict["generateLauncher"]      = generateLauncher
+        hipKernelDict["generateCPULauncher"]   = False
         hipKernelDict["modifier"]              = "__global__" if stprocedure.isKernelSubroutine() else "__device__"
         hipKernelDict["launchBounds"]          = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS) if stprocedure.isKernelSubroutine() else ""
         hipKernelDict["returnType"]            = resultType
@@ -471,47 +473,49 @@ def updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext
             fInterfaceDictManual["args"]    += kernelArgs
             fInterfaceDictManual["argNames"] = [arg["name"] for arg in fInterfaceDictManual["args"]]
             fInterfaceDictManual["doTest"]   = True
-            
-            # External CPU interface
-            fCPUInterfaceDict = copy.deepcopy(fInterfaceDictManual)
-            fCPUInterfaceDict["fName"]  = kernelLauncherName + "_cpu" 
-            fCPUInterfaceDict["cName"]  = kernelLauncherName + "_cpu"
-            fCPUInterfaceDict["args"]   = kernelArgs
-            fCPUInterfaceDict["doTest"] = False
+            fContext["interfaces"].append(fInterfaceDictManual)
+ 
+            #TODO(12/05/2021): Check if it makes sense to generate a CPU version of a global kernel
 
-            # Internal CPU routine
-            fCPURoutineDict = copy.deepcopy(fInterfaceDictManual)
-            fCPURoutineDict["fName"]    = kernelLauncherName + "_cpu1" 
-            fCPURoutineDict["cName"]    = kernelLauncherName + "_cpu1"
-            fCPURoutineDict["args"]     = kernelArgs
-            fCPURoutineDict["argNames"] = [arg["name"] for arg in fCPURoutineDict["args"]]
+            ## External CPU interface
+            #fCPUInterfaceDict = copy.deepcopy(fInterfaceDictManual)
+            #fCPUInterfaceDict["fName"]  = kernelLauncherName + "_cpu" 
+            #fCPUInterfaceDict["cName"]  = kernelLauncherName + "_cpu"
+            #fCPUInterfaceDict["args"]   = kernelArgs
+            #fCPUInterfaceDict["doTest"] = False
 
-            # rename copied modified args
-            for i,val in enumerate(fCPURoutineDict["args"]):
-                varName = val["name"]
-                if val.get("isArray",False):
-                    fCPURoutineDict["args"][i]["name"] = "d_{}".format(varName)
+            ## Internal CPU routine
+            #fCPURoutineDict = copy.deepcopy(fInterfaceDictManual)
+            #fCPURoutineDict["fName"]    = kernelLauncherName + "_cpu1" 
+            #fCPURoutineDict["cName"]    = kernelLauncherName + "_cpu1"
+            #fCPURoutineDict["args"]     = kernelArgs
+            #fCPURoutineDict["argNames"] = [arg["name"] for arg in fCPURoutineDict["args"]]
 
-            fCPURoutineDict["argNames"] = [a["name"] for a in fCPURoutineDict["args"]]
-            fCPURoutineDict["args"]    += localCpuRoutineArgs # ordering important
-            # add mallocs, memcpys , frees
-            prolog = ""
-            epilog = ""
-            for arg in localCpuRoutineArgs:
-                 if len(arg.get("bounds","")): # is local Fortran array
-                   localArray = arg["name"]
-                   # device to host
-                   prolog += "allocate({var}({bounds}))\n".format(var=localArray,bounds=arg["bounds"])
-                   prolog += "CALL hipCheck(hipMemcpy(c_loc({var}),d_{var},{bpe}_8*SIZE({var}),hipMemcpyDeviceToHost))\n".format(var=localArray,bpe=arg["bytesPerElement"])
-                   # host to device
-                   epilog += "CALL hipCheck(hipMemcpy(d_{var},c_loc({var}),{bpe}_8*SIZE({var}),hipMemcpyHostToDevice))\n".format(var=localArray,bpe=arg["bytesPerElement"])
-                   epilog += "deallocate({var})\n".format(var=localArray)
-            fCPURoutineDict["body"] = prolog + fBody + epilog
+            ## rename copied modified args
+            #for i,val in enumerate(fCPURoutineDict["args"]):
+            #    varName = val["name"]
+            #    if val.get("isArray",False):
+            #        fCPURoutineDict["args"][i]["name"] = "d_{}".format(varName)
+
+            #fCPURoutineDict["argNames"] = [a["name"] for a in fCPURoutineDict["args"]]
+            #fCPURoutineDict["args"]    += localCpuRoutineArgs # ordering important
+            ## add mallocs, memcpys , frees
+            #prolog = ""
+            #epilog = ""
+            #for arg in localCpuRoutineArgs:
+            #     if len(arg.get("bounds","")): # is local Fortran array
+            #       localArray = arg["name"]
+            #       # device to host
+            #       prolog += "allocate({var}({bounds}))\n".format(var=localArray,bounds=arg["bounds"])
+            #       prolog += "CALL hipCheck(hipMemcpy(c_loc({var}),d_{var},{bpe}_8*SIZE({var}),hipMemcpyDeviceToHost))\n".format(var=localArray,bpe=arg["bytesPerElement"])
+            #       # host to device
+            #       epilog += "CALL hipCheck(hipMemcpy(d_{var},c_loc({var}),{bpe}_8*SIZE({var}),hipMemcpyHostToDevice))\n".format(var=localArray,bpe=arg["bytesPerElement"])
+            #       epilog += "deallocate({var})\n".format(var=localArray)
+            #fCPURoutineDict["body"] = prolog + fBody + epilog
 
             # Add all definitions to context
-            fContext["interfaces"].append(fInterfaceDictManual)
-            fContext["interfaces"].append(fCPUInterfaceDict)
-            fContext["routines"].append(fCPURoutineDict)
+            #fContext["interfaces"].append(fCPUInterfaceDict)
+            #fContext["routines"].append(fCPURoutineDict)
 
 def renderTemplates(outputFilePrefix,hipContext,fContext):
     # HIP kernel file

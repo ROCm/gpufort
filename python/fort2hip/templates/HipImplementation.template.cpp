@@ -169,6 +169,7 @@ extern "C" void {{ifacePrefix}}_auto(const int sharedMem, hipStream_t stream,{{k
   #endif
 }
 {% endif %}
+{% if kernel.generateCPULauncher -%}
 extern "C" void {{ifacePrefix}}_cpu1(const int sharedMem, hipStream_t stream,{{kernel.interfaceArgs | join(",")}});
 
 extern "C" void {{ifacePrefix}}_cpu(const int sharedMem, hipStream_t stream,{{kernel.interfaceArgs | join(",")}}) {
@@ -196,7 +197,7 @@ extern "C" void {{ifacePrefix}}_cpu(const int sharedMem, hipStream_t stream,{{ke
   {% for array in kernel.outputArrays %}
   {{ print_array(krnlPrefix+":cpu","out","false","true",array.name,array.rank) }}
   {% endfor %}
-  #endif
+  #endif{% endif %}
 }{% endif %}
 // END {{krnlPrefix}}
 

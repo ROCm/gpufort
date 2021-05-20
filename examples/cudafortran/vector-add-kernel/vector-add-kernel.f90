@@ -32,34 +32,37 @@ program testSaxpy
 contains 
   
    attributes(host) subroutine hostFun(i,a,x,y,N)
-     real :: x(N), y(N), a
+     implicit none
      integer :: i,N
+     real :: x(N), y(N), a
      if (i < N) then
        y(i) = y(i) + a*x(i)
      endif
    end subroutine
    
    attributes(host,device) subroutine hostdeviceFun(i,a,x,y,N)
-     real :: x(N), y(N), a
+     implicit none
      integer :: i,N
+     real :: x(N), y(N), a
      if (i < N) then
        y(i) = y(i) + a*x(i)
      endif
    end subroutine
    
-   attributes(device) subroutine deviceFun(i,a,x,y,N)
+   attributes(device) subroutine deviceFun(a,x,y,N)
+     implicit none
+     integer :: N
      real :: x, y, a
-     integer :: i,N
      y = y + a*x
    end subroutine
 
    attributes(global) subroutine gpuKernel(a,x,y,N)
+     implicit none
+     integer :: i,N
      real :: x(N), y(N), a
-     integer :: N
-     integer :: i
-     i = threadidx%x
-     if (i < N) then
-       call deviceFun(i,a,x(i),y(i),N)
+     i = threadidx%x + (blockIdx%x-1)*blockDim%x
+     if (i <= N) then
+       call deviceFun(a,x(i),y(i),N)
      endif
    end subroutine
 end program testSaxpy

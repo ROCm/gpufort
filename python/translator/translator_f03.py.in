@@ -956,27 +956,6 @@ class TTDeclaration(TTNode,Attributed):
             if ttdeclaredvariable.name().lower() == name.lower():
                 result = makeCStr(ttdeclaredvariable._rhs)
         return result
-    def convertToCptr(self):
-        """
-        Convert all ttdeclaredvariable variables to 'type(c_ptr)'
-        and strip off most qualifiers except 'intent', 'save' ,...
-        :note: `type(c_ptr)` is a Fortran type. This function is not for C code generation.
-        """
-        self._datatype._type   = "type(c_ptr)"
-        self._datatype._kind   = None
-        self._datatype._length = None
-        hasSaveQualifier = self.hasStringQualifier("save")
-        hasPointerQualifier = self.hasStringQualifier("pointer")
-        intent = findFirst(self._qualifiers,TTIntentQualifier)
-        self._qualifiers = []
-        if intent != None:
-            self._qualifiers.append(intent)
-        if hasSaveQualifier:
-            self._qualifiers.append("save")
-        for ttdeclaredvariable in self._rhs: # strip off bounds of declared variables
-            ttdeclaredvariable._bounds = []
-            if not hasPointerQualifier:
-                ttdeclaredvariable._rhs = "c_null_ptr"
     def fStr(self,extraIgnoreList=[],includeBounds=True,includeRhs=True):
         """
         The ignore list can be used to filter out some
@@ -1001,7 +980,7 @@ class TTDeclaration(TTNode,Attributed):
         variables, e._g. if these are parameters of a subroutine
         that we want to convert.
         """
-        ignoreList      = map(makeCStr, self._ignoreList + extraIgnoreList)
+        ignoreList      = [makeCStr(var) for var in (self._ignoreList + extraIgnoreList)]
         result          = ""
         comment         = ""
         dimensionBounds = ""
@@ -1012,7 +991,7 @@ class TTDeclaration(TTNode,Attributed):
                 dimensionBounds = makeCStr(dimensionQualifier[0])
            comment = " /* Fortran qualifiers: {0} */".format(",".join([makeFStr(el) for el in self._qualifiers]))
         for ttdeclaredvariable in self._rhs:
-            if not ttdeclaredvariable.name(makeCStr).lower() in ignoreList: 
+            if not ttdeclaredvariable.name(makeCStr) in ignoreList: 
                 ignoredVars += 1
                 if isFunctionArgument:
                     result += "{0} {1},".format(makeCStr(self._datatype),ttdeclaredvariable.cStr(includeBounds,includeRhs),comment)
@@ -1021,7 +1000,7 @@ class TTDeclaration(TTNode,Attributed):
                     if self.hasStringQualifier("shared"):
                         datatype = "__shared__ " + datatype
                     result += "{0} {1}{2};{3}\n".format(datatype,ttdeclaredvariable.cStr(includeBounds,includeRhs),dimensionBounds,comment) 
-        if ignoredVars == len(self._rhs):
+        if ignoredVars < len(self._rhs):
             if isFunctionArgument:
                 return result
             else:
@@ -1137,7 +1116,7 @@ class TTProcedureBody(TTNode):
             ttdeclaration._ignoreList = list(self._ignoredVars)
             for name in ttdeclaration.variableNames():
                 if "selected_real_kind" in ttdeclaration.rhsCStr(name).lower():
-                    ttdeclaration.append(name)
+                    ttdeclaration._ignoreList.append(name)
         # 2. Propagate result variable name to return statements
         if len(self._resultName):
             for expr in findAll(self._body,TTReturn):

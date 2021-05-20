@@ -197,8 +197,9 @@ extern "C" void {{ifacePrefix}}_cpu(const int sharedMem, hipStream_t stream,{{ke
   {% for array in kernel.outputArrays %}
   {{ print_array(krnlPrefix+":cpu","out","false","true",array.name,array.rank) }}
   {% endfor %}
-  #endif{% endif %}
+  #endif
 }{% endif %}
+{% endif %}
 // END {{krnlPrefix}}
 
 {% endfor %}{# kernels #}

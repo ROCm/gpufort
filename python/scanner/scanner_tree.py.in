@@ -568,8 +568,8 @@ class STCudaLibCall(STNode):
             def replMemcpy(parseResult):
                 destName = parseResult.destNameFStr()
                 srcName  = parseResult.srcNameFStr()
-                destIndexedVar = indexertools.searchIndexForVariable(indexHints,destName)[0]
-                srcIndexedVar  = indexertools.searchIndexForVariable(indexHints,srcName)[0]
+                destIndexedVar,_ = indexertools.searchIndexForVariable(indexHints,destName)[0]
+                srcIndexedVar ,_ = indexertools.searchIndexForVariable(indexHints,srcName)[0]
                 destOnDevice = destIndexedVar["device"] == True or destIndexedVar["declaredOnTarget"] == True
                 srcOnDevice  = srcIndexedVar["device"] == True or srcIndexedVar["declaredOnTarget"] == True
                 subst = parseResult.hipFStr(destOnDevice,srcOnDevice)
@@ -594,20 +594,36 @@ class STCudaLibCall(STNode):
 
 class STCudaKernelCall(STNode):
     """TODO(gpufort): Fix
+    Translates a CUDA kernel call to a call to a subroutine interface.
     """
     def transformFSnippet(self,fSnippet,indexHints=[]):
-        #TODO(gpufort): Check variables, check which ones are array variables and replace with additional information such as size per dimension and lower bound,  _ni and _lbi.
         for tokens,start,end in translator.cudaKernelCall.scanString(fSnippet):
             parseResult = tokens[0]
-            kernelArgs = self._lines[0].split("(")[1]
+            kernelArgs  = []
+            for ttexpr in parseResult._args:
+                # expand array arguments
+                maxRank = 0
+                for rvalue in translator.findAll(ttexpr,translator.TTRValue):
+                     indexedVar, discovered = indexertools.searchIndexForVariable(indexHints,rvalue.name())
+                     if discovered:
+                         maxRank = max(maxRank,indexedVar["rank"])
+                exprFStr = translator.makeFStr(ttexpr)
+                if maxRank > 0:
+                    kernelArgs.append("c_loc("+exprFStr+")")
+                else:
+                    kernelArgs.append(exprFStr)
+                for rank in range(1,maxRank+1):
+                    kernelArgs.append("size({0},{1})".format(exprFStr,rank))
+                for rank in range(1,maxRank+1):
+                    kernelArgs.append("lbound({0},{1})".format(exprFStr,rank))
             kernelLaunchInfo = translator.cudaKernelCall.parseString(self._lines[0])[0]
-            subst="CALL launch_{0}({1},{2},{3},{4},{5}".format(\
+            subst="CALL launch_{0}({1},{2},{3},{4},{5})".format(\
               kernelLaunchInfo.kernelNameFStr(),\
               kernelLaunchInfo.gridFStr(),
               kernelLaunchInfo.blockFStr(),\
               kernelLaunchInfo.sharedMemFStr(),
               kernelLaunchInfo.streamFStr(),\
-              kernelArgs
+              ",".join(kernelArgs)
             )
             fSnippet = fSnippet.replace(fSnippet[start:end],subst)
             break

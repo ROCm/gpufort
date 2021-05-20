@@ -402,7 +402,6 @@ def updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext
             parseResult = translator.parseProcedureBody(fBody,indexRecord)
 
         # TODO: look up functions and subroutines called internally and supply to parseResult before calling cStr()
-        cBody = parseResult.cStr()
     
         ## general
         generateLauncher   = GENERATE_KERNEL_LAUNCHER and stprocedure.isKernelSubroutine()
@@ -433,7 +432,7 @@ def updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext
         hipKernelDict["isLoopKernel"]          = False
         hipKernelDict["kernelName"]            = kernelName
         hipKernelDict["macros"]                = macros
-        hipKernelDict["cBody"]                 = cBody
+        hipKernelDict["cBody"]                 = parseResult.cStr()
         hipKernelDict["fBody"]                 = "".join(stprocedure._lines)
         hipKernelDict["kernelArgs"] = []
         # device procedures take all C args as reference or pointer

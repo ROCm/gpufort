@@ -50,6 +50,7 @@ class TTCudaKernelCall(TTNode):
         self._block       = postprocessDim3(tokens[1][1])
         self._sharedMem   = tokens[1][2]
         self._stream      = tokens[1][3]
+        self._args        = tokens[2]
     def kernelNameFStr(self):
         return makeFStr(self._kernelName)
     def gridFStr(self):

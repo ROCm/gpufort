@@ -29,7 +29,7 @@ def run(expression,testdata,tag,raiseException=False):
         with open("testoutput/{}-fail.txt".format(tag),"w") as output:
             output.writelines(failedToParse)
     if not len(failedToParse):
-        print("SUCCESS")
+        print("PASSED")
     else:
         print("Summary: Failed to parse {0} of {1} test inputs".format(len(failedToParse),len(failedToParse)+len(successfullyParsed)))
-        print("FAILURE")
+        print("FAILED")

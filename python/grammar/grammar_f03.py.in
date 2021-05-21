@@ -6,7 +6,7 @@ PEQ=Suppress("=>")
 COLONS=Suppress("::")
 OPTCOMMA = Optional(COMMA)
 
-CALL,ATTRIBUTES,LEN,KIND = makeCaselessLiteral("call,attributes,len,kind",suppress=True)
+CALL,ATTRIBUTES,LEN,KIND,DIM = makeCaselessLiteral("call,attributes,len,kind,dim",suppress=True)
 
 # basic
 
@@ -25,26 +25,6 @@ funcKind = COMMA + ( KIND + EQ + Regex(r"[0-9]+|([sSdDqQ][pP])") ) | Regex(r"[sS
 argList = Group(delimitedList(Group(~funcKind + funcRValue)))
 funcCall = identifier + LPAR + Optional(argList, default=[]) + RPAR # emits 2 tokens: *,*,*
 
-# conversion functions
-# TODO check type of variable when translating
-# see http://userweb.eng.gla.ac.uk/peter.smart/com/com/f77-conv.htm
-# for now, always assume conversion between complex and float types 
-conversionRValue = Forward()
-REAL,DBLE,CMPLX,DCMPLX,AIMAG,CONJG,DCONJG = makeCaselessLiteral("real,dble,cmplx,dcmplx,aimag,conjg,dconjg",suppress=True)
-singleArgPlusKind = LPAR + (~funcKind+conversionRValue) + Optional(funcKind,default=None) + RPAR # emits 2 tokens: *,*,*
-doubleArgPlusKind = LPAR + (~funcKind+conversionRValue) + Optional(COMMA + (~funcKind+conversionRValue),default="0") +\
-                           Optional(funcKind,default=None) + RPAR # emits 2 tokens: *,*,*
-
-convertToExtractReal   = REAL   + singleArgPlusKind # emits 2 tokens,
-convertToDouble        = DBLE   + singleArgPlusKind # emits 2 tokens, 
-convertToComplex       = CMPLX  + doubleArgPlusKind # emits 3 tokens, op (x,y) -> x+iy | c.x = x, c.y = b  ; op: x -> (x,0) -> x+i0 -> | c.x = x, c.y =0
-convertToDoubleComplex = DCMPLX + doubleArgPlusKind # emits 3 tokens, op (x,y) -> x+iy | c.x = x, c.y = b  ; op: x -> (x,0) -> x+i0 -> | c.x = x, c.y =0
-extractImag            = AIMAG  + singleArgPlusKind # emits 1 tokens, op: x+iy -> y
-conjugate              = CONJG  + singleArgPlusKind # emits 1 tokens, op: x+iy -> x-iy | c.y = -c.y
-conjugateDoubleComplex = DCONJG + singleArgPlusKind # emits 1 tokens, op: x+iy -> x-iy | c.y = -c.y
-
-conversions = convertToExtractReal | convertToDouble | convertToComplex | convertToDoubleComplex | extractImag | conjugate | conjugateDoubleComplex
-
 # derivedTypes
 simpleStructRValue = Forward()
 simpleDerivedTypeMember   = identifier + ELEM + simpleStructRValue
@@ -55,7 +35,10 @@ derivedTypeElem = (( funcCall | identifier ) + ELEM + derivedTypeRValue )
 derivedTypeRValue <<= funcCall | derivedTypeElem | identifier
 
 complexArithmeticExpression = Forward()
-rvalue = OPTSIGN + (conversions | complexArithmeticExpression | derivedTypeElem | funcCall | identifier | logical | character | number)  # |: ordered OR, order is important
+conversion      = Forward()
+inquiryFunction = Forward()
+
+rvalue = OPTSIGN + (conversion | inquiryFunction | complexArithmeticExpression | derivedTypeElem | funcCall | identifier | logical | character | number)  # |: ordered OR, order is important
 subroutineCall = CALL + funcCall
 
 # assignments
@@ -75,7 +58,7 @@ arithmeticLogicalExpression = infixNotation(rvalue, #NOTE: Slower because of the
 )
 
 # use in preprocessing step
-powerValue1 = OPTSIGN + (conversions | derivedTypeElem | funcCall | identifier | number)
+powerValue1 = OPTSIGN + (conversion | inquiryFunction | derivedTypeElem | funcCall | identifier | number)
 powerValue2 = LPAR + arithmeticExpression + RPAR
 powerValue  = powerValue2 | powerValue1
 power       = powerValue + Suppress("**") + powerValue
@@ -102,7 +85,35 @@ matrixRange2  = (arithmeticExpression + singleColon + arithmeticExpression)
 matrixRange   = (matrixRange2 | matrixRange1b | matrixRange1a | matrixRange0) + Optional(stride,default=None)
 # define forward declared tokens
 funcRValue       <<= matrixRange | arithmeticLogicalExpression
-conversionRValue <<= arithmeticExpression
+
+# conversion functions
+# TODO check type of variable when translating
+# see http://userweb.eng.gla.ac.uk/peter.smart/com/com/f77-conv.htm
+# for now, always assume conversion between complex and float types 
+REAL,DBLE,CMPLX,DCMPLX,AIMAG,CONJG,DCONJG = makeCaselessLiteral("real,dble,cmplx,dcmplx,aimag,conjg,dconjg",suppress=True)
+singleArgPlusKind = LPAR + (~funcKind+arithmeticExpression) + Optional(funcKind,default=None) + RPAR # emits 2 tokens: *,*,*
+doubleArgPlusKind = LPAR + (~funcKind+arithmeticExpression) + Optional(COMMA + (~funcKind+arithmeticExpression),default="0") +\
+                           Optional(funcKind,default=None) + RPAR # emits 2 tokens: *,*,*
+
+convertToExtractReal   = REAL   + singleArgPlusKind # emits 2 tokens,
+convertToDouble        = DBLE   + singleArgPlusKind # emits 2 tokens, 
+convertToComplex       = CMPLX  + doubleArgPlusKind # emits 3 tokens, op (x,y) -> x+iy | c.x = x, c.y = b  ; op: x -> (x,0) -> x+i0 -> | c.x = x, c.y =0
+convertToDoubleComplex = DCMPLX + doubleArgPlusKind # emits 3 tokens, op (x,y) -> x+iy | c.x = x, c.y = b  ; op: x -> (x,0) -> x+i0 -> | c.x = x, c.y =0
+extractImag            = AIMAG  + singleArgPlusKind # emits 1 tokens, op: x+iy -> y
+conjugate              = CONJG  + singleArgPlusKind # emits 1 tokens, op: x+iy -> x-iy | c.y = -c.y
+conjugateDoubleComplex = DCONJG + singleArgPlusKind # emits 1 tokens, op: x+iy -> x-iy | c.y = -c.y
+
+conversion <<= convertToExtractReal | convertToDouble | convertToComplex | convertToDoubleComplex | extractImag | conjugate | conjugateDoubleComplex
+
+# inquiry functions
+SIZE,LBOUND,UBOUND = makeCaselessLiteral("size,lbound,ubound",suppress=True)
+inquiryDimArg  = ( integer | arithmeticExpression ) 
+inquiryKindArg = ( integer | arithmeticExpression ) 
+inquiryFunctionArg = lvalue + Optional(COMMA + Optional(DIM + EQ) + inquiryDimArg,default=None) + Optional(COMMA + Optional(KIND + EQ) + inquiryKindArg,default=None)
+sizeInquiry   = SIZE   + LPAR + inquiryFunctionArg + RPAR  
+lboundInquiry = LBOUND + LPAR + inquiryFunctionArg + RPAR 
+uboundInquiry = UBOUND + LPAR + inquiryFunctionArg + RPAR 
+inquiryFunction <<= sizeInquiry | lboundInquiry | uboundInquiry
 
 ## Condition
 ### If statement

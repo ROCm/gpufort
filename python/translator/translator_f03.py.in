@@ -261,6 +261,90 @@ class TTLValue(TTNode,IValue):
             result += "[{idx}]".format(idx=self._reductionIndex) 
         return result
 
+class TTSizeInquiry(TTNode):
+    """
+    Translator tree node for size inquiry function.
+    """
+    def _assignFields(self,tokens):
+        self._ref, self._dim, self._kind = tokens
+    def cStr(self):
+        """
+        :return: number of elements per array dimension, if the dimension
+                 is specified as argument.
+                 Utilizes the <array>_n<dim> and <array>_lb<dim> arguments that
+                 are passed as argument of the extracted kernels.
+        :note: only the case where <dim> is specified as integer literal is handled by this function.
+        """
+        if type(self._dim) is TTNumber:
+            return makeCStr(self._ref) + "_n" + makeCStr(self._dim) 
+        else:
+            prefix = "size"
+            return "/* "+prefix+"("+makeFStr(self._ref)+") */"
+    def fStr(self):
+        prefix = "size"
+        result = prefix + "("+makeFStr(self._ref)
+        if self._dim != None:
+            result += "," + makeFStr(self._dim)
+        if self._kind != None:
+            result += "," + makeFStr(self._kind)
+        return result + ")"
+
+class TTLboundInquiry(TTNode):
+    """
+    Translator tree node for lbound inquiry function.
+    """
+    def _assignFields(self,tokens):
+        self._ref, self._dim, self._kind = tokens
+    def cStr(self):
+        """
+        :return: lower bound per array dimension, if the dimension argument is specified as integer literal.
+                 Utilizes the <array>_n<dim> and <array>_lb<dim> arguments that
+                 are passed as argument of the extracted kernels.
+        :note:   only the case where <dim> is specified as integer literal is handled by this function.
+        """
+        if type(self._dim) is TTNumber:
+            return makeCStr(self._ref) + "_lb" + makeCStr(self._dim) 
+        else:
+            prefix = "lbound"
+            return "/* "+prefix+"("+makeFStr(self._ref)+") */"
+    def fStr(self):
+        prefix = "lbound"
+        result = prefix + "("+makeFStr(self._ref)
+        if self._dim != None:
+            result += "," + makeFStr(self._dim)
+        if self._kind != None:
+            result += "," + makeFStr(self._kind)
+        return result + ")"
+
+class TTUboundInquiry(TTNode):
+    """
+    Translator tree node for ubound inquiry function.
+    """
+    def _assignFields(self,tokens):
+        self._ref, self._dim, self._kind = tokens
+    def cStr(self):
+        """
+        :return: upper bound per array dimension, if the dimension argument is specified as integer literal.
+                 Utilizes the <array>_n<dim> and <array>_lb<dim> arguments that
+                 are passed as argument of the extracted kernels.
+        :note:   only the case where <dim> is specified as integer literal is handled by this function.
+        """
+        if type(self._dim) is TTNumber:
+            return "({0}_lb{1} + {0}_n{1} - 1)".format(
+                makeCStr(self._ref),
+                makeCStr(self._dim))
+        else:
+            prefix = "ubound"
+            return "/* "+prefix+"("+makeFStr(self._ref)+") */"
+    def fStr(self):
+        prefix = "ubound"
+        result = prefix + "("+makeFStr(self._ref)
+        if self._dim != None:
+            result += "," + makeFStr(self._dim)
+        if self._kind != None:
+            result += "," + makeFStr(self._kind)
+        return result + ")"
+
 class TTConvertToExtractReal (TTNode):
     def _assignFields(self,tokens):
         self._ref, self._kind = tokens
@@ -1151,6 +1235,10 @@ convertToDoubleComplex.setParseAction(TTConvertToDoubleComplex)
 extractImag.setParseAction(TTExtractImag)
 conjugate.setParseAction(TTConjugate)
 conjugateDoubleComplex.setParseAction(TTConjugate) # same action
+
+sizeInquiry.setParseAction(TTSizeInquiry)
+lboundInquiry.setParseAction(TTLboundInquiry)
+uboundInquiry.setParseAction(TTUboundInquiry)
 
 datatype_comment.setParseAction(TTDatatype_Comment)
 datatype_convert.setParseAction(TTDatatype_Convert)

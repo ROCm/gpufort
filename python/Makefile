@@ -1,4 +1,4 @@
-TEST_FOLDERS = test/grammar_translator/acc test/grammar_translator/cuf
+TEST_FOLDERS = test/grammar_translator/openacc test/grammar_translator/cudafortran
 
 TEST_COLLECTIONS            := $(shell echo "$(TEST_FOLDERS)" | sed "s,/,.,g")
 GRAMMAR_TEST_COLLECTIONS    := $(addsuffix .grammar,$(TEST_COLLECTIONS))

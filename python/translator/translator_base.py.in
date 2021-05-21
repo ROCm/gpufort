@@ -10,6 +10,9 @@ ADDITIONS = "cuf kernel kind" # TODO
 KEYWORDS = " ".join([CUDA_FORTRAN_KEYWORDS_STR, FORTRAN_INTRINSICS_STR, F08_KEYWORDS_STR, ADDITIONS])
 KEYWORDS = KEYWORDS.lower().split(" ")
 
+# Ternary state
+False3, Unknown3, True3 = -1,0,1
+
 ## Define actions
 class TTNode(object):
     def __init__(self, s, loc, tokens):
@@ -88,7 +91,7 @@ def makeCStr(obj):
     if obj is None:
       return ""
     try:
-        return obj.cStr()
+        return obj.cStr().lower()
     except Exception as e:
         if isinstance(obj,ParseResults) or\
            isinstance(obj,list):
@@ -97,7 +100,7 @@ def makeCStr(obj):
                 result += makeCStr(child)
             return result
         elif type(obj) in [bool,int,float,str]:
-            return str(obj)
+            return str(obj).lower()
         else:
             raise e
 
@@ -169,24 +172,28 @@ def prepareFortranSnippet(fortranSnippet):
 def postprocessCSnippet(cSnippet):
     toHip = GPUFORT_CPP_ROUTINES 
     toHip.update({
-       "threadidx" : "threadIdx",
-       "blockdim" : "blockDim",
-       "blockidx" : "blockIdx",
-       "griddim" : "gridDim",
-       "warpsize" : "warpSize",
+       "threadidx.x" : "(1+threadIdx.x)",
+       "threadidx.y" : "(1+threadIdx.y)",
+       "threadidx.z" : "(1+threadIdx.z)",
+       "blockidx.x"  : "(1+blockIdx.x)",
+       "blockidx.y"  : "(1+blockIdx.y)",
+       "blockidx.z"  : "(1+blockIdx.z)",
+       "blockdim"    : "blockDim",
+       "griddim"     : "gridDim",
+       "warpsize"    : "warpSize",
        "syncthreads" : "__syncthreads",
-       "atomicadd" : "atomicAdd",
-       "atomicsub" : "atomicSub",
-       "atomicmax" : "atomicMax",
-       "atomicmin" : "atomicMin",
-       "atomicand" : "atomicAnd",
+       "atomicadd"  : "atomicAdd",
+       "atomicsub"  : "atomicSub",
+       "atomicmax"  : "atomicMax",
+       "atomicmin"  : "atomicMin",
+       "atomicand"  : "atomicAnd",
        "atomicor"   : "atomicOr",
        "atomicxor"  : "atomicXor",
        "atomicexch" : "atomicExch",
-       "atomicinc" : "atomicInc",
-       "atomicdec" : "atomicDec",
-       "atomiccas" : "atomicCas",
-       "sign"      : "copysign",
+       "atomicinc"  : "atomicInc",
+       "atomicdec"  : "atomicDec",
+       "atomiccas"  : "atomicCas",
+       "sign"       : "copysign",
     })
     for key,subst in toHip.items():
         cSnippet = re.sub(r"\b"+key+r"\b",subst,cSnippet)

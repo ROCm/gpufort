@@ -52,18 +52,18 @@ print(translator.declaration.parseString("complex :: f_d ( :,: )")[0].arrayVaria
 print(translator.declaration.parseString("complex :: f_d ( 5,5 )")[0].arrayBoundVariableNamesFStr("f_d"))
 print(translator.declaration.parseString("complex :: f_d ( 5,5 )")[0].arrayVariableIndexMacroStr("f_d"))
 
-print(translator.createCodegenContextFromDeclaration(\
+print(translator.createIndexRecordsFromDeclaration(\
         translator.declaration.parseString("complex :: f_d ( 5,5 )")[0]))
 
-print(translator.createCodegenContextFromDeclaration(\
+print(translator.createIndexRecordsFromDeclaration(\
         translator.declaration.parseString("complex,pinned,device,managed,allocatable,pointer :: f_d ( 2:5,-1:5 )")[0]))
 
-context = translator.createCodegenContextFromDeclaration(\
+context = translator.createIndexRecordsFromDeclaration(\
         translator.declaration.parseString("integer, parameter :: a = x , b = c*x, f_d = 5")[0])
 
 print(context)
 translator.changeKind(context[0],"8")
 print(context)
 
-print(translator.createCodegenContextFromDeclaration(\
+print(translator.createIndexRecordsFromDeclaration(\
         translator.declaration.parseString("complex,pointer :: f_d ( :,-2: )")[0]))

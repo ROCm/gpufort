@@ -8,7 +8,7 @@ annotatedDoLoop <<= Optional( loopAnnotation, default=None) +\
 
 statement = accKernelBodyDirective | comment | printStatement | controlStatements | subroutineCall | ifElseBlock | singleLineIf | selectCaseBlock | annotatedDoLoop | whileLoop | matrixAssignment | complexAssignment | assignment | funcCall
 
-block <<= Group(ZeroOrMore(statement))
+block <<= Group(OneOrMore(statement))
 
 # reduced number of possible statements in "body" of single-line if statement
 singleLineIfBody <<= comment | printStatement | controlStatements | subroutineCall | matrixAssignment | complexAssignment | assignment | funcCall 

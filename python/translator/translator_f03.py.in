@@ -3,6 +3,7 @@
 #import utils
 #from translator.translator_base import *
 
+
 #f03
 def flattenArithmeticExpression(expr,converter=makeCStr):
     def descend(element,depth=0):
@@ -24,6 +25,17 @@ class TTSimpleToken(TTNode):
           return "{};".format(self._text.lower())
       def fStr(self):
           return str(self._text)
+
+class TTReturn(TTNode):
+      def _assignFields(self,tokens):
+          self._resultName = ""  
+      def cStr(self): 
+          if len(self._resultName):
+              return "return "+self._resultName+";"
+          else:
+              return "return;"
+      def fStr(self):
+          return "return"
 
 class TTCommentedOut(TTNode):
       def _assignFields(self,tokens):
@@ -148,6 +160,7 @@ class TTFunctionCallOrTensorAccess(TTNode):
     def _assignFields(self,tokens):
         self._name = tokens[0]
         self._args = tokens[1]
+        self._isTensorAccess = Unknown3
     def matrixRangeArgs(self):
         """
         Returns all matrix range args in the order of their appeareance.
@@ -158,16 +171,24 @@ class TTFunctionCallOrTensorAccess(TTNode):
         If any matrix range args are present in the argument list.
         """
         return not findFirst(self._args,searchedType=TTMatrixRange) is None
-    def isFunction(self,isDefinitivelyFunction=False): 
+    def __guessItIsFunction(self): 
+        """ 
+        Tries to determine if the whole expression
+        is function or not if no other hints are given
+        """
         name = makeCStr(self._name).lower()
         return len(self._args) == 0 or\
-          isDefinitivelyFunction or\
           name in GPUFORT_CPP_ROUTINES or\
           name in ALL_HOST_ROUTINES or\
           name in ALL_DEVICE_ROUTINES
-    def isTensor(self,isDefinitivelyFunction=False):
-        return not self.isFunction(isDefinitivelyFunction) or\
-                self.hasMatrixRangeArgs()
+    def isTensor(self):
+        if self._isTensorAccess == True3:
+            return True
+        elif self._isTensorAccess == False3:
+            return False
+        else:
+            return self.hasMatrixRangeArgs() or\
+                   not self.__guessItIsFunction()
     def name(self,mangleArgs=False):
         if mangleArgs:
             result = self.fStr().replace("(","_")
@@ -176,9 +197,9 @@ class TTFunctionCallOrTensorAccess(TTNode):
             return result
         else:
             return makeFStr(self._name)
-    def cStr(self,isDefinitivelyFunction=False):
+    def cStr(self):
         name = makeCStr(self._name).lower()
-        if self.isTensor(isDefinitivelyFunction):
+        if self.isTensor():
             return "{0}[_idx_{0}({1})]".format(name,",".join([makeCStr(s) for s in self._args])) # Fortran identifiers cannot start with "_"
         else:
             return "{}({})".format(name,",".join([makeCStr(s) for s in self._args]))
@@ -225,7 +246,8 @@ class TTRValue(TTNode,IValue):
         result = self._sign + makeCStr(self._value)
         if len(self._reductionIndex):
             result += "[{idx}]".format(idx=self._reductionIndex) 
-        return result
+        return result.lower()
+
 class TTLValue(TTNode,IValue):
     def _assignFields(self,tokens):
         self._value          = tokens[0]
@@ -334,7 +356,8 @@ class TTSubroutineCall(TTNode):
     def _assignFields(self,tokens):
         self._subroutine=tokens[0]
     def cStr(self):
-        return self._subroutine.cStr(isDefinitivelyFunction=True)
+        self._subroutine._isTensorAccess = False3
+        return self._subroutine.cStr()+";"
 
 class TTOperator(TTNode):
     def _assignFields(self,tokens):
@@ -933,27 +956,6 @@ class TTDeclaration(TTNode,Attributed):
             if ttdeclaredvariable.name().lower() == name.lower():
                 result = makeCStr(ttdeclaredvariable._rhs)
         return result
-    def convertToCptr(self):
-        """
-        Convert all ttdeclaredvariable variables to 'type(c_ptr)'
-        and strip off most qualifiers except 'intent', 'save' ,...
-        :note: `type(c_ptr)` is a Fortran type. This function is not for C code generation.
-        """
-        self._datatype._type   = "type(c_ptr)"
-        self._datatype._kind   = None
-        self._datatype._length = None
-        hasSaveQualifier = self.hasStringQualifier("save")
-        hasPointerQualifier = self.hasStringQualifier("pointer")
-        intent = findFirst(self._qualifiers,TTIntentQualifier)
-        self._qualifiers = []
-        if intent != None:
-            self._qualifiers.append(intent)
-        if hasSaveQualifier:
-            self._qualifiers.append("save")
-        for ttdeclaredvariable in self._rhs: # strip off bounds of declared variables
-            ttdeclaredvariable._bounds = []
-            if not hasPointerQualifier:
-                ttdeclaredvariable._rhs = "c_null_ptr"
     def fStr(self,extraIgnoreList=[],includeBounds=True,includeRhs=True):
         """
         The ignore list can be used to filter out some
@@ -978,7 +980,7 @@ class TTDeclaration(TTNode,Attributed):
         variables, e._g. if these are parameters of a subroutine
         that we want to convert.
         """
-        ignoreList      = map(str.lower, self._ignoreList + extraIgnoreList)
+        ignoreList      = [makeCStr(var) for var in (self._ignoreList + extraIgnoreList)]
         result          = ""
         comment         = ""
         dimensionBounds = ""
@@ -989,7 +991,7 @@ class TTDeclaration(TTNode,Attributed):
                 dimensionBounds = makeCStr(dimensionQualifier[0])
            comment = " /* Fortran qualifiers: {0} */".format(",".join([makeFStr(el) for el in self._qualifiers]))
         for ttdeclaredvariable in self._rhs:
-            if not ttdeclaredvariable.name(makeCStr).lower() in ignoreList: 
+            if not ttdeclaredvariable.name(makeCStr) in ignoreList: 
                 ignoredVars += 1
                 if isFunctionArgument:
                     result += "{0} {1},".format(makeCStr(self._datatype),ttdeclaredvariable.cStr(includeBounds,includeRhs),comment)
@@ -998,7 +1000,7 @@ class TTDeclaration(TTNode,Attributed):
                     if self.hasStringQualifier("shared"):
                         datatype = "__shared__ " + datatype
                     result += "{0} {1}{2};{3}\n".format(datatype,ttdeclaredvariable.cStr(includeBounds,includeRhs),dimensionBounds,comment) 
-        if ignoredVars == len(self._rhs):
+        if ignoredVars < len(self._rhs):
             if isFunctionArgument:
                 return result
             else:
@@ -1076,45 +1078,53 @@ class TTEndIf(TTNode):
 class TTWhile(TTNode):
     def _assignFields(self,tokens):
         self._condition, self._body = tokens
-        
     def cStr(self):    
         bodyContent = flattenBody(self._body)
         conditionContent = makeCStr(self._condition)
         cStr = "while ({0}) {{\n  {1}\n}}".format(conditionContent,bodyContent) 
         return cStr
 
-class TTSubroutine(TTNode):
+class TTProcedureBody(TTNode):
     def _assignFields(self,tokens):
-        self._qualifier = tokens[0]
-        self._name      = tokens[1]
-        self._args      = tokens[2]
-        self._body      = tokens[3]
-    def nameCStr(self):
+        self._body = tokens[0]
+        self._indexHints  = []
+        self._ignoredVars = []
+        self._resultName  = ""
+    def cStr(self):
         """
-        Returns the name of the subroutine.
+        :return: body of a procedure as C/C++ code.
+        
+        When converting declarations, all declared variables with a name in the
+        _ignoredVars member are ignored. All declared variables that store a precision
+        kind are ignored too.
+
+        Moreover, non-empty result names will be propagated to
+        all return statements.
         """
-        return makeCStr(self._name) 
-    def argNamesCStr(self):
-        """
-        Returns the arguments of the subroutine.
-        """
-        return [makeCStr(ident) for ident in self._args]
-    def bodyCStr(self,ignoreDeclarationsAttributes=False):
-        """
-        Returns the body of the subroutine.
-        """
-        # Remove function argument definitions and precision definitions
+        # 0. Clarify types of function calls / tensor access that are not 
+        # members of a struct
+        if len(self._indexHints):
+            for expr in findAllMatching(self._body,filterExpr=lambda x: isinstance(x,IValue)):
+                 if type(expr._value) is TTFunctionCallOrTensorAccess:
+                     _, discovered = indexertools.searchIndexForVariable(self._indexHints,expr.name())
+                     if discovered:
+                         expr._value._isTensorAccess = True3
+        # 1. Remove function argument definitions and precision definitions
         # from body before converting body to C code.
         declarations = findAll(self._body,TTDeclaration)
-        #declarations += findAll(self._body,TTAttributes)
-        ignoredVars = [makeFStr(arg).lower() for arg in  self._args]
         for ttdeclaration in declarations:
-             for name in ttdeclaration.variableNames():
-                  if "selected_real_kind" in ttdeclaration.rhsCStr(name).lower():
-                      ignoredVars.append(name)
-        for node in declarations:
-             node._ignoreList = ignoredVars
-        return makeCStr(self._body)
+            ttdeclaration._ignoreList = list(self._ignoredVars)
+            for name in ttdeclaration.variableNames():
+                if "selected_real_kind" in ttdeclaration.rhsCStr(name).lower():
+                    ttdeclaration._ignoreList.append(name)
+        # 2. Propagate result variable name to return statements
+        if len(self._resultName):
+            for expr in findAll(self._body,TTReturn):
+                 expr._resultName = resultName  
+        cBody = makeCStr(self._body)
+        if len(self._resultName):
+             cBody += "\nreturn "+resultName+";"
+        return postprocessCSnippet(cBody)
 
 ## Link actions
 #printStatement.setParseAction(TTCommentedOut)
@@ -1172,5 +1182,5 @@ singleLineIfBody.setParseAction(TTStatement)
 statement.setParseAction(TTStatement)
 
 use.setParseAction(TTIgnore)
-returnStatement.setParseAction(TTSimpleToken)
-subroutine.setParseAction(TTSubroutine) 
+returnStatement.setParseAction(TTReturn)
+procedureBody.setParseAction(TTProcedureBody) 

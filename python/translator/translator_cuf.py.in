@@ -213,13 +213,10 @@ class TTAllocateRValue(TTNode):
             # TODO(gpufort): Add Warning
             return "TODO(gpufort): UNKNOWN"
     def cStr(self):
-        if self._bounds != None:
-            return makeCStr(self._var) + "(" + makeCStr(self._bounds) + ")"
-        else:
-            return makeCStr(self._var)
+        assert False, "TTAllocateRValue: 'cStr(self)' not implemented"
     def fStr(self):
         if self._bounds != None:
-            return makeFStr(self._var) + "(" + makeFStr(self._bounds) + ")"
+            return makeFStr(self._var) + makeFStr(self._bounds)
         else:
             return makeFStr(self._var)
 

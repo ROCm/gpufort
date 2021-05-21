@@ -10,5 +10,9 @@ GENERATE_KERNEL_LAUNCHER = True     # Generate kernel launch routines that are c
 GENERATE_CPU_KERNEL_LAUNCHER = True # Generate CPU kernel launch routines that are callable from Fortran.
                                     # Overruled by GENERATE_KERNEL_LAUNCHER
 
-CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140, BinPackArguments: false, BinPackParameters: false, AllowAllArgumentsOnNextLine: false, AllowAllParametersOfDeclarationOnNextLine: false}\""
+PRETTIFY_GENERATED_FORTRAN_CODE = False # Prettify the generated Fortran code with fprettify
+
+PRETTIFY_GENERATED_C_CODE       = True  # Prettify the generated HIP C++ code with clang-format.
+CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140, BinPackArguments: false, BinPackParameters: false, AllowAllArgumentsOnNextLine: false, AllowAllParametersOfDeclarationOnNextLine: false}\"" 
+   # Format style that is passed to clang-format
 

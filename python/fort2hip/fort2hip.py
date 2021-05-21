@@ -522,7 +522,8 @@ def renderTemplates(outputFilePrefix,hipContext,fContext):
     #pprint.pprint(hipContext)
     hipImplementationFilePath = "{0}.kernels.hip.cpp".format(outputFilePrefix)
     model.HipImplementationModel().generateCode(hipImplementationFilePath,hipContext)
-    utils.prettifyCFile(hipImplementationFilePath,CLANG_FORMAT_STYLE)
+    if PRETTIFY_GENERATED_C_CODE:
+        utils.prettifyCFile(hipImplementationFilePath,CLANG_FORMAT_STYLE)
     msg = "created HIP C++ implementation file: ".ljust(40) + hipImplementationFilePath
     logger = logging.getLogger("")
     logger.info(msg) ; print(msg)
@@ -545,7 +546,8 @@ def renderTemplates(outputFilePrefix,hipContext,fContext):
         # Fortran interface/testing module
         moduleFilePath = "{0}.kernels.f08".format(outputFilePrefix)
         model.InterfaceModuleModel().generateCode(moduleFilePath,fContext)
-        #utils.prettifyFFile(moduleFilePath)
+        if PRETTIFY_GENERATED_FORTRAN_CODE:
+            utils.prettifyFFile(moduleFilePath)
         msg = "created interface/testing module: ".ljust(40) + moduleFilePath
         logger.info(msg) ; print(msg)
 
@@ -554,7 +556,8 @@ def renderTemplates(outputFilePrefix,hipContext,fContext):
            # Fortran test program
            testFilePath = "{0}.kernels.TEST.f08".format(outputFilePrefix)
            model.InterfaceModuleTestModel().generateCode(testFilePath,fContext)
-           #utils.prettifyFFile(testFilePath)
+           if PRETTIFY_GENERATED_FORTRAN_CODE:
+               utils.prettifyFFile(testFilePath)
            msg = "created interface module test file: ".ljust(40) + testFilePath
            logger.info(msg)
            print(msg)

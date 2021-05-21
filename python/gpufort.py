@@ -67,7 +67,8 @@ def translateFortranSource(fortranFilePath,stree,index,wrapInIfdef):
     with open(modifiedFortranFilePath,"w") as outfile:
          for line in outputLines:
               outfile.write(line.strip("\n") + "\n")
-    utils.prettifyFFile(modifiedFortranFilePath)
+    if PRETTIFY_MODIFIED_TRANSLATION_SOURCE:
+        utils.prettifyFFile(modifiedFortranFilePath)
     msg = "created hipified input file: ".ljust(40) + modifiedFortranFilePath
     logger = logging.getLogger("")
     logger.info(msg) ; print(msg)

@@ -9,6 +9,8 @@ GENERATE_KERNEL_LAUNCHER = True     # Generate kernel launch routines that are c
                                     # Set to 'False' in order to categorically disable generation of kernel launch routines.
 GENERATE_CPU_KERNEL_LAUNCHER = True # Generate CPU kernel launch routines that are callable from Fortran.
                                     # Overruled by GENERATE_KERNEL_LAUNCHER
+GENERATE_DEBUG_CODE             = True  # Generate debug routine calls into the code that can be used 
+                                        # to print out kernel argument values or device array elements and norms.
 
 PRETTIFY_GENERATED_FORTRAN_CODE = False # Prettify the generated Fortran code with fprettify
 

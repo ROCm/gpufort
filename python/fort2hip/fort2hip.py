@@ -248,6 +248,7 @@ def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         hipKernelDict["isLoopKernel"]          = True
         hipKernelDict["modifier"]              = "__global__"
         hipKernelDict["returnType"]            = "void"
+        hipKernelDict["generateDebugCode"]     = GENERATE_DEBUG_CODE
         hipKernelDict["generateLauncher"]      = GENERATE_KERNEL_LAUNCHER
         hipKernelDict["generateCPULauncher"]   = GENERATE_KERNEL_LAUNCHER and GENERATE_CPU_KERNEL_LAUNCHER
         if DEFAULT_LAUNCH_BOUNDS != None and len(DEFAULT_LAUNCH_BOUNDS):
@@ -429,6 +430,7 @@ def updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext
 
         # C routine and C stprocedure launcher
         hipKernelDict = {}
+        hipKernelDict["generateDebugCode"]     = GENERATE_DEBUG_CODE
         hipKernelDict["generateLauncher"]      = generateLauncher
         hipKernelDict["generateCPULauncher"]   = False
         hipKernelDict["modifier"]              = "__global__" if stprocedure.isKernelSubroutine() else "__device__"

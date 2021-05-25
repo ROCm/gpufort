@@ -35,6 +35,8 @@ def createIndex(searchDirs,defines,filePath,indexFile):
         return indexer.resolveDependencies(context,searchedFiles=[ filePath ])
 
 def translateFortranSource(fortranFilePath,stree,index,wrapInIfdef):
+    global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
+    
     # derive code line groups from original tree
     groups = scanner.groupObjects(stree,index)
     # first pass to update some scanner tree nodes

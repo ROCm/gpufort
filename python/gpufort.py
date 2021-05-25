@@ -142,7 +142,12 @@ def parseCommandLineArguments():
     Parse command line arguments after all changes and argument transformations by the config file have been applied.
     """
     global LOG_LEVEL
-    
+    global DUMP_INDEX
+    global ONLY_GENERATE_KERNELS
+    global ONLY_MODIFY_TRANSLATION_SOURCE
+    global INCLUDE_DIRS
+    global WRAP_IN_IFDEF
+      
     # parse command line arguments
     parser = argparse.ArgumentParser(description="S2S translation tool for CUDA Fortran and Fortran+X")
     
@@ -152,7 +157,7 @@ def parseCommandLineArguments():
     parser.add_argument("-i,--index", dest="index", help="Pregenerated JSON index file. If this option is used, the '-d,--search-dirs' switch is ignored.", required=False, default=None, type=argparse.FileType("r"))
     parser.add_argument("-w,--wrap-in-ifdef",dest="wrapInIfdef",action="store_true",help="Wrap converted lines into ifdef in host code.")
     parser.add_argument("-k,--only-generate-kernels",dest="onlyGenerateKernels",action="store_true",help="Only generate kernels; do not modify host code.")
-    parser.add_argument("-m,--only-modify-host-code",dest="onlyModifyHostCode",action="store_true",help="Only modify host code; do not generate kernels.")
+    parser.add_argument("-m,--only-modify-host-code",dest="onlyModifyTranslationSource",action="store_true",help="Only modify host code; do not generate kernels.")
     parser.add_argument("-E,--destination-dialect",dest="destinationDialect",default=None,type=str,help="One of: {}".format(", ".join(scanner.SUPPORTED_DESTINATION_DIALECTS)))
     parser.add_argument("--log-level",dest="logLevel",required=False,type=str,default="",help="Set log level. Overrides config value.")
     parser.add_argument("--cublas-v2",dest="cublasV2",action="store_true",help="Assume cublas v2 function signatures that use a handle. Overrides config value.")
@@ -164,7 +169,7 @@ def parseCommandLineArguments():
     parser.add_argument("--dump-index",dest="dumpIndex",action="store_true",help="Dump the index.")
     
     parser.set_defaults(printConfigDefaults=False,dumpIndex=False,\
-        wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyHostCode=False)
+        wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyTranslationSource=False)
     args, unknownArgs = parser.parse_known_args()
 
     if args.printConfigDefaults:
@@ -198,17 +203,12 @@ def parseCommandLineArguments():
                            print(line,end="")
         print("")
         sys.exit(0)
+    ## VALIDATION
     # mutually exclusive arguments
-    if args.onlyGenerateKernels and args.onlyModifyHostCode:
+    if args.onlyGenerateKernels and args.onlyModifyTranslationSource:
         msg = "switches '--only-generate-kernels' and 'only-modify-host-code' cannot be used at the same time."
         print("ERROR: "+msg,file=sys.stderr)
         sys.exit(2)
-    # overwrite config values
-    if len(args.logLevel):
-        LOG_LEVEL = getattr(logging,args.logLevel.upper(),getattr(logging,"INFO"))
-    if args.cublasV2:
-        scanner.CUBLAS_VERSION = 2
-        translator.CUBLAS_VERSION = 2
     # check if input is set
     if args.input is None:
         msg = "no input file"
@@ -223,6 +223,28 @@ def parseCommandLineArguments():
     if len(unknownArgs):
         msg = "unknown arguments (may be used by registered actions): {}".format(" ".join(unknownArgs))
         print("WARNING: "+msg,file=sys.stderr)
+    ## OVERWRITE CONFIG VALUES
+    # parse file and create index in parallel
+    if args.destinationDialect != None:
+        scanner.DESTINATION_DIALECT = \
+          scanner.checkDestinationDialect(args.destinationDialect)
+    # dump index
+    if args.dumpIndex: # ONLY modify config value if arg is set, i.e. specified
+        DUMP_INDEX = True
+    # only generate kernels / modify source 
+    if args.onlyGenerateKernels:
+        ONLY_GENERATE_KERNELS = True
+    if args.onlyModifyTranslationSource:
+        ONLY_MODIFY_TRANSLATION_SOURCE = True
+    # wrap modified lines in ifdef
+    if args.wrapInIfdef:
+        WRAP_IN_IFDEF = True
+    # log level
+    if len(args.logLevel):
+        LOG_LEVEL = getattr(logging,args.logLevel.upper(),getattr(logging,"INFO"))
+    if args.cublasV2:
+        scanner.CUBLAS_VERSION = 2
+        translator.CUBLAS_VERSION = 2
     return args, unknownArgs
 
 def initLogging(inputFilePath):
@@ -269,13 +291,14 @@ if __name__ == "__main__":
                 action(args,unknownArgs)
     
     inputFilePath = os.path.abspath(args.input)
-    args.searchDirs += includeDirs
+    INCLUDE_DIRS += args.searchDirs
+    INCLUDE_DIRS += includeDirs
     oneOrMoreSearchDirsNotFound = False
-    for i,directory in enumerate(args.searchDirs):
+    for i,directory in enumerate(INCLUDE_DIRS):
         if directory[0]  != "/":
-            args.searchDirs[i] = args.workingDir+"/"+directory
-        if not os.path.exists(args.searchDirs[i]):
-            msg = "search directory '{}' cannot be found".format(args.searchDirs)
+            INCLUDE_DIRS[i] = args.workingDir+"/"+directory
+        if not os.path.exists(INCLUDE_DIRS[i]):
+            msg = "search directory '{}' cannot be found".format(INCLUDE_DIRS[i])
             print("ERROR: "+msg,file=sys.stderr)
             oneOrMoreSearchDirsNotFound = True
     if oneOrMoreSearchDirsNotFound:
@@ -284,10 +307,6 @@ if __name__ == "__main__":
     # init logging
     initLogging(inputFilePath)
 
-    # parse file and create index in parallel
-    if args.destinationDialect != None:
-        scanner.DESTINATION_DIALECT = \
-          scanner.checkDestinationDialect(args.destinationDialect)
     # scanner must be invoked after index creation
     index = createIndex(args.searchDirs,defines,inputFilePath,args.index)
     stree = scanner.parseFile(inputFilePath,index)    
@@ -300,14 +319,14 @@ if __name__ == "__main__":
     else:
         kernelsToConvertToHip = scanner.KERNELS_TO_CONVERT_TO_HIP
     fort2hip.createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename,\
-      generateCode=not args.onlyModifyHostCode)
+      generateCode=not ONLY_MODIFY_TRANSLATION_SOURCE)
     
     # modify original file
-    if not args.onlyGenerateKernels:
-        translateFortranSource(inputFilePath,stree,index,args.wrapInIfdef) 
+    if not ONLY_GENERATE_KERNELS:
+        translateFortranSource(inputFilePath,stree,index,WRAP_IN_IFDEF) 
 
     # dump index
-    if args.dumpIndex:
+    if DUMP_INDEX:
         indexFilePath = outputFilePrefix + ".index.json"
         indexFile = open(indexFilePath, "w")
         json.dump(index, indexFile, indent=2)

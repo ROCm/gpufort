@@ -22,7 +22,7 @@ program testSaxpy
   y_d = y
   
   !$cuf kernel do(1) <<<grid, tBlock>>>
-  do i=1,N
+  do i=1,size(y_d,1)
     y_d(i) = y_d(i) + a*x_d(i)
   end do
 

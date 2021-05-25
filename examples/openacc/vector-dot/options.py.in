@@ -1,1 +1,2 @@
 LOG_DIR="log"
+fort2hip.CLANG_FORMAT_STYLE = "\"{BasedOnStyle: llvm, ColumnLimit: 140}\""

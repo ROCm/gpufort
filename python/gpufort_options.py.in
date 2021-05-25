@@ -5,9 +5,16 @@ LOG_LEVEL      = logging.INFO   # log level
 LOG_DIR        = "/tmp/gpufort" # directory for storing log files
 LOG_DIR_CREATE = True           # create log dir if it does not exist
 
+DUMP_INDEX = False # dump the index as JSON file
+
+WRAP_IN_IFDEF                  = False
+ONLY_MODIFY_TRANSLATION_SOURCE = False # Do only modify the translation source. 
+ONLY_GENERATE_KERNELS          = False # Do only generate/extract HIP C++ kernels. (Only makes sense if destination language is HIP.)
+
 # actions to run after the command line argument parse
 POST_CLI_ACTIONS = [] # register functions with parameters (args,unknownArgs) (see: argparse.parse_known_args
 
 PRETTIFY_MODIFIED_TRANSLATION_SOURCE = False # Prettify the translation source after all modifications have been applied. 
                                              # (Does not change the actual source but the modified version of it.)
+INCLUDE_DIRS = []
 

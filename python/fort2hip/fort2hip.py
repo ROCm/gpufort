@@ -21,7 +21,7 @@ def convertDim3(dim3,dimensions,doFilter=True):
      result = []
      specified = dim3
      if doFilter:
-         specified = [ x for x in dim3 if type(x) != int or x < 1 ]
+         specified = [ x for x in dim3 if type(x) != int or x > 0 ]
      for i,value in enumerate(specified):
           if i >= dimensions:
               break
@@ -240,6 +240,7 @@ def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         # C LoopKernel
         dimensions  = kernelParseResult.numDimensions()
         block = convertDim3(kernelParseResult.numThreadsInBlock(),dimensions)
+        # TODO more logging
         if not len(block):
             defaultBlockSize = DEFAULT_BLOCK_SIZES 
             block = convertDim3(defaultBlockSize[dimensions],dimensions)
@@ -249,7 +250,10 @@ def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         hipKernelDict["returnType"]            = "void"
         hipKernelDict["generateLauncher"]      = GENERATE_KERNEL_LAUNCHER
         hipKernelDict["generateCPULauncher"]   = GENERATE_KERNEL_LAUNCHER and GENERATE_CPU_KERNEL_LAUNCHER
-        hipKernelDict["launchBounds"]          = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS)
+        if DEFAULT_LAUNCH_BOUNDS != None and len(DEFAULT_LAUNCH_BOUNDS):
+            hipKernelDict["launchBounds"]      = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS)
+        else:
+            hipKernelDict["launchBounds"]      = ""
         hipKernelDict["size"]                  = convertDim3(kernelParseResult.problemSize(),dimensions,doFilter=False)
         hipKernelDict["grid"]                  = convertDim3(kernelParseResult.numGangsTeamsBlocks(),dimensions)
         hipKernelDict["block"]                 = block

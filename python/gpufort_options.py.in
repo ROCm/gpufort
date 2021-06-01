@@ -5,7 +5,7 @@ LOG_LEVEL      = logging.INFO   # log level
 LOG_DIR        = "/tmp/gpufort" # directory for storing log files
 LOG_DIR_CREATE = True           # create log dir if it does not exist
 
-DUMP_INDEX = False # dump the index as JSON file
+DUMP_INDEX         = False # dump the index as JSON file
 
 WRAP_IN_IFDEF                  = False
 ONLY_MODIFY_TRANSLATION_SOURCE = False # Do only modify the translation source. 

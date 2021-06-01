@@ -21,13 +21,21 @@ exec(open("{0}/grammar.py".format(GRAMMAR_DIR)).read())
 indexerDir = os.path.dirname(__file__)
 exec(open("{0}/indexer_options.py.in".format(indexerDir)).read())
     
-pContinuation = re.compile(CONTINUATION)
-pFilter       = re.compile(FILTER) 
-pAntiFilter   = re.compile(ANTIFILTER)
+pFilter        = re.compile(FILTER) 
+pAntiFilter    = re.compile(ANTIFILTER)
+pContinuation  = re.compile(CONTINUATION_FILTER)
+pPrescanFilter = re.compile(PRESCAN_FILTER) 
 
-def __readFortranFile(filepath,compilerOptions):
+def __readFortranFile(filepath,compilerOptions,prescan=False):
+    """
+    :param prescan: If this is a pre scan, then only programs,
+    """
     def considerLine(strippedLine):
-        return (pFilter.match(strippedLine) != None) and (pAntiFilter.match(strippedLine) is None)
+        nonlocal prescan
+        if prescan:
+            return (pPrescanFilter.match(strippedLine) != None) and (pAntiFilter.match(strippedLine) is None)
+        else:
+            return (pFilter.match(strippedLine) != None) and (pAntiFilter.match(strippedLine) is None)
 
     """
     Read and preprocess a Fortran file. Make all
@@ -67,16 +75,12 @@ class __Node():
     def __init__(self,name,data,parent=None):
         self._name     = name
         self._parent   = parent 
-        self._children = []
         self._data     = data
     def __str__(self):
-        if len(self._children):
-            return "{}: {}".format(self._name,self._children)
-        else:
-            return self._name
+        return "{}: {}".format(self._name,self._data)
     __repr__ = __str__
 
-def __parseFile(fileLines,filePath):
+def __parseFile(fileLines,filePath,prescan=False):
     index = []
 
     # Currently, we are only interested in a modules declarations
@@ -93,21 +97,26 @@ def __parseFile(fileLines,filePath):
         entry["name"]                            = name
         entry["tag"]                             = tag
         entry["file"]                            = filePath
-        entry["types"]                           = []
         entry["variables"]                       = []
-        entry["usedModulesOrParentSubprograms"]  = []
+        entry["subprograms"]                     = []
+        entry["types"]                           = []
+        entry["usedModules"]  = []
         return entry
 
     def End(tokens):
+        nonlocal root
         nonlocal current
-        current = current._parent
+        if current != root:
+            current = current._parent
     def ModuleStart(tokens):
+        nonlocal root
         nonlocal current
         name = tokens[0]
         module = createBaseEntry_("module",name,name,filePath)
         root._data.append(module)
         current = __Node("module",data=module,parent=current)
     def ProgramStart(tokens):
+        nonlocal root
         nonlocal current
         name    = tokens[0]
         program = createBaseEntry_("program",name,name,filePath)
@@ -115,78 +124,112 @@ def __parseFile(fileLines,filePath):
         current = __Node("program",data=program,parent=current)
     #host|device,name,[args]
     def SubroutineStart(tokens):
+        nonlocal root
         nonlocal current
-        name = tokens[1]
-        subroutine = createBaseEntry_("subroutine",name,name,filePath)
         if current != root:
-            subroutine["tag"] = current._data["name"] + ":" + name
-        subroutine["attributes"]  = [q.lower() for q in tokens[0]]
-        subroutine["dummyArgs"]   = list(tokens[2])
-        if current._name not in ["root","module"]:
-            subroutine["usedModulesOrParentSubprograms"].append({ "name": current._data["name"], "only": []})
-        root._data.append(subroutine)
-        current = __Node("subroutine",data=subroutine,parent=current)
+            name = tokens[1]
+            subroutine = createBaseEntry_("subroutine",name,name,filePath)
+            if current != root:
+                subroutine["tag"] = current._data["name"] + ":" + name
+            subroutine["attributes"]  = [q.lower() for q in tokens[0]]
+            subroutine["dummyArgs"]   = list(tokens[2])
+            current._data["subprograms"].append(subroutine)
+            current = __Node("subroutine",data=subroutine,parent=current)
     #host|device,name,[args],result
     def FunctionStart(tokens):
+        nonlocal root
         nonlocal current
-        name = tokens[1]
-        function = createBaseEntry_("function",name,name,filePath)
         if current != root:
-            function["tag"] = current._data["name"] + ":" + name
-        function["attributes"]  = [q.lower() for q in tokens[0]]
-        function["dummyArgs"]   = list(tokens[2])
-        function["resultName"]  = name if tokens[3] is None else tokens[3]
-        if current._name not in ["root","module"]:
-            function["usedModulesOrParentSubprograms"].append({ "name": current._data["name"], "only": []})
-        root._data.append(function)
-        current = __Node("function",data=function,parent=current)
+            name = tokens[1]
+            function = createBaseEntry_("function",name,name,filePath)
+            if current != root:
+                function["tag"] = current._data["name"] + ":" + name
+            function["attributes"]  = [q.lower() for q in tokens[0]]
+            function["dummyArgs"]   = list(tokens[2])
+            function["resultName"]  = name if tokens[3] is None else tokens[3]
+            current._data["subprograms"].append(function)
+            current = __Node("function",data=function,parent=current)
     
     def TypeStart(tokens):
+        nonlocal root
         nonlocal current
-        name = tokens[1]
-        derivedType = {}
-        derivedType["name"]      = name
-        derivedType["variables"] = []
-        current._data["types"].append(derivedType)
-        current = __Node("type",data=derivedType,parent=current)
+        if current != root:
+            name = tokens[1]
+            derivedType = {}
+            derivedType["name"]      = name
+            derivedType["variables"] = []
+            current._data["types"].append(derivedType)
+            current = __Node("type",data=derivedType,parent=current)
     def Declaration(s,loc,tokens):
+        nonlocal root
         nonlocal current
         nonlocal currentLine
         #print(currentLine)
-        current._data["variables"] +=\
-          translator.createIndexRecordsFromDeclaration(\
-            translator.declaration.parseString(currentLine)[0])
+        if current != root:
+            current._data["variables"] +=\
+              translator.createIndexRecordsFromDeclaration(\
+                translator.declaration.parseString(currentLine)[0])
     def Attributes(s,loc,tokens):
         """
         Add attributes to previously declared variables in same scope.
         Does not modify scope of other variables.
         """
         # TODO investigate if target of attribute must be in same scope or not!
+        nonlocal root
         nonlocal current
         nonlocal currentLine
         #print(currentLine)
-        attribute, modifiedVars = \
-            translator.parseAttributes(translator.attributes.parseString(currentLine)[0])
-        for varContext in current._data["variables"]:
-            if varContext["name"] in modifiedVars and attribute in varContext:
-                varContext[attribute] = True
+        if current != root:
+            attribute, modifiedVars = \
+                translator.parseAttributes(translator.attributes.parseString(currentLine)[0])
+            for varContext in current._data["variables"]:
+                if varContext["name"] in modifiedVars and attribute in varContext:
+                    varContext[attribute] = True
+    def AccDeclare(s,loc,tokens):
+        """
+        Add attributes to previously declared variables in same scope.
+        Does not modify scope of other variables.
+        """
+        # TODO investigate if target of attribute must be in same scope or not!
+        nonlocal root
+        nonlocal current
+        nonlocal currentLine
+        parseResult = translator.acc_declare.parseString(currentLine)[0]
+        if current != root:
+            for varContext in current._data["variables"]:
+                for varName in parseResult.mapAllocVariables():
+                    if varContext["name"] == varName:
+                        varContext["declareOnTarget"] = "alloc"
+                for varName in parseResult.mapToVariables():
+                    if varContext["name"] == varName: 
+                        varContext["declareOnTarget"] = "to"
+                for varName in parseResult.mapFromVariables():
+                    if varContext["name"] == varName: 
+                        varContext["declareOnTarget"] = "from"
+                for varName in parseResult.mapTofromVariables():
+                    if varContext["name"] == varName: 
+                        varContext["declareOnTarget"] = "tofrom"
     # 'use kinds, only: dp, sp => sp2' --> [None, 'kinds', [['dp', None], ['sp', 'sp2']]]
     def Use(tokens):
+        nonlocal root
         nonlocal current
-        usedModule = {}
-        usedModule["name"] = translator.makeFStr(tokens[1])
-        usedModule["only"] = {}
-        for pair in tokens[2]:
-            original = translator.makeFStr(pair[0])
-            renaming = original if pair[1] is None else translator.makeFStr(pair[1])
-            usedModule["only"][original]=renaming
-        current._data["usedModulesOrParentSubprograms"].append(usedModule) # TODO only include what is necessary
+        if current != root:
+            usedModule = {}
+            usedModule["name"] = translator.makeFStr(tokens[1])
+            usedModule["only"] = {}
+            for pair in tokens[2]:
+                original = translator.makeFStr(pair[0])
+                renaming = original if pair[1] is None else translator.makeFStr(pair[1])
+                usedModule["only"][original]=renaming
+            #print(current)
+            current._data["usedModules"].append(usedModule) # TODO only include what is necessary
     
     moduleStart.setParseAction(ModuleStart)
     typeStart.setParseAction(TypeStart)
     programStart.setParseAction(ProgramStart)
     functionStart.setParseAction(FunctionStart)
     subroutineStart.setParseAction(SubroutineStart)
+    acc_declare.setParseAction(AccDeclare)
 
     typeEnd.setParseAction(End)
     structureEnd.setParseAction(End)
@@ -199,31 +242,36 @@ def __parseFile(fileLines,filePath):
     def tryToParseString(expressionName,expression):
         try:
            expression.parseString(currentLine)
-           logging.getLogger("").debug("indexer:\tFOUND expression '{}' in line: '{}'".format(expressionName,currentLine))
+           utils.logDebug("indexer:\tFOUND expression '{}' in line: '{}'".format(expressionName,currentLine))
            return True
         except ParseBaseException as e: 
-           logging.getLogger("").debug2("indexer:\tdid not find expression '{}' in line '{}'".format(expressionName,currentLine))
-           logging.getLogger("").debug3(str(e))
+           utils.logDebug("indexer:\tdid not find expression '{}' in line '{}'".format(expressionName,currentLine),debugLevel=2)
+           utils.logDebug(str(e),debugLevel=3)
            return False
 
     for currentLine in fileLines:
-        tryToParseString("structureEnd|typeEnd|declaration|use|attributes|typeStart|moduleStart|programStart|functionStart|subroutineStart",\
-            typeEnd|structureEnd|declarationLhs|use|attributesLhs|typeStart|moduleStart|programStart|functionStart|subroutineStart)
+        if prescan:
+            tryToParseString("structureEnd|use|moduleStart|programStart|functionStart|subroutineStart",\
+              structureEnd|use|moduleStart|programStart|functionStart|subroutineStart)
+        else:
+            tryToParseString("structureEnd|typeEnd|declaration|use|attributes|acc_declare|typeStart|moduleStart|programStart|functionStart|subroutineStart",\
+              typeEnd|structureEnd|declarationLhs|use|attributesLhs|acc_declare|typeStart|moduleStart|programStart|functionStart|subroutineStart)
     return index
 
 def __resolveDependencies_body(i,index):
     def ascend(module):
         nonlocal index
         nonlocal i
-        for used in module["usedModulesOrParentSubprograms"]:
+        for used in module["usedModules"]:
             name = used["name"]
             only = used["only"]
             usedModule = next((m for m in index if m["name"] == name),None)
             if usedModule != None:
                 ascend(usedModule)
                 if len(only):
-                    variables  = []
-                    types      = []
+                    variables   = []
+                    types       = []
+                    subprograms = []
                     for var in usedModule["variables"]:
                         if var["name"] in only:
                             var["name"] = only[var["name"]]
@@ -232,21 +280,31 @@ def __resolveDependencies_body(i,index):
                         if struct["name"] in only:
                             struct["name"] = only[struct["name"]]
                             types.append(struct)
+                    for subprogram in usedModule["subprograms"]:
+                        if subprogram["name"] in only:
+                            subprogram["name"] = only[subprogram["name"]]
+                            subprograms.append(subprogram)
                 else:
-                    variables = usedModule["variables"]
-                    types     = usedModule["types"]
-                localVarNames  = [var["name"] for var in index[i]["variables"]]
-                localTypeNames = [typ["name"] for typ in index[i]["types"]]
-                index[i]["variables"] = [var for var in variables if var["name"] not in localVarNames]  +\
+                    variables   = usedModule["variables"]
+                    types       = usedModule["types"]
+                    subprograms = usedModule["subprograms"]
+                localVarNames        = [var["name"]  for var in index[i]["variables"]]
+                localTypeNames       = [typ["name"]  for typ in index[i]["types"]]
+                localSubprogramNames = [prog["name"] for prog in index[i]["subprograms"]]
+                index[i]["variables"]   = [var for var in variables     if var["name"] not in localVarNames]  +\
                    index[i]["variables"]
-                index[i]["types"]     = [typ for typ in types     if typ["type"] not in localTypeNames] +\
+                index[i]["types"]       = [typ for typ in types         if typ["name"] not in localTypeNames] +\
                    index[i]["types"]  
+                index[i]["subprograms"] = [prog for prog in subprograms if prog["name"] not in localSubprogramNames] +\
+                   index[i]["subprograms"]  
     ascend(index[i])
     # resolve dependencies
     return i,index[i]
 
 # API
-def scanSearchDirs(searchDirs,optionsAsStr):
+def scanSearchDirs(searchDirs,optionsAsStr,prescan=False):
+    global SCAN_SEARCH_DIRS_MAX_PROCESSES
+
     index = []
     inputFiles = []
     for searchDir in searchDirs:
@@ -254,11 +312,12 @@ def scanSearchDirs(searchDirs,optionsAsStr):
             inputFiles += __discoverInputFiles(searchDir)
         else:
             msg = "indexer: include directory '{}' does not exist. Is ignored.".format(searchDir)
-            logging.getLogger("").warn(msg); print("WARNING: "+msg,file=sys.stderr)
+            utils.logWarn(msg)
     partialResults = []
-    with Pool(processes=len(inputFiles)) as pool: #untuned
-        fileLines = [__readFortranFile(inputFile,optionsAsStr) for i,inputFile in enumerate(inputFiles)]
-        partialResults = [pool.apply_async(__parseFile, (fileLines[i],inputFile,)) for i,inputFile in enumerate(inputFiles)]
+    print("\n".join(inputFiles))
+    with Pool(processes=min(SCAN_SEARCH_DIRS_MAX_PROCESSES,len(inputFiles))) as pool: #untuned
+        fileLines = [__readFortranFile(inputFile,optionsAsStr,prescan) for i,inputFile in enumerate(inputFiles)]
+        partialResults = [pool.apply_async(__parseFile, (fileLines[i],inputFile,prescan,)) for i,inputFile in enumerate(inputFiles)]
         pool.close()
         pool.join()
     for p in partialResults:
@@ -271,7 +330,7 @@ def dependencyGraphs(index):
     graphs = []
     for module in index:
         isNotRoot = False
-        for usedModule in module["usedModulesOrParentSubprograms"]:
+        for usedModule in module["usedModules"]:
             isNotRoot = isNotRoot or usedModule["name"] in discoveredModuleNames
         if not isNotRoot:
             graphs.append(__Node(module["name"],data=module))
@@ -293,7 +352,7 @@ def resolveDependencies(index,searchedFiles=[],searchedTags=[]):
         considerTag  = not len(searchedTags) or module["tag"] in searchedTags
         return considerFile and considerTag
 
-    selection = [i for i,module in enumerate(index) if select(module) and len(module["usedModulesOrParentSubprograms"])]
+    selection = [i for i,module in enumerate(index) if select(module) and len(module["usedModules"])]
  
     if len(selection):
         with Pool(processes=len(selection)) as pool: # untuned
@@ -305,3 +364,12 @@ def resolveDependencies(index,searchedFiles=[],searchedTags=[]):
                 index[i] = result
     # filter out not needed entries 
     return [module for module in index if select(module)]
+
+def writeIndexToFile(index,filepath):
+    with open(filepath,"w") as outfile:
+            json.dump(index, indexFile, indent=2)
+        #
+
+def loadIndexFromFile(filepath):
+    return
+

@@ -507,7 +507,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         doLoops = findAll(self._body,TTDoLoop)
         if numOuterLoopsToMap == 1 or (LOOP_COLLAPSE_STRATEGY == "grid" and numOuterLoopsToMap <= 3):
             if numOuterLoopsToMap > 3:
-                logging.getLogger("").warn("loop collapse strategy grid chosen with nested loops > 3")
+                utils.logWarn("loop collapse strategy grid chosen with nested loops > 3")
             numOuterLoopsToMap = min(3,numOuterLoopsToMap)
             threadIndices = ["x","y","z"]
             for i in range(0,3-numOuterLoopsToMap):

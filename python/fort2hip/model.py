@@ -17,9 +17,9 @@ def renderAsString(templateName, context):
         return template.render(context)
     except Exception:
         pp = pprint.PrettyPrinter(depth=8)
-        logging.getLogger("").error("could not render template '%s'" % templateName)
-        logging.getLogger("").error("used context:")
-        logging.getLogger("").error(pp.pformat(context))
+        logging.logError("could not render template '%s'" % templateName)
+        logging.logError("used context:")
+        logging.logError(pp.pformat(context))
         raise
 
 def render(templateName, outputFilePath, context):

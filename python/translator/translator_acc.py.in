@@ -307,6 +307,14 @@ class TTAccDeclare(TTAccDirectiveBase):
     """ NOTE: In contrast to OMP, '!$acc declare' is only applied to global variables.
     There is '!$acc routine' for routines.
     """
+    def mapAllocVariables(self):
+        return self._handleSimpleMapping(TTAccClauseCreate)
+    def mapToVariables(self):
+        return self._handleSimpleMapping(TTAccClauseCopyin)
+    def mapFromVariables(self):
+        return self._handleSimpleMapping(TTAccClauseCopyout)
+    def mapTofromVariables(self):
+        return self._handleSimpleMapping(TTAccClauseCopy)
     def ompFStr(self):
         toList =\
           self._handleSimpleMapping(TTAccClauseCreate) +\

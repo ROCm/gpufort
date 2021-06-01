@@ -125,3 +125,30 @@ def addLoggingLevel(levelName, levelNum, methodName=None):
     setattr(logging, levelName, levelNum)
     setattr(logging.getLoggerClass(), methodName, logForLevel)
     setattr(logging, methodName, logToRoot)
+
+def logInfo(msg,verbose=True):
+    logging.getLogger("").info(msg)
+    if verbose:
+        print("INFO: "+msg, file=sys.stderr)
+
+def logError(msg,verbose=True):
+    logging.getLogger("").error(msg)
+    if verbose:
+        print("ERROR: "+msg, file=sys.stderr)
+
+def logWarning(msg,verbose=True):
+    logging.getLogger("").warning(msg)
+    if verbose:
+        print("WARNING: "+msg, file=sys.stderr)
+
+def logDebug(msg,debugLevel=1,verbose=False):
+    if debugLevel == 1:
+       logging.getLogger("").debug(msg)
+    elif debugLevel == 2:
+       logging.getLogger("").debug2(msg)
+    elif debugLevel == 3:
+       logging.getLogger("").debug3(msg)
+    else:
+        assert False, "debug level not supported"
+    if verbose:
+        print("WARNING: "+msg)

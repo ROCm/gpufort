@@ -72,8 +72,7 @@ def translateFortranSource(fortranFilePath,stree,index,wrapInIfdef):
     if PRETTIFY_MODIFIED_TRANSLATION_SOURCE:
         utils.prettifyFFile(modifiedFortranFilePath)
     msg = "created hipified input file: ".ljust(40) + modifiedFortranFilePath
-    logger = logging.getLogger("")
-    logger.info(msg) ; print(msg)
+    utils.logInfo(msg)
 
 def parseRawCommandLineArguments():
     """
@@ -130,13 +129,13 @@ def parseConfig(configFilePath):
             CONFIG_FILE=os.path.dirname(os.path.realpath(__file__))+"/"+configFilePath
         exec(prolog + open(CONFIG_FILE).read()+ epilog)
         msg = "config file '{}' found and successfully parsed".format(CONFIG_FILE)
-        logging.getLogger("").info(msg) ; print(msg)
+        utils.logInfo(msg)
     except FileNotFoundError:
         msg = "no '{}' file found. Use defaults.".format(CONFIG_FILE)
-        logging.warn(msg)
+        utils.logWarning(msg)
     except Exception as e:
         msg = "failed to parse config file '{}'. REASON: {} (NOTE: num prolog lines: {}). ABORT".format(CONFIG_FILE,str(e),len(prolog.split("\n")))
-        logging.getLogger("").error(msg) 
+        utils.logError(msg)
         sys.exit(1)
 
 def parseCommandLineArguments():
@@ -273,11 +272,10 @@ def initLogging(inputFilePath):
         print("ERROR: "+msg,file=sys.stderr)
         sys.exit(2)
 
-    logger = logging.getLogger("")
     msg = "input file: {0} (log id: {1})".format(inputFilePath,inputFilePathHash)
-    logger.info(msg) ; print(msg)
+    utils.logInfo(msg)
     msg = "log file:   {0} (log level: {1}) ".format(FILE,logging.getLevelName(LOG_LEVEL))
-    logger.info(msg) ; print(msg)
+    utils.logInfo(msg)
 
 if __name__ == "__main__":
     # read config and command line arguments
@@ -287,7 +285,7 @@ if __name__ == "__main__":
     args, unknownArgs = parseCommandLineArguments()
     if len(POST_CLI_ACTIONS):
         msg = "run registered actions"
-        logging.getLogger("").info(msg)# ; print(msg,file=sys.stderr)
+        utils.logInfo(msg,verbose=False)
         for action in POST_CLI_ACTIONS:
             if callable(action):
                 action(args,unknownArgs)
@@ -329,10 +327,9 @@ if __name__ == "__main__":
 
     # dump index
     if DUMP_INDEX:
-        indexFilePath = outputFilePrefix + ".index.json"
-        indexFile = open(indexFilePath, "w")
-        json.dump(index, indexFile, indent=2)
+        indexFilePath = outputFilePrefix + ".gpufort_mod"
+        indexer.writeIndexToFile(index, indexFilePath)
         msg = "saved index to file:".ljust(40) + indexFilePath
-        logging.getLogger("").info(msg) ; print(msg)
+        utils.logInfo(msg)
     # shutdown logging
     logging.shutdown()

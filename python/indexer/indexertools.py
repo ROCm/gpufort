@@ -25,7 +25,7 @@ EMPTY_VARIABLE = {
   "pinned"                     : "UNKNOWN",
   "managed"                    : "UNKNOWN",
   "allocatable"                : "UNKNOWN",
-  "declaredOnTarget"           : "UNKNOWN",
+  "declareOnTarget"           : "UNKNOWN",
   "rank"                       : -1,
   "unspecifiedBounds"          : "UNKNOWN",
   "lbounds"                    : "UNKNOWN",
@@ -45,15 +45,14 @@ def filterIndexByTag(index,tag,errorHandling=ERROR_HANDLING):
     if len(resultSet) != 1:
         msg = "'{}' entries found for tag '{}'. Expected to find a single entry.".format(len(resultSet),tag)
         if errorHandling == "strict":
-            logging.getLogger("").error(msg)
-            print("ERROR: "+msg,file=sys.stderr)
+            utils.logError(msg) 
             sys.exit(1001)
         else:
-            logging.getLogger("").warn(msg)
+            utils.logWarn(msg) 
             return [ EMPTY ]
     else:
         msg = "'{}' entries found for tag '{}'".format(len(resultSet),tag)
-        logging.getLogger("").debug2(msg)
+        utils.logDebug2(msg) 
         return resultSet
 
 def searchIndexForVariable(index,variableExpression,errorHandling=ERROR_HANDLING):
@@ -93,13 +92,16 @@ def searchIndexForVariable(index,variableExpression,errorHandling=ERROR_HANDLING
         result["name"] = variableExpression
         msg = "indexertools: no entry found for variable '{}'.".format(variableExpression)
         if errorHandling  == "strict":
-            logging.getLogger("").error(msg)
-            print("ERROR: "+msg,file=sys.stderr)
+            utils.logError(msg) 
             sys.exit(1002)
         else:
-            logging.getLogger("").warn(msg)
+            utils.logWarn(msg) 
         return result, False
     else:
         msg = "indexertools: single entry found for variable '{}'".format(variableExpression)
-        logging.getLogger("").debug2(msg)
+        utils.logDebug2(msg) 
         return result, True
+            
+def indexVariableIsOnDevice(indexVar):
+    return indexVar["device"] == True or\
+           indexVar["declareOnTarget"] in ["alloc","to","from","tofrom"]

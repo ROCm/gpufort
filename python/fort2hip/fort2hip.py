@@ -401,7 +401,7 @@ def updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext
                 parseResult = translator.parseProcedureBody(fBody,indexRecord,resultVar["name"])
             else:
                 msg = "could not identify return value for function ''"
-                logging.getLogger("").error(msg) ; print("ERROR: "+msg,file=sys.stderr)
+                utils.logError(msg)
                 sys.exit(INDEXER_ERROR_CODE)
         else:
             resultType = "void"
@@ -531,22 +531,19 @@ def renderTemplates(outputFilePrefix,hipContext,fContext):
     if PRETTIFY_GENERATED_C_CODE:
         utils.prettifyCFile(hipImplementationFilePath,CLANG_FORMAT_STYLE)
     msg = "created HIP C++ implementation file: ".ljust(40) + hipImplementationFilePath
-    logger = logging.getLogger("")
-    logger.info(msg) ; print(msg)
+    utils.logInfo(msg)
 
     # header files
     outputDir = os.path.dirname(hipImplementationFilePath)
     gpufortHeaderFilePath = outputDir + "/gpufort.h"
     model.GpufortHeaderModel().generateCode(gpufortHeaderFilePath)
     msg = "created gpufort main header: ".ljust(40) + gpufortHeaderFilePath
-    logger = logging.getLogger("")
-    logger.info(msg) ; print(msg)
+    utils.logInfo(msg)
     if hipContext["haveReductions"]:
         gpufortReductionsHeaderFilePath = outputDir + "/gpufort_reductions.h"
         model.GpufortReductionsHeaderModel().generateCode(gpufortReductionsHeaderFilePath)
         msg = "created gpufort reductions header file: ".ljust(40) + gpufortReductionsHeaderFilePath
-        logger = logging.getLogger("")
-        logger.info(msg) ; print(msg)
+        utils.logInfo(msg)
 
     if len(fContext["interfaces"]):
         # Fortran interface/testing module
@@ -555,7 +552,7 @@ def renderTemplates(outputFilePrefix,hipContext,fContext):
         if PRETTIFY_GENERATED_FORTRAN_CODE:
             utils.prettifyFFile(moduleFilePath)
         msg = "created interface/testing module: ".ljust(40) + moduleFilePath
-        logger.info(msg) ; print(msg)
+        utils.logInfo(msg)
 
         # TODO disable tests for now
         if False:
@@ -565,8 +562,7 @@ def renderTemplates(outputFilePrefix,hipContext,fContext):
            if PRETTIFY_GENERATED_FORTRAN_CODE:
                utils.prettifyFFile(testFilePath)
            msg = "created interface module test file: ".ljust(40) + testFilePath
-           logger.info(msg)
-           print(msg)
+           utils.logInfo(msg)
 
 def createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename,generateCode):
     """

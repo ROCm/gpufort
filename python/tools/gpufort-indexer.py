@@ -10,6 +10,8 @@ import time
 
 import indexer.indexer as indexer
 import utils
+    
+PRETTY_PRINT_INDEX = False
 
 def parseCommandLineArguments():
     args = {}
@@ -55,11 +57,8 @@ def initLogging(args):
     FILE="{0}/log.log".format(logDir)
     logging.basicConfig(format=FORMAT,filename=FILE,filemode="w", level=LOG_LEVEL)
    
-    logger = logging.getLogger('')
-    #logger.handlers = []
- 
     msg = "log file:   {0} (log level: {1}) ".format(FILE,logging.getLevelName(LOG_LEVEL))
-    logger.info(msg) ; print(msg,file=sys.stderr)
+    utils.logInfo(msg)
 
 if __name__ == "__main__":
     start_time = time.time()
@@ -69,7 +68,7 @@ if __name__ == "__main__":
     
     begin_timing = time.time()
     optionsAsStr = " ".join(args["options"])
-    context = indexer.scanSearchDirs(args["searchDirs"],optionsAsStr)
+    context = indexer.scanSearchDirs(args["searchDirs"],optionsAsStr,prescan=False)
     print("scan files:            %s seconds" % (time.time() - begin_timing),file=sys.stderr)
     #
     begin_timing = time.time()
@@ -77,7 +76,15 @@ if __name__ == "__main__":
     print("resolve dependencies: %s seconds" % (time.time() - begin_timing),file=sys.stderr)
     #
     begin_timing = time.time()
-    print(json.dumps(context,indent=4,sort_keys=False))
+    with open("index.json","w") as outfile:
+        if PRETTY_PRINT_INDEX:
+            json.dump(context,outfile,indent=4,sort_keys=False)
+        else:
+            json.dump(context,outfile)
     print("save context:          %s seconds" % (time.time() - begin_timing),file=sys.stderr)
+    begin_timing = time.time()
+    with open("index.json","r") as infile:
+        data = json.load(infile)
+    print("load saved context:    %s seconds" % (time.time() - begin_timing),file=sys.stderr)
     
     print("--- %s seconds ---" % (time.time() - start_time),file=sys.stderr)

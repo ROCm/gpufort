@@ -34,7 +34,7 @@ def createIndexRecordsFromDeclaration(ttdeclaration):
         varContext["managed"]                    = ttdeclaration.hasStringQualifier("managed")
         varContext["allocatable"]                = ttdeclaration.hasStringQualifier("allocatable")
         # ACC/OMP
-        varContext["declaredOnTarget"]           = False
+        varContext["declareOnTarget"]           = False
         # arrays
         varContext["rank"]                       = 0
         #varContext["unspecifiedBounds"]          = True
@@ -134,9 +134,8 @@ def parseLoopKernel(fortranSnippet,indexHints=[],maxRecursions=30):
         return computeConstruct
     except Exception as e:
         #raise e
-        logger = logging.getLogger('') 
-        logger.error("failed to convert kernel:\n{}".format(fortranSnippet))
-        logger.error(str(e))
+        utils.logError("failed to convert kernel:\n{}".format(fortranSnippet))
+        utils.logError(str(e))
         return EmptyComputeConstruct(fsnippet)
 
 class EmptyProcedureBody():
@@ -175,8 +174,7 @@ def parseProcedureBody(fortranSnippet,indexRecord={},resultName="",maxRecursions
         parseResult._ignoredVars += indexRecord["dummyArgs"]
     except Exception as e:
         #raise e
-        logger = logging.getLogger('') 
-        logger.error("failed to convert kernel:\n{}".format(fortranSnippet))
-        logger.error(str(e))
+        utils.logError("failed to convert kernel:\n{}".format(fortranSnippet))
+        utils.logError(str(e))
         return EmptyProcedureBody()
     return parseResult

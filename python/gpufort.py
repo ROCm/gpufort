@@ -10,7 +10,6 @@ from collections.abc import Iterable # < py38
 import pprint    
 import logging
 
-import json
 import multiprocessing
 
 # local imports
@@ -28,7 +27,7 @@ exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "gpufort_opti
 
 def createIndex(searchDirs,defines,filePath,indexFile):
     if indexFile != None:
-        return json.load(indexFile)
+        return utils.loadIndexFromFile(indexFile)
     else: 
         searchDirs.insert(0,os.path.dirname(filePath))
         context = indexer.scanSearchDirs(searchDirs,optionsAsStr=" ".join(defines))
@@ -181,7 +180,7 @@ def parseCommandLineArguments():
           "translator/translator_options.py.in",
           "fort2hip/fort2hip_options.py.in",
           "indexer/indexer_options.py.in",
-          "indexer/indexertools_options.py.in"
+          "indexer/scoper_options.py.in"
         ]
         print("\nCONFIGURABLE GPUFORT OPTIONS (DEFAULT VALUES):")
         for optionsFile in optionsFiles:
@@ -299,7 +298,7 @@ if __name__ == "__main__":
             INCLUDE_DIRS[i] = args.workingDir+"/"+directory
         if not os.path.exists(INCLUDE_DIRS[i]):
             msg = "search directory '{}' cannot be found".format(INCLUDE_DIRS[i])
-            print("ERROR: "+msg,file=sys.stderr)
+            utils.logError(msg,verbose=False) 
             oneOrMoreSearchDirsNotFound = True
     if oneOrMoreSearchDirsNotFound:
         sys.exit(2)
@@ -308,7 +307,7 @@ if __name__ == "__main__":
     initLogging(inputFilePath)
 
     # scanner must be invoked after index creation
-    index = createIndex(args.searchDirs,defines,inputFilePath,args.index)
+    index = createIndex(args.searchDirs,defines,inputFilePath,args.indexFile.n)
     stree = scanner.parseFile(inputFilePath,index)    
  
     # extract kernels

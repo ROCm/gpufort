@@ -20,4 +20,4 @@ CONTINUATION_FILTER=r"(\&\s*\n)|(\n\s*[\!c\*]\$\w+\&)"
 
 SCAN_SEARCH_DIRS_MAX_PROCESSES = 1 # max number of processes used for scanning files in search directories.
 
-PRETTY_PRINT_INDEX = False # Pretty print index before writing it to disk.
+PRETTY_PRINT_INDEX_FILE = False # Pretty print index before writing it to disk.

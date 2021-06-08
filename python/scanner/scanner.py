@@ -16,7 +16,7 @@ import re
 # local includes
 import addtoplevelpath
 import translator.translator as translator
-import indexer.indexertools as indexertools
+import indexer.scoper as scoper
 import pyparsingtools
 
 SCANNER_ERROR_CODE = 1000

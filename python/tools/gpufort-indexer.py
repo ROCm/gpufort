@@ -11,8 +11,6 @@ import time
 import indexer.indexer as indexer
 import utils
     
-PRETTY_PRINT_INDEX = False
-
 def parseCommandLineArguments():
     args = {}
     args["options"] = sys.argv[1:]
@@ -68,23 +66,20 @@ if __name__ == "__main__":
     
     begin_timing = time.time()
     optionsAsStr = " ".join(args["options"])
-    context = indexer.scanSearchDirs(args["searchDirs"],optionsAsStr,prescan=False)
+    index = indexer.scanSearchDirs(args["searchDirs"],optionsAsStr,prescan=False)
     print("scan files:            %s seconds" % (time.time() - begin_timing),file=sys.stderr)
     #
     begin_timing = time.time()
-    context = indexer.resolveDependencies(context,args["searchedFiles"],args["searchedTags"])
+    index = indexer.resolveDependencies(index,args["searchedFiles"],args["searchedTags"])
     print("resolve dependencies: %s seconds" % (time.time() - begin_timing),file=sys.stderr)
     #
+    indexer.PRETTY_PRINT_INDEX_FILE = True
     begin_timing = time.time()
-    with open("index.json","w") as outfile:
-        if PRETTY_PRINT_INDEX:
-            json.dump(context,outfile,indent=4,sort_keys=False)
-        else:
-            json.dump(context,outfile)
-    print("save context:          %s seconds" % (time.time() - begin_timing),file=sys.stderr)
+    filepath = "index.json"
+    indexer.writeIndexToFile(index,filepath)
+    print("save index:          %s seconds" % (time.time() - begin_timing),file=sys.stderr)
     begin_timing = time.time()
-    with open("index.json","r") as infile:
-        data = json.load(infile)
-    print("load saved context:    %s seconds" % (time.time() - begin_timing),file=sys.stderr)
+    _ = indexer.loadIndexFromFile(filepath)
+    print("load saved index:    %s seconds" % (time.time() - begin_timing),file=sys.stderr)
     
     print("--- %s seconds ---" % (time.time() - start_time),file=sys.stderr)

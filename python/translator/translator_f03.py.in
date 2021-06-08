@@ -1190,7 +1190,7 @@ class TTProcedureBody(TTNode):
         if len(self._indexHints):
             for expr in findAllMatching(self._body,filterExpr=lambda x: isinstance(x,IValue)):
                  if type(expr._value) is TTFunctionCallOrTensorAccess:
-                     _, discovered = indexertools.searchIndexForVariable(self._indexHints,expr.name())
+                     _, discovered = scoper.searchIndexForVariable(self._indexHints,expr.name())
                      if discovered:
                          expr._value._isTensorAccess = True3
         # 1. Remove function argument definitions and precision definitions

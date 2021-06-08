@@ -3,6 +3,7 @@
 #!/usr/bin/env python3
 import subprocess
 import logging
+import sys
 
 #CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140}\""
 
@@ -141,7 +142,7 @@ def logWarning(msg,verbose=True):
     if verbose:
         print("WARNING: "+msg, file=sys.stderr)
 
-def logDebug(msg,debugLevel=1,verbose=False):
+def logDebug(msg,debugLevel=1,verbose=True):
     if debugLevel == 1:
        logging.getLogger("").debug(msg)
     elif debugLevel == 2:

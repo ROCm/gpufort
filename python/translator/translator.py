@@ -10,7 +10,7 @@ import ast
 import re
 
 # recursive inclusion
-import indexer.indexertools as indexertools
+import indexer.scoper as scoper
 import pyparsingtools as pyparsingtools
 
 #from grammar import *

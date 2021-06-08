@@ -56,18 +56,6 @@ def __readFortranFile(filepath,gfortranOptions):
         raise cpe
     return filteredLines
 
-def __discoverInputFiles(searchDir):
-    """
-    Discover 
-    """
-    try:
-       command = DISCOVER_INPUT_FILES.format(search_dir=searchDir)
-       output = subprocess.check_output(command,shell=True).decode('UTF-8')
-       result = output.rstrip("\n").split("\n")
-       return result
-    except subprocess.CalledProcessError as cpe:
-       raise cpe
-
 class __Node():
     def __init__(self,name,data,parent=None):
         self._name     = name
@@ -79,10 +67,7 @@ class __Node():
 
 def __parseFile(fileLines,filepath):
     # Regex
-    moduleStart_reg      = Regex(r"\bmodule\b")
-    programStart_reg     = Regex(r"\bprogram\b")
-    datatype_reg         = Regex(r"\b(type|character|integer|logical|real|complex|double\s+precision)\b")
-    use_reg              = Regex(r"\buse\b\s+\w+")
+    datatype_reg = Regex(r"\b(type|character|integer|logical|real|complex|double\s+precision)\b")
 
     index = []
 
@@ -164,17 +149,17 @@ def __parseFile(fileLines,filepath):
                         accessLock.release()
 
     # Parser events
-    def createBaseEntry_(typeName,name,tag,filepath):
+    def createBaseEntry_(kind,name,filepath):
         entry = {}
-        entry["type"]                            = typeName
-        entry["name"]                            = name
-        entry["tag"]                             = tag
-        entry["file"]                            = filepath
-        entry["variables"]                       = []
-        entry["subprograms"]                     = []
-        entry["types"]                           = []
+        entry["kind"]         = kind
+        entry["name"]         = name
+        #entry["file"]         = filepath
+        entry["variables"]    = []
+        entry["subprograms"]  = []
         entry["usedModules"]  = []
         return entry
+   
+    # direct parsing
 
     def End(tokens):
         nonlocal root
@@ -184,26 +169,29 @@ def __parseFile(fileLines,filepath):
     def ModuleStart(tokens):
         nonlocal root
         nonlocal currentNode
+        utils.logDebug("indexer:\tFOUND module start in line: '{}'".format(currentLine))
         name = tokens[0]
-        module = createBaseEntry_("module",name,name,filepath)
+        module = createBaseEntry_("module",name,filepath)
+        module["types"] = []
         root._data.append(module)
         currentNode = __Node("module",data=module,parent=currentNode)
     def ProgramStart(tokens):
         nonlocal root
         nonlocal currentNode
+        utils.logDebug("indexer:\tFOUND program start in line: '{}'".format(currentLine))
         name    = tokens[0]
-        program = createBaseEntry_("program",name,name,filepath)
+        program = createBaseEntry_("program",name,filepath)
+        program["types"] = []
         root._data.append(program)
         currentNode = __Node("program",data=program,parent=currentNode)
     #host|device,name,[args]
     def SubroutineStart(tokens):
         nonlocal root
         nonlocal currentNode
+        utils.logDebug("indexer:\tFOUND subroutine start in line: '{}'".format(currentLine))
         if currentNode != root:
             name = tokens[1]
-            subroutine = createBaseEntry_("subroutine",name,name,filepath)
-            if currentNode != root:
-                subroutine["tag"] = currentNode._data["name"] + ":" + name
+            subroutine = createBaseEntry_("subroutine",name,filepath)
             subroutine["attributes"]  = [q.lower() for q in tokens[0]]
             subroutine["dummyArgs"]   = list(tokens[2])
             currentNode._data["subprograms"].append(subroutine)
@@ -212,11 +200,10 @@ def __parseFile(fileLines,filepath):
     def FunctionStart(tokens):
         nonlocal root
         nonlocal currentNode
+        utils.logDebug("indexer:\tFOUND function start in line: '{}'".format(currentLine))
         if currentNode != root:
             name = tokens[1]
-            function = createBaseEntry_("function",name,name,filepath)
-            if currentNode != root:
-                function["tag"] = currentNode._data["name"] + ":" + name
+            function = createBaseEntry_("function",name,filepath)
             function["attributes"]  = [q.lower() for q in tokens[0]]
             function["dummyArgs"]   = list(tokens[2])
             function["resultName"]  = name if tokens[3] is None else tokens[3]
@@ -225,12 +212,30 @@ def __parseFile(fileLines,filepath):
     def TypeStart(tokens):
         nonlocal root
         nonlocal currentNode
+        utils.logDebug("indexer:\tFOUND type start in line: '{}'".format(currentLine))
         if currentNode != root:
             name = tokens[1]
             derivedType = {}
             derivedType["name"]      = name
             derivedType["variables"] = []
             currentNode._data["types"].append(derivedType)
+    def Use(tokens):
+        nonlocal root
+        nonlocal currentNode
+        utils.logDebug("indexer:\tFOUND use statement in line: '{}'".format(currentLine))
+        if currentNode != root:
+            usedModule = {}
+            usedModule["name"] = translator.makeFStr(tokens[1])
+            usedModule["only"] = []
+            for pair in tokens[2]:
+                original = translator.makeFStr(pair[0])
+                renamed = original if pair[1] is None else translator.makeFStr(pair[1])
+                usedModule["only"].append({ "original": original, "renamed": renamed })
+            #print(currentNode)
+            currentNode._data["usedModules"].append(usedModule) # TODO only include what is necessary
+    
+    # delayed parsing
+    
     def Declaration(s,loc,tokens):
         nonlocal root
         nonlocal currentNode
@@ -267,23 +272,10 @@ def __parseFile(fileLines,filepath):
             job = ParseAccDeclareJob_(currentNode,currentLine) 
             postParsingJobs.append(job)
             # 'use kinds, only: dp, sp => sp2' --> [None, 'kinds', [['dp', None], ['sp', 'sp2']]]
-    def Use(tokens):
-        nonlocal root
-        nonlocal currentNode
-        if currentNode != root:
-            usedModule = {}
-            usedModule["name"] = translator.makeFStr(tokens[1])
-            usedModule["only"] = {}
-            for pair in tokens[2]:
-                original = translator.makeFStr(pair[0])
-                renaming = original if pair[1] is None else translator.makeFStr(pair[1])
-                usedModule["only"][original]=renaming
-            #print(currentNode)
-            currentNode._data["usedModules"].append(usedModule) # TODO only include what is necessary
     
-    moduleStart_reg.setParseAction(ModuleStart)
+    moduleStart.setParseAction(ModuleStart)
     typeStart.setParseAction(TypeStart)
-    programStart_reg.setParseAction(ProgramStart)
+    programStart.setParseAction(ProgramStart)
     functionStart.setParseAction(FunctionStart)
     subroutineStart.setParseAction(SubroutineStart)
     acc_declare.setParseAction(AccDeclare)
@@ -299,7 +291,7 @@ def __parseFile(fileLines,filepath):
     def tryToParseString(expressionName,expression):
         try:
            expression.parseString(currentLine)
-           utils.logDebug("indexer:\tFOUND expression '{}' in line: '{}'".format(expressionName,currentLine))
+           #utils.logDebug("indexer:\tFOUND expression '{}' in line: '{}'".format(expressionName,currentLine))
            return True
         except ParseBaseException as e: 
            utils.logDebug("indexer:\tdid not find expression '{}' in line '{}'".format(expressionName,currentLine),debugLevel=2)
@@ -308,7 +300,7 @@ def __parseFile(fileLines,filepath):
 
     for currentLine in fileLines:
         tryToParseString("structureEnd|typeEnd|declaration|use|attributes|acc_declare|typeStart|moduleStart|programStart|functionStart|subroutineStart",\
-          typeEnd|structureEnd|datatype_reg|use_reg|attributesLhs|acc_declare|typeStart|moduleStart_reg|programStart_reg|functionStart|subroutineStart)
+          typeEnd|structureEnd|datatype_reg|use|attributesLhs|acc_declare|typeStart|moduleStart|programStart|functionStart|subroutineStart)
     taskExecutor.shutdown(wait=True) # waits till all tasks have been completed
 
     # apply attributes and acc variable modifications
@@ -318,51 +310,6 @@ def __parseFile(fileLines,filepath):
     postParsingJobs.clear()
 
     return index
-
-def __resolveDependencies_body(i,index):
-    def ascend(module):
-        """
-        """
-        nonlocal index
-        nonlocal i
-        for used in module["usedModules"]:
-            name = used["name"]
-            only = used["only"]
-            usedModule = next((m for m in index if m["name"] == name),None)
-            if usedModule != None:
-                ascend(usedModule)
-                if len(only):
-                    variables   = []
-                    types       = []
-                    subprograms = []
-                    for var in usedModule["variables"]:
-                        if var["name"] in only:
-                            var["name"] = only[var["name"]]
-                            variables.append(var)
-                    for struct in usedModule["types"]:
-                        if struct["name"] in only:
-                            struct["name"] = only[struct["name"]]
-                            types.append(struct)
-                    for subprogram in usedModule["subprograms"]:
-                        if subprogram["name"] in only:
-                            subprogram["name"] = only[subprogram["name"]]
-                            subprograms.append(subprogram)
-                else:
-                    variables   = usedModule["variables"]
-                    types       = usedModule["types"]
-                    subprograms = usedModule["subprograms"]
-                localVarNames        = [var["name"]  for var in index[i]["variables"]]
-                localTypeNames       = [typ["name"]  for typ in index[i]["types"]]
-                localSubprogramNames = [prog["name"] for prog in index[i]["subprograms"]]
-                index[i]["variables"]   = [var for var in variables     if var["name"] not in localVarNames]  +\
-                   index[i]["variables"]
-                index[i]["types"]       = [typ for typ in types         if typ["name"] not in localTypeNames] +\
-                   index[i]["types"]  
-                index[i]["subprograms"] = [prog for prog in subprograms if prog["name"] not in localSubprogramNames] +\
-                   index[i]["subprograms"]  
-    ascend(index[i])
-    # resolve dependencies
-    return i,index[i]
 
 def __writeJsonFile(index,filepath):
     global PRETTY_PRINT_INDEX_FILE
@@ -397,7 +344,7 @@ def writeGpufortModuleFiles(index,outputDir):
     """
     for mod in index:
         filepath = outputDir + "/" + mod["name"] + GPUFORT_MODULE_FILE_SUFFIX
-        __writeJsonFile(index,filepath)
+        __writeJsonFile(mod,filepath)
 
 def loadGpufortModuleFiles(inputDirs,index):
     """
@@ -409,71 +356,12 @@ def loadGpufortModuleFiles(inputDirs,index):
     for inputDir in inputDirs:
          for child in os.listdir(inputDir):
              if child.endswith(GPUFORT_MODULE_FILE_SUFFIX):
-                 #if not len(searchedModules) or child.replace(GPUFORT_MODULE_FILE_SUFFIX,"") in searchedModules:
+                 moduleAlreadyExists = False
+                 for mod in index:
+                     if mod == child.replace(GPUFORT_MODULE_FILE_SUFFIX,""):
+                         moduleAlreadyExists = True
+                         break
+                 if not moduleAlreadyExists:
                      modIndex = __readJsonFile(os.path.join(inputDir, child))
                      index.append(modIndex)
 
-# TODO old code, keep here for now as reference
-
-#def dependencyGraphs(index):
-#    # discover root nodes (serial)
-#    discoveredModuleNames = [module["name"] for module in index]
-#    graphs = []
-#    for module in index:
-#        isNotRoot = False
-#        for usedModule in module["usedModules"]:
-#            isNotRoot = isNotRoot or usedModule["name"] in discoveredModuleNames
-#        if not isNotRoot:
-#            graphs.append(__Node(module["name"],data=module))
-#    # build tree (parallel)
-#    handles = []
-#    with Pool(processes=max(1,int(len(graphs)/2))) as pool: # untuned
-#         handles = [pool.apply_async(__dependencyGraphs_descend, (root,index,)) for root in graphs]
-#         pool.close()
-#         pool.join()
-#         for i,h in enumerate(handles):
-#            graphs[i] = h.get()
-#    return graphs
-#
-#def resolveDependencies(index,searchedFiles=[],searchedTags=[]):
-#    def select(module):
-#        nonlocal searchedFiles
-#        nonlocal searchedTags
-#        considerFile = not len(searchedFiles) or module["file"] in searchedFiles
-#        considerTag  = not len(searchedTags) or module["tag"] in searchedTags
-#        return considerFile and considerTag
-#
-#    selection = [i for i,module in enumerate(index) if select(module) and len(module["usedModules"])]
-# 
-#    if len(selection):
-#        with Pool(processes=len(selection)) as pool: # untuned
-#            handles = [pool.apply_async(__resolveDependencies_body, (i,index,)) for i in selection]
-#            pool.close()
-#            pool.join()
-#            for h in handles:
-#                i,result = h.get()
-#                index[i] = result
-#    # filter out not needed entries 
-#    return [module for module in index if select(module)]
-#def scanSearchDirs(searchDirs,optionsAsStr):
-#    global SCAN_SEARCH_DIRS_MAX_PROCESSES
-#
-#    index = []
-#    inputFiles = []
-#    for searchDir in searchDirs:
-#        if os.path.exists(searchDir):
-#            inputFiles += __discoverInputFiles(searchDir)
-#        else:
-#            msg = "indexer: include directory '{}' does not exist. Is ignored.".format(searchDir)
-#            utils.logWarn(msg)
-#    partialResults = []
-#    print("\n".join(inputFiles))
-#    with Pool(processes=min(SCAN_SEARCH_DIRS_MAX_PROCESSES,len(inputFiles))) as pool: #untuned
-#        fileLines = [__readFortranFile(inputFile,optionsAsStr) for i,inputFile in enumerate(inputFiles)]
-#        partialResults = [pool.apply_async(__parseFile, (fileLines[i],inputFile,)) for i,inputFile in enumerate(inputFiles)]
-#        pool.close()
-#        pool.join()
-#    for p in partialResults:
-#        index += p.get()
-#    return index
-#

@@ -22,4 +22,16 @@ module mymod2
   type mytype
     real :: b(n)
   end type 
+
+contains
+  subroutine func(a)
+    integer,intent(in) :: a
+  end subroutine
+  
+  function func2(a)
+    integer,intent(in) :: a
+    integer :: func2
+    func2 = a 
+  end function
+  
 end module mymod2

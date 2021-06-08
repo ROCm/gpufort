@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT                                                
+# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+ERROR_HANDLING="warn" # one of "warn","error"
+
+MODULE_IGNORE_LIST = [ # these modules are ignored when checking dependencies
+ "cudafor",
+ "cublas",
+ "cusparse",
+ "cusolver",
+ "iso_c_binding",
+ "iso_fortran_env"]
+    
+SCOPES                 = []   # Can be used to preload scopes
+REMOVE_OUTDATED_SCOPES = True # Set to false if you want to preload scopes via your config file

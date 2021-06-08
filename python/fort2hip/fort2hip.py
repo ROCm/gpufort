@@ -9,7 +9,7 @@ import addtoplevelpath
 import fort2hip.model as model
 import translator.translator as translator
 import indexer.indexer as indexer
-import indexer.indexertools as indexertools
+import indexer.scoper as scoper
 import scanner.scanner as scanner
 
 INDEXER_ERROR_CODE = 1000
@@ -125,7 +125,7 @@ def deriveKernelArguments(index, identifiers, localVars, loopVars, whiteList=[],
 
     for name in identifiersLower:
         if includeArgument(name):
-            indexedVar, discovered = indexertools.searchIndexForVariable(index,name) # TODO treat implicit here
+            indexedVar, discovered = scoper.searchIndexForVariable(index,name) # TODO treat implicit here
             argName = name
             if not discovered:
                 arg = initArg(name,"TODO declaration not found","",[],"TODO declaration not found")
@@ -190,7 +190,7 @@ def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
     hipContext["haveReductions"] = False
     for stkernel in loopKernels:
         parentTag     = stkernel._parent.tag()
-        filteredIndex = indexertools.filterIndexByTag(index,parentTag)
+        filteredIndex = scoper.filterIndexByTag(index,parentTag)
        
         fSnippet = "".join(stkernel.lines())
 

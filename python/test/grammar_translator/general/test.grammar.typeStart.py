@@ -10,6 +10,7 @@ print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.std
 testdata = []
 testdata.append("""type mytype""")
 testdata.append("""type :: mytype""")
+testdata.append("""type, bind(c) :: mytype""")
 
 for snippet in testdata:
     try:

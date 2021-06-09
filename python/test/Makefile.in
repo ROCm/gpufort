@@ -1,8 +1,10 @@
 GRAMMAR_TESTS    = $(shell find . -maxdepth 1 -name "test.grammar.*.py" -execdir basename {} ';')
 TRANSLATOR_TESTS = $(shell find . -maxdepth 1 -name "test.translator.*.py" -execdir basename {} ';')
+INDEXER_TESTS    = $(shell find . -maxdepth 1 -name "test.indexer.*.py" -execdir basename {} ';')
 CUSTOM_TESTS     = $(shell find . -maxdepth 1 -name "test.custom.*.py" -execdir basename {} ';')
 
-.PHONY: $(GRAMMAR_TESTS) $(TRANSLATOR_TESTS) $(CUSTOM_TESTS) test.grammar test.translator test.custom
+.PHONY: $(GRAMMAR_TESTS) $(TRANSLATOR_TESTS) $(INDEXER_TESTS) $(CUSTOM_TESTS)\
+	test.grammar test.translator test.indexer test.custom
 
 all: test.grammar test.translator test.custom
 
@@ -12,11 +14,16 @@ $(GRAMMAR_TESTS): %:
 $(TRANSLATOR_TESTS): %:
 	python3 $@
 
+$(INDEXER_TESTS): %:
+	python3 $@
+
 $(CUSTOM_TESTS): %:
 	python3 $@
 
 test.grammar: $(GRAMMAR_TESTS)
 
 test.translator: $(TRANSLATOR_TESTS)
+
+test.indexer: $(INDEXER_TESTS)
 
 test.custom: $(CUSTOM_TESTS)

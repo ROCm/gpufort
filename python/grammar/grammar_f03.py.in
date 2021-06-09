@@ -311,7 +311,7 @@ simpleTypeAttribute  = Regex(r"\b((abstract|public|private)\b|bind\s*\(\s*c\s*\)
 extendsTypeAttribute = Regex(r"extends\s*\(\w+\)",re.IGNORECASE).\
         setParseAction(lambda tokens: tokens[0].replace(" ",""))
 typeAttributeList    = Group(delimitedList(extendsTypeAttribute | simpleTypeAttribute))
-typeStart = TYPE.suppress() + Optional(typeAttributeList,default=[]) + Optional(COLONS) + identifier # ! emits 2 tokens: [[*], *]
+typeStart = TYPE.suppress() + Optional(COMMA + typeAttributeList,default=[]) + Optional(COLONS) + identifier # ! emits 2 tokens: [[*], *]
 typeEnd   = END + TYPE.suppress() + Optional(identifier).suppress()
 
 structureEnd = END + ~(NONSTRUCTURE) + Optional(FUNCTION|SUBROUTINE|MODULE).suppress() + Optional(identifier).suppress()

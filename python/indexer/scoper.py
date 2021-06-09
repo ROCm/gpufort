@@ -117,7 +117,7 @@ def constructScope(index,tag,errorHandling=ERROR_HANDLING):
     existingScope   = EMPTY_SCOPE
     nestingLevel    = -1 # -1 implies that nothing has been found
     scopesToDelete  = []
-    for s in scopes:
+    for s in SCOPES:
         existingTag = s["tag"]
         if existingTag == tag[0:len(existingTag)]:
             existingScope = s
@@ -127,7 +127,7 @@ def constructScope(index,tag,errorHandling=ERROR_HANDLING):
     # clean up scopes that are not used anymore 
     if REMOVE_OUTDATED_SCOPES:
         for s in scopesToDelete:
-            scopes.remove(s)
+            SCOPES.remove(s)
 
     # return existing existingScope or construct it
     tagTokens = tag.split(":")
@@ -141,7 +141,6 @@ def constructScope(index,tag,errorHandling=ERROR_HANDLING):
             baseRecord = next((module for module in index if module["name"] == tagTokens[0]),None)  
             for l in range(1,nestingLevel+1):
                 baseRecord = next((subprogram for subprogram in baseRecord["subprograms"] if subprogram["name"] == tagTokens[l]),None)
-        if subprogram["name"] == name:
             currentRecordList = baseRecord["subprograms"]
         else:
             currentRecordList = index
@@ -218,30 +217,30 @@ def indexVariableIsOnDevice(indexVar):
     return indexVar["device"] == True or\
            indexVar["declareOnTarget"] in ["alloc","to","from","tofrom"]
 
-def __searchIndexForDerivedTypeOrSubprogram(index,parentTag,name,errorHandlin):
-    scopeVariables   = reversed(scope["variables"])
-    scopeTypes       = reversed(scope["types"])
-
-    result = None
-    
-    # construct/lookup scope
-    scope = constructScope(index,parentTag,errorHandling)
-    # reverse access such that entries from the inner-most scope come first
-    scopeTypes       = reversed(scope["types"])
-
-    for structure in index:
-        lookupFromLeftToRight(structure,variableExpression.lower().replace(" ",""))
-    if result is None:
-        result         = EMPTY_VARIABLE
-        result["name"] = variableExpression
-        msg = "scoper: no entry found for variable '{}'.".format(variableExpression)
-        if errorHandling  == "strict":
-            utils.logError(msg) 
-            sys.exit(ERR_SCOPER_LOOKUP_FAILED)
-        else:
-            utils.logWarn(msg) 
-        return result, False
-    else:
-        msg = "scoper: single entry found for variable '{}'".format(variableExpression)
-        utils.logDebug2(msg) 
-        return result, True
+#def __searchIndexForDerivedTypeOrSubprogram(index,parentTag,name,errorHandlin):
+#    scopeVariables   = reversed(scope["variables"])
+#    scopeTypes       = reversed(scope["types"])
+#
+#    result = None
+#    
+#    # construct/lookup scope
+#    scope = constructScope(index,parentTag,errorHandling)
+#    # reverse access such that entries from the inner-most scope come first
+#    scopeTypes       = reversed(scope["types"])
+#
+#    for structure in index:
+#        lookupFromLeftToRight(structure,variableExpression.lower().replace(" ",""))
+#    if result is None:
+#        result         = EMPTY_VARIABLE
+#        result["name"] = variableExpression
+#        msg = "scoper: no entry found for variable '{}'.".format(variableExpression)
+#        if errorHandling  == "strict":
+#            utils.logError(msg) 
+#            sys.exit(ERR_SCOPER_LOOKUP_FAILED)
+#        else:
+#            utils.logWarn(msg) 
+#        return result, False
+#    else:
+#        msg = "scoper: single entry found for variable '{}'".format(variableExpression)
+#        utils.logDebug2(msg) 
+#        return result, True

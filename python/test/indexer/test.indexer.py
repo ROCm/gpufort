@@ -2,8 +2,11 @@
 import addtoplevelpath
 import indexer.indexer as indexer
 import indexer.scoper as scoper
+import utils 
 
 import json
+
+utils.registerAdditionalDebugLevels()
 
 options="-DCUDA"
 
@@ -21,6 +24,6 @@ indexer.writeGpufortModuleFiles(writtenIndex,"./")
 readIndex = []
 indexer.loadGpufortModuleFiles(["./"],readIndex)
 
-print(json.dumps(readIndex,indent=2))
+#print(json.dumps(readIndex,indent=2))
 
 #indexer.loadUsedModules(["./"],readIndex)

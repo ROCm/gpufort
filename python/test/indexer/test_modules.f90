@@ -19,7 +19,7 @@ module mymod2
   !$acc declare create(c)
   attributes(device) :: c
 
-  type mytype
+  type :: mytype
     real :: b(n)
   end type 
 

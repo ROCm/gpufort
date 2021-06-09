@@ -57,7 +57,8 @@ def __readFortranFile(filepath,gfortranOptions):
     return filteredLines
 
 class __Node():
-    def __init__(self,name,data,parent=None):
+    def __init__(self,kind,name,data,parent=None):
+        self._kind     = kind
         self._name     = name
         self._parent   = parent 
         self._data     = data
@@ -67,17 +68,13 @@ class __Node():
 
 def __parseFile(fileLines,filepath):
     # Regex
-    datatype_reg = Regex(r"\b(type|character|integer|logical|real|complex|double\s+precision)\b")
+    datatype_reg = Regex(r"\b(type\s*\(|character|integer|logical|real|complex|double\s+precision)\b")
 
     index = []
 
     # Currently, we are only interested in a modules declarations
     # and its derived types.
     # Later, we might also parse routines
-
-    root    = __Node("root",data=index,parent=None)
-    currentNode = root
-    currentLine = None
 
     accessLock   = threading.Lock()
     taskExecutor = concurrent.futures.ThreadPoolExecutor()
@@ -149,81 +146,109 @@ def __parseFile(fileLines,filepath):
                         accessLock.release()
 
     # Parser events
+    root        = __Node("root","root",data=index,parent=None)
+    currentNode = root
+    currentLine = None
+
     def createBaseEntry_(kind,name,filepath):
         entry = {}
-        entry["kind"]         = kind
-        entry["name"]         = name
-        #entry["file"]         = filepath
-        entry["variables"]    = []
-        entry["subprograms"]  = []
-        entry["usedModules"]  = []
+        entry["kind"]        = kind
+        entry["name"]        = name
+        #entry["file"]        = filepath
+        entry["variables"]   = []
+        entry["subprograms"] = []
+        entry["usedModules"] = []
         return entry
+    def logEnterNode_():
+        nonlocal currentNode
+        nonlocal currentLine
+        utils.logDebug("indexer:\tenter {0} '{1}' in line: '{2}'".format(\
+          currentNode._data["kind"],currentNode._data["name"],\
+          currentLine))
+    def logLeaveNode_():
+        nonlocal currentNode
+        nonlocal currentLine
+        utils.logDebug("indexer:\tleave {0} '{1}' in line: '{2}'".format(\
+          currentNode._data["kind"],currentNode._data["name"],\
+          currentLine))
+    def logDetection_(kind):
+        nonlocal currentNode
+        nonlocal currentLine
+        utils.logDebug2("indexer:\t[current-node={}:{}] FOUND {} in line: '{}'".format(\
+                currentNode._kind,currentNode._name,kind,currentLine))
    
     # direct parsing
-
     def End(tokens):
         nonlocal root
         nonlocal currentNode
-        if currentNode != root:
+        nonlocal currentLine
+        logDetection_("end of program/module/subroutine/function")
+        if currentNode._kind != "root":
+            logLeaveNode_()
             currentNode = currentNode._parent
     def ModuleStart(tokens):
         nonlocal root
         nonlocal currentNode
-        utils.logDebug("indexer:\tFOUND module start in line: '{}'".format(currentLine))
         name = tokens[0]
         module = createBaseEntry_("module",name,filepath)
         module["types"] = []
-        root._data.append(module)
-        currentNode = __Node("module",data=module,parent=currentNode)
+        assert currentNode == root
+        currentNode._data.append(module)
+        currentNode = __Node("module",name,data=module,parent=currentNode)
+        logEnterNode_()
     def ProgramStart(tokens):
         nonlocal root
         nonlocal currentNode
-        utils.logDebug("indexer:\tFOUND program start in line: '{}'".format(currentLine))
         name    = tokens[0]
         program = createBaseEntry_("program",name,filepath)
         program["types"] = []
-        root._data.append(program)
-        currentNode = __Node("program",data=program,parent=currentNode)
+        assert currentNode._kind == "root"
+        currentNode._data.append(program)
+        currentNode = __Node("program",name,data=program,parent=currentNode)
+        logEnterNode_()
     #host|device,name,[args]
     def SubroutineStart(tokens):
-        nonlocal root
         nonlocal currentNode
-        utils.logDebug("indexer:\tFOUND subroutine start in line: '{}'".format(currentLine))
-        if currentNode != root:
+        logDetection_("start of subroutine")
+        if currentNode._kind != "root":
             name = tokens[1]
             subroutine = createBaseEntry_("subroutine",name,filepath)
             subroutine["attributes"]  = [q.lower() for q in tokens[0]]
             subroutine["dummyArgs"]   = list(tokens[2])
             currentNode._data["subprograms"].append(subroutine)
-            currentNode = __Node("subroutine",data=subroutine,parent=currentNode)
+            currentNode = __Node("subroutine",name,data=subroutine,parent=currentNode)
+            logEnterNode_()
     #host|device,name,[args],result
     def FunctionStart(tokens):
-        nonlocal root
         nonlocal currentNode
-        utils.logDebug("indexer:\tFOUND function start in line: '{}'".format(currentLine))
-        if currentNode != root:
+        logDetection_("start of function")
+        if currentNode._kind != "root":
             name = tokens[1]
             function = createBaseEntry_("function",name,filepath)
             function["attributes"]  = [q.lower() for q in tokens[0]]
             function["dummyArgs"]   = list(tokens[2])
             function["resultName"]  = name if tokens[3] is None else tokens[3]
             currentNode._data["subprograms"].append(function)
-            currentNode = __Node("function",data=function,parent=currentNode)
+            currentNode = __Node("function",name,data=function,parent=currentNode)
+            logEnterNode_()
     def TypeStart(tokens):
-        nonlocal root
         nonlocal currentNode
-        utils.logDebug("indexer:\tFOUND type start in line: '{}'".format(currentLine))
-        if currentNode != root:
+        print(currentNode._kind)
+        logDetection_("start of type")
+        if currentNode._kind != "root":
+            assert len(tokens) == 2
             name = tokens[1]
             derivedType = {}
             derivedType["name"]      = name
+            derivedType["kind"]      = "type"
             derivedType["variables"] = []
             currentNode._data["types"].append(derivedType)
+            currentNode = __Node("type",name,data=derivedType,parent=currentNode)
+            logEnterNode_()
     def Use(tokens):
-        nonlocal root
         nonlocal currentNode
-        utils.logDebug("indexer:\tFOUND use statement in line: '{}'".format(currentLine))
-        if currentNode != root:
+        logDetection_("use statement")
+        if currentNode._kind != "root":
             usedModule = {}
             usedModule["name"] = translator.makeFStr(tokens[1])
             usedModule["only"] = []
@@ -236,13 +261,14 @@ def __parseFile(fileLines,filepath):
     
     # delayed parsing
     
-    def Declaration(s,loc,tokens):
+    def Declaration(tokens):
         nonlocal root
         nonlocal currentNode
         nonlocal currentLine
         nonlocal taskExecutor
         nonlocal totalNumTasks
         #print(currentLine)
+        logDetection_("declaration")
         if currentNode != root:
             totalNumTasks += 1
             taskExecutor.submit(ParseDeclarationTask_,currentNode,currentLine) 
@@ -255,6 +281,7 @@ def __parseFile(fileLines,filepath):
         nonlocal currentNode
         nonlocal currentLine
         #print(currentLine)
+        logDetection_("attributes statement")
         if currentNode != root:
             job = ParseAttributesJob_(currentNode,currentLine) 
             postParsingJobs.append(job)
@@ -267,7 +294,7 @@ def __parseFile(fileLines,filepath):
         nonlocal root
         nonlocal currentNode
         nonlocal currentLine
-        parseResult = translator.acc_declare.parseString(currentLine)[0]
+        logDetection_("acc declare directive")
         if currentNode != root:
             job = ParseAccDeclareJob_(currentNode,currentLine) 
             postParsingJobs.append(job)
@@ -291,16 +318,17 @@ def __parseFile(fileLines,filepath):
     def tryToParseString(expressionName,expression):
         try:
            expression.parseString(currentLine)
-           #utils.logDebug("indexer:\tFOUND expression '{}' in line: '{}'".format(expressionName,currentLine))
            return True
         except ParseBaseException as e: 
-           utils.logDebug("indexer:\tdid not find expression '{}' in line '{}'".format(expressionName,currentLine),debugLevel=2)
-           utils.logDebug(str(e),debugLevel=3)
+           utils.logDebug3("indexer:\tdid not find expression '{}' in line '{}'".format(expressionName,currentLine))
+           utils.logDebug4(str(e))
            return False
 
     for currentLine in fileLines:
-        tryToParseString("structureEnd|typeEnd|declaration|use|attributes|acc_declare|typeStart|moduleStart|programStart|functionStart|subroutineStart",\
-          typeEnd|structureEnd|datatype_reg|use|attributesLhs|acc_declare|typeStart|moduleStart|programStart|functionStart|subroutineStart)
+        utils.logDebug3("indexer:\tprocessing line '{}'".format(currentLine))
+        # typeStart must be tried before datatype_reg
+        tryToParseString("structureEnd|typeEnd|typeStart|declaration|use|attributes|acc_declare|moduleStart|programStart|functionStart|subroutineStart",\
+          typeEnd|structureEnd|typeStart|datatype_reg|use|attributesLhs|acc_declare|moduleStart|programStart|functionStart|subroutineStart)
     taskExecutor.shutdown(wait=True) # waits till all tasks have been completed
 
     # apply attributes and acc variable modifications

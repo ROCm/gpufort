@@ -76,6 +76,8 @@ def readCFile(filepath,unifdefArgs=""):
            output = cpe.output.decode("UTF-8")
     return output
 
+
+
 def addLoggingLevel(levelName, levelNum, methodName=None):
     """
     ! Taken from: https://stackoverflow.com/a/35804945
@@ -127,6 +129,12 @@ def addLoggingLevel(levelName, levelNum, methodName=None):
     setattr(logging.getLoggerClass(), methodName, logForLevel)
     setattr(logging, methodName, logToRoot)
 
+def registerAdditionalDebugLevels():
+    addLoggingLevel("DEBUG2", logging.DEBUG-1, methodName="debug2")
+    addLoggingLevel("DEBUG3", logging.DEBUG-2, methodName="debug3")
+    addLoggingLevel("DEBUG4", logging.DEBUG-3, methodName="debug4")
+    addLoggingLevel("DEBUG5", logging.DEBUG-4, methodName="debug5")
+
 def logInfo(msg,verbose=True):
     logging.getLogger("").info(msg)
     if verbose:
@@ -149,7 +157,22 @@ def logDebug(msg,debugLevel=1,verbose=True):
        logging.getLogger("").debug2(msg)
     elif debugLevel == 3:
        logging.getLogger("").debug3(msg)
+    elif debugLevel == 4:
+       logging.getLogger("").debug4(msg)
+    elif debugLevel == 5:
+       logging.getLogger("").debug5(msg)
     else:
         assert False, "debug level not supported"
     if verbose:
-        print("WARNING: "+msg)
+        print("DEBUG"+str(debugLevel)+": "+msg)
+
+def logDebug1(msg,verbose=True):
+    logDebug(msg,1,True)
+def logDebug2(msg,verbose=True):
+    logDebug(msg,2,True)
+def logDebug3(msg,verbose=True):
+    logDebug(msg,3,True)
+def logDebug4(msg,verbose=True):
+    logDebug(msg,4,True)
+def logDebug5(msg,verbose=True):
+    logDebug(msg,5,True)

@@ -252,8 +252,7 @@ def initLogging(inputFilePath):
     global LOG_DIR
     global LOG_DIR_CREATE
     # add custom log levels:
-    utils.addLoggingLevel("DEBUG2", logging.DEBUG-1, methodName="debug2")
-    utils.addLoggingLevel("DEBUG3", logging.DEBUG-2, methodName="debug3")
+    utils.registerAdditionalDebugLevels()
     inputFilePathHash = hashlib.md5(inputFilePath.encode()).hexdigest()[0:8]
     logDir = LOG_DIR
     if not LOG_DIR_CREATE and not os.path.exists(logDir):

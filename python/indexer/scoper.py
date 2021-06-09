@@ -135,7 +135,9 @@ def constructScope(index,tag,errorHandling=ERROR_HANDLING):
         return existingScope
     else:
         newScope = copy.deepcopy(existingScope)
-       
+        print(existingScope["tag"])
+        newScope["tag"] = tag 
+ 
         # we already have a scope for this record
         if nestingLevel >= 0:
             baseRecord = next((module for module in index if module["name"] == tagTokens[0]),None)  
@@ -154,7 +156,8 @@ def constructScope(index,tag,errorHandling=ERROR_HANDLING):
                     __resolveDependencies(newScope,currentRecord,index) 
                     # 2. now include the current record's   
                     for entryType in __SCOPE_ENTRY_TYPES:
-                         scope[entryType] += currentRecord[entryType]
+                        if entryType in currentRecord:
+                            newScope[entryType] += currentRecord[entryType]
                     currentRecordList = currentRecord["subprograms"]
                     break
     SCOPES.append(newScope)

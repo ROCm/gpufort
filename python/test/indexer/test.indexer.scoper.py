@@ -18,5 +18,11 @@ indexer.scanFile("test_modules.f90",gfortranOptions,index)
 indexer.scanFile("test1.f90",gfortranOptions,index)
 
 parentTag = "mymod2"
-
 scope = scoper.constructScope(index,parentTag,errorHandling="strict")
+
+print(json.dumps(scope,indent=2))
+
+parentTag = "mymod2:func2"
+scope = scoper.constructScope(index,parentTag,errorHandling="strict")
+
+print(json.dumps(scope,indent=2))

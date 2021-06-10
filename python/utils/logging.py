@@ -1,82 +1,60 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
-#!/usr/bin/env python3
-import subprocess
 import logging
-import sys
+import os,sys
 
-#CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140}\""
+exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "logging_options.py.in")).read())
 
-def prettifyCCode(cCode,style):
-    """
-    Requires clang-format 7.0+.
-    
-    Use e.g. the one coming with ROCm:
-    /opt/rocm-<suffix>/hcc/bin/clang-format"
-    """
-    command = "printf \"{0}\" | clang-format -style={1}".format(cCode.replace("%","%%"),style)
-    return subprocess.check_output(command,shell=True).decode('ascii')
+__LOG_LEVEL        = "WARNING" # should only be modified by initLogging
+__LOG_LEVEL_AS_INT = getattr(logging,__LOG_LEVEL)
 
-def prettifyCFile(cPath,style):
-    """
-    Requires clang-format 7.0+
-    
-    Use e.g. the one coming with ROCm:
-    /opt/rocm-<suffix>/hcc/bin/clang-format"
-    """
-    command = "clang-format -i -style={1} {0}".format(cPath,style) # writes inplace
-    subprocess.check_output(command,shell=True).decode('ascii')
+ERR_UTILS_LOGGING_UNSUPPORTED_LOG_LEVEL  = 91001
+ERR_UTILS_LOGGING_LOG_DIR_DOES_NOT_EXIST = 91002
 
-def prettifyFCode(fCode):
+def initLogging(logfileBaseName,logLevel):
     """
-    Requires fprettify
-    """
-    command = "printf \"{0}\"".format(fCode.replace("%","%%"))
-    command += r"| fprettify -l 1000 | sed 's,\s*\([<>]\)\s*[<>]\s*[<>]\s*,\1\1\1,g'"
-    return subprocess.check_output(command,shell=True).decode('ascii')
+    Init the logging infrastructure.
 
-def prettifyFFile(fPath):
+    :param str logFormat: The format that the log writer should use.
+    :param str logfileBaseName:  The base name of the log file that this logging module should use.
+    :return 
+    :note: Directory for storing the log file and further options can be specified
+           via global variables before calling this method.
     """
-    Requires fprettify
-    """
-    subprocess.check_call(["fprettify","-l 1000",fPath], stdout=subprocess.DEVNULL)
-    subprocess.check_call(r"sed -i 's,\s*\([<>]\)\s*[<>]\s*[<>]\s*,\1\1\1,g' {0}".format(fPath), shell=True, stdout=subprocess.DEVNULL)
-    #return subprocess.check_output(command,shell=True).decode('ascii')
-    #pass
+    global __LOG_LEVEL
+    global __LOG_LEVEL_AS_INT
+    global LOG_DIR
+    global LOG_DIR_CREATE
+    global LOG_FORMAT
 
-def readCFileWithoutComments(filepath,unifdefArgs=""):
-    """
-    Requires gcc, unifdef
-    """
-    command="gcc -w -fmax-errors=100 -fpreprocessed -dD -E {0}".format(filepath)
-    if len(unifdefArgs):
-        command += " | unifdef {0}".format(unifdefArgs)
-    try: 
-       output = subprocess.check_output(command,shell=True).decode('UTF-8')
-    except subprocess.CalledProcessError as cpe:
-       if not cpe.returncode == 1: # see https://linux.die.net/man/1/unifdef
-           raise cpe
-       else:
-           output = cpe.output.decode("UTF-8")
-    return output
+    # add custom log levels:
+    registerAdditionalDebugLevels()
+    logDir = LOG_DIR
+    if not LOG_DIR_CREATE and not os.path.exists(logDir):
+        msg = "directory for storing log files ('{}') does not exist".format(logDir)
+        print("ERROR: "+msg)
+        sys.exit(2)
+    os.makedirs(logDir,exist_ok=True)
 
-def readCFile(filepath,unifdefArgs=""):
-    """
-    Requires unifdef
-    """
-    command="cat {0}".format(filepath)
-    if len(unifdefArgs):
-        command += " | unifdef {0}".format(unifdefArgs)
-    try: 
-       output = subprocess.check_output(command,shell=True).decode('UTF-8')
-    except subprocess.CalledProcessError as cpe:
-       if not cpe.returncode == 1: # see https://linux.die.net/man/1/unifdef
-           raise cpe
-       else:
-           output = cpe.output.decode("UTF-8")
-    return output
-
-
+    # TODO check if log level exists
+  
+    maxDebugLevel = 5 
+    supportedLevels = ["ERROR","WARNING","INFO","DEBUG"] + [ "DEBUG"+str(i) for i in range(2,maxDebugLevel+1) ]
+    if logLevel.upper() not in supportedLevels:
+        msg = "unsupported log level: {}; must be one of (arbitrary case): {}".format(logLevel,",".join(supportedLevels))
+        print("ERROR: "+msg,file=sys.stderr)
+        sys.exit(ERR_UTILS_LOGGING_UNSUPPORTED_LOG_LEVEL)
+    try:
+        logfilePath="{0}/{1}".format(logDir,logfileBaseName)
+        __LOG_LEVEL_AS_INT = getattr(logging,logLevel.upper(),getattr(logging,"WARNING"))
+        __LOG_LEVEL        = logLevel
+        logging.basicConfig(format=LOG_FORMAT,filename=logfilePath,filemode="w", level=__LOG_LEVEL_AS_INT)
+    except Exception as e:
+        msg = "directoy for storing log files '{}' cannot be accessed".format(logDir)
+        print("ERROR: "+msg,file=sys.stderr)
+        raise e
+        sys.exit(ERR_UTILS_LOGGING_LOG_DIR_DOES_NOT_EXIST)
+    return logfilePath
 
 def addLoggingLevel(levelName, levelNum, methodName=None):
     """
@@ -135,22 +113,28 @@ def registerAdditionalDebugLevels():
     addLoggingLevel("DEBUG4", logging.DEBUG-3, methodName="debug4")
     addLoggingLevel("DEBUG5", logging.DEBUG-4, methodName="debug5")
 
-def logInfo(msg,verbose=True):
+def logInfo(msg):
+    global __LOG_LEVEL_AS_INT
+    global VERBOSE
     logging.getLogger("").info(msg)
-    if verbose:
+    if VERBOSE and __LOG_LEVEL_AS_INT <= getattr(logging,"INFO"):
         print("INFO: "+msg, file=sys.stderr)
 
-def logError(msg,verbose=True):
+def logError(msg):
+    global VERBOSE
     logging.getLogger("").error(msg)
-    if verbose:
-        print("ERROR: "+msg, file=sys.stderr)
+    print("ERROR: "+msg, file=sys.stderr)
 
-def logWarning(msg,verbose=True):
+def logWarning(msg):
+    global __LOG_LEVEL_AS_INT
+    global VERBOSE
     logging.getLogger("").warning(msg)
-    if verbose:
-        print("WARNING: "+msg, file=sys.stderr)
+    print("WARNING: "+msg, file=sys.stderr)
 
-def logDebug(msg,debugLevel=1,verbose=True):
+def logDebug(msg,debugLevel=1):
+    global __LOG_LEVEL_AS_INT
+    global VERBOSE
+
     if debugLevel == 1:
        logging.getLogger("").debug(msg)
     elif debugLevel == 2:
@@ -163,16 +147,16 @@ def logDebug(msg,debugLevel=1,verbose=True):
        logging.getLogger("").debug5(msg)
     else:
         assert False, "debug level not supported"
-    if verbose:
-        print("DEBUG"+str(debugLevel)+": "+msg)
+    if VERBOSE and __LOG_LEVEL_AS_INT <= getattr(logging,"DEBUG")-debugLevel+1:
+        print("DEBUG"+str(debugLevel)+": "+msg,file=sys.stderr)
 
-def logDebug1(msg,verbose=True):
-    logDebug(msg,1,True)
-def logDebug2(msg,verbose=True):
-    logDebug(msg,2,True)
-def logDebug3(msg,verbose=True):
-    logDebug(msg,3,True)
-def logDebug4(msg,verbose=True):
-    logDebug(msg,4,True)
-def logDebug5(msg,verbose=True):
-    logDebug(msg,5,True)
+def logDebug1(msg):
+    logDebug(msg,1)
+def logDebug2(msg):
+    logDebug(msg,2)
+def logDebug3(msg):
+    logDebug(msg,3)
+def logDebug4(msg):
+    logDebug(msg,4)
+def logDebug5(msg):
+    logDebug(msg,5)

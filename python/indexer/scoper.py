@@ -94,10 +94,10 @@ def __resolveDependencies(scope,indexRecord,index):
             if not usedModuleFound:
                 msg = "no index record for module '{}' could be found".format(usedModule[name])
                 if errorHandling == "strict":
-                    utils.logError(msg) 
+                    utils.logging.logError(msg) 
                     sys.exit(ERR_INDEXER_RESOLVE_DEPENDENCIES_FAILED)
                 else:
-                    utils.logWarn(msg)
+                    utils.logging.logWarn(msg)
 
 
 def constructScope(index,tag,errorHandling=ERROR_HANDLING):
@@ -206,14 +206,14 @@ def searchIndexForVariable(index,parentTag,variableExpression,errorHandling=ERRO
         result["name"] = variableExpression
         msg = "scoper: no entry found for variable '{}'.".format(variableExpression)
         if errorHandling  == "strict":
-            utils.logError(msg) 
+            utils.logging.logError(msg) 
             sys.exit(ERR_SCOPER_LOOKUP_FAILED)
         else:
-            utils.logWarn(msg) 
+            utils.logging.logWarn(msg) 
         return result, False
     else:
         msg = "scoper: single entry found for variable '{}'".format(variableExpression)
-        utils.logDebug2(msg) 
+        utils.logging.logDebug2(msg) 
         return result, True
             
 def indexVariableIsOnDevice(indexVar):
@@ -238,12 +238,12 @@ def indexVariableIsOnDevice(indexVar):
 #        result["name"] = variableExpression
 #        msg = "scoper: no entry found for variable '{}'.".format(variableExpression)
 #        if errorHandling  == "strict":
-#            utils.logError(msg) 
+#            utils.logging.logError(msg) 
 #            sys.exit(ERR_SCOPER_LOOKUP_FAILED)
 #        else:
-#            utils.logWarn(msg) 
+#            utils.logging.logWarn(msg) 
 #        return result, False
 #    else:
 #        msg = "scoper: single entry found for variable '{}'".format(variableExpression)
-#        utils.logDebug2(msg) 
+#        utils.logging.logDebug2(msg) 
 #        return result, True

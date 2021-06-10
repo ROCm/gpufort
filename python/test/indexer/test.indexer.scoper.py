@@ -2,11 +2,11 @@
 import addtoplevelpath
 import indexer.indexer as indexer
 import indexer.scoper as scoper
-import utils 
+import utils.logging
 
 import json
 
-utils.registerAdditionalDebugLevels()
+utils.logging.registerAdditionalDebugLevels()
 
 gfortranOptions="-DCUDA"
 

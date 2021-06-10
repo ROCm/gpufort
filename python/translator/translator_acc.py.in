@@ -2,7 +2,6 @@
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 
 #from translator.translator_f03 import *
-#import utils
 
 class TTAccClauseGang(TTNode):
     def _assignFields(self,tokens):

@@ -134,8 +134,8 @@ def parseLoopKernel(fortranSnippet,indexHints=[],maxRecursions=30):
         return computeConstruct
     except Exception as e:
         #raise e
-        utils.logError("failed to convert kernel:\n{}".format(fortranSnippet))
-        utils.logError(str(e))
+        utils.logging.logError("failed to convert kernel:\n{}".format(fortranSnippet))
+        utils.logging.logError(str(e))
         return EmptyComputeConstruct(fsnippet)
 
 class EmptyProcedureBody():
@@ -174,7 +174,7 @@ def parseProcedureBody(fortranSnippet,indexRecord={},resultName="",maxRecursions
         parseResult._ignoredVars += indexRecord["dummyArgs"]
     except Exception as e:
         #raise e
-        utils.logError("failed to convert kernel:\n{}".format(fortranSnippet))
-        utils.logError(str(e))
+        utils.logging.logError("failed to convert kernel:\n{}".format(fortranSnippet))
+        utils.logging.logError(str(e))
         return EmptyProcedureBody()
     return parseResult

@@ -429,7 +429,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 nonlocal reduction
                 return parseResult.ompFStr(arraysInBody,inoutArraysInBody,reduction,depend), True
             
-            result,_ = pyparsingtools.replaceFirst(fSnippet,\
+            result,_ = utils.pyparsingutils.replaceFirst(fSnippet,\
                 cuf_kernel_do,\
                 cufKernelDoRepl)
             return result
@@ -454,16 +454,16 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 nonlocal reduction
                 return parseResult.strip()+"!$omp end target", True
             
-            result,_ = pyparsingtools.replaceFirst(fSnippet,\
+            result,_ = utils.pyparsingutils.replaceFirst(fSnippet,\
                     acc_parallel | acc_parallel_loop | acc_kernels | acc_kernels_loop,\
                     accComputeRepl)
-            result,_ = pyparsingtools.replaceAll(result,\
+            result,_ = utils.pyparsingutils.replaceAll(result,\
                     acc_loop,\
                     accLoopRepl)
-            result,_ = pyparsingtools.replaceFirst(result,\
+            result,_ = utils.pyparsingutils.replaceFirst(result,\
                     Optional(White(),default="") + ( ACC_END_PARALLEL | ACC_END_KERNELS ),
                     accEndRepl)
-            result,_ = pyparsingtools.eraseAll(result,\
+            result,_ = utils.pyparsingutils.eraseAll(result,\
                     ACC_END_PARALLEL_LOOP | ACC_END_KERNELS_LOOP)
             return result
     def cStr(self):
@@ -507,7 +507,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         doLoops = findAll(self._body,TTDoLoop)
         if numOuterLoopsToMap == 1 or (LOOP_COLLAPSE_STRATEGY == "grid" and numOuterLoopsToMap <= 3):
             if numOuterLoopsToMap > 3:
-                utils.logWarn("loop collapse strategy grid chosen with nested loops > 3")
+                utils.logging.logWarn("loop collapse strategy grid chosen with nested loops > 3")
             numOuterLoopsToMap = min(3,numOuterLoopsToMap)
             threadIndices = ["x","y","z"]
             for i in range(0,3-numOuterLoopsToMap):

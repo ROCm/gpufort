@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 import os
-import utils
 import copy
 import logging
 
@@ -11,6 +10,8 @@ import translator.translator as translator
 import indexer.indexer as indexer
 import indexer.scoper as scoper
 import scanner.scanner as scanner
+import utils.logging
+import utils.fileutils
 
 INDEXER_ERROR_CODE = 1000
 
@@ -263,7 +264,7 @@ def updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         hipKernelDict["kernelName"]            = kernelName
         hipKernelDict["macros"]                = macros
         hipKernelDict["cBody"]                 = kernelParseResult.cStr()
-        hipKernelDict["fBody"]                 = utils.prettifyFCode(fSnippet)
+        hipKernelDict["fBody"]                 = utils.fileutils.prettifyFCode(fSnippet)
         hipKernelDict["kernelArgs"]            = ["{} {}{}{}".format(a["cType"],a["name"],a["cSize"],a["cSuffix"]) for a in kernelArgs]
         hipKernelDict["kernelCallArgNames"]    = kernelCallArgNames
         hipKernelDict["cpuKernelCallArgNames"] = cpuKernelCallArgNames
@@ -391,7 +392,7 @@ def updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext
         isFunction  = indexRecord["type"] == "function"
         
         fBody  = "".join(stprocedure._lines[beginOfBody_(stprocedure._lines):endOfBody_(stprocedure._lines)])
-        #fBody  = utils.prettifyFCode(fBody)
+        #fBody  = utils.fileutils.prettifyFCode(fBody)
         
         if isFunction:
             resultName = indexValue["resultName"]
@@ -401,7 +402,7 @@ def updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext
                 parseResult = translator.parseProcedureBody(fBody,indexRecord,resultVar["name"])
             else:
                 msg = "could not identify return value for function ''"
-                utils.logError(msg)
+                utils.logging.logError(msg)
                 sys.exit(INDEXER_ERROR_CODE)
         else:
             resultType = "void"
@@ -529,30 +530,30 @@ def renderTemplates(outputFilePrefix,hipContext,fContext):
     hipImplementationFilePath = "{0}.kernels.hip.cpp".format(outputFilePrefix)
     model.HipImplementationModel().generateCode(hipImplementationFilePath,hipContext)
     if PRETTIFY_GENERATED_C_CODE:
-        utils.prettifyCFile(hipImplementationFilePath,CLANG_FORMAT_STYLE)
+        utils.fileutils.prettifyCFile(hipImplementationFilePath,CLANG_FORMAT_STYLE)
     msg = "created HIP C++ implementation file: ".ljust(40) + hipImplementationFilePath
-    utils.logInfo(msg)
+    utils.logging.logInfo(msg)
 
     # header files
     outputDir = os.path.dirname(hipImplementationFilePath)
     gpufortHeaderFilePath = outputDir + "/gpufort.h"
     model.GpufortHeaderModel().generateCode(gpufortHeaderFilePath)
     msg = "created gpufort main header: ".ljust(40) + gpufortHeaderFilePath
-    utils.logInfo(msg)
+    utils.logging.logInfo(msg)
     if hipContext["haveReductions"]:
         gpufortReductionsHeaderFilePath = outputDir + "/gpufort_reductions.h"
         model.GpufortReductionsHeaderModel().generateCode(gpufortReductionsHeaderFilePath)
         msg = "created gpufort reductions header file: ".ljust(40) + gpufortReductionsHeaderFilePath
-        utils.logInfo(msg)
+        utils.logging.logInfo(msg)
 
     if len(fContext["interfaces"]):
         # Fortran interface/testing module
         moduleFilePath = "{0}.kernels.f08".format(outputFilePrefix)
         model.InterfaceModuleModel().generateCode(moduleFilePath,fContext)
         if PRETTIFY_GENERATED_FORTRAN_CODE:
-            utils.prettifyFFile(moduleFilePath)
+            utils.fileutils.prettifyFFile(moduleFilePath)
         msg = "created interface/testing module: ".ljust(40) + moduleFilePath
-        utils.logInfo(msg)
+        utils.logging.logInfo(msg)
 
         # TODO disable tests for now
         if False:
@@ -560,9 +561,9 @@ def renderTemplates(outputFilePrefix,hipContext,fContext):
            testFilePath = "{0}.kernels.TEST.f08".format(outputFilePrefix)
            model.InterfaceModuleTestModel().generateCode(testFilePath,fContext)
            if PRETTIFY_GENERATED_FORTRAN_CODE:
-               utils.prettifyFFile(testFilePath)
+               utils.fileutils.prettifyFFile(testFilePath)
            msg = "created interface module test file: ".ljust(40) + testFilePath
-           utils.logInfo(msg)
+           utils.logging.logInfo(msg)
 
 def createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename,generateCode):
     """

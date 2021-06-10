@@ -14,7 +14,8 @@ import multiprocessing
 
 # local imports
 import addtoplevelpath
-import utils
+import utils.logging
+import utils.fileutils
 import scanner.scanner as scanner
 import indexer.indexer as indexer
 import translator.translator as translator
@@ -27,7 +28,8 @@ exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "gpufort_opti
 
 def createIndex(searchDirs,defines,filePath,indexFile):
     if indexFile != None:
-        return utils.loadIndexFromFile(indexFile)
+        #return ...loadIndexFromFile(indexFile)
+        pass
     else: 
         searchDirs.insert(0,os.path.dirname(filePath))
         context = indexer.scanSearchDirs(searchDirs,optionsAsStr=" ".join(defines))
@@ -69,9 +71,9 @@ def translateFortranSource(fortranFilePath,stree,index,wrapInIfdef):
          for line in outputLines:
               outfile.write(line.strip("\n") + "\n")
     if PRETTIFY_MODIFIED_TRANSLATION_SOURCE:
-        utils.prettifyFFile(modifiedFortranFilePath)
+        utils.fileutils.prettifyFFile(modifiedFortranFilePath)
     msg = "created hipified input file: ".ljust(40) + modifiedFortranFilePath
-    utils.logInfo(msg)
+    utils.logging.logInfo(msg)
 
 def parseRawCommandLineArguments():
     """
@@ -115,11 +117,13 @@ def parseConfig(configFilePath):
     """
     Load user-supplied config fule.
     """
-    global LOG_LEVEL
-    global LOG_DIR
-    global LOG_DIR_CREATE
-
-    prolog = "global LOG_LEVEL\nglobal LOG_DIR\nglobal LOG_DIR_CREATE\n"
+    prolog = """global DUMP_INDEX
+global WRAP_IN_IFDEF
+global ONLY_MODIFY_TRANSLATION_SOURCE
+global ONLY_GENERATE_KERNELS
+global POST_CLI_ACTIONS
+global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
+global INCLUDE_DIRS"""
     epilog = ""
     try:
         if configFilePath.strip()[0]=="/":
@@ -128,20 +132,19 @@ def parseConfig(configFilePath):
             CONFIG_FILE=os.path.dirname(os.path.realpath(__file__))+"/"+configFilePath
         exec(prolog + open(CONFIG_FILE).read()+ epilog)
         msg = "config file '{}' found and successfully parsed".format(CONFIG_FILE)
-        utils.logInfo(msg)
+        utils.logging.logInfo(msg)
     except FileNotFoundError:
         msg = "no '{}' file found. Use defaults.".format(CONFIG_FILE)
-        utils.logWarning(msg)
+        utils.logging.logWarning(msg)
     except Exception as e:
         msg = "failed to parse config file '{}'. REASON: {} (NOTE: num prolog lines: {}). ABORT".format(CONFIG_FILE,str(e),len(prolog.split("\n")))
-        utils.logError(msg)
+        utils.logging.logError(msg)
         sys.exit(1)
 
 def parseCommandLineArguments():
     """
     Parse command line arguments after all changes and argument transformations by the config file have been applied.
     """
-    global LOG_LEVEL
     global DUMP_INDEX
     global ONLY_GENERATE_KERNELS
     global ONLY_MODIFY_TRANSLATION_SOURCE
@@ -181,6 +184,7 @@ def parseCommandLineArguments():
           "fort2hip/fort2hip_options.py.in",
           "indexer/indexer_options.py.in",
           "indexer/scoper_options.py.in"
+          "utils/logging_options.py.in"
         ]
         print("\nCONFIGURABLE GPUFORT OPTIONS (DEFAULT VALUES):")
         for optionsFile in optionsFiles:
@@ -241,39 +245,23 @@ def parseCommandLineArguments():
         WRAP_IN_IFDEF = True
     # log level
     if len(args.logLevel):
-        LOG_LEVEL = getattr(logging,args.logLevel.upper(),getattr(logging,"INFO"))
+        utils.logging.LOG_LEVEL = getattr(logging,args.logLevel.upper(),getattr(logging,"INFO"))
     if args.cublasV2:
         scanner.CUBLAS_VERSION = 2
         translator.CUBLAS_VERSION = 2
     return args, unknownArgs
 
 def initLogging(inputFilePath):
-    global LOG_LEVEL
-    global LOG_DIR
-    global LOG_DIR_CREATE
-    # add custom log levels:
-    utils.registerAdditionalDebugLevels()
     inputFilePathHash = hashlib.md5(inputFilePath.encode()).hexdigest()[0:8]
-    logDir = LOG_DIR
-    if not LOG_DIR_CREATE and not os.path.exists(logDir):
-        msg = "directory for storing log files ('{}') does not exist".format(logDir)
-        print("ERROR: "+msg)
-        sys.exit(2)
-    os.makedirs(logDir,exist_ok=True)
-   
-    try:
-        FORMAT = "gpufort:%(levelname)s:{0}: %(message)s".format(inputFilePath)
-        FILE="{0}/log-{1}.log".format(logDir,inputFilePathHash)
-        logging.basicConfig(format=FORMAT,filename=FILE,filemode="w", level=LOG_LEVEL)
-    except:
-        msg = "directoy for storing log files '{}' cannot be accessed".format(logDir)
-        print("ERROR: "+msg,file=sys.stderr)
-        sys.exit(2)
-
+    logfileBaseName = "log-{}.log".format(inputFilePathHash)
+    logFormat       = "gpufort:%(levelname)s:{0}: %(message)s".format(inputFilePath)
+  
+    logfilePath = utils.logging.initLogging(logfileBaseName,logFormat)
+ 
     msg = "input file: {0} (log id: {1})".format(inputFilePath,inputFilePathHash)
-    utils.logInfo(msg)
-    msg = "log file:   {0} (log level: {1}) ".format(FILE,logging.getLevelName(LOG_LEVEL))
-    utils.logInfo(msg)
+    utils.logging.logInfo(msg)
+    msg = "log file:   {0} (log level: {1}) ".format(logfilePath,logging.getLevelName(utils.logging.LOG_LEVEL))
+    utils.logging.logInfo(msg)
 
 if __name__ == "__main__":
     # read config and command line arguments
@@ -283,7 +271,7 @@ if __name__ == "__main__":
     args, unknownArgs = parseCommandLineArguments()
     if len(POST_CLI_ACTIONS):
         msg = "run registered actions"
-        utils.logInfo(msg,verbose=False)
+        utils.logging.logInfo(msg,verbose=False)
         for action in POST_CLI_ACTIONS:
             if callable(action):
                 action(args,unknownArgs)
@@ -297,7 +285,7 @@ if __name__ == "__main__":
             INCLUDE_DIRS[i] = args.workingDir+"/"+directory
         if not os.path.exists(INCLUDE_DIRS[i]):
             msg = "search directory '{}' cannot be found".format(INCLUDE_DIRS[i])
-            utils.logError(msg,verbose=False) 
+            utils.logging.logError(msg,verbose=False) 
             oneOrMoreSearchDirsNotFound = True
     if oneOrMoreSearchDirsNotFound:
         sys.exit(2)
@@ -328,6 +316,6 @@ if __name__ == "__main__":
         indexFilePath = outputFilePrefix + ".gpufort_mod"
         indexer.writeIndexToFile(index, indexFilePath)
         msg = "saved index to file:".ljust(40) + indexFilePath
-        utils.logInfo(msg)
+        utils.logging.logInfo(msg)
     # shutdown logging
     logging.shutdown()

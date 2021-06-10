@@ -6,7 +6,7 @@ class Acc2Omp(AccBackendBase):
         try:
            def repl(parseResult):
                 return parseResult.ompFStr(), True
-           result,_ = pyparsingtools.replaceFirst(fSnippet,\
+           result,_ = utils.pyparsingutils.replaceFirst(fSnippet,\
                     translator.accSimpleDirective,\
                     repl)
            return result, True 

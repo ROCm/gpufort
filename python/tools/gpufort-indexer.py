@@ -9,7 +9,7 @@ import json
 import time
 
 import indexer.indexer as indexer
-import utils
+import utils.logging
     
 def parseCommandLineArguments():
     args = {}
@@ -45,8 +45,7 @@ def parseCommandLineArguments():
 
 def initLogging(args):
     # add custom log levels:
-    utils.addLoggingLevel("DEBUG2", logging.DEBUG-1, methodName="debug2")
-    utils.addLoggingLevel("DEBUG3", logging.DEBUG-2, methodName="debug3")
+    utils.logging.addAdditionalDebugLevels()
     logDir = os.path.join(os.path.dirname(os.path.abspath(__file__)),"log")
     os.makedirs(logDir,exist_ok=True)
    
@@ -56,7 +55,7 @@ def initLogging(args):
     logging.basicConfig(format=FORMAT,filename=FILE,filemode="w", level=LOG_LEVEL)
    
     msg = "log file:   {0} (log level: {1}) ".format(FILE,logging.getLevelName(LOG_LEVEL))
-    utils.logInfo(msg)
+    utils.logging.logInfo(msg)
 
 if __name__ == "__main__":
     start_time = time.time()

@@ -226,7 +226,7 @@ class STProcedure(STNode,Tagged):
         self._indexRecord = scoper.filterIndexByTag(index,self.tag())[0]
         if self._indexRecord == scoper.EMPTY:
             msg = "scanner: could not find index entry for procedure with tag '"+self.tag()+"'"
-            utils.logError(msg)
+            utils.logging.logError(msg)
             sys.exit(SCANNER_ERROR_CODE)
     def hasAttribute(self,attribute):
         return attribute in self._indexRecord["attributes"]
@@ -472,7 +472,7 @@ class STAllocated(STNode):
             indexedVar  = scoper.searchIndexForVariable(indexHints,varName)
             onDevice    = scoper.indexVariableIsOnDevice(indexedVar)
             return (parseResult.fStr(), onDevice) # TODO backend specific
-        result, transformed = pyparsingtools.replaceAll(fSnippet,translator.allocated,repl)
+        result, transformed = utils.pyparsingutils.replaceAll(fSnippet,translator.allocated,repl)
         assert result != None
         return result, transformed
 
@@ -498,7 +498,7 @@ class STAllocate(STNode):
                 transformed |= onDevice | pinned
             subst = parseResult.hipFStr(bytesPerElement,arrayQualifiers,indent="")
             return (subst, transformed)
-        return pyparsingtools.replaceAll(fSnippet,translator.allocate,repl)
+        return utils.pyparsingutils.replaceAll(fSnippet,translator.allocate,repl)
              
 class STDeallocate(STNode):
     def __init__(self,parent,lineno,lines):
@@ -524,7 +524,7 @@ class STDeallocate(STNode):
                 transformed |= onDevice | pinned
             subst = parseResult.hipFStr(arrayQualifiers,indent="")
             return (subst, transformed)
-        return pyparsingtools.replaceAll(fSnippet,translator.deallocate,repl)
+        return utils.pyparsingutils.replaceAll(fSnippet,translator.deallocate,repl)
          
 class STMemcpy(STNode):
     def __init__(self,parent,lineno,lines):
@@ -543,7 +543,7 @@ class STMemcpy(STNode):
                 return (subst,True)
             else:
                 return ("",False) # no transformation; will not be considered
-        fSnippet, transformed = pyparsingtools.replaceAll(fSnippet,translator.memcpy,replMemcpy)
+        fSnippet, transformed = utils.pyparsingutils.replaceAll(fSnippet,translator.memcpy,replMemcpy)
         return fSnippet, transformed
 
 class STCudaLibCall(STNode):
@@ -573,11 +573,11 @@ class STCudaLibCall(STNode):
                 srcOnDevice  = scoper.indexVariableIsOnDevice(srcIndexedVar)
                 subst = parseResult.hipFStr(destOnDevice,srcOnDevice)
                 return (subst, True)
-            fSnippet,_ = pyparsingtools.replaceAll(fSnippet,translator.cufCudaMemcpyVariant,replMemcpy)
+            fSnippet,_ = utils.pyparsingutils.replaceAll(fSnippet,translator.cufCudaMemcpyVariant,replMemcpy)
         def replCublas(parseResult):
             subst = parseResult.fStr(indent)
             return (subst, True)
-        fSnippet,haveCublas = pyparsingtools.replaceAll(fSnippet,translator.cublasCall,replCublas)
+        fSnippet,haveCublas = utils.pyparsingutils.replaceAll(fSnippet,translator.cublasCall,replCublas)
         if haveCublas:
             self._hasCublas = True
         for elem in CUDA_RUNTIME_ENUMS:

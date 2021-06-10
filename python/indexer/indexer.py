@@ -15,7 +15,7 @@ import concurrent.futures
 from multiprocessing import Pool
 
 import translator.translator as translator
-import utils
+import utils.logging
 
 GPUFORT_MODULE_FILE_SUFFIX=".gpufort_mod"
 
@@ -162,19 +162,20 @@ def __parseFile(fileLines,filepath):
     def logEnterNode_():
         nonlocal currentNode
         nonlocal currentLine
-        utils.logDebug("indexer:\tenter {0} '{1}' in line: '{2}'".format(\
-          currentNode._data["kind"],currentNode._data["name"],\
+        utils.logging.logDebug("indexer:\t[current-node={0}:{1}]\tenter {2} '{3}' in line: '{4}'".format(\
+          currentNode._parent._kind,currentNode._parent._name,
+          currentNode._kind,currentNode._name,\
           currentLine))
     def logLeaveNode_():
         nonlocal currentNode
         nonlocal currentLine
-        utils.logDebug("indexer:\tleave {0} '{1}' in line: '{2}'".format(\
+        utils.logging.logDebug("indexer:\t[current-node={0}:{1}]\tleave {0} '{1}' in line: '{2}'".format(\
           currentNode._data["kind"],currentNode._data["name"],\
           currentLine))
     def logDetection_(kind):
         nonlocal currentNode
         nonlocal currentLine
-        utils.logDebug2("indexer:\t[current-node={}:{}] FOUND {} in line: '{}'".format(\
+        utils.logging.logDebug2("indexer:\t[current-node={}:{}]\tfound {} in line: '{}'".format(\
                 currentNode._kind,currentNode._name,kind,currentLine))
    
     # direct parsing
@@ -233,7 +234,6 @@ def __parseFile(fileLines,filepath):
             logEnterNode_()
     def TypeStart(tokens):
         nonlocal currentNode
-        print(currentNode._kind)
         logDetection_("start of type")
         if currentNode._kind != "root":
             assert len(tokens) == 2
@@ -256,7 +256,6 @@ def __parseFile(fileLines,filepath):
                 original = translator.makeFStr(pair[0])
                 renamed = original if pair[1] is None else translator.makeFStr(pair[1])
                 usedModule["only"].append({ "original": original, "renamed": renamed })
-            #print(currentNode)
             currentNode._data["usedModules"].append(usedModule) # TODO only include what is necessary
     
     # delayed parsing
@@ -320,18 +319,19 @@ def __parseFile(fileLines,filepath):
            expression.parseString(currentLine)
            return True
         except ParseBaseException as e: 
-           utils.logDebug3("indexer:\tdid not find expression '{}' in line '{}'".format(expressionName,currentLine))
-           utils.logDebug4(str(e))
+           utils.logging.logDebug3("indexer:\tdid not find expression '{}' in line '{}'".format(expressionName,currentLine))
+           utils.logging.logDebug4(str(e))
            return False
 
     for currentLine in fileLines:
-        utils.logDebug3("indexer:\tprocessing line '{}'".format(currentLine))
+        utils.logging.logDebug3("indexer:\tprocessing line '{}'".format(currentLine))
         # typeStart must be tried before datatype_reg
         tryToParseString("structureEnd|typeEnd|typeStart|declaration|use|attributes|acc_declare|moduleStart|programStart|functionStart|subroutineStart",\
           typeEnd|structureEnd|typeStart|datatype_reg|use|attributesLhs|acc_declare|moduleStart|programStart|functionStart|subroutineStart)
     taskExecutor.shutdown(wait=True) # waits till all tasks have been completed
 
     # apply attributes and acc variable modifications
+    utils.logging.logDebug("apply variable modificatu
     with concurrent.futures.ThreadPoolExecutor() as jobExecutor:
         for job in postParsingJobs:
             jobExecutor.submit(job.run)

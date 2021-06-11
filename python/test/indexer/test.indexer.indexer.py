@@ -7,7 +7,7 @@ import utils.logging
 import json
 
 utils.logging.VERBOSE   = True
-utils.logging.initLogging("log.log","debug2")
+utils.logging.initLogging("log.log","debug3")
 
 gfortranOptions="-DCUDA"
 

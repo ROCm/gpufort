@@ -2,17 +2,12 @@
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 #!/usr/bin/env python3
 import addtoplevelpath
-import os,sys
+import os,sys,subprocess
 import re
-import subprocess
-import logging
-
-import orjson
-
 import threading
 import concurrent.futures
 
-from multiprocessing import Pool
+import orjson
 
 import translator.translator as translator
 import utils.logging
@@ -81,6 +76,11 @@ def __parseFile(fileLines,filepath):
     # statistics
     totalNumTasks = 0
     
+    def logProcessJobOrTask(parentNode,msg):
+        utils.logging.logDebug2("indexer:\t[thread-id={3}][parent-node={0}:{1}]\t{2}".format(\
+          parentNode._kind, parentNode._name, msg,\
+          threading.get_ident()))
+    
     def ParseDeclarationTask_(parentNode,inputText):
         """
         :note: the term 'task' should highlight that this is a function
@@ -93,6 +93,8 @@ def __parseFile(fileLines,filepath):
         accessLock.acquire()
         parentNode._data["variables"] += variables
         accessLock.release()
+        msg = "parsed variable declaration in line '{}'".format(inputText)
+        logProcessJobOrTask(parentNode, msg)
     
     postParsingJobs = [] # jobs to run after the file was parsed statement by statement
     class ParseAttributesJob_:
@@ -106,12 +108,14 @@ def __parseFile(fileLines,filepath):
         def run(self):
             nonlocal accessLock
             attribute, modifiedVars = \
-                translator.parseAttributes(translator.attributes.parseString(inputText)[0])
+                translator.parseAttributes(translator.attributes.parseString(self._inputText)[0])
             for varContext in self._parentNode._data["variables"]:
                 if varContext["name"] in modifiedVars and attribute in varContext:
                     accessLock.acquire()
                     varContext[attribute] = True
                     accessLock.release()
+            msg = "parsed attributes statement in line '{}'".format(self._inputText)
+            logProcessJobOrTask(self._parentNode, msg)
     class ParseAccDeclareJob_:
         """
         :note: the term 'job' should highlight that an object of this class
@@ -122,7 +126,7 @@ def __parseFile(fileLines,filepath):
             self._inputText  = inputText
         def run(self):
             nonlocal accessLock
-            parseResult = translator.acc_declare.parseString(inputText)[0]
+            parseResult = translator.acc_declare.parseString(self._inputText)[0]
             for varContext in currentNode._data["variables"]:
                 for varName in parseResult.mapAllocVariables():
                     if varContext["name"] == varName:
@@ -144,6 +148,8 @@ def __parseFile(fileLines,filepath):
                         accessLock.acquire()
                         varContext["declareOnTarget"] = "tofrom"
                         accessLock.release()
+            msg = "parsed acc declare directive in line '{}'".format(self._inputText)
+            logProcessJobOrTask(self._parentNode, msg)
 
     # Parser events
     root        = __Node("root","root",data=index,parent=None)
@@ -331,7 +337,7 @@ def __parseFile(fileLines,filepath):
     taskExecutor.shutdown(wait=True) # waits till all tasks have been completed
 
     # apply attributes and acc variable modifications
-    utils.logging.logDebug("apply variable modificatu
+    utils.logging.logDebug("apply variable modifications")
     with concurrent.futures.ThreadPoolExecutor() as jobExecutor:
         for job in postParsingJobs:
             jobExecutor.submit(job.run)
@@ -359,7 +365,11 @@ def scanFile(filepath,gfortranOptions,index):
     """
     Creates an index from a single file.
     """
+    utils.logging.logDebug("indexer:\tscan file '{}' with preprocessor options '{}'".format(filepath,gfortranOptions))
     filteredLines = __readFortranFile(filepath,gfortranOptions)
+    utils.logging.logDebug3(\
+      "indexer:\textracted the following lines:\n>>>\n{}\n<<<".format(\
+        "\n".join(filteredLines)))
     index += __parseFile(filteredLines,filepath)
 
 def writeGpufortModuleFiles(index,outputDir):

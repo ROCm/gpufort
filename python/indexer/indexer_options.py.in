@@ -15,13 +15,9 @@ USE=r"use\b\s+"
 FILTER=r"\b("+STRUCTURES+"|"+DECLARATIONS+"|"+ATTRIBUTES+"|"+DIRECTIVES+"|"+USE+r")\b"
 ANTIFILTER=r"\bend\b\s+\b(do|if)\b"
 
-PRESCAN_FILTER=r"\b("+STRUCTURES+"|"+USE+r")\b"
 CONTINUATION_FILTER=r"(\&\s*\n)|(\n\s*[\!c\*]\$\w+\&)"
-
-SCAN_SEARCH_DIRS_MAX_PROCESSES = 1 # max number of processes used for scanning files in search directories.
 
 PRETTY_PRINT_INDEX_FILE = False # Pretty print index before writing it to disk.
 
-PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE = 4 # Number of worker threads for parsing variable declarations
-PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE      = 4 # Number of worker threads for parsing statements that modify variable index records, e.g. CUDA Fortran attributes statements  or OpenACC acc declare directives.
-PARSE_VARIABLE_MODIFICATION_STATEMENTS_CHUNK_SIZE = 4 # Chunk of tasks per worker.
+PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE            = 4 # Number of worker threads for parsing variable declarations.
+PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE = 4 # Number of worker threads for parsing statements that modify variable index records, e.g. CUDA Fortran attributes statements  or OpenACC acc declare directives.

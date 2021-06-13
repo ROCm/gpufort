@@ -7,6 +7,7 @@ import utils.logging
 import json
 
 utils.logging.VERBOSE   = True
+utils.logging.LOG_FILTER = "readFortran"
 utils.logging.initLogging("log.log","debug3")
 
 gfortranOptions="-DCUDA"

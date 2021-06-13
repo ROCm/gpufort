@@ -25,7 +25,6 @@ exec(open("{0}/indexer_options.py.in".format(indexerDir)).read())
 pFilter        = re.compile(FILTER) 
 pAntiFilter    = re.compile(ANTIFILTER)
 pContinuation  = re.compile(CONTINUATION_FILTER)
-pPrescanFilter = re.compile(PRESCAN_FILTER) 
 
 def __readFortranFile(filepath,gfortranOptions):
     """
@@ -33,6 +32,13 @@ def __readFortranFile(filepath,gfortranOptions):
     statements take a single line, i.e. remove all occurences
     of "&".
     """
+    global PREPROCESS_FORTRAN_FILE
+    global pFilter
+    global pAntiFilter
+    global pContinuation
+    
+    utils.logging.logDebug("indexer.indexer.__readFortranFile(...):\tstep into with arguments: filepath='{}', gfortranOptions='{}'".format(filepath,gfortranOptions))
+    
     def considerLine(strippedLine):
         return (pFilter.match(strippedLine) != None) and (pAntiFilter.match(strippedLine) is None)
     try:
@@ -46,9 +52,14 @@ def __readFortranFile(filepath,gfortranOptions):
        for line in output.split("\n"):
            strippedLine = line.strip().rstrip("\n")
            if considerLine(strippedLine):
+               utils.logging.logDebug2("indexer.indexer.__readFortranFile(...):\tconsider line '{}'".format(strippedLine))
                filteredLines.append(strippedLine)
+           else:
+               utils.logging.logDebug3("indexer.indexer.__readFortranFile(...):\tdo not consider line '{}'".format(strippedLine))
     except subprocess.CalledProcessError as cpe:
         raise cpe
+    
+    utils.logging.logDebug("indexer.indexer.__readFortranFile(...):\treturn")
     return filteredLines
 
 class __Node():
@@ -62,6 +73,10 @@ class __Node():
     __repr__ = __str__
 
 def __parseFile(fileLines,filepath):
+    global PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE
+    global PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE 
+
+    utils.logging.logDebug("indexer.indexer.__parseFile(...):\tstep into")
     # Regex
     datatype_reg = Regex(r"\b(type\s*\(|character|integer|logical|real|complex|double\s+precision)\b")
 
@@ -72,12 +87,15 @@ def __parseFile(fileLines,filepath):
     # Later, we might also parse routines
 
     accessLock   = threading.Lock()
-    taskExecutor = concurrent.futures.ThreadPoolExecutor()
+    utils.logging.logDebug("indexer.indexer.__parseFile(...):\tcreate thread pool of size {} for processing variable declarations".format(\
+      PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE))
+    taskExecutor = concurrent.futures.ThreadPoolExecutor(\
+      max_workers=PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE)
     # statistics
     totalNumTasks = 0
     
     def logProcessJobOrTask(parentNode,msg):
-        utils.logging.logDebug2("indexer:\t[thread-id={3}][parent-node={0}:{1}]\t{2}".format(\
+        utils.logging.logDebug2("indexer.indexer.__parseFile(...):\t[thread-id={3}][parent-node={0}:{1}]\t{2}".format(\
           parentNode._kind, parentNode._name, msg,\
           threading.get_ident()))
     
@@ -168,20 +186,20 @@ def __parseFile(fileLines,filepath):
     def logEnterNode_():
         nonlocal currentNode
         nonlocal currentLine
-        utils.logging.logDebug("indexer:\t[current-node={0}:{1}]\tenter {2} '{3}' in line: '{4}'".format(\
+        utils.logging.logDebug("indexer.indexer.__parseFile(...):\t[current-node={0}:{1}]\tenter {2} '{3}' in line: '{4}'".format(\
           currentNode._parent._kind,currentNode._parent._name,
           currentNode._kind,currentNode._name,\
           currentLine))
     def logLeaveNode_():
         nonlocal currentNode
         nonlocal currentLine
-        utils.logging.logDebug("indexer:\t[current-node={0}:{1}]\tleave {0} '{1}' in line: '{2}'".format(\
+        utils.logging.logDebug("indexer.indexer.__parseFile(...):\t[current-node={0}:{1}]\tleave {0} '{1}' in line: '{2}'".format(\
           currentNode._data["kind"],currentNode._data["name"],\
           currentLine))
     def logDetection_(kind):
         nonlocal currentNode
         nonlocal currentLine
-        utils.logging.logDebug2("indexer:\t[current-node={}:{}]\tfound {} in line: '{}'".format(\
+        utils.logging.logDebug2("indexer.indexer.__parseFile(...):\t[current-node={}:{}]\tfound {} in line: '{}'".format(\
                 currentNode._kind,currentNode._name,kind,currentLine))
    
     # direct parsing
@@ -277,7 +295,7 @@ def __parseFile(fileLines,filepath):
         if currentNode != root:
             totalNumTasks += 1
             taskExecutor.submit(ParseDeclarationTask_,currentNode,currentLine) 
-    def Attributes(s,loc,tokens):
+    def Attributes(tokens):
         """
         Add attributes to previously declared variables in same scope/declaration list.
         Does not modify scope of other variables.
@@ -290,7 +308,7 @@ def __parseFile(fileLines,filepath):
         if currentNode != root:
             job = ParseAttributesJob_(currentNode,currentLine) 
             postParsingJobs.append(job)
-    def AccDeclare(s,loc,tokens):
+    def AccDeclare(tokens):
         """
         Add attributes to previously declared variables in same scope.
         Does not modify scope of other variables.
@@ -310,7 +328,6 @@ def __parseFile(fileLines,filepath):
     programStart.setParseAction(ProgramStart)
     functionStart.setParseAction(FunctionStart)
     subroutineStart.setParseAction(SubroutineStart)
-    acc_declare.setParseAction(AccDeclare)
 
     typeEnd.setParseAction(End)
     structureEnd.setParseAction(End)
@@ -318,31 +335,39 @@ def __parseFile(fileLines,filepath):
     datatype_reg.setParseAction(Declaration)
     use.setParseAction(Use)
     attributesLhs.setParseAction(Attributes)
-    # TODO openacc pragmas
+    
+    acc_declare.setParseAction(AccDeclare)
 
     def tryToParseString(expressionName,expression):
         try:
            expression.parseString(currentLine)
            return True
         except ParseBaseException as e: 
-           utils.logging.logDebug3("indexer:\tdid not find expression '{}' in line '{}'".format(expressionName,currentLine))
+           utils.logging.logDebug3("indexer.indexer.__parseFile(...):\tdid not find expression '{}' in line '{}'".format(expressionName,currentLine))
            utils.logging.logDebug4(str(e))
            return False
 
     for currentLine in fileLines:
-        utils.logging.logDebug3("indexer:\tprocessing line '{}'".format(currentLine))
+        utils.logging.logDebug3("indexer.indexer.__parseFile(...):\tprocessing line '{}'".format(currentLine))
         # typeStart must be tried before datatype_reg
         tryToParseString("structureEnd|typeEnd|typeStart|declaration|use|attributes|acc_declare|moduleStart|programStart|functionStart|subroutineStart",\
           typeEnd|structureEnd|typeStart|datatype_reg|use|attributesLhs|acc_declare|moduleStart|programStart|functionStart|subroutineStart)
     taskExecutor.shutdown(wait=True) # waits till all tasks have been completed
+    utils.logging.logDebug("all jobs ")
 
     # apply attributes and acc variable modifications
-    utils.logging.logDebug("apply variable modifications")
-    with concurrent.futures.ThreadPoolExecutor() as jobExecutor:
+    numPostParsingJobs = len(postParsingJobs)
+    utils.logging.logDebug("indexer.indexer.__parseFile(...):\tapply variable modifications (submit {} jobs to worker pool of size {})".format(\
+      numPostParsingJobs,PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE))
+    with concurrent.futures.ThreadPoolExecutor(\
+        max_workers=PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE)\
+            as jobExecutor:
         for job in postParsingJobs:
             jobExecutor.submit(job.run)
+    utils.logging.logDebug("indexer.indexer.__parseFile(...):\tapply variable modifications --- done") 
     postParsingJobs.clear()
 
+    utils.logging.logDebug("indexer.indexer.__parseFile(...):\treturn") 
     return index
 
 def __writeJsonFile(index,filepath):
@@ -365,10 +390,10 @@ def scanFile(filepath,gfortranOptions,index):
     """
     Creates an index from a single file.
     """
-    utils.logging.logDebug("indexer:\tscan file '{}' with preprocessor options '{}'".format(filepath,gfortranOptions))
+    utils.logging.logDebug("indexer.indexer.__parseFile(...):\tscan file '{}' with preprocessor options '{}'".format(filepath,gfortranOptions))
     filteredLines = __readFortranFile(filepath,gfortranOptions)
     utils.logging.logDebug3(\
-      "indexer:\textracted the following lines:\n>>>\n{}\n<<<".format(\
+      "indexer.indexer.__parseFile(...):\textracted the following lines:\n>>>\n{}\n<<<".format(\
         "\n".join(filteredLines)))
     index += __parseFile(filteredLines,filepath)
 

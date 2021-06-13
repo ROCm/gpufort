@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
-import logging
 import os,sys
+import re
+import logging
 
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "logging_options.py.in")).read())
 
@@ -116,39 +117,46 @@ def registerAdditionalDebugLevels():
 def logInfo(msg):
     global __LOG_LEVEL_AS_INT
     global VERBOSE
-    logging.getLogger("").info(msg)
-    if VERBOSE and __LOG_LEVEL_AS_INT <= getattr(logging,"INFO"):
-        print("INFO: "+msg, file=sys.stderr)
+    global LOG_FILTER
+    if LOG_FILTER == None or re.search(LOG_FILTER,msg):
+        logging.getLogger("").info(msg)
+        if VERBOSE and __LOG_LEVEL_AS_INT <= getattr(logging,"INFO"):
+            print("INFO: "+msg, file=sys.stderr)
 
 def logError(msg):
     global VERBOSE
-    logging.getLogger("").error(msg)
-    print("ERROR: "+msg, file=sys.stderr)
+    global LOG_FILTER
+    if LOG_FILTER == None or re.search(LOG_FILTER,msg):
+        logging.getLogger("").error(msg)
+        print("ERROR: "+msg, file=sys.stderr)
 
 def logWarning(msg):
     global __LOG_LEVEL_AS_INT
     global VERBOSE
-    logging.getLogger("").warning(msg)
-    print("WARNING: "+msg, file=sys.stderr)
+    global LOG_FILTER
+    if LOG_FILTER == None or re.search(LOG_FILTER,msg):
+        logging.getLogger("").warning(msg)
+        print("WARNING: "+msg, file=sys.stderr)
 
 def logDebug(msg,debugLevel=1):
     global __LOG_LEVEL_AS_INT
     global VERBOSE
-
-    if debugLevel == 1:
-       logging.getLogger("").debug(msg)
-    elif debugLevel == 2:
-       logging.getLogger("").debug2(msg)
-    elif debugLevel == 3:
-       logging.getLogger("").debug3(msg)
-    elif debugLevel == 4:
-       logging.getLogger("").debug4(msg)
-    elif debugLevel == 5:
-       logging.getLogger("").debug5(msg)
-    else:
-        assert False, "debug level not supported"
-    if VERBOSE and __LOG_LEVEL_AS_INT <= getattr(logging,"DEBUG")-debugLevel+1:
-        print("DEBUG"+str(debugLevel)+": "+msg,file=sys.stderr)
+    global LOG_FILTER
+    if LOG_FILTER == None or re.search(LOG_FILTER,msg):
+        if debugLevel == 1:
+           logging.getLogger("").debug(msg)
+        elif debugLevel == 2:
+           logging.getLogger("").debug2(msg)
+        elif debugLevel == 3:
+           logging.getLogger("").debug3(msg)
+        elif debugLevel == 4:
+           logging.getLogger("").debug4(msg)
+        elif debugLevel == 5:
+           logging.getLogger("").debug5(msg)
+        else:
+            assert False, "debug level not supported"
+        if VERBOSE and __LOG_LEVEL_AS_INT <= getattr(logging,"DEBUG")-debugLevel+1:
+            print("DEBUG"+str(debugLevel)+": "+msg,file=sys.stderr)
 
 def logDebug1(msg):
     logDebug(msg,1)

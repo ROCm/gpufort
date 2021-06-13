@@ -7,12 +7,12 @@ FILTER_INPUT_FILES="grep -l \"{module_names}\" {input_files}"
 PREPROCESS_FORTRAN_FILE="gfortran -cpp -E {options} {file} | grep -v \"^# [0-9]\""
 
 STRUCTURES=r"module|program|interface|function|routine|procedure|subroutine|type|end"
-DECLARATIONS=r"integer|real|double|logical" # derived types already considered by definition
-ATTRIBUTES=r"attributes" # derived types already considered by definition
+DECLARATIONS=r"integer|real|double|logical" # derived types already considered by STRUCTURES
+ATTRIBUTES=r"attributes"                    
+USE=r"use"
 DIRECTIVES=r"([!c\*]\$\w+)"
-USE=r"use\b\s+"
 
-FILTER=r"\b("+STRUCTURES+"|"+DECLARATIONS+"|"+ATTRIBUTES+"|"+DIRECTIVES+"|"+USE+r")\b"
+FILTER=r"\b("+STRUCTURES+"|"+DECLARATIONS+"|"+ATTRIBUTES+"|"+USE+r")\b"+"|"+DIRECTIVES
 ANTIFILTER=r"\bend\b\s+\b(do|if)\b"
 
 CONTINUATION_FILTER=r"(\&\s*\n)|(\n\s*[\!c\*]\$\w+\&)"

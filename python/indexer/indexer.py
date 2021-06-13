@@ -40,7 +40,10 @@ def __readFortranFile(filepath,gfortranOptions):
     utils.logging.logDebug("indexer.indexer.__readFortranFile(...):\tstep into with arguments: filepath='{}', gfortranOptions='{}'".format(filepath,gfortranOptions))
     
     def considerLine(strippedLine):
-        return (pFilter.match(strippedLine) != None) and (pAntiFilter.match(strippedLine) is None)
+        passesFilter     = pFilter.match(strippedLine) != None
+        passesAntifilter = pAntiFilter.match(strippedLine) != None
+        utils.logging.logDebug4("indexer.indexer.__readFortranFile(...):\tstatement '{}' passes select filter: '{}'; statement passes ignore filter: '{}'".format(strippedLine,passesFilter,passesAntifilter))
+        return passesFilter and not passesAntifilter
     try:
        command = PREPROCESS_FORTRAN_FILE.format(file=filepath,options=gfortranOptions)
        output  = subprocess.check_output(command,shell=True).decode("UTF-8")
@@ -52,10 +55,10 @@ def __readFortranFile(filepath,gfortranOptions):
        for line in output.split("\n"):
            strippedLine = line.strip().rstrip("\n")
            if considerLine(strippedLine):
-               utils.logging.logDebug2("indexer.indexer.__readFortranFile(...):\tconsider line '{}'".format(strippedLine))
+               utils.logging.logDebug2("indexer.indexer.__readFortranFile(...):\tselect statement '{}'".format(strippedLine))
                filteredLines.append(strippedLine)
            else:
-               utils.logging.logDebug3("indexer.indexer.__readFortranFile(...):\tdo not consider line '{}'".format(strippedLine))
+               utils.logging.logDebug3("indexer.indexer.__readFortranFile(...):\tignore statement '{}'".format(strippedLine))
     except subprocess.CalledProcessError as cpe:
         raise cpe
     

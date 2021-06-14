@@ -26,7 +26,7 @@ pFilter        = re.compile(FILTER)
 pAntiFilter    = re.compile(ANTIFILTER)
 pContinuation  = re.compile(CONTINUATION_FILTER)
 
-def __readFortranFile(filepath,gfortranOptions):
+def __readFortranFile(filepath,preprocOptions):
     """
     Read and preprocess a Fortran file. Make all
     statements take a single line, i.e. remove all occurences
@@ -37,15 +37,15 @@ def __readFortranFile(filepath,gfortranOptions):
     global pAntiFilter
     global pContinuation
     
-    utils.logging.logDebug("indexer.indexer.__readFortranFile(...):\tstep into with arguments: filepath='{}', gfortranOptions='{}'".format(filepath,gfortranOptions))
+    utils.logging.logEnterFunction(LOG_PREFIX,"__readFortranFile",{"filepath":filepath,"preprocOptions":preprocOptions})
     
     def considerLine(strippedLine):
         passesFilter     = pFilter.match(strippedLine) != None
         passesAntifilter = pAntiFilter.match(strippedLine) != None
-        utils.logging.logDebug4("indexer.indexer.__readFortranFile(...):\tstatement '{}' passes select filter: '{}'; statement passes ignore filter: '{}'".format(strippedLine,passesFilter,passesAntifilter))
+        utils.logging.logDebug4(LOG_PREFIX,"__readFortranFile","statement '{}' passes select filter: '{}'; statement passes ignore filter: '{}'".format(strippedLine,passesFilter,passesAntifilter))
         return passesFilter and not passesAntifilter
     try:
-       command = PREPROCESS_FORTRAN_FILE.format(file=filepath,options=gfortranOptions)
+       command = PREPROCESS_FORTRAN_FILE.format(file=filepath,options=preprocOptions)
        output  = subprocess.check_output(command,shell=True).decode("UTF-8")
        # remove Fortran line continuation and directive continuation
        output = pContinuation.sub(" ",output.lower()) 
@@ -55,14 +55,14 @@ def __readFortranFile(filepath,gfortranOptions):
        for line in output.split("\n"):
            strippedLine = line.strip().rstrip("\n")
            if considerLine(strippedLine):
-               utils.logging.logDebug2("indexer.indexer.__readFortranFile(...):\tselect statement '{}'".format(strippedLine))
+               utils.logging.logDebug2(LOG_PREFIX,"__readFortranFile","select statement '{}'".format(strippedLine))
                filteredLines.append(strippedLine)
            else:
-               utils.logging.logDebug3("indexer.indexer.__readFortranFile(...):\tignore statement '{}'".format(strippedLine))
+               utils.logging.logDebug3(LOG_PREFIX,"__readFortranFile","ignore statement '{}'".format(strippedLine))
     except subprocess.CalledProcessError as cpe:
         raise cpe
     
-    utils.logging.logDebug("indexer.indexer.__readFortranFile(...):\treturn")
+    utils.logging.logLeaveFunction(LOG_PREFIX,"__readFortranFile")
     return filteredLines
 
 class __Node():
@@ -79,7 +79,7 @@ def __parseFile(fileLines,filepath):
     global PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE
     global PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE 
 
-    utils.logging.logDebug("indexer.indexer.__parseFile(...):\tstep into")
+    utils.logging.logEnterFunction(LOG_PREFIX,"__parseFile",{"filepath":filepath})
     # Regex
     datatype_reg = Regex(r"\b(type\s*\(|character|integer|logical|real|complex|double\s+precision)\b")
 
@@ -90,17 +90,22 @@ def __parseFile(fileLines,filepath):
     # Later, we might also parse routines
 
     accessLock   = threading.Lock()
-    utils.logging.logDebug("indexer.indexer.__parseFile(...):\tcreate thread pool of size {} for processing variable declarations".format(\
+    utils.logging.logDebug(LOG_PREFIX,"__parseFile","create thread pool of size {} for process variable declarations".format(\
       PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE))
     taskExecutor = concurrent.futures.ThreadPoolExecutor(\
       max_workers=PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE)
     # statistics
     totalNumTasks = 0
-    
-    def logProcessJobOrTask(parentNode,msg):
-        utils.logging.logDebug2("indexer.indexer.__parseFile(...):\t[thread-id={3}][parent-node={0}:{1}]\t{2}".format(\
-          parentNode._kind, parentNode._name, msg,\
-          threading.get_ident()))
+ 
+    def logEnterJobOrTask_(parentNode,msg):
+        utils.logging.logDebug3(LOG_PREFIX,"__parseFile","[thread-id={3}][parent-node={0}:{1}]{2}".format(\
+              parentNode._kind, parentNode._name, msg,\
+              threading.get_ident()))
+        
+    def logLeaveJobOrTask_(parentNode,msg):
+        utils.logging.logDebug2(LOG_PREFIX+"__parseFile","[thread-id={3}][parent-node={0}:{1}]{2}".format(\
+              parentNode._kind, parentNode._name, msg,\
+              threading.get_ident()))
     
     def ParseDeclarationTask_(parentNode,inputText):
         """
@@ -108,14 +113,18 @@ def __parseFile(fileLines,filepath):
         that is directly submitted to a thread in the worker pool.
         """
         nonlocal accessLock
+        msg = "begin to parse variable declaration '{}'".format(inputText)
+        logEnterJobOrTask_(parentNode, msg)
+        #
         variables =\
           translator.createIndexRecordsFromDeclaration(\
             translator.declaration.parseString(inputText)[0])
         accessLock.acquire()
         parentNode._data["variables"] += variables
         accessLock.release()
-        msg = "parsed variable declaration in line '{}'".format(inputText)
-        logProcessJobOrTask(parentNode, msg)
+        #
+        msg = "parsed variable declaration '{}'".format(inputText)
+        logLeaveJobOrTask_(parentNode, msg)
     
     postParsingJobs = [] # jobs to run after the file was parsed statement by statement
     class ParseAttributesJob_:
@@ -128,6 +137,9 @@ def __parseFile(fileLines,filepath):
             self._inputText  = inputText
         def run(self):
             nonlocal accessLock
+            msg = "begin to parse attributes statement '{}'".format(self._inputText)
+            logEnterJobOrTask_(self._parentNode, msg)
+            #
             attribute, modifiedVars = \
                 translator.parseAttributes(translator.attributes.parseString(self._inputText)[0])
             for varContext in self._parentNode._data["variables"]:
@@ -135,8 +147,9 @@ def __parseFile(fileLines,filepath):
                     accessLock.acquire()
                     varContext[attribute] = True
                     accessLock.release()
-            msg = "parsed attributes statement in line '{}'".format(self._inputText)
-            logProcessJobOrTask(self._parentNode, msg)
+            #
+            msg = "parsed attributes statement '{}'".format(self._inputText)
+            logLeaveJobOrTask_(self._parentNode, msg)
     class ParseAccDeclareJob_:
         """
         :note: the term 'job' should highlight that an object of this class
@@ -147,16 +160,19 @@ def __parseFile(fileLines,filepath):
             self._inputText  = inputText
         def run(self):
             nonlocal accessLock
+            msg = "begin to parse acc declare directive '{}'".format(self._inputText)
+            logEnterJobOrTask_(self._parentNode, msg)
+            #
             parseResult = translator.acc_declare.parseString(self._inputText)[0]
-            for varContext in currentNode._data["variables"]:
+            for varContext in self._parentNode._data["variables"]:
                 for varName in parseResult.mapAllocVariables():
                     if varContext["name"] == varName:
                         accessLock.acquire()
                         varContext["declareOnTarget"] = "alloc"
-                        accesslock.release()
+                        accessLock.release()
                 for varName in parseResult.mapToVariables():
                     if varContext["name"] == varName: 
-                        accesslock.acquire()
+                        accessLock.acquire()
                         varContext["declareOnTarget"] = "to"
                         accessLock.release()
                 for varName in parseResult.mapFromVariables():
@@ -169,8 +185,8 @@ def __parseFile(fileLines,filepath):
                         accessLock.acquire()
                         varContext["declareOnTarget"] = "tofrom"
                         accessLock.release()
-            msg = "parsed acc declare directive in line '{}'".format(self._inputText)
-            logProcessJobOrTask(self._parentNode, msg)
+            msg = "parsed acc declare directive '{}'".format(self._inputText)
+            logLeaveJobOrTask_(self._parentNode, msg)
 
     # Parser events
     root        = __Node("root","root",data=index,parent=None)
@@ -189,20 +205,20 @@ def __parseFile(fileLines,filepath):
     def logEnterNode_():
         nonlocal currentNode
         nonlocal currentLine
-        utils.logging.logDebug("indexer.indexer.__parseFile(...):\t[current-node={0}:{1}]\tenter {2} '{3}' in line: '{4}'".format(\
+        utils.logging.logDebug(LOG_PREFIX,"__parseFile","[current-node={0}:{1}]enter {2} '{3}' in statement: '{4}'".format(\
           currentNode._parent._kind,currentNode._parent._name,
           currentNode._kind,currentNode._name,\
           currentLine))
     def logLeaveNode_():
         nonlocal currentNode
         nonlocal currentLine
-        utils.logging.logDebug("indexer.indexer.__parseFile(...):\t[current-node={0}:{1}]\tleave {0} '{1}' in line: '{2}'".format(\
+        utils.logging.logDebug(LOG_PREFIX,".__parseFile","[current-node={0}:{1}]leave {0} '{1}' in statement: '{2}'".format(\
           currentNode._data["kind"],currentNode._data["name"],\
           currentLine))
     def logDetection_(kind):
         nonlocal currentNode
         nonlocal currentLine
-        utils.logging.logDebug2("indexer.indexer.__parseFile(...):\t[current-node={}:{}]\tfound {} in line: '{}'".format(\
+        utils.logging.logDebug2(LOG_PREFIX,".__parseFile","[current-node={}:{}]found {} in statement: '{}'".format(\
                 currentNode._kind,currentNode._name,kind,currentLine))
    
     # direct parsing
@@ -346,59 +362,67 @@ def __parseFile(fileLines,filepath):
            expression.parseString(currentLine)
            return True
         except ParseBaseException as e: 
-           utils.logging.logDebug3("indexer.indexer.__parseFile(...):\tdid not find expression '{}' in line '{}'".format(expressionName,currentLine))
+           utils.logging.logDebug3(LOG_PREFIX,"__parseFile","did not find expression '{}' in statement '{}'".format(expressionName,currentLine))
            utils.logging.logDebug4(str(e))
            return False
 
     for currentLine in fileLines:
-        utils.logging.logDebug3("indexer.indexer.__parseFile(...):\tprocessing line '{}'".format(currentLine))
+        utils.logging.logDebug3(LOG_PREFIX,"__parseFile","process statement '{}'".format(currentLine))
         # typeStart must be tried before datatype_reg
         tryToParseString("structureEnd|typeEnd|typeStart|declaration|use|attributes|acc_declare|moduleStart|programStart|functionStart|subroutineStart",\
           typeEnd|structureEnd|typeStart|datatype_reg|use|attributesLhs|acc_declare|moduleStart|programStart|functionStart|subroutineStart)
     taskExecutor.shutdown(wait=True) # waits till all tasks have been completed
-    utils.logging.logDebug("all jobs ")
 
     # apply attributes and acc variable modifications
     numPostParsingJobs = len(postParsingJobs)
-    utils.logging.logDebug("indexer.indexer.__parseFile(...):\tapply variable modifications (submit {} jobs to worker pool of size {})".format(\
-      numPostParsingJobs,PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE))
-    with concurrent.futures.ThreadPoolExecutor(\
-        max_workers=PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE)\
-            as jobExecutor:
-        for job in postParsingJobs:
-            jobExecutor.submit(job.run)
-    utils.logging.logDebug("indexer.indexer.__parseFile(...):\tapply variable modifications --- done") 
-    postParsingJobs.clear()
+    if numPostParsingJobs > 0:
+        utils.logging.logDebug(LOG_PREFIX,"__parseFile","apply variable modifications (submit {} jobs to worker pool of size {})".format(\
+          numPostParsingJobs,PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE))
+        with concurrent.futures.ThreadPoolExecutor(\
+            max_workers=PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE)\
+                as jobExecutor:
+            for job in postParsingJobs:
+                jobExecutor.submit(job.run)
+        utils.logging.logDebug(LOG_PREFIX,"__parseFile","apply variable modifications --- done") 
+        postParsingJobs.clear()
 
-    utils.logging.logDebug("indexer.indexer.__parseFile(...):\treturn") 
+    utils.logging.logLeaveFunction(LOG_PREFIX,"__parseFile") 
     return index
 
 def __writeJsonFile(index,filepath):
     global PRETTY_PRINT_INDEX_FILE
+    global LOG_PREFIX    
+
+    utils.logging.logEnterFunction(LOG_PREFIX,"__writeJsonFile",{"filepath":filepath}) 
     with open(filepath,"wb") as outfile:
          if PRETTY_PRINT_INDEX_FILE:
              outfile.write(orjson.dumps(index,option=orjson.OPT_INDENT_2))
          else:
              outfile.write(orjson.dumps(index))
+    utils.logging.logLeaveFunction(LOG_PREFIX,"__writeJsonFile") 
 
 def __readJsonFile(filepath):
+    global LOG_PREFIX    
+    
+    utils.logging.logEnterFunction(LOG_PREFIX,"__readJsonFile",{"filepath":filepath}) 
     try:
        with open(filepath,"rb") as infile:
             return orjson.loads(infile.read())
     except Exception as e:
         raise e
+    utils.logging.logLeaveFunction(LOG_PREFIX,"__readJsonFile") 
 
 # API
-def scanFile(filepath,gfortranOptions,index):
+def scanFile(filepath,preprocOptions,index):
     """
     Creates an index from a single file.
     """
-    utils.logging.logDebug("indexer.indexer.__parseFile(...):\tscan file '{}' with preprocessor options '{}'".format(filepath,gfortranOptions))
-    filteredLines = __readFortranFile(filepath,gfortranOptions)
-    utils.logging.logDebug3(\
-      "indexer.indexer.__parseFile(...):\textracted the following lines:\n>>>\n{}\n<<<".format(\
+    utils.logging.logEnterFunction(LOG_PREFIX,"scanFile",{"filepath":filepath,"preprocOptions":preprocOptions}) 
+    filteredLines = __readFortranFile(filepath,preprocOptions)
+    utils.logging.logDebug3(LOG_PREFIX,"scanFile","extracted the following lines:\n>>>\n{}\n<<<".format(\
         "\n".join(filteredLines)))
     index += __parseFile(filteredLines,filepath)
+    utils.logging.logLeaveFunction(LOG_PREFIX,"scanFile") 
 
 def writeGpufortModuleFiles(index,outputDir):
     """
@@ -408,9 +432,11 @@ def writeGpufortModuleFiles(index,outputDir):
     :param list index:    [in] Empty or non-empty list.
     :param str outputDir: [in] Output directory.
     """
+    utils.logging.logEnterFunction(LOG_PREFIX,"writeGpufortModuleFiles",{"outputDir":outputDir})
     for mod in index:
         filepath = outputDir + "/" + mod["name"] + GPUFORT_MODULE_FILE_SUFFIX
         __writeJsonFile(mod,filepath)
+    utils.logging.logLeaveFunction(LOG_PREFIX,"writeGpufortModuleFiles")
 
 def loadGpufortModuleFiles(inputDirs,index):
     """
@@ -419,6 +445,8 @@ def loadGpufortModuleFiles(inputDirs,index):
     :param list inputDirs: [in] List of input directories (as strings).
     :param list index:     [inout] Empty or non-empty list. Loaded data structure is appended.
     """
+    utils.logging.logEnterFunction(LOG_PREFIX,"loadGpufortModuleFiles",{"inputDirs":inputDirs})
+
     for inputDir in inputDirs:
          for child in os.listdir(inputDir):
              if child.endswith(GPUFORT_MODULE_FILE_SUFFIX):
@@ -430,4 +458,6 @@ def loadGpufortModuleFiles(inputDirs,index):
                  if not moduleAlreadyExists:
                      modIndex = __readJsonFile(os.path.join(inputDir, child))
                      index.append(modIndex)
+    
+    utils.logging.logLeaveFunction(LOG_PREFIX,"loadGpufortModuleFiles")
 

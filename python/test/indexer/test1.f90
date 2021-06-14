@@ -1,7 +1,9 @@
-program myprogram
- use mymod1
- use mymod2, only: func2
+program test1
+ use simple
+ use nested_subprograms, only: func2
  implicit none
  
- integer :: var
-end myprogram
+ real                   :: floatScalar
+ real(8)                :: doubleScalar
+ integer,dimension(:,:) :: intArray2d
+end test1

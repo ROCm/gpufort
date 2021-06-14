@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+LOG_PREFIX = "indexer.scoper"
+ 
 ERROR_HANDLING="warn" # one of "warn","error"
 
 MODULE_IGNORE_LIST = [ # these modules are ignored when checking dependencies

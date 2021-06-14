@@ -114,34 +114,45 @@ def registerAdditionalDebugLevels():
     addLoggingLevel("DEBUG4", logging.DEBUG-3, methodName="debug4")
     addLoggingLevel("DEBUG5", logging.DEBUG-4, methodName="debug5")
 
-def logInfo(msg):
+def __makeMessage(prefix,funcName,rawMsg):
+    return prefix+"."+funcName+"(...):\t"+rawMsg
+
+def logInfo(prefix,funcName,rawMsg):
     global __LOG_LEVEL_AS_INT
     global VERBOSE
     global LOG_FILTER
+    
+    msg = __makeMessage(prefix,funcName,rawMsg)
     if LOG_FILTER == None or re.search(LOG_FILTER,msg):
         logging.getLogger("").info(msg)
         if VERBOSE and __LOG_LEVEL_AS_INT <= getattr(logging,"INFO"):
             print("INFO: "+msg, file=sys.stderr)
 
-def logError(msg):
+def logError(prefix,funcName,msg):
     global VERBOSE
     global LOG_FILTER
+    
+    msg = __makeMessage(prefix,funcName,rawMsg)
     if LOG_FILTER == None or re.search(LOG_FILTER,msg):
         logging.getLogger("").error(msg)
         print("ERROR: "+msg, file=sys.stderr)
 
-def logWarning(msg):
+def logWarning(prefix,funcName,msg):
     global __LOG_LEVEL_AS_INT
     global VERBOSE
     global LOG_FILTER
+    
+    msg = __makeMessage(prefix,funcName,rawMsg)
     if LOG_FILTER == None or re.search(LOG_FILTER,msg):
         logging.getLogger("").warning(msg)
         print("WARNING: "+msg, file=sys.stderr)
 
-def logDebug(msg,debugLevel=1):
+def logDebug(prefix,funcName,rawMsg,debugLevel=1):
     global __LOG_LEVEL_AS_INT
     global VERBOSE
     global LOG_FILTER
+   
+    msg = __makeMessage(prefix,funcName,rawMsg)
     if LOG_FILTER == None or re.search(LOG_FILTER,msg):
         if debugLevel == 1:
            logging.getLogger("").debug(msg)
@@ -158,13 +169,40 @@ def logDebug(msg,debugLevel=1):
         if VERBOSE and __LOG_LEVEL_AS_INT <= getattr(logging,"DEBUG")-debugLevel+1:
             print("DEBUG"+str(debugLevel)+": "+msg,file=sys.stderr)
 
-def logDebug1(msg):
-    logDebug(msg,1)
-def logDebug2(msg):
-    logDebug(msg,2)
-def logDebug3(msg):
-    logDebug(msg,3)
-def logDebug4(msg):
-    logDebug(msg,4)
-def logDebug5(msg):
-    logDebug(msg,5)
+def logDebug1(prefix,funcName,msg):
+    logDebug(prefix,funcName,msg,1)
+def logDebug2(prefix,funcName,msg):
+    logDebug(prefix,funcName,msg,2)
+def logDebug3(prefix,funcName,msg):
+    logDebug(prefix,funcName,msg,3)
+def logDebug4(prefix,funcName,msg):
+    logDebug(prefix,funcName,msg,4)
+def logDebug5(prefix,funcName,msg):
+    logDebug(prefix,funcName,msg,5)
+    
+def logEnterFunction(prefix,funcName,args={}):
+    """
+    Log entry to a function.
+
+    :param str prefix: (sub-)package name
+    :param str funcName: name of the function
+    :param dict args: arguments (identifier and value) that have a meaningful string representation.
+    """
+    if len(args):
+        addition = " [arguments: "+ ", ".join(a+"="+str(args[a]) for a in args.keys())+"]"
+    else:
+        addition = "" 
+    logDebug(prefix,funcName,"enter"+addition)
+
+def logLeaveFunction(prefix,funcName,returnVals={}):
+    """
+    Log return from a function.
+    :param str prefix: (sub-)package name
+    :param str funcName: name of the function
+    :param dict retVals: arguments (identifier and value) that have a meaningful string representation.
+    """
+    if len(returnVals):
+        addition = " [return values: "+ ", ".join(a+"="+str(returnVals[a]) for a in returnVals.keys())+"]"
+    else:
+        addition = "" 
+    logDebug(prefix,funcName,"return"+addition)

@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 # configurable parameters
+LOG_PREFIX = "indexer.indexer"
+
 DISCOVER_INPUT_FILES="find {search_dir} -type f -name \"*.*\" | grep \"\.[fF]\(90\|95\|77\)\?$\" | grep -v hipified"
 FILTER_INPUT_FILES="grep -l \"{module_names}\" {input_files}"
 

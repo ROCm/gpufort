@@ -1,4 +1,4 @@
-module mymod1
+module simple
   integer :: a
   integer, parameter :: n = 100
   real :: c(n,n)
@@ -11,20 +11,15 @@ module mymod1
   type mytype
     real :: b(n)
   end type 
-end module mymod1
+end module simple
 
-module mymod2
+module nested_subprograms
   integer :: a
-  integer, parameter :: n = 100
-  real :: c(n,n)
- 
-  !$acc declare create(c)
-#ifdef CUDA
-  attributes(device) :: c
-#endif
+  integer, parameter :: n = 1000
+  real :: e(-n:n,-n:n)
 
-  type,bind(c) :: mytype
-    real :: b(n)
+  type,bind(c) :: mytype ! type with same name as in other module
+    real*8 :: b(n)
   end type 
 
 contains
@@ -32,16 +27,20 @@ contains
     integer,intent(in) :: a
   end subroutine
   
-  function func2(a)
+  function func2(a) result(res)
     integer,intent(in) :: a
-    integer :: func2
-    func2 = a 
-    ! nested
+    integer :: res
+    res = a 
+  
+  ! Fortran allows single-level of nesting
+  contains
+
     function func3(a)
-      integer,intent(in) :: a
+      real,intent(in) :: a ! scoper: should hide the a in scoper
       integer :: func3
-      func2 = a 
+      integer :: e(n,n) ! scoper: should hide the e in module
+      func3 = a 
     end function
   end function
   
-end module mymod2
+end module nested_subprograms

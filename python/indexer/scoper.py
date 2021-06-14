@@ -2,9 +2,12 @@
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 #!/usr/bin/env python3
 import addtoplevelpath
-import os
-import logging
+import os,sys
 import copy
+
+import orjson
+
+import utils.logging
 
 # configurable parameters
 indexerDir = os.path.dirname(__file__)
@@ -72,7 +75,14 @@ def __resolveDependencies(scope,indexRecord,index):
     :param dict scope: the scope that you updated with information from the used modules.
     :param dict indexRecord: a module/program/subprogram index record
     :param list index: list of module/program index records
+
+    TODO must be recursive!!!
     """
+    global LOG_PREFIX    
+    global ERROR_HANDLING
+
+    utils.logging.logEnterFunction(LOG_PREFIX,"__resolveDependencies")
+
     for usedModule in indexRecord["usedModules"]:
         usedModuleFound = usedModule["name"] in MODULE_IGNORE_LIST
         # include definitions from other modules
@@ -88,19 +98,20 @@ def __resolveDependencies(scope,indexRecord,index):
                         for entryType in __SCOPE_ENTRY_TYPES:
                             for entry in module[entryType]:
                                 if entry["name"] == mapping["original"]:
-                                    copiedEntry = entry.deepcopy(entry)
-                                    copiedEntry["name"] = mapping["renaming"]
+                                    copiedEntry = copy.deepcopy(entry)
+                                    copiedEntry["name"] = mapping["renamed"]
                                     scope[entryType].append(copiedEntry)
-            if not usedModuleFound:
-                msg = "no index record for module '{}' could be found".format(usedModule[name])
-                if errorHandling == "strict":
-                    utils.logging.logError(msg) 
-                    sys.exit(ERR_INDEXER_RESOLVE_DEPENDENCIES_FAILED)
-                else:
-                    utils.logging.logWarn(msg)
+        if not usedModuleFound:
+            msg = "no index record for module '{}' could be found".format(usedModule["name"])
+            if ERROR_HANDLING == "strict":
+                utils.logging.logError(LOG_PREFIX,"__resolveDependencies",msg) 
+                sys.exit(ERR_INDEXER_RESOLVE_DEPENDENCIES_FAILED)
+            else:
+                utils.logging.logWarning(LOG_PREFIX,"__resolveDependencies",msg)
 
+    utils.logging.logLeaveFunction(LOG_PREFIX,"__resolveDependencies")
 
-def constructScope(index,tag,errorHandling=ERROR_HANDLING):
+def __createScope(index,tag):
     """
     :param str tag: a colon-separated list of strings. Ex: mymod:mysubroutine or mymod.
     :note: not thread-safe
@@ -111,6 +122,8 @@ def constructScope(index,tag,errorHandling=ERROR_HANDLING):
     global SCOPES
     global REMOVE_OUTDATED_SCOPES
     global MODULE_IGNORE_LIST
+    global LOG_PREFIX    
+    utils.logging.logEnterFunction(LOG_PREFIX,"__createScope",{"tag":tag,"ERROR_HANDLING":ERROR_HANDLING})
     
     # check if already a scope exists for the tag or if
     # it can be derived from a higher-level scope
@@ -125,26 +138,36 @@ def constructScope(index,tag,errorHandling=ERROR_HANDLING):
         else:
             scopesToDelete.append(s)
     # clean up scopes that are not used anymore 
-    if REMOVE_OUTDATED_SCOPES:
+    if REMOVE_OUTDATED_SCOPES and len(scopesToDelete):
+        utils.logging.logDebug(LOG_PREFIX,"__createScope",\
+          "delete outdated scopes with tags '{}'".format(\
+            ", ".join([s["tag"] for s in scopesToDelete])))
         for s in scopesToDelete:
             SCOPES.remove(s)
 
-    # return existing existingScope or construct it
+    # return existing existingScope or create it
     tagTokens = tag.split(":")
     if len(tagTokens)-1 == nestingLevel:
+        utils.logging.logDebug(LOG_PREFIX,"__createScope",\
+          "found existing scope for tag '{}'".format(tag))
+        utils.logging.logLeaveFunction(LOG_PREFIX,"__createScope")
         return existingScope
     else:
         newScope = copy.deepcopy(existingScope)
-        print(existingScope["tag"])
         newScope["tag"] = tag 
  
         # we already have a scope for this record
         if nestingLevel >= 0:
+            baseRecordTag = ":".join(tagTokens[0:nestingLevel+1])
+            utils.logging.logDebug(LOG_PREFIX,"__createScope",\
+              "create scope for tag '{}' based on existing scope with tag '{}'".format(tag,baseRecordTag))
             baseRecord = next((module for module in index if module["name"] == tagTokens[0]),None)  
             for l in range(1,nestingLevel+1):
                 baseRecord = next((subprogram for subprogram in baseRecord["subprograms"] if subprogram["name"] == tagTokens[l]),None)
             currentRecordList = baseRecord["subprograms"]
         else:
+            utils.logging.logDebug(LOG_PREFIX,"__createScope",\
+              "create scope for tag '{}'".format(tag))
             currentRecordList = index
         begin = nestingLevel + 1 # 
         
@@ -160,14 +183,16 @@ def constructScope(index,tag,errorHandling=ERROR_HANDLING):
                             newScope[entryType] += currentRecord[entryType]
                     currentRecordList = currentRecord["subprograms"]
                     break
-    SCOPES.append(newScope)
-    return newScope
+        SCOPES.append(newScope)
+        utils.logging.logLeaveFunction(LOG_PREFIX,"__createScope")
+        return newScope
 
-def searchIndexForVariable(index,parentTag,variableExpression,errorHandling=ERROR_HANDLING):
+# API
+def searchIndexForVariable(index,parentTag,variableExpression):
     """
 
     :param str variableExpression: a simple identifier such as 'a' or 'A_d' or a more complicated derived-type member expression such as 'a%b%c' or 'A%b(i)%c'.
-    :param str parentTag: tag constructed of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
+    :param str parentTag: tag createed of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
                           This tag encodes the scope of the searched variable.
     :see: filterIndexByTag
 
@@ -175,45 +200,54 @@ def searchIndexForVariable(index,parentTag,variableExpression,errorHandling=ERRO
     has other derived type members, they must be declared before the definition of a new
     type that uses them.
     """
+    global LOG_PREFIX
+    utils.logging.logEnterFunction(LOG_PREFIX,"searchIndexForVariable",\
+      {"parentTag":parentTag,"variableExpression":variableExpression})
+
     result = None
     
-    # construct/lookup scope
-    scope = constructScope(index,parentTag,errorHandling)
+    # create/lookup scope
+    scope = __createScope(index,parentTag)
     # reverse access such that entries from the inner-most scope come first
 
-    def lookupFromLeftToRight_(scopeVariables,scopeTypes,expression):
+    scopeTypes = reversed(scope["types"])
+    def lookupFromLeftToRight_(scopeVariables,expression):
         """
         :note: recursive
         """
+        nonlocal scopeTypes
+
         if "%" not in expression:
             result = next((var for var in scopeVariables if var["name"] == expression),None)  
         else:
-            parts     = expression.split("%")
-            typeVar   = parts[0].split("(")[0] # strip away array brackets
-            remainder = "%".join(parts[1:])
+            parts       = expression.split("%")
+            typeVarName = parts[0].split("(")[0] # strip away array brackets
+            remainder   = "%".join(parts[1:])
             try:
-                matchingTypeVar = next((var for var in scopeVariables if var["name"] == typeVar),None)
+                matchingTypeVar = next((var for var in scopeVariables if var["name"] == typeVarName),None)
                 matchingType    = next((typ for typ in scopeTypes if typ["name"] == matchingTypeVar["kind"]),None)
-                result = lookupFromLeftToRight_(matchingType["variables"],matchingType["types"],remainder)
-            except:
+                result = lookupFromLeftToRight_(reversed(matchingType["variables"]),remainder)
+            except Exception as e:
+                raise e
                 result = None
         return result
     
-    result = lookupFromLeftToRight_(reversed(scope["variables"]),reversed(scope["types"]),\
+    result = lookupFromLeftToRight_(reversed(scope["variables"]),\
         variableExpression.lower().replace(" ",""))
     if result is None:
         result         = EMPTY_VARIABLE
         result["name"] = variableExpression
-        msg = "scoper: no entry found for variable '{}'.".format(variableExpression)
-        if errorHandling  == "strict":
-            utils.logging.logError(msg) 
+        msg = "no entry found for variable '{}'.".format(variableExpression)
+        if ERROR_HANDLING  == "strict":
+            utils.logging.logError(LOG_PREFIX,"searchIndexForVariable",msg) 
             sys.exit(ERR_SCOPER_LOOKUP_FAILED)
         else:
-            utils.logging.logWarn(msg) 
+            utils.logging.logWarning(LOG_PREFIX,"searchIndexForVariable",msg) 
         return result, False
     else:
-        msg = "scoper: single entry found for variable '{}'".format(variableExpression)
-        utils.logging.logDebug2(msg) 
+        utils.logging.logDebug2(LOG_PREFIX,"searchIndexForVariable",\
+          "entry found for variable '{}'".format(variableExpression)) 
+        utils.logging.logLeaveFunction(LOG_PREFIX,"searchIndexForVariable")
         return result, True
             
 def indexVariableIsOnDevice(indexVar):
@@ -226,8 +260,8 @@ def indexVariableIsOnDevice(indexVar):
 #
 #    result = None
 #    
-#    # construct/lookup scope
-#    scope = constructScope(index,parentTag,errorHandling)
+#    # create/lookup scope
+#    scope = __createScope(index,parentTag,ERROR_HANDLING)
 #    # reverse access such that entries from the inner-most scope come first
 #    scopeTypes       = reversed(scope["types"])
 #
@@ -236,14 +270,14 @@ def indexVariableIsOnDevice(indexVar):
 #    if result is None:
 #        result         = EMPTY_VARIABLE
 #        result["name"] = variableExpression
-#        msg = "scoper: no entry found for variable '{}'.".format(variableExpression)
-#        if errorHandling  == "strict":
+#        msg = "no entry found for variable '{}'.".format(variableExpression)
+#        if ERROR_HANDLING  == "strict":
 #            utils.logging.logError(msg) 
 #            sys.exit(ERR_SCOPER_LOOKUP_FAILED)
 #        else:
-#            utils.logging.logWarn(msg) 
+#            utils.logging.logWarning(msg) 
 #        return result, False
 #    else:
-#        msg = "scoper: single entry found for variable '{}'".format(variableExpression)
+#        msg = "single entry found for variable '{}'".format(variableExpression)
 #        utils.logging.logDebug2(msg) 
 #        return result, True

@@ -55,7 +55,7 @@ def __readFortranFile(filepath,preprocOptions):
        for line in output.split("\n"):
            strippedLine = line.strip().rstrip("\n")
            if considerLine(strippedLine):
-               utils.logging.logDebug2(LOG_PREFIX,"__readFortranFile","select statement '{}'".format(strippedLine))
+               utils.logging.logDebug3(LOG_PREFIX,"__readFortranFile","select statement '{}'".format(strippedLine))
                filteredLines.append(strippedLine)
            else:
                utils.logging.logDebug3(LOG_PREFIX,"__readFortranFile","ignore statement '{}'".format(strippedLine))
@@ -392,36 +392,37 @@ def __parseFile(fileLines,filepath):
 def __writeJsonFile(index,filepath):
     global PRETTY_PRINT_INDEX_FILE
     global LOG_PREFIX    
-
     utils.logging.logEnterFunction(LOG_PREFIX,"__writeJsonFile",{"filepath":filepath}) 
+    
     with open(filepath,"wb") as outfile:
          if PRETTY_PRINT_INDEX_FILE:
              outfile.write(orjson.dumps(index,option=orjson.OPT_INDENT_2))
          else:
              outfile.write(orjson.dumps(index))
+    
     utils.logging.logLeaveFunction(LOG_PREFIX,"__writeJsonFile") 
 
 def __readJsonFile(filepath):
     global LOG_PREFIX    
-    
     utils.logging.logEnterFunction(LOG_PREFIX,"__readJsonFile",{"filepath":filepath}) 
-    try:
-       with open(filepath,"rb") as infile:
-            return orjson.loads(infile.read())
-    except Exception as e:
-        raise e
-    utils.logging.logLeaveFunction(LOG_PREFIX,"__readJsonFile") 
+    
+    with open(filepath,"rb") as infile:
+         utils.logging.logLeaveFunction(LOG_PREFIX,"__readJsonFile") 
+         return orjson.loads(infile.read())
 
 # API
 def scanFile(filepath,preprocOptions,index):
     """
     Creates an index from a single file.
     """
+    global LOG_PREFIX
     utils.logging.logEnterFunction(LOG_PREFIX,"scanFile",{"filepath":filepath,"preprocOptions":preprocOptions}) 
+    
     filteredLines = __readFortranFile(filepath,preprocOptions)
-    utils.logging.logDebug3(LOG_PREFIX,"scanFile","extracted the following lines:\n>>>\n{}\n<<<".format(\
+    utils.logging.logDebug2(LOG_PREFIX,"scanFile","extracted the following lines:\n>>>\n{}\n<<<".format(\
         "\n".join(filteredLines)))
     index += __parseFile(filteredLines,filepath)
+    
     utils.logging.logLeaveFunction(LOG_PREFIX,"scanFile") 
 
 def writeGpufortModuleFiles(index,outputDir):
@@ -432,10 +433,13 @@ def writeGpufortModuleFiles(index,outputDir):
     :param list index:    [in] Empty or non-empty list.
     :param str outputDir: [in] Output directory.
     """
+    global LOG_PREFIX
     utils.logging.logEnterFunction(LOG_PREFIX,"writeGpufortModuleFiles",{"outputDir":outputDir})
+    
     for mod in index:
         filepath = outputDir + "/" + mod["name"] + GPUFORT_MODULE_FILE_SUFFIX
         __writeJsonFile(mod,filepath)
+    
     utils.logging.logLeaveFunction(LOG_PREFIX,"writeGpufortModuleFiles")
 
 def loadGpufortModuleFiles(inputDirs,index):
@@ -445,8 +449,9 @@ def loadGpufortModuleFiles(inputDirs,index):
     :param list inputDirs: [in] List of input directories (as strings).
     :param list index:     [inout] Empty or non-empty list. Loaded data structure is appended.
     """
-    utils.logging.logEnterFunction(LOG_PREFIX,"loadGpufortModuleFiles",{"inputDirs":inputDirs})
-
+    global LOG_PREFIX
+    utils.logging.logEnterFunction(LOG_PREFIX,"loadGpufortModuleFiles",{"inputDirs":",".join(inputDirs)})
+    
     for inputDir in inputDirs:
          for child in os.listdir(inputDir):
              if child.endswith(GPUFORT_MODULE_FILE_SUFFIX):

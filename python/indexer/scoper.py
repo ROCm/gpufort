@@ -61,12 +61,6 @@ EMPTY_SUBPROGRAM = {
 
 __SCOPE_ENTRY_TYPES = ["subprograms","variables","types"]
 
-#def __addNewScope(newChildName,scopeContribution):
-#    global currentNode
-#    newChildTag = currentNode._tag + ":" + newChildName
-#    new         = __Node(newChildTag,currentNode,scopeContribution)
-#    currentNode = new
-   
 def __resolveDependencies(scope,indexRecord,index):
     """
     Include variable, type, and subprogram records from modules used
@@ -83,32 +77,48 @@ def __resolveDependencies(scope,indexRecord,index):
 
     utils.logging.logEnterFunction(LOG_PREFIX,"__resolveDependencies")
 
-    for usedModule in indexRecord["usedModules"]:
-        usedModuleFound = usedModule["name"] in MODULE_IGNORE_LIST
-        # include definitions from other modules
-        for module in index:
-            if module["name"] == usedModule["name"]:
-                usedModuleFound   = True
-                includeAllEntries = not len(usedModule["only"])
-                if includeAllEntries: # simple include
-                    for entryType in __SCOPE_ENTRY_TYPES:
-                        scope[entryType] += module[entryType]
-                else:
-                    for mapping in usedModule["only"]:
-                        for entryType in __SCOPE_ENTRY_TYPES:
-                            for entry in module[entryType]:
-                                if entry["name"] == mapping["original"]:
-                                    copiedEntry = copy.deepcopy(entry)
-                                    copiedEntry["name"] = mapping["renamed"]
-                                    scope[entryType].append(copiedEntry)
-        if not usedModuleFound:
-            msg = "no index record for module '{}' could be found".format(usedModule["name"])
-            if ERROR_HANDLING == "strict":
-                utils.logging.logError(LOG_PREFIX,"__resolveDependencies",msg) 
-                sys.exit(ERR_INDEXER_RESOLVE_DEPENDENCIES_FAILED)
-            else:
-                utils.logging.logWarning(LOG_PREFIX,"__resolveDependencies",msg)
+    def handleUseStatements_(scope,moduleRecord):
+        """
+        recursive function
+        :param dict moduleRecord: 
+        """ 
+        nonlocal index
+        for usedModule in moduleRecord["usedModules"]:
+            usedModuleFound = usedModule["name"] in MODULE_IGNORE_LIST
+            # include definitions from other modules
+            for module in index:
+                if module["name"] == usedModule["name"]:
+                    handleUseStatements_(scope,module) # recursivie call
 
+                    usedModuleFound   = True
+                    includeAllEntries = not len(usedModule["only"])
+                    if includeAllEntries: # simple include
+                        utils.logging.logDebug2(LOG_PREFIX,"__resolveDependencies.handleUseStatements",
+                          "use all definitions from module '{}'".format(moduleRecord["name"]))
+                        for entryType in __SCOPE_ENTRY_TYPES:
+                            scope[entryType] += module[entryType]
+                    else:
+                        for mapping in usedModule["only"]:
+                            for entryType in __SCOPE_ENTRY_TYPES:
+                                for entry in module[entryType]:
+                                    if entry["name"] == mapping["original"]:
+                                        utils.logging.logDebug2(LOG_PREFIX,
+                                          "__resolveDependencies.handleUseStatements",\
+                                          "use {} '{}' as '{}' from module '{}'".format(\
+                                          entryType[0:-1],mapping["original"],mapping["renamed"],\
+                                          moduleRecord["name"]))
+                                        copiedEntry = copy.deepcopy(entry)
+                                        copiedEntry["name"] = mapping["renamed"]
+                                        scope[entryType].append(copiedEntry)
+            if not usedModuleFound:
+                msg = "no index record for module '{}' could be found".format(usedModule["name"])
+                if ERROR_HANDLING == "strict":
+                    utils.logging.logError(LOG_PREFIX,"__resolveDependencies",msg) 
+                    sys.exit(ERR_INDEXER_RESOLVE_DEPENDENCIES_FAILED)
+                else:
+                    utils.logging.logWarning(LOG_PREFIX,"__resolveDependencies",msg)
+
+    handleUseStatements_(scope,indexRecord)
     utils.logging.logLeaveFunction(LOG_PREFIX,"__resolveDependencies")
 
 def __createScope(index,tag):

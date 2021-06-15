@@ -7,7 +7,7 @@ import utils.logging
 import unittest
 
 utils.logging.VERBOSE    = False
-utils.logging.initLogging("log.log","warning")
+utils.logging.initLogging("log.log","debug2")
         
 gfortranOptions="-DCUDA"
 writtenIndex = []
@@ -15,7 +15,7 @@ indexer.scanFile("test_modules.f90",gfortranOptions,writtenIndex)
 indexer.writeGpufortModuleFiles(writtenIndex,"./")
 writtenIndex.clear()
 # main file
-indexer.scanFile("test_modules.f90",gfortranOptions,writtenIndex)
+indexer.scanFile("test1.f90",gfortranOptions,writtenIndex)
 indexer.writeGpufortModuleFiles(writtenIndex,"./")
 writtenIndex.clear()
 
@@ -43,6 +43,8 @@ class TestIndexer(unittest.TestCase):
         self.assertIsNotNone(intArray2d)
         self.assertEqual(intArray2d["cType"],"int")
         self.assertEqual(intArray2d["rank"],2)
+        t = next((var for var in test1["variables"] if var["name"] == "t".lower()),None)
+        self.assertIsNotNone(t)
     
     def test_indexer_scan_module_simple(self):
         simple = next((mod for mod in self._index if mod["name"] == "simple"),None)

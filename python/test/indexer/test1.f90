@@ -6,4 +6,6 @@ program test1
  real                   :: floatScalar
  real(8)                :: doubleScalar
  integer,dimension(:,:) :: intArray2d
+
+ type(mytype) :: t
 end test1

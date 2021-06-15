@@ -128,7 +128,7 @@ def logInfo(prefix,funcName,rawMsg):
         if VERBOSE and __LOG_LEVEL_AS_INT <= getattr(logging,"INFO"):
             print("INFO: "+msg, file=sys.stderr)
 
-def logError(prefix,funcName,msg):
+def logError(prefix,funcName,rawMsg):
     global VERBOSE
     global LOG_FILTER
     
@@ -137,7 +137,7 @@ def logError(prefix,funcName,msg):
         logging.getLogger("").error(msg)
         print("ERROR: "+msg, file=sys.stderr)
 
-def logWarning(prefix,funcName,msg):
+def logWarning(prefix,funcName,rawMsg):
     global __LOG_LEVEL_AS_INT
     global VERBOSE
     global LOG_FILTER

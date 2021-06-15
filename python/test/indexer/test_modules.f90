@@ -1,4 +1,10 @@
+module base
+  integer :: z1, z2
+end module
+
+
 module simple
+  use base, only: z1 => abc1
   integer :: a
   integer, parameter :: n = 100
   real :: c(n,n)

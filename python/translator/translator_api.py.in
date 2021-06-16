@@ -37,13 +37,6 @@ def createIndexRecordsFromDeclaration(ttdeclaration):
         varContext["declareOnTarget"]           = False
         # arrays
         varContext["rank"]                       = 0
-        #varContext["unspecifiedBounds"]          = True
-        #varContext["lbounds"]                    = []
-        #varContext["counts"]                     = []
-        #varContext["totalCount"]                 = "1" 
-        #varContext["totalBytes"]                 = bpe
-        #varContext["indexMacro"]                 = "_idx_{}(a) (a)".format(varName) 
-        #varContext["indexMacroWithPlaceHolders"] = varContext["indexMacro"]
         dimensionQualifier = findAll(ttdeclaration._qualifiers,TTDimensionQualifier)
         if ttdeclaredvariable.hasBounds() or len(dimensionQualifier):
             varContext["fInterfaceType"] = "type(c_ptr)"

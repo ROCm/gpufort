@@ -8,8 +8,8 @@ import translator.translator as translator
 import indexer.scoper as scoper
 import utils.logging
 
-utils.logging.VERBOSE    = False
-utils.logging.initLogging("log.log","warning")
+utils.logging.VERBOSE    = True
+utils.logging.initLogging("log.log","debug2")
 
 gfortranOptions="-DCUDA"
 
@@ -25,10 +25,12 @@ class TestScoper(unittest.TestCase):
     def tearDown(self):
         elapsed = time.time() - self._started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
-    def test_indexer_scan_files(self):
+    def test_0_donothing(self):
+        pass 
+    def test_1_indexer_scan_files(self):
         indexer.scanFile("test_modules.f90",gfortranOptions,self._index)
         indexer.scanFile("test1.f90",gfortranOptions,self._index)
-    def test_scoper_search_for_variables(self):
+    def test_2_scoper_search_for_variables(self):
         c   = scoper.searchIndexForVariable(index,"test1","c") # included from module 'simple'
         scoper.SCOPES.clear()
         t_b = scoper.searchIndexForVariable(index,"test1",\
@@ -40,7 +42,7 @@ class TestScoper(unittest.TestCase):
         tc_t2list_t1list_a = scoper.searchIndexForVariable(index,"test1",
           translator.createIndexSearchTagForVariable("tc%t2list(indexlist%j)%t1list(i)%a")) 
         scoper.SCOPES.clear()
-    def test_scoper_search_for_variables_reuse_scope(self):
+    def test_3_scoper_search_for_variables_reuse_scope(self):
         c   = scoper.searchIndexForVariable(index,"test1","c") # included from module 'simple'
         t_b = scoper.searchIndexForVariable(index,"test1",\
           translator.createIndexSearchTagForVariable("t%b")) # type of t included from module 'simple'
@@ -49,8 +51,7 @@ class TestScoper(unittest.TestCase):
         tc_t2list_t1list_a = scoper.searchIndexForVariable(index,"test1",
           translator.createIndexSearchTagForVariable("tc%t2list(indexlist%j)%t1list(i)%a")) 
         scoper.SCOPES.clear()
-
-    def test_scoper_search_for_subprograms(self):
+    def test_4_scoper_search_for_subprograms(self):
         func2 = scoper.searchIndexForSubprogram(index,"test1","func2")
         scoper.SCOPES.clear()
         func3 = scoper.searchIndexForSubprogram(index,"nested_subprograms:func2","func3")

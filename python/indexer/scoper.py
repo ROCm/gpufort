@@ -214,15 +214,13 @@ def __searchIndexForTypeOrSubprogram(index,parentTag,entryName,entryType,emptyRe
 
     result = next((entry for entry in scopeEntities if entry["name"] == entryName),None)  
     if result is None:
-        result         = emptyRecord
-        result["name"] = entryName
         msg = "no entry found for {} '{}'.".format(entryType,entryName)
         if ERROR_HANDLING  == "strict":
             utils.logging.logError(LOG_PREFIX,"__searchIndexForTypeOrSubprogram",msg) 
             sys.exit(ERR_SCOPER_LOOKUP_FAILED)
         else:
             utils.logging.logWarning(LOG_PREFIX,"__searchIndexForTypeOrSubprogram",msg) 
-        return result, False
+        return emptyRecord, False
     else:
         utils.logging.logDebug2(LOG_PREFIX,"__searchIndexForTypeOrSubprogram",\
           "entry found for {} '{}'".format(entryType,entryName)) 
@@ -270,15 +268,13 @@ def searchIndexForVariable(index,parentTag,variableTag):
     result = lookupFromLeftToRight_(reversed(scope["variables"]))
     
     if result is None:
-        result         = EMPTY_VARIABLE
-        result["name"] = variableTag
         msg = "no entry found for variable '{}'.".format(variableTag)
         if ERROR_HANDLING  == "strict":
             utils.logging.logError(LOG_PREFIX,"searchIndexForVariable",msg) 
             sys.exit(ERR_SCOPER_LOOKUP_FAILED)
         else:
             utils.logging.logWarning(LOG_PREFIX,"searchIndexForVariable",msg) 
-        return result, False
+        return EMPTY_VARIABLE, False
     else:
         utils.logging.logDebug2(LOG_PREFIX,"searchIndexForVariable",\
           "entry found for variable '{}'".format(variableTag)) 

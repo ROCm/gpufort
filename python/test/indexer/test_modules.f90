@@ -1,10 +1,10 @@
-! arrays, scalars, types, device attributes, and use statements
+! 1. simple_base and base: arrays, scalars, types, device attributes, and use statements
 module simple_base
   integer :: z1, z2
 end module
 
 module simple
-  use simple_base, only: z1 => abc1
+  use simple_base, only: z1 => abc1 ! include z1 but rename it to abc1
   integer :: a
   integer, parameter :: n = 100
   real :: c(n,n)
@@ -19,7 +19,8 @@ module simple
   end type 
 end module simple
 
-! subprogram nesting
+
+! 2. subprogram nesting
 module nested_subprograms
   integer :: a
   integer, parameter :: n = 1000
@@ -52,7 +53,8 @@ contains
   
 end module nested_subprograms
 
-! complex types
+
+! 3. complex types
 module complex_types_base_1
  type type1
    integer,allocatable :: a(:) 

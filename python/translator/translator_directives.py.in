@@ -189,7 +189,7 @@ class EmptyComputeConstruct(IComputeConstruct):
         for ident in valueType.scanString(self._fSnippet): # includes the identifiers of the function calls
             name      = converter(ident._value)
             nameLower = name.lower()
-            definition,foundInIndex = scoper.searchIndexForVariable(indexHints,nameLower)
+            definition,foundInIndex = scoper.searchIndexForVariable(indexHints,createIndexSearchTagForVariable(nameLower))
             if (foundInIndex or\
                (not nameLower in KEYWORDS and\
                not nameLower in GPUFORT_CPP_ROUTINES)) and\
@@ -239,7 +239,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         for valueType in findAllMatchingExcludeDirectives(self._body,searchFilter): # includes the identifiers of the function calls
             name = makeFStr(valueType.name())
             nameLower = name.lower()
-            definition,foundInIndex = scoper.searchIndexForVariable(indexHints,nameLower)
+            definition,foundInIndex = scoper.searchIndexForVariable(indexHints,createIndexSearchTagForVariable(nameLower))
             if (foundInIndex or\
                 (not nameLower in KEYWORDS and\
                 not nameLower in GPUFORT_CPP_ROUTINES)) and\
@@ -294,7 +294,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             lvalue     = assignment._lhs._value
             lvalueName = makeFStr(lvalue)
             if type(lvalue) is TTIdentifier: # could still be a matrix
-                definition,foundInIndex = scoper.searchIndexForVariable(indexHints,lvalueName)
+                definition,foundInIndex = scoper.searchIndexForVariable(indexHints,createIndexSearchTagForVariable(lvalueName))
                 if not foundInIndex or definition["rank"] == 0 and\
                         not lvalueName.lower() in scalarsReadSoFar:
                             initializedScalars.append(lvalueName) # read and initialized in 
@@ -302,7 +302,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             rhsIdentifiers = findAll(assignment._rhs,TTIdentifier)
             for ttidentifier in rhsIdentifiers:
                 nameLower = ttidentifier.fStr().lower()
-                definition,foundInIndex = scoper.searchIndexForVariable(indexHints,nameLower)
+                definition,foundInIndex = scoper.searchIndexForVariable(indexHints,createIndexSearchTagForVariable(nameLower))
                 if (not foundInIndex or definition["rank"] == 0) and\
                         nameLower != lvalueName.lower(): # do not include name of lhs if lhs appears in rhs
                             scalarsReadSoFar.append(nameLower)
@@ -474,7 +474,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         # members of a struct
         for expr in findAll(self._body,IValue):
              if type(expr._value) is TTFunctionCallOrTensorAccess:
-                 _, discovered = scoper.searchIndexForVariable(self._indexHints,expr.name())
+                 _, discovered = scoper.searchIndexForVariable(self._indexHints,createIndexSearchTagForVariable(expr.name()))
                  if discovered:
                      expr._value._isTensorAccess = True3
         # TODO look up correct signature of called device functions from index

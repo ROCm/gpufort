@@ -98,12 +98,12 @@ def __parseFile(fileLines,filepath):
     totalNumTasks = 0
  
     def logEnterJobOrTask_(parentNode,msg):
-        utils.logging.logDebug3(LOG_PREFIX,"__parseFile","[thread-id={3}][parent-node={0}:{1}]{2}".format(\
+        utils.logging.logDebug3(LOG_PREFIX,"__parseFile","[thread-id={3}][parent-node={0}:{1}] {2}".format(\
               parentNode._kind, parentNode._name, msg,\
               threading.get_ident()))
         
     def logLeaveJobOrTask_(parentNode,msg):
-        utils.logging.logDebug2(LOG_PREFIX+"__parseFile","[thread-id={3}][parent-node={0}:{1}]{2}".format(\
+        utils.logging.logDebug2(LOG_PREFIX+"__parseFile","[thread-id={3}][parent-node={0}:{1}] {2}".format(\
               parentNode._kind, parentNode._name, msg,\
               threading.get_ident()))
     
@@ -205,20 +205,20 @@ def __parseFile(fileLines,filepath):
     def logEnterNode_():
         nonlocal currentNode
         nonlocal currentLine
-        utils.logging.logDebug(LOG_PREFIX,"__parseFile","[current-node={0}:{1}]enter {2} '{3}' in statement: '{4}'".format(\
+        utils.logging.logDebug(LOG_PREFIX,"__parseFile","[current-node={0}:{1}] enter {2} '{3}' in statement: '{4}'".format(\
           currentNode._parent._kind,currentNode._parent._name,
           currentNode._kind,currentNode._name,\
           currentLine))
     def logLeaveNode_():
         nonlocal currentNode
         nonlocal currentLine
-        utils.logging.logDebug(LOG_PREFIX,".__parseFile","[current-node={0}:{1}]leave {0} '{1}' in statement: '{2}'".format(\
+        utils.logging.logDebug(LOG_PREFIX,".__parseFile","[current-node={0}:{1}] leave {0} '{1}' in statement: '{2}'".format(\
           currentNode._data["kind"],currentNode._data["name"],\
           currentLine))
     def logDetection_(kind):
         nonlocal currentNode
         nonlocal currentLine
-        utils.logging.logDebug2(LOG_PREFIX,".__parseFile","[current-node={}:{}]found {} in statement: '{}'".format(\
+        utils.logging.logDebug2(LOG_PREFIX,".__parseFile","[current-node={}:{}] found {} in statement: '{}'".format(\
                 currentNode._kind,currentNode._name,kind,currentLine))
    
     # direct parsing

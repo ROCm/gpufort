@@ -8,7 +8,7 @@ import indexer.scoper as scoper
 import utils.logging
 
 utils.logging.VERBOSE    = False
-utils.logging.initLogging("log.log","debug2")
+utils.logging.initLogging("log.log","warning")
         
 gfortranOptions="-DCUDA"
 
@@ -22,19 +22,21 @@ class TestIndexer(unittest.TestCase):
     def tearDown(self):
         elapsed = time.time() - self._started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
-    def test_0_indexer_scan_files(self):
+    def test_0_donothing(self):
+        pass 
+    def test_1_indexer_scan_files(self):
         indexer.scanFile("test_modules.f90",gfortranOptions,self._index)
         indexer.scanFile("test1.f90",gfortranOptions,self._index)
-    def test_1_indexer_write_module_files(self):
+    def test_2_indexer_write_module_files(self):
         indexer.writeGpufortModuleFiles(index,"./")
-    def test_2_indexer_load_module_files(self):
+    def test_3_indexer_load_module_files(self):
         self._index.clear()
         indexer.loadGpufortModuleFiles(["./"],self._index)
-    def test_3_indexer_check_modules_programs(self):
+    def test_4_indexer_check_modules_programs(self):
         self.assertEqual(len([mod for mod in self._index if mod["name"] == "simple"]),1, "Did not find module 'simple'")
         self.assertEqual(len([mod for mod in self._index if mod["name"] == "nested_subprograms"]),1, "Did not find module 'nested_subprograms'")
         self.assertEqual(len([mod for mod in self._index if mod["name"] == "simple"]),1, "Did not find module 'simple'")
-    def test_4_indexer_check_program_test1(self):
+    def test_5_indexer_check_program_test1(self):
         test1 = next((mod for mod in self._index if mod["name"] == "test1"),None)
         floatScalar = next((var for var in test1["variables"] if var["name"] == "floatScalar".lower()),None)
         self.assertIsNotNone(floatScalar)
@@ -50,7 +52,7 @@ class TestIndexer(unittest.TestCase):
         self.assertEqual(intArray2d["rank"],2)
         t = next((var for var in test1["variables"] if var["name"] == "t".lower()),None)
         self.assertIsNotNone(t)
-    def test_5_indexer_check_module_simple(self):
+    def test_6_indexer_check_module_simple(self):
         simple = next((mod for mod in self._index if mod["name"] == "simple"),None)
         a = next((var for var in simple["variables"] if var["name"] == "a".lower()),None)
         self.assertIsNotNone(a)
@@ -76,7 +78,7 @@ class TestIndexer(unittest.TestCase):
         self.assertEqual(b["rank"],1)
         self.assertEqual(b["counts"][0],"n")
         self.assertEqual(b["lbounds"][0],"1")
-    def test_6_indexer_check_module_nested_subprograms(self):
+    def test_7_indexer_check_module_nested_subprograms(self):
         nested_subprograms = next((mod for mod in self._index if mod["name"] == "nested_subprograms"),None)
         a = next((var for var in nested_subprograms["variables"] if var["name"] == "a".lower()),None)
         self.assertIsNotNone(a)

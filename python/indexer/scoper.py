@@ -197,8 +197,40 @@ def __createScope(index,tag):
         utils.logging.logLeaveFunction(LOG_PREFIX,"__createScope")
         return newScope
 
-# API
+def __searchIndexForTypeOrSubprogram(index,parentTag,entryName,entryType,emptyRecord):
+    """
+    :param str entryType: either 'types' or 'subprograms'
+    """
+    global LOG_PREFIX
+    utils.logging.logEnterFunction(LOG_PREFIX,"__searchIndexForTypeOrSubprogram",\
+      {"parentTag":parentTag,"entryName":entryName,"entryType":entryType})
 
+    result = None
+    
+    # create/lookup scope
+    scope = __createScope(index,parentTag)
+    # reverse access such that entries from the inner-most scope come first
+    scopeEntities = reversed(scope[entryType])
+
+    result = next((entry for entry in scopeEntities if entry["name"] == entryName),None)  
+    if result is None:
+        result         = emptyRecord
+        result["name"] = entryName
+        msg = "no entry found for {} '{}'.".format(entryType,entryName)
+        if ERROR_HANDLING  == "strict":
+            utils.logging.logError(LOG_PREFIX,"__searchIndexForTypeOrSubprogram",msg) 
+            sys.exit(ERR_SCOPER_LOOKUP_FAILED)
+        else:
+            utils.logging.logWarning(LOG_PREFIX,"__searchIndexForTypeOrSubprogram",msg) 
+        return result, False
+    else:
+        utils.logging.logDebug2(LOG_PREFIX,"__searchIndexForTypeOrSubprogram",\
+          "entry found for {} '{}'".format(entryType,entryName)) 
+        
+        utils.logging.logLeaveFunction(LOG_PREFIX,"__searchIndexForTypeOrSubprogram")
+        return result, True
+
+# API
 def searchIndexForVariable(index,parentTag,variableTag):
     """
     :param str parentTag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
@@ -252,35 +284,29 @@ def searchIndexForVariable(index,parentTag,variableTag):
           "entry found for variable '{}'".format(variableTag)) 
         utils.logging.logLeaveFunction(LOG_PREFIX,"searchIndexForVariable")
         return result, True
+
+def searchIndexForType(index,parentTag,typeName):
+    """
+    :param str parentTag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
+    :param str typeName: lower case name of the searched type. Simple identifier such as 'mytype'.
+    """
+    utils.logging.logEnterFunction(LOG_PREFIX,"searchIndexForType",\
+      {"parentTag":parentTag,"typeName":typeName})
+    result = __searchIndexForTypeOrSubprogram(index,parentTag,typeName,"types",EMPTY_TYPE)
+    utils.logging.logLeaveFunction(LOG_PREFIX,"searchIndexForType")
+    return result
+
+def searchIndexForSubprogram(index,parentTag,subprogramName):
+    """
+    :param str parentTag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
+    :param str subprogramName: lower case name of the searched subprogram. Simple identifier such as 'mysubroutine'.
+    """
+    utils.logging.logEnterFunction(LOG_PREFIX,"searchIndexForSubprogram",\
+      {"parentTag":parentTag,"subprogramName":subprogramName})
+    result =  __searchIndexForTypeOrSubprogram(index,parentTag,subprogramName,"subprograms",EMPTY_SUBPROGRAM)
+    utils.logging.logLeaveFunction(LOG_PREFIX,"searchIndexForSubprogram")
+    return result
             
 def indexVariableIsOnDevice(indexVar):
     return indexVar["device"] == True or\
            indexVar["declareOnTarget"] in ["alloc","to","from","tofrom"]
-
-#def __searchIndexForDerivedTypeOrSubprogram(index,parentTag,name,errorHandlin):
-#    scopeVariables   = reversed(scope["variables"])
-#    scopeTypes       = reversed(scope["types"])
-#
-#    result = None
-#    
-#    # create/lookup scope
-#    scope = __createScope(index,parentTag,ERROR_HANDLING)
-#    # reverse access such that entries from the inner-most scope come first
-#    scopeTypes       = reversed(scope["types"])
-#
-#    for structure in index:
-#        lookupFromLeftToRight(structure,variableExpression.lower().replace(" ",""))
-#    if result is None:
-#        result         = EMPTY_VARIABLE
-#        result["name"] = variableExpression
-#        msg = "no entry found for variable '{}'.".format(variableExpression)
-#        if ERROR_HANDLING  == "strict":
-#            utils.logging.logError(msg) 
-#            sys.exit(ERR_SCOPER_LOOKUP_FAILED)
-#        else:
-#            utils.logging.logWarning(msg) 
-#        return result, False
-#    else:
-#        msg = "single entry found for variable '{}'".format(variableExpression)
-#        utils.logging.logDebug2(msg) 
-#        return result, True

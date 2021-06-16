@@ -425,8 +425,6 @@ class TTDerivedTypeMember(TTNode):
             return current.hasMatrixRangeArgs()
         else:
             return False
-    def type(self):
-        return self._type 
     def name(self,mangleName=False):
         return self._type.name(mangleName) + "_" + self._element.name(mangleName)
     def cStr(self,):

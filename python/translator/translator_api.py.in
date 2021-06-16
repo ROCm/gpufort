@@ -97,6 +97,32 @@ def parseAttributes(ttattributes):
     modifiedVars = [makeFStr(var).lower() for var in ttattributes._rhs]
     return attribute, modifiedVars 
 
+def createIndexSearchTagForVariable(variableExpression):
+    """
+    Creates tag from variable expressions such as 'A%b(i)%c' that
+    can be used to search the index via the scoper module.
+    The example 'A%b(i)%c' is translated to a tag 'a%b%c' (lower case).
+    All array indexing expressions are stripped away.
+    A single identifer 'a' would be translated to the tag 'a'.
+
+    :param str variableExpression: a simple identifier such as 'a' or 'A_d' or a more complicated derived-type member variable expression such as 'a%b%c' or 'A%b(i)%c'.
+    :see: indexer.scoper.searchIndexForVariable
+    """
+    if not "(" in variableExpression:
+        return variableExpression
+    else:
+        expr        = derivedTypeElem
+        parseResult = expr.parseString(variableExpression.lower())[0]
+        def traverse(ttderivedtype):
+            result = ttderivedtype._type.name().lower() + "%"
+            if type(ttderivedtype._element) == TTIdentifier or\
+               type(ttderivedtype._element) == TTFunctionCallOrTensorAccess:
+                result += ttderivedtype._element.name().lower() # end of recursion
+            else: # if type(ttderivedtype._element) == TTDerivedTypeElem:
+               result += traverse(ttderivedtype._element)
+            return result
+        return traverse(parseResult)
+
 # TODO parsing and translation is similar but analysis differs between the different kernel
 # types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)
 # while they are specified with ACC,OMP.

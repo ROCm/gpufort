@@ -198,56 +198,49 @@ def __createScope(index,tag):
         return newScope
 
 # API
-def searchIndexForVariable(index,parentTag,variableExpression):
+
+def searchIndexForVariable(index,parentTag,variableTag):
     """
-
-    :param str variableExpression: a simple identifier such as 'a' or 'A_d' or a more complicated derived-type member expression such as 'a%b%c' or 'A%b(i)%c'.
-    :param str parentTag: tag createed of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
-                          This tag encodes the scope of the searched variable.
-    :see: filterIndexByTag
-
-    :note: Fortran does not support nested declarations of types. If a derived type
-    has other derived type members, they must be declared before the definition of a new
-    type that uses them.
+    :param str parentTag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
+    %param str variableTag% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c'. Note that all array indexing expressions must be stripped away.
+    :see: translator.translator.createIndexSearchTagForVariable(variableExpression)
     """
     global LOG_PREFIX
     utils.logging.logEnterFunction(LOG_PREFIX,"searchIndexForVariable",\
-      {"parentTag":parentTag,"variableExpression":variableExpression})
+      {"parentTag":parentTag,"variableTag":variableTag})
 
     result = None
-    
     # create/lookup scope
     scope = __createScope(index,parentTag)
     # reverse access such that entries from the inner-most scope come first
-
     scopeTypes = reversed(scope["types"])
-    def lookupFromLeftToRight_(scopeVariables,expression):
+
+    listOfVarNames = variableTag.split("%") 
+    def lookupFromLeftToRight_(scopeVariables,pos=0):
         """
         :note: recursive
         """
         nonlocal scopeTypes
-
-        if "%" not in expression:
-            result = next((var for var in scopeVariables if var["name"] == expression),None)  
+        nonlocal listOfVarNames
+     
+        varName = listOfVarNames[pos]
+        if pos == len(listOfVarNames)-1:
+            result = next((var for var in scopeVariables if var["name"] == varName),None)  
         else:
-            parts       = expression.split("%")
-            typeVarName = parts[0].split("(")[0] # strip away array brackets
-            remainder   = "%".join(parts[1:])
             try:
-                matchingTypeVar = next((var for var in scopeVariables if var["name"] == typeVarName),None)
+                matchingTypeVar = next((var for var in scopeVariables if var["name"] == varName),None)
                 matchingType    = next((typ for typ in scopeTypes if typ["name"] == matchingTypeVar["kind"]),None)
-                result = lookupFromLeftToRight_(reversed(matchingType["variables"]),remainder)
+                result = lookupFromLeftToRight_(reversed(matchingType["variables"]),pos+1)
             except Exception as e:
                 raise e
                 result = None
         return result
+    result = lookupFromLeftToRight_(reversed(scope["variables"]))
     
-    result = lookupFromLeftToRight_(reversed(scope["variables"]),\
-        variableExpression.lower().replace(" ",""))
     if result is None:
         result         = EMPTY_VARIABLE
-        result["name"] = variableExpression
-        msg = "no entry found for variable '{}'.".format(variableExpression)
+        result["name"] = variableTag
+        msg = "no entry found for variable '{}'.".format(variableTag)
         if ERROR_HANDLING  == "strict":
             utils.logging.logError(LOG_PREFIX,"searchIndexForVariable",msg) 
             sys.exit(ERR_SCOPER_LOOKUP_FAILED)
@@ -256,7 +249,7 @@ def searchIndexForVariable(index,parentTag,variableExpression):
         return result, False
     else:
         utils.logging.logDebug2(LOG_PREFIX,"searchIndexForVariable",\
-          "entry found for variable '{}'".format(variableExpression)) 
+          "entry found for variable '{}'".format(variableTag)) 
         utils.logging.logLeaveFunction(LOG_PREFIX,"searchIndexForVariable")
         return result, True
             

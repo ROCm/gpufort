@@ -32,7 +32,7 @@ simpleStructRValue <<= simpleDerivedTypeMember | identifier
 #
 derivedTypeRValue = Forward()
 derivedTypeElem = (( funcCall | identifier ) + ELEM + derivedTypeRValue )
-derivedTypeRValue <<= funcCall | derivedTypeElem | identifier
+derivedTypeRValue <<= derivedTypeElem | funcCall | identifier
 
 complexArithmeticExpression = Forward()
 conversion      = Forward()

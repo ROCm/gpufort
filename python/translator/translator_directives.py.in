@@ -143,7 +143,7 @@ class IComputeConstruct():
     def selfCondition(self): 
         """ OMP,ACC: run on current CPU / device (and do not offload) """
         return ""
-    def deviceptrs(self,indexHints=[]):
+    def deviceptrs(self,scope=[]):
         return []
     def createAllocVars(self):
         return []
@@ -180,16 +180,16 @@ class EmptyComputeConstruct(IComputeConstruct):
     """
     def __init__(self,fSnippet):
         self._fSnippet   = fSnippet
-        self._indexHints = []
-    def setIndexHints(self,indexHints):
-        self._indexHints = indexHints
+        self._scope = []
+    def setscope(self,scope):
+        self._scope = scope
     def identifiersInBody(self,converter=makeFStr):
         valueType = lvalue | rvalue
         identifierNames = []
         for ident in valueType.scanString(self._fSnippet): # includes the identifiers of the function calls
             name      = converter(ident._value)
             nameLower = name.lower()
-            definition,foundInIndex = scoper.searchIndexForVariable(indexHints,createIndexSearchTagForVariable(nameLower))
+            definition,foundInIndex = scoper.searchIndexForVariable(scope,createIndexSearchTagForVariable(nameLower))
             if (foundInIndex or\
                (not nameLower in KEYWORDS and\
                not nameLower in GPUFORT_CPP_ROUTINES)) and\
@@ -204,16 +204,16 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         if self._parentDirective is None:
             assert type(self._body) is TTDoLoop
             self._parentDirective = self._firstLoopAnnotation
-        self._indexHints          = []
-    def setIndexHints(self,indexHints):
-        self._indexHints = indexHints
+        self._scope          = []
+    def setscope(self,scope):
+        self._scope = scope
     def loopVars(self):
         identifierNames = []
         doLoops  = findAll(self._body,TTDoLoop)
         for loop in doLoops:
             identifierNames.append(loop.loopVar(makeFStr))
         return identifierNames
-    def __searchValueInBody(self,searchFilter,indexHints,minRank=-1e20):
+    def __searchValueInBody(self,searchFilter,scope,minRank=-1e20):
         #TODO exclude other annotations as well from this search
         def findAllMatchingExcludeDirectives(body,filterExpr=lambda x: True,N=-1):
             """
@@ -239,7 +239,8 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         for valueType in findAllMatchingExcludeDirectives(self._body,searchFilter): # includes the identifiers of the function calls
             name = makeFStr(valueType.name())
             nameLower = name.lower()
-            definition,foundInIndex = scoper.searchIndexForVariable(indexHints,createIndexSearchTagForVariable(nameLower))
+            definition,foundInIndex = scoper.searchScopeForVariable(\
+              scope,createIndexSearchTagForVariable(nameLower))
             if (foundInIndex or\
                 (not nameLower in KEYWORDS and\
                 not nameLower in GPUFORT_CPP_ROUTINES)) and\
@@ -247,32 +248,32 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 not name in identifierNames: # using set destroys order
                      identifierNames.append(name)
         return identifierNames
-    def identifiersInBody(self,indexHints=[]):
+    def identifiersInBody(self,scope=[]):
         """
         :return: all identifiers of LValue and RValues in the body.
         """
-        if len(indexHints):
-            self._indexHints = indexHints
+        if len(scope):
+            self._scope = scope
         def searchFilter(node):
             return isinstance(node, IValue) and\
                    type(node._value) in [TTDerivedTypeMember,TTIdentifier,TTFunctionCallOrTensorAccess]
-        result = self.__searchValueInBody(searchFilter,self._indexHints)
+        result = self.__searchValueInBody(searchFilter,self._scope)
         return result
-    def arraysInBody(self,indexHints=[]):
-        if len(indexHints):
-            self._indexHints = indexHints
+    def arraysInBody(self,scope=[]):
+        if len(scope):
+            self._scope = scope
         def searchFilter(node):
             return isinstance(node,IValue) and\
                     type(node._value) is TTFunctionCallOrTensorAccess 
-        return self.__searchValueInBody(searchFilter,self._indexHints,1)
-    def inoutArraysInBody(self,indexHints=[]):
-        if len(indexHints):
-            self._indexHints = indexHints
+        return self.__searchValueInBody(searchFilter,self._scope,1)
+    def inoutArraysInBody(self,scope=[]):
+        if len(scope):
+            self._scope = scope
         def searchFilter(node):
             return type(node) is TTLValue and\
                     type(node._value) is TTFunctionCallOrTensorAccess 
-        return self.__searchValueInBody(searchFilter,self._indexHints,1)
-    def __localScalarsAndReductionCandidates(self,indexHints):
+        return self.__searchValueInBody(searchFilter,self._scope,1)
+    def __localScalarsAndReductionCandidates(self,scope):
         """
         local variable      - scalar variable that is not read before the assignment (and is no derived type member)
         reductionCandidates - scalar variable that is written but not read anymore 
@@ -294,7 +295,8 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             lvalue     = assignment._lhs._value
             lvalueName = makeFStr(lvalue)
             if type(lvalue) is TTIdentifier: # could still be a matrix
-                definition,foundInIndex = scoper.searchIndexForVariable(indexHints,createIndexSearchTagForVariable(lvalueName))
+                definition,foundInIndex = scoper.searchScopeForVariable(\
+                  scope,createIndexSearchTagForVariable(lvalueName))
                 if not foundInIndex or definition["rank"] == 0 and\
                         not lvalueName.lower() in scalarsReadSoFar:
                             initializedScalars.append(lvalueName) # read and initialized in 
@@ -302,7 +304,8 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             rhsIdentifiers = findAll(assignment._rhs,TTIdentifier)
             for ttidentifier in rhsIdentifiers:
                 nameLower = ttidentifier.fStr().lower()
-                definition,foundInIndex = scoper.searchIndexForVariable(indexHints,createIndexSearchTagForVariable(nameLower))
+                definition,foundInScope = scoper.searchScopeForVariable(scope,\
+                  createIndexSearchTagForVariable(nameLower))
                 if (not foundInIndex or definition["rank"] == 0) and\
                         nameLower != lvalueName.lower(): # do not include name of lhs if lhs appears in rhs
                             scalarsReadSoFar.append(nameLower)
@@ -315,15 +318,15 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             if var.lower() in loopVars:
                 localScalars.remove(var)
         return localScalars, reductionCandidates
-    def localScalars(self,indexHints=[]):
-        if len(indexHints):
-            self._indexHints = indexHints
-        localScalars,_ = self.__localScalarsAndReductionCandidates(self._indexHints)
+    def localScalars(self,scope=[]):
+        if len(scope):
+            self._scope = scope
+        localScalars,_ = self.__localScalarsAndReductionCandidates(self._scope)
         return localScalars 
-    def reductionCandidates(self,indexHints=[]):
-        if len(indexHints):
-            self._indexHints = indexHints
-        _,reductionCandidates = self.__localScalarsAndReductionCandidates(self._indexHints)
+    def reductionCandidates(self,scope=[]):
+        if len(scope):
+            self._scope = scope
+        _,reductionCandidates = self.__localScalarsAndReductionCandidates(self._scope)
         return reductionCandidates
     def problemSize(self):
         numOuterLoopsToMap = int(self._parentDirective.numCollapse())
@@ -357,9 +360,9 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         return self._parentDirective.ifCondition()
     def selfCondition(self): 
         return self._parentDirective.selfCondition
-    def deviceptrs(self,indexHints=[]):
+    def deviceptrs(self,scope=[]):
         if self._parentDirective.allArraysAreOnDevice():
-            return self.arraysInBody(indexHints)
+            return self.arraysInBody(scope)
         else:
             return self._parentDirective.deviceptrs()
     def createAllocVars(self):
@@ -474,7 +477,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         # members of a struct
         for expr in findAll(self._body,IValue):
              if type(expr._value) is TTFunctionCallOrTensorAccess:
-                 _, discovered = scoper.searchIndexForVariable(self._indexHints,createIndexSearchTagForVariable(expr.name()))
+                 _, discovered = scoper.searchIndexForVariable(self._scope,createIndexSearchTagForVariable(expr.name()))
                  if discovered:
                      expr._value._isTensorAccess = True3
         # TODO look up correct signature of called device functions from index

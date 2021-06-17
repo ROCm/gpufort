@@ -42,7 +42,7 @@ def checkDestinationDialect(destinationDialect):
     else:
         msg = "scanner: destination dialect '{}' is not supported. Must be one of: {}".format(\
                 destinationDialect,", ".join(SUPPORTED_DESTINATION_DIALECTS))
-        utils.logging.logError(msg)
+        utils.logging.logError(LOG_PREFIX,"checkDestinationDialect",msg)
         sys.exit(SCANNER_ERROR_CODE)
 
 def handleIncludeStatements(fortranFilePath,lines):
@@ -292,7 +292,7 @@ def parseFile(fortranFilePath,index):
         new._ignoreInS2STranslation = not translationEnabled
         directiveNo = directiveNo + 1
         msg = "scanner: {}: found acc construct:\t'{}'".format(currentLineno,singleLineStatement)
-        utils.logging.logDebug(msg)
+        utils.logging.logDebug2(LOG_PREFIX,"AccDirective",msg)
         # if end directive ascend
         if new.isEndDirective() and\
            type(current) is STAccDirective and current.isKernelsDirective():
@@ -395,9 +395,9 @@ def parseFile(fortranFilePath,index):
 
         matched = len(expression.searchString(singleLineStatement,1))
         if matched:
-           utils.logging.logDebug("scanner::scanString\tFOUND expression '{}' in line {}: '{}'".format(expressionName,currentLineno,currentLines[0].rstrip()))
+           utils.logging.logDebug3(LOG_PREFIX,"parseFile.scanString","FOUND expression '{}' in line {}: '{}'".format(expressionName,currentLineno,currentLines[0].rstrip()))
         else:
-           utils.logging.logDebug("scanner::scanString\tdid not find expression '{}' in line {}: '{}'".format(expressionName,currentLineno,currentLines[0].rstrip()),debugLevel=2)
+           utils.logging.logDebug4(LOG_PREFIX,"parseFile.scanString","did not find expression '{}' in line {}: '{}'".format(expressionName,currentLineno,currentLines[0].rstrip()))
         return matched
     
     def tryToParseString(expressionName,expression):
@@ -413,11 +413,11 @@ def parseFile(fortranFilePath,index):
         
         try:
            expression.parseString(singleLineStatement)
-           utils.logging.logDebug("scanner::tryToParseString\tFOUND expression '{}' in line {}: '{}'".format(expressionName,currentLineno,currentLines[0].rstrip()))
+           utils.logging.logDebug3(LOG_PREFIX,"parseFile.tryToParseString","FOUND expression '{}' in line {}: '{}'".format(expressionName,currentLineno,currentLines[0].rstrip()))
            return True
         except ParseBaseException as e: 
-           utils.logging.logDebug("scanner::tryToParseString\tdid not find expression '{}' in line '{}'".format(expressionName,currentLines[0]),debugLevel=2)
-           utils.logging.logDebug(str(e),debugLevel=3)
+           utils.logging.logDebug4(LOG_PREFIX,"parseFile.tryToParseString","did not find expression '{}' in line '{}'".format(expressionName,currentLines[0]))
+           utils.logging.logDebug5(LOG_PREFIX,"parseFile.tryToParseString",str(e))
            return False
     
     pDirectiveContinuation = re.compile(r"\n[!c\*]\$\w+\&")
@@ -475,7 +475,7 @@ def parseFile(fortranFilePath,index):
                    try:
                       current._lines += currentLines
                    except Exception as e:
-                      utils.logging.logError("While parsing file {}".format(currentFile))
+                      utils.logging.logError(LOG_PREFIX,"parseFile","While parsing file {}".format(currentFile))
                       raise e
     assert type(current) is STRoot
     return current

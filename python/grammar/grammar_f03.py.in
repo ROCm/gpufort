@@ -242,8 +242,7 @@ returnStatement   = CASELESS_LITERAL("return")
 controlStatements = returnStatement
 
 ## Attributes // example: attributes
-attributesLhs = CASELESS_LITERAL("attributes").suppress()
-attributes= attributesLhs + LPAR + qualifierList + RPAR + COLONS + Group(delimitedList(identifier))
+attributes = CASELESS_LITERAL("attributes").suppress() + LPAR + qualifierList + RPAR + COLONS + Group(delimitedList(identifier))
 
 ## Program / Subroutine / Function
 PROGRAM,MODULE,PROCEDURE,FUNCTION,SUBROUTINE,ATTRIBUTES,IMPLICIT,NONE,USE,ONLY,CONTAINS,INTERFACE =  makeCaselessLiteral(\

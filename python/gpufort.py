@@ -90,7 +90,7 @@ def translateFortranSource(fortranFilepath,stree,index,wrapInIfdef):
     if PRETTIFY_MODIFIED_TRANSLATION_SOURCE:
         utils.fileutils.prettifyFFile(modifiedFortranFilepath)
     msg = "created hipified input file: ".ljust(40) + modifiedFortranFilepath
-    utils.logging.logInfo(msg)
+    utils.logging.logInfo(LOG_PREFIX,"translateFortranSource",msg)
     
     utils.logging.logLeaveFunction(LOG_PREFIX,"translateFortranSource")
 
@@ -154,15 +154,15 @@ global INCLUDE_DIRS
             CONFIG_FILE = configFilepath
         else:
             CONFIG_FILE=os.path.dirname(os.path.realpath(__file__))+"/"+configFilepath
-        exec(prolog + open(CONFIG_FILE).read()+ epilog)
+        exec(prolog + "\n" + open(CONFIG_FILE).read()+ epilog)
         msg = "config file '{}' found and successfully parsed".format(CONFIG_FILE)
-        utils.logging.logInfo(msg)
+        utils.logging.logInfo(LOG_PREFIX,"parseConfig",msg)
     except FileNotFoundError:
         msg = "no '{}' file found. Use defaults.".format(CONFIG_FILE)
-        utils.logging.logWarning(msg)
+        utils.logging.logWarning(LOG_PREFIX,"parseConfig",msg)
     except Exception as e:
         msg = "failed to parse config file '{}'. REASON: {} (NOTE: num prolog lines: {}). ABORT".format(CONFIG_FILE,str(e),len(prolog.split("\n")))
-        utils.logging.logError(msg)
+        utils.logging.logError(LOG_PREFIX,"parseConfig",msg)
         sys.exit(1)
 
 def parseCommandLineArguments():

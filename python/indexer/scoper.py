@@ -54,6 +54,8 @@ EMPTY_SUBPROGRAM = {
   "kind"        : __UNKNOWN,
   "name"        : __UNKNOWN,
   "resultName"  : __UNKNOWN,
+  "attributes"  : [],
+  "dummyArgs"   : [],
   "variables"   : [],
   "subprograms" : [],
   "usedModules" : []
@@ -121,7 +123,45 @@ def __resolveDependencies(scope,indexRecord,index):
     handleUseStatements_(scope,indexRecord)
     utils.logging.logLeaveFunction(LOG_PREFIX,"__resolveDependencies")
 
-def __createScope(index,tag):
+def __searchScopeForTypeOrSubprogram(scope,entryName,entryType,emptyRecord):
+    """
+    :param str entryType: either 'types' or 'subprograms'
+    """
+    global LOG_PREFIX
+    utils.logging.logEnterFunction(LOG_PREFIX,"__searchScopeForTypeOrSubprogram",\
+      {"entryName":entryName,"entryType":entryType})
+
+    # reverse access such that entries from the inner-most scope come first
+    scopeEntities = reversed(scope[entryType])
+
+    result = next((entry for entry in scopeEntities if entry["name"] == entryName),None)  
+    if result is None:
+        msg = "no entry found for {} '{}'.".format(entryType,entryName)
+        if ERROR_HANDLING  == "strict":
+            utils.logging.logError(LOG_PREFIX,"__searchScopeForTypeOrSubprogram",msg) 
+            sys.exit(ERR_SCOPER_LOOKUP_FAILED)
+        else:
+            utils.logging.logWarning(LOG_PREFIX,"__searchScopeForTypeOrSubprogram",msg) 
+        return emptyRecord, False
+    else:
+        utils.logging.logDebug2(LOG_PREFIX,"__searchScopeForTypeOrSubprogram",\
+          "entry found for {} '{}'".format(entryType,entryName)) 
+        utils.logging.logLeaveFunction(LOG_PREFIX,"__searchScopeForTypeOrSubprogram")
+        return result, True
+
+def __searchIndexForTypeOrSubprogram(index,parentTag,entryName,entryType,emptyRecord):
+    """
+    :param str entryType: either 'types' or 'subprograms'
+    """
+    global LOG_PREFIX
+    utils.logging.logEnterFunction(LOG_PREFIX,"__searchIndexForTypeOrSubprogram",\
+      {"parentTag":parentTag,"entryName":entryName,"entryType":entryType})
+
+    scope = createScope(index,parentTag)
+    return __searchScopeForTypeOrSubprogram(scope,entryName,entryType,emptyRecord)
+
+# API
+def createScope(index,tag):
     """
     :param str tag: a colon-separated list of strings. Ex: mymod:mysubroutine or mymod.
     :note: not thread-safe
@@ -133,7 +173,7 @@ def __createScope(index,tag):
     global REMOVE_OUTDATED_SCOPES
     global MODULE_IGNORE_LIST
     global LOG_PREFIX    
-    utils.logging.logEnterFunction(LOG_PREFIX,"__createScope",{"tag":tag,"ERROR_HANDLING":ERROR_HANDLING})
+    utils.logging.logEnterFunction(LOG_PREFIX,"createScope",{"tag":tag,"ERROR_HANDLING":ERROR_HANDLING})
     
     # check if already a scope exists for the tag or if
     # it can be derived from a higher-level scope
@@ -149,7 +189,7 @@ def __createScope(index,tag):
             scopesToDelete.append(s)
     # clean up scopes that are not used anymore 
     if REMOVE_OUTDATED_SCOPES and len(scopesToDelete):
-        utils.logging.logDebug(LOG_PREFIX,"__createScope",\
+        utils.logging.logDebug(LOG_PREFIX,"createScope",\
           "delete outdated scopes with tags '{}'".format(\
             ", ".join([s["tag"] for s in scopesToDelete])))
         for s in scopesToDelete:
@@ -158,9 +198,9 @@ def __createScope(index,tag):
     # return existing existingScope or create it
     tagTokens = tag.split(":")
     if len(tagTokens)-1 == nestingLevel:
-        utils.logging.logDebug(LOG_PREFIX,"__createScope",\
+        utils.logging.logDebug(LOG_PREFIX,"createScope",\
           "found existing scope for tag '{}'".format(tag))
-        utils.logging.logLeaveFunction(LOG_PREFIX,"__createScope")
+        utils.logging.logLeaveFunction(LOG_PREFIX,"createScope")
         return existingScope
     else:
         newScope = copy.deepcopy(existingScope)
@@ -169,14 +209,14 @@ def __createScope(index,tag):
         # we already have a scope for this record
         if nestingLevel >= 0:
             baseRecordTag = ":".join(tagTokens[0:nestingLevel+1])
-            utils.logging.logDebug(LOG_PREFIX,"__createScope",\
+            utils.logging.logDebug(LOG_PREFIX,"createScope",\
               "create scope for tag '{}' based on existing scope with tag '{}'".format(tag,baseRecordTag))
             baseRecord = next((module for module in index if module["name"] == tagTokens[0]),None)  
             for l in range(1,nestingLevel+1):
                 baseRecord = next((subprogram for subprogram in baseRecord["subprograms"] if subprogram["name"] == tagTokens[l]),None)
             currentRecordList = baseRecord["subprograms"]
         else:
-            utils.logging.logDebug(LOG_PREFIX,"__createScope",\
+            utils.logging.logDebug(LOG_PREFIX,"createScope",\
               "create scope for tag '{}'".format(tag))
             currentRecordList = index
         begin = nestingLevel + 1 # 
@@ -194,54 +234,19 @@ def __createScope(index,tag):
                     currentRecordList = currentRecord["subprograms"]
                     break
         SCOPES.append(newScope)
-        utils.logging.logLeaveFunction(LOG_PREFIX,"__createScope")
+        utils.logging.logLeaveFunction(LOG_PREFIX,"createScope")
         return newScope
 
-def __searchIndexForTypeOrSubprogram(index,parentTag,entryName,entryType,emptyRecord):
+def searchScopeForVariable(scope,variableTag):
     """
-    :param str entryType: either 'types' or 'subprograms'
-    """
-    global LOG_PREFIX
-    utils.logging.logEnterFunction(LOG_PREFIX,"__searchIndexForTypeOrSubprogram",\
-      {"parentTag":parentTag,"entryName":entryName,"entryType":entryType})
-
-    result = None
-    
-    # create/lookup scope
-    scope = __createScope(index,parentTag)
-    # reverse access such that entries from the inner-most scope come first
-    scopeEntities = reversed(scope[entryType])
-
-    result = next((entry for entry in scopeEntities if entry["name"] == entryName),None)  
-    if result is None:
-        msg = "no entry found for {} '{}'.".format(entryType,entryName)
-        if ERROR_HANDLING  == "strict":
-            utils.logging.logError(LOG_PREFIX,"__searchIndexForTypeOrSubprogram",msg) 
-            sys.exit(ERR_SCOPER_LOOKUP_FAILED)
-        else:
-            utils.logging.logWarning(LOG_PREFIX,"__searchIndexForTypeOrSubprogram",msg) 
-        return emptyRecord, False
-    else:
-        utils.logging.logDebug2(LOG_PREFIX,"__searchIndexForTypeOrSubprogram",\
-          "entry found for {} '{}'".format(entryType,entryName)) 
-        
-        utils.logging.logLeaveFunction(LOG_PREFIX,"__searchIndexForTypeOrSubprogram")
-        return result, True
-
-# API
-def searchIndexForVariable(index,parentTag,variableTag):
-    """
-    :param str parentTag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
     %param str variableTag% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c'. Note that all array indexing expressions must be stripped away.
     :see: translator.translator.createIndexSearchTagForVariable(variableExpression)
     """
     global LOG_PREFIX
     utils.logging.logEnterFunction(LOG_PREFIX,"searchIndexForVariable",\
-      {"parentTag":parentTag,"variableTag":variableTag})
+      {"variableTag":variableTag})
 
     result = None
-    # create/lookup scope
-    scope = __createScope(index,parentTag)
     # reverse access such that entries from the inner-most scope come first
     scopeTypes = reversed(scope["types"])
 
@@ -280,6 +285,37 @@ def searchIndexForVariable(index,parentTag,variableTag):
           "entry found for variable '{}'".format(variableTag)) 
         utils.logging.logLeaveFunction(LOG_PREFIX,"searchIndexForVariable")
         return result, True
+
+def searchScopeForType(scope,typeName):
+    """
+    :param str typeName: lower case name of the searched type. Simple identifier such as 'mytype'.
+    """
+    utils.logging.logEnterFunction(LOG_PREFIX,"searchScopeForType",{"typeName":typeName})
+    result = __searchScopeForTypeOrSubprogram(scope,typeName,"types",EMPTY_TYPE)
+    utils.logging.logLeaveFunction(LOG_PREFIX,"searchScopeForType")
+    return result
+
+def searchScopeForSubprogram(scope,subprogramName):
+    """
+    :param str subprogramName: lower case name of the searched subprogram. Simple identifier such as 'mysubroutine'.
+    """
+    utils.logging.logEnterFunction(LOG_PREFIX,"searchScopeForSubprogram",{"subprogramName":subprogramName})
+    result =  __searchScopeForTypeOrSubprogram(scope,subprogramName,"subprograms",EMPTY_SUBPROGRAM)
+    utils.logging.logLeaveFunction(LOG_PREFIX,"searchScopeForSubprogram")
+    return result
+
+def searchIndexForVariable(index,parentTag,variableTag):
+    """
+    :param str parentTag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
+    %param str variableTag% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c'. Note that all array indexing expressions must be stripped away.
+    :see: translator.translator.createIndexSearchTagForVariable(variableExpression)
+    """
+    global LOG_PREFIX
+    utils.logging.logEnterFunction(LOG_PREFIX,"searchIndexForVariable",\
+      {"parentTag":parentTag,"variableTag":variableTag})
+
+    scope = createScope(index,parentTag)
+    return searchScopeForVariable(scope,variableTag)
 
 def searchIndexForType(index,parentTag,typeName):
     """

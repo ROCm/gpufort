@@ -102,7 +102,7 @@ def createIndexSearchTagForVariable(variableExpression):
     :see: indexer.scoper.searchIndexForVariable
     """
     if not "(" in variableExpression:
-        return variableExpression
+        return variableExpression.lower()
     else:
         expr        = derivedTypeElem
         parseResult = expr.parseString(variableExpression.lower())[0]
@@ -119,7 +119,7 @@ def createIndexSearchTagForVariable(variableExpression):
 # TODO parsing and translation is similar but analysis differs between the different kernel
 # types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)
 # while they are specified with ACC,OMP.
-def parseLoopKernel(fortranSnippet,indexHints=[],maxRecursions=30):
+def parseLoopKernel(fortranSnippet,scope=[],maxRecursions=30):
     """
     Return a csnippet equivalent to the original Fortran code.
     """
@@ -147,7 +147,7 @@ def parseLoopKernel(fortranSnippet,indexHints=[],maxRecursions=30):
     fortranSnippet = prepareFortranSnippet(fortranSnippet)
     try:
         computeConstruct = simplifyLoopKernelUntilItCanGetParsed(fortranSnippet,maxRecursions)
-        computeConstruct._indexHints = indexHints
+        computeConstruct._scope = scope
         if recursionsLeft < maxRecursions:
             body = "\n".join(fortranSnippet.split("\n")[1:])
         return computeConstruct
@@ -161,7 +161,7 @@ class EmptyProcedureBody():
     def cStr(self):
         return "" 
 
-def parseProcedureBody(fortranSnippet,indexRecord={},resultName="",maxRecursions=10):
+def parseProcedureBody(fortranSnippet,scope,indexRecord,resultName="",maxRecursions=10):
     """
     Parse a function/subroutine body.
     """
@@ -188,12 +188,12 @@ def parseProcedureBody(fortranSnippet,indexRecord={},resultName="",maxRecursions
     fortranSnippet = prepareFortranSnippet(fortranSnippet)
     try:
         parseResult = simplifyProcedureBodyUntilItCanGetParsed(fortranSnippet,maxRecursions)
-        parseResult._indexHints   = [ indexRecord ] 
+        parseResult._scope        = scope 
         parseResult._resultName   = resultName
         parseResult._ignoredVars += indexRecord["dummyArgs"]
     except Exception as e:
         #raise e
-        utils.logging.logError("failed to convert kernel:\n{}".format(fortranSnippet))
-        utils.logging.logError(str(e))
+        utils.logging.logError(LOG_PREFIX,"parseProcedureBody","failed to convert kernel:\n{}".format(fortranSnippet))
+        utils.logging.logError(LOG_PREFIX,"parseProcedureBody",str(e))
         return EmptyProcedureBody()
     return parseResult

@@ -22,9 +22,9 @@ exec(open("{0}/grammar.py".format(GRAMMAR_DIR)).read())
 indexerDir = os.path.dirname(__file__)
 exec(open("{0}/indexer_options.py.in".format(indexerDir)).read())
     
-pFilter        = re.compile(FILTER) 
-pAntiFilter    = re.compile(ANTIFILTER)
-pContinuation  = re.compile(CONTINUATION_FILTER)
+pFilter       = re.compile(FILTER) 
+pAntiFilter   = re.compile(ANTIFILTER)
+pContinuation = re.compile(CONTINUATION_FILTER)
 
 def __readFortranFile(filepath,preprocOptions):
     """
@@ -353,7 +353,7 @@ def __parseFile(fileLines,filepath):
 
     datatype_reg.setParseAction(Declaration)
     use.setParseAction(Use)
-    attributesLhs.setParseAction(Attributes)
+    attributes.setParseAction(Attributes)
     
     acc_declare.setParseAction(AccDeclare)
 
@@ -370,7 +370,7 @@ def __parseFile(fileLines,filepath):
         utils.logging.logDebug3(LOG_PREFIX,"__parseFile","process statement '{}'".format(currentLine))
         # typeStart must be tried before datatype_reg
         tryToParseString("structureEnd|typeEnd|typeStart|declaration|use|attributes|acc_declare|moduleStart|programStart|functionStart|subroutineStart",\
-          typeEnd|structureEnd|typeStart|datatype_reg|use|attributesLhs|acc_declare|moduleStart|programStart|functionStart|subroutineStart)
+          typeEnd|structureEnd|typeStart|datatype_reg|use|attributes|acc_declare|moduleStart|programStart|functionStart|subroutineStart)
     taskExecutor.shutdown(wait=True) # waits till all tasks have been completed
 
     # apply attributes and acc variable modifications

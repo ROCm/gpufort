@@ -26,17 +26,34 @@ exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "gpufort_opti
 # arg for kernel generator
 # array is split into multiple args
 
-def createIndex(searchDirs,defines,filePath,indexFile):
-    if indexFile != None:
-        #return ...loadIndexFromFile(indexFile)
-        pass
-    else: 
-        searchDirs.insert(0,os.path.dirname(filePath))
-        context = indexer.scanSearchDirs(searchDirs,optionsAsStr=" ".join(defines))
-        return indexer.resolveDependencies(context,searchedFiles=[ filePath ])
+def createIndex(searchDirs,options,filepath):
+    global LOG_PREFIX
+    global SKIP_GENERATE_GPUFORT_MODULE_FILES
+   
+    utils.logging.logEnterFunction(LOG_PREFIX,"createIndex",\
+      {"filepath":filepath,"options":" ".join(options},\
+       "searchDirs":" ".join(searchDirs))
 
-def translateFortranSource(fortranFilePath,stree,index,wrapInIfdef):
+    optionsAsStr = " ".join(options)
+    
+    index = []
+    if not SKIP_GENERATE_GPUFORT_MODULE_FILES:
+        scanFile(filepath,optionsAsStr,index)
+        outputDir = os.path.dirname(filepath)
+        writeGpufortModuleFiles(index,outputDir)
+   index.clear()
+   loadGpufortModuleFiles(searchDirs,index):
+   
+   utils.logging.logLeaveunction(LOG_PREFIX,"createIndex")
+   return index
+
+def translateFortranSource(fortranFilepath,stree,index,wrapInIfdef):
     global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
+    global LOG_PREFIX
+    global SKIP_GENERATE_GPUFORT_MODULE_FILES
+    
+    utils.logging.logEnterFunction(LOG_PREFIX,"translateFortranSource",\
+      {"fortranFilepath":fortranFilepath,"wrapInIfdef":wrapInIfdef})
     
     # derive code line groups from original tree
     groups = scanner.groupObjects(stree,index)
@@ -44,7 +61,7 @@ def translateFortranSource(fortranFilePath,stree,index,wrapInIfdef):
     for group in groups.values():
         group.generateCode(index,wrapInIfdef)
     # post process before grouping again
-    basename      = os.path.basename(fortranFilePath).split(".")[0]
+    basename      = os.path.basename(fortranFilepath).split(".")[0]
     hipModuleName = basename.replace(".","_").replace("-","_") + "_kernels"
     scanner.postprocess(stree,hipModuleName,index)
     
@@ -54,8 +71,8 @@ def translateFortranSource(fortranFilePath,stree,index,wrapInIfdef):
     # now process file
     outputLines = []
     nextLinesToSkip = 0
-    with open(fortranFilePath,"r") as fortranFile:
-        lines = scanner.handleIncludeStatements(fortranFilePath,fortranFile.readlines())
+    with open(fortranFilepath,"r") as fortranFile:
+        lines = scanner.handleIncludeStatements(fortranFilepath,fortranFile.readlines())
         for lineno,line in enumerate(lines):
             if lineno in groups:
                 lines, linesToSkip = groups[lineno].generateCode(index,wrapInIfdef)
@@ -65,15 +82,17 @@ def translateFortranSource(fortranFilePath,stree,index,wrapInIfdef):
                 nextLinesToSkip -= 1
             else:
                 outputLines.append(line)
-    parts = os.path.splitext(fortranFilePath)
-    modifiedFortranFilePath = "{}.hipified.f90".format(parts[0])
-    with open(modifiedFortranFilePath,"w") as outfile:
+    parts = os.path.splitext(fortranFilepath)
+    modifiedFortranFilepath = "{}.hipified.f90".format(parts[0])
+    with open(modifiedFortranFilepath,"w") as outfile:
          for line in outputLines:
               outfile.write(line.strip("\n") + "\n")
     if PRETTIFY_MODIFIED_TRANSLATION_SOURCE:
-        utils.fileutils.prettifyFFile(modifiedFortranFilePath)
-    msg = "created hipified input file: ".ljust(40) + modifiedFortranFilePath
+        utils.fileutils.prettifyFFile(modifiedFortranFilepath)
+    msg = "created hipified input file: ".ljust(40) + modifiedFortranFilepath
     utils.logging.logInfo(msg)
+    
+    utils.logging.logLeaveFunction(LOG_PREFIX,"translateFortranSource")
 
 def parseRawCommandLineArguments():
     """
@@ -82,7 +101,7 @@ def parseRawCommandLineArguments():
     the argparse switches and help information.
     Further transform some arguments.
     """
-    configFilePath = None
+    configFilepath = None
     workingDirPath = os.getcwd()
     includeDirs    = []
     defines        = []
@@ -93,7 +112,7 @@ def parseRawCommandLineArguments():
                 workingDirPath = options[i+1]
         elif opt == "--config-file":
             if i+1 < len(options):
-                configFilePath = options[i+1]
+                configFilepath = options[i+1]
         elif opt.startswith("-I"):
             includeDirs.append(opt[2:])
             sys.argv.remove(opt)
@@ -104,20 +123,20 @@ def parseRawCommandLineArguments():
         msg = "working directory '{}' cannot be found".format(workingDirPath)
         print("ERROR: "+msg,file=sys.stderr)
         sys.exit(2)
-    if configFilePath != None: 
-        if configFilePath[0] != "/":
-          configFilePath = workingDirPath + "/" + configFilePath 
-        if not os.path.exists(configFilePath):
-            msg = "config file '{}' cannot be found".format(configFilePath)
+    if configFilepath != None: 
+        if configFilepath[0] != "/":
+          configFilepath = workingDirPath + "/" + configFilepath 
+        if not os.path.exists(configFilepath):
+            msg = "config file '{}' cannot be found".format(configFilepath)
             print("ERROR: "+msg,file=sys.stderr)
             sys.exit(2)
-    return configFilePath, includeDirs, defines 
+    return configFilepath, includeDirs, defines 
 
-def parseConfig(configFilePath):
+def parseConfig(configFilepath):
     """
     Load user-supplied config fule.
     """
-    prolog = """global DUMP_INDEX
+    prolog = """global ONLY_GENERATE_GPUFORT_MODULEFILES
 global WRAP_IN_IFDEF
 global ONLY_MODIFY_TRANSLATION_SOURCE
 global ONLY_GENERATE_KERNELS
@@ -126,10 +145,10 @@ global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
 global INCLUDE_DIRS"""
     epilog = ""
     try:
-        if configFilePath.strip()[0]=="/":
-            CONFIG_FILE = configFilePath
+        if configFilepath.strip()[0]=="/":
+            CONFIG_FILE = configFilepath
         else:
-            CONFIG_FILE=os.path.dirname(os.path.realpath(__file__))+"/"+configFilePath
+            CONFIG_FILE=os.path.dirname(os.path.realpath(__file__))+"/"+configFilepath
         exec(prolog + open(CONFIG_FILE).read()+ epilog)
         msg = "config file '{}' found and successfully parsed".format(CONFIG_FILE)
         utils.logging.logInfo(msg)
@@ -145,7 +164,7 @@ def parseCommandLineArguments():
     """
     Parse command line arguments after all changes and argument transformations by the config file have been applied.
     """
-    global DUMP_INDEX
+    global ONLY_GENERATE_GPUFORT_MODULEFILES
     global ONLY_GENERATE_KERNELS
     global ONLY_MODIFY_TRANSLATION_SOURCE
     global INCLUDE_DIRS
@@ -155,24 +174,30 @@ def parseCommandLineArguments():
     parser = argparse.ArgumentParser(description="S2S translation tool for CUDA Fortran and Fortran+X")
     
     parser.add_argument("input",help="The input file.",type=str,nargs="?",default=None)
-    parser.add_argument("-o,--output", help="The output file. Interface module and HIP C++ implementation are named accordingly", default=sys.stdout, required=False, type=argparse.FileType("w"))
+    parser.add_argument("-c,--only-create-mod-files",dest="onlyGenerateGpufortModuleFiles",action="store_true",help="Only generate GPUFORT modules files. No other output is generated.")
+    parser.add_argument("-s,--skip-create-mod-files",dest="skipGenerateGpufortModuleFiles",action="store_true",help="Skip generating GPUFORT modulesles, e.g. if they already exist. Mutually exclusive")
+    parser.add_argument("-o,--output", help="The output file. Interface module and HIP C++ implementation are named accordingly. GPUFORT module files are generated too.", default=sys.stdout, required=False, type=argparse.FileType("w"))
+    parser.add_argument("--working-dir",dest="workingDir",default=os.getcwd(),type=str,help="Set working directory.") # shadow arg
     parser.add_argument("-d,--search-dirs", dest="searchDirs", help="Module search dir", nargs="*",  required=False, default=[], type=str)
-    parser.add_argument("-i,--index", dest="index", help="Pregenerated JSON index file. If this option is used, the '-d,--search-dirs' switch is ignored.", required=False, default=None, type=argparse.FileType("r"))
     parser.add_argument("-w,--wrap-in-ifdef",dest="wrapInIfdef",action="store_true",help="Wrap converted lines into ifdef in host code.")
-    parser.add_argument("-k,--only-generate-kernels",dest="onlyGenerateKernels",action="store_true",help="Only generate kernels; do not modify host code.")
-    parser.add_argument("-m,--only-modify-host-code",dest="onlyModifyTranslationSource",action="store_true",help="Only modify host code; do not generate kernels.")
     parser.add_argument("-E,--destination-dialect",dest="destinationDialect",default=None,type=str,help="One of: {}".format(", ".join(scanner.SUPPORTED_DESTINATION_DIALECTS)))
-    parser.add_argument("--log-level",dest="logLevel",required=False,type=str,default="",help="Set log level. Overrides config value.")
-    parser.add_argument("--cublas-v2",dest="cublasV2",action="store_true",help="Assume cublas v2 function signatures that use a handle. Overrides config value.")
-    # shadow arguments that are actually taken care of by raw argument parsing
-    parser.add_argument("--working-dir",dest="workingDir",default=os.getcwd(),type=str,help="Set working directory.")
-    parser.add_argument("--print-config-defaults",dest="printConfigDefaults",action="store_true",help="Print config defaults. "+\
+    parser.add_argument("-m,--only-modify-host-code",dest="onlyModifyTranslationSource",action="store_true",help="Only modify host code; do not generate kernels.")
+    group_hip = parser.add_argument_group('Fortran to HIP translation')
+    group_hip.add_argument("-k,--only-generate-kernels",dest="onlyGenerateKernels",action="store_true",help="Only generate kernels; do not modify host code.")
+    group_cuf = parser.add_argument_group('CUDA Fortran')
+    group_cuf.add_argument("--cublas-v2",dest="cublasV2",action="store_true",help="Assume cublas v2 function signatures that use a handle. Overrides config value.")
+    # config options: shadow arguments that are actually taken care of by raw argument parsing
+    group_config = parser.add_argument_group_config('Config file')
+    group_config.add_argument("--print-config-defaults",dest="printConfigDefaults",action="store_true",help="Print config defaults. "+\
             "Config values can be overriden by providing a config file. A number of config values can be overwritten via this CLI.")
-    parser.add_argument("--config-file",default=None,type=argparse.FileType("r"),dest="configFile",help="Provide a config file.")
-    parser.add_argument("--dump-index",dest="dumpIndex",action="store_true",help="Dump the index.")
+    group_config.add_argument("--config-file",default=None,type=argparse.FileType("r"),dest="configFile",help="Provide a config file.")
+    # logging
+    group_logging = parser.add_argument_group_config('Logging')
+    group_logging.add_argument("--log-level",dest="logLevel",required=False,type=str,default="",help="Set log level. Overrides config value.")
     
     parser.set_defaults(printConfigDefaults=False,dumpIndex=False,\
-        wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyTranslationSource=False)
+        wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyTranslationSource=False,
+        onlyGenerateGpufortModuleFiles)
     args, unknownArgs = parser.parse_known_args()
 
     if args.printConfigDefaults:
@@ -208,9 +233,13 @@ def parseCommandLineArguments():
         print("")
         sys.exit(0)
     ## VALIDATION
+    if args.onlyGenerateGpufortModuleFiles and args.skipGenerateGpufortModuleFiles:
+        msg = "switches '--only-create-mod-files' and '--skip-generate-mod-files' are mutually exclusive."
+        print("ERROR: "+msg,file=sys.stderr)
+        sys.exit(2)
     # mutually exclusive arguments
     if args.onlyGenerateKernels and args.onlyModifyTranslationSource:
-        msg = "switches '--only-generate-kernels' and 'only-modify-host-code' cannot be used at the same time."
+        msg = "switches '--only-generate-kernels' and 'only-modify-host-code' are mutually exclusive."
         print("ERROR: "+msg,file=sys.stderr)
         sys.exit(2)
     # check if input is set
@@ -251,23 +280,23 @@ def parseCommandLineArguments():
         translator.CUBLAS_VERSION = 2
     return args, unknownArgs
 
-def initLogging(inputFilePath):
-    inputFilePathHash = hashlib.md5(inputFilePath.encode()).hexdigest()[0:8]
-    logfileBaseName = "log-{}.log".format(inputFilePathHash)
-    logFormat       = "gpufort:%(levelname)s:{0}: %(message)s".format(inputFilePath)
+def initLogging(inputFilepath):
+    inputFilepathHash = hashlib.md5(inputFilepath.encode()).hexdigest()[0:8]
+    logfileBaseName = "log-{}.log".format(inputFilepathHash)
+    logFormat       = "gpufort:%(levelname)s:{0}: %(message)s".format(inputFilepath)
   
-    logfilePath = utils.logging.initLogging(logfileBaseName,logFormat)
+    logfilepath = utils.logging.initLogging(logfileBaseName,logFormat)
  
-    msg = "input file: {0} (log id: {1})".format(inputFilePath,inputFilePathHash)
+    msg = "input file: {0} (log id: {1})".format(inputFilepath,inputFilepathHash)
     utils.logging.logInfo(msg)
-    msg = "log file:   {0} (log level: {1}) ".format(logfilePath,logging.getLevelName(utils.logging.LOG_LEVEL))
+    msg = "log file:   {0} (log level: {1}) ".format(logfilepath,logging.getLevelName(utils.logging.LOG_LEVEL))
     utils.logging.logInfo(msg)
 
 if __name__ == "__main__":
     # read config and command line arguments
-    configFilePath, includeDirs, defines = parseRawCommandLineArguments()
-    if configFilePath != None:
-        parseConfig(configFilePath)
+    configFilepath, includeDirs, defines = parseRawCommandLineArguments()
+    if configFilepath != None:
+        parseConfig(configFilepath)
     args, unknownArgs = parseCommandLineArguments()
     if len(POST_CLI_ACTIONS):
         msg = "run registered actions"
@@ -275,8 +304,12 @@ if __name__ == "__main__":
         for action in POST_CLI_ACTIONS:
             if callable(action):
                 action(args,unknownArgs)
+
+    # init logging
+    inputFilepath = os.path.abspath(args.input)
+    initLogging(inputFilepath)
     
-    inputFilePath = os.path.abspath(args.input)
+    # Update INCLUDE_DIRS from all sources    
     INCLUDE_DIRS += args.searchDirs
     INCLUDE_DIRS += includeDirs
     oneOrMoreSearchDirsNotFound = False
@@ -287,35 +320,27 @@ if __name__ == "__main__":
             msg = "search directory '{}' cannot be found".format(INCLUDE_DIRS[i])
             utils.logging.logError(msg,verbose=False) 
             oneOrMoreSearchDirsNotFound = True
+    INCLUDE_DIRS.append(args.workingDir)
     if oneOrMoreSearchDirsNotFound:
         sys.exit(2)
-    
-    # init logging
-    initLogging(inputFilePath)
 
     # scanner must be invoked after index creation
-    index = createIndex(args.searchDirs,defines,inputFilePath,args.indexFile.n)
-    stree = scanner.parseFile(inputFilePath,index)    
+    index = createIndex(INCLUDE_DIRS,defines,inputFilepath)
+    if not ONLY_GENERATE_GPUFORT_MODULEFILES:
+        stree = scanner.parseFile(inputFilepath,index)    
  
-    # extract kernels
-    outputFilePrefix = ".".join(inputFilePath.split(".")[:-1])
-    basename         =  os.path.basename(outputFilePrefix)
-    if "hip" in scanner.DESTINATION_DIALECT: 
-        kernelsToConvertToHip = ["*"]
-    else:
-        kernelsToConvertToHip = scanner.KERNELS_TO_CONVERT_TO_HIP
-    fort2hip.createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename,\
-      generateCode=not ONLY_MODIFY_TRANSLATION_SOURCE)
-    
-    # modify original file
-    if not ONLY_GENERATE_KERNELS:
-        translateFortranSource(inputFilePath,stree,index,WRAP_IN_IFDEF) 
-
-    # dump index
-    if DUMP_INDEX:
-        indexFilePath = outputFilePrefix + ".gpufort_mod"
-        indexer.writeIndexToFile(index, indexFilePath)
-        msg = "saved index to file:".ljust(40) + indexFilePath
-        utils.logging.logInfo(msg)
+        # extract kernels
+        outputFilePrefix = ".".join(inputFilepath.split(".")[:-1])
+        basename         =  os.path.basename(outputFilePrefix)
+        if "hip" in scanner.DESTINATION_DIALECT: 
+            kernelsToConvertToHip = ["*"]
+        else:
+            kernelsToConvertToHip = scanner.KERNELS_TO_CONVERT_TO_HIP
+        fort2hip.createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename,\
+          generateCode=not ONLY_MODIFY_TRANSLATION_SOURCE)
+        
+        # modify original file
+        if not ONLY_GENERATE_KERNELS:
+            translateFortranSource(inputFilepath,stree,index,WRAP_IN_IFDEF) 
     # shutdown logging
     logging.shutdown()

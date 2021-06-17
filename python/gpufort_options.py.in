@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 # logging
-DUMP_INDEX         = False # dump the index as JSON file
+LOG_PREFIX="gpufort"
+
+ONLY_GENERATE_GPUFORT_MODULEFILES = False # Only create and write GPUFORT module files and no other output.
 
 WRAP_IN_IFDEF                  = False
 ONLY_MODIFY_TRANSLATION_SOURCE = False # Do only modify the translation source. 

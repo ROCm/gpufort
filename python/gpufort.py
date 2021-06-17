@@ -28,7 +28,7 @@ exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "gpufort_opti
 
 def createIndex(searchDirs,options,filepath):
     global LOG_PREFIX
-    global SKIP_GENERATE_GPUFORT_MODULE_FILES
+    global SKIP_CREATE_GPUFORT_MODULE_FILES
    
     utils.logging.logEnterFunction(LOG_PREFIX,"createIndex",\
       {"filepath":filepath,"options":" ".join(options),\
@@ -37,20 +37,20 @@ def createIndex(searchDirs,options,filepath):
     optionsAsStr = " ".join(options)
     
     index = []
-    if not SKIP_GENERATE_GPUFORT_MODULE_FILES:
-        scanFile(filepath,optionsAsStr,index)
+    if not SKIP_CREATE_GPUFORT_MODULE_FILES:
+        indexer.scanFile(filepath,optionsAsStr,index)
         outputDir = os.path.dirname(filepath)
-        writeGpufortModuleFiles(index,outputDir)
+        indexer.writeGpufortModuleFiles(index,outputDir)
     index.clear()
-    loadGpufortModuleFiles(searchDirs,index)
+    indexer.loadGpufortModuleFiles(searchDirs,index)
     
-    utils.logging.logLeaveunction(LOG_PREFIX,"createIndex")
+    utils.logging.logLeaveFunction(LOG_PREFIX,"createIndex")
     return index
 
 def translateFortranSource(fortranFilepath,stree,index,wrapInIfdef):
     global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
     global LOG_PREFIX
-    global SKIP_GENERATE_GPUFORT_MODULE_FILES
+    global SKIP_CREATE_GPUFORT_MODULE_FILES
     
     utils.logging.logEnterFunction(LOG_PREFIX,"translateFortranSource",\
       {"fortranFilepath":fortranFilepath,"wrapInIfdef":wrapInIfdef})
@@ -136,13 +136,18 @@ def parseConfig(configFilepath):
     """
     Load user-supplied config fule.
     """
-    prolog = """global ONLY_GENERATE_GPUFORT_MODULEFILES
+    prolog = """
+global LOG_LEVEL
+global LOG_FORMAT_PATTERN
+global ONLY_CREATE_GPUFORT_MODULE_FILES
+global SKIP_CREATE_GPUFORT_MODULE_FILES
 global WRAP_IN_IFDEF
 global ONLY_MODIFY_TRANSLATION_SOURCE
 global ONLY_GENERATE_KERNELS
 global POST_CLI_ACTIONS
 global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
-global INCLUDE_DIRS"""
+global INCLUDE_DIRS
+""".strip()
     epilog = ""
     try:
         if configFilepath.strip()[0]=="/":
@@ -164,7 +169,8 @@ def parseCommandLineArguments():
     """
     Parse command line arguments after all changes and argument transformations by the config file have been applied.
     """
-    global ONLY_GENERATE_GPUFORT_MODULEFILES
+    global SKIP_CREATE_GPUFORT_MODULE_FILES
+    global ONLY_CREATE_GPUFORT_MODULE_FILES
     global ONLY_GENERATE_KERNELS
     global ONLY_MODIFY_TRANSLATION_SOURCE
     global INCLUDE_DIRS
@@ -174,8 +180,8 @@ def parseCommandLineArguments():
     parser = argparse.ArgumentParser(description="S2S translation tool for CUDA Fortran and Fortran+X")
     
     parser.add_argument("input",help="The input file.",type=str,nargs="?",default=None)
-    parser.add_argument("-c,--only-create-mod-files",dest="onlyGenerateGpufortModuleFiles",action="store_true",help="Only generate GPUFORT modules files. No other output is generated.")
-    parser.add_argument("-s,--skip-create-mod-files",dest="skipGenerateGpufortModuleFiles",action="store_true",help="Skip generating GPUFORT modulesles, e.g. if they already exist. Mutually exclusive")
+    parser.add_argument("-c,--only-create-mod-files",dest="onlyCreateGpufortModuleFiles",action="store_true",help="Only generate GPUFORT modules files. No other output is generated.")
+    parser.add_argument("-s,--skip-create-mod-files",dest="skipCreateGpufortModuleFiles",action="store_true",help="Skip generating GPUFORT modulesles, e.g. if they already exist. Mutually exclusive")
     parser.add_argument("-o,--output", help="The output file. Interface module and HIP C++ implementation are named accordingly. GPUFORT module files are generated too.", default=sys.stdout, required=False, type=argparse.FileType("w"))
     parser.add_argument("--working-dir",dest="workingDir",default=os.getcwd(),type=str,help="Set working directory.") # shadow arg
     parser.add_argument("-d,--search-dirs", dest="searchDirs", help="Module search dir", nargs="*",  required=False, default=[], type=str)
@@ -197,7 +203,7 @@ def parseCommandLineArguments():
     
     parser.set_defaults(printConfigDefaults=False,dumpIndex=False,\
       wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyTranslationSource=False,\
-      onlyGenerateGpufortModuleFiles=False,skipGenerateGpufortModuleFiles=False)
+      onlyCreateGpufortModuleFiles=False,skipCreateGpufortModuleFiles=False)
     args, unknownArgs = parser.parse_known_args()
 
     if args.printConfigDefaults:
@@ -233,7 +239,7 @@ def parseCommandLineArguments():
         print("")
         sys.exit(0)
     ## VALIDATION
-    if args.onlyGenerateGpufortModuleFiles and args.skipGenerateGpufortModuleFiles:
+    if args.onlyCreateGpufortModuleFiles and args.skipCreateGpufortModuleFiles:
         msg = "switches '--only-create-mod-files' and '--skip-generate-mod-files' are mutually exclusive."
         print("ERROR: "+msg,file=sys.stderr)
         sys.exit(2)
@@ -261,9 +267,11 @@ def parseCommandLineArguments():
     if args.destinationDialect != None:
         scanner.DESTINATION_DIALECT = \
           scanner.checkDestinationDialect(args.destinationDialect)
-    # dump index
-    if args.dumpIndex: # ONLY modify config value if arg is set, i.e. specified
-        DUMP_INDEX = True
+    # only create modules files / skip module file generation
+    if args.onlyCreateGpufortModuleFiles: 
+        ONLY_CREATE_GPUFORT_MODULE_FILES = True
+    if args.skipCreateGpufortModuleFiles: 
+        SKIP_CREATE_GPUFORT_MODULE_FILES = True
     # only generate kernels / modify source 
     if args.onlyGenerateKernels:
         ONLY_GENERATE_KERNELS = True
@@ -274,23 +282,26 @@ def parseCommandLineArguments():
         WRAP_IN_IFDEF = True
     # log level
     if len(args.logLevel):
-        utils.logging.LOG_LEVEL = getattr(logging,args.logLevel.upper(),getattr(logging,"INFO"))
+        LOG_LEVEL = args.logLevel
     if args.cublasV2:
         scanner.CUBLAS_VERSION = 2
         translator.CUBLAS_VERSION = 2
     return args, unknownArgs
 
 def initLogging(inputFilepath):
+    global LOG_LEVEL
+    global LOG_FORMAT_PATTERN
+
     inputFilepathHash = hashlib.md5(inputFilepath.encode()).hexdigest()[0:8]
     logfileBaseName = "log-{}.log".format(inputFilepathHash)
-    logFormat       = "gpufort:%(levelname)s:{0}: %(message)s".format(inputFilepath)
-  
-    logfilepath = utils.logging.initLogging(logfileBaseName,logFormat)
+    
+    utils.logging.LOG_FORMAT = LOG_FORMAT_PATTERN.format(inputFilepath)
+    logfilepath = utils.logging.initLogging(logfileBaseName,LOG_LEVEL)
  
     msg = "input file: {0} (log id: {1})".format(inputFilepath,inputFilepathHash)
-    utils.logging.logInfo(msg)
-    msg = "log file:   {0} (log level: {1}) ".format(logfilepath,logging.getLevelName(utils.logging.LOG_LEVEL))
-    utils.logging.logInfo(msg)
+    utils.logging.logInfo(LOG_PREFIX,"initLogging",msg)
+    msg = "log file:   {0} (log level: {1}) ".format(logfilepath,logging.getLevelName(LOG_LEVEL))
+    utils.logging.logInfo(LOG_PREFIX,"initLogging",msg)
 
 if __name__ == "__main__":
     # read config and command line arguments
@@ -326,7 +337,7 @@ if __name__ == "__main__":
 
     # scanner must be invoked after index creation
     index = createIndex(INCLUDE_DIRS,defines,inputFilepath)
-    if not ONLY_GENERATE_GPUFORT_MODULEFILES:
+    if not ONLY_CREATE_GPUFORT_MODULE_FILES:
         stree = scanner.parseFile(inputFilepath,index)    
  
         # extract kernels

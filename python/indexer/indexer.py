@@ -363,7 +363,7 @@ def __parseFile(fileLines,filepath):
            return True
         except ParseBaseException as e: 
            utils.logging.logDebug3(LOG_PREFIX,"__parseFile","did not find expression '{}' in statement '{}'".format(expressionName,currentLine))
-           utils.logging.logDebug4(str(e))
+           utils.logging.logDebug4(LOG_PREFIX,"__parseFile",str(e))
            return False
 
     for currentLine in fileLines:

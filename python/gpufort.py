@@ -214,12 +214,13 @@ def parseCommandLineArguments():
           "translator/translator_options.py.in",
           "fort2hip/fort2hip_options.py.in",
           "indexer/indexer_options.py.in",
-          "indexer/scoper_options.py.in"
+          "indexer/scoper_options.py.in",
           "utils/logging_options.py.in"
         ]
         print("\nCONFIGURABLE GPUFORT OPTIONS (DEFAULT VALUES):")
         for optionsFile in optionsFiles:
             prefix = optionsFile.split("/")[1].split("_")[0]
+            prefix = prefix.replace("logging","utils.logging") # hack
             print("\n---- "+prefix+" -----------------------------")
             with open(gpufortPythonDir+"/"+optionsFile) as f:
                 for line in f.readlines():

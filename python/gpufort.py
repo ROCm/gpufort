@@ -31,8 +31,8 @@ def createIndex(searchDirs,options,filepath):
     global SKIP_GENERATE_GPUFORT_MODULE_FILES
    
     utils.logging.logEnterFunction(LOG_PREFIX,"createIndex",\
-      {"filepath":filepath,"options":" ".join(options},\
-       "searchDirs":" ".join(searchDirs))
+      {"filepath":filepath,"options":" ".join(options),\
+       "searchDirs":" ".join(searchDirs)})
 
     optionsAsStr = " ".join(options)
     
@@ -41,11 +41,11 @@ def createIndex(searchDirs,options,filepath):
         scanFile(filepath,optionsAsStr,index)
         outputDir = os.path.dirname(filepath)
         writeGpufortModuleFiles(index,outputDir)
-   index.clear()
-   loadGpufortModuleFiles(searchDirs,index):
-   
-   utils.logging.logLeaveunction(LOG_PREFIX,"createIndex")
-   return index
+    index.clear()
+    loadGpufortModuleFiles(searchDirs,index)
+    
+    utils.logging.logLeaveunction(LOG_PREFIX,"createIndex")
+    return index
 
 def translateFortranSource(fortranFilepath,stree,index,wrapInIfdef):
     global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
@@ -187,17 +187,17 @@ def parseCommandLineArguments():
     group_cuf = parser.add_argument_group('CUDA Fortran')
     group_cuf.add_argument("--cublas-v2",dest="cublasV2",action="store_true",help="Assume cublas v2 function signatures that use a handle. Overrides config value.")
     # config options: shadow arguments that are actually taken care of by raw argument parsing
-    group_config = parser.add_argument_group_config('Config file')
+    group_config = parser.add_argument_group('Config file')
     group_config.add_argument("--print-config-defaults",dest="printConfigDefaults",action="store_true",help="Print config defaults. "+\
             "Config values can be overriden by providing a config file. A number of config values can be overwritten via this CLI.")
     group_config.add_argument("--config-file",default=None,type=argparse.FileType("r"),dest="configFile",help="Provide a config file.")
     # logging
-    group_logging = parser.add_argument_group_config('Logging')
+    group_logging = parser.add_argument_group('Logging')
     group_logging.add_argument("--log-level",dest="logLevel",required=False,type=str,default="",help="Set log level. Overrides config value.")
     
     parser.set_defaults(printConfigDefaults=False,dumpIndex=False,\
-        wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyTranslationSource=False,
-        onlyGenerateGpufortModuleFiles)
+      wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyTranslationSource=False,\
+      onlyGenerateGpufortModuleFiles=False,skipGenerateGpufortModuleFiles=False)
     args, unknownArgs = parser.parse_known_args()
 
     if args.printConfigDefaults:

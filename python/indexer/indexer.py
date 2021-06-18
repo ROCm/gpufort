@@ -212,13 +212,13 @@ def __parseFile(fileLines,filepath):
     def logLeaveNode_():
         nonlocal currentNode
         nonlocal currentLine
-        utils.logging.logDebug(LOG_PREFIX,".__parseFile","[current-node={0}:{1}] leave {0} '{1}' in statement: '{2}'".format(\
+        utils.logging.logDebug(LOG_PREFIX,"__parseFile","[current-node={0}:{1}] leave {0} '{1}' in statement: '{2}'".format(\
           currentNode._data["kind"],currentNode._data["name"],\
           currentLine))
     def logDetection_(kind):
         nonlocal currentNode
         nonlocal currentLine
-        utils.logging.logDebug2(LOG_PREFIX,".__parseFile","[current-node={}:{}] found {} in statement: '{}'".format(\
+        utils.logging.logDebug2(LOG_PREFIX,"__parseFile","[current-node={}:{}] found {} in statement: '{}'".format(\
                 currentNode._kind,currentNode._name,kind,currentLine))
    
     # direct parsing

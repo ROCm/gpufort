@@ -45,14 +45,18 @@ def checkDestinationDialect(destinationDialect):
         utils.logging.logError(LOG_PREFIX,"checkDestinationDialect",msg)
         sys.exit(SCANNER_ERROR_CODE)
 
-def handleIncludeStatements(fortranFilePath,lines):
+def handleIncludeStatements(fortranFilepath,lines):
     """
-    Copy included files' content into current file.
+    Copy included files' content into currentNode file.
     """
+    global LOG_PREFIX    
+    utils.logging.logEnterFunction(LOG_PREFIX,"handleIncludeStatements",\
+      {"fortranFilepath":fortranFilepath})
+
     def processLine(line):
         if "#include" in line.lower():
             relativeSnippetPath = line.split(' ')[-1].replace('\"','').replace('\'','').strip()
-            snippetPath = os.path.dirname(fortranFilePath) + "/" + relativeSnippetPath
+            snippetPath = os.path.dirname(fortranFilepath) + "/" + relativeSnippetPath
             try:
                 result = ["! {stmt}\n".format(stmt=line)]
                 result.append("! begin gpufort include\n")
@@ -69,218 +73,253 @@ def handleIncludeStatements(fortranFilePath,lines):
     result = []
     for line in lines:
         result += processLine(line)
+    utils.logging.logLeaveFunction(LOG_PREFIX,"handleIncludeStatements")
     return result
 
-# Pyparsing Actions that create scanner tree (ST)
-def parseFile(fortranFilePath,index):
+# Pyparsing actions that create scanner tree (ST)
+def parseFile(fortranFilepath,index):
     """
     Generate an object tree (OT). 
     """
+    utils.logging.logEnterFunction(LOG_PREFIX,"parseFile",
+      {"fortranFilepath":fortranFilepath})
+
     translationEnabled = TRANSLATION_ENABLED_BY_DEFAULT
     
-    current=STRoot()
+    currentNode   = STRoot()
     doLoopCtr     = 0     
     keepRecording = False
-    currentFile   = str(fortranFilePath)
+    currentFile   = str(fortranFilepath)
     currentLineno = -1
     currentLines  = []
     directiveNo   = 0
 
-    def appendIfNotRecording(new):
-        nonlocal current
+    def logDetection_(kind):
+        nonlocal currentNode
+        nonlocal currentLineno
+        nonlocal currentLines
+        utils.logging.logDebug2(LOG_PREFIX,".__parseFile","[current-node={}:{}] found {} in statement: '{}'".format(\
+                currentNode._kind,currentNode._name,kind,currentLineno))
+
+    def appendIfNotRecording_(new):
+        nonlocal currentNode
         nonlocal keepRecording 
         if not keepRecording:
-            current.append(new)
-    def descend(new):
-        nonlocal current
-        current.append(new)
-        current=new
-    def ascend():
-        nonlocal current
+            currentNode.append(new)
+    def descend_(new):
+        nonlocal currentNode
+        nonlocal currentLineno
+        nonlocal currentLines
+        currentNode.append(new)
+        currentNode=new
+        
+        currentNodeId = currentNode._kind
+        if currentNode._name != None:
+            currentNodeId += " '"+currentNode._name+"'"
+        parentNodeId = currentNode._parent._kind
+        if currentNode._parent._name != None:
+            parentNodeId += ":"+currentNode._parent._name
+
+        utils.logging.logDebug(LOG_PREFIX,"parseFile","[current-node={0}] enter {1} in line {2}: '{3}'".format(\
+          parentNodeId,currentNodeId,currentLineno,currentLines[0]))
+    def ascend_():
+        nonlocal currentNode
         nonlocal currentFile
-        assert not current._parent is None, "In file {}: parent of {} is none".format(currentFile,type(current))
-        current = current._parent
+        nonlocal currentLineno
+        nonlocal currentLines
+        assert not currentNode._parent is None, "In file {}: parent of {} is none".format(currentFile,type(currentNode))
+        
+        currentNodeId = currentNode._kind
+        if currentNode._name != None:
+            currentNodeId += " '"+currentNode._name+"'"
+        parentNodeId = currentNode._parent._kind
+        if currentNode._parent._name != None:
+            parentNodeId += ":"+currentNode._parent._name
+        
+        utils.logging.logDebug(LOG_PREFIX,"parseFile","[current-node={0}] leave {1} in line {2}: '{3}'".format(\
+          parentNodeId,currentNodeId,currentLineno,currentLines[0]))
+        currentNode = currentNode._parent
    
     # parse actions
     def Module_visit(tokens):
-        nonlocal current
+        nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
-        new = STModule(tokens[0],current,currentLineno)
+        new = STModule(tokens[0],currentNode,currentLineno)
         new._ignoreInS2STranslation = not translationEnabled
-        descend(new)
+        descend_(new)
     def Program_visit(tokens):
-        nonlocal current
+        nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
-        new = STProgram(tokens[0],current,currentLineno)
+        new = STProgram(tokens[0],currentNode,currentLineno)
         new._ignoreInS2STranslation = not translationEnabled
-        descend(new)
+        descend_(new)
     def Function_visit(tokens):
-        nonlocal current
+        nonlocal currentNode
         nonlocal translationEnabled
         nonlocal keepRecording
         nonlocal index
-        new = STProcedure(tokens[1],index,\
-          parent=current,lineno=currentLineno,lines=currentLines)
+        new = STProcedure(tokens[1],"function",index,\
+          parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         keepRecording = new.keepRecording()
         if keepRecording:
             new._lines = []
-        descend(new)
+        descend_(new)
     def Subroutine_visit(tokens):
-        nonlocal current
+        nonlocal currentNode
         nonlocal translationEnabled
         nonlocal keepRecording
         nonlocal index
-        new = STProcedure(tokens[1],index,\
-          parent=current,lineno=currentLineno,lines=currentLines)
+        new = STProcedure(tokens[1],"subroutine",index,\
+          parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         keepRecording = new.keepRecording()
         if keepRecording:
             new._lines = []
-        descend(new)
+        descend_(new)
     def Structure_leave(tokens):
-        nonlocal current
+        nonlocal currentNode
         nonlocal keepRecording
-        assert type(current) in [STModule,STProgram,STProcedure], "In file {}: line {}: type is {}".format(currentFile, currentLineno, type(current))
-        if type(current) is STProcedure and current.mustBeAvailableOnDevice():
-            current._lines += currentLines
+        assert type(currentNode) in [STModule,STProgram,STProcedure], "In file {}: line {}: type is {}".format(currentFile, currentLineno, type(currentNode))
+        if type(currentNode) is STProcedure and currentNode.mustBeAvailableOnDevice():
+            currentNode._lines += currentLines
             keepRecording = False
-        ascend()
+        ascend_()
     def inKernelsAccRegionAndNotRecording():
-        nonlocal current
+        nonlocal currentNode
         nonlocal keepRecording
         return not keepRecording and\
-            (type(current) is STAccDirective) and\
-            (current.isKernelsDirective())
+            (type(currentNode) is STAccDirective) and\
+            (currentNode.isKernelsDirective())
     def DoLoop_visit(tokens):
         nonlocal keepRecording
         nonlocal translationEnabled
         nonlocal doLoopCtr
         if inKernelsAccRegionAndNotRecording():
-            new = STAccLoopKernel(parent=current,lineno=currentLineno,lines=currentLines)
+            new = STAccLoopKernel(parent=currentNode,lineno=currentLineno,lines=currentLines)
             new._ignoreInS2STranslation = not translationEnabled
             new._lines = []
             new._doLoopCtrMemorised=doLoopCtr
-            descend(new) 
+            descend_(new) 
             keepRecording = True
         doLoopCtr += 1
     def DoLoop_leave(tokens):
-        nonlocal current
+        nonlocal currentNode
         nonlocal currentLines
         nonlocal doLoopCtr
         nonlocal keepRecording
         doLoopCtr -= 1
-        if isinstance(current, STLoopKernel):
-            if keepRecording and current._doLoopCtrMemorised == doLoopCtr:
-                current._lines += currentLines
-                ascend()
+        if isinstance(currentNode, STLoopKernel):
+            if keepRecording and currentNode._doLoopCtrMemorised == doLoopCtr:
+                currentNode._lines += currentLines
+                ascend_()
                 keepRecording = False
     def Declaration(tokens):
-        nonlocal current
+        nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
-        new = STDeclaration(parent=current,lineno=currentLineno,lines=currentLines)
+        new = STDeclaration(parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
-        appendIfNotRecording(new)
+        appendIfNotRecording_(new)
     def Attributes(tokens):
-        nonlocal current
+        nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
-        new = STAttributes(parent=current,lineno=currentLineno,lines=currentLines)
+        new = STAttributes(parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
-        current.append(new)
+        currentNode.append(new)
     def UseStatement(tokens):
-        nonlocal current
+        nonlocal currentNode
         nonlocal currentLineno
         nonlocal currentLines
-        new = STUseStatement(parent=current,lineno=currentLineno,lines=currentLines)
+        new = STUseStatement(parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         new._name = translator.makeFStr(tokens[1]) # just get the name, ignore specific includes
-        appendIfNotRecording(new)
+        appendIfNotRecording_(new)
     def PlaceHolder(tokens):
-        nonlocal current
+        nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
-        new = STPlaceHolder(current,currentLineno,currentLines)
+        new = STPlaceHolder(currentNode,currentLineno,currentLines)
         new._ignoreInS2STranslation = not translationEnabled
-        appendIfNotRecording(new)
+        appendIfNotRecording_(new)
     def NonZeroCheck(tokens):
-        nonlocal current
+        nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
-        new=STNonZeroCheck(parent=current,lineno=currentLineno,lines=currentLines)
+        new=STNonZeroCheck(parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
-        appendIfNotRecording(new)
+        appendIfNotRecording_(new)
     def Allocated(tokens):
-        nonlocal current
+        nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
-        new=STAllocated(parent=current,lineno=currentLineno,lines=currentLines)
+        new=STAllocated(parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
-        appendIfNotRecording(new)
+        appendIfNotRecording_(new)
     def Allocate(tokens):
-        nonlocal current
+        nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
-        new=STAllocate(parent=current,lineno=currentLineno,lines=currentLines)
+        new=STAllocate(parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
-        appendIfNotRecording(new)
+        appendIfNotRecording_(new)
     def Deallocate(tokens):
-        nonlocal current
+        nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
         # TODO filter variable, replace with hipFree
-        new = STDeallocate(parent=current,lineno=currentLineno,lines=currentLines)
+        new = STDeallocate(parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
-        appendIfNotRecording(new)
+        appendIfNotRecording_(new)
     def Memcpy(tokens):
-        nonlocal current
+        nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
-        new = STMemcpy(parent=current,lineno=currentLineno,lines=currentLines)
+        new = STMemcpy(parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
-        appendIfNotRecording(new)
+        appendIfNotRecording_(new)
     def CudaLibCall(tokens):
         #TODO scan for cudaMemcpy calls
-        nonlocal current
+        nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
         nonlocal keepRecording
         cudaApi, args, finishesOnFirstLine = tokens 
-        if not type(current) in [STCudaLibCall,STCudaKernelCall]:
-            new = STCudaLibCall(parent=current,lineno=currentLineno,lines=currentLines) 
+        if not type(currentNode) in [STCudaLibCall,STCudaKernelCall]:
+            new = STCudaLibCall(parent=currentNode,lineno=currentLineno,lines=currentLines) 
             new._ignoreInS2STranslation = not translationEnabled
             new.cudaApi  = cudaApi
             #print("finishesOnFirstLine={}".format(finishesOnFirstLine))
             assert type(new._parent) in [STModule,STProcedure,STProgram], type(new._parent)
             new._lines = currentLines
-            appendIfNotRecording(new)
+            appendIfNotRecording_(new)
     def CudaKernelCall(tokens):
-        nonlocal current
+        nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentLines
         nonlocal keepRecording
         kernelName, kernelLaunchArgs, args, finishesOnFirstLine = tokens 
-        assert type(current) in [STModule,STProcedure,STProgram], "type is: "+str(type(current))
-        new = STCudaKernelCall(parent=current,lineno=currentLineno,lines=currentLines)
+        assert type(currentNode) in [STModule,STProcedure,STProgram], "type is: "+str(type(currentNode))
+        new = STCudaKernelCall(parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         new._lines = currentLines
-        appendIfNotRecording(new)
+        appendIfNotRecording_(new)
     def AccDirective(tokens):
-        nonlocal current
+        nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentLines
         nonlocal currentLineno
@@ -288,46 +327,47 @@ def parseFile(fortranFilePath,index):
         nonlocal keepRecording
         nonlocal doLoopCtr
         nonlocal directiveNo
-        new = STAccDirective(current,currentLineno,currentLines,directiveNo)
+        new = STAccDirective(currentNode,currentLineno,currentLines,directiveNo)
         new._ignoreInS2STranslation = not translationEnabled
         directiveNo = directiveNo + 1
-        msg = "scanner: {}: found acc construct:\t'{}'".format(currentLineno,singleLineStatement)
-        utils.logging.logDebug2(LOG_PREFIX,"AccDirective",msg)
+        #msg = "scanner: {}: found acc construct:\t'{}'".format(currentLineno,singleLineStatement)
+        #utils.logging.logDebug2(LOG_PREFIX,"AccDirective",msg)
         # if end directive ascend
         if new.isEndDirective() and\
-           type(current) is STAccDirective and current.isKernelsDirective():
-            ascend()
-            current.append(new)
+           type(currentNode) is STAccDirective and currentNode.isKernelsDirective():
+            ascend_()
+            currentNode.append(new)
         # descend in constructs or new node
         elif new.isParallelLoopDirective() or new.isKernelsLoopDirective() or\
              (not new.isEndDirective() and new.isParallelDirective()):
-            new = STAccLoopKernel(current,currentLineno,[],directiveNo)
+            new = STAccLoopKernel(currentNode,currentLineno,[],directiveNo)
+            new._kind = "acc-compute-construct"
             new._ignoreInS2STranslation = not translationEnabled
             new._doLoopCtrMemorised=doLoopCtr
-            descend(new)  # descend also appends 
+            descend_(new)  # descend also appends 
             keepRecording = True
         elif not new.isEndDirective() and new.isKernelsDirective():
-            descend(new)  # descend also appends 
+            descend_(new)  # descend also appends 
             #print("descending into kernels or parallel construct")
         else:
            # append new directive
-           appendIfNotRecording(new)
+           appendIfNotRecording_(new)
     def CufLoopKernel(tokens):
         nonlocal doLoopCtr
-        nonlocal current
+        nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
         nonlocal keepRecording
         nonlocal directiveNo
-        new = STCufLoopKernel(current,currentLineno,[],directiveNo)
+        new = STCufLoopKernel(currentNode,currentLineno,[],directiveNo)
         new._ignoreInS2STranslation = not translationEnabled
         new._doLoopCtrMemorised=doLoopCtr
         directiveNo += 1
-        descend(new) 
+        descend_(new) 
         keepRecording = True
     def Assignment(tokens):
-        nonlocal current
+        nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentLines
         nonlocal currentLineno
@@ -336,9 +376,9 @@ def parseFile(fortranFilePath,index):
             parseResult = translator.assignmentBegin.parseString(singleLineStatement)
             lvalue = translator.findFirst(parseResult,translator.TTLValue)
             if not lvalue is None and lvalue.hasMatrixRangeArgs():
-                new  = STAccLoopKernel(parent=current,lineno=currentLineno,lines=currentLines)
+                new  = STAccLoopKernel(parent=currentNode,lineno=currentLineno,lines=currentLines)
                 new._ignoreInS2STranslation = not translationEnabled
-                appendIfNotRecording(new)
+                appendIfNotRecording_(new)
     def GpufortControl(tokens):
         nonlocal singleLineStatement
         nonlocal translationEnabled
@@ -383,8 +423,8 @@ def parseFile(fortranFilePath,index):
     # GPUFORT control
     gpufort_control.setParseAction(GpufortControl)
 
-    currentFile = str(fortranFilePath)
-    current._children.clear()
+    currentFile = str(fortranFilepath)
+    currentNode._children.clear()
     def scanString(expressionName,expression):
         """
         These expressions might be hidden behind a single-line if.
@@ -422,9 +462,9 @@ def parseFile(fortranFilePath,index):
     
     pDirectiveContinuation = re.compile(r"\n[!c\*]\$\w+\&")
     pContinuation          = re.compile(r"(\&\s*\n)|(\n[!c\*]\$\w+\&)")
-    with open(fortranFilePath,"r") as fortranFile:
+    with open(fortranFilepath,"r") as fortranFile:
         # 1. Handle all include statements
-        lines = handleIncludeStatements(fortranFilePath,fortranFile.readlines())
+        lines = handleIncludeStatements(fortranFilepath,fortranFile.readlines())
         # 2. collapse multi-line statements (&)
         buffering = False
         lineStarts = []
@@ -473,20 +513,24 @@ def parseFile(fortranFilePath,index):
                 
                 if keepRecording:
                    try:
-                      current._lines += currentLines
+                      currentNode._lines += currentLines
                    except Exception as e:
                       utils.logging.logError(LOG_PREFIX,"parseFile","While parsing file {}".format(currentFile))
                       raise e
-    assert type(current) is STRoot
-    return current
+    assert type(currentNode) is STRoot
+    utils.logging.logLeaveFunction(LOG_PREFIX,"parseFile")
+    return currentNode
 
 def postprocessAcc(stree,hipModuleName):
     """
     Add use statements as well as handles plus their creation and destruction for certain
     math libraries.
     """
+    global LOG_PREFIX
     global DESTINATION_DIALECT
     global RUNTIME_MODULE_NAMES
+    
+    utils.logging.logEnterFunction(LOG_PREFIX,"postprocessAcc",{"hipModuleName":hipModuleName})
     
     # acc detection
     directives = stree.findAll(filter=lambda node: isinstance(node,STAccDirective), recursively=True)
@@ -497,13 +541,16 @@ def postprocessAcc(stree,hipModuleName):
              accRuntimeModuleName = RUNTIME_MODULE_NAMES[DESTINATION_DIALECT]
              if accRuntimeModuleName != None and len(accRuntimeModuleName):
                  stnode._preamble.add("{0}use iso_c_binding\n{0}use {1}\n".format(indent,accRuntimeModuleName))
+    utils.logging.logLeaveFunction(LOG_PREFIX,"postprocessAcc")
     
 def postprocessCuf(stree,hipModuleName):
     """
     Add use statements as well as handles plus their creation and destruction for certain
     math libraries.
     """
+    global LOG_PREFIX
     global CUBLAS_VERSION 
+    utils.logging.logEnterFunction(LOG_PREFIX,"postprocessCuf",{"hipModuleName":hipModuleName})
     # cublas_v1 detection
     if CUBLAS_VERSION == 1:
         def hasCublasCall(child):
@@ -523,12 +570,14 @@ def postprocessCuf(stree,hipModuleName):
             last = localCublasCalls[-1]
             indent = " "*(len(last.lines()[0]) - len(last.lines()[0].lstrip()))
             last._epilog.add("{0}hipblasDestroy(hipblasHandle)\n".format(indent))
+    utils.logging.logLeaveFunction(LOG_PREFIX,"postprocessCuf")
 
 def postprocess(stree,hipModuleName,index):
     """
     Add use statements as well as handles plus their creation and destruction for certain
     math libraries.
     """
+    utils.logging.logEnterFunction(LOG_PREFIX,"postprocess",{"hipModuleName":hipModuleName})
     if "hip" in DESTINATION_DIALECT or len(KERNELS_TO_CONVERT_TO_HIP):
         # insert use kernel statements at appropriate point
         def isLoopKernel(child):
@@ -546,6 +595,6 @@ def postprocess(stree,hipModuleName,index):
    
     if "cuf" in SOURCE_DIALECTS:
          postprocessCuf(stree,hipModuleName)
-    
     if "acc" in SOURCE_DIALECTS:
          postprocessAcc(stree,hipModuleName)
+    utils.logging.logLeaveFunction(LOG_PREFIX,"postprocess")

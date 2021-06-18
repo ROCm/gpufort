@@ -8,11 +8,12 @@ exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "logging_opti
 
 __LOG_LEVEL        = "WARNING" # should only be modified by initLogging
 __LOG_LEVEL_AS_INT = getattr(logging,__LOG_LEVEL)
+__LOG_FORMAT       = "%(levelname)s:%(message)s"
 
 ERR_UTILS_LOGGING_UNSUPPORTED_LOG_LEVEL  = 91001
 ERR_UTILS_LOGGING_LOG_DIR_DOES_NOT_EXIST = 91002
 
-def initLogging(logfileBaseName,logLevel):
+def initLogging(logfileBaseName,logFormat,logLevel):
     """
     Init the logging infrastructure.
 
@@ -24,9 +25,10 @@ def initLogging(logfileBaseName,logLevel):
     """
     global __LOG_LEVEL
     global __LOG_LEVEL_AS_INT
+    global __LOG_FORMAT
     global LOG_DIR
     global LOG_DIR_CREATE
-    global LOG_FORMAT
+    __LOG_FORMAT = logFormat
 
     # add custom log levels:
     registerAdditionalDebugLevels()
@@ -49,7 +51,7 @@ def initLogging(logfileBaseName,logLevel):
         logfilePath="{0}/{1}".format(logDir,logfileBaseName)
         __LOG_LEVEL_AS_INT = getattr(logging,logLevel.upper(),getattr(logging,"WARNING"))
         __LOG_LEVEL        = logLevel
-        logging.basicConfig(format=LOG_FORMAT,filename=logfilePath,filemode="w", level=__LOG_LEVEL_AS_INT)
+        logging.basicConfig(format=logFormat,filename=logfilePath,filemode="w", level=__LOG_LEVEL_AS_INT)
     except Exception as e:
         msg = "directoy for storing log files '{}' cannot be accessed".format(logDir)
         print("ERROR: "+msg,file=sys.stderr)
@@ -117,6 +119,10 @@ def registerAdditionalDebugLevels():
 def __makeMessage(prefix,funcName,rawMsg):
     return prefix+"."+funcName+"(...):\t"+rawMsg
 
+def __printMessage(levelname,message):
+    print(__LOG_FORMAT.replace("%(levelname)s",levelname).\
+      replace("%(message)s",message),file=sys.stderr)
+
 def logInfo(prefix,funcName,rawMsg):
     global __LOG_LEVEL_AS_INT
     global VERBOSE
@@ -126,7 +132,7 @@ def logInfo(prefix,funcName,rawMsg):
     if LOG_FILTER == None or re.search(LOG_FILTER,msg):
         logging.getLogger("").info(msg)
         if VERBOSE and __LOG_LEVEL_AS_INT <= getattr(logging,"INFO"):
-            print("INFO: "+msg, file=sys.stderr)
+            __printMessage("INFO",msg)
 
 def logError(prefix,funcName,rawMsg):
     global VERBOSE
@@ -135,7 +141,7 @@ def logError(prefix,funcName,rawMsg):
     msg = __makeMessage(prefix,funcName,rawMsg)
     if LOG_FILTER == None or re.search(LOG_FILTER,msg):
         logging.getLogger("").error(msg)
-        print("ERROR: "+msg, file=sys.stderr)
+        __printMessage("ERROR",msg)
 
 def logWarning(prefix,funcName,rawMsg):
     global __LOG_LEVEL_AS_INT
@@ -145,7 +151,7 @@ def logWarning(prefix,funcName,rawMsg):
     msg = __makeMessage(prefix,funcName,rawMsg)
     if LOG_FILTER == None or re.search(LOG_FILTER,msg):
         logging.getLogger("").warning(msg)
-        print("WARNING: "+msg, file=sys.stderr)
+        __printMessage("WARNING",msg)
 
 def logDebug(prefix,funcName,rawMsg,debugLevel=1):
     global __LOG_LEVEL_AS_INT
@@ -167,7 +173,8 @@ def logDebug(prefix,funcName,rawMsg,debugLevel=1):
         else:
             assert False, "debug level not supported"
         if VERBOSE and __LOG_LEVEL_AS_INT <= getattr(logging,"DEBUG")-debugLevel+1:
-            print("DEBUG"+str(debugLevel)+": "+msg,file=sys.stderr)
+            levelname =  "DEBUG" if ( debugLevel == 1 ) else ("DEBUG"+str(debugLevel))
+            __printMessage(levelname,msg)
 
 def logDebug1(prefix,funcName,msg):
     logDebug(prefix,funcName,msg,1)

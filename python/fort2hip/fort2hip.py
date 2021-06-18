@@ -634,7 +634,8 @@ def createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename
 
     if (len(loopKernels) or len(deviceProcedures)):
         utils.logging.logDebug2(LOG_PREFIX,"createHipKernels",\
-          "detected loop kernels: {}; detected device subprograms {}".format(len(loopKernels),len(deviceProcedures))
+          "detected loop kernels: {}; detected device subprograms {}".format(\
+          len(loopKernels),len(deviceProcedures)))
         
         __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext)
         __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext)

@@ -291,13 +291,12 @@ def parseCommandLineArguments():
 
 def initLogging(inputFilepath):
     global LOG_LEVEL
-    global LOG_FORMAT_PATTERN
+    global LOG_FORMAT
 
     inputFilepathHash = hashlib.md5(inputFilepath.encode()).hexdigest()[0:8]
     logfileBaseName = "log-{}.log".format(inputFilepathHash)
     
-    utils.logging.LOG_FORMAT = LOG_FORMAT_PATTERN.format(inputFilepath)
-    logfilepath = utils.logging.initLogging(logfileBaseName,LOG_LEVEL)
+    logfilepath = utils.logging.initLogging(logfileBaseName,LOG_FORMAT,LOG_LEVEL)
  
     msg = "input file: {0} (log id: {1})".format(inputFilepath,inputFilepathHash)
     utils.logging.logInfo(LOG_PREFIX,"initLogging",msg)

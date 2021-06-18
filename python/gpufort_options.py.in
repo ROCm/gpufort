@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 # logging
-LOG_LEVEL          = "warning"
-LOG_FORMAT_PATTERN = "%(levelname)s:{0}: %(message)s"
-LOG_PREFIX         = "gpufort"
+LOG_LEVEL  = "warning"
+LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
+LOG_PREFIX = "gpufort"
 
 ONLY_CREATE_GPUFORT_MODULE_FILES = False # Only create and write GPUFORT module files and no other output.
 SKIP_CREATE_GPUFORT_MODULE_FILES = False # Skip creating and writing GPUFORT module files.

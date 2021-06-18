@@ -40,6 +40,7 @@ class STNode:
         self._lineno                 = lineno
         self._lines                  = lines
         self._name                   = None
+        self._kind                   = None
         self._children               = []
         self._parent                 = parent
         self._ignoreInS2STranslation = False 
@@ -170,6 +171,7 @@ class STModule(STNode,Tagged):
     def __init__(self,name,parent,lineno):
         STNode.__init__(self,parent,lineno)
         self._name = name.lower()
+        self._kind = "module"
     def considerInS2STranslation(self,indexHints=[]):
         return False
 
@@ -177,15 +179,13 @@ class STProgram(STNode,Tagged):
     def __init__(self,name,parent,lineno):
         STNode.__init__(self,parent,lineno)
         self._name = name.lower()
+        self._kind = "program"
     def considerInS2STranslation(self,indexHints=[]):
         return False
 
 class STUseStatement(STNode):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
-        self._name = None
-    def name(self):
-        return self._name
     def gpufortFStr(self,indexHints=[],indent=""):
         indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
         result = "".join(self._lines).lower()
@@ -219,9 +219,10 @@ class STPlaceHolder(STNode):
                (len(self._preamble) or len(self._epilog))
 
 class STProcedure(STNode,Tagged):
-    def __init__(self,name,index,parent,lineno,lines):
+    def __init__(self,name,kind,index,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
-        self._name        = name
+        self._name = name
+        self._kind = kind
         # check attributes
         self._indexRecord,_ = scoper.searchIndexForSubprogram(index,self._parent.tag(),name)
     def hasAttribute(self,attribute):

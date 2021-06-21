@@ -56,7 +56,7 @@ def initLogging(logfileBaseName,logFormat,logLevel):
         __LOG_LEVEL        = logLevel
         logging.basicConfig(format=logFormat,filename=logfilePath,filemode="w", level=__LOG_LEVEL_AS_INT)
     except Exception as e:
-        msg = "directoy for storing log files '{}' cannot be accessed".format(logDir)
+        msg = "directory for storing log files '{}' cannot be accessed".format(logDir)
         print("ERROR: "+msg,file=sys.stderr)
         raise e
         sys.exit(ERR_UTILS_LOGGING_LOG_DIR_DOES_NOT_EXIST)

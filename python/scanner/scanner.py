@@ -98,8 +98,8 @@ def parseFile(fortranFilepath,index):
         nonlocal currentNode
         nonlocal currentLineno
         nonlocal currentLines
-        utils.logging.logDebug2(LOG_PREFIX,".__parseFile","[current-node={}:{}] found {} in statement: '{}'".format(\
-                currentNode._kind,currentNode._name,kind,currentLineno))
+        utils.logging.logDebug2(LOG_PREFIX,".__parseFile","[current-node={}:{}] found {} in line {}: '{}'".format(\
+                currentNode._kind,currentNode._name,kind,currentLineno+1,currentLines[0]))
 
     def appendIfNotRecording_(new):
         nonlocal currentNode
@@ -121,7 +121,7 @@ def parseFile(fortranFilepath,index):
             parentNodeId += ":"+currentNode._parent._name
 
         utils.logging.logDebug(LOG_PREFIX,"parseFile","[current-node={0}] enter {1} in line {2}: '{3}'".format(\
-          parentNodeId,currentNodeId,currentLineno,currentLines[0]))
+          parentNodeId,currentNodeId,currentLineno+1,currentLines[0]))
     def ascend_():
         nonlocal currentNode
         nonlocal currentFile
@@ -137,7 +137,7 @@ def parseFile(fortranFilepath,index):
             parentNodeId += ":"+currentNode._parent._name
         
         utils.logging.logDebug(LOG_PREFIX,"parseFile","[current-node={0}] leave {1} in line {2}: '{3}'".format(\
-          parentNodeId,currentNodeId,currentLineno,currentLines[0]))
+          parentNodeId,currentNodeId,currentLineno+1,currentLines[0]))
         currentNode = currentNode._parent
    
     # parse actions
@@ -146,6 +146,7 @@ def parseFile(fortranFilepath,index):
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
+        logDetection_("module")
         new = STModule(tokens[0],currentNode,currentLineno)
         new._ignoreInS2STranslation = not translationEnabled
         descend_(new)
@@ -154,6 +155,7 @@ def parseFile(fortranFilepath,index):
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
+        logDetection_("program")
         new = STProgram(tokens[0],currentNode,currentLineno)
         new._ignoreInS2STranslation = not translationEnabled
         descend_(new)
@@ -162,6 +164,7 @@ def parseFile(fortranFilepath,index):
         nonlocal translationEnabled
         nonlocal keepRecording
         nonlocal index
+        logDetection_("function")
         new = STProcedure(tokens[1],"function",index,\
           parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
@@ -174,6 +177,7 @@ def parseFile(fortranFilepath,index):
         nonlocal translationEnabled
         nonlocal keepRecording
         nonlocal index
+        logDetection_("subroutine")
         new = STProcedure(tokens[1],"subroutine",index,\
           parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
@@ -184,6 +188,7 @@ def parseFile(fortranFilepath,index):
     def Structure_leave(tokens):
         nonlocal currentNode
         nonlocal keepRecording
+        logDetection_("end of module/program/function/subroutine")
         assert type(currentNode) in [STModule,STProgram,STProcedure], "In file {}: line {}: type is {}".format(currentFile, currentLineno, type(currentNode))
         if type(currentNode) is STProcedure and currentNode.mustBeAvailableOnDevice():
             currentNode._lines += currentLines
@@ -199,6 +204,7 @@ def parseFile(fortranFilepath,index):
         nonlocal keepRecording
         nonlocal translationEnabled
         nonlocal doLoopCtr
+        logDetection_("do loop")
         if inKernelsAccRegionAndNotRecording():
             new = STAccLoopKernel(parent=currentNode,lineno=currentLineno,lines=currentLines)
             new._ignoreInS2STranslation = not translationEnabled
@@ -212,6 +218,7 @@ def parseFile(fortranFilepath,index):
         nonlocal currentLines
         nonlocal doLoopCtr
         nonlocal keepRecording
+        logDetection_("end of do loop")
         doLoopCtr -= 1
         if isinstance(currentNode, STLoopKernel):
             if keepRecording and currentNode._doLoopCtrMemorised == doLoopCtr:
@@ -223,6 +230,7 @@ def parseFile(fortranFilepath,index):
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
+        logDetection_("declaration")
         new = STDeclaration(parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         appendIfNotRecording_(new)
@@ -231,6 +239,7 @@ def parseFile(fortranFilepath,index):
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
+        logDetection_("attributes statement")
         new = STAttributes(parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         currentNode.append(new)
@@ -238,6 +247,7 @@ def parseFile(fortranFilepath,index):
         nonlocal currentNode
         nonlocal currentLineno
         nonlocal currentLines
+        logDetection_("use statement")
         new = STUseStatement(parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         new._name = translator.makeFStr(tokens[1]) # just get the name, ignore specific includes
@@ -247,6 +257,7 @@ def parseFile(fortranFilepath,index):
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
+        logDetection_("placeholder")
         new = STPlaceHolder(currentNode,currentLineno,currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         appendIfNotRecording_(new)
@@ -255,6 +266,7 @@ def parseFile(fortranFilepath,index):
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
+        logDetection_("non-zero check")
         new=STNonZeroCheck(parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         appendIfNotRecording_(new)
@@ -263,6 +275,7 @@ def parseFile(fortranFilepath,index):
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
+        logDetection_("allocated statement")
         new=STAllocated(parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         appendIfNotRecording_(new)
@@ -271,6 +284,7 @@ def parseFile(fortranFilepath,index):
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
+        logDetection_("allocate statement")
         new=STAllocate(parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         appendIfNotRecording_(new)
@@ -279,6 +293,7 @@ def parseFile(fortranFilepath,index):
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
+        logDetection_("deallocate statement")
         # TODO filter variable, replace with hipFree
         new = STDeallocate(parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
@@ -288,6 +303,7 @@ def parseFile(fortranFilepath,index):
         nonlocal translationEnabled
         nonlocal currentLineno
         nonlocal currentLines
+        logDetection_("memcpy")
         new = STMemcpy(parent=currentNode,lineno=currentLineno,lines=currentLines)
         new._ignoreInS2STranslation = not translationEnabled
         appendIfNotRecording_(new)
@@ -298,6 +314,7 @@ def parseFile(fortranFilepath,index):
         nonlocal currentLineno
         nonlocal currentLines
         nonlocal keepRecording
+        logDetection_("CUDA API call")
         cudaApi, args, finishesOnFirstLine = tokens 
         if not type(currentNode) in [STCudaLibCall,STCudaKernelCall]:
             new = STCudaLibCall(parent=currentNode,lineno=currentLineno,lines=currentLines) 
@@ -312,6 +329,7 @@ def parseFile(fortranFilepath,index):
         nonlocal translationEnabled
         nonlocal currentLines
         nonlocal keepRecording
+        logDetection_("CUDA kernel call")
         kernelName, kernelLaunchArgs, args, finishesOnFirstLine = tokens 
         assert type(currentNode) in [STModule,STProcedure,STProgram], "type is: "+str(type(currentNode))
         new = STCudaKernelCall(parent=currentNode,lineno=currentLineno,lines=currentLines)
@@ -327,6 +345,7 @@ def parseFile(fortranFilepath,index):
         nonlocal keepRecording
         nonlocal doLoopCtr
         nonlocal directiveNo
+        logDetection_("OpenACC directive")
         new = STAccDirective(currentNode,currentLineno,currentLines,directiveNo)
         new._ignoreInS2STranslation = not translationEnabled
         directiveNo = directiveNo + 1
@@ -360,6 +379,7 @@ def parseFile(fortranFilepath,index):
         nonlocal currentLines
         nonlocal keepRecording
         nonlocal directiveNo
+        logDetection_("CUDA Fortran loop kernel directive")
         new = STCufLoopKernel(currentNode,currentLineno,[],directiveNo)
         new._ignoreInS2STranslation = not translationEnabled
         new._doLoopCtrMemorised=doLoopCtr
@@ -372,6 +392,7 @@ def parseFile(fortranFilepath,index):
         nonlocal currentLines
         nonlocal currentLineno
         nonlocal singleLineStatement
+        logDetection_("assignment")
         if inKernelsAccRegionAndNotRecording():
             parseResult = translator.assignmentBegin.parseString(singleLineStatement)
             lvalue = translator.findFirst(parseResult,translator.TTLValue)
@@ -382,6 +403,7 @@ def parseFile(fortranFilepath,index):
     def GpufortControl(tokens):
         nonlocal singleLineStatement
         nonlocal translationEnabled
+        logDetection_("gpufortran control statement")
         if "on" in singleLineStatement:
             translationEnabled = True
         elif "off" in singleLineStatement:

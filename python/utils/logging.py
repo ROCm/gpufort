@@ -13,6 +13,9 @@ __LOG_FORMAT       = "%(levelname)s:%(message)s"
 ERR_UTILS_LOGGING_UNSUPPORTED_LOG_LEVEL  = 91001
 ERR_UTILS_LOGGING_LOG_DIR_DOES_NOT_EXIST = 91002
 
+def shutdown():
+    logging.shutdown()
+
 def initLogging(logfileBaseName,logFormat,logLevel):
     """
     Init the logging infrastructure.

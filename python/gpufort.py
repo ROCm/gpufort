@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
-import os, sys, traceback
-import subprocess
-import copy, shutil
+import os, sys
 import argparse
 import hashlib
-from collections.abc import Iterable # < py38
-import pprint    
-import logging
-
-import multiprocessing
+import cProfile,pstats,io
 
 # local imports
 import addtoplevelpath
@@ -300,7 +294,7 @@ def initLogging(inputFilepath):
  
     msg = "input file: {0} (log id: {1})".format(inputFilepath,inputFilepathHash)
     utils.logging.logInfo(LOG_PREFIX,"initLogging",msg)
-    msg = "log file:   {0} (log level: {1}) ".format(logfilepath,logging.getLevelName(LOG_LEVEL))
+    msg = "log file:   {0} (log level: {1}) ".format(logfilepath,LOG_LEVEL)
     utils.logging.logInfo(LOG_PREFIX,"initLogging",msg)
 
 if __name__ == "__main__":
@@ -336,6 +330,10 @@ if __name__ == "__main__":
         sys.exit(2)
 
     # scanner must be invoked after index creation
+    if ENABLE_PROFILING:
+        profiler = cProfile.Profile()
+        profiler.enable()
+    #
     index = createIndex(INCLUDE_DIRS,defines,inputFilepath)
     if not ONLY_CREATE_GPUFORT_MODULE_FILES:
         stree = scanner.parseFile(inputFilepath,index)    
@@ -353,5 +351,14 @@ if __name__ == "__main__":
         # modify original file
         if not ONLY_GENERATE_KERNELS:
             translateFortranSource(inputFilepath,stree,index,WRAP_IN_IFDEF) 
+    #
+    if ENABLE_PROFILING:
+        profiler.disable() 
+        s = io.StringIO()
+        sortby = 'cumulative'
+        stats = pstats.Stats(profiler, stream=s).sort_stats(sortby)
+        stats.print_stats(PROFILING_OUTPUT_NUM_FUNCTIONS)
+        print(s.getvalue())
+
     # shutdown logging
-    logging.shutdown()
+    utils.logging.shutdown()

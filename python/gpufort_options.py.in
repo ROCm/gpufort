@@ -2,7 +2,7 @@
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 # logging
 LOG_LEVEL  = "warning"
-LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
+LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s [file:%(filename)s]"
 LOG_PREFIX = "gpufort"
 
 ENABLE_PROFILING               = False

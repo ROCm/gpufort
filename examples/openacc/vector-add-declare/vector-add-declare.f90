@@ -5,11 +5,13 @@ program main
   integer, parameter :: N = 1000
   integer :: i
   integer(4) :: x(N), y(N), y_exact(N)
-  !$acc declare copy(x,y)
+  !$acc declare create(x,y)
 
   do i = 1, N
     y_exact(i) = 3
   end do
+
+  !$acc update 
 
   !$acc parallel loop
   do i = 1, N

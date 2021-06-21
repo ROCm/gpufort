@@ -36,7 +36,8 @@ def __readFortranFile(filepath,preprocOptions):
     global pFilter
     global pAntiFilter
     global pContinuation
-    
+    global LOG_PREFIX
+
     utils.logging.logEnterFunction(LOG_PREFIX,"__readFortranFile",{"filepath":filepath,"preprocOptions":preprocOptions})
     
     def considerLine(strippedLine):
@@ -252,9 +253,11 @@ def __parseFile(fileLines,filepath):
         logEnterNode_()
     #host|device,name,[args]
     def SubroutineStart(tokens):
+        global LOG_PREFIX
+        nonlocal currentLine
         nonlocal currentNode
         logDetection_("start of subroutine")
-        if currentNode._kind != "root":
+        if currentNode._kind in ["module","program","subroutine","function"]:
             name = tokens[1]
             subroutine = createBaseEntry_("subroutine",name,filepath)
             subroutine["attributes"]  = [q.lower() for q in tokens[0]]
@@ -262,11 +265,16 @@ def __parseFile(fileLines,filepath):
             currentNode._data["subprograms"].append(subroutine)
             currentNode = __Node("subroutine",name,data=subroutine,parent=currentNode)
             logEnterNode_()
+        else:
+            utils.logging.logWarning(LOG_PREFIX,"__parseFile","found subroutine in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
+              format(currentLine,currentNode._kind))
     #host|device,name,[args],result
     def FunctionStart(tokens):
+        global LOG_PREFIX
+        nonlocal currentLine
         nonlocal currentNode
         logDetection_("start of function")
-        if currentNode._kind != "root":
+        if currentNode._kind in ["module","program","subroutine","function"]:
             name = tokens[1]
             function = createBaseEntry_("function",name,filepath)
             function["attributes"]  = [q.lower() for q in tokens[0]]
@@ -275,19 +283,28 @@ def __parseFile(fileLines,filepath):
             currentNode._data["subprograms"].append(function)
             currentNode = __Node("function",name,data=function,parent=currentNode)
             logEnterNode_()
+        else:
+            utils.logging.logWarning(LOG_PREFIX,"__parseFile","found function in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
+              format(currentLine,currentNode._kind))
     def TypeStart(tokens):
+        global LOG_PREFIX
+        nonlocal currentLine
         nonlocal currentNode
         logDetection_("start of type")
-        if currentNode._kind != "root":
+        if currentNode._kind in ["module","program"]:
             assert len(tokens) == 2
             name = tokens[1]
             derivedType = {}
             derivedType["name"]      = name
             derivedType["kind"]      = "type"
             derivedType["variables"] = []
+            derivedType["types"] = []
             currentNode._data["types"].append(derivedType)
             currentNode = __Node("type",name,data=derivedType,parent=currentNode)
             logEnterNode_()
+        else:
+            utils.logging.logWarning(LOG_PREFIX,"__parseFile","found derived type in '{}' but parent is {}; expected program or module parent.".\
+                    format(currentLine,currentNode._kind))
     def Use(tokens):
         nonlocal currentNode
         logDetection_("use statement")

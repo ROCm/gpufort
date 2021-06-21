@@ -1,6 +1,6 @@
 fort2hip.CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140, BinPackArguments: false, BinPackParameters: false}\""
 
-LOG_DIR="log"
+LOG_DIR="./log"
 
 LOG_LEVEL="warning"
 

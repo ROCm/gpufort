@@ -136,7 +136,7 @@ def __searchScopeForTypeOrSubprogram(scope,entryName,entryType,emptyRecord):
 
     result = next((entry for entry in scopeEntities if entry["name"] == entryName),None)  
     if result is None:
-        msg = "no entry found for {} '{}'.".format(entryType,entryName)
+        msg = "no entry found for {} '{}'.".format(entryType[:-1],entryName)
         if ERROR_HANDLING  == "strict":
             utils.logging.logError(LOG_PREFIX,"__searchScopeForTypeOrSubprogram",msg) 
             sys.exit(ERR_SCOPER_LOOKUP_FAILED)
@@ -145,7 +145,7 @@ def __searchScopeForTypeOrSubprogram(scope,entryName,entryType,emptyRecord):
         return emptyRecord, False
     else:
         utils.logging.logDebug2(LOG_PREFIX,"__searchScopeForTypeOrSubprogram",\
-          "entry found for {} '{}'".format(entryType,entryName)) 
+          "entry found for {} '{}'".format(entryType[:-1],entryName)) 
         utils.logging.logLeaveFunction(LOG_PREFIX,"__searchScopeForTypeOrSubprogram")
         return result, True
 
@@ -219,6 +219,12 @@ def createScope(index,tag):
             utils.logging.logDebug(LOG_PREFIX,"createScope",\
               "create scope for tag '{}'".format(tag))
             currentRecordList = index
+            # add top-level subprograms to scope of top-level entry
+            newScope["subprograms"] += [indexEntry for indexEntry in index\
+                    if indexEntry["kind"] in ["subroutine","function"] and\
+                       indexEntry["name"] != tagTokens[0]]
+            utils.logging.logDebug(LOG_PREFIX,"createScope",\
+              "add {} top-level subprograms to scope".format(len(newScope["subprograms"])))
         begin = nestingLevel + 1 # 
         
         for d in range(begin,len(tagTokens)):

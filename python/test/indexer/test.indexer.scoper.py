@@ -8,11 +8,13 @@ import translator.translator as translator
 import indexer.scoper as scoper
 import utils.logging
 
-utils.logging.VERBOSE = False
+utils.logging.VERBOSE = True
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
-utils.logging.initLogging("log.log",LOG_FORMAT,"warning")
+utils.logging.initLogging("log.log",LOG_FORMAT,"debug")
 
 gfortranOptions="-DCUDA"
+
+scoper.ERROR_HANDLING="strict"
 
 # scan index
 index = []
@@ -54,10 +56,11 @@ class TestScoper(unittest.TestCase):
         scoper.SCOPES.clear()
     def test_4_scoper_search_for_subprograms(self):
         func2 = scoper.searchIndexForSubprogram(index,"test1","func2")
-        scoper.SCOPES.clear()
         func3 = scoper.searchIndexForSubprogram(index,"nested_subprograms:func2","func3")
-        scoper.SCOPES.clear()
         type1 = scoper.searchIndexForType(index,"complex_types","type1")
+        scoper.SCOPES.clear()
+    def test_5_scoper_search_for_top_level_subprograms(self):
+        func2 = scoper.searchIndexForSubprogram(index,"test1","top_level_subroutine")
         scoper.SCOPES.clear()
 
 if __name__ == '__main__':

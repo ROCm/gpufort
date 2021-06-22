@@ -296,12 +296,13 @@ def initLogging(inputFilepath):
     logfileBaseName = "log-{}.log".format(inputFilepathHash)
    
     logFormat   = LOG_FORMAT.replace("%(filename)s",inputFilepath)
-    logfilepath = utils.logging.initLogging(logfileBaseName,logFormat,LOG_LEVEL)
+    logFilepath = utils.logging.initLogging(logfileBaseName,logFormat,LOG_LEVEL)
  
     msg = "input file: {0} (log id: {1})".format(inputFilepath,inputFilepathHash)
     utils.logging.logInfo(LOG_PREFIX,"initLogging",msg)
-    msg = "log file:   {0} (log level: {1}) ".format(logfilepath,LOG_LEVEL)
+    msg = "log file:   {0} (log level: {1}) ".format(logFilepath,LOG_LEVEL)
     utils.logging.logInfo(LOG_PREFIX,"initLogging",msg)
+    return logFilepath
 
 if __name__ == "__main__":
     # read config and command line arguments
@@ -318,7 +319,7 @@ if __name__ == "__main__":
 
     # init logging
     inputFilepath = os.path.abspath(args.input)
-    initLogging(inputFilepath)
+    logFilepath   = initLogging(inputFilepath)
     
     # Update INCLUDE_DIRS from all sources    
     INCLUDE_DIRS += args.searchDirs
@@ -367,4 +368,6 @@ if __name__ == "__main__":
         print(s.getvalue())
 
     # shutdown logging
+    msg = "log file:   {0} (log level: {1}) ".format(logFilepath,LOG_LEVEL)
+    utils.logging.logInfo(LOG_PREFIX,"__main__",msg)
     utils.logging.shutdown()

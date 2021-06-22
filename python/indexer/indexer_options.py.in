@@ -8,7 +8,7 @@ FILTER_INPUT_FILES="grep -l \"{module_names}\" {input_files}"
 
 PREPROCESS_FORTRAN_FILE="gfortran -cpp -E {options} {file} | grep -v \"^# [0-9]\""
 
-STRUCTURES=r"module|program|interface|function|routine|procedure|subroutine|type|end"
+STRUCTURES=r"module|program|function|routine|procedure|subroutine|interface|type|(end\s*(module|program|function|subroutine|interface|type))"
 DECLARATIONS=r"integer|real|double|logical" # derived types already considered by STRUCTURES
 ATTRIBUTES=r"attributes"                    
 USE=r"use"

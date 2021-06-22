@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import time
 import unittest
+import cProfile,pstats,io
 
 import addtoplevelpath
 import indexer.indexer as indexer
@@ -10,8 +11,10 @@ import utils.logging
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
 utils.logging.VERBOSE    = False
 utils.logging.initLogging("log.log",LOG_FORMAT,"warning")
-        
+
 gfortranOptions="-DCUDA"
+
+ENABLE_PROFILING = False
 
 index = []
 
@@ -26,8 +29,18 @@ class TestIndexer(unittest.TestCase):
     def test_0_donothing(self):
         pass 
     def test_1_indexer_scan_files(self):
+        if ENABLE_PROFILING:
+            profiler = cProfile.Profile()
+            profiler.enable()
         indexer.scanFile("test_modules.f90",gfortranOptions,self._index)
         indexer.scanFile("test1.f90",gfortranOptions,self._index)
+        if ENABLE_PROFILING:
+            profiler.disable() 
+            s = io.StringIO()
+            sortby = 'cumulative'
+            stats = pstats.Stats(profiler, stream=s).sort_stats(sortby)
+            stats.print_stats(10)
+            print(s.getvalue())
     def test_2_indexer_write_module_files(self):
         indexer.writeGpufortModuleFiles(index,"./")
     def test_3_indexer_load_module_files(self):

@@ -15,7 +15,6 @@ USE=r"use"
 DIRECTIVES=r"([!c\*]\$\w+)"
 
 FILTER=r"\b("+STRUCTURES+"|"+DECLARATIONS+"|"+ATTRIBUTES+"|"+USE+r")\b"+"|"+DIRECTIVES
-ANTIFILTER=r"\bend\b\s+\b(do|if)\b"
 
 CONTINUATION_FILTER=r"(\&\s*\n)|(\n\s*[\!c\*]\$\w+\&)"
 

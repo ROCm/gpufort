@@ -23,7 +23,6 @@ indexerDir = os.path.dirname(__file__)
 exec(open("{0}/indexer_options.py.in".format(indexerDir)).read())
     
 pFilter       = re.compile(FILTER) 
-pAntiFilter   = re.compile(ANTIFILTER)
 pContinuation = re.compile(CONTINUATION_FILTER)
 
 def __readFortranFile(filepath,preprocOptions):
@@ -41,10 +40,8 @@ def __readFortranFile(filepath,preprocOptions):
     utils.logging.logEnterFunction(LOG_PREFIX,"__readFortranFile",{"filepath":filepath,"preprocOptions":preprocOptions})
     
     def considerLine(strippedLine):
-        passesFilter     = pFilter.match(strippedLine) != None
-        passesAntifilter = pAntiFilter.match(strippedLine) != None
-        utils.logging.logDebug4(LOG_PREFIX,"__readFortranFile","statement '{}' passes select filter: '{}'; statement passes ignore filter: '{}'".format(strippedLine,passesFilter,passesAntifilter))
-        return passesFilter and not passesAntifilter
+        passesFilter = pFilter.match(strippedLine) != None
+        return passesFilter
     try:
        command = PREPROCESS_FORTRAN_FILE.format(file=filepath,options=preprocOptions)
        output  = subprocess.check_output(command,shell=True).decode("UTF-8")

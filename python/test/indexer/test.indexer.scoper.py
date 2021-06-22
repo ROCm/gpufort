@@ -8,9 +8,9 @@ import translator.translator as translator
 import indexer.scoper as scoper
 import utils.logging
 
-utils.logging.VERBOSE = True
+utils.logging.VERBOSE = False
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
-utils.logging.initLogging("log.log",LOG_FORMAT,"debug")
+utils.logging.initLogging("log.log",LOG_FORMAT,"warning")
 
 gfortranOptions="-DCUDA"
 

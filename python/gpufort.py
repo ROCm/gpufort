@@ -163,6 +163,7 @@ def parseCommandLineArguments():
     """
     Parse command line arguments after all changes and argument transformations by the config file have been applied.
     """
+    global LOG_LEVEL
     global SKIP_CREATE_GPUFORT_MODULE_FILES
     global ONLY_CREATE_GPUFORT_MODULE_FILES
     global ONLY_GENERATE_KERNELS
@@ -194,10 +195,11 @@ def parseCommandLineArguments():
     # logging
     group_logging = parser.add_argument_group('Logging')
     group_logging.add_argument("--log-level",dest="logLevel",required=False,type=str,default="",help="Set log level. Overrides config value.")
+    group_logging.add_argument("-v,--verbose",dest="verbose",required=False,action="store_true",default="",help="Print all log messages to error output stream too.")
     
     parser.set_defaults(printConfigDefaults=False,dumpIndex=False,\
       wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyTranslationSource=False,\
-      onlyCreateGpufortModuleFiles=False,skipCreateGpufortModuleFiles=False)
+      onlyCreateGpufortModuleFiles=False,skipCreateGpufortModuleFiles=False,verbose=False)
     args, unknownArgs = parser.parse_known_args()
 
     if args.printConfigDefaults:
@@ -275,9 +277,12 @@ def parseCommandLineArguments():
     # wrap modified lines in ifdef
     if args.wrapInIfdef:
         WRAP_IN_IFDEF = True
-    # log level
+    # logging
     if len(args.logLevel):
         LOG_LEVEL = args.logLevel
+    if args.verbose:
+        utils.logging.VERBOSE = args.verbose
+    # other
     if args.cublasV2:
         scanner.CUBLAS_VERSION = 2
         translator.CUBLAS_VERSION = 2

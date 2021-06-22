@@ -200,6 +200,7 @@ def __parseFile(fileLines,filepath):
         entry["name"]        = name
         #entry["file"]        = filepath
         entry["variables"]   = []
+        entry["types"]       = []
         entry["subprograms"] = []
         entry["usedModules"] = []
         return entry
@@ -236,7 +237,6 @@ def __parseFile(fileLines,filepath):
         nonlocal currentNode
         name = tokens[0]
         module = createBaseEntry_("module",name,filepath)
-        module["types"] = []
         assert currentNode == root
         currentNode._data.append(module)
         currentNode = __Node("module",name,data=module,parent=currentNode)
@@ -246,7 +246,6 @@ def __parseFile(fileLines,filepath):
         nonlocal currentNode
         name    = tokens[0]
         program = createBaseEntry_("program",name,filepath)
-        program["types"] = []
         assert currentNode._kind == "root"
         currentNode._data.append(program)
         currentNode = __Node("program",name,data=program,parent=currentNode)
@@ -257,12 +256,15 @@ def __parseFile(fileLines,filepath):
         nonlocal currentLine
         nonlocal currentNode
         logDetection_("start of subroutine")
-        if currentNode._kind in ["module","program","subroutine","function"]:
+        if currentNode._kind in ["root","module","program","subroutine","function"]:
             name = tokens[1]
             subroutine = createBaseEntry_("subroutine",name,filepath)
             subroutine["attributes"]  = [q.lower() for q in tokens[0]]
             subroutine["dummyArgs"]   = list(tokens[2])
-            currentNode._data["subprograms"].append(subroutine)
+            if currentNode._kind == "root":
+                currentNode._data.append(subroutine)
+            else:
+                currentNode._data["subprograms"].append(subroutine)
             currentNode = __Node("subroutine",name,data=subroutine,parent=currentNode)
             logEnterNode_()
         else:
@@ -274,13 +276,16 @@ def __parseFile(fileLines,filepath):
         nonlocal currentLine
         nonlocal currentNode
         logDetection_("start of function")
-        if currentNode._kind in ["module","program","subroutine","function"]:
+        if currentNode._kind in ["root","module","program","subroutine","function"]:
             name = tokens[1]
             function = createBaseEntry_("function",name,filepath)
             function["attributes"]  = [q.lower() for q in tokens[0]]
             function["dummyArgs"]   = list(tokens[2])
             function["resultName"]  = name if tokens[3] is None else tokens[3]
-            currentNode._data["subprograms"].append(function)
+            if currentNode._kind == "root":
+                currentNode._data.append(function)
+            else:
+                currentNode._data["subprograms"].append(function)
             currentNode = __Node("function",name,data=function,parent=currentNode)
             logEnterNode_()
         else:
@@ -291,7 +296,7 @@ def __parseFile(fileLines,filepath):
         nonlocal currentLine
         nonlocal currentNode
         logDetection_("start of type")
-        if currentNode._kind in ["module","program"]:
+        if currentNode._kind in ["module","program","subroutine","function"]:
             assert len(tokens) == 2
             name = tokens[1]
             derivedType = {}

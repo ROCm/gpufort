@@ -11,63 +11,138 @@ MAX_DIRECTIVE_LINE_WIDTH = 80
 UNCONVERTED = "TODO(gpufort) UNCONVERTED - Please adjust yourself!"
 DEPEND_TODO = "TODO(gpufort) - specify depend inputs"
 
-FLOAT_COMPLEX="hipFloatComplex"
-DOUBLE_COMPLEX="hipDoubleComplex"
+__FLOAT_COMPLEX="hipFloatComplex"
+__DOUBLE_COMPLEX="hipDoubleComplex"
+
 FORTRAN_2_C_TYPE_MAP = { 
+  "character": {
+    "": "char",
+    "c_char": "char"
+  },
   "complex" : { 
-     "": FLOAT_COMPLEX,
-     "16": None,
-     "8": DOUBLE_COMPLEX,
-     "4": FLOAT_COMPLEX,
-     "2": None,
-     "1": None,
+    "": __FLOAT_COMPLEX,
+    "16": None,
+    "8": __DOUBLE_COMPLEX,
+    "4": __FLOAT_COMPLEX,
+    "2": None,
+    "1": None,
+    "c_float_complex": "hipFloatComplex",
+    "c_double_complex": "hipDoubleComplex",
+    "c_long_double_complex": "long double _complex"
   },
   "real" : { 
-     "": "float",
-     "16": "long double",
-     "8": "double",
-     "4": "float",
-     "2": "_Float16",
-     "1": None,
+    "": "float",
+    "16": "long double",
+    "8": "double",
+    "4": "float",
+    "2": "_Float16",
+    "1": None,
+    "c_float": "float",
+    "c_double": "double",
+    "c_long_double": "long double",
+    "c_float128": "__float128",
+    "c_float128_complex": "__float128 _complex"
   },
   "integer" : { 
-     "": "int",
-     "8": "long",
-     "4": "int",
-     "2": "short",
-     "1": "char",
+    "": "int",
+    "8": "long",
+    "4": "int",
+    "2": "short",
+    "1": "char",
+    "c_int": "int",
+    "c_short": "short int",
+    "c_long": "long int",
+    "c_long_long": "long long int",
+    "c_signed_char": "signed char",
+    "c_size_t": "size_t",
+    "c_int8_t": "int8_t",
+    "c_int16_t": "int16_t",
+    "c_int32_t": "int32_t",
+    "c_int64_t": "int64_t",
+    "c_int128_t": "int128_t",
+    "c_int_least8_t": "int_least8_t",
+    "c_int_least16_t": "int_least16_t",
+    "c_int_least32_t": "int_least32_t",
+    "c_int_least64_t": "int_least64_t",
+    "c_int_least128_t": "int_least128_t",
+    "c_int_fast8_t": "int_fast8_t",
+    "c_int_fast16_t": "int_fast16_t",
+    "c_int_fast32_t": "int_fast32_t",
+    "c_int_fast64_t": "int_fast64_t",
+    "c_int_fast128_t": "int_fast128_t",
+    "c_intmax_t": "intmax_t",
+    "c_intptr_t": "intptr_t",
+    "c_ptrdiff_t": "ptrdiff_t"
   },
   "logical" : { 
-    "": "bool"
+    "": "bool",
+    "c_bool": "bool"
   }
-} 
+}
     
-FORTRAN_TYPE_2_BYTES_MAP = { 
+FORTRAN_TYPE_2_BYTES_MAP = { # x86_64 
+  "character": {
+    "": "1",
+    "c_char": "1"
+  },
   "complex" : { 
-     "":   "2*4",
-     "16": "2*16",
-     "8":  "2*8",
-     "4":  "2*4",
-     "2":  "2*2",
-     "1":  "2*1",
+    "":   "2*4",
+    "16": "2*16",
+    "8":  "2*8",
+    "4":  "2*4",
+    "2":  "2*2",
+    "1":  "2*1",
+    "c_float_complex": "4",
+    "c_double_complex": "8",
+    "c_long_double_complex": "16"
   },
   "real" : { 
-     "": "4",
-     "16": "16",
-     "8": "8",
-     "4": "4",
-     "2": "2",
-     "1": "1",
+    "": "4",
+    "16": "16",
+    "8": "8",
+    "4": "4",
+    "2": "2",
+    "1": "1",
+    "c_float": "4",
+    "c_double": "8",
+    "c_long_double": "16",
+    "c_float128": "16",
+    "c_float128_complex": "16"
   },
-  "integer" : { 
-     "": "4",
-     "8": "8",
-     "4": "4",
-     "2": "2",
-     "1": "1",
+  "integer" : {
+    "": "4",
+    "8": "8",
+    "4": "4",
+    "2": "2",
+    "1": "1",
+    "c_int": "4",
+    "c_short": "2",
+    "c_long": "8",
+    "c_long_long": "16",
+    "c_signed_char": "1",
+    "c_size_t": "8",
+    "c_int8_t": "1",
+    "c_int16_t": "2",
+    "c_int32_t": "4",
+    "c_int64_t": "8",
+    "c_int128_t": "16",
+    "c_int_least8_t": "1",
+    "c_int_least16_t": "2",
+    "c_int_least32_t": "4",
+    "c_int_least64_t": "8",
+    "c_int_least128_t": "16",
+    "c_int_fast8_t": "1",
+    "c_int_fast16_t": "8",
+    "c_int_fast32_t": "8",
+    "c_int_fast64_t": "8",
+    "c_int_fast128_t": "16",
+    "c_intmax_t": "8",
+    "c_intptr_t": "8",
+    "c_ptrdiff_t": "8"
   },
   "logical" : { 
-    "": "1"
+    "": "1",
+    "c_bool": "1"
   }
 }
 

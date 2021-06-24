@@ -1,3 +1,9 @@
 *.o
 *.mod
 __pycache__
+*.gpufort_mod
+*.kernels.f08
+*.kernels.hip.cpp
+*.hipified.*
+gpufort.h
+gpufort_reductions.h

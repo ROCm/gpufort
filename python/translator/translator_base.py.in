@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
-def bytes(fType,kind,default=None,floatComplex=FLOAT_COMPLEX,doubleComplex=DOUBLE_COMPLEX):
+def bytes(fType,kind,default=None,floatComplex=__FLOAT_COMPLEX,doubleComplex=__DOUBLE_COMPLEX):
     assert type(fType) is str
     assert type(kind) is str
     kindLower = kind.lower()

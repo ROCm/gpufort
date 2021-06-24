@@ -23,7 +23,7 @@ def createIndexRecordsFromDeclaration(ttdeclaration):
         varContext["kind"]                       = kind
         varContext["bytesPerElement"]            = bpe 
         varContext["cType"]                      = convertToCType(fType,kind,"TODO unknown")
-        varContext["fInterfaceType"]             = varContext["cType"]
+        varContext["fInterfaceType"]             = varContext["fType"]
         varContext["fInterfaceQualifiers"]       = [ "value" ] # assume pass by value by default
         # TODO pack into single variable
         varContext["parameter"]                  = ttdeclaration.hasParameter()
@@ -34,16 +34,9 @@ def createIndexRecordsFromDeclaration(ttdeclaration):
         varContext["managed"]                    = ttdeclaration.hasStringQualifier("managed")
         varContext["allocatable"]                = ttdeclaration.hasStringQualifier("allocatable")
         # ACC/OMP
-        varContext["declaredOnTarget"]           = False
+        varContext["declareOnTarget"]           = False
         # arrays
         varContext["rank"]                       = 0
-        #varContext["unspecifiedBounds"]          = True
-        #varContext["lbounds"]                    = []
-        #varContext["counts"]                     = []
-        #varContext["totalCount"]                 = "1" 
-        #varContext["totalBytes"]                 = bpe
-        #varContext["indexMacro"]                 = "_idx_{}(a) (a)".format(varName) 
-        #varContext["indexMacroWithPlaceHolders"] = varContext["indexMacro"]
         dimensionQualifier = findAll(ttdeclaration._qualifiers,TTDimensionQualifier)
         if ttdeclaredvariable.hasBounds() or len(dimensionQualifier):
             varContext["fInterfaceType"] = "type(c_ptr)"
@@ -97,10 +90,36 @@ def parseAttributes(ttattributes):
     modifiedVars = [makeFStr(var).lower() for var in ttattributes._rhs]
     return attribute, modifiedVars 
 
+def createIndexSearchTagForVariable(variableExpression):
+    """
+    Creates tag from variable expressions such as 'A%b(i)%c' that
+    can be used to search the index via the scoper module.
+    The example 'A%b(i)%c' is translated to a tag 'a%b%c' (lower case).
+    All array indexing expressions are stripped away.
+    A single identifer 'a' would be translated to the tag 'a'.
+
+    :param str variableExpression: a simple identifier such as 'a' or 'A_d' or a more complicated derived-type member variable expression such as 'a%b%c' or 'A%b(i)%c'.
+    :see: indexer.scoper.searchIndexForVariable
+    """
+    if not "(" in variableExpression:
+        return variableExpression.lower()
+    else:
+        expr        = derivedTypeElem
+        parseResult = expr.parseString(variableExpression.lower())[0]
+        def traverse(ttderivedtype):
+            result = ttderivedtype._type.name().lower() + "%"
+            if type(ttderivedtype._element) == TTIdentifier or\
+               type(ttderivedtype._element) == TTFunctionCallOrTensorAccess:
+                result += ttderivedtype._element.name().lower() # end of recursion
+            else: # if type(ttderivedtype._element) == TTDerivedTypeElem:
+               result += traverse(ttderivedtype._element)
+            return result
+        return traverse(parseResult)
+
 # TODO parsing and translation is similar but analysis differs between the different kernel
 # types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)
 # while they are specified with ACC,OMP.
-def parseLoopKernel(fortranSnippet,indexHints=[],maxRecursions=30):
+def parseLoopKernel(fortranSnippet,scope=[],maxRecursions=30):
     """
     Return a csnippet equivalent to the original Fortran code.
     """
@@ -128,22 +147,21 @@ def parseLoopKernel(fortranSnippet,indexHints=[],maxRecursions=30):
     fortranSnippet = prepareFortranSnippet(fortranSnippet)
     try:
         computeConstruct = simplifyLoopKernelUntilItCanGetParsed(fortranSnippet,maxRecursions)
-        computeConstruct._indexHints = indexHints
+        computeConstruct._scope = scope
         if recursionsLeft < maxRecursions:
             body = "\n".join(fortranSnippet.split("\n")[1:])
         return computeConstruct
     except Exception as e:
         #raise e
-        logger = logging.getLogger('') 
-        logger.error("failed to convert kernel:\n{}".format(fortranSnippet))
-        logger.error(str(e))
+        utils.logging.logError("failed to convert kernel:\n{}".format(fortranSnippet))
+        utils.logging.logError(str(e))
         return EmptyComputeConstruct(fsnippet)
 
 class EmptyProcedureBody():
     def cStr(self):
         return "" 
 
-def parseProcedureBody(fortranSnippet,indexRecord={},resultName="",maxRecursions=10):
+def parseProcedureBody(fortranSnippet,scope,indexRecord,resultName="",maxRecursions=10):
     """
     Parse a function/subroutine body.
     """
@@ -170,13 +188,12 @@ def parseProcedureBody(fortranSnippet,indexRecord={},resultName="",maxRecursions
     fortranSnippet = prepareFortranSnippet(fortranSnippet)
     try:
         parseResult = simplifyProcedureBodyUntilItCanGetParsed(fortranSnippet,maxRecursions)
-        parseResult._indexHints   = [ indexRecord ] 
+        parseResult._scope        = scope 
         parseResult._resultName   = resultName
         parseResult._ignoredVars += indexRecord["dummyArgs"]
     except Exception as e:
         #raise e
-        logger = logging.getLogger('') 
-        logger.error("failed to convert kernel:\n{}".format(fortranSnippet))
-        logger.error(str(e))
+        utils.logging.logError(LOG_PREFIX,"parseProcedureBody","failed to convert kernel:\n{}".format(fortranSnippet))
+        utils.logging.logError(LOG_PREFIX,"parseProcedureBody",str(e))
         return EmptyProcedureBody()
     return parseResult

@@ -3,15 +3,15 @@
 import os
 import addtoplevelpath
 import os,sys,traceback
-import utils
 import logging
 import collections
 import ast
 import re
 
 # recursive inclusion
-import indexer.indexertools as indexertools
-import pyparsingtools as pyparsingtools
+import indexer.scoper as scoper
+import utils.logging
+import utils.pyparsingutils 
 
 #from grammar import *
 CASELESS    = True

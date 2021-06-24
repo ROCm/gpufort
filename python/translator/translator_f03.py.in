@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
-#import utils
 #from translator.translator_base import *
-
 
 #f03
 def flattenArithmeticExpression(expr,converter=makeCStr):
@@ -427,8 +425,6 @@ class TTDerivedTypeMember(TTNode):
             return current.hasMatrixRangeArgs()
         else:
             return False
-    def type(self):
-        return self._type 
     def name(self,mangleName=False):
         return self._type.name(mangleName) + "_" + self._element.name(mangleName)
     def cStr(self,):
@@ -489,7 +485,7 @@ class TTComplexArithmeticExpression(TTNode):
 class TTPower(TTNode):
     def _assignFields(self,tokens):
         self._base, self._exp = tokens
-    def gpufortFStr(self,indexHints=[]):
+    def gpufortFStr(self,scope=[]):
         sign = ""
         base = self._base
         if type(self._base) is TTRValue:
@@ -1171,7 +1167,7 @@ class TTWhile(TTNode):
 class TTProcedureBody(TTNode):
     def _assignFields(self,tokens):
         self._body = tokens[0]
-        self._indexHints  = []
+        self._scope  = []
         self._ignoredVars = []
         self._resultName  = ""
     def cStr(self):
@@ -1187,10 +1183,10 @@ class TTProcedureBody(TTNode):
         """
         # 0. Clarify types of function calls / tensor access that are not 
         # members of a struct
-        if len(self._indexHints):
+        if len(self._scope):
             for expr in findAllMatching(self._body,filterExpr=lambda x: isinstance(x,IValue)):
                  if type(expr._value) is TTFunctionCallOrTensorAccess:
-                     _, discovered = indexertools.searchIndexForVariable(self._indexHints,expr.name())
+                     _, discovered = scoper.searchScopeForVariable(self._scope,createIndexSearchTagForVariable(expr.name()))
                      if discovered:
                          expr._value._isTensorAccess = True3
         # 1. Remove function argument definitions and precision definitions

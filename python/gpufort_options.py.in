@@ -1,11 +1,15 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 # logging
-LOG_LEVEL      = logging.INFO   # log level
-LOG_DIR        = "/tmp/gpufort" # directory for storing log files
-LOG_DIR_CREATE = True           # create log dir if it does not exist
+LOG_LEVEL  = "warning"
+LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s [file:%(filename)s]"
+LOG_PREFIX = "gpufort"
 
-DUMP_INDEX = False # dump the index as JSON file
+ENABLE_PROFILING               = False
+PROFILING_OUTPUT_NUM_FUNCTIONS = 50
+
+ONLY_CREATE_GPUFORT_MODULE_FILES = False # Only create and write GPUFORT module files and no other output.
+SKIP_CREATE_GPUFORT_MODULE_FILES = False # Skip creating and writing GPUFORT module files.
 
 WRAP_IN_IFDEF                  = False
 ONLY_MODIFY_TRANSLATION_SOURCE = False # Do only modify the translation source. 
@@ -16,5 +20,6 @@ POST_CLI_ACTIONS = [] # register functions with parameters (args,unknownArgs) (s
 
 PRETTIFY_MODIFIED_TRANSLATION_SOURCE = False # Prettify the translation source after all modifications have been applied. 
                                              # (Does not change the actual source but the modified version of it.)
-INCLUDE_DIRS = []
+__GPUFORT_INC_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),"../include")
+INCLUDE_DIRS = [ __GPUFORT_INC_DIR ]
 

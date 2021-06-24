@@ -32,7 +32,7 @@ simpleStructRValue <<= simpleDerivedTypeMember | identifier
 #
 derivedTypeRValue = Forward()
 derivedTypeElem = (( funcCall | identifier ) + ELEM + derivedTypeRValue )
-derivedTypeRValue <<= funcCall | derivedTypeElem | identifier
+derivedTypeRValue <<= derivedTypeElem | funcCall | identifier
 
 complexArithmeticExpression = Forward()
 conversion      = Forward()
@@ -242,8 +242,7 @@ returnStatement   = CASELESS_LITERAL("return")
 controlStatements = returnStatement
 
 ## Attributes // example: attributes
-attributesLhs = CASELESS_LITERAL("attributes").suppress()
-attributes= attributesLhs + LPAR + qualifierList + RPAR + COLONS + Group(delimitedList(identifier))
+attributes = CASELESS_LITERAL("attributes").suppress() + LPAR + qualifierList + RPAR + COLONS + Group(delimitedList(identifier))
 
 ## Program / Subroutine / Function
 PROGRAM,MODULE,PROCEDURE,FUNCTION,SUBROUTINE,ATTRIBUTES,IMPLICIT,NONE,USE,ONLY,CONTAINS,INTERFACE =  makeCaselessLiteral(\
@@ -302,8 +301,17 @@ procedure = PROCEDURE + LPAR + delimitedList(identifier) + RPAR + COLONS - delim
 programStart = PROGRAM + identifier
 programEnd = END + PROGRAM + Optional(identifier.suppress())
 
-typeStart = TYPE.suppress() + Optional(Optional(qualifierList) + COLONS,default=[]) + identifier # ! emits 2 tokens: [[*], *]
-typeEnd   = END + TYPE.suppress() + Optional(identifier).suppress()
+# pick this up: https://fortran-lang.org/learn/quickstart/derived_types
+#typeAttributeList = attribute-list
+
+
+simpleTypeAttribute  = Regex(r"\b((abstract|public|private)\b|bind\s*\(\s*c\s*\))",\
+        re.IGNORECASE).setParseAction(lambda tokens: tokens[0].replace(" ",""))
+extendsTypeAttribute = Regex(r"extends\s*\(\w+\)",re.IGNORECASE).\
+        setParseAction(lambda tokens: tokens[0].replace(" ",""))
+typeAttributeList    = Group(delimitedList(extendsTypeAttribute | simpleTypeAttribute))
+typeStart = TYPE.suppress() + Optional(COMMA + typeAttributeList,default=[]) + Optional(COLONS) + identifier # ! emits 2 tokens: [[*], *]
+typeEnd   = Regex(r"\bend\s*type\b",re.IGNORECASE).suppress() + Optional(identifier).suppress()
 
 structureEnd = END + ~(NONSTRUCTURE) + Optional(FUNCTION|SUBROUTINE|MODULE).suppress() + Optional(identifier).suppress()
 # preprocessor

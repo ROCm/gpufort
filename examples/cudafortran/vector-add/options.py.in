@@ -1,3 +1,7 @@
 fort2hip.CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140, BinPackArguments: false, BinPackParameters: false}\""
 
+fort2hip.GENERATE_DEBUG_CODE = False
+
+PRETTIFY_MODIFIED_TRANSLATION_SOURCE = True
+
 LOG_DIR="log"

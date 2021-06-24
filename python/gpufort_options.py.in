@@ -20,5 +20,6 @@ POST_CLI_ACTIONS = [] # register functions with parameters (args,unknownArgs) (s
 
 PRETTIFY_MODIFIED_TRANSLATION_SOURCE = False # Prettify the translation source after all modifications have been applied. 
                                              # (Does not change the actual source but the modified version of it.)
-INCLUDE_DIRS = []
+__GPUFORT_INC_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),"../include")
+INCLUDE_DIRS = [ __GPUFORT_INC_DIR ]
 

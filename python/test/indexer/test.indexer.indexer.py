@@ -138,7 +138,6 @@ class TestIndexer(unittest.TestCase):
         self.assertEqual(func3["kind"],"function")
         self.assertEqual(func3["resultName"],"func3")
         self.assertEqual(len(func3["subprograms"]),0)
-        
       
 if __name__ == '__main__':
     unittest.main() 

@@ -23,7 +23,7 @@ def createIndexRecordsFromDeclaration(ttdeclaration):
         varContext["kind"]                       = kind
         varContext["bytesPerElement"]            = bpe 
         varContext["cType"]                      = convertToCType(fType,kind,"TODO unknown")
-        varContext["fInterfaceType"]             = varContext["cType"]
+        varContext["fInterfaceType"]             = varContext["fType"]
         varContext["fInterfaceQualifiers"]       = [ "value" ] # assume pass by value by default
         # TODO pack into single variable
         varContext["parameter"]                  = ttdeclaration.hasParameter()

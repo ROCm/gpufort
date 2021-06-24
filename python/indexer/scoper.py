@@ -16,8 +16,6 @@ exec(open("{0}/scoper_options.py.in".format(indexerDir)).read())
 ERR_SCOPER_RESOLVE_DEPENDENCIES_FAILED = 1001
 ERR_SCOPER_LOOKUP_FAILED = 1002
 
-EMPTY_SCOPE = { "tag": "", "types" : [], "variables" : [], "subprograms" : []} 
-
 __UNKNOWN = "UNKNOWN"
 
 EMPTY_VARIABLE = {                         
@@ -60,6 +58,8 @@ EMPTY_SUBPROGRAM = {
   "subprograms" : [],
   "usedModules" : []
 }
+
+EMPTY_SCOPE = { "tag": "", "types" : [], "variables" : [], "subprograms" : [] } 
 
 __SCOPE_ENTRY_TYPES = ["subprograms","variables","types"]
 

@@ -4,6 +4,6 @@ scanner.LOOP_KERNEL_DEFAULT_LAUNCHER="auto"
 fort2hip.CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140, BinPackArguments: false, BinPackParameters: false}\""
 
 LOG_DIR="log"
-LOG_LEVEL="debug"
+#LOG_LEVEL="debug"
 
-utils.logging.VERBOSE = True
+#utils.logging.VERBOSE = True

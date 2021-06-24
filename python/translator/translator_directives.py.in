@@ -180,9 +180,7 @@ class EmptyComputeConstruct(IComputeConstruct):
     """
     def __init__(self,fSnippet):
         self._fSnippet   = fSnippet
-        self._scope = []
-    def setscope(self,scope):
-        self._scope = scope
+        self._scope      = scoper.EMPTY_SCOPE
     def identifiersInBody(self,converter=makeFStr):
         valueType = lvalue | rvalue
         identifierNames = []
@@ -204,9 +202,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         if self._parentDirective is None:
             assert type(self._body) is TTDoLoop
             self._parentDirective = self._firstLoopAnnotation
-        self._scope          = []
-    def setscope(self,scope):
-        self._scope = scope
+        self._scope = scoper.EMPTY_SCOPE
     def loopVars(self):
         identifierNames = []
         doLoops  = findAll(self._body,TTDoLoop)

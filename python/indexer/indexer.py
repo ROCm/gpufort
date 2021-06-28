@@ -47,6 +47,7 @@ def __readFortranFile(filepath,preprocOptions):
        output  = subprocess.check_output(command,shell=True).decode("UTF-8")
        # remove Fortran line continuation and directive continuation
        output = pContinuation.sub(" ",output.lower()) 
+       output = output.replace(";","\n") # convert multi-statement lines to multiple lines; preprocessing removed comments
        
        # filter statements
        filteredLines = []

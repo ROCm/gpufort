@@ -18,6 +18,7 @@ import addtoplevelpath
 import translator.translator as translator
 import indexer.scoper as scoper
 import utils.pyparsingutils
+#import scanner.normalizer as normalizer
 
 SCANNER_ERROR_CODE = 1000
 #SUPPORTED_DESTINATION_DIALECTS = ["omp","hip-gpufort-rt","hip-gcc-rt","hip-hpe-rt","hip"]

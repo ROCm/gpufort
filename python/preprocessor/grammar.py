@@ -24,7 +24,7 @@ pp_op_not = pyp.Regex(r"\.not\.|!",re.IGNORECASE).setParseAction(lambda tk: "not
 # https://en.cppreference.com/w/c/language/operator_precedence
 pp_arithm_logic_expr =  pyp.infixNotation(pp_value, [
     (pp_op_not,               1, pyp.opAssoc.RIGHT),
-    (pyp.Regex(r"\*|/"),      2, pyp.opAssoc.LEFT),
+    (pyp.Regex(r"\*|/|%"),    2, pyp.opAssoc.LEFT),
     (pyp.Regex(r"\+|-"),      2, pyp.opAssoc.LEFT),
     (pyp.Regex(r"<|>|<=|>="), 2, pyp.opAssoc.LEFT),
     (pyp.Regex(r"==|!="),     2, pyp.opAssoc.LEFT),
@@ -46,7 +46,7 @@ pp_dir_elif    = pyp.Regex(r"#\s*elif\s+(?P<condition>.+)",re.IGNORECASE)
 # else
 pp_dir_else    = pyp.Regex(r"#\s*else\b",re.IGNORECASE)
 # include
-pp_dir_include = pyp.Regex(r"#\s*include\s+\"(?P<filename>["+pyp.printables+r"\"]+)",re.IGNORECASE)
+pp_dir_include = pyp.Regex(r"#\s*include\s+\"(?P<filename>["+pyp.printables+r"]+)\"",re.IGNORECASE)
 # define / undef
 pp_dir_define  = pyp.Regex(r"#\s*define\s+(?P<name>\w+)",re.IGNORECASE) +\
                  pyp.Optional(LPAR + pyp.Optional(pyp.delimitedList(pp_ident),default=[]) + RPAR,default=[]).setResultsName("args") +\

@@ -1,0 +1,4 @@
+INDENT_WIDTH_WHITESPACE=2 # number of indent chars if indentation uses whitespaces
+INDENT_WIDTH_TABS=1       # number of indent chars if indentation uses tabs
+
+DEFAULT_INDENT_CHAR=' '   # The default index char to use if no other char was detected (' ' or '\t').

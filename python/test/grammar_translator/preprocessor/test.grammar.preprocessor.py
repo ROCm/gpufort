@@ -2,6 +2,8 @@
 import time
 import unittest
 import cProfile,pstats,io
+import re
+import ast
 
 import addtoplevelpath
 import preprocessor.grammar as grammar
@@ -16,6 +18,7 @@ ENABLE_PROFILING = False
 class TestPreprocessorGrammar(unittest.TestCase):
     def setUp(self):
         self._started_at = time.time()
+        self._extra      = ""
         if ENABLE_PROFILING:
             self._profiler = cProfile.Profile()
             self._profiler.enable()
@@ -28,7 +31,7 @@ class TestPreprocessorGrammar(unittest.TestCase):
             stats.print_stats(10)
             print(s.getvalue())
         elapsed = time.time() - self._started_at
-        print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
+        print('{} ({}s{})'.format(self.id(), round(elapsed, 6),self._extra))
     def test_1_compiler__options(self):
         options = "-Dflag0 -Dflag1=value1 -Dflag2=1 -Dflag3=.TRUE. -Dflag4=1.012E-23"
         names   = ["flag"+str(i) for i in range(0,4+1)]
@@ -105,21 +108,97 @@ class TestPreprocessorGrammar(unittest.TestCase):
                 self.assertEqual(files[n],result.filename)
             n += 1
     def test_5_arithm_logic_expr(self):
+        numSuccess = 0
+        # basic checks
         testdata = [
             "a",
             "!a",
         ]
-        binops      = ["==","!=","<",">","<=",">=","*","/","%","&&","||","and"
-        expressions = ["a","1","0",".true.",".false.","true","false","a(b,c,d)"]
-        for expressions in 
-            testdata.append(
-
-        n = 0
+        binops      = ["==","!=","<",">","<=",">=","*","/","%","&&","||",".and.",".or."]
+        expressions = ["a","1","0",".true.","a(b,c,d)"]
+        for op in binops:
+            for a in expressions:
+                for b in expressions:
+                    testdata.append("{} {} {}".format(a,op,b))
+        numTests = len(testdata)
         for text in testdata:
-            for result,_,__ in grammar.pp_arithm_logic_expr.scanString(text):
-                print(result)
-            n += 1
-
+            try:
+                result = grammar.pp_arithm_logic_expr.parseString(text,parseAll=True)
+                numSuccess += 1
+            except:
+                pass
+        # some more complicated checks
+        testdata.clear()
+        testdata = [
+          "( a == b ) || ( ( a*b <= 4 ) && defined(x) )",
+          "defined(a) && macro(a*b+c,c+d-e%5) <= N%3",
+          "defined(a) && macro1(macro2(a*b+macro3(c)),c+d-e%5) <= N%3",
+        ]
+        numTests += len(testdata)
+        for text in testdata:
+            try:
+                result = grammar.pp_arithm_logic_expr.parseString(text,parseAll=True)
+                numSuccess += 1
+            except:
+                print(text)
+                pass
+        self._extra = ", performed {} checks".format(numTests)
+        self.assertEqual(numSuccess,numTests)
+    def test_6_macro_substitution(self):
+        macroStack = [
+          { "name": 'b', "args": [], "subst": "5" },
+          { "name": 'a', "args": ["x"], "subst": "(5*x)" },
+        ]
+        def defined_(tokens):
+            nonlocal macroStack
+            if next((macro for macro in macroStack if macro["name"] == tokens[0]),None):
+                return "1"
+            else: 
+                return "0"
+        def substitute_(tokens):
+            name = tokens[0]
+            args = tokens[1]
+            nonlocal macroStack
+            macro = next((macro for macro in reversed(macroStack) if macro["name"] == tokens[0]),None)
+            if macro:
+                subst = macro["subst"]
+                for n,placeholder in enumerate(macro["args"]):
+                    subst = re.sub(r"\b{}\b".format(placeholder),args[n],subst)      
+                return subst
+            else:
+                tokens[0]
+        def transformArithmLogicExpr_(original):
+             oldResult = None
+             result    = original
+             # expand macro; one at a time
+             while result != oldResult:
+                   oldResult = result
+                   result    = grammar.pp_value.transformString(result)
+             # replace C and Fortran operatos by python equivalents 
+             result = grammar.pp_ops.transformString(result)
+             return result
+        testdata_true = [
+          "defined(a)",
+          "!!defined(a)",
+          "!defined(x)",
+          "defined(a) && !defined(x) && a(b) > 4"
+        ]
+        testdata_false = [
+          "!defined(a)",
+          "!!defined(x)",
+          "!defined(a) || defined(x) || a(5) < 1",
+          "!(defined(a) && !defined(x) && a(b) > 4)"
+        ]
+        grammar.pp_defined.setParseAction(defined_)
+        grammar.pp_macro_eval.setParseAction(substitute_)
+        for text in testdata_true:
+            result    = transformArithmLogicExpr_(text)
+            condition = bool(eval(result))
+            self.assertTrue(condition)
+        for text in testdata_false:
+            result = transformArithmLogicExpr_(text)
+            condition = bool(eval(result))
+            self.assertFalse(condition)
       
 if __name__ == '__main__':
     unittest.main() 

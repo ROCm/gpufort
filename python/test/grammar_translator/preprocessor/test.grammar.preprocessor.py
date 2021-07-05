@@ -167,7 +167,7 @@ class TestPreprocessorGrammar(unittest.TestCase):
                 return subst
             else:
                 tokens[0]
-        def transformArithmLogicExpr_(original):
+        def expandMacros_(original):
              oldResult = None
              result    = original
              # expand macro; one at a time
@@ -175,8 +175,9 @@ class TestPreprocessorGrammar(unittest.TestCase):
                    oldResult = result
                    result    = grammar.pp_value.transformString(result)
              # replace C and Fortran operatos by python equivalents 
-             result = grammar.pp_ops.transformString(result)
              return result
+        def convertOperators_(text):
+            return grammar.pp_ops.transformString(text)
         testdata_true = [
           "defined(a)",
           "!!defined(a)",
@@ -192,13 +193,15 @@ class TestPreprocessorGrammar(unittest.TestCase):
         grammar.pp_defined.setParseAction(defined_)
         grammar.pp_macro_eval.setParseAction(substitute_)
         for text in testdata_true:
-            result    = transformArithmLogicExpr_(text)
+            result    = convertOperators_(expandMacros_(text))
             condition = bool(eval(result))
             self.assertTrue(condition)
         for text in testdata_false:
-            result = transformArithmLogicExpr_(text)
+            result    = convertOperators_(expandMacros_(text))
             condition = bool(eval(result))
             self.assertFalse(condition)
+        numTests = len(testdata_true) + len(testdata_false)
+        self._extra = ", performed {} checks".format(numTests)
       
 if __name__ == '__main__':
     unittest.main() 

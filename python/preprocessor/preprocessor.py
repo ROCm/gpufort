@@ -9,66 +9,8 @@ import utils.logging
 ERR_PREPROCESSOR_MACRO_DEFINITION_NOT_FOUND = 11001
 
 preprocessorDir = os.path.dirname(__file__)
+exec(open("{0}/preprocessor_options.py.in".format(preprocessorDir)).read())
 exec(open("{0}/grammar.py".format(preprocessorDir)).read())
-
-# API
-
-
-def preprocess(fortranFileLines,options):
-    """
-    A C and Fortran preprocessor (cpp and fpp).
-
-    Current limitations:
-
-    * Only considers if/ifdef/ifndef/elif/else/define/undef/include 
-
-    :param list normalizedFileLines: List of dictionaries with "statements" attribute (list of str).
-                as produced by the normalizer. The statements must not contain any line breaks 
-                or line continuation characters.
-    }
-    :return: The input data structure without the entries whose statements where not in active code region
-             as determined by the preprocessor.
-    """
-    macroStack     = []
-    regionStack    = [] 
-    inActiveRegion = True
-
-    preprocessedFilesLines = []
-    for entry in normalizedFileLines:
-        for statement in entry["statements"]:
-            if inActiveRegion:
-                if stmt.startswith("#"): #macrosV
-                    processed = False
-                    for result,_,__ in pp_define.scanString(stmt,1):
-                        newMacro = { "name": result.name, "args": result.args.asList(), "subst": result.subst }
-                        macroStack.push(newMacro)
-                        processed = True
-                    if not processed:
-                        for result,_,__ in pp_define.scanString(stmt,1):
-                           newMacro = { "name": result.name, "args": result.args.asList(), "subst": result.subst }
-                           macroStack.push(newMacro)
-                           found = True
-
-# if inActiveRegion:
-#     if encounter define:
-#        add new macro
-#     elif encounter undefine
-#        remove macro
-#     elif encounter if-branch: 
-#         current <- push context to stack
-#         inActiveRegionIfElifBranch <- 0
-#         inActiveRegion <- evaluate if cond.
-#         if inActiveRegion:
-#             inActiveRegionIfElifBranch += 1
-#         # active means we record lines
-#     elif any other dexpression
-#        
-#     else
-#        detect and apply macros to code line
-# elif encounter elif-branch:
-#     inActiveRegion <- evaluate if cond.
-#     if inActiveRegion:
-
 
 def __expandMacros(text):
      oldResult = None
@@ -76,107 +18,111 @@ def __expandMacros(text):
      # expand macro; one at a time
      while result != oldResult:
            oldResult = result
-           result    = grammar.pp_value.transformString(result)
+           result    = pp_value.transformString(result)
      return result
 
 def __convertOperators(text):
     # replace C and Fortran operatos by python equivalents
-    return grammar.pp_ops.transformString(text)
+    return pp_ops.transformString(text)
 
 def __evaluateCondition(text):
     # replace C and Fortran operatos by python equivalents
     # TODO error handling
     return eval(__convertLinesToStatements(expandMacros_))
 
-def __handlePreprocessorDirective_(statements,inActiveRegion,fortranFilepath,macroStack,regionStack):
+def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,regionStack2):
     """
-    :param str fortranFilepath: needed to load included files
+    :param str fortranFilepath: needed to load included files where only relative path is specified
+    :param list macroStack: A stack for storing/removing macro definition based on preprocessor directives.
+    :param list regionStack1: A stack that stores if the current code region is active or inactive.
+    :param list regionStack2: A stack that stores if any if/elif branch in the current if-elif-else-then
+                              construct was active. This info is needed to decide if an else region 
+                              should be activated.
     """
+    global LOG_PREFIX
+
     includedRecords = []
 
-    inActiveParentRegion = len(regionStack) < 2 or regionStack[-2] 
-    inActiveRegion       = regionStack[-1]
+    inActiveRegion  = regionStack1[-1]
+    handled = False
+    
+    # strip away whitespace chars
+    strippedFirstLine = lines[0].lstrip("# \t").lower()
+    singleLineStatement = __convertLinesToStatements(lines)[0] # does not make sense for define
     if inActiveRegion:
-       # will be ignored if not in active region -> no descend -> problem, we do not know where we are
-       handled = False
-       # strip away whitespace chars
-       strippedStmt = stmt.lstrip("# \t").lower()
-       if strippedStmt.startswith("define"):`
-           result = pp_dir_define.parseString(stmt,parseAll=True):
-           newMacro = { "name": result.name, "args": result.args.asList(), "subst": result.subst }
-           macroStack.push(newMacro)
-           handled = True
-       elif strippedStmt.startswith("undef"):
-           result = pp_dir_define.parseString(stmt,parseAll=True):
+       if strippedFirstLine.startswith("define"):
+           # TODO error handling
+           try:
+              result   = pp_dir_define.parseString(lines[0],parseAll=True)
+              substLines = [line.strip("\n")+"\n" for line in [result.subst] + lines[1:]]
+              subst    = "".join(substLines).replace(r"\\","")
+              newMacro = { "name": result.name, "args": result.args.asList(), "subst": subst }
+              macroStack.push(newMacro)
+              handled = True
+           except:
+              pass
+       elif strippedFirstLine.startswith("undef"):
+           result = pp_dir_define.parseString(singleLineStatement,parseAll=True)
            for macro in list(macroStack):
                if macro["name"] == result.name:
                    macroStack.remove(macro)
            handled = True
-       elif strippedStmt.startswith("include"):
-           result = pp_dir_include.parseString(stmt,parseAll=True):
-           includeFileAbsPath = fortranFilepath + "/" + result.filename
-           includedRecords = __preprocessAndNormalizeFortranFile(includeFileAbsPath,macroStack,regionStack):
+       elif strippedFirstLine.startswith("include"):
+           result = pp_dir_include.parseString(singleLineStatement,parseAll=True)
+           filename = result.filename.strip(" \t")
+           if not filename.startswith("/"):
+               filename = fortranFilepath + "/" + filename
+           includedRecords = __preprocessAndNormalizeFortranFile(filename,macroStack,regionStack1,regionStack2)
            handled = True
-       # if cond. true, push new region to stack
-       # if parent not in active region, should also not be active
-    # if and short hands
-    if strippedStmt.startswith("ifdef"):
-        if inActiveRegion:
-            result = pp_dir_ifdef.parseString(stmt,parseAll=True):
+    # if cond. true, push new region to stack
+    if strippedFirstLine.startswith("if"):
+        if inActiveRegion and strippedFirstLine.startswith("ifdef"):
+            result = pp_dir_ifdef.parseString(singleLineStatement,parseAll=True)
             condition = "defined("+result.name+")"
-            regionStack.append(
+        elif inActiveRegion and strippedFirstLine.startswith("ifndef"):
+            result = pp_dir_ifndef.parseString(singleLineStatement,parseAll=True)
+            condition = "!defined("+result.name+")"
+        elif inActiveRegion: # and strippedFirstLine.startswith("if"):
+            result    = pp_dir_if.parseString(singleLineStatement,parseAll=True)
+            condition = result.condition
         else:
-            regionStack.append(False)
-    elif strippedStmt.startswith("ifndef"):
-        if inActiveRegion:
-            regionStack.append(condition)
+            condition = "0"
+        active = __evaluateCondition(condition)
+        regionStack1.append(active)
+        anyIfElifActive = active
+        regionStack2.append(anyIfElifActive)
+        handled = True
+    # elif
+    elif strippedFirstLine.startswith("elif"):
+        regionStack1.pop() # rm previous if/elif-branch
+        if inActiveRegion and not regionStack2[-1]: # TODO allow to have multiple options specified at once
+            result    = pp_dir_elif.parseString(singleLineStatement,parseAll=True)
+            condition = result.condition
         else:
-            regionStack.append(False)
-    elif strippedStmt.startswith("if"):
-        if inActiveRegion:
-            regionStack.append(condition)
-        else:
-            regionStack.append(False)
-    elif strippedStmt.startswith("elif"):
-        if inActiveParentRegion:
-            pass
-        else:
-            regionStack.append(False)
-    elif strippedStmt.startswith("else"):
-        if inActiveParentRegion:
-            pass
-        else:
-            regionStack.append(False)
-    elif strippedStmt.startswith("endif"):
-        regionStack.pop()
-          # if parent not in active region, should also not be active
+            condition = "0"
+        active = __evaluateCondition(condition)
+        regionStack1.append(active)
+        regionStack2[-1] = regionStack2[-1] or active
+        handled = True
+    # else
+    elif strippedFirstLine.startswith("else"):
+        regionStack1.pop() # rm previous if/elif-branch
+        active = inActiveRegion and not regionStack2[-1]
+        regionStack1.append(active)
+        handled = True
+    # endif
+    elif strippedFirstLine.startswith("endif"):
+        regionStack1.pop()
+        regionStack2.pop()
+        handled = True
 
-#def __applyMacros(statements,macroStack)
-#    # TODO apply defined first; only if directive
-#    
-#
-#    for macro in reversed(macroStack):
-#        key   = macro["name"]
-#        subst = macro["subst"] # keep the '\' here
-#        # TODO move into macro creation and just read here
-#        if not len(macro["args"]):
-#            macro_pattern = pyp.Regex(r"\b"+key+r"\b",re.IGNORECASE).setParseAction(lambda tk: subst)
-#        else: 
-#            
-#            for stmt in unrolledStatements:
-#    
-#    def expandMacros_(original):
-#        oldResult = None
-#        result    = original
-#        # expand macro; one at a time
-#        while result != oldResult:
-#              oldResult = result
-#              result    = grammar.pp_value.transformString(result)
-#        # replace C and Fortran operatos by python equivalents
-#        return result
-#    def convertOperators_(text):
-#        return grammar.pp_ops.transformString(text)
-                        
+    if not handled:
+        # TODO add ignore filter
+        utils.logging.logWarning(LOG_PREFIX,"__handlePreprocessorDirective",\
+          "preprocessor directive '{}' was ignored".format(singleLineStatement))
+
+    return includedRecords
+
 def __convertLinesToStatements(lines):
     """
     Fortran lines can contain multiple statements that
@@ -187,18 +133,18 @@ def __convertLinesToStatements(lines):
     """
     pContinuation          = re.compile(r"([\&]\s*\n)|(\n[!c\*]\$\w+\&)")
     # we look for a sequence ") <word>" were word != "then".
-    pSingleLineIf          = re.compile("^(?P<indent>[\s\t]*)(?P<head>if\s*\(.+\))\s*\b(?!then)(?<body>\w.+)",re.IGNORECASE)
+    pSingleLineIf          = re.compile("^(?P<indent>[\s\t]*)(?P<head>if\s*\(.+\))\s*\b(?!then)(?P<body>\w.+)",re.IGNORECASE)
     
     # Try to determine indent char and width
     firstLine = lines[0]
-    numIndentChars = len(lineStart)-len(lineStarts.lstrip(' '))
-    if numIndentChars == 0 and defaultIndentChar == '\t':
+    numIndentChars = len(firstLine)-len(firstLine.lstrip(' '))
+    if numIndentChars == 0 and DEFAULT_INDENT_CHAR == '\t':
         indentChar      = '\t'
-        numIndentChars  = len(lineStart)-len(lineStarts.lstrip('\t'))
-        indentIncrement = indentChar * indentWidthTab
+        numIndentChars  = len(firstLine)-len(firstLine.lstrip('\t'))
+        indentIncrement = indentChar * INDENT_WIDTH_TABS
     else:
         indentChar      = ' '
-        indentIncrement = indentChar * indentWidthWhitespace
+        indentIncrement = indentChar * INDENT_WIDTH_WHITESPACE
     indentOffset = numIndentChars * indentChar
 
     # make lower case, replace line continuation by whitespace, split at ";"
@@ -218,7 +164,7 @@ def __convertLinesToStatements(lines):
             unrolledStatements.append(match.group("indent") + indentIncrement + match.group("body")) # line break is part of body
             unrolledStatements.append(match.group("indent") + ENDIF + "\n")
         else:
-            unrolledStatements.append(indexOffset + stmt.lstrip(indentChar))
+            unrolledStatements.append(indentOffset + stmt.lstrip(indentChar))
     return unrolledStatements
 
 def __detectLineStarts(lines):
@@ -239,90 +185,90 @@ def __detectLineStarts(lines):
         buffering |= pDirectiveContinuation.match(line) != None
         if not buffering:
             lineStarts.append(lineno)
-        if line.rstrip()[-1] in ['&','\\']:
+        strippedLine = line.rstrip(" \t")  
+        if len(strippedLine) and strippedLine[-1] in ['&','\\']:
             buffering = True
         else:
             buffering = False
     lineStarts.append(len(lines))
     return lineStarts
 
-def __preprocessAndNormalize(fortranFileLines,options,fortranFilepath):
-    """
-    :param int includeLineno: Overwrite 
-    """
-
-    global LOG_PREFIX
-
-    utils.logging.logEnterFunction(LOG_PREFIX,"preprocessAndNormalize",{
-      "fortranFileLines":fortranFileLines,
-      "fortranFilepath":fortranFilepath,
-      "defaultIndentChar":defaultIndentChar,
-      "indentWidthWhitespace":indentWidthWhitespace,
-      "indentWidthTab":indentWidthTab
-    })
-    
+def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionStack1,regionStack2):
     """
     :param list fileLines: Lines of a file, terminated with line break characters ('\n').
     :returns: a list of dicts with keys 'lineno', 'originalLines', 'statements'.
     """
-    assert defaultIndentChar in [' ','\t'], "Indent char must be whitespace ' ' or tab '\\t'"
+    global LOG_PREFIX
+    global ERROR_HANDLING
+           
+    global INDENT_WIDTH_WHITESPACE
+    global INDENT_WIDTH_TABS
+           
+    global DEFAULT_INDENT_CHAR
 
+    utils.logging.logEnterFunction(LOG_PREFIX,"preprocessAndNormalize",{
+      "fortranFileLines":fortranFileLines,
+      "fortranFilepath":fortranFilepath
+    })
+    assert DEFAULT_INDENT_CHAR in [' ','\t'], "Indent char must be whitespace ' ' or tab '\\t'"
+
+    # 1. detect line starts
     lineStarts = __detectLineStarts(fortranFileLines)
 
-    inActiveRegion = True
-
-    # 2. now go through the blocks of buffered lines
+    # 2. go through the blocks of buffered lines
+    result = []
     for i,_ in enumerate(lineStarts[:-1]):
         lineStart     = lineStarts[i]
         nextLineStart = lineStarts[i+1]
-        lines         = lines[lineStart:nextLineStart]
+        lines         = fortranFileLines[lineStart:nextLineStart]
 
         includedRecords = []
         isPreprocessorDirective = lines[0].startswith("#")
         if isPreprocessorDirective:
-            unrolledStatements = list(lines)
             try:
-                inActiveRegion, includedRecords = __handlePreprocessorDirective(lines,inActiveRegion,macroStack,regionStack)
-                if not len(includedRecords):
-                    __applyMacros
+                includedRecords = __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,regionStack2)
             except Exception as e:
                 raise e
         else:
-            if inActiveRegion:
-                unrolledStatements1 = __convertToStatements(lines)
-                "modified" = __applyMacros
-                # todo apply macros to statements and convert to statements again if necessary
-                unrolledStatements  = []
+            if regionStack1[-1]: # inActiveRegion
+                # Convert line to statememts
+                statements1 = __convertLinesToStatements(lines)
+                # 2. Apply macros to statements
+                statements2  = []
+                for stmt1 in statements1:
+                    statements2.append(__expandMacros(stmt1))
+                # 3. Above processing might introduce multiple statements per line againa.
+                # Hence, convert each element of statements2 to single statements again
+                statements3 = []
+                for stmt2 in statements2:
+                    for stmt3 in __convertLinesToStatements(stmt2):
+                        statements3.append(stmt3)
 
                 record = {
-                  "lineno":        lineno, # key
-                  "lines":         lines,
-                  "statements":    unrolledStatements,
-                  "file":          fortranFilepath
-                  "modified":      False
-                  "included":      includedRecords
+                  "file":                fortranFilepath,
+                  "lineno":              lineStart, # key
+                  "lines":               lines,
+                  "statements":          statements1,
+                  "expandedStatements":  statements3,
+                  "included":            includedRecords,
+                  "modified":            False,
                 }
                 result.append(record)
     
-    utils.logging.logLeaveFunction(LOG_PREFIX,"preprocessAndNormalize")
+    utils.logging.logLeaveFunction(LOG_PREFIX,"__preprocessAndNormalize")
     return result
 
-
-def __preprocessAndNormalizeFortranFile(fortranFilepath,macroStack=[],regionStack=[]):
+def __preprocessAndNormalizeFortranFile(fortranFilepath,macroStack,regionStack1,regionStack2):
     """
     :throws: IOError if the specified file cannot be found/accessed.
     """
     utils.logging.logEnterFunction(LOG_PREFIX,"__preprocessAndNormalizeFortranFile",{
-      "fortranFilepath":fortranFilepath,
-      "options":options,
-      "defaultIndentChar":defaultIndentChar,
-      "indentWidthWhitespace":indentWidthWhitespace,
-      "indentWidthTab":indentWidthTab
+      "fortranFilepath":fortranFilepath
     })
 
     try:
-        with open(fortranFilepath,"r"):
-            result = __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionStack)
+        with open(fortranFilepath,"r") as infile:
+            result = __preprocessAndNormalize(infile.readlines(),fortranFilepath,macroStack,regionStack1,regionStack2)
             utils.logging.logLeaveFunction(LOG_PREFIX,"__preprocessAndNormalizeFortranFile")
             return result
     except Exception as e:
@@ -338,7 +284,7 @@ def __initMacros(options):
 
 # API
 
-def preprocessAndNormalizeFortranFile(fortranFilepath,options):
+def preprocessAndNormalizeFortranFile(fortranFilepath,options=""):
     """
     A C and Fortran preprocessor (cpp and fpp).
 
@@ -356,10 +302,7 @@ def preprocessAndNormalizeFortranFile(fortranFilepath,options):
 
     utils.logging.logEnterFunction(LOG_PREFIX,"preprocessAndNormalizeFortranFile",{
       "fortranFilepath":fortranFilepath,
-      "options":options,
-      "defaultIndentChar":defaultIndentChar,
-      "indentWidthWhitespace":indentWidthWhitespace,
-      "indentWidthTab":indentWidthTab
+      "options":options
     })
 
     macroStack = __initMacros(options)
@@ -382,44 +325,22 @@ def preprocessAndNormalizeFortranFile(fortranFilepath,options):
                 subst = re.sub(r"\b{}\b".format(placeholder),args[n],subst)
             return subst
         else:
-            if ERROR_HANDLING=="strict":
-                utils.logging.logError(LOG_PREFIX,"__preprocessAndNormalizeFortranFile","expanding macro failed: macro '{}' is not defined".format(name)))
-                sys.abort(ERR_PREPROCESSOR_MACRO_DEFINITION_NOT_FOUND)
-            else:
-                utils.logging.logWarning(LOG_PREFIX,"__preprocessAndNormalizeFortranFile","expanding macro failed: macro '{}' is not defined".format(name)))
-    
-    grammar.pp_defined.setParseAction(defined_)
-    grammar.pp_macro_eval.setParseAction(substitute_) 
+            pass
+            #if ERROR_HANDLING=="strict":
+            #    utils.logging.logError(LOG_PREFIX,"__preprocessAndNormalizeFortranFile",\
+            #            "expanding macro failed: macro '{}' is not defined".format(name))
+            #    sys.exit(ERR_PREPROCESSOR_MACRO_DEFINITION_NOT_FOUND)
+            #else:
+            #    utils.logging.logWarning(LOG_PREFIX,"__preprocessAndNormalizeFortranFile",\
+            #            "expanding macro failed: macro '{}' is not defined".format(name))
+
+    pp_defined.setParseAction(defined_)
+    pp_macro_eval.setParseAction(substitute_) 
 
     try:
-        result = __preprocessAndNormalizeFortranFile(fortranFilepath,__initMacros(options))
+        result = __preprocessAndNormalizeFortranFile(fortranFilepath,macroStack=__initMacros(options),\
+           regionStack1=[True],regionStack2=[False]) # init value of regionStack[0] can be arbitrary
         utils.logging.logLeaveFunction(LOG_PREFIX,"preprocessAndNormalizeFortranFile")
         return result
     except Exception as e:
         raise e
-
-#def __applyMacros(statements,macroStack)
-#    # TODO apply defined first; only if directive
-#    
-#
-#    for macro in reversed(macroStack):
-#        key   = macro["name"]
-#        subst = macro["subst"] # keep the '\' here
-#        # TODO move into macro creation and just read here
-#        if not len(macro["args"]):
-#            macro_pattern = pyp.Regex(r"\b"+key+r"\b",re.IGNORECASE).setParseAction(lambda tk: subst)
-#        else: 
-#            
-#            for stmt in unrolledStatements:
-#    
-#    def expandMacros_(original):
-#        oldResult = None
-#        result    = original
-#        # expand macro; one at a time
-#        while result != oldResult:
-#              oldResult = result
-#              result    = grammar.pp_value.transformString(result)
-#        # replace C and Fortran operatos by python equivalents
-#        return result
-#    def convertOperators_(text):
-#        return grammar.pp_ops.transformString(text)

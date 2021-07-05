@@ -2,6 +2,7 @@
 import time
 import unittest
 import cProfile,pstats,io
+import json
 
 import addtoplevelpath
 import preprocessor.preprocessor as preprocessor
@@ -36,9 +37,9 @@ class TestIndexer(unittest.TestCase):
     def test_0_donothing(self):
         pass 
     def test_1_definitions(self):
-        options = "-DCUDA"
+        options = "-DCUDA -DCUDA2"
         result = preprocessor.preprocessAndNormalizeFortranFile("test1.f90",options)
-        print(result)
+        print(json.dumps(result,indent=2))
       
 if __name__ == '__main__':
     unittest.main() 

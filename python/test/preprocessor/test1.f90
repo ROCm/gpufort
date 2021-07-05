@@ -5,7 +5,11 @@ program main
 #define size8(x) 8*(x)*b
 
 #if defined(CUDA)
+#if defined(CUDA1)
+#elif defined(CUDA3)
+#elif defined(CUDA2)
 if ( 1 > 0 ) print *, size8(c)
+#endif
 #else
 #endif
 

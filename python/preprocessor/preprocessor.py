@@ -298,6 +298,9 @@ def __initMacros(options):
     # init macro stack from compiler options
     macroStack = []
     for result,_,__ in pp_compiler_option.scanString(options):
+        value = result.value
+        if value == None:
+            value == "1"
         macro = { "name": result.name, "args": [], "subst": result.value }
         macroStack.append(macro)
     return macroStack

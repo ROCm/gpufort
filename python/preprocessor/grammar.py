@@ -5,7 +5,7 @@ pyp.ParserElement.enablePackrat()
 
 ## INGREDIENTS
 
-pp_ident           = pyp.pyparsing_common.identifier.copy()
+pp_ident           = pyp.Regex(r"\b\w+\b")
 LPAR,RPAR          = map(pyp.Suppress, "()")
 
 # conditions
@@ -34,7 +34,7 @@ pp_arithm_logic_expr =  pyp.infixNotation(pp_value, [
     (pp_op_or,                2, pyp.opAssoc.LEFT)
 ])
 
-pp_macro_eval   = pp_ident + pyp.Optional(LPAR + pyp.delimitedList( pp_arithm_logic_expr ) + RPAR,default=[])
+pp_macro_eval   = pp_ident.setResultsName("name") + pyp.Optional(LPAR + pyp.delimitedList( pp_arithm_logic_expr ) + RPAR,default=[]).setResultsName("args")
 
 pp_value      <<= ( pp_number | pp_bool_true | pp_bool_false | pp_defined | pp_macro_eval ) # | pp_char ) # ! defined must come before eval
 
@@ -43,7 +43,7 @@ pp_value      <<= ( pp_number | pp_bool_true | pp_bool_false | pp_defined | pp_m
 # if
 pp_dir_ifdef   = pyp.Regex(r"#\s*ifdef\s+(?P<name>\w+)",re.IGNORECASE)
 pp_dir_ifndef  = pyp.Regex(r"#\s*ifndef\s+(?P<name>\w+)",re.IGNORECASE)
-pp_dir_if      = pyp.Regex(r"#\s*if\s+(?P<condition>.+)$",re.IGNORECASE)
+pp_dir_if      = pyp.Regex(r"#\s*if\s+(?P<condition>.+)",re.IGNORECASE)
 # elif
 pp_dir_elif    = pyp.Regex(r"#\s*elif\s+(?P<condition>.+)",re.IGNORECASE)
 # else
@@ -53,7 +53,7 @@ pp_dir_include = pyp.Regex(r"#\s*include\s+\"(?P<filename>["+pyp.printables+r"]+
 # define / undef
 pp_dir_define  = pyp.Regex(r"#\s*define\s+(?P<name>\w+)",re.IGNORECASE) +\
                  pyp.Optional(LPAR + pyp.Optional(pyp.delimitedList(pp_ident),default=[]) + RPAR,default=[]).setResultsName("args") +\
-                 pyp.Regex(".*$").setResultsName("subst")
+                 pyp.Regex(".*\n?$").setResultsName("subst")
 pp_dir_undef   = pyp.Regex(r"#\s*undef\s+(?P<name>\w+)",re.IGNORECASE)
 # other
 pp_compiler_option = pyp.Regex(r"-D(?P<name>\w+)(=(?P<value>["+pyp.printables+r"]+))?")

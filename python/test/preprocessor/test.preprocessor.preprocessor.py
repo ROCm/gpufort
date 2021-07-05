@@ -36,8 +36,9 @@ class TestIndexer(unittest.TestCase):
     def test_0_donothing(self):
         pass 
     def test_1_definitions(self):
-        options = ""
-        preprocessor.preprocessAndNormalizeFortranFile("test1.f90")
+        options = "-DCUDA"
+        result = preprocessor.preprocessAndNormalizeFortranFile("test1.f90",options)
+        print(result)
       
 if __name__ == '__main__':
     unittest.main() 

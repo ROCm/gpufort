@@ -4,6 +4,9 @@ program main
 #define c 5
 #define size8(x) 8*(x)*b
 
-print *, size8(c)
+#if defined(CUDA)
+if ( 1 > 0 ) print *, size8(c)
+#else
+#endif
 
 end program main

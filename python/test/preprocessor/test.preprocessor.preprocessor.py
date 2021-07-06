@@ -9,8 +9,8 @@ import preprocessor.preprocessor as preprocessor
 import utils.logging
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
-utils.logging.VERBOSE    = False
-utils.logging.initLogging("log.log",LOG_FORMAT,"warning")
+utils.logging.VERBOSE    = True
+utils.logging.initLogging("log.log",LOG_FORMAT,"debug4")
 
 ENABLE_PROFILING = False
 
@@ -39,7 +39,7 @@ class TestIndexer(unittest.TestCase):
     def test_1_definitions(self):
         options = "-DCUDA -DCUDA2"
         result = preprocessor.preprocessAndNormalizeFortranFile("test1.f90",options)
-        print(json.dumps(result,indent=2))
+        #print(json.dumps(result,indent=2))
       
 if __name__ == '__main__':
     unittest.main() 

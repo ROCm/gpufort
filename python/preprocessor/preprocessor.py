@@ -44,7 +44,7 @@ def __expandMacros(text,macroStack):
 def __evaluateCondition(text,macroStack):
     # replace C and Fortran operators by python equivalents
     # TODO error handling
-    return eval(pp_ops.transformString(pp_defined.transformString(__expandMacros(text,macroStack))))
+    return eval(pp_ops.transformString(pp_defined.transformString(__expandMacros(text,macroStack)))) > 0
 
 def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,regionStack2):
     """
@@ -56,18 +56,31 @@ def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,
                               should be activated.
     """
     global LOG_PREFIX
+    
+    utils.logging.logEnterFunction(LOG_PREFIX,"__handlePreprocessorDirective",
+      {"fortran-file-path": fortranFilepath,
+       "region-stack-1="+regionStackFormat(regionStack1),
+       "region-stack-2="+regionStackFormat(regionStack2),   
+       "macro-names="+macroNames)
+
+    def regionStackFormat(stack):
+        return "-".join([str(int(el)) for el in stack])
+    macroNames = ",".join([macro["name"] for macro in macroStack])
+    utils.logging.logDebug2(LOG_PREFIX,"__handlePreprocessorDirective","region-stack-1="+regionStackFormat(regionStack1))
+    utils.logging.logDebug2(LOG_PREFIX,"__handlePreprocessorDirective","region-stack-2="+regionStackFormat(regionStack2))
+    utils.logging.logDebug2(LOG_PREFIX,"__handlePreprocessorDirective","macro-names="+macroNamesi                       )
 
     includedRecords = []
 
-    inActiveRegion  = regionStack1[-1]
     handled = False
     
     # strip away whitespace chars
     try:
         strippedFirstLine = lines[0].lstrip("# \t").lower()
         singleLineStatement = __convertLinesToStatements(lines)[0] # does not make sense for define
-        if inActiveRegion:
+        if regionStack1[-1]:
            if strippedFirstLine.startswith("define"):
+               utils.logging.logDebug3(LOG_PREFIX,"__handlePreprocessorDirective","found define in line '{}'".format(lines[0].rstrip("\n")))
                # TODO error handling
                result   = pp_dir_define.parseString(lines[0],parseAll=True)
                substLines = [line.strip("\n")+"\n" for line in [result.subst] + lines[1:]]
@@ -77,12 +90,14 @@ def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,
                print(macroStack)
                handled = True
            elif strippedFirstLine.startswith("undef"):
+               utils.logging.logDebug3(LOG_PREFIX,"__handlePreprocessorDirective","found undef in line '{}'".format(lines[0].rstrip("\n")))
                result = pp_dir_define.parseString(singleLineStatement,parseAll=True)
                for macro in list(macroStack):
                    if macro["name"] == result.name:
                        macroStack.remove(macro)
                handled = True
            elif strippedFirstLine.startswith("include"):
+               utils.logging.logDebug3(LOG_PREFIX,"__handlePreprocessorDirective","found include in line '{}'".format(lines[0].rstrip("\n")))
                result = pp_dir_include.parseString(singleLineStatement,parseAll=True)
                filename = result.filename.strip(" \t")
                if not filename.startswith("/"):
@@ -91,13 +106,14 @@ def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,
                handled = True
         # if cond. true, push new region to stack
         if strippedFirstLine.startswith("if"):
-            if inActiveRegion and strippedFirstLine.startswith("ifdef"):
+            utils.logging.logDebug3(LOG_PREFIX,"__handlePreprocessorDirective","found if/ifdef/ifndef in line '{}'".format(lines[0].rstrip("\n")))
+            if regionStack1[-1] and strippedFirstLine.startswith("ifdef"):
                 result = pp_dir_ifdef.parseString(singleLineStatement,parseAll=True)
                 condition = "defined("+result.name+")"
-            elif inActiveRegion and strippedFirstLine.startswith("ifndef"):
+            elif regionStack1[-1] and strippedFirstLine.startswith("ifndef"):
                 result = pp_dir_ifndef.parseString(singleLineStatement,parseAll=True)
                 condition = "!defined("+result.name+")"
-            elif inActiveRegion: # and strippedFirstLine.startswith("if"):
+            elif regionStack1[-1]: # and strippedFirstLine.startswith("if"):
                 result    = pp_dir_if.parseString(singleLineStatement,parseAll=True)
                 condition = result.condition
             else:
@@ -109,8 +125,9 @@ def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,
             handled = True
         # elif
         elif strippedFirstLine.startswith("elif"):
+            utils.logging.logDebug3(LOG_PREFIX,"__handlePreprocessorDirective","found elif in line '{}'".format(lines[0].rstrip("\n")))
             regionStack1.pop() # rm previous if/elif-branch
-            if inActiveRegion and not regionStack2[-1]: # TODO allow to have multiple options specified at once
+            if regionStack1[-1] and not regionStack2[-1]: # TODO allow to have multiple options specified at once
                 result    = pp_dir_elif.parseString(singleLineStatement,parseAll=True)
                 condition = result.condition
             else:
@@ -121,8 +138,9 @@ def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,
             handled = True
         # else
         elif strippedFirstLine.startswith("else"):
+            utils.logging.logDebug3(LOG_PREFIX,"__handlePreprocessorDirective","found else in line '{}'".format(lines[0].rstrip("\n")))
             regionStack1.pop() # rm previous if/elif-branch
-            active = inActiveRegion and not regionStack2[-1]
+            active = regionStack1[-1] and not regionStack2[-1]
             regionStack1.append(active)
             handled = True
         # endif
@@ -224,9 +242,9 @@ def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionS
     global DEFAULT_INDENT_CHAR
 
     utils.logging.logEnterFunction(LOG_PREFIX,"preprocessAndNormalize",{
-      "fortranFileLines":fortranFileLines,
       "fortranFilepath":fortranFilepath
     })
+    
     assert DEFAULT_INDENT_CHAR in [' ','\t'], "Indent char must be whitespace ' ' or tab '\\t'"
 
     # 1. detect line starts
@@ -342,7 +360,7 @@ def preprocessAndNormalizeFortranFile(fortranFilepath,options=""):
 
     try:
         result = __preprocessAndNormalizeFortranFile(fortranFilepath,macroStack,\
-           regionStack1=[True],regionStack2=[False]) # init value of regionStack[0] can be arbitrary
+           regionStack1=[True],regionStack2=[True]) # init value of regionStack[0] can be arbitrary
         utils.logging.logLeaveFunction(LOG_PREFIX,"preprocessAndNormalizeFortranFile")
         return result
     except Exception as e:

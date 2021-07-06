@@ -94,10 +94,11 @@ def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,
                handled = True
            elif strippedFirstLine.startswith("include"):
                utils.logging.logDebug3(LOG_PREFIX,"__handlePreprocessorDirective","found include in line '{}'".format(lines[0].rstrip("\n")))
-               result = pp_dir_include.parseString(singleLineStatement,parseAll=True)
-               filename = result.filename.strip(" \t")
-               if not filename.startswith("/"):
-                   filename = fortranFilepath + "/" + filename
+               result     = pp_dir_include.parseString(singleLineStatement,parseAll=True)
+               filename   = result.filename.strip(" \t")
+               currentDir = os.path.dirname(fortranFilepath)
+               if not filename.startswith("/") and len(currentDir):
+                   filename = os.path.dirname(fortranFilepath) + "/" + filename
                includedRecords = __preprocessAndNormalizeFortranFile(filename,macroStack,regionStack1,regionStack2)
                handled = True
         # if cond. true, push new region to stack
@@ -185,7 +186,6 @@ def __convertLinesToStatements(lines):
     for stmt in singleLineStatements:
         match = pSingleLineIf.search(stmt)
         if match:
-            print(match)
             if match.group("head").startswith("if"):
                 THEN  = " then" 
                 ENDIF = "endif"
@@ -259,35 +259,35 @@ def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionS
         if isPreprocessorDirective:
             try:
                 includedRecords = __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,regionStack2)
+                statements1 = []
+                statements3 = []
             except Exception as e:
                 raise e
-        else:
-            if regionStack1[-1]: # inActiveRegion
+        elif regionStack1[-1]: # inActiveRegion
                 # Convert line to statememts
                 statements1 = __convertLinesToStatements(lines)
                 # 2. Apply macros to statements
-                print(statements1)
                 statements2  = []
                 for stmt1 in statements1:
                     statements2.append(__expandMacros(stmt1,macroStack))
-                print(statements2)
                 # 3. Above processing might introduce multiple statements per line againa.
                 # Hence, convert each element of statements2 to single statements again
                 statements3 = []
                 for stmt2 in statements2:
                     for stmt3 in __convertLinesToStatements([stmt2]):
                         statements3.append(stmt3)
-
-                record = {
-                  "file":                fortranFilepath,
-                  "lineno":              lineStart, # key
-                  "lines":               lines,
-                  "statements":          statements1,
-                  "expandedStatements":  statements3,
-                  "included":            includedRecords,
-                  "modified":            False,
-                }
-                records.append(record)
+    
+        if len(includedRecords) or (not isPreprocessorDirective and regionStack1[-1]):
+            record = {
+              "file":                    fortranFilepath,
+              "lineno":                  lineStart, # key
+              "lines":                   lines,
+              "statements":              statements1,
+              "expandedStatements":      statements3,
+              "includedRecords":         includedRecords,
+              "modified":                False,
+            }
+            records.append(record)
     
     utils.logging.logLeaveFunction(LOG_PREFIX,"__preprocessAndNormalize")
     return records
@@ -369,9 +369,16 @@ def renderFile(records,stage="expandedStatements"):
     utils.logging.logEnterFunction(LOG_PREFIX,"renderFile",\
       {"stage":stage})
 
-    result = ""
-    for record in records:
-        result += "".join(record[stage])
+    def renderFile_(records):
+        nonlocal stage
+        result = ""
+        for record in records:
+            if not len(record["includedRecords"]):
+                result += "".join(record[stage])
+            else:
+                result += renderFile_(record["includedRecords"])
+        return result
+
     utils.logging.logLeaveFunction(LOG_PREFIX,"renderFile")
     
-    return result
+    return renderFile_(records).strip("\n")

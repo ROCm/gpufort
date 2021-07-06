@@ -12,6 +12,7 @@ import utils.logging
 import utils.fileutils
 import scanner.scanner as scanner
 import indexer.indexer as indexer
+import preprocessor.preprocessor as preprocessor
 import translator.translator as translator
 import fort2hip.fort2hip as fort2hip
 
@@ -211,6 +212,7 @@ def parseCommandLineArguments():
           "fort2hip/fort2hip_options.py.in",
           "indexer/indexer_options.py.in",
           "indexer/scoper_options.py.in",
+          "preprocessor/preprocessor_options.py.in",
           "utils/logging_options.py.in"
         ]
         print("\nCONFIGURABLE GPUFORT OPTIONS (DEFAULT VALUES):")
@@ -343,7 +345,8 @@ if __name__ == "__main__":
     #
     index = createIndex(INCLUDE_DIRS,defines,inputFilepath)
     if not ONLY_CREATE_GPUFORT_MODULE_FILES:
-        stree = scanner.parseFile(inputFilepath,index)    
+        records = preprocessor.preprocessAndNormalizeFortranFile(inputFilepath,defines)
+        stree   = scanner.parseFile(records,index,inputFilepath)    
  
         # extract kernels
         outputFilePrefix = ".".join(inputFilepath.split(".")[:-1])

@@ -219,7 +219,7 @@ DIMENSION = DIMENSION.suppress()
 
 PUBLIC,PRIVATE,EXTERNAL,INTRINSIC = makeCaselessLiteral(\
   "public,private,external,intrinsic")
-simpleAttribute = Regex(r"\b(public|private|external|intrinsic|value|parameter|allocatable|pointer|save|target|shared|device|pinned|managed|optional|vartype|contiguous)\b"))
+simpleAttribute = Regex(r"\b(public|private|external|intrinsic|value|parameter|allocatable|pointer|save|target|shared|device|pinned|managed|optional|vartype|contiguous)\b",re.IGNORECASE)
 # TODO identify how many what dimension(5) means. Range 1:5?
 dimensionValue     = matrixRange | arithmeticExpression | Literal("*")
 bounds             = Group(LPAR + delimitedList(dimensionValue) + RPAR)

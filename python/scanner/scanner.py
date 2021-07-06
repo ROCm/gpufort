@@ -77,13 +77,67 @@ def handleIncludeStatements(fortranFilepath,lines):
     utils.logging.logLeaveFunction(LOG_PREFIX,"handleIncludeStatements")
     return result
 
+def __postprocessAcc(stree,hipModuleName):
+    """
+    Add use statements as well as handles plus their creation and destruction for certain
+    math libraries.
+    """
+    global LOG_PREFIX
+    global DESTINATION_DIALECT
+    global RUNTIME_MODULE_NAMES
+    
+    utils.logging.logEnterFunction(LOG_PREFIX,"__postprocessAcc",{"hipModuleName":hipModuleName})
+    
+    # acc detection
+    directives = stree.findAll(filter=lambda node: isinstance(node,STAccDirective), recursively=True)
+    for directive in directives:
+         stnode = directive._parent.findFirst(filter=lambda child : type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
+         if not stnode is None:
+             indent = " "*(len(stnode.lines()[0]) - len(stnode.lines()[0].lstrip()))
+             accRuntimeModuleName = RUNTIME_MODULE_NAMES[DESTINATION_DIALECT]
+             if accRuntimeModuleName != None and len(accRuntimeModuleName):
+                 stnode._preamble.add("{0}use iso_c_binding\n{0}use {1}\n".format(indent,accRuntimeModuleName))
+    utils.logging.logLeaveFunction(LOG_PREFIX,"__postprocessAcc")
+    
+def __postprocessCuf(stree,hipModuleName):
+    """
+    Add use statements as well as handles plus their creation and destruction for certain
+    math libraries.
+    """
+    global LOG_PREFIX
+    global CUBLAS_VERSION 
+    utils.logging.logEnterFunction(LOG_PREFIX,"__postprocessCuf",{"hipModuleName":hipModuleName})
+    # cublas_v1 detection
+    if CUBLAS_VERSION == 1:
+        def hasCublasCall(child):
+            return type(child) is STCudaLibCall and child.hasCublas()
+        cublasCalls = stree.findAll(filter=hasCublasCall, recursively=True)
+        #print(cublasCalls)
+        for call in cublasCalls:
+            begin = call._parent.findLast(filter=lambda child : type(child) in [STUseStatement,STDeclaration])
+            indent = " "*(len(begin.lines()[0]) - len(begin.lines()[0].lstrip()))
+            begin._epilog.add("{0}type(c_ptr) :: hipblasHandle = c_null_ptr\n".format(indent))
+            #print(begin._lines)       
+ 
+            localCublasCalls = call._parent.findAll(filter=hasCublasCall, recursively=False)
+            first = localCublasCalls[0]
+            indent = " "*(len(first.lines()[0]) - len(first.lines()[0].lstrip()))
+            first._preamble.add("{0}hipblasCreate(hipblasHandle)\n".format(indent))
+            last = localCublasCalls[-1]
+            indent = " "*(len(last.lines()[0]) - len(last.lines()[0].lstrip()))
+            last._epilog.add("{0}hipblasDestroy(hipblasHandle)\n".format(indent))
+    utils.logging.logLeaveFunction(LOG_PREFIX,"__postprocessCuf")
+
+
+# API
+
 # Pyparsing actions that create scanner tree (ST)
-def parseFile(fortranFilepath,index):
+def parseFile(records,index,fortranFilepath):
     """
     Generate an object tree (OT). 
     """
     utils.logging.logEnterFunction(LOG_PREFIX,"parseFile",
-      {"fortranFilepath":fortranFilepath})
+        {"fortranFilepath":fortranFilepath})
 
     translationEnabled = TRANSLATION_ENABLED_BY_DEFAULT
     
@@ -411,7 +465,6 @@ def parseFile(fortranFilepath,index):
             translationEnabled = False
     
     # TODO completely remove / comment out !$acc end kernels
-
     moduleStart.setParseAction(Module_visit)
     programStart.setParseAction(Program_visit)
     functionStart.setParseAction(Function_visit)
@@ -482,118 +535,41 @@ def parseFile(fortranFilepath,index):
            utils.logging.logDebug4(LOG_PREFIX,"parseFile.tryToParseString","did not find expression '{}' in line '{}'".format(expressionName,currentLines[0]))
            utils.logging.logDebug5(LOG_PREFIX,"parseFile.tryToParseString",str(e))
            return False
-    
-    pDirectiveContinuation = re.compile(r"\n[!c\*]\$\w+\&")
-    pContinuation          = re.compile(r"(\&\s*\n)|(\n[!c\*]\$\w+\&)")
-    with open(fortranFilepath,"r") as fortranFile:
-        # 1. Handle all include statements
-        lines = handleIncludeStatements(fortranFilepath,fortranFile.readlines())
-        # 2. collapse multi-line statements (&)
-        buffering = False
-        lineStarts = []
-        for lineno,line in enumerate(lines):
-            # Continue buffering if multiline CUF/ACC/OMP statement
-            buffering |= pDirectiveContinuation.match(line) != None
-            if not buffering:
-                lineStarts.append(lineno)
-            if line.rstrip().endswith("&"):
-                buffering = True
-            else:
-                buffering = False
-        lineStarts.append(len(lines))
-        # TODO merge this with loop above
-        # 3. now go through the collapsed lines
-        for i,_ in enumerate(lineStarts[:-1]):
-            lineStart     = lineStarts[i]
-            lineEnd       = lineStarts[i+1]
-            currentLineno = lineStart
-            currentLines  = lines[lineStart:lineEnd]
+
+    for record in records:
+        for singleLineStatement in record["expandedStatements"]: 
+            currentLineno = record["lineno"]
+            currentLines  = record["lines"]
+            # host code
+            if "cuf" in SOURCE_DIALECTS:
+                scanString("attributes",attributes)
+                scanString("cudaLibCall",cudaLibCall)
+                scanString("cudaKernelCall",cudaKernelCall)
+     
+            # scan for more complex expressions first      
+            scanString("assignmentBegin",assignmentBegin)
+            scanString("memcpy",memcpy)
+            scanString("allocated",ALLOCATED)
+            scanString("deallocate",DEALLOCATE) 
+            scanString("allocate",ALLOCATE) 
+            scanString("nonZeroCheck",nonZeroCheck)
+            #scanString("cpp_ifdef",cpp_ifdef)
+            #scanString("cpp_defined",cpp_defined)
             
-            # make lower case, replace line continuation by whitespace, split at ";"
-            preprocessedLines = pContinuation.sub(" "," ".join(currentLines).lower()).split(";")
-            for singleLineStatement in preprocessedLines: 
-                # host code
-                if "cuf" in SOURCE_DIALECTS:
-                    scanString("attributes",attributes)
-                    scanString("cudaLibCall",cudaLibCall)
-                    scanString("cudaKernelCall",cudaKernelCall)
-      
-                # scan for more complex expressions first      
-                scanString("assignmentBegin",assignmentBegin)
-                scanString("memcpy",memcpy)
-                scanString("allocated",ALLOCATED)
-                scanString("deallocate",DEALLOCATE) 
-                scanString("allocate",ALLOCATE) 
-                scanString("nonZeroCheck",nonZeroCheck)
-                #scanString("cpp_ifdef",cpp_ifdef)
-                #scanString("cpp_defined",cpp_defined)
-                
-                # host/device environments  
-                #tryToParseString("callEnd",callEnd)
-                if not tryToParseString("structureEnd|ENDDO|gpufort_control",structureEnd|ENDDO|gpufort_control):
-                    tryToParseString("use|CONTAINS|IMPLICIT|declaration|ACC_START|cuf_kernel_do|DO|moduleStart|programStart|functionStart|subroutineStart",\
-                       use|CONTAINS|IMPLICIT|declaration|ACC_START|cuf_kernel_do|DO|moduleStart|programStart|functionStart|subroutineStart)
-                
-                if keepRecording:
-                   try:
-                      currentNode._lines += currentLines
-                   except Exception as e:
-                      utils.logging.logError(LOG_PREFIX,"parseFile","While parsing file {}".format(currentFile))
-                      raise e
+            # host/device environments  
+            #tryToParseString("callEnd",callEnd)
+            if not tryToParseString("structureEnd|ENDDO|gpufort_control",structureEnd|ENDDO|gpufort_control):
+                tryToParseString("use|CONTAINS|IMPLICIT|declaration|ACC_START|cuf_kernel_do|DO|moduleStart|programStart|functionStart|subroutineStart",\
+                   use|CONTAINS|IMPLICIT|declaration|ACC_START|cuf_kernel_do|DO|moduleStart|programStart|functionStart|subroutineStart)
+            if keepRecording:
+               try:
+                  currentNode._lines += currentLines
+               except Exception as e:
+                  utils.logging.logError(LOG_PREFIX,"parseFile","While parsing file {}".format(currentFile))
+                  raise e
     assert type(currentNode) is STRoot
     utils.logging.logLeaveFunction(LOG_PREFIX,"parseFile")
     return currentNode
-
-def postprocessAcc(stree,hipModuleName):
-    """
-    Add use statements as well as handles plus their creation and destruction for certain
-    math libraries.
-    """
-    global LOG_PREFIX
-    global DESTINATION_DIALECT
-    global RUNTIME_MODULE_NAMES
-    
-    utils.logging.logEnterFunction(LOG_PREFIX,"postprocessAcc",{"hipModuleName":hipModuleName})
-    
-    # acc detection
-    directives = stree.findAll(filter=lambda node: isinstance(node,STAccDirective), recursively=True)
-    for directive in directives:
-         stnode = directive._parent.findFirst(filter=lambda child : type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
-         if not stnode is None:
-             indent = " "*(len(stnode.lines()[0]) - len(stnode.lines()[0].lstrip()))
-             accRuntimeModuleName = RUNTIME_MODULE_NAMES[DESTINATION_DIALECT]
-             if accRuntimeModuleName != None and len(accRuntimeModuleName):
-                 stnode._preamble.add("{0}use iso_c_binding\n{0}use {1}\n".format(indent,accRuntimeModuleName))
-    utils.logging.logLeaveFunction(LOG_PREFIX,"postprocessAcc")
-    
-def postprocessCuf(stree,hipModuleName):
-    """
-    Add use statements as well as handles plus their creation and destruction for certain
-    math libraries.
-    """
-    global LOG_PREFIX
-    global CUBLAS_VERSION 
-    utils.logging.logEnterFunction(LOG_PREFIX,"postprocessCuf",{"hipModuleName":hipModuleName})
-    # cublas_v1 detection
-    if CUBLAS_VERSION == 1:
-        def hasCublasCall(child):
-            return type(child) is STCudaLibCall and child.hasCublas()
-        cublasCalls = stree.findAll(filter=hasCublasCall, recursively=True)
-        #print(cublasCalls)
-        for call in cublasCalls:
-            begin = call._parent.findLast(filter=lambda child : type(child) in [STUseStatement,STDeclaration])
-            indent = " "*(len(begin.lines()[0]) - len(begin.lines()[0].lstrip()))
-            begin._epilog.add("{0}type(c_ptr) :: hipblasHandle = c_null_ptr\n".format(indent))
-            #print(begin._lines)       
- 
-            localCublasCalls = call._parent.findAll(filter=hasCublasCall, recursively=False)
-            first = localCublasCalls[0]
-            indent = " "*(len(first.lines()[0]) - len(first.lines()[0].lstrip()))
-            first._preamble.add("{0}hipblasCreate(hipblasHandle)\n".format(indent))
-            last = localCublasCalls[-1]
-            indent = " "*(len(last.lines()[0]) - len(last.lines()[0].lstrip()))
-            last._epilog.add("{0}hipblasDestroy(hipblasHandle)\n".format(indent))
-    utils.logging.logLeaveFunction(LOG_PREFIX,"postprocessCuf")
 
 def postprocess(stree,hipModuleName,index):
     """
@@ -617,7 +593,7 @@ def postprocess(stree,hipModuleName,index):
                 stnode._preamble.add("{0}use {1}\n".format(indent,hipModuleName))
    
     if "cuf" in SOURCE_DIALECTS:
-         postprocessCuf(stree,hipModuleName)
+         __postprocessCuf(stree,hipModuleName)
     if "acc" in SOURCE_DIALECTS:
-         postprocessAcc(stree,hipModuleName)
+         __postprocessAcc(stree,hipModuleName)
     utils.logging.logLeaveFunction(LOG_PREFIX,"postprocess")

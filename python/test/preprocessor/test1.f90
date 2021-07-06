@@ -13,4 +13,15 @@ if ( 1 > 0 ) print *, size8(c)
 #else
 #endif
 
+
+#if defined(HIP)
+#  if defined(CUDA1)
+#  elif defined(CUDA3)
+#  elif defined(CUDA2)
+if ( 1 > 0 ) print *, size8(2*c+c)
+#  endif
+#else
+print *, "else"
+#endif
+
 end program main

@@ -57,18 +57,15 @@ def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,
     """
     global LOG_PREFIX
     
-    utils.logging.logEnterFunction(LOG_PREFIX,"__handlePreprocessorDirective",
-      {"fortran-file-path": fortranFilepath,
-       "region-stack-1="+regionStackFormat(regionStack1),
-       "region-stack-2="+regionStackFormat(regionStack2),   
-       "macro-names="+macroNames)
-
     def regionStackFormat(stack):
         return "-".join([str(int(el)) for el in stack])
     macroNames = ",".join([macro["name"] for macro in macroStack])
-    utils.logging.logDebug2(LOG_PREFIX,"__handlePreprocessorDirective","region-stack-1="+regionStackFormat(regionStack1))
-    utils.logging.logDebug2(LOG_PREFIX,"__handlePreprocessorDirective","region-stack-2="+regionStackFormat(regionStack2))
-    utils.logging.logDebug2(LOG_PREFIX,"__handlePreprocessorDirective","macro-names="+macroNamesi                       )
+    
+    utils.logging.logEnterFunction(LOG_PREFIX,"__handlePreprocessorDirective",\
+      {"fortran-file-path": fortranFilepath,\
+       "region-stack-1":    regionStackFormat(regionStack1),\
+       "region-stack-2":    regionStackFormat(regionStack2),\
+       "macro-names":       macroNames})
 
     includedRecords = []
 
@@ -87,7 +84,6 @@ def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,
                subst    = "".join(substLines).replace(r"\\","")
                newMacro = { "name": result.name, "args": result.args.asList(), "subst": subst }
                macroStack.append(newMacro)
-               print(macroStack)
                handled = True
            elif strippedFirstLine.startswith("undef"):
                utils.logging.logDebug3(LOG_PREFIX,"__handlePreprocessorDirective","found undef in line '{}'".format(lines[0].rstrip("\n")))
@@ -168,7 +164,7 @@ def __convertLinesToStatements(lines):
     """
     pContinuation          = re.compile(r"([\&]\s*\n)|(\n[!c\*]\$\w+\&)")
     # we look for a sequence ") <word>" were word != "then".
-    pSingleLineIf          = re.compile("^(?P<indent>[\s\t]*)(?P<head>if\s*\(.+\))\s*\b(?!then)(?P<body>\w.+)",re.IGNORECASE)
+    pSingleLineIf          = re.compile(r"^(?P<indent>[\s\t]*)(?P<head>if\s*\(.+\))\s*\b(?!then)(?P<body>\w.+)",re.IGNORECASE)
     
     # Try to determine indent char and width
     firstLine = lines[0]
@@ -189,14 +185,15 @@ def __convertLinesToStatements(lines):
     for stmt in singleLineStatements:
         match = pSingleLineIf.search(stmt)
         if match:
+            print(match)
             if match.group("head").startswith("if"):
-                THEN  = "then" 
+                THEN  = " then" 
                 ENDIF = "endif"
             else:
-                THEN  = "THEN"
+                THEN  = " THEN"
                 ENDIF = "ENDIF"
             unrolledStatements.append(match.group("indent") + match.group("head") + THEN + "\n")
-            unrolledStatements.append(match.group("indent") + indentIncrement + match.group("body")) # line break is part of body
+            unrolledStatements.append(match.group("indent") + indentIncrement + match.group("body").rstrip("\n")+"\n") # line break is part of body
             unrolledStatements.append(match.group("indent") + ENDIF + "\n")
         else:
             unrolledStatements.append(indentOffset + stmt.lstrip(indentChar))
@@ -251,7 +248,7 @@ def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionS
     lineStarts = __detectLineStarts(fortranFileLines)
 
     # 2. go through the blocks of buffered lines
-    result = []
+    records = []
     for i,_ in enumerate(lineStarts[:-1]):
         lineStart     = lineStarts[i]
         nextLineStart = lineStarts[i+1]
@@ -270,7 +267,6 @@ def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionS
                 statements1 = __convertLinesToStatements(lines)
                 # 2. Apply macros to statements
                 print(statements1)
-
                 statements2  = []
                 for stmt1 in statements1:
                     statements2.append(__expandMacros(stmt1,macroStack))
@@ -291,10 +287,10 @@ def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionS
                   "included":            includedRecords,
                   "modified":            False,
                 }
-                result.append(record)
+                records.append(record)
     
     utils.logging.logLeaveFunction(LOG_PREFIX,"__preprocessAndNormalize")
-    return result
+    return records
 
 def __preprocessAndNormalizeFortranFile(fortranFilepath,macroStack,regionStack1,regionStack2):
     """
@@ -306,9 +302,9 @@ def __preprocessAndNormalizeFortranFile(fortranFilepath,macroStack,regionStack1,
 
     try:
         with open(fortranFilepath,"r") as infile:
-            result = __preprocessAndNormalize(infile.readlines(),fortranFilepath,macroStack,regionStack1,regionStack2)
+            records = __preprocessAndNormalize(infile.readlines(),fortranFilepath,macroStack,regionStack1,regionStack2)
             utils.logging.logLeaveFunction(LOG_PREFIX,"__preprocessAndNormalizeFortranFile")
-            return result
+            return records
     except Exception as e:
             raise e
 
@@ -359,9 +355,23 @@ def preprocessAndNormalizeFortranFile(fortranFilepath,options=""):
     pp_defined.setParseAction(defined_)
 
     try:
-        result = __preprocessAndNormalizeFortranFile(fortranFilepath,macroStack,\
+        records = __preprocessAndNormalizeFortranFile(fortranFilepath,macroStack,\
            regionStack1=[True],regionStack2=[True]) # init value of regionStack[0] can be arbitrary
         utils.logging.logLeaveFunction(LOG_PREFIX,"preprocessAndNormalizeFortranFile")
-        return result
+        return records
     except Exception as e:
         raise e
+
+def renderFile(records,stage="expandedStatements"):
+    """
+    :param str stage: either 'lines', 'statements' or 'expandedStatements', i.e. the preprocessor stage.
+    """
+    utils.logging.logEnterFunction(LOG_PREFIX,"renderFile",\
+      {"stage":stage})
+
+    result = ""
+    for record in records:
+        result += "".join(record[stage])
+    utils.logging.logLeaveFunction(LOG_PREFIX,"renderFile")
+    
+    return result

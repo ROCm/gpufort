@@ -9,8 +9,8 @@ import preprocessor.preprocessor as preprocessor
 import utils.logging
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
-utils.logging.VERBOSE    = True
-utils.logging.initLogging("log.log",LOG_FORMAT,"debug4")
+utils.logging.VERBOSE    = False
+utils.logging.initLogging("log.log",LOG_FORMAT,"warning")
 
 ENABLE_PROFILING = False
 
@@ -20,28 +20,75 @@ class TestIndexer(unittest.TestCase):
     def setUp(self):
         global ENABLE_PROFILING
         if ENABLE_PROFILING:
-            profiler = cProfile.Profile()
-            profiler.enable()
+            self._profiler = cProfile.Profile()
+            self._profiler.enable()
         self._started_at = time.time()
     def tearDown(self):
         global ENABLE_PROFILING
         if ENABLE_PROFILING:
-            profiler.disable() 
+            self._profiler.disable() 
             s = io.StringIO()
             sortby = 'cumulative'
-            stats = pstats.Stats(profiler, stream=s).sort_stats(sortby)
+            stats = pstats.Stats(self._profiler, stream=s).sort_stats(sortby)
             stats.print_stats(10)
             print(s.getvalue())
         elapsed = time.time() - self._started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
     def test_0_donothing(self):
         pass 
-    def test_1_definitions(self):
+    def test_1_full_test(self):
         options = "-DCUDA -DCUDA2"
         records = preprocessor.preprocessAndNormalizeFortranFile("test1.f90",options)
-        print(preprocessor.renderFile(records,stage="lines"))
-        print(preprocessor.renderFile(records,stage="statements"))
-        print(preprocessor.renderFile(records,stage="expandedStatements"))
+        result_lines              = preprocessor.renderFile(records,stage="lines")
+        result_statements         = preprocessor.renderFile(records,stage="statements")
+        result_expandedStatements = preprocessor.renderFile(records,stage="expandedStatements")
+        testdata_lines              = """
+        program main
+
+        if ( 1 > 0 ) print *, size8(c)
+        
+        print *, "else"
+        
+        print *, B
+        
+        end program main
+        """
+        testdata_statements         = """
+        program main
+        
+        if ( 1 > 0 ) then
+          print *, size8(c)
+        endif
+        
+        print *, "else"
+        
+        print *, B
+        
+        end program main
+        """
+        testdata_expandedStatements = """
+        program main
+        
+        if ( 1 > 0 ) then
+          print *, 8*(5)*2
+        endif
+        
+        print *, "else"
+        
+        print *, 5*6
+        
+        end program main
+        """
+        #print(result_lines)
+        #print(result_statements)
+        #print(result_expandedStatements)
+
+        def clean_(text):
+            return text.replace(" ","").replace("\t","").replace("\n","").replace("\r","")
+
+        self.assertEqual(clean_(result_lines),clean_(testdata_lines))
+        self.assertEqual(clean_(result_statements),clean_(testdata_statements))
+        self.assertEqual(clean_(result_expandedStatements),clean_(testdata_expandedStatements))
       
 if __name__ == '__main__':
     unittest.main() 

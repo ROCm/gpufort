@@ -13,7 +13,6 @@ if ( 1 > 0 ) print *, size8(c)
 #else
 #endif
 
-
 #if defined(HIP)
 #  if defined(CUDA1)
 #  elif defined(CUDA3)
@@ -23,5 +22,7 @@ if ( 1 > 0 ) print *, size8(2*c+c)
 #else
 print *, "else"
 #endif
+
+# include "snippet1.f90"
 
 end program main

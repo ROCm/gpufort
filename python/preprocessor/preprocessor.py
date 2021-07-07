@@ -277,17 +277,18 @@ def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionS
                     for stmt3 in __convertLinesToStatements([stmt2]):
                         statements3.append(stmt3)
     
-        if len(includedRecords) or (not isPreprocessorDirective and regionStack1[-1]):
-            record = {
-              "file":                    fortranFilepath,
-              "lineno":                  lineStart, # key
-              "lines":                   lines,
-              "statements":              statements1,
-              "expandedStatements":      statements3,
-              "includedRecords":         includedRecords,
-              "modified":                False,
-            }
-            records.append(record)
+        #if len(includedRecords) or (not isPreprocessorDirective and regionStack1[-1]):
+        record = {
+          "file":                    fortranFilepath,
+          "lineno":                  lineStart, # key
+          "lines":                   lines,
+          "statements":              statements1,
+          "expandedStatements":      statements3,
+          "includedRecords":         includedRecords,
+          "isPreprocessorDirective": isPreprocessorDirective,
+          "isActive":                regionStack1[-1]
+        }
+        records.append(record)
     
     utils.logging.logLeaveFunction(LOG_PREFIX,"__preprocessAndNormalize")
     return records
@@ -362,21 +363,29 @@ def preprocessAndNormalizeFortranFile(fortranFilepath,options=""):
     except Exception as e:
         raise e
 
-def renderFile(records,stage="expandedStatements"):
+def renderFile(records,stage="expandedStatements",includeInactive=False,includePreprocessorDirectives=False):
     """
     :param str stage: either 'lines', 'statements' or 'expandedStatements', i.e. the preprocessor stage.
+    :param bool includeInactive: include also code lines in inactive code regions.
+    :param includePreprocessorDirectives: include also preprocessor directives in the output (except include directives).
     """
     utils.logging.logEnterFunction(LOG_PREFIX,"renderFile",\
       {"stage":stage})
 
     def renderFile_(records):
         nonlocal stage
+        nonlocal includeInactive
+        nonlocal includePreprocessorDirectives
+
         result = ""
         for record in records:
-            if not len(record["includedRecords"]):
-                result += "".join(record[stage])
-            else:
-                result += renderFile_(record["includedRecords"])
+            condition1 = includeInactive or (record["isActive"])
+            condition2 = includePreprocessorDirectives or (len(record["includedRecords"]) or not record["isPreprocessorDirective"])
+            if condition1 and condition2:
+                if len(record["includedRecords"]):
+                    result += renderFile_(record["includedRecords"])
+                else:
+                    result += "".join(record[stage])
         return result
 
     utils.logging.logLeaveFunction(LOG_PREFIX,"renderFile")

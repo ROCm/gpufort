@@ -10,10 +10,10 @@ LPAR,RPAR          = map(pyp.Suppress, "()")
 
 # conditions
 #pp_char             = pyp.Regex(r"'[ -~]'")
-pp_number            = pyp.pyparsing_common.number.copy().setParseAction(lambda tk: str(tk[0]))
-pp_bool_true         = pyp.Regex(r"\.true\.|true|1",re.IGNORECASE).setParseAction(lambda tk: "1")
-pp_bool_false        = pyp.Regex(r"\.false\.|false|0",re.IGNORECASE).setParseAction(lambda tk: "0")
-pp_defined           = pyp.Regex(r"defined",re.IGNORECASE).suppress() + LPAR + pyp.Regex("\w+",re.IGNORECASE) + RPAR
+pp_number     = pyp.pyparsing_common.number.copy().setParseAction(lambda tk: str(tk[0]))
+pp_bool_true  = pyp.Regex(r"\.true\.|true|1",re.IGNORECASE).setParseAction(lambda tk: "1")
+pp_bool_false = pyp.Regex(r"\.false\.|false|0",re.IGNORECASE).setParseAction(lambda tk: "0")
+pp_defined    = pyp.Regex(r"defined\(\s*(?P<name>\w+)\s*\)",re.IGNORECASE)
 
 pp_value = pyp.Forward()
 
@@ -51,9 +51,10 @@ pp_dir_else    = pyp.Regex(r"#\s*else\b",re.IGNORECASE)
 # include
 pp_dir_include = pyp.Regex(r"#\s*include\s+\"(?P<filename>["+pyp.printables+r"]+)\"",re.IGNORECASE)
 # define / undef
-pp_dir_define  = pyp.Regex(r"#\s*define\s+(?P<name>\w+)",re.IGNORECASE) +\
-                 pyp.Optional(LPAR + pyp.Optional(pyp.delimitedList(pp_ident),default=[]) + RPAR,default=[]).setResultsName("args") +\
-                 pyp.Regex(".*\n?$").setResultsName("subst")
+#pp_dir_define  = pyp.Regex(r"#\s*define\s+(?P<name>\w+)",re.IGNORECASE) +\
+#                 pyp.Optional(LPAR + pyp.Optional(pyp.delimitedList(pp_ident),default=[]) + RPAR,default=[]).setResultsName("args") +\
+#                 pyp.Regex(".*\n?$").setResultsName("subst")
+pp_dir_define  = pyp.Regex(r"#\s*define\s+(?P<name>\w+)(\((?P<args>(\w|[, ])+)\))?\s+(?P<subst>.*)",re.IGNORECASE)
 pp_dir_undef   = pyp.Regex(r"#\s*undef\s+(?P<name>\w+)",re.IGNORECASE)
 # other
 pp_compiler_option = pyp.Regex(r"-D(?P<name>\w+)(=(?P<value>["+pyp.printables+r"]+))?")

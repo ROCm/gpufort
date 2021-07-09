@@ -36,9 +36,10 @@ class Tagged:
         return result
 
 class STNode:
-    def __init__(self,parent,lineno,lines=[]):
-        self._lineno                 = lineno
-        self._lines                  = lines
+    def __init__(self,parent,records,firstStatementIndex=0):
+        self._records                = records
+        self._firstStatementIndex    = firstStatementIndex
+        self._lastStatementIndex     = -1
         self._name                   = None
         self._kind                   = None
         self._children               = []
@@ -46,33 +47,44 @@ class STNode:
         self._ignoreInS2STranslation = False 
         # transformation
         self._preamble = set() 
-        self._epilog = set()
+        self._epilog   = set()
     def lines(self):
-        return self._lines
+        return self._records["lines"]
     def minLineno(self):
         """
         :return: Inclusive first line number belonging to this object.
         """
-        return self._lineno
+        return self._records[0]["lineno"]
     def maxLineno(self):
         """
         :return: Inclusive last line number belonging to this object.
         """
-        return self._lineno + len(self._lines) - 1
-    def strippedContent(self):
+        lastRecord = self._records[-1]
+        return lastRecord["lineno"]+len(lastRecord["lines"])-1
+    def _removeCommentsAndLineBreaks(self,listOfStrings):
         """
-        :return: The stripped content of this object as text. The functions removes all
-        comments and Fortran linebreak characters '&'.
+        :param str stage: one of "lines", "statements", "expandedStatements".
+        :return: Content from the node's records records with all
+        comments and Fortran line continuation characters '&' removed.
         :rettype: str
         """
-        result = "".join(self._lines)
-        comment = Literal("!") + ~(~White()+Literal("$")) + restOfLine + Optional(Regex(r"\n")) # via pyparsing
         amperSand = Regex(r"&\n")
+        comment = Regex(r"^\s*[\*c\!][^\$].+")
         comment.setParseAction(lambda tokens: "") # remove comments
         amperSand.setParseAction(lambda tokens: "") # remove &
-        result = commentCopy.transformString(result)
+        result = comment.transformString(result)
         result = amperSand.transformString(result)
         return result
+    def strippedLines(self):
+        result = ""
+        for record in self._records:
+            result += " ".join(record["lines"])
+        return self._joinAndRemoveComments("lines")
+    def strippedStatements(self):
+
+        return self._joinAndRemoveComments("statements")
+    def strippedExpandedStatements(self):
+        return self._joinAndRemoveComments("expandedStatements")
     def considerInS2STranslation(self,indexHints=[]):
         """
         Consider this object when transforming host code.

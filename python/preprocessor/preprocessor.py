@@ -14,7 +14,6 @@ exec(open("{0}/grammar.py".format(preprocessorDir)).read())
 
 
 def __expandMacros(text,macroStack):
-    oldResult = ""
     result    = text
     # expand macro; one at a time
     macroNames = [ macro["name"] for macro in reversed(macroStack) ]
@@ -41,10 +40,29 @@ def __expandMacros(text,macroStack):
             result = result.replace(substring,subst)
     return result
 
+def __evaluateDefined(text,macroStack):
+    # expand macro; one at a time
+    result = text
+    macroNames = [ macro["name"] for macro in reversed(macroStack) ]
+    iterate = True
+    while iterate:
+        substring = ""
+        iterate   = False
+        args      = []
+        for match,start,end in pp_defined.scanString(result):
+            substring = result[start:end].strip(" \t\n")
+            subst = "1" if match.name in macroNames else "0"
+            iterate = True
+            break
+        if iterate:
+            result = result.replace(substring,subst)
+    return result
+
 def __evaluateCondition(text,macroStack):
     # replace C and Fortran operators by python equivalents
     # TODO error handling
-    return eval(pp_ops.transformString(pp_defined.transformString(__expandMacros(text,macroStack)))) > 0
+
+    return eval(pp_ops.transformString(__evaluateDefined(__expandMacros(text,macroStack)))) > 0
 
 def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,regionStack2):
     """
@@ -312,6 +330,7 @@ def __preprocessAndNormalizeFortranFile(fortranFilepath,macroStack,regionStack1,
 def __initMacros(options):
     # init macro stack from compiler options
     macroStack = []
+    macroStack += USER_DEFINED_MACROS
     for result,_,__ in pp_compiler_option.scanString(options):
         value = result.value
         if value == None:

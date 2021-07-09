@@ -2,6 +2,10 @@ LOG_PREFIX="preprocessor.preprocessor" # prefix for logging
 
 ERROR_HANDLING="strict"   # 'strict': program terminates with error. Otherwise, a warning is printed.
 
+USER_DEFINED_MACROS = [] # add macro definitions
+
+ONLY_APPLY_USER_DEFINED_MACROS = False # Only apply user defined macros (incl. compiler options) and turn off other preprocessing (-> all code is active)
+
 INDENT_WIDTH_WHITESPACE=2 # number of indent chars if indentation uses whitespaces
 INDENT_WIDTH_TABS=1       # number of indent chars if indentation uses tabs
 

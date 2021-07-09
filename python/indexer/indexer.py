@@ -84,10 +84,6 @@ def __parseFile(fileLines,filepath):
 
     index = []
 
-    # Currently, we are only interested in a modules declarations
-    # and its derived types.
-    # Later, we might also parse routines
-
     accessLock   = threading.Lock()
     utils.logging.logDebug(LOG_PREFIX,"__parseFile","create thread pool of size {} for process variable declarations".format(\
       PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE))

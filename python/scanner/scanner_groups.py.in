@@ -5,7 +5,7 @@ class STGroup():
         self._objects = []
         self._minLineno = 10**20
         self._maxLineno = -1
-        self._lines = []
+        self._records = []
     def borders(self,stnode):
         """
         Check if a object tree node borders this `ObjectGroup`.
@@ -13,45 +13,52 @@ class STGroup():
         :return: `True` if this group is empty or if its max line number is exactly one smaller than the min line no of `otnode`. Returns `False` otherwise.
         :rtype: bool
         """
-        #print(stnode.minLineno())
-        #print("<<<"+"".join(stnode.lines()))
         assert stnode.minLineno() >= self._maxLineno, "{0} >= {1}: False, type of new node: {2}, code line: {3}".format(\
                 stnode.minLineno(),self._maxLineno,type(stnode),"".join(stnode.lines()))
         return not len(self._objects) or (stnode.minLineno() - self._maxLineno <= 1)
+    def lines(self):
+        """
+        :return: Original code lines associated with this group.
+        :rtype: list
+        """
+        result = []
+        for record in self._records:
+            result.append(record["lines"]
+        return result
+    def expandedStatements(self):
+        """
+        :return: All statements extracted from the code lines associated with this groups.
+                 Statements spreading over multiple lines are transformed into a single statement.
+                 Multiple statements per source code line that are separated by ";" are converted to single
+                 statements.
+                 Single-line if statements are transformed to if-then-endif blocks.
+                 Macros are expanded and the above transformations have been applied again.
+        :rtype: list
+        """
+        result = []
+        for record in self._records:
+            for statement in record["expandedStatements"]:
+                result.append(statement.rstrip("\n")).
+        return result
     def add(self,stnode):
         """
         Add an object node to this object group.
         :note: Use the `borders` method to check if it makes sense to add this node to this group.
         :param stnode: an object tree node
         """
-        #print("".join(stnode.lines()))
         assert stnode.minLineno() >= self._maxLineno
         assert self._maxLineno < 0 or stnode.minLineno() - self._maxLineno <= 1
         if not len(self._objects):
             self._minLineno = stnode.minLineno()
-        for i in range(stnode.minLineno(),stnode.maxLineno()+1): # maxLineno is inclusive
-            if i > self._maxLineno:
-                self._lines.append(stnode.lines()[i-stnode.minLineno()])
+        for record in stnode._records:
+            if record["lineo"] > self._maxLineno:
+                self._records.append(record)
+        # TODO(debug) keep a while for reference
+        #for i in range(stnode.minLineno(),stnode.maxLineno()+1): # maxLineno is inclusive
+        #    if i > self._maxLineno:
+        #        self._lines.append(stnode.lines()[i-stnode.minLineno()])
         self._maxLineno = max(self._maxLineno, stnode.maxLineno())
         self._objects.append(stnode)
-    def strippedContent(self):
-        """
-        :return: The stripped content of this object as text. The functions removes all
-        comments and Fortran linebreak characters '&'.
-        :rettype: str
-        """
-        result = "".join(self._lines)
-        comment = Literal("!") + ~(~White()+Literal("$")) + restOfLine + Optional(Regex(r"\n")) # via pyparsing
-        amperSand = Regex(r"&\n")
-        comment.setParseAction(lambda tokens: "") # remove comments
-        amperSand.setParseAction(lambda tokens: "") # remove &
-        result2 = comment.transformString(result)
-        result2 = amperSand.transformString(result)
-        try:
-           result = translator.singleLineIf.transformString(result2)
-        except:
-           result = result2
-        return result
     def generateCode(self,indexHints,wrapInIfdef):
         """
         Generates code from all objects in the group.
@@ -67,9 +74,11 @@ class MatchAllGroup(STGroup):
         If the original code is modified,
         the code will be wrapped in an ifdef.
         """
-        linesToSkip = len(self._lines)-1
+        orginalLines = self.lines() # terminated by '\n'
+        linesToSkip  = len(originalLines)-1
         performedTransformation = False
-        result = self.strippedContent()
+
+        result   = "\n".join(self.expandedStatements) # not terminated by '\n'
         preamble = ""
         epilog   = ""
         processedTypes = set()
@@ -91,7 +100,7 @@ class MatchAllGroup(STGroup):
             if len(epilog):
                 epilog = "\n" + epilog
             if wrapInIfdef:
-                original = "".join(self._lines).rstrip("\n")
+                original = "".join(originalLines).rstrip("\n")
                 return """#ifdef {0}
 {1}{2}{3}
 #else
@@ -109,7 +118,8 @@ class OneByOneGroup(STGroup):
         If the original code is modified,
         the code will be wrapped in an ifdef.
         """
-        linesToSkip = len(self._lines)-1
+        orginalLines = self.lines()
+        linesToSkip  = len(originalLines)-1
         performedTransformation = False
         result = ""
         preamble = ""
@@ -127,7 +137,7 @@ class OneByOneGroup(STGroup):
             if len(epilog):
                 epilog = "\n" + epilog
             if wrapInIfdef:
-                original = "".join(self._lines).strip("\n")
+                original = "".join(originalLines).strip("\n")
                 result = result.rstrip("\n")
                 return """#ifdef {0}
 {1}{2}{3}

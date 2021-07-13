@@ -45,11 +45,6 @@ class STCufLoopKernel(STCufDirective,STLoopKernel):
     def __init__(self,parent,lineno,lines,directiveNo):
         STCufDirective.__init__(self,parent,lineno,lines,directiveNo)
         STLoopKernel.__init__(self,parent,lineno,lines)
-    def lines(self):
-        """
-        :note: used for grouping scanner tree objects
-        """
-        return self._lines
     def gpufortFStr(self,indexHints=[],destinationDialect=""):
         """
         :param destinationDialect: allows to override default if this kernel

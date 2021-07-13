@@ -32,7 +32,8 @@ class STGroup():
                  Multiple statements per source code line that are separated by ";" are converted to single
                  statements.
                  Single-line if statements are transformed to if-then-endif blocks.
-                 Macros are expanded and the above transformations have been applied again.
+                 Macros have been expanded and the above transformations have been applied again to
+                 the substituted text.
         :rtype: list
         """
         result = []
@@ -78,7 +79,7 @@ class MatchAllGroup(STGroup):
         linesToSkip  = len(originalLines)-1
         performedTransformation = False
 
-        result   = "\n".join(self.expandedStatements) # not terminated by '\n'
+        result   = "\n".join(self.expandedStatements()) # not terminated by '\n'
         preamble = ""
         epilog   = ""
         processedTypes = set()

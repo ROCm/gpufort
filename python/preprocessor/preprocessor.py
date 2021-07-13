@@ -185,9 +185,9 @@ def __convertLinesToStatements(lines):
     Additionally, it converts single-line Fortran if statements
     into multi-line if-then-endif statements.
     """
-    pContinuation          = re.compile(r"([\&]\s*\n)|(\n[!c\*]\$\w+\&)")
+    pContinuation = re.compile(r"([\&]\s*\n)|(\n[!c\*]\$\w+\&)")
     # we look for a sequence ") <word>" were word != "then".
-    pSingleLineIf          = re.compile(r"^(?P<indent>[\s\t]*)(?P<head>if\s*\(.+\))\s*\b(?!then)(?P<body>\w.+)",re.IGNORECASE)
+    pSingleLineIf = re.compile(r"^(?P<indent>[\s\t]*)(?P<head>if\s*\(.+\))\s*\b(?!then)(?P<body>\w.+)",re.IGNORECASE)
     
     # Try to determine indent char and width
     firstLine = lines[0]

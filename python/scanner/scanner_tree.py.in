@@ -48,8 +48,40 @@ class STNode:
         # transformation
         self._preamble = set() 
         self._epilog   = set()
+    def __getRecordContent(self,key,firstRecordFirstElem=0,lastRecordLastElem=-1):
+        # TODO add docu
+        result = []
+        for i,record in enumerate(self._records):
+            if i == 0: 
+                result += self._records[key][firstRecordFirstElem:]
+            elif i == len(self._records)-1: 
+                result += self._records[key][:lastRecordLastElem]
+            else:
+                result += self._records[key]
+        return result
+    def _removeComments(self,lines):
+        """
+        Remove comments but keep directives.
+        """
+        # TODO move somewhere else
+        for line in list(lines): # shallow copy
+            strippedLine = line.lstrip("\t ")
+            if strippedLine[0] in ["*","c","C","!"] and not\
+               strippedLine[1] == "$": 
+                 lines.remove("line")
+    def _removeWhitespaces(self,lines):
+        """
+        Remove any whitespace and line continuation characters.
+        """
+        for i,line in enumerate(lines):
+            lines[i] = line.replace(" ","").replace("\t","").replace("\n","").replace("&","")
     def lines(self):
-        return self._records["lines"]
+        return self.__getRecordContent(self,"lines")
+    def statements(self,firstRecordFirstElem=0,lastRecordLastElem=-1):
+        result = self.__getRecordContent(self,"expandedStatements",\
+                firstRecordFirstElem,lastRecordLastElem)
+        self._removeComments(result)
+        return result
     def minLineno(self):
         """
         :return: Inclusive first line number belonging to this object.
@@ -61,30 +93,16 @@ class STNode:
         """
         lastRecord = self._records[-1]
         return lastRecord["lineno"]+len(lastRecord["lines"])-1
-    def _removeCommentsAndLineBreaks(self,listOfStrings):
+    def firstLine(self):
         """
-        :param str stage: one of "lines", "statements", "expandedStatements".
-        :return: Content from the node's records records with all
-        comments and Fortran line continuation characters '&' removed.
-        :rettype: str
+        :return: First line in first record.
         """
-        amperSand = Regex(r"&\n")
-        comment = Regex(r"^\s*[\*c\!][^\$].+")
-        comment.setParseAction(lambda tokens: "") # remove comments
-        amperSand.setParseAction(lambda tokens: "") # remove &
-        result = comment.transformString(result)
-        result = amperSand.transformString(result)
-        return result
-    def strippedLines(self):
-        result = ""
-        for record in self._records:
-            result += " ".join(record["lines"])
-        return self._joinAndRemoveComments("lines")
-    def strippedStatements(self):
-
-        return self._joinAndRemoveComments("statements")
-    def strippedExpandedStatements(self):
-        return self._joinAndRemoveComments("expandedStatements")
+        return self._records[0]["lines"][0]
+    def firstStatement(self):
+        """
+        :return: First line in first record.
+        """
+        return self._records[0]["expandedStatement"][0]
     def considerInS2STranslation(self,indexHints=[]):
         """
         Consider this object when transforming host code.
@@ -199,7 +217,7 @@ class STUseStatement(STNode):
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
     def gpufortFStr(self,indexHints=[],indent=""):
-        indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
+        indent = " "*(len(self.firstLine()) - len(self.firstLine().lstrip()))
         result = "".join(self._lines).lower()
         useCuda = False
         for lib in HOST_MODULES:
@@ -225,7 +243,7 @@ class STPlaceHolder(STNode):
         STNode.__init__(self,parent,lineno,lines)
         self._name = None
     def gpufortFStr(self,indexHints=[],indent=""):
-        return self._lines[0], False
+        return "".join(self.lines()), False
     def considerInS2STranslation(self,indexHints=[]):
         return STNode.considerInS2STranslation(self) and\
                (len(self._preamble) or len(self._epilog))
@@ -275,7 +293,7 @@ class STProcedure(STNode,Tagged):
              if mustBeAvailableOnHost:
                  return pAttributes.sub("", original), True
              elif mustBeAvailableOnDevice: # and not mustBeAvailableOnHost
-                 indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
+                 indent = " "*(len(self.firstLine()) - len(self.firstLine().lstrip()))
                  return "{0}! extracted to HIP C++ file".format(indent), True
         else: 
                  return original, False
@@ -284,19 +302,12 @@ class STDirective(STNode):
     def __init__(self,parent,lineno,lines,directiveNo,sentinel="!$cuf"):
         STNode.__init__(self,parent,lineno,lines)
         self._sentinel            = sentinel
-        self._singleLineStatement = None
         self._directiveNo         = directiveNo
     def singleLineStatement(self):
         """
         Express the statement as lower case single-line statement
         """
-        assert len(self._lines)
-        if self._singleLineStatement is None:
-            _genericPragma = genericPragma.copy().setParseAction(lambda tokens: "") # do not overwrite existing parse action if any
-            self._singleLineStatement = self._sentinel + " " + _genericPragma.transformString(" ".join(self._lines)).rstrip("\n").replace("&","").lower()
-            # remove whitespaces
-            self._singleLineStatement = White().setParseAction(lambda tokens: " ").transformString(self._singleLineStatement)
-        return self._singleLineStatement
+        return self._records[0]["expandedStatements"]
 
 class STLoopKernel(STNode):
     def __init__(self,parent,lineno,lines):
@@ -308,19 +319,11 @@ class STLoopKernel(STNode):
         self._sharedMemFStr          = "0" # set from extraction routine
         self._streamFStr             = "c_null_ptr" # set from extraction routine
         self._kernelArgNames         = [] # set from extraction routine
-    def stripLines(self,lines):
-        """Remove whitespace characters and comments."""
-        result = ""
-        for line in lines:
-             result += line.split("!")[0]
-        result = result.replace(" ","")
-        result = result.replace("&","")
-        return result.lower()
-    def hashSnippet(self):
-        snippet = self.stripLines(self._lines) 
-        return hashlib.md5(snippet.encode()).hexdigest()[0:6]
-    def hashBody(self):
-        snippet = self.stripLines(self._lines[1:]) 
+    def hashKernel(self):
+        statements = self.statements(self._firstStatementIndex,self._lastStatementIndex)
+        self._removeComments(statements)
+        self._removeWhitespaces(statements)
+        snippet = "".join(statements)
         return hashlib.md5(snippet.encode()).hexdigest()[0:6]
     def kernelName(self):
         """
@@ -328,11 +331,11 @@ class STLoopKernel(STNode):
         
         We hash the body because we will use different block sizes and shmem anyway in HIP.
         """
-        return LOOP_KERNEL_NAME_TEMPLATE.format(parent=self._parent._name.lower(),lineno=self._lineno+1,hash=self.hashBody())
+        return LOOP_KERNEL_NAME_TEMPLATE.format(parent=self._parent._name.lower(),lineno=self._lineno+1,hash=self.hashKernel())
     def kernelLauncherName(self):
         return "launch_{}".format(self.kernelName())
     def transformFSnippet(self,fSnippet,indexHints=[]):
-        indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
+        indent = " "*(len(self.firstLine()) - len(self.firstLine().lstrip()))
         try:
             streamAsInt = int(self._streamFStr)
             stream = "c_null_ptr" if streamAsInt < 1 else self._streamFStr
@@ -349,7 +352,11 @@ class STLoopKernel(STNode):
           
         return result, True
     def gpufortFStr(self,indexHints=[]):
-        return self.transformFSnippet("".join(self._lines),indexHints)
+        statementsBefore = self.records[0]["expandedStatements"][0:self._firstStatementIndex)
+        statementsAfter  = self.records[-1]["expandedStatements"][self._lastStatementIndex:-1]
+        relevantStatements = self.statements(self._firstStatementIndex,self._lastStatementIndex)
+        numRelevantSt
+        return self.transformFSnippet("".join(relevantStatements),indexHints)
 
 class STDeclaration(STNode):
     """
@@ -360,7 +367,7 @@ class STDeclaration(STNode):
     """
     def __init__(self,parent,lineno,lines):
         STNode.__init__(self,parent,lineno,lines)
-        self._ttdeclaration   = translator.declaration.parseString(self._lines[0])[0]
+        self._ttdeclaration   = translator.declaration.parseString(self.firstStatement())[0]
         self._vars            = [name.lower() for name in self._ttdeclaration.variableNames()]
     def createCodegenContext(self):
         return translator.createIndexRecordsFromDeclaration(self._ttdeclaration)
@@ -369,7 +376,7 @@ class STDeclaration(STNode):
         if not self._ignoreInS2STranslation:
             if len(self._preamble) or len(self._epilog):
                 return True
-            for l in self._lines:
+            for l in self.expandedStatements():
                 lineLower = l.lower()
                 for q in interestingQualifiers:
                     if q in lineLower:
@@ -406,7 +413,7 @@ class STDeclaration(STNode):
         newDevicePointerVariables = []
         newHostPointerVariables   = []
         
-        indent = " "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
+        indent = " "*(len(self.firstLine()) - len(self.firstLine().lstrip()))
         # argument names if declared in procedure
         if isinstance(self._parent, STProcedure):
             argNames = [makeFStr(n).lower() for n in self.parent._dummyArgs]
@@ -579,7 +586,7 @@ class STCudaLibCall(STNode):
         global CUBLAS_VERSION 
         global KEEP_CUDA_LIB_NAMES
         oldfSnippet = fSnippet
-        indent = ""#" "*(len(self._lines[0]) - len(self._lines[0].lstrip()))
+        indent = ""#" "*(len(self.firstLine()) - len(self.firstLine().lstrip()))
         transformed = False
         if not KEEP_CUDA_LIB_NAMES:
             def replMemcpy(parseResult):
@@ -637,7 +644,7 @@ class STCudaKernelCall(STNode):
                     kernelArgs.append("size({0},{1})".format(exprFStr,rank))
                 for rank in range(1,maxRank+1):
                     kernelArgs.append("lbound({0},{1})".format(exprFStr,rank))
-            kernelLaunchInfo = translator.cudaKernelCall.parseString(self._lines[0])[0]
+            kernelLaunchInfo = translator.cudaKernelCall.parseString(self.firstStatement())[0]
             subst="CALL launch_{0}({1},{2},{3},{4},{5})".format(\
               kernelLaunchInfo.kernelNameFStr(),\
               kernelLaunchInfo.gridFStr(),

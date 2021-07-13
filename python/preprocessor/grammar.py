@@ -34,7 +34,7 @@ pp_arithm_logic_expr =  pyp.infixNotation(pp_value, [
     (pp_op_or,                2, pyp.opAssoc.LEFT)
 ])
 
-pp_macro_eval   = pp_ident.setResultsName("name") + pyp.Optional(LPAR + pyp.delimitedList( pp_arithm_logic_expr ) + RPAR,default=[]).setResultsName("args")
+pp_macro_eval = pyp.Regex(r"(?P<name>\w+)(\((?P<args>(\w|[, ])+)?\))?",re.IGNORECASE)
 
 pp_value      <<= ( pp_number | pp_bool_true | pp_bool_false | pp_defined | pp_macro_eval ) # | pp_char ) # ! defined must come before eval
 

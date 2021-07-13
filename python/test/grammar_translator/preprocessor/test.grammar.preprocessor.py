@@ -61,13 +61,17 @@ class TestPreprocessorGrammar(unittest.TestCase):
             "#define a text",
             "#define a(b,c,d) (b)*(c)*(d)",
         ]
-        args          = [[], [], [], [], ["b","c","d"]]
+        args          = [None, None, None, None, ["b","c","d"]]
         substitutions = ["", "5", "6", "text", "(b)*(c)*(d)"]
         n = 0
         for text in testdata:
             for result,_,__ in grammar.pp_dir_define.scanString(text):
                 self.assertEqual(names[n],result.name) 
-                self.assertEqual(args[n],result.args.asList()) 
+                if result.args:
+                    result_args = result.args.replace(" ","").split(",")
+                    self.assertEqual(args[n],result_args) 
+                else:
+                    self.assertEqual(args[n],result.args) 
                 self.assertEqual(substitutions[n],result.subst) 
             n += 1
     def test_3_simple_conditionals(self):
@@ -149,13 +153,10 @@ class TestPreprocessorGrammar(unittest.TestCase):
           { "name": 'b', "args": [], "subst": "5" },
           { "name": 'a', "args": ["x"], "subst": "(5*x)" },
         ]
-        def defined_(tokens):
-            nonlocal macroStack
-            if next((macro for macro in macroStack if macro["name"] == tokens[0]),None):
-                return "1"
-            else: 
-                return "0"
         def substitute_(tokens):
+            """
+            pyparsing parse action
+            """
             name = tokens[0]
             args = tokens[1]
             nonlocal macroStack
@@ -167,17 +168,34 @@ class TestPreprocessorGrammar(unittest.TestCase):
                 return subst
             else:
                 tokens[0]
+        grammar.pp_macro_eval.setParseAction(substitute_)
+
         def expandMacros_(original):
              oldResult = None
              result    = original
-             # expand macro; one at a time
+             # convert defines
+             iterate = True
+             while iterate:
+                iterate = False
+                for parseResult,start,end in grammar.pp_defined.scanString(result):
+                    substring = result[start:end].strip(" \t\n")
+                    if next((macro for macro in macroStack if macro["name"] == parseResult.name),None):
+                        subst = "1"
+                    else: 
+                        subst = "0"
+                    result = result.replace(substring,subst)
+                    iterate = True
+                    break
+             # expand other macros; one at a time
              while result != oldResult:
                    oldResult = result
                    result    = grammar.pp_value.transformString(result)
              # replace C and Fortran operatos by python equivalents 
              return result
+
         def convertOperators_(text):
             return grammar.pp_ops.transformString(text)
+
         testdata_true = [
           "defined(a)",
           "!!defined(a)",
@@ -190,8 +208,6 @@ class TestPreprocessorGrammar(unittest.TestCase):
           "!defined(a) || defined(x) || a(5) < 1",
           "!(defined(a) && !defined(x) && a(b) > 4)"
         ]
-        grammar.pp_defined.setParseAction(defined_)
-        grammar.pp_macro_eval.setParseAction(substitute_)
         for text in testdata_true:
             result    = convertOperators_(expandMacros_(text))
             condition = bool(eval(result))

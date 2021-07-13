@@ -13,56 +13,56 @@ exec(open("{0}/preprocessor_options.py.in".format(preprocessorDir)).read())
 exec(open("{0}/grammar.py".format(preprocessorDir)).read())
 
 
-def __expandMacros(text,macroStack):
-    result    = text
-    # expand macro; one at a time
-    macroNames = [ macro["name"] for macro in reversed(macroStack) ]
-    macroName = "initial"
-    while macroName:
-        substring = ""
-        macroName = None
-        args      = []
-        # finds all identifiers
-        for match,start,end in pp_macro_eval.scanString(result):
-            substring = result[start:end].strip(" \t\n")
-            for name in macroNames:
-                if substring.startswith(name):
-                    macroName = name
-                    args = match.args.asList()
-                    break
-            if macroName:
-                break
-        if macroName:
-            macro = next((macro for macro in macroStack if macro["name"] == macroName),None)
-            subst = macro["subst"].strip(" \n\t")
-            for n,placeholder in enumerate(macro["args"]):
-                subst = re.sub(r"\b{}\b".format(placeholder),args[n],subst)
-            result = result.replace(substring,subst)
-    return result
-
 def __evaluateDefined(text,macroStack):
     # expand macro; one at a time
     result = text
     macroNames = [ macro["name"] for macro in reversed(macroStack) ]
     iterate = True
     while iterate:
-        substring = ""
         iterate   = False
-        args      = []
         for match,start,end in pp_defined.scanString(result):
             substring = result[start:end].strip(" \t\n")
             subst = "1" if match.name in macroNames else "0"
+            result = result.replace(substring,subst)
             iterate = True
             break
-        if iterate:
-            result = result.replace(substring,subst)
+    return result
+
+def __expandMacros(text,macroStack):
+    # expand defined(...) expressions
+    result = __evaluateDefined(text,macroStack)
+    # expand macro; one at a time
+    macroNames = [ macro["name"] for macro in reversed(macroStack) ]
+    iterate    = True
+    while iterate:
+        iterate = False
+        # finds all identifiers
+        for match,start,end in pp_macro_eval.scanString(result):
+            macroName = None
+            for name in macroNames:
+                if match.name == name:
+                    macroName = name
+                    break
+            if macroName:
+                if match.args:
+                    args = match.args.replace(" ","").split(",")
+                else:
+                    args = []
+                macro     = next((macro for macro in macroStack if macro["name"] == macroName),None)
+                subst     = macro["subst"].strip(" \n\t")
+                for n,placeholder in enumerate(macro["args"]):
+                    subst = re.sub(r"\b{}\b".format(placeholder),args[n],subst)
+                substring = result[start:end].strip(" \t\n")
+                result  = result.replace(substring,subst)
+                iterate = True
+                break
     return result
 
 def __evaluateCondition(text,macroStack):
     # replace C and Fortran operators by python equivalents
     # TODO error handling
 
-    return eval(pp_ops.transformString(__evaluateDefined(__expandMacros(text,macroStack)))) > 0
+    return eval(pp_ops.transformString(__expandMacros(text,macroStack))) > 0
 
 def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,regionStack2):
     """
@@ -100,13 +100,17 @@ def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,
                result   = pp_dir_define.parseString(lines[0],parseAll=True)
                substLines = [line.strip("\n")+"\n" for line in [result.subst] + lines[1:]]
                subst    = "".join(substLines).replace(r"\\","")
-               newMacro = { "name": result.name, "args": result.args.asList(), "subst": subst }
+               if result.args:
+                   args = result.args.replace(" ","").split(",")
+               else:
+                   args = []
+               newMacro = { "name": result.name, "args": args, "subst": subst }
                macroStack.append(newMacro)
                handled = True
            elif strippedFirstLine.startswith("undef"):
                utils.logging.logDebug3(LOG_PREFIX,"__handlePreprocessorDirective","found undef in line '{}'".format(lines[0].rstrip("\n")))
                result = pp_dir_define.parseString(singleLineStatement,parseAll=True)
-               for macro in list(macroStack):
+               for macro in list(macroStack): # shallow copy
                    if macro["name"] == result.name:
                        macroStack.remove(macro)
                handled = True
@@ -363,17 +367,6 @@ def preprocessAndNormalizeFortranFile(fortranFilepath,options=""):
     })
 
     macroStack = __initMacros(options)
-
-    # parse actions parameterized with macroStack
-    def defined_(tokens):
-        nonlocal macroStack
-        if next((macro for macro in macroStack if macro["name"] == tokens[0]),None):
-            return "1"
-        else:
-            return "0"
-    
-    pp_defined.setParseAction(defined_)
-
     try:
         records = __preprocessAndNormalizeFortranFile(fortranFilepath,macroStack,\
            regionStack1=[True],regionStack2=[True]) # init value of regionStack[0] can be arbitrary

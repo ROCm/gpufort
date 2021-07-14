@@ -308,7 +308,8 @@ def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionS
           "expandedStatements":      statements3,
           "includedRecords":         includedRecords,
           "isPreprocessorDirective": isPreprocessorDirective,
-          "isActive":                regionStack1[-1]
+          "isActive":                regionStack1[-1],
+          "modified":                False
         }
         records.append(record)
     

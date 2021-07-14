@@ -62,7 +62,7 @@ def __postprocessAcc(stree,hipModuleName):
     for directive in directives:
          stnode = directive._parent.findFirst(filter=lambda child : type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
          if not stnode is None:
-             indent = " "*(len(stnode.lines()[0]) - len(stnode.lines()[0].lstrip()))
+             indent = self.firstLineIndent()
              accRuntimeModuleName = RUNTIME_MODULE_NAMES[DESTINATION_DIALECT]
              if accRuntimeModuleName != None and len(accRuntimeModuleName):
                  stnode._preamble.add("{0}use iso_c_binding\n{0}use {1}\n".format(indent,accRuntimeModuleName))
@@ -84,16 +84,16 @@ def __postprocessCuf(stree,hipModuleName):
         #print(cublasCalls)
         for call in cublasCalls:
             begin = call._parent.findLast(filter=lambda child : type(child) in [STUseStatement,STDeclaration])
-            indent = " "*(len(begin.lines()[0]) - len(begin.lines()[0].lstrip()))
+            indent = self.firstLineIndent()
             begin._epilog.add("{0}type(c_ptr) :: hipblasHandle = c_null_ptr\n".format(indent))
             #print(begin._lines)       
  
             localCublasCalls = call._parent.findAll(filter=hasCublasCall, recursively=False)
             first = localCublasCalls[0]
-            indent = " "*(len(first.lines()[0]) - len(first.lines()[0].lstrip()))
+            indent = self.firstLineIndent()
             first._preamble.add("{0}hipblasCreate(hipblasHandle)\n".format(indent))
             last = localCublasCalls[-1]
-            indent = " "*(len(last.lines()[0]) - len(last.lines()[0].lstrip()))
+            indent = self.firstLineIndent()
             last._epilog.add("{0}hipblasDestroy(hipblasHandle)\n".format(indent))
     utils.logging.logLeaveFunction(LOG_PREFIX,"__postprocessCuf")
 
@@ -166,7 +166,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal translationEnabled
         nonlocal currentRecords
         logDetection_("module")
-        new = STModule(tokens[0],currentNode,currentStatementNo)
+        new = STModule(tokens[0],currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
         descend_(new)
     def Program_visit(tokens):
@@ -174,7 +174,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal translationEnabled
         nonlocal currentRecords
         logDetection_("program")
-        new = STProgram(tokens[0],currentNode,currentStatementNo)
+        new = STProgram(tokens[0],currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
         descend_(new)
     def Function_visit(tokens):
@@ -184,7 +184,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal index
         logDetection_("function")
         new = STProcedure(tokens[1],"function",index,\
-          parent=currentNode,lineno=currentStatementNo,lines=currentLines)
+            currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
         keepRecording = new.keepRecording()
         if keepRecording:
@@ -197,7 +197,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal index
         logDetection_("subroutine")
         new = STProcedure(tokens[1],"subroutine",index,\
-          parent=currentNode,lineno=currentStatementNo,lines=currentLines)
+            currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
         keepRecording = new.keepRecording()
         if keepRecording:
@@ -224,7 +224,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal doLoopCtr
         logDetection_("do loop")
         if inKernelsAccRegionAndNotRecording():
-            new = STAccLoopKernel(parent=currentNode,lineno=currentStatementNo,lines=currentLines)
+            new = STAccLoopKernel(currentNode,currentRecords,currentStatementNo)
             new._ignoreInS2STranslation = not translationEnabled
             new._lines = []
             new._doLoopCtrMemorised=doLoopCtr
@@ -248,7 +248,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal translationEnabled
         nonlocal currentRecords
         logDetection_("declaration")
-        new = STDeclaration(parent=currentNode,lineno=currentStatementNo,lines=currentLines)
+        new = STDeclaration(currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
         appendIfNotRecording_(new)
     def Attributes(tokens):
@@ -256,14 +256,14 @@ def parseFile(records,index,fortranFilepath):
         nonlocal translationEnabled
         nonlocal currentRecords
         logDetection_("attributes statement")
-        new = STAttributes(parent=currentNode,lineno=currentStatementNo,lines=currentLines)
+        new = STAttributes(currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
         currentNode.append(new)
     def UseStatement(tokens):
         nonlocal currentNode
         nonlocal currentRecords
         logDetection_("use statement")
-        new = STUseStatement(parent=currentNode,lineno=currentStatementNo,lines=currentLines)
+        new = STUseStatement(currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
         new._name = translator.makeFStr(tokens[1]) # just get the name, ignore specific includes
         appendIfNotRecording_(new)
@@ -280,7 +280,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal translationEnabled
         nonlocal currentRecords
         logDetection_("non-zero check")
-        new=STNonZeroCheck(parent=currentNode,lineno=currentStatementNo,lines=currentLines)
+        new=STNonZeroCheck(currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
         appendIfNotRecording_(new)
     def Allocated(tokens):
@@ -288,7 +288,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal translationEnabled
         nonlocal currentRecords
         logDetection_("allocated statement")
-        new=STAllocated(parent=currentNode,lineno=currentStatementNo,lines=currentLines)
+        new=STAllocated(currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
         appendIfNotRecording_(new)
     def Allocate(tokens):
@@ -296,7 +296,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal translationEnabled
         nonlocal currentRecords
         logDetection_("allocate statement")
-        new=STAllocate(parent=currentNode,lineno=currentStatementNo,lines=currentLines)
+        new = STAllocate(currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
         appendIfNotRecording_(new)
     def Deallocate(tokens):
@@ -305,7 +305,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentRecords
         logDetection_("deallocate statement")
         # TODO filter variable, replace with hipFree
-        new = STDeallocate(parent=currentNode,lineno=currentStatementNo,lines=currentLines)
+        new = STDeallocate(currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
         appendIfNotRecording_(new)
     def Memcpy(tokens):
@@ -313,7 +313,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal translationEnabled
         nonlocal currentRecords
         logDetection_("memcpy")
-        new = STMemcpy(parent=currentNode,lineno=currentStatementNo,lines=currentLines)
+        new = STMemcpy(currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
         appendIfNotRecording_(new)
     def CudaLibCall(tokens):
@@ -325,7 +325,7 @@ def parseFile(records,index,fortranFilepath):
         logDetection_("CUDA API call")
         cudaApi, args, finishesOnFirstLine = tokens 
         if not type(currentNode) in [STCudaLibCall,STCudaKernelCall]:
-            new = STCudaLibCall(parent=currentNode,lineno=currentStatementNo,lines=currentLines) 
+            new = STCudaLibCall(currentNode,currentRecords,currentStatementNo)
             new._ignoreInS2STranslation = not translationEnabled
             new.cudaApi  = cudaApi
             #print("finishesOnFirstLine={}".format(finishesOnFirstLine))
@@ -340,7 +340,7 @@ def parseFile(records,index,fortranFilepath):
         logDetection_("CUDA kernel call")
         kernelName, kernelLaunchArgs, args, finishesOnFirstLine = tokens 
         assert type(currentNode) in [STModule,STProcedure,STProgram], "type is: "+str(type(currentNode))
-        new = STCudaKernelCall(parent=currentNode,lineno=currentStatementNo,lines=currentLines)
+        new = STCudaKernelCall(currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
         new._lines = currentLines
         appendIfNotRecording_(new)
@@ -402,7 +402,7 @@ def parseFile(records,index,fortranFilepath):
             parseResult = translator.assignmentBegin.parseString(currentStatement)
             lvalue = translator.findFirst(parseResult,translator.TTLValue)
             if not lvalue is None and lvalue.hasMatrixRangeArgs():
-                new  = STAccLoopKernel(parent=currentNode,lineno=currentStatementNo,lines=currentLines)
+                new  = STAccLoopKernel(currentNode,currentRecords,currentStatementNo)
                 new._ignoreInS2STranslation = not translationEnabled
                 appendIfNotRecording_(new)
     def GpufortControl(tokens):
@@ -539,7 +539,7 @@ def postprocess(stree,hipModuleName,index):
               kernel.kernelName() in kernelsToConvertToHip:
                 stnode = kernel._parent.findFirst(filter=lambda child: not child.considerInS2STranslation() and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
                 assert not stnode is None
-                indent = " "*(len(stnode.lines()[0]) - len(stnode.lines()[0].lstrip()))
+                indent = self.firstLineIndent()
                 stnode._preamble.add("{0}use {1}\n".format(indent,hipModuleName))
    
     if "cuf" in SOURCE_DIALECTS:

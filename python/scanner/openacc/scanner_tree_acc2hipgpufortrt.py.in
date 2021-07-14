@@ -260,11 +260,11 @@ class Acc2HipGpufortRT(AccBackendBase):
         if len(allTempVars):
             begin = stnode._parent.findLast(filter=lambda child : not child._ignoreInS2STranslation and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
             if not begin is None:
-                indent = " "*(len(begin._lines[0]) - len(begin._lines[0].lstrip()))
+                indent = self.firstLineIndent()
                 for var in allTempVars:
                      begin._epilog.add("{indent}type(c_ptr) :: {name}\n".format(indent=indent,name=var))
             else:
-                indent = " "*(len(stnode._lines[0]) - len(stnode._lines[0].lstrip()))
+                indent = self.firstLineIndent()
                 stnode._preamble.add("! TODO(gpufort): move declarations and use statement to appropriate place\n")
                 for var in allTempVars:
                     stnode._preamble.add("{indent}type(c_ptr) :: {name}\n".format(indent=indent,name=var))

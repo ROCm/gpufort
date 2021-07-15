@@ -259,6 +259,7 @@ def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionS
     global INDENT_WIDTH_TABS
            
     global DEFAULT_INDENT_CHAR
+    global ONLY_APPLY_USER_DEFINED_MACROS
 
     utils.logging.logEnterFunction(LOG_PREFIX,"preprocessAndNormalize",{
       "fortranFilepath":fortranFilepath
@@ -278,7 +279,7 @@ def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionS
 
         includedRecords = []
         isPreprocessorDirective = lines[0].startswith("#")
-        if isPreprocessorDirective:
+        if isPreprocessorDirective and not ONLY_APPLY_USER_DEFINED_MACROS:
             try:
                 includedRecords = __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,regionStack2)
                 statements1 = []
@@ -333,7 +334,9 @@ def __preprocessAndNormalizeFortranFile(fortranFilepath,macroStack,regionStack1,
             raise e
 
 def __initMacros(options):
-    # init macro stack from compiler options
+    """init macro stack from compiler options and user-prescribed config values."""
+    global USER_DEFINED_MACROS
+
     macroStack = []
     macroStack += USER_DEFINED_MACROS
     for result,_,__ in pp_compiler_option.scanString(options):

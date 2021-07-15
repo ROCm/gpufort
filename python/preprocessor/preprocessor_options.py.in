@@ -2,7 +2,7 @@ LOG_PREFIX="preprocessor.preprocessor" # prefix for logging
 
 ERROR_HANDLING="strict"   # 'strict': program terminates with error. Otherwise, a warning is printed.
 
-USER_DEFINED_MACROS = [] # add macro definitions
+USER_DEFINED_MACROS = [] # manually add macro definitions: dicts with entries 'name' (str), 'args' (list of str), and 'subst' (str)
 
 ONLY_APPLY_USER_DEFINED_MACROS = False # Only apply user defined macros (incl. compiler options) and turn off other preprocessing (-> all code is active)
 

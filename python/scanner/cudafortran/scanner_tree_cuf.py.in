@@ -38,18 +38,18 @@ class STCufDirective(STDirective):
                  of the object is a device subroutine.
         """
         return True
-    def gpufortFStr(self,indexHints=[]):
+    def transform(self,originalSnippet,preprocessedSnippet,statementsFullyCoverLines,indexHints=[]):
         assert False, "Currently, there are only CUF parallel directives"
 
 class STCufLoopKernel(STCufDirective,STLoopKernel):
     def __init__(self,parent,lineno,lines,directiveNo):
         STCufDirective.__init__(self,parent,lineno,lines,directiveNo)
         STLoopKernel.__init__(self,parent,lineno,lines)
-    def gpufortFStr(self,indexHints=[],destinationDialect=""):
+    def transform(self,originalSnippet,preprocessedSnippet,statementsFullyCoverLines,indexHints=[],destinationDialect=""):
         """
         :param destinationDialect: allows to override default if this kernel
                                    should be translated via another backend.
         """
         checkedDialect = checkDestinationDialect(\
             DESTINATION_DIALECT if not len(destinationDialect) else destinationDialect)
-        return CUF_LOOP_KERNEL_BACKENDS[checkedDialect](self).gpufortFStr(indexHints)
+        return CUF_LOOP_KERNEL_BACKENDS[checkedDialect](self).transform(originalSnippet,preprocessedSnippet,statementsFullyCoverLines,indexHints)

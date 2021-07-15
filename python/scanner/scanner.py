@@ -86,7 +86,7 @@ def __postprocessCuf(stree,hipModuleName):
             begin = call._parent.findLast(filter=lambda child : type(child) in [STUseStatement,STDeclaration])
             indent = self.firstLineIndent()
             begin._epilog.add("{0}type(c_ptr) :: hipblasHandle = c_null_ptr\n".format(indent))
-            #print(begin._lines)       
+            #print(begin._records)       
  
             localCublasCalls = call._parent.findAll(filter=hasCublasCall, recursively=False)
             first = localCublasCalls[0]
@@ -120,6 +120,7 @@ def parseFile(records,index,fortranFilepath):
     def logDetection_(kind):
         nonlocal currentNode
         nonlocal currentRecords
+        nonlocal currentStatementNo
         utils.logging.logDebug2(LOG_PREFIX,".__parseFile","[current-node={}:{}] found {} in line {}: '{}'".format(\
                 currentNode._kind,currentNode._name,kind,currentStatementNo+1,currentRecord["lines"][0]))
 
@@ -131,6 +132,7 @@ def parseFile(records,index,fortranFilepath):
     def descend_(new):
         nonlocal currentNode
         nonlocal currentRecords
+        nonlocal currentStatementNo
         currentNode.append(new)
         currentNode=new
         
@@ -147,6 +149,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentNode
         nonlocal currentFile
         nonlocal currentRecords
+        nonlocal currentStatementNo
         assert not currentNode._parent is None, "In file {}: parent of {} is none".format(currentFile,type(currentNode))
         
         currentNodeId = currentNode._kind
@@ -165,6 +168,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentRecords
+        nonlocal currentStatementNo
         logDetection_("module")
         new = STModule(tokens[0],currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
@@ -173,6 +177,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentRecords
+        nonlocal currentStatementNo
         logDetection_("program")
         new = STProgram(tokens[0],currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
@@ -188,7 +193,7 @@ def parseFile(records,index,fortranFilepath):
         new._ignoreInS2STranslation = not translationEnabled
         keepRecording = new.keepRecording()
         if keepRecording:
-            new._lines = []
+            new._records = []
         descend_(new)
     def Subroutine_visit(tokens):
         nonlocal currentNode
@@ -201,7 +206,7 @@ def parseFile(records,index,fortranFilepath):
         new._ignoreInS2STranslation = not translationEnabled
         keepRecording = new.keepRecording()
         if keepRecording:
-            new._lines = []
+            new._records = []
         descend_(new)
     def Structure_leave(tokens):
         nonlocal currentNode
@@ -209,7 +214,8 @@ def parseFile(records,index,fortranFilepath):
         logDetection_("end of module/program/function/subroutine")
         assert type(currentNode) in [STModule,STProgram,STProcedure], "In file {}: line {}: type is {}".format(currentFile, currentStatementNo, type(currentNode))
         if type(currentNode) is STProcedure and currentNode.mustBeAvailableOnDevice():
-            currentNode._lines += currentLines
+            currentNode._records += currentRecords
+            currentNode._lastStatementIndex = currentStatementNo
             keepRecording = False
         ascend_()
     def inKernelsAccRegionAndNotRecording():
@@ -226,7 +232,7 @@ def parseFile(records,index,fortranFilepath):
         if inKernelsAccRegionAndNotRecording():
             new = STAccLoopKernel(currentNode,currentRecords,currentStatementNo)
             new._ignoreInS2STranslation = not translationEnabled
-            new._lines = []
+            new._records = []
             new._doLoopCtrMemorised=doLoopCtr
             descend_(new) 
             keepRecording = True
@@ -234,19 +240,22 @@ def parseFile(records,index,fortranFilepath):
     def DoLoop_leave(tokens):
         nonlocal currentNode
         nonlocal currentRecords
+        nonlocal currentStatementNo
         nonlocal doLoopCtr
         nonlocal keepRecording
         logDetection_("end of do loop")
         doLoopCtr -= 1
         if isinstance(currentNode, STLoopKernel):
             if keepRecording and currentNode._doLoopCtrMemorised == doLoopCtr:
-                currentNode._lines += currentLines
+                currentNode._records += currentRecords
+                currentNode._lastStatementIndex = currentStatementNo
                 ascend_()
                 keepRecording = False
     def Declaration(tokens):
         nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentRecords
+        nonlocal currentStatementNo
         logDetection_("declaration")
         new = STDeclaration(currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
@@ -255,6 +264,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentRecords
+        nonlocal currentStatementNo
         logDetection_("attributes statement")
         new = STAttributes(currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
@@ -262,6 +272,7 @@ def parseFile(records,index,fortranFilepath):
     def UseStatement(tokens):
         nonlocal currentNode
         nonlocal currentRecords
+        nonlocal currentStatementNo
         logDetection_("use statement")
         new = STUseStatement(currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
@@ -271,6 +282,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentRecords
+        nonlocal currentStatementNo
         logDetection_("placeholder")
         new = STPlaceHolder(currentNode,currentStatementNo,currentLines)
         new._ignoreInS2STranslation = not translationEnabled
@@ -279,6 +291,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentRecords
+        nonlocal currentStatementNo
         logDetection_("non-zero check")
         new=STNonZeroCheck(currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
@@ -287,6 +300,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentRecords
+        nonlocal currentStatementNo
         logDetection_("allocated statement")
         new=STAllocated(currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
@@ -295,6 +309,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentRecords
+        nonlocal currentStatementNo
         logDetection_("allocate statement")
         new = STAllocate(currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
@@ -303,6 +318,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentRecords
+        nonlocal currentStatementNo
         logDetection_("deallocate statement")
         # TODO filter variable, replace with hipFree
         new = STDeallocate(currentNode,currentRecords,currentStatementNo)
@@ -312,6 +328,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentRecords
+        nonlocal currentStatementNo
         logDetection_("memcpy")
         new = STMemcpy(currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
@@ -321,6 +338,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentRecords
+        nonlocal currentStatementNo
         nonlocal keepRecording
         logDetection_("CUDA API call")
         cudaApi, args, finishesOnFirstLine = tokens 
@@ -330,24 +348,26 @@ def parseFile(records,index,fortranFilepath):
             new.cudaApi  = cudaApi
             #print("finishesOnFirstLine={}".format(finishesOnFirstLine))
             assert type(new._parent) in [STModule,STProcedure,STProgram], type(new._parent)
-            new._lines = currentLines
+            new._records = currentRecords
             appendIfNotRecording_(new)
     def CudaKernelCall(tokens):
         nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentRecords
+        nonlocal currentStatementNo
         nonlocal keepRecording
         logDetection_("CUDA kernel call")
         kernelName, kernelLaunchArgs, args, finishesOnFirstLine = tokens 
         assert type(currentNode) in [STModule,STProcedure,STProgram], "type is: "+str(type(currentNode))
         new = STCudaKernelCall(currentNode,currentRecords,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
-        new._lines = currentLines
+        new._records = currentRecords
         appendIfNotRecording_(new)
     def AccDirective(tokens):
         nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentRecords
+        nonlocal currentStatementNo
         nonlocal currentStatement
         nonlocal keepRecording
         nonlocal doLoopCtr
@@ -383,6 +403,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentRecords
+        nonlocal currentStatementNo
         nonlocal keepRecording
         nonlocal directiveNo
         logDetection_("CUDA Fortran loop kernel directive")
@@ -396,6 +417,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentNode
         nonlocal translationEnabled
         nonlocal currentRecords
+        nonlocal currentStatementNo
         nonlocal currentStatement
         logDetection_("assignment")
         if inKernelsAccRegionAndNotRecording():
@@ -456,6 +478,7 @@ def parseFile(records,index,fortranFilepath):
         These expressions might be hidden behind a single-line if.
         """
         nonlocal currentRecords
+        nonlocal currentStatementNo
         nonlocal currentStatement
 
         matched = len(expression.searchString(currentStatement,1))
@@ -473,6 +496,7 @@ def parseFile(records,index,fortranFilepath):
         words of the line must match the expression.
         """
         nonlocal currentRecords
+        nonlocal currentStatementNo
         nonlocal currentStatement
         
         try:
@@ -547,3 +571,51 @@ def postprocess(stree,hipModuleName,index):
     if "acc" in SOURCE_DIALECTS:
          __postprocessAcc(stree,hipModuleName)
     utils.logging.logLeaveFunction(LOG_PREFIX,"postprocess")
+
+def transformStatements(stree,indexHints):
+    def traverse_(stnode):
+        stnode.transformStatements(indexHints)
+        for child in stnode._children:
+            traverse_(child)
+
+def groupModifiedRecords(records):
+    global LINE_GROUPING_ENABLE
+    global LINE_GROUPING_INCLUDE_BLANK_LINES
+    """Find contiguous blocks of modified lines and blank lines between them."""
+    blocks       = []
+    currentBlock = []
+
+    def bordersPreviousRecord_(record):
+        nonlocal currentBlock
+        return i == 0 or record["lineno"] ==\
+            currentBlock[-1]["lineno"] + len(currentBlock[-1]["lines"]):
+
+    def containsBlankLine_(record):
+        return len(record["lines"]) == 1 and not len(record["lines"][0].lstrip(" \t\n"))
+
+    def appendCurrentBlockIfNonEmpty_():
+        # append current block if it is not empty
+        # or does only contain blank lines.
+        nonlocal blocks
+        nonlocal currentBlock
+        if len(currentBlock): # remove blank lines
+            while containsBlankLine(currentBlock[-1]):
+                currentBlock.pop()
+        if len(currentBlock): # len might have changed
+            blocks.append(currentBlock)
+
+    # 1. find contiguous blocks of modified lines and lines that contain only whitespaces
+    # 2. blocks must start with modified lines
+    # 3. blank lines must be removed from tail of block
+    for i,record in enumerate(records):
+        lineno = record["lineno"]
+        if record["modified"]:
+            if not LINE_GROUPING_ENABLE or not bordersPreviousRecord_(i):
+                appendCurrentBlockIfNonEmpty_()
+                currentBlock = []
+            currentBlock.append(record)
+        elif LINE_GROUPING_INCLUDE_BLANK_LINES and len(currentBlock) and containsBlankLine(record) and bordersPreviousRecord_(record)
+            currentBlock.append(record)
+    # append last block
+    appendCurrentBlockIfNonEmpty_()
+    return blocks

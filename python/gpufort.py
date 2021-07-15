@@ -42,7 +42,7 @@ def createIndex(searchDirs,options,filepath):
     utils.logging.logLeaveFunction(LOG_PREFIX,"createIndex")
     return index
 
-def translateFortranSource(fortranFilepath,stree,index,wrapInIfdef):
+def translateFortranSource(fortranFilepath,records,stree,index,wrapInIfdef):
     global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
     global LOG_PREFIX
     global SKIP_CREATE_GPUFORT_MODULE_FILES
@@ -51,17 +51,17 @@ def translateFortranSource(fortranFilepath,stree,index,wrapInIfdef):
       {"fortranFilepath":fortranFilepath,"wrapInIfdef":wrapInIfdef})
     
     # derive code line groups from original tree
-    groups = scanner.groupObjects(stree,index)
-    # first pass to update some scanner tree nodes
-    for group in groups.values():
-        group.generateCode(index,wrapInIfdef)
+
     # post process before grouping again
     basename      = os.path.basename(fortranFilepath).split(".")[0]
     hipModuleName = basename.replace(".","_").replace("-","_") + "_kernels"
     scanner.postprocess(stree,hipModuleName,index)
+
+    # transform statements
+    scanner.transformStatements(stree,index)
     
     # group again with updated tree
-    groups = scanner.groupObjects(stree,index)
+    groups = scanner.groupModifiedRecords(records)
 
     # now process file
     outputLines = []
@@ -360,7 +360,7 @@ if __name__ == "__main__":
         
         # modify original file
         if not ONLY_GENERATE_KERNELS:
-            translateFortranSource(inputFilepath,stree,index,WRAP_IN_IFDEF) 
+            translateFortranSource(inputFilepath,stree,records,index,WRAP_IN_IFDEF) 
     #
     if ENABLE_PROFILING:
         profiler.disable() 

@@ -201,7 +201,7 @@ def __convertLinesToStatements(lines):
         indentIncrement = indentChar * INDENT_WIDTH_WHITESPACE
     indentOffset = numIndentChars * indentChar
 
-    # make lower case, replace line continuation by whitespace, split at ";"
+    # replace line continuation by whitespace, split at ";"
     singleLineStatements = pContinuation.sub(" "," ".join(lines)).split(";")
     # unroll single-line if
     unrolledStatements = []

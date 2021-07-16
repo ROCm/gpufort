@@ -199,7 +199,7 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         parentTag = stkernel._parent.tag()
         scope     = scoper.createScope(index,parentTag)
        
-        fSnippet = "".join(stkernel.lines())
+        fSnippet = stkernel.getSnippet()
 
         # translate and analyze kernels
         kernelParseResult = translator.parseLoopKernel(fSnippet,scope)
@@ -308,12 +308,12 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
             #######################################################################
             # Feed argument names back to STLoopKernel for host code modification
             #######################################################################
-            stkernel._kernelArgNames = [arg["callArgName"] for arg in kernelArgs]
-            stkernel._gridFStr       = kernelParseResult.gridExpressionFStr()
-            stkernel._blockFStr      = kernelParseResult.blockExpressionFStr()
+            stkernel.kernelArgNames = [arg["callArgName"] for arg in kernelArgs]
+            stkernel.gridFStr       = kernelParseResult.gridExpressionFStr()
+            stkernel.blockFStr      = kernelParseResult.blockExpressionFStr()
             # TODO use indexer to check if block and dim expressions are actually dim3 types or introduce overloaded make_dim3 interface to hipfort
-            stkernel._streamFStr     = kernelParseResult.stream()    # TODO consistency
-            stkernel._sharedMemFstr  = kernelParseResult.sharedMem() # TODO consistency
+            stkernel.streamFStr     = kernelParseResult.stream()    # TODO consistency
+            stkernel.sharedMemFstr  = kernelParseResult.sharedMem() # TODO consistency
 
             # Fortran interface with manual specification of stkernel launch parameters
             fInterfaceDictManual = copy.deepcopy(fInterfaceDictAuto)
@@ -378,32 +378,12 @@ def __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fConte
     """
     utils.logging.logEnterFunction(LOG_PREFIX,"__updateContextFromDeviceProcedures")
     
-    def beginOfBody_(lines):
-        """
-        starts from the begin
-        """
-        lineno = 0
-        while(not "use" in lines[lineno].lower() and\
-              not "implicit" in lines[lineno].lower() and\
-              not "::" in lines[lineno].lower()):
-            lineno += 1
-        return lineno
-    def endOfBody_(lines):
-        """
-        starts from the end
-        """
-        lineno = len(lines)-1
-        while(not "end" in lines[lineno].lower()):
-            lineno -= 1
-        return lineno
-    
     for stprocedure in deviceProcedures:
         scope         = scoper.createScope(index,stprocedure.tag())
         indexRecord   = stprocedure._indexRecord
         isFunction    = indexRecord["kind"] == "function"
         
-        fBody  = "".join(stprocedure._lines[beginOfBody_(stprocedure._lines):endOfBody_(stprocedure._lines)])
-        #fBody  = utils.fileutils.prettifyFCode(fBody)
+        fBody = stprocedure.extractBody()
         
         if isFunction:
             resultName = indexValue["resultName"]

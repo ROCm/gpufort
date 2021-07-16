@@ -1,28 +1,31 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 class Acc2Omp(AccBackendBase):
-    def gpufortFStr(self,indexHints=[]):
-        fSnippet = "".join(self._stnode._lines)
+    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines):
+        snippet = joinedStatements
         try:
            def repl(parseResult):
                 return parseResult.ompFStr(), True
-           result,_ = utils.pyparsingutils.replaceFirst(fSnippet,\
+           result,_ = utils.pyparsingutils.replaceFirst(snippet,\
                     translator.accSimpleDirective,\
                     repl)
            return result, True 
         except Exception as e:
-           print("failed: "+fSnippet) #TODO
+           print("failed: "+snippet) # TODO error handling
            raise e
            return "", False 
 
 class AccLoopKernel2Omp(AccBackendBase):
-    def gpufortFStr(self,indexHints=[]):
-        fSnippet = "".join(self._stnode._lines)
+    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines):
+        if statementsFullyCoverLines:
+            snippet = joinedLines
+        else:
+            snippet = joinedStatements
         try:
-           parseResult = translator.loopKernel.parseString(fSnippet)[0]
-           return parseResult.ompFStr(fSnippet), True 
+           parseResult = translator.loopKernel.parseString(snippet)[0]
+           return parseResult.ompFStr(snippet), True 
         except Exception as e:
-           print("failed: "+fSnippet) #TODO
+           print("failed: "+snippet) # TODO error handling
            raise e
            return "", False 
 

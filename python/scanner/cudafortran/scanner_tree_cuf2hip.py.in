@@ -2,7 +2,7 @@
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 
 class CufLoopKernel2Hip(CufBackendBase):
-    def translateSnippet(self,snippet,indexHints=[]):
-        return STLoopKernel.translateSnippet(self._stnode,snippet,indexHints) 
+    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
+        return STLoopKernel.transform(self._stnode,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints) 
 
 registerCufBackend("hip",CufLoopKernel2Hip,None)

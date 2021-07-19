@@ -6,8 +6,8 @@ import re
 import ast
 
 import addtoplevelpath
-import preprocessor.grammar as grammar
-import preprocessor.preprocessor as preprocessor
+import linemapper.grammar as grammar
+import linemapper.linemapper as linemapper
 
 #import utils.logging
 #
@@ -168,10 +168,10 @@ class TestPreprocessorGrammar(unittest.TestCase):
           "!(defined(a) && !defined(x) && a(b) > 4)"
         ]
         for text in testdata_true:
-            condition = preprocessor.evaluateCondition(text,macroStack)
+            condition = linemapper.evaluateCondition(text,macroStack)
             self.assertTrue(condition)
         for text in testdata_false:
-            condition = preprocessor.evaluateCondition(text,macroStack)
+            condition = linemapper.evaluateCondition(text,macroStack)
             self.assertFalse(condition)
         numTests = len(testdata_true) + len(testdata_false)
         self._extra = ", performed {} checks".format(numTests)

@@ -1,15 +1,15 @@
 GRAMMAR_TESTS      = $(shell find . -maxdepth 1 -name "test.grammar.*.py" -execdir basename {} ';')
 TRANSLATOR_TESTS   = $(shell find . -maxdepth 1 -name "test.translator.*.py" -execdir basename {} ';')
 INDEXER_TESTS      = $(shell find . -maxdepth 1 -name "test.indexer.*.py" -execdir basename {} ';')
-PREPROCESSOR_TESTS = $(shell find . -maxdepth 1 -name "test.preprocessor.*.py" -execdir basename {} ';')
+LINEMAPPER_TESTS   = $(shell find . -maxdepth 1 -name "test.linemapper.*.py" -execdir basename {} ';')
 CUSTOM_TESTS       = $(shell find . -maxdepth 1 -name "test.custom.*.py" -execdir basename {} ';')
 
-.PHONY: $(GRAMMAR_TESTS) $(TRANSLATOR_TESTS) $(INDEXER_TESTS) $(PREPROCESSOR_TESTS) $(CUSTOM_TESTS)\
-	test.grammar test.translator test.indexer test.preprocessor test.custom
+.PHONY: $(GRAMMAR_TESTS) $(TRANSLATOR_TESTS) $(INDEXER_TESTS) $(LINEMAPPER_TESTS) $(CUSTOM_TESTS)\
+	test.grammar test.translator test.indexer test.linemapper test.custom
 
-all: test.grammar test.translator test.indexer test.preprocessor test.custom
+all: test.grammar test.translator test.indexer test.linemapper test.custom
 
-TESTS = $(GRAMMAR_TESTS) $(TRANSLATOR_TESTS) $(INDEXER_TESTS) $(PREPROCESSOR_TESTS) $(CUSTOM_TESTS)
+TESTS = $(GRAMMAR_TESTS) $(TRANSLATOR_TESTS) $(INDEXER_TESTS) $(LINEMAPPER_TESTS) $(CUSTOM_TESTS)
 
 $(TESTS): %:
 	python3 $@
@@ -20,6 +20,6 @@ test.translator: $(TRANSLATOR_TESTS)
 
 test.indexer: $(INDEXER_TESTS)
 
-test.preprocessor: $(PREPROCESSOR_TESTS)
+test.linemapper: $(LINEMAPPER_TESTS)
 
 test.custom: $(CUSTOM_TESTS)

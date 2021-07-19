@@ -5,7 +5,7 @@ import cProfile,pstats,io
 import json
 
 import addtoplevelpath
-import preprocessor.preprocessor as preprocessor
+import linemapper.linemapper as linemapper
 import utils.logging
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
@@ -38,10 +38,10 @@ class TestIndexer(unittest.TestCase):
         pass 
     def test_1_full_test(self):
         options = "-DCUDA -DCUDA2"
-        records = preprocessor.preprocessAndNormalizeFortranFile("test1.f90",options)
-        result_lines              = preprocessor.renderFile(records,stage="lines")
-        result_statements         = preprocessor.renderFile(records,stage="statements")
-        result_expandedStatements = preprocessor.renderFile(records,stage="expandedStatements")
+        records                   = linemapper.readFile("test1.f90",options)
+        result_lines              = linemapper.renderFile(records,stage="lines")
+        result_statements         = linemapper.renderFile(records,stage="statements")
+        result_expandedStatements = linemapper.renderFile(records,stage="expandedStatements")
         testdata_lines              = """
         program main
 

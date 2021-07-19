@@ -6,11 +6,11 @@ import pyparsing as pyp
 
 import utils.logging
 
-ERR_PREPROCESSOR_MACRO_DEFINITION_NOT_FOUND = 11001
+ERR_LINEMAPPER_MACRO_DEFINITION_NOT_FOUND = 11001
 
-preprocessorDir = os.path.dirname(__file__)
-exec(open("{0}/preprocessor_options.py.in".format(preprocessorDir)).read())
-exec(open("{0}/grammar.py".format(preprocessorDir)).read())
+linemapperDir = os.path.dirname(__file__)
+exec(open("{0}/linemapper_options.py.in".format(linemapperDir)).read())
+exec(open("{0}/grammar.py".format(linemapperDir)).read())
 
 def __evaluateDefined(inputString,macroStack):
     # expand macro; one at a time
@@ -344,9 +344,73 @@ def __initMacros(options):
         macroStack.append(macro)
     return macroStack
 
+def __groupModifiedRecords(records):
+    global LINE_GROUPING_ENABLE
+    global LINE_GROUPING_INCLUDE_BLANK_LINES
+    """Find contiguous blocks of modified lines and blank lines between them."""
+    EMPTY_BLOCK    = { "minLineno": -1, "maxLineno": -1, "orig": "", "subst": ""}
+    blocks         = []
+    currentRecords = []
+
+    # auxiliary local functions
+    def maxLineno_(record):
+        record["lineno"] + len(record["lines"]) - 1
+    def bordersPreviousRecord_(record):
+        nonlocal currentRecords
+        return i == 0 or record["lineno"] == maxLineno_(currentRecords[-1])+1
+    def containsBlankLine_(record):
+        return len(record["lines"]) == 1 and not len(record["lines"][0].lstrip(" \t\n"))
+    def wasModified_(record):
+        modified = record["modified"]
+        for record in record["includedRecords"]:
+            modified = modified or wasModified_(record)
+        return modified
+    def appendCurrentBlockIfNonEmpty_():
+        # append current block if it is not empty
+        # or does only contain blank lines.
+        nonlocal blocks
+        nonlocal currentRecords
+        if len(currentRecords): # remove blank lines
+            while containsBlankLine(currentRecords[-1]):
+                currentRecords.pop()
+        if len(currentRecords): # len might have changed
+            block = dict(EMPTY_BLOCK) # shallow copy
+            block["minLineno"] = currentRecords[0]["lineno"]
+            block["maxLineno"] = maxLineno_(currentRecords[-1])
+
+            def collectSubst_(record):
+                if len(record["includedRecords"]):
+                    for record in record["includedRecords"]:
+                        return collectSubst_(record)
+                elif record["modified"]:
+                    return "\n".join([stmt.rstrip("\n") for rstmt in record["expandedStatements"]])
+                else: # for included records
+                    return "".join(record["lines"])
+
+            for record in currentRecords:
+                block["orig"]  += "".join(record["lines"])
+                block["subst"] += collectSubst_(record)
+            blocks.append(currentRecords)
+
+    # 1. find contiguous blocks of modified or blank lines
+    # 2. blocks must start with modified lines
+    # 3. blank lines must be removed from tail of block
+    for i,record in enumerate(records):
+        lineno = record["lineno"]
+        if wasModified_(record):
+            if not LINE_GROUPING_ENABLE or not bordersPreviousRecord_(records):
+                appendCurrentBlockIfNonEmpty_()
+                currentRecords = []
+            currentRecords.append(record)
+        elif LINE_GROUPING_INCLUDE_BLANK_LINES and len(currentRecords) and containsBlankLine(record) and bordersPreviousRecord_(record):
+            currentRecords.append(record)
+    # append last block
+    appendCurrentBlockIfNonEmpty_()
+    return blocks
+
 # API
 
-def preprocessAndNormalizeFortranFile(fortranFilepath,options=""):
+def readFile(fortranFilepath,options=""):
     """
     A C and Fortran preprocessor (cpp and fpp).
 
@@ -362,7 +426,7 @@ def preprocessAndNormalizeFortranFile(fortranFilepath,options=""):
     global LOG_PREFIX
     global ERROR_HANDLING
 
-    utils.logging.logEnterFunction(LOG_PREFIX,"preprocessAndNormalizeFortranFile",{
+    utils.logging.logEnterFunction(LOG_PREFIX,"readFile",{
       "fortranFilepath":fortranFilepath,
       "options":options
     })
@@ -371,10 +435,34 @@ def preprocessAndNormalizeFortranFile(fortranFilepath,options=""):
     try:
         records = __preprocessAndNormalizeFortranFile(fortranFilepath,macroStack,\
            regionStack1=[True],regionStack2=[True]) # init value of regionStack[0] can be arbitrary
-        utils.logging.logLeaveFunction(LOG_PREFIX,"preprocessAndNormalizeFortranFile")
+        utils.logging.logLeaveFunction(LOG_PREFIX,"readFile")
         return records
     except Exception as e:
         raise e
+
+def writeModifiedFile(infilePath,outfilePath,records):
+    blocks = __groupModifiedRecords(records)
+
+    output      = ""
+    blockId     = 0
+    linesToSkip = -1
+    with open(infilePath,"r") as infile:
+        for lineno,line in enumerate(infile.readlines()):
+            if lineno == blocks[blockId]["minLineno"]:
+                block = blocks[blockId]
+                linesToSkip = blocks["maxLineno"] - blockId["minLineno"] + 1
+                subst = block["subst"]
+                if WRAP_IN_IFDEF:
+                    original = block["orig"]
+                    output += "#ifdef {0}\n{1}\n#else\n{2}\n#endif\n".format(\
+                      MACRO,result,original).split("\n")
+                blockId +=1
+            elif linesToSkip > 0:
+                linesToSkip -= 1
+            else:
+                output += line
+    with open(outfilePath,"w") as outfile:
+        outfile.write(output.rstrip("\n"))
 
 def renderFile(records,stage="expandedStatements",includeInactive=False,includePreprocessorDirectives=False):
     """

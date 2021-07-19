@@ -1,4 +1,4 @@
-LOG_PREFIX="preprocessor.preprocessor" # prefix for logging
+LOG_PREFIX="linemapper.linemapper" # prefix for logging
 
 ERROR_HANDLING="strict"   # 'strict': program terminates with error. Otherwise, a warning is printed.
 

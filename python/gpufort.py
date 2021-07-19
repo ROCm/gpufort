@@ -12,7 +12,7 @@ import utils.logging
 import utils.fileutils
 import scanner.scanner as scanner
 import indexer.indexer as indexer
-import preprocessor.preprocessor as preprocessor
+import linemapper.linemapper as linemapper
 import translator.translator as translator
 import fort2hip.fort2hip as fort2hip
 
@@ -42,12 +42,18 @@ def createIndex(searchDirs,options,filepath):
     utils.logging.logLeaveFunction(LOG_PREFIX,"createIndex")
     return index
 
-def translateFortranSource(fortranFilepath,records,stree,index,wrapInIfdef):
+def __transformStatements(stree,indexHints):
+    def traverse_(stnode):
+        stnode.transformStatements(indexHints)
+        for child in stnode._children:
+            traverse_(child)
+
+def translateSource(fortranFilepath,records,stree,index,wrapInIfdef):
     global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
     global LOG_PREFIX
     global SKIP_CREATE_GPUFORT_MODULE_FILES
     
-    utils.logging.logEnterFunction(LOG_PREFIX,"translateFortranSource",\
+    utils.logging.logEnterFunction(LOG_PREFIX,"translateSource",\
       {"fortranFilepath":fortranFilepath,"wrapInIfdef":wrapInIfdef})
     
     # derive code line groups from original tree
@@ -56,38 +62,19 @@ def translateFortranSource(fortranFilepath,records,stree,index,wrapInIfdef):
     basename      = os.path.basename(fortranFilepath).split(".")[0]
     hipModuleName = basename.replace(".","_").replace("-","_") + "_kernels"
     scanner.postprocess(stree,hipModuleName,index)
-
     # transform statements
-    scanner.transformStatements(stree,index)
+    __transformStatements(stree,index) # has sides effect on records
     
-    # group again with updated tree
-    groups = scanner.groupModifiedRecords(records)
-
-    # now process file
-    outputLines = []
-    nextLinesToSkip = 0
-    with open(fortranFilepath,"r") as fortranFile:
-        lines = scanner.handleIncludeStatements(fortranFilepath,fortranFile.readlines())
-        for lineno,line in enumerate(lines):
-            if lineno in groups:
-                lines, linesToSkip = groups[lineno].generateCode(index,wrapInIfdef)
-                nextLinesToSkip = linesToSkip 
-                outputLines += lines
-            elif nextLinesToSkip > 0:
-                nextLinesToSkip -= 1
-            else:
-                outputLines.append(line)
     parts = os.path.splitext(fortranFilepath)
-    modifiedFortranFilepath = "{}.hipified.f90".format(parts[0])
-    with open(modifiedFortranFilepath,"w") as outfile:
-         for line in outputLines:
-              outfile.write(line.strip("\n") + "\n")
+    modifiedFilepath = "{}.hipified.f90".format(parts[0])
+    linemapper.writeModifiedFile(modifiedFilepath,inputFilepath,records)
+
     if PRETTIFY_MODIFIED_TRANSLATION_SOURCE:
-        utils.fileutils.prettifyFFile(modifiedFortranFilepath)
-    msg = "created hipified input file: ".ljust(40) + modifiedFortranFilepath
-    utils.logging.logInfo(LOG_PREFIX,"translateFortranSource",msg)
+        utils.fileutils.prettifyFFile(modifiedFilepath)
+    msg = "created hipified input file: ".ljust(40) + modifiedFilepath
+    utils.logging.logInfo(LOG_PREFIX,"translateSource",msg)
     
-    utils.logging.logLeaveFunction(LOG_PREFIX,"translateFortranSource")
+    utils.logging.logLeaveFunction(LOG_PREFIX,"translateSource")
 
 def parseRawCommandLineArguments():
     """
@@ -212,7 +199,7 @@ def parseCommandLineArguments():
           "fort2hip/fort2hip_options.py.in",
           "indexer/indexer_options.py.in",
           "indexer/scoper_options.py.in",
-          "preprocessor/preprocessor_options.py.in",
+          "linemapper/linemapper_options.py.in",
           "utils/logging_options.py.in"
         ]
         print("\nCONFIGURABLE GPUFORT OPTIONS (DEFAULT VALUES):")
@@ -345,7 +332,7 @@ if __name__ == "__main__":
     #
     index = createIndex(INCLUDE_DIRS,defines,inputFilepath)
     if not ONLY_CREATE_GPUFORT_MODULE_FILES:
-        records = preprocessor.preprocessAndNormalizeFortranFile(inputFilepath,defines)
+        records = linemapper.readFile(inputFilepath,defines)
         stree   = scanner.parseFile(records,index,inputFilepath)    
  
         # extract kernels

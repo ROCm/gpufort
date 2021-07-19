@@ -7,6 +7,7 @@ import ast
 
 import addtoplevelpath
 import preprocessor.grammar as grammar
+import preprocessor.preprocessor as preprocessor
 
 #import utils.logging
 #
@@ -143,59 +144,17 @@ class TestPreprocessorGrammar(unittest.TestCase):
             try:
                 result = grammar.pp_arithm_logic_expr.parseString(text,parseAll=True)
                 numSuccess += 1
-            except:
+            except Exception as e:
                 print(text)
-                pass
+                raise e
         self._extra = ", performed {} checks".format(numTests)
         self.assertEqual(numSuccess,numTests)
     def test_6_macro_substitution(self):
         macroStack = [
-          { "name": 'b', "args": [], "subst": "5" },
-          { "name": 'a', "args": ["x"], "subst": "(5*x)" },
+          { "name": "b", "args": [], "subst": "5" },
+          { "name": "a", "args": ["x"], "subst": "(5*x)" },
         ]
-        def substitute_(tokens):
-            """
-            pyparsing parse action
-            """
-            name = tokens[0]
-            args = tokens[1]
-            nonlocal macroStack
-            macro = next((macro for macro in reversed(macroStack) if macro["name"] == tokens[0]),None)
-            if macro:
-                subst = macro["subst"]
-                for n,placeholder in enumerate(macro["args"]):
-                    subst = re.sub(r"\b{}\b".format(placeholder),args[n],subst)      
-                return subst
-            else:
-                tokens[0]
-        grammar.pp_macro_eval.setParseAction(substitute_)
-
-        def expandMacros_(original):
-             oldResult = None
-             result    = original
-             # convert defines
-             iterate = True
-             while iterate:
-                iterate = False
-                for parseResult,start,end in grammar.pp_defined.scanString(result):
-                    substring = result[start:end].strip(" \t\n")
-                    if next((macro for macro in macroStack if macro["name"] == parseResult.name),None):
-                        subst = "1"
-                    else: 
-                        subst = "0"
-                    result = result.replace(substring,subst)
-                    iterate = True
-                    break
-             # expand other macros; one at a time
-             while result != oldResult:
-                   oldResult = result
-                   result    = grammar.pp_value.transformString(result)
-             # replace C and Fortran operatos by python equivalents 
-             return result
-
-        def convertOperators_(text):
-            return grammar.pp_ops.transformString(text)
-
+        
         testdata_true = [
           "defined(a)",
           "!!defined(a)",
@@ -209,12 +168,10 @@ class TestPreprocessorGrammar(unittest.TestCase):
           "!(defined(a) && !defined(x) && a(b) > 4)"
         ]
         for text in testdata_true:
-            result    = convertOperators_(expandMacros_(text))
-            condition = bool(eval(result))
+            condition = preprocessor.evaluateCondition(text,macroStack)
             self.assertTrue(condition)
         for text in testdata_false:
-            result    = convertOperators_(expandMacros_(text))
-            condition = bool(eval(result))
+            condition = preprocessor.evaluateCondition(text,macroStack)
             self.assertFalse(condition)
         numTests = len(testdata_true) + len(testdata_false)
         self._extra = ", performed {} checks".format(numTests)

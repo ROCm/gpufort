@@ -12,10 +12,9 @@ preprocessorDir = os.path.dirname(__file__)
 exec(open("{0}/preprocessor_options.py.in".format(preprocessorDir)).read())
 exec(open("{0}/grammar.py".format(preprocessorDir)).read())
 
-
-def __evaluateDefined(text,macroStack):
+def __evaluateDefined(inputString,macroStack):
     # expand macro; one at a time
-    result = text
+    result = inputString
     macroNames = [ macro["name"] for macro in reversed(macroStack) ]
     iterate = True
     while iterate:
@@ -28,37 +27,30 @@ def __evaluateDefined(text,macroStack):
             break
     return result
 
-def __expandMacros(text,macroStack):
+def __expandMacros(inputString,macroStack):
     # expand defined(...) expressions
-    result = __evaluateDefined(text,macroStack)
+    result = __evaluateDefined(inputString,macroStack)
     # expand macro; one at a time
-    macroNames = [ macro["name"] for macro in reversed(macroStack) ]
+    macroNames = [ macro["name"] for macro in macroStack ]
     iterate    = True
     while iterate:
         iterate = False
         # finds all identifiers
-        for match,start,end in pp_macro_eval.scanString(result):
-            macroName = None
-            for name in macroNames:
-                if match.name == name:
-                    macroName = name
-                    break
-            if macroName:
-                if match.args:
-                    args = match.args.replace(" ","").split(",")
-                else:
-                    args = []
-                macro     = next((macro for macro in macroStack if macro["name"] == macroName),None)
+        for parseResult,start,end in pp_macro_eval.scanString(result):
+            name = parseResult[0]
+            if name in macroNames:
+                substring = result[start:end].strip(" \t\n")
+                args      = parseResult[1].asList()
+                macro     = next((macro for macro in macroStack if macro["name"] == name),None)
                 subst     = macro["subst"].strip(" \n\t")
                 for n,placeholder in enumerate(macro["args"]):
                     subst = re.sub(r"\b{}\b".format(placeholder),args[n],subst)
-                substring = result[start:end].strip(" \t\n")
                 result  = result.replace(substring,subst)
                 iterate = True
                 break
     return result
 
-def __evaluateCondition(inputString,macroStack):
+def evaluateCondition(inputString,macroStack):
     """
     Evaluates preprocessor condition.
     :param str inputString: Expression as text.
@@ -142,7 +134,7 @@ def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,
                 condition = result.condition
             else:
                 condition = "0"
-            active = __evaluateCondition(condition,macroStack)
+            active = evaluateCondition(condition,macroStack)
             regionStack1.append(active)
             anyIfElifActive = active
             regionStack2.append(anyIfElifActive)
@@ -156,7 +148,7 @@ def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,
                 condition = result.condition
             else:
                 condition = "0"
-            active = __evaluateCondition(condition,macroStack)
+            active = evaluateCondition(condition,macroStack)
             regionStack1.append(active)
             regionStack2[-1] = regionStack2[-1] or active
             handled = True

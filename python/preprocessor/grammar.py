@@ -4,12 +4,9 @@ import re
 pyp.ParserElement.enablePackrat()
 
 ## INGREDIENTS
+LPAR,RPAR  = map(pyp.Suppress, "()")
 
-pp_ident           = pyp.Regex(r"\b\w+\b")
-LPAR,RPAR          = map(pyp.Suppress, "()")
-
-# conditions
-#pp_char             = pyp.Regex(r"'[ -~]'")
+pp_ident      = pyp.pyparsing_common.identifier.copy()
 pp_number     = pyp.pyparsing_common.number.copy().setParseAction(lambda tk: str(tk[0]))
 pp_bool_true  = pyp.Regex(r"\.true\.|true|1",re.IGNORECASE).setParseAction(lambda tk: "1")
 pp_bool_false = pyp.Regex(r"\.false\.|false|0",re.IGNORECASE).setParseAction(lambda tk: "0")
@@ -34,8 +31,9 @@ pp_arithm_logic_expr =  pyp.infixNotation(pp_value, [
     (pp_op_or,                2, pyp.opAssoc.LEFT)
 ])
 
-pp_macro_eval = pyp.Regex(r"(?P<name>\w+)(\((?P<args>(\w|[, ])+)?\))?",re.IGNORECASE)
-
+arg_list = (LPAR + RPAR).setParseAction(lambda tk: []) | \
+  (LPAR + pyp.delimitedList( pp_arithm_logic_expr ) + RPAR)
+pp_macro_eval   = pp_ident + pyp.Group(pyp.Optional(arg_list,default=[])) # ! setResultName causes issue when args are macro evals again
 pp_value      <<= ( pp_number | pp_bool_true | pp_bool_false | pp_defined | pp_macro_eval ) # | pp_char ) # ! defined must come before eval
 
 # DIRECTIVES
@@ -51,9 +49,6 @@ pp_dir_else    = pyp.Regex(r"#\s*else\b",re.IGNORECASE)
 # include
 pp_dir_include = pyp.Regex(r"#\s*include\s+\"(?P<filename>["+pyp.printables+r"]+)\"",re.IGNORECASE)
 # define / undef
-#pp_dir_define  = pyp.Regex(r"#\s*define\s+(?P<name>\w+)",re.IGNORECASE) +\
-#                 pyp.Optional(LPAR + pyp.Optional(pyp.delimitedList(pp_ident),default=[]) + RPAR,default=[]).setResultsName("args") +\
-#                 pyp.Regex(".*\n?$").setResultsName("subst")
 pp_dir_define  = pyp.Regex(r"#\s*define\s+(?P<name>\w+)(\((?P<args>(\w|[, ])+)\))?\s+(?P<subst>.*)",re.IGNORECASE)
 pp_dir_undef   = pyp.Regex(r"#\s*undef\s+(?P<name>\w+)",re.IGNORECASE)
 # other

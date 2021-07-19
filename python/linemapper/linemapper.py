@@ -182,7 +182,9 @@ def __convertLinesToStatements(lines):
     Additionally, it converts single-line Fortran if statements
     into multi-line if-then-endif statements.
     """
-    pContinuation = re.compile(r"([\&]\s*\n)|(\n[!c\*]\$\w+\&)")
+    global PATTERN_LINE_CONTINUATION
+
+    pContinuation = re.compile(PATTERN_LINE_CONTINUATION)
     # we look for a sequence ") <word>" were word != "then".
     pSingleLineIf = re.compile(r"^(?P<indent>[\s\t]*)(?P<head>if\s*\(.+\))\s*\b(?!then)(?P<body>\w.+)",re.IGNORECASE)
     
@@ -441,6 +443,9 @@ def readFile(fortranFilepath,options=""):
         raise e
 
 def writeModifiedFile(infilePath,outfilePath,records):
+    global FILE_MODIFICATION_WRAP_IN_IFDEF
+    global FILE_MODIFICATION_MACRO
+
     blocks = __groupModifiedRecords(records)
 
     output      = ""
@@ -452,10 +457,10 @@ def writeModifiedFile(infilePath,outfilePath,records):
                 block = blocks[blockId]
                 linesToSkip = blocks["maxLineno"] - blockId["minLineno"] + 1
                 subst = block["subst"]
-                if WRAP_IN_IFDEF:
+                if FILE_MODIFICATION_WRAP_IN_IFDEF:
                     original = block["orig"]
                     output += "#ifdef {0}\n{1}\n#else\n{2}\n#endif\n".format(\
-                      MACRO,result,original).split("\n")
+                      FILE_MODIFICATION_MACRO,result,original).split("\n")
                 blockId +=1
             elif linesToSkip > 0:
                 linesToSkip -= 1

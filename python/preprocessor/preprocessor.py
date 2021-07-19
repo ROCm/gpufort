@@ -58,11 +58,16 @@ def __expandMacros(text,macroStack):
                 break
     return result
 
-def __evaluateCondition(text,macroStack):
-    # replace C and Fortran operators by python equivalents
-    # TODO error handling
-
-    return eval(pp_ops.transformString(__expandMacros(text,macroStack))) > 0
+def __evaluateCondition(inputString,macroStack):
+    """
+    Evaluates preprocessor condition.
+    :param str inputString: Expression as text.
+    :note: Input validation performed according to:
+           https://realpython.com/python-eval-function/#minimizing-the-security-issues-of-eval
+    """
+    transformedInputString = pp_ops.transformString(__expandMacros(inputString,macroStack))
+    code = compile(transformedInputString, "<string>", "eval") 
+    return eval(code, {"__builtins__": {}},{}) > 0
 
 def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,regionStack2):
     """

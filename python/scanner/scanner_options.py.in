@@ -21,7 +21,6 @@ LOOP_KERNEL_DEFAULT_LAUNCHER = "auto" # "auto" or "cpu"
 HIP_MODULE_NAME        = "hipfort"
 HIP_MATH_MODULE_PREFIX = HIP_MODULE_NAME+"_"
 
-GPUFORT_IFDEF        = "__GPUFORT"
 CUDA_IFDEF           = "CUDA"
 CUBLAS_VERSION       = 1
 KEEP_CUDA_LIB_NAMES = False

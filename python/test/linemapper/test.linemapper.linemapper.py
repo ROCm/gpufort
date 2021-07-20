@@ -40,8 +40,8 @@ class TestIndexer(unittest.TestCase):
         options = "-DCUDA -DCUDA2"
         records                   = linemapper.readFile("test1.f90",options)
         result_lines              = linemapper.renderFile(records,stage="lines")
-        result_statements         = linemapper.renderFile(records,stage="statements")
-        result_expandedStatements = linemapper.renderFile(records,stage="expandedStatements")
+        result_raw_statements         = linemapper.renderFile(records,stage="raw_statements")
+        result_statements = linemapper.renderFile(records,stage="statements")
         testdata_lines              = """
         program main
 

@@ -304,8 +304,8 @@ def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionS
           "file":                    fortranFilepath,
           "lineno":                  lineStart, # key
           "lines":                   lines,
-          "statements":              statements1,
-          "expandedStatements":      statements3,
+          "raw_statements":              raw_statements1,
+          "statements":      statements3,
           "includedRecords":         includedRecords,
           "isPreprocessorDirective": isPreprocessorDirective,
           "isActive":                regionStack1[-1],
@@ -347,9 +347,12 @@ def __initMacros(options):
     return macroStack
 
 def __groupModifiedRecords(records):
+    """Find contiguous blocks of modified lines and blank lines between them."""
     global LINE_GROUPING_ENABLE
     global LINE_GROUPING_INCLUDE_BLANK_LINES
-    """Find contiguous blocks of modified lines and blank lines between them."""
+    
+    utils.logging.logEnterFunction(LOG_PREFIX,"__groupModifiedRecords")
+
     EMPTY_BLOCK    = { "minLineno": -1, "maxLineno": -1, "orig": "", "subst": ""}
     blocks         = []
     currentRecords = []
@@ -385,7 +388,7 @@ def __groupModifiedRecords(records):
                     for record in record["includedRecords"]:
                         return collectSubst_(record)
                 elif record["modified"]:
-                    return "\n".join([stmt.rstrip("\n") for rstmt in record["expandedStatements"]])
+                    return "\n".join([stmt.rstrip("\n") for rstmt in record["statements"]])
                 else: # for included records
                     return "".join(record["lines"])
 
@@ -408,6 +411,9 @@ def __groupModifiedRecords(records):
             currentRecords.append(record)
     # append last block
     appendCurrentBlockIfNonEmpty_()
+    
+    utils.logging.logLeaveFunction(LOG_PREFIX,"__groupModifiedRecords")
+    
     return blocks
 
 # API
@@ -445,6 +451,9 @@ def readFile(fortranFilepath,options=""):
 def writeModifiedFile(infilePath,outfilePath,records):
     global FILE_MODIFICATION_WRAP_IN_IFDEF
     global FILE_MODIFICATION_MACRO
+    
+    utils.logging.logEnterFunction(LOG_PREFIX,"writeModifiedFile",\
+      {"infilePath":infilePath,"outfilePath":outfilePath})
 
     blocks = __groupModifiedRecords(records)
 
@@ -454,9 +463,9 @@ def writeModifiedFile(infilePath,outfilePath,records):
     with open(infilePath,"r") as infile:
         for lineno,line in enumerate(infile.readlines()):
             if lineno == blocks[blockId]["minLineno"]:
-                block = blocks[blockId]
+                block       = blocks[blockId]
                 linesToSkip = blocks["maxLineno"] - blockId["minLineno"] + 1
-                subst = block["subst"]
+                subst       = block["subst"]
                 if FILE_MODIFICATION_WRAP_IN_IFDEF:
                     original = block["orig"]
                     output += "#ifdef {0}\n{1}\n#else\n{2}\n#endif\n".format(\
@@ -468,8 +477,10 @@ def writeModifiedFile(infilePath,outfilePath,records):
                 output += line
     with open(outfilePath,"w") as outfile:
         outfile.write(output.rstrip("\n"))
+    
+    utils.logging.logLeaveFunction(LOG_PREFIX,"writeModifiedFile")
 
-def renderFile(records,stage="expandedStatements",includeInactive=False,includePreprocessorDirectives=False):
+def renderFile(records,stage="statements",includeInactive=False,includePreprocessorDirectives=False):
     """
     :param str stage: either 'lines', 'statements' or 'expandedStatements', i.e. the preprocessor stage.
     :param bool includeInactive: include also code lines in inactive code regions.

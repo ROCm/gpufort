@@ -42,39 +42,38 @@ def createIndex(searchDirs,options,filepath):
     utils.logging.logLeaveFunction(LOG_PREFIX,"createIndex")
     return index
 
-def __transformStatements(stree,indexHints):
-    def traverse_(stnode):
-        stnode.transformStatements(indexHints)
-        for child in stnode._children:
-            traverse_(child)
-
-def translateSource(fortranFilepath,records,stree,index,wrapInIfdef):
+def __translateSource(infilepath,records,stree,index):
     global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
     global LOG_PREFIX
     global SKIP_CREATE_GPUFORT_MODULE_FILES
     
-    utils.logging.logEnterFunction(LOG_PREFIX,"translateSource",\
+    utils.logging.logEnterFunction(LOG_PREFIX,"__translateSource",\
       {"fortranFilepath":fortranFilepath,"wrapInIfdef":wrapInIfdef})
     
-    # derive code line groups from original tree
-
-    # post process before grouping again
+    # post process
     basename      = os.path.basename(fortranFilepath).split(".")[0]
     hipModuleName = basename.replace(".","_").replace("-","_") + "_kernels"
     scanner.postprocess(stree,hipModuleName,index)
-    # transform statements
-    __transformStatements(stree,index) # has sides effect on records
     
-    parts = os.path.splitext(fortranFilepath)
-    modifiedFilepath = "{}.hipified.f90".format(parts[0])
-    linemapper.writeModifiedFile(modifiedFilepath,inputFilepath,records)
+    # transform statements; wrtites to 'records'
+    def transform_(stnode):
+        stnode.transformStatements(index)
+        for child in stnode._children:
+            transform_(child)
+    transform_(stree)
 
+    # write the file
+    parts = os.path.splitext(fortranFilepath)
+    outfilepath = "{}.hipified.f90".format(parts[0])
+    linemapper.writeModifiedFile(outfilepath,infilepath,records)
+
+    # prettify the file
     if PRETTIFY_MODIFIED_TRANSLATION_SOURCE:
         utils.fileutils.prettifyFFile(modifiedFilepath)
     msg = "created hipified input file: ".ljust(40) + modifiedFilepath
-    utils.logging.logInfo(LOG_PREFIX,"translateSource",msg)
+    utils.logging.logInfo(LOG_PREFIX,"__translateSource",msg)
     
-    utils.logging.logLeaveFunction(LOG_PREFIX,"translateSource")
+    utils.logging.logLeaveFunction(LOG_PREFIX,"__translateSource")
 
 def parseRawCommandLineArguments():
     """
@@ -123,7 +122,6 @@ global LOG_LEVEL
 global LOG_FORMAT_PATTERN
 global ONLY_CREATE_GPUFORT_MODULE_FILES
 global SKIP_CREATE_GPUFORT_MODULE_FILES
-global WRAP_IN_IFDEF
 global ONLY_MODIFY_TRANSLATION_SOURCE
 global ONLY_GENERATE_KERNELS
 global POST_CLI_ACTIONS
@@ -265,7 +263,7 @@ def parseCommandLineArguments():
         ONLY_MODIFY_TRANSLATION_SOURCE = True
     # wrap modified lines in ifdef
     if args.wrapInIfdef:
-        WRAP_IN_IFDEF = True
+        linemapper.FILE_MODIFICATION_WRAP_IN_IFDEF = True
     # logging
     if len(args.logLevel):
         LOG_LEVEL = args.logLevel

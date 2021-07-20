@@ -35,7 +35,6 @@ exec(open("{0}/scanner_options.py.in".format(scannerDir)).read())
 exec(open("{0}/scanner_tree.py.in".format(scannerDir)).read())
 exec(open("{0}/openacc/scanner_tree_acc.py.in".format(scannerDir)).read())
 exec(open("{0}/cudafortran/scanner_tree_cuf.py.in".format(scannerDir)).read())
-exec(open("{0}/scanner_groups.py.in".format(scannerDir)).read())
 
 def checkDestinationDialect(destinationDialect):
     if destinationDialect in SUPPORTED_DESTINATION_DIALECTS:
@@ -513,7 +512,7 @@ def parseFile(records,index,fortranFilepath):
         condition1 = currentRecord["isActive"]
         condition2 = len(currentRecord["includedRecords"]) or not currentRecord["isPreprocessorDirective"]
         if condition1 and condition2:
-            for currentStatementNo,currentStatement in enumerate(currentRecord["expandedStatements"]):
+            for currentStatementNo,currentStatement in enumerate(currentRecord["statements"]):
                 # host code
                 if "cuf" in SOURCE_DIALECTS:
                     scanString("attributes",attributes)

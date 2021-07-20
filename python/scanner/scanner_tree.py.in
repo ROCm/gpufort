@@ -82,7 +82,7 @@ class STNode:
         Extract the statements associated with this node from the records associated with this node.
         :param bool includeNoneEntries: Also include entries that are None [default=False].
         """
-        result = self.__getRecordContent(self,"expandedStatements",\
+        result = self.__getRecordContent(self,"statements",\
           self._firstStatementIndex,self._lastStatementIndex)
         if not includeNoneEntries:
             return [stmt for stmt in result if stmt != None]
@@ -219,16 +219,16 @@ class STNode:
         lastRecordLastElem   = self._lastStatementIndex
         # write subst into first record first statement
         self._records[0]["modified"]                                 = True
-        self._records[0]["expandedStatements"][firstRecordFirstElem] = subst
+        self._records[0]["statements"][firstRecordFirstElem] = subst
         assert len(self._records), "self._records should not be empty"
         if len(self._records) == 1:
-            self._records[0]["expandedStatements"][firstRecordFirstElem:lastRecordLastElem] = None
+            self._records[0]["statements"][firstRecordFirstElem:lastRecordLastElem] = None
         else:
-            self._records[0]["expandedStatements"][firstRecordFirstElem:-1] = None
-            self._records[-1]["expandedStatements"][0:lastRecordLastElem]   = None
+            self._records[0]["statements"][firstRecordFirstElem:-1] = None
+            self._records[-1]["statements"][0:lastRecordLastElem]   = None
             self._records[-1]["modified"]                                   = True
             for record in self._records[1:-1]: # upper bound exclusive
-                record["expandedStatements"][:] = None
+                record["statements"][:] = None
                 record["modified"]              = True
     def transformStatements(self,indexHints=[]):
         """
@@ -245,7 +245,7 @@ class STNode:
         last in the record/line and that this statement is only modified once.
         """
         haveFirstInFirstRecord    = self._firstStatementIndex == 0
-        haveLastInLastRecord      = self._lastStatementIndex in [-1, len(self._records[-1]["expandedStatements"])-1]
+        haveLastInLastRecord      = self._lastStatementIndex in [-1, len(self._records[-1]["statements"])-1]
         statementsFullyCoverLines = haveFirstInFirstRecord and haveLastInLastRecord
 
         joinedLines                 = "".join(self.lines)
@@ -405,7 +405,7 @@ class STDirective(STNode):
         """
         Express the statement as lower case single-line statement
         """
-        return self._records[0]["expandedStatements"]
+        return self._records[0]["statements"]
 
 class STLoopKernel(STNode):
     def __init__(self,parent,records,firstRecordFirstStatement,lastRecordLastStatement):

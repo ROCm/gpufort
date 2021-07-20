@@ -42,16 +42,15 @@ def createIndex(searchDirs,options,filepath):
     utils.logging.logLeaveFunction(LOG_PREFIX,"createIndex")
     return index
 
-def __translateSource(infilepath,records,stree,index):
-    global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
+def __translateSource(infilepath,stree,records,index):
     global LOG_PREFIX
+    global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
     global SKIP_CREATE_GPUFORT_MODULE_FILES
     
-    utils.logging.logEnterFunction(LOG_PREFIX,"__translateSource",\
-      {"fortranFilepath":fortranFilepath,"wrapInIfdef":wrapInIfdef})
+    utils.logging.logEnterFunction(LOG_PREFIX,"__translateSource",{"infilepath":infilepath})
     
     # post process
-    basename      = os.path.basename(fortranFilepath).split(".")[0]
+    basename      = os.path.basename(infilepath).split(".")[0]
     hipModuleName = basename.replace(".","_").replace("-","_") + "_kernels"
     scanner.postprocess(stree,hipModuleName,index)
     
@@ -63,14 +62,14 @@ def __translateSource(infilepath,records,stree,index):
     transform_(stree)
 
     # write the file
-    parts = os.path.splitext(fortranFilepath)
+    parts = os.path.splitext(infilepath)
     outfilepath = "{}.hipified.f90".format(parts[0])
     linemapper.writeModifiedFile(outfilepath,infilepath,records)
 
     # prettify the file
     if PRETTIFY_MODIFIED_TRANSLATION_SOURCE:
-        utils.fileutils.prettifyFFile(modifiedFilepath)
-    msg = "created hipified input file: ".ljust(40) + modifiedFilepath
+        utils.fileutils.prettifyFFile(outfilepath)
+    msg = "created hipified input file: ".ljust(40) + outfilepath
     utils.logging.logInfo(LOG_PREFIX,"__translateSource",msg)
     
     utils.logging.logLeaveFunction(LOG_PREFIX,"__translateSource")
@@ -162,7 +161,7 @@ def parseCommandLineArguments():
     
     parser.add_argument("input",help="The input file.",type=str,nargs="?",default=None)
     parser.add_argument("-c,--only-create-mod-files",dest="onlyCreateGpufortModuleFiles",action="store_true",help="Only generate GPUFORT modules files. No other output is generated.")
-    parser.add_argument("-s,--skip-create-mod-files",dest="skipCreateGpufortModuleFiles",action="store_true",help="Skip generating GPUFORT modulesles, e.g. if they already exist. Mutually exclusive")
+    parser.add_argument("-s,--skip-create-mod-files",dest="skipCreateGpufortModuleFiles",action="store_true",help="Skip generating GPUFORT modules, e.g. if they already exist. Mutually exclusive")
     parser.add_argument("-o,--output", help="The output file. Interface module and HIP C++ implementation are named accordingly. GPUFORT module files are generated too.", default=sys.stdout, required=False, type=argparse.FileType("w"))
     parser.add_argument("--working-dir",dest="workingDir",default=os.getcwd(),type=str,help="Set working directory.") # shadow arg
     parser.add_argument("-d,--search-dirs", dest="searchDirs", help="Module search dir", nargs="*",  required=False, default=[], type=str)
@@ -345,7 +344,7 @@ if __name__ == "__main__":
         
         # modify original file
         if not ONLY_GENERATE_KERNELS:
-            translateFortranSource(inputFilepath,stree,records,index,WRAP_IN_IFDEF) 
+            __translateSource(inputFilepath,stree,records,index) 
     #
     if ENABLE_PROFILING:
         profiler.disable() 

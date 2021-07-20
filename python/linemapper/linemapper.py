@@ -233,7 +233,7 @@ def __detectLineStarts(lines):
     # 1. save multi-line statements (&) in buffer
     buffering  = False
     lineStarts = []
-    for lineno,line in enumerate(lines):
+    for lineno,line in enumerate(lines,start=0):
         # Continue buffering if multiline CUF/ACC/OMP statement
         buffering |= pDirectiveContinuation.match(line) != None
         if not buffering:
@@ -302,10 +302,10 @@ def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionS
         #if len(includedRecords) or (not isPreprocessorDirective and regionStack1[-1]):
         record = {
           "file":                    fortranFilepath,
-          "lineno":                  lineStart, # key
+          "lineno":                  lineStart+1, # key
           "lines":                   lines,
-          "raw_statements":              raw_statements1,
-          "statements":      statements3,
+          "raw_statements":          statements1,
+          "statements":              statements3,
           "includedRecords":         includedRecords,
           "isPreprocessorDirective": isPreprocessorDirective,
           "isActive":                regionStack1[-1],
@@ -359,10 +359,13 @@ def __groupModifiedRecords(records):
 
     # auxiliary local functions
     def maxLineno_(record):
-        record["lineno"] + len(record["lines"]) - 1
+        return record["lineno"] + len(record["lines"]) - 1
     def bordersPreviousRecord_(record):
         nonlocal currentRecords
-        return i == 0 or record["lineno"] == maxLineno_(currentRecords[-1])+1
+        if len(currentRecords):
+            return record["lineno"] == maxLineno_(currentRecords[-1])+1
+        else:
+            return True
     def containsBlankLine_(record):
         return len(record["lines"]) == 1 and not len(record["lines"][0].lstrip(" \t\n"))
     def wasModified_(record):
@@ -376,7 +379,7 @@ def __groupModifiedRecords(records):
         nonlocal blocks
         nonlocal currentRecords
         if len(currentRecords): # remove blank lines
-            while containsBlankLine(currentRecords[-1]):
+            while containsBlankLine_(currentRecords[-1]):
                 currentRecords.pop()
         if len(currentRecords): # len might have changed
             block = dict(EMPTY_BLOCK) # shallow copy
@@ -388,14 +391,14 @@ def __groupModifiedRecords(records):
                     for record in record["includedRecords"]:
                         return collectSubst_(record)
                 elif record["modified"]:
-                    return "\n".join([stmt.rstrip("\n") for rstmt in record["statements"]])
+                    return "\n".join([stmt.rstrip("\n") for stmt in record["statements"] if stmt is not None])
                 else: # for included records
                     return "".join(record["lines"])
 
             for record in currentRecords:
-                block["orig"]  += "".join(record["lines"])
-                block["subst"] += collectSubst_(record)
-            blocks.append(currentRecords)
+                block["orig"]  += "".join(record["lines"]).rstrip("\n") + "\n"
+                block["subst"] += collectSubst_(record).rstrip("\n") + "\n"
+            blocks.append(block)
 
     # 1. find contiguous blocks of modified or blank lines
     # 2. blocks must start with modified lines
@@ -403,11 +406,11 @@ def __groupModifiedRecords(records):
     for i,record in enumerate(records):
         lineno = record["lineno"]
         if wasModified_(record):
-            if not LINE_GROUPING_ENABLE or not bordersPreviousRecord_(records):
+            if not LINE_GROUPING_ENABLE or not bordersPreviousRecord_(record):
                 appendCurrentBlockIfNonEmpty_()
                 currentRecords = []
             currentRecords.append(record)
-        elif LINE_GROUPING_INCLUDE_BLANK_LINES and len(currentRecords) and containsBlankLine(record) and bordersPreviousRecord_(record):
+        elif LINE_GROUPING_INCLUDE_BLANK_LINES and len(currentRecords) and containsBlankLine_(record) and bordersPreviousRecord_(record):
             currentRecords.append(record)
     # append last block
     appendCurrentBlockIfNonEmpty_()
@@ -448,9 +451,9 @@ def readFile(fortranFilepath,options=""):
     except Exception as e:
         raise e
 
-def writeModifiedFile(infilePath,outfilePath,records):
-    global FILE_MODIFICATION_WRAP_IN_IFDEF
-    global FILE_MODIFICATION_MACRO
+def writeModifiedFile(outfilePath,infilePath,records):
+    global LINE_GROUPING_WRAP_IN_IFDEF
+    global LINE_GROUPING_MACRO
     
     utils.logging.logEnterFunction(LOG_PREFIX,"writeModifiedFile",\
       {"infilePath":infilePath,"outfilePath":outfilePath})
@@ -461,15 +464,16 @@ def writeModifiedFile(infilePath,outfilePath,records):
     blockId     = 0
     linesToSkip = -1
     with open(infilePath,"r") as infile:
-        for lineno,line in enumerate(infile.readlines()):
-            if lineno == blocks[blockId]["minLineno"]:
+        for lineno,line in enumerate(infile.readlines(),start=1):
+            if blockId < len(blocks) and\
+               lineno == blocks[blockId]["minLineno"]:
                 block       = blocks[blockId]
-                linesToSkip = blocks["maxLineno"] - blockId["minLineno"] + 1
-                subst       = block["subst"]
-                if FILE_MODIFICATION_WRAP_IN_IFDEF:
-                    original = block["orig"]
+                linesToSkip = block["maxLineno"] - block["minLineno"] + 1
+                subst       = block["subst"].rstrip("\n")
+                if LINE_GROUPING_WRAP_IN_IFDEF:
+                    original = block["orig"].rstrip("\n")
                     output += "#ifdef {0}\n{1}\n#else\n{2}\n#endif\n".format(\
-                      FILE_MODIFICATION_MACRO,result,original).split("\n")
+                      LINE_GROUPING_IFDEF_MACRO,subst,original)
                 blockId +=1
             elif linesToSkip > 0:
                 linesToSkip -= 1

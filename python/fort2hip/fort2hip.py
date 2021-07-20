@@ -39,7 +39,7 @@ def __initArg(argName,fType,kind,qualifiers=[],cType="",isArray=False):
     if len(kind):
         fTypeFinal += "({})".format(kind)
     arg = {
-      "name"            : argName.replace("%","_") ,
+      "name"            : argName.replace("%","_") , # TODO structures
       "callArgName"     : argName,
       "qualifiers"      : qualifiers,
       "type"            : fTypeFinal,
@@ -590,7 +590,7 @@ def createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename
         condition1 = not kernel._ignoreInS2STranslation
         condition2 = \
                 kernelsToConvertToHip[0] == "*" or\
-                kernel._lineno in kernelsToConvertToHip or\
+                kernel.minLineno() in kernelsToConvertToHip or\
                 kernel.kernelName() in kernelsToConvertToHip
         return condition1 and condition2
 

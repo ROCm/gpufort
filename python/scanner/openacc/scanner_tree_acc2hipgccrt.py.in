@@ -105,7 +105,7 @@ class Acc2HipGccRT(AccBackendBase):
             return clause.condition()
         else:
             return ""
-    def gpufortFStr(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[],handleIf=False):
+    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[],handleIf=False):
         fSnippet = joinedStatements
         result = ""
         try:
@@ -151,14 +151,14 @@ class Acc2HipGccRT(AccBackendBase):
            return fSnippet, False 
 
 class AccLoopKernel2HipGccRT(Acc2HipGccRT):
-    def gpufortFStr(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
+    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
         stnode = self._stnode
         indent = self.firstLineIndent()
         result = ""
         if stnode.isParallelLoopDirective() or stnode.isKernelsLoopDirective():
-            partialResult, _ = Acc2HipGccRT.gpufortFStr(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints,handleIf=False) 
+            partialResult, _ = Acc2HipGccRT.transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints,handleIf=False) 
             result = partialResult
-        partialResult, _ = STLoopKernel.gpufortFStr(stnode,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints) 
+        partialResult, _ = STLoopKernel.transform(stnode,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints) 
         result += partialResult
         # add wait call if necessary
         arg = self._handleAsync(None,"")

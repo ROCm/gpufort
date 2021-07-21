@@ -163,7 +163,7 @@ class Acc2HipGpufortRT(AccBackendBase):
         for parseResult in translator.acc_clause_if.searchString(self._stnode.singleLineStatement(),1):
             condition = parseResult[0].condition()
         return condition
-    def gpufortFStr(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[],handleIf=True):
+    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[],handleIf=True):
         """
         :param line: An excerpt from a Fortran file, possibly multiple lines
         :type line: str
@@ -272,13 +272,13 @@ class Acc2HipGpufortRT(AccBackendBase):
         return result, len(result)
 
 class AccLoopKernel2HipGpufortRT(Acc2HipGpufortRT):
-    def gpufortFStr(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
+    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
         result = ""
         stnode = self._stnode
         if stnode.isParallelLoopDirective() or stnode.isKernelsLoopDirective():
-            partialResult, _ = Acc2HipGpufortRT.gpufortFStr(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints,handleIf=False) 
+            partialResult, _ = Acc2HipGpufortRT.transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints,handleIf=False) 
             result = partialResult
-        partialResult, _ = STLoopKernel.gpufortFStr(stnode,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints) 
+        partialResult, _ = STLoopKernel.transform(stnode,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints) 
         result += partialResult
         # add wait call if necessary
         queue = self._handleAsync(None,"")

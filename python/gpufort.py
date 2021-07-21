@@ -180,6 +180,7 @@ def parseCommandLineArguments():
     # logging
     group_logging = parser.add_argument_group('Logging')
     group_logging.add_argument("--log-level",dest="logLevel",required=False,type=str,default="",help="Set log level. Overrides config value.")
+    group_logging.add_argument("--log-filter",dest="logFilter",required=False,type=str,default=None,help="Filter the log output according to a regular expression.")
     group_logging.add_argument("-v,--verbose",dest="verbose",required=False,action="store_true",default="",help="Print all log messages to error output stream too.")
     
     parser.set_defaults(printConfigDefaults=False,dumpIndex=False,\
@@ -268,6 +269,8 @@ def parseCommandLineArguments():
         LOG_LEVEL = args.logLevel
     if args.verbose:
         utils.logging.VERBOSE = args.verbose
+    if args.logFilter != None:
+        utils.logging.LOG_FILTER = args.logFilter
     # other
     if args.cublasV2:
         scanner.CUBLAS_VERSION = 2

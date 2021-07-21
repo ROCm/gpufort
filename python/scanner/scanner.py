@@ -109,12 +109,12 @@ def parseFile(records,index,fortranFilepath):
 
     translationEnabled = TRANSLATION_ENABLED_BY_DEFAULT
     
-    currentNode    = STRoot()
-    doLoopCtr      = 0     
-    keepRecording  = False
-    currentFile    = str(fortranFilepath)
-    currentRecord  = None
-    directiveNo    = 0
+    currentNode   = STRoot()
+    doLoopCtr     = 0     
+    keepRecording = False
+    currentFile   = str(fortranFilepath)
+    currentRecord = None
+    directiveNo   = 0
 
     def logDetection_(kind):
         nonlocal currentNode
@@ -192,8 +192,6 @@ def parseFile(records,index,fortranFilepath):
             currentNode,currentRecord,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
         keepRecording = new.keepRecording()
-        if keepRecording:
-            new._records = []
         descend_(new)
     def Subroutine_visit(tokens):
         nonlocal translationEnabled
@@ -202,12 +200,13 @@ def parseFile(records,index,fortranFilepath):
         nonlocal keepRecording
         nonlocal index
         logDetection_("subroutine")
-        new = STProcedure(tokens[1],"subroutine",index,\
-            currentNode,currentRecord,currentStatementNo)
-        new._ignoreInS2STranslation = not translationEnabled
-        keepRecording = new.keepRecording()
-        if keepRecording:
-            new._records = []
+        try:
+           new = STProcedure(tokens[1],"subroutine",index,\
+               currentNode,currentRecord,currentStatementNo)
+           new._ignoreInS2STranslation = not translationEnabled
+           keepRecording = new.keepRecording()
+        except Expection as e:
+            print(e)
         descend_(new)
     def Structure_leave(tokens):
         nonlocal currentNode
@@ -218,6 +217,7 @@ def parseFile(records,index,fortranFilepath):
         if type(currentNode) is STProcedure and currentNode.mustBeAvailableOnDevice():
             currentNode.addRecord(currentRecord)
             currentNode._lastStatementIndex = currentStatementNo
+            currentNode.completeInit()
             keepRecording = False
         ascend_()
     def inKernelsAccRegionAndNotRecording():
@@ -236,7 +236,6 @@ def parseFile(records,index,fortranFilepath):
         if inKernelsAccRegionAndNotRecording():
             new = STAccLoopKernel(currentNode,currentRecord,currentStatementNo)
             new._ignoreInS2STranslation = not translationEnabled
-            new._records = []
             new._doLoopCtrMemorised=doLoopCtr
             descend_(new) 
             keepRecording = True

@@ -348,7 +348,6 @@ class STProcedure(STNode,Tagged):
         self._kind = kind
         # check attributes
         self._indexRecord,_ = scoper.searchIndexForSubprogram(index,self._parent.tag(),name)
-        self._body          = self.__extractBody()
     def __extractBody(self):
         def beginOfBody_(stmts):
             """
@@ -369,13 +368,15 @@ class STProcedure(STNode,Tagged):
                 stmtno -= 1
             return stmtno
         
-        allStatements = self.statements(self._firstStatementIndex,self._lastStatementIndex)    
-        return "\n".join(allStatements[beginOfBody_(stmts):endOfBody_(stmts)])
+        allStatements = self.statements()    
+        return "\n".join(allStatements[beginOfBody_(allStatements):endOfBody_(allStatements)])
     def __mustBeAvailableOnHost(self):
         return not len(self._indexRecord["attributes"]) or\
                "host" in self._indexRecord["attributes"]
     def __attributesPresent(self):
         return len(self._indexRecord["attributes"])
+    def completeInit(self):
+        self._body = self.__extractBody()
     def getBody(self):
         return self._body 
     def hasAttribute(self,attribute):
@@ -534,7 +535,7 @@ class STDeclaration(STNode):
         indent = self.firstLineIndent()
         # argument names if declared in procedure
         if isinstance(self._parent, STProcedure):
-            argNames = [makeFStr(n).lower() for n in self.parent._dummyArgs]
+            argNames = [makeFStr(n).lower() for n in self._parent._indexRecord["dummyArgs"]]
         else:
             argNames = []
         result = ""
@@ -581,7 +582,7 @@ class STAttributes(STNode):
     """
     def __init__(self,parent,firstRecord,firstRecordFirstStatement):
         STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
-    def gpufortFStr(self,indexHints=[],indent=""):
+    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]): # TODO
         return "", True
 
 class STNonZeroCheck(STNode):
@@ -742,6 +743,7 @@ class STCudaKernelCall(STNode):
     Translates a CUDA kernel call to a call to a subroutine interface.
     """
     def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
+        snippet = joinedStatements
         for tokens,start,end in translator.cudaKernelCall.scanString(snippet):
             parseResult = tokens[0]
             kernelArgs  = []

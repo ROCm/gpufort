@@ -460,6 +460,8 @@ def writeModifiedFile(outfilePath,infilePath,records):
 
     blocks = __groupModifiedRecords(records)
 
+    print(blocks)
+
     output      = ""
     blockId     = 0
     linesToSkip = -1
@@ -468,7 +470,7 @@ def writeModifiedFile(outfilePath,infilePath,records):
             if blockId < len(blocks) and\
                lineno == blocks[blockId]["minLineno"]:
                 block       = blocks[blockId]
-                linesToSkip = block["maxLineno"] - block["minLineno"] + 1
+                linesToSkip = block["maxLineno"] - block["minLineno"]
                 subst       = block["subst"].rstrip("\n")
                 if LINE_GROUPING_WRAP_IN_IFDEF:
                     original = block["orig"].rstrip("\n")

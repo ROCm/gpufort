@@ -350,7 +350,7 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
             fCPURoutineDict["args"]    += localCpuRoutineArgs # ordering important
             # add mallocs, memcpys , frees
             prolog = ""
-            epilog = ""
+            epilog = "\n"
             for arg in localCpuRoutineArgs:
                  if len(arg.get("bounds","")): # is local Fortran array
                    localArray = arg["name"]
@@ -360,7 +360,7 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
                    # host to device
                    epilog += "CALL hipCheck(hipMemcpy(d_{var},c_loc({var}),{bpe}_8*SIZE({var}),hipMemcpyHostToDevice))\n".format(var=localArray,bpe=arg["bytesPerElement"])
                    epilog += "deallocate({var})\n".format(var=localArray)
-            fCPURoutineDict["body"] = prolog + fSnippet + epilog
+            fCPURoutineDict["body"] = prolog + fSnippet.rstrip("\n") + epilog
 
             # Add all definitions to context
             fContext["interfaces"].append(fInterfaceDictManual)

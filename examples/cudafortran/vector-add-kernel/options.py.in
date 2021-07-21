@@ -4,8 +4,8 @@ LOG_DIR="./log"
 
 LOG_LEVEL="warning"
 
-utils.logging.VERBOSE = False
+utils.logging.VERBOSE = True
 
-utils.logging.LOG_FILTER = "indexer"
+utils.logging.LOG_FILTER = "scanner"
 
 utils.logging.SKIP_CREATE_GPUFORT_MODULE_FILES = True

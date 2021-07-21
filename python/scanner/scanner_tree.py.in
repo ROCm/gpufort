@@ -54,7 +54,6 @@ class STNode:
     def __getRecordContent(self,key,firstRecordFirstElem=0,lastRecordLastElem=-1):
         # TODO add docu
         result = []
-        print(self._records)
         for i,record in enumerate(self._records):
             if i == 0: 
                 result += record[key][firstRecordFirstElem:]
@@ -65,7 +64,6 @@ class STNode:
                     result += record[key][:lastRecordLastElem+1]
             else:
                 result += record[key]
-        print(result)
         return result
     def addRecord(self,record):
         """Adds a record if it differs from the last record."""
@@ -234,21 +232,20 @@ class STNode:
         self._records[0]["modified"]                         = True
         self._records[0]["statements"][firstRecordFirstElem] = substitution
         assert len(self._records), "self._records should not be empty"
-        def assignNone_(statements):
-            for i,_ in enumerate(statements):
+        lastRecordUbound = lastRecordLastElem
+        if lastRecordUbound != -1:
+            lastRecordUbound += 1
+        def assignNone_(statements,lbound=0,ubound=-1):
+            if ubound == -1:
+                ubound = len(statements)
+            for i in range(lbound,ubound):
                 statements[i] = None
         if len(self._records) == 1:
-            if lastRecordLastElem == -1:
-                assignNone_(self._records[0]["statements"][firstRecordFirstElem+1:])
-            else:
-                assignNone_(self._records[0]["statements"][firstRecordFirstElem+1:lastRecordLastElem+1])
+            assignNone_(self._records[0]["statements"],firstRecordFirstElem+1,lastRecordUbound)
         else:
             self._records[-1]["modified"] = True
-            assignNone_(self._records[0]["statements"][firstRecordFirstElem:-1])
-            if lastRecordLastElem == -1:
-                assignNone_(self._records[-1]["statements"][0:lastRecordLastElem])
-            else:
-                assignNone_(self._records[-1]["statements"][0:lastRecordLastElem])
+            assignNone_(self._records[0]["statements"],firstRecordFirstElem+1)
+            assignNone_(self._records[-1]["statements"],0,lastRecordUbound)
             for record in self._records[1:-1]: # upper bound exclusive
                 record["modified"] = True
                 assignNone_(record["statements"])
@@ -461,7 +458,6 @@ class STLoopKernel(STNode):
         return "launch_{}".format(self.kernelName())
     def getSnippet(self):
         """Creates a snippet from the (original) statements associated with this node"""
-        print(self._records)
         return "\n".join([stmt.rstrip("\n") for stmt in self.__originalStatements])
     def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
         indent = self.firstLineIndent()

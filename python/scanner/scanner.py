@@ -120,7 +120,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentNode
         nonlocal currentRecord
         nonlocal currentStatementNo
-        utils.logging.logDebug2(LOG_PREFIX,".__parseFile","[current-node={}:{}] found {} in line {}: '{}'".format(\
+        utils.logging.logDebug2(LOG_PREFIX,"parseFile","[current-node={}:{}] found {} in line {}: '{}'".format(\
                 currentNode._kind,currentNode._name,kind,currentStatementNo+1,currentRecord["lines"][0]))
 
     def appendIfNotRecording_(new):
@@ -188,8 +188,8 @@ def parseFile(records,index,fortranFilepath):
         nonlocal keepRecording
         nonlocal index
         logDetection_("function")
-        new = STProcedure(tokens[1],"function",index,\
-            currentNode,currentRecord,currentStatementNo)
+        new = STProcedure(tokens[1],"function",\
+            currentNode,currentRecord,currentStatementNo,index)
         new._ignoreInS2STranslation = not translationEnabled
         keepRecording = new.keepRecording()
         descend_(new)
@@ -201,8 +201,8 @@ def parseFile(records,index,fortranFilepath):
         nonlocal index
         logDetection_("subroutine")
         try:
-           new = STProcedure(tokens[1],"subroutine",index,\
-               currentNode,currentRecord,currentStatementNo)
+           new = STProcedure(tokens[1],"subroutine",\
+               currentNode,currentRecord,currentStatementNo,index)
            new._ignoreInS2STranslation = not translationEnabled
            keepRecording = new.keepRecording()
         except Expection as e:

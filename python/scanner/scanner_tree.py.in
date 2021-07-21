@@ -342,12 +342,13 @@ class STPlaceHolder(STNode):
                (len(self._preamble) or len(self._epilog))
 
 class STProcedure(STNode,Tagged):
-    def __init__(self,name,kind,index,parent,firstRecord,firstRecordFirstStatement):
+    def __init__(self,name,kind,parent,firstRecord,firstRecordFirstStatement,index):
         STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
         self._name = name
         self._kind = kind
         # check attributes
         self._indexRecord,_ = scoper.searchIndexForSubprogram(index,self._parent.tag(),name)
+        print(self._indexRecord)
     def __extractBody(self):
         def beginOfBody_(stmts):
             """
@@ -403,19 +404,24 @@ class STProcedure(STNode,Tagged):
         when encountering a CUF device procedure that
         needs to be kept on the host too.
         """
-        attributesPresent       = self.__attributesPresent()
-        mustBeAvailableOnDevice = self.mustBeAvailableOnDevice()
-        mustBeAvailableOnHost   = self.__mustBeAvailableOnHost()
+        print("hallo")
 
-        original = "".join(self.lines())
-        if attributesPresent: # CUF case
-             if mustBeAvailableOnHost:
-                 return pAttributes.sub("", original), True
-             elif mustBeAvailableOnDevice: # and not mustBeAvailableOnHost
-                 indent = self.firstLineIndent()
-                 return "{0}! extracted to HIP C++ file".format(indent), True
-        else: 
-                 return original, False
+        try:
+            attributesPresent       = self.__attributesPresent()
+            mustBeAvailableOnDevice = self.mustBeAvailableOnDevice()
+            mustBeAvailableOnHost   = self.__mustBeAvailableOnHost()
+
+            original = joinedLines
+            if attributesPresent: # CUF case
+                if mustBeAvailableOnHost:
+                    return pAttributes.sub("", original), True
+                elif mustBeAvailableOnDevice: # and not mustBeAvailableOnHost
+                    indent = self.firstLineIndent()
+                    return "{0}! extracted to HIP C++ file".format(indent), True
+            else: 
+                return original, False
+        except Exception as e:
+            print(e)
 
 class STDirective(STNode):
     def __init__(self,parent,firstRecord,firstRecordFirstStatement,directiveNo,sentinel="!$cuf"):

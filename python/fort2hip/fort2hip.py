@@ -303,7 +303,7 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
             # for test
             fInterfaceDictAuto["doTest"]   = False # True
             fInterfaceDictAuto["testComment"] = ["Fortran implementation:"] + fSnippet.split("\n")
-            #fInterfaceDictAuto["testComment"] = ["","Hints:","Device variables in scope:"] + ["".join(declared._lines).lower() for declared in deviceVarsInScope]
+            #fInterfaceDictAuto["testComment"] = ["","Hints:","Device variables in scope:"] + ["".join(declared.lines()).lower() for declared in deviceVarsInScope]
 
             #######################################################################
             # Feed argument names back to STLoopKernel for host code modification
@@ -383,7 +383,7 @@ def __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fConte
         indexRecord   = stprocedure._indexRecord
         isFunction    = indexRecord["kind"] == "function"
         
-        fBody = stprocedure.extractBody()
+        fBody = stprocedure.getBody()
         
         if isFunction:
             resultName = indexValue["resultName"]
@@ -432,7 +432,7 @@ def __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fConte
         hipKernelDict["kernelName"]            = kernelName
         hipKernelDict["macros"]                = macros
         hipKernelDict["cBody"]                 = parseResult.cStr()
-        hipKernelDict["fBody"]                 = "".join(stprocedure._lines)
+        hipKernelDict["fBody"]                 = "".join(stprocedure.lines())
         hipKernelDict["kernelArgs"] = []
         # device procedures take all C args as reference or pointer
         # kernel proceduers take all C args as value or (device) pointer
@@ -460,7 +460,7 @@ def __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fConte
             fInterfaceDictManual = {}
             fInterfaceDictManual["cName"]       = kernelLauncherName
             fInterfaceDictManual["fName"]       = kernelLauncherName
-            fInterfaceDictManual["testComment"] = ["Fortran implementation:"] + stprocedure._lines
+            fInterfaceDictManual["testComment"] = ["Fortran implementation:"] + stprocedure.lines()
             fInterfaceDictManual["type"]        = "subroutine"
             fInterfaceDictManual["args"]        = [
                 {"type" : "type(dim3)", "qualifiers" : ["intent(in)"], "name" : "grid"},

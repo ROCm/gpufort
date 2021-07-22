@@ -205,7 +205,7 @@ def parseFile(records,index,fortranFilepath):
                currentNode,currentRecord,currentStatementNo,index)
            new._ignoreInS2STranslation = not translationEnabled
            keepRecording = new.keepRecording()
-        except Expection as e:
+        except Exception as e:
             print(e)
         descend_(new)
     def Structure_leave(tokens):

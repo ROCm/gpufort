@@ -397,7 +397,9 @@ def __groupModifiedRecords(records):
 
             for record in currentRecords:
                 block["orig"]  += "".join(record["lines"]).rstrip("\n") + "\n"
-                block["subst"] += collectSubst_(record).rstrip("\n") + "\n"
+                subst = collectSubst_(record)
+                if len(subst):
+                    block["subst"] += subst.rstrip("\n") + "\n"
             blocks.append(block)
 
     # 1. find contiguous blocks of modified or blank lines
@@ -459,8 +461,6 @@ def writeModifiedFile(outfilePath,infilePath,records):
       {"infilePath":infilePath,"outfilePath":outfilePath})
 
     blocks = __groupModifiedRecords(records)
-
-    print(blocks)
 
     output      = ""
     blockId     = 0

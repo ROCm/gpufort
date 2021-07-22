@@ -249,6 +249,7 @@ class STNode:
             for record in self._records[1:-1]: # upper bound exclusive
                 record["modified"] = True
                 assignNone_(record["statements"])
+        print(self._records)
     def transformStatements(self,indexHints=[]):
         """
         Replaces original statements by generated code. Modifies the 'statements' 
@@ -347,8 +348,7 @@ class STProcedure(STNode,Tagged):
         self._name = name
         self._kind = kind
         # check attributes
-        self._indexRecord,_ = scoper.searchIndexForSubprogram(index,self._parent.tag(),name)
-        print(self._indexRecord)
+        self._indexRecord, _ = scoper.searchIndexForSubprogram(index,self._parent.tag(),name)
     def __extractBody(self):
         def beginOfBody_(stmts):
             """
@@ -404,24 +404,19 @@ class STProcedure(STNode,Tagged):
         when encountering a CUF device procedure that
         needs to be kept on the host too.
         """
-        print("hallo")
+        attributesPresent       = self.__attributesPresent()
+        mustBeAvailableOnDevice = self.mustBeAvailableOnDevice()
+        mustBeAvailableOnHost   = self.__mustBeAvailableOnHost()
 
-        try:
-            attributesPresent       = self.__attributesPresent()
-            mustBeAvailableOnDevice = self.mustBeAvailableOnDevice()
-            mustBeAvailableOnHost   = self.__mustBeAvailableOnHost()
-
-            original = joinedLines
-            if attributesPresent: # CUF case
-                if mustBeAvailableOnHost:
-                    return pAttributes.sub("", original), True
-                elif mustBeAvailableOnDevice: # and not mustBeAvailableOnHost
-                    indent = self.firstLineIndent()
-                    return "{0}! extracted to HIP C++ file".format(indent), True
-            else: 
-                return original, False
-        except Exception as e:
-            print(e)
+        original = joinedLines
+        if attributesPresent: # CUF case
+            if mustBeAvailableOnHost:
+                return pAttributes.sub("", original), True
+            elif mustBeAvailableOnDevice: # and not mustBeAvailableOnHost
+                indent = self.firstLineIndent()
+                return "{0}! extracted to HIP C++ file".format(indent), True
+        else: 
+            return original, False
 
 class STDirective(STNode):
     def __init__(self,parent,firstRecord,firstRecordFirstStatement,directiveNo,sentinel="!$cuf"):
@@ -541,7 +536,7 @@ class STDeclaration(STNode):
         indent = self.firstLineIndent()
         # argument names if declared in procedure
         if isinstance(self._parent, STProcedure):
-            argNames = [makeFStr(n).lower() for n in self._parent._indexRecord["dummyArgs"]]
+            argNames = list(self._parent._indexRecord["dummyArgs"])
         else:
             argNames = []
         result = ""
@@ -627,7 +622,9 @@ class STAllocate(STNode):
     def __init__(self,parent,firstRecord,firstRecordFirstStatement):
         STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
     def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]): # TODO
+        indent = self.firstLineIndent()
         def repl(parseResult):
+            nonlocal indent
             transformed     = False
             bytesPerElement = []
             arrayQualifiers = []
@@ -644,7 +641,7 @@ class STAllocate(STNode):
                 else:
                     arrayQualifiers.append(None)
                 transformed |= onDevice | pinned
-            subst = parseResult.hipFStr(bytesPerElement,arrayQualifiers,indent="")
+            subst = parseResult.hipFStr(bytesPerElement,arrayQualifiers,indent=indent).lstrip(" ")
             return (subst, transformed)
         return utils.pyparsingutils.replaceAll(joinedStatements,translator.allocate,repl)
              
@@ -656,7 +653,9 @@ class STDeallocate(STNode):
         :note: `wrapInIfDef` can be deactivated if a higher level function
         embeds the outcome already in an `ifdef`.
         """
+        indent = self.firstLineIndent()
         def repl(parseResult):
+            nonlocal indent
             transformed     = False
             arrayQualifiers = []
             for arrayName in parseResult.variableNames():
@@ -671,7 +670,7 @@ class STDeallocate(STNode):
                 else:
                     arrayQualifiers.append(None)
                 transformed |= onDevice | pinned
-            subst = parseResult.hipFStr(arrayQualifiers,indent="")
+            subst = parseResult.hipFStr(arrayQualifiers,indent=indent).lstrip(" ")
             return (subst, transformed)
         return utils.pyparsingutils.replaceAll(joinedStatements,translator.deallocate,repl)
          

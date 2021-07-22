@@ -134,7 +134,8 @@ def __searchScopeForTypeOrSubprogram(scope,entryName,entryType,emptyRecord):
     # reverse access such that entries from the inner-most scope come first
     scopeEntities = reversed(scope[entryType])
 
-    result = next((entry for entry in scopeEntities if entry["name"] == entryName),None)  
+    entryNameLower = entryName.lower()
+    result = next((entry for entry in scopeEntities if entry["name"] == entryNameLower),None)  
     if result is None:
         msg = "no entry found for {} '{}'.".format(entryType[:-1],entryName)
         if ERROR_HANDLING  == "strict":
@@ -256,7 +257,7 @@ def searchScopeForVariable(scope,variableTag):
     # reverse access such that entries from the inner-most scope come first
     scopeTypes = reversed(scope["types"])
 
-    listOfVarNames = variableTag.split("%") 
+    listOfVarNames = variableTag.lower().split("%") 
     def lookupFromLeftToRight_(scopeVariables,pos=0):
         """
         :note: recursive

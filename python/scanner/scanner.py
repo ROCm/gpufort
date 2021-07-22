@@ -59,12 +59,12 @@ def __postprocessAcc(stree,hipModuleName):
     # acc detection
     directives = stree.findAll(filter=lambda node: isinstance(node,STAccDirective), recursively=True)
     for directive in directives:
-         stnode = directive._parent.findFirst(filter=lambda child : type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
+         stnode = directive._parent.findFirst(filter=lambda child : not child._ignoreInS2STranslation and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
          if not stnode is None:
              indent = stnode.firstLineIndent()
              accRuntimeModuleName = RUNTIME_MODULE_NAMES[DESTINATION_DIALECT]
              if accRuntimeModuleName != None and len(accRuntimeModuleName):
-                 stnode._preamble.add("{0}use iso_c_binding\n{0}use {1}\n".format(indent,accRuntimeModuleName))
+                 stnode._prolog.add("{0}use iso_c_binding\n{0}use {1}\n".format(indent,accRuntimeModuleName))
     utils.logging.logLeaveFunction(LOG_PREFIX,"__postprocessAcc")
     
 def __postprocessCuf(stree,hipModuleName):
@@ -90,7 +90,7 @@ def __postprocessCuf(stree,hipModuleName):
             localCublasCalls = call._parent.findAll(filter=hasCublasCall, recursively=False)
             first = localCublasCalls[0]
             indent = self.firstLineIndent()
-            first._preamble.add("{0}hipblasCreate(hipblasHandle)\n".format(indent))
+            first._prolog.add("{0}hipblasCreate(hipblasHandle)\n".format(indent))
             last = localCublasCalls[-1]
             indent = self.firstLineIndent()
             last._epilog.add("{0}hipblasDestroy(hipblasHandle)\n".format(indent))
@@ -564,7 +564,7 @@ def postprocess(stree,hipModuleName,index):
                 stnode = kernel._parent.findFirst(filter=lambda child: type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
                 assert not stnode is None
                 indent = stnode.firstLineIndent()
-                stnode._preamble.add("{0}use {1}\n".format(indent,hipModuleName))
+                stnode._prolog.add("{0}use {1}\n".format(indent,hipModuleName))
    
     if "cuf" in SOURCE_DIALECTS:
          __postprocessCuf(stree,hipModuleName)

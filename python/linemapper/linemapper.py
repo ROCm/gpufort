@@ -175,9 +175,8 @@ def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,
     return includedRecords
 
 def __convertLinesToStatements(lines):
-    """
-    Fortran lines can contain multiple statements that
-    are separated by a semi-colon.
+    """Fortran lines can contain multiple statements that
+    are separated by a semicolon.
     This routine unrolls such lines into multiple single statements.
     Additionally, it converts single-line Fortran if statements
     into multi-line if-then-endif statements.
@@ -221,8 +220,7 @@ def __convertLinesToStatements(lines):
     return unrolledStatements
 
 def __detectLineStarts(lines):
-    """
-    Fortran statements can be broken into multiple lines 
+    """Fortran statements can be broken into multiple lines 
     via the '&'. This routine records in which line a statement
     (or multiple statements per line) begins.
     The difference between the line numbers of consecutive entries
@@ -247,8 +245,7 @@ def __detectLineStarts(lines):
     return lineStarts
 
 def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionStack1,regionStack2):
-    """
-    :param list fileLines: Lines of a file, terminated with line break characters ('\n').
+    """:param list fileLines: Lines of a file, terminated with line break characters ('\n').
     :returns: a list of dicts with keys 'lineno', 'originalLines', 'statements'.
     """
     global LOG_PREFIX
@@ -305,11 +302,15 @@ def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionS
           "lineno":                  lineStart+1, # key
           "lines":                   lines,
           "raw_statements":          statements1,
-          "statements":              statements3,
           "includedRecords":         includedRecords,
           "isPreprocessorDirective": isPreprocessorDirective,
           "isActive":                regionStack1[-1],
-          "modified":                False
+          # inout
+          "statements":              statements3,
+          "modified":                False,
+          # out
+          "prolog":                  [],
+          "epilog":                  []
         }
         records.append(record)
     
@@ -353,7 +354,8 @@ def __groupModifiedRecords(records):
     
     utils.logging.logEnterFunction(LOG_PREFIX,"__groupModifiedRecords")
 
-    EMPTY_BLOCK    = { "minLineno": -1, "maxLineno": -1, "orig": "", "subst": ""}
+    EMPTY_BLOCK    = { "minLineno": -1, "maxLineno": -1, "orig": "", "subst": "",\
+                       "only_prolog": False, "only_epilog": False}
     blocks         = []
     currentRecords = []
 
@@ -373,6 +375,16 @@ def __groupModifiedRecords(records):
         for record in record["includedRecords"]:
             modified = modified or wasModified_(record)
         return modified
+    def hasProlog_(record):
+        result = len(record["prolog"])
+        for record in record["includedRecords"]:
+            result = result or hasProlog_(record)
+        return result
+    def hasEpilog_(record):
+        result = len(record["epilog"])
+        for record in record["includedRecords"]:
+            result = result or hasEpilog_(record)
+        return result
     def appendCurrentBlockIfNonEmpty_():
         # append current block if it is not empty
         # or does only contain blank lines.
@@ -397,9 +409,23 @@ def __groupModifiedRecords(records):
 
             for record in currentRecords:
                 block["orig"]  += "".join(record["lines"]).rstrip("\n") + "\n"
+                if len(record["prolog"]):
+                    block["subst"] = "\n".join(record["prolog"]) + "\n"
                 subst = collectSubst_(record)
                 if len(subst):
                     block["subst"] += subst.rstrip("\n") + "\n"
+                if len(record["epilog"]):
+                    block["subst"] = "\n".join(record["epilog"]) + "\n"
+            # special treatment for single-record blocks which are not modified
+            # but have prolog or epilog
+            if len(currentRecords) == 1 and not currentRecords[0]["modified"]:
+                assert hasProlog_(currentRecords[0]) or hasProlog_(currentRecords[0])
+                block["only_prolog"] = hasProlog_(currentRecords[0])
+                block["only_epilog"] = hasEpilog_(currentRecords[0])
+                if block["only_epilog"]: # xor
+                    block["only_epilog"] = not block["only_prolog"]
+                    block["only_prolog"] = False
+                block["subst"]       = "\n".join(record["prolog"] + record["epilog"]) + "\n"
             blocks.append(block)
 
     # 1. find contiguous blocks of modified or blank lines
@@ -407,7 +433,7 @@ def __groupModifiedRecords(records):
     # 3. blank lines must be removed from tail of block
     for i,record in enumerate(records):
         lineno = record["lineno"]
-        if wasModified_(record):
+        if wasModified_(record) or hasProlog_(record) or hasEpilog_(record):
             if not LINE_GROUPING_ENABLE or not bordersPreviousRecord_(record):
                 appendCurrentBlockIfNonEmpty_()
                 currentRecords = []
@@ -454,6 +480,7 @@ def readFile(fortranFilepath,options=""):
         raise e
 
 def writeModifiedFile(outfilePath,infilePath,records):
+    """TODO docu"""
     global LINE_GROUPING_WRAP_IN_IFDEF
     global LINE_GROUPING_MACRO
     
@@ -472,10 +499,23 @@ def writeModifiedFile(outfilePath,infilePath,records):
                 block       = blocks[blockId]
                 linesToSkip = block["maxLineno"] - block["minLineno"]
                 subst       = block["subst"].rstrip("\n")
+                original    = block["orig"].rstrip("\n")
                 if LINE_GROUPING_WRAP_IN_IFDEF:
-                    original = block["orig"].rstrip("\n")
-                    output += "#ifdef {0}\n{1}\n#else\n{2}\n#endif\n".format(\
-                      LINE_GROUPING_IFDEF_MACRO,subst,original)
+                    if block["only_epilog"]:
+                        output += "{2}\n#ifdef {0}\n{1}\n#endif\n".format(\
+                          LINE_GROUPING_IFDEF_MACRO,subst,original)
+                    elif block["only_prolog"]:
+                        output += "#ifdef {0}\n{1}\n#endif\n{2}\n".format(\
+                          LINE_GROUPING_IFDEF_MACRO,subst,original)
+                    else:
+                        output += "#ifdef {0}\n{1}\n#else\n{2}\n#endif\n".format(\
+                          LINE_GROUPING_IFDEF_MACRO,subst,original)
+                else:
+                    output = subst + "\n"
+                    if block["only_epilog"]:
+                        output = original + "\n" + output
+                    elif block["only_prolog"]:
+                        output += original + "\n"
                 blockId +=1
             elif linesToSkip > 0:
                 linesToSkip -= 1

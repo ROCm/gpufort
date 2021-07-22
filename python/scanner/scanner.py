@@ -61,7 +61,7 @@ def __postprocessAcc(stree,hipModuleName):
     for directive in directives:
          stnode = directive._parent.findFirst(filter=lambda child : type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
          if not stnode is None:
-             indent = self.firstLineIndent()
+             indent = stnode.firstLineIndent()
              accRuntimeModuleName = RUNTIME_MODULE_NAMES[DESTINATION_DIALECT]
              if accRuntimeModuleName != None and len(accRuntimeModuleName):
                  stnode._preamble.add("{0}use iso_c_binding\n{0}use {1}\n".format(indent,accRuntimeModuleName))
@@ -374,9 +374,9 @@ def parseFile(records,index,fortranFilepath):
         nonlocal doLoopCtr
         nonlocal directiveNo
         logDetection_("OpenACC directive")
-        new = STAccDirective(currentNode,None,currentStatementNo,directiveNo)
+        new = STAccDirective(currentNode,currentRecord,currentStatementNo,directiveNo)
         new._ignoreInS2STranslation = not translationEnabled
-        directiveNo = directiveNo + 1
+        directiveNo += 1
         # if end directive ascend
         if new.isEndDirective() and\
            type(currentNode) is STAccDirective and currentNode.isKernelsDirective():
@@ -385,7 +385,7 @@ def parseFile(records,index,fortranFilepath):
         # descend in constructs or new node
         elif new.isParallelLoopDirective() or new.isKernelsLoopDirective() or\
              (not new.isEndDirective() and new.isParallelDirective()):
-            new = STAccLoopKernel(currentNode,None,currentStatementNo,directiveNo)
+            new = STAccLoopKernel(currentNode,currentRecord,currentStatementNo,directiveNo)
             new._kind = "acc-compute-construct"
             new._ignoreInS2STranslation = not translationEnabled
             new._doLoopCtrMemorised=doLoopCtr
@@ -406,7 +406,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal keepRecording
         nonlocal directiveNo
         logDetection_("CUDA Fortran loop kernel directive")
-        new = STCufLoopKernel(currentNode,None,currentStatementNo,directiveNo)
+        new = STCufLoopKernel(currentNode,currentRecord,currentStatementNo,directiveNo)
         new._ignoreInS2STranslation = not translationEnabled
         new._doLoopCtrMemorised=doLoopCtr
         directiveNo += 1
@@ -561,7 +561,7 @@ def postprocess(stree,hipModuleName,index):
             if "hip" in DESTINATION_DIALECT or\
               kernel.minLineno() in kernelsToConvertToHip or\
               kernel.kernelName() in kernelsToConvertToHip:
-                stnode = kernel._parent.findFirst(filter=lambda child: not child.considerInS2STranslation() and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
+                stnode = kernel._parent.findFirst(filter=lambda child: type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
                 assert not stnode is None
                 indent = stnode.firstLineIndent()
                 stnode._preamble.add("{0}use {1}\n".format(indent,hipModuleName))

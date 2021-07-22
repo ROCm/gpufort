@@ -38,8 +38,7 @@ class Tagged:
 class STNode:
     def __init__(self,parent,firstRecord,firstStatementIndex=0):
         self._records = []
-        if firstRecord is not None:
-            assert type(firstRecord) == dict
+        if firstRecord != None:
             self._records.append(firstRecord)
         self._firstStatementIndex    = firstStatementIndex
         self._lastStatementIndex     = firstStatementIndex # inclusive
@@ -58,12 +57,13 @@ class STNode:
             if i == 0: 
                 result += record[key][firstRecordFirstElem:]
             elif i == len(self._records)-1:
-                if lastRecordLastElem == -1:
-                    result += record[key]
-                else:
-                    result += record[key][:lastRecordLastElem+1]
+                ubound = lastRecordLastElem
+                if lastRecordLastElem != -1:
+                    ubound += 1
+                result += record[key][:ubound]
             else:
                 result += record[key]
+        print(result)
         return result
     def addRecord(self,record):
         """Adds a record if it differs from the last record."""
@@ -126,13 +126,6 @@ class STNode:
         :return: First line in first record.
         """
         return self._records[0]["statements"][0]
-    def considerInS2STranslation(self,indexHints=[]):
-        """
-        Consider this object when transforming host code.
-        :return: The default implementation returns False if the parent
-                 of the object is a device subroutine.
-        """
-        return not self._ignoreInS2STranslation
     def append(self,child):
         self._children.append(child)
     def listOfParents(self):
@@ -249,7 +242,6 @@ class STNode:
             for record in self._records[1:-1]: # upper bound exclusive
                 record["modified"] = True
                 assignNone_(record["statements"])
-        print(self._records)
     def transformStatements(self,indexHints=[]):
         """
         Replaces original statements by generated code. Modifies the 'statements' 
@@ -264,49 +256,44 @@ class STNode:
         :note: When appending an epilog, it is assumed that the modified statement is the 
         last in the record/line and that this statement is only modified once.
         """
-        haveFirstInFirstRecord    = self._firstStatementIndex == 0
-        haveLastInLastRecord      = self._lastStatementIndex  == -1 or\
-                                    self._lastStatementIndex  == len(self._records[-1]["statements"])-1
-        statementsFullyCoverLines = haveFirstInFirstRecord and haveLastInLastRecord
+        if not self._ignoreInS2STranslation:
+            haveFirstInFirstRecord    = self._firstStatementIndex == 0
+            haveLastInLastRecord      = self._lastStatementIndex  == -1 or\
+                                        self._lastStatementIndex  == len(self._records[-1]["statements"])-1
+            statementsFullyCoverLines = haveFirstInFirstRecord and haveLastInLastRecord
 
-        joinedLines                = "".join(self.lines())
-        joinedStatements           = "\n".join(self.statements())
-        transformedCode, modified  = self.transform(joinedLines,joinedStatements,statementsFullyCoverLines,indexHints)
-        if modified or len(self._preamble) or len(self._epilog):
-            assert not (len(self._preamble) and len(self._epilog))
-            assert not len(self._preamble) or haveFirstInFirstRecord
-            assert not len(self._epilog) or haveLastInLastRecord
-            if modified:
-                result = transformedCode
-            else:
-                result = joinedLines
-            if len(self._preamble):
-                result = self.preamble() + "\n" + result 
-            if len(self._epilog):
-                result += "\n" + self.epilog()
-            self.__modifyRecords(result)
+            joinedLines                = "".join(self.lines())
+            joinedStatements           = "\n".join(self.statements())
+            transformedCode, modified  = self.transform(joinedLines,joinedStatements,statementsFullyCoverLines,indexHints)
+            if modified or len(self._preamble) or len(self._epilog):
+                assert not (len(self._preamble) and len(self._epilog))
+                assert not len(self._preamble) or haveFirstInFirstRecord
+                assert not len(self._epilog) or haveLastInLastRecord
+                if modified:
+                    result = transformedCode
+                else:
+                    result = joinedLines
+                if len(self._preamble):
+                    result = self.preamble() + "\n" + result 
+                if len(self._epilog):
+                    result += "\n" + self.epilog()
+                self.__modifyRecords(result)
 
 class STRoot(STNode):
     def __init__(self):
         STNode.__init__(self,None,None,-1)
-    def considerInS2STranslation(self,indexHints=[]):
-        return False
 
 class STModule(STNode,Tagged):
     def __init__(self,name,parent,firstRecord,firstRecordFirstStatement):
         STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
         self._name = name.lower()
         self._kind = "module"
-    def considerInS2STranslation(self,indexHints=[]):
-        return False
 
 class STProgram(STNode,Tagged):
     def __init__(self,name,parent,firstRecord,firstRecordFirstStatement):
         STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
         self._name = name.lower()
         self._kind = "program"
-    def considerInS2STranslation(self,indexHints=[]):
-        return False
 
 class STUseStatement(STNode):
     def __init__(self,parent,firstRecord,firstRecordFirstStatement):
@@ -324,23 +311,11 @@ class STUseStatement(STNode):
                     snippet = snippet.rstrip("\n")+"\n" + "{0}use iso_c_binding".format(indent) 
                 snippet = re.sub(r"\bcu(\w+)\b",HIP_MATH_MODULE_PREFIX+r"hip\1",snippet,re.IGNORECASE)
         return snippet, useCuda
-    def considerInS2STranslation(self,indexHints=[]):
-        if not STNode.considerInS2STranslation(self):
-            return False
-        else:
-            useCuda = False
-            content  = "".join(self.statements()).lower()
-            for lib in HOST_MODULES:
-                 useCuda |= lib.lower() in content
-            return useCuda or len(self._preamble) or len(self._epilog)
 
 class STPlaceHolder(STNode):
     def __init__(self,parent,firstRecord,firstRecordFirstStatement):
         STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
         self._name = None
-    def considerInS2STranslation(self,indexHints=[]):
-        return STNode.considerInS2STranslation(self) and\
-               (len(self._preamble) or len(self._epilog))
 
 class STProcedure(STNode,Tagged):
     def __init__(self,name,kind,parent,firstRecord,firstRecordFirstStatement,index):
@@ -392,9 +367,6 @@ class STProcedure(STNode,Tagged):
         No recording if the function needs to be kept only on the host.
         """
         return self.mustBeAvailableOnDevice()
-    def considerInS2STranslation(self,index=[]):
-        return self.__attributesPresent() or\
-               self.mustBeAvailableOnDevice()
     def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,index=[]):
         """
         Treats CUF and OpenACC subroutines/functions that carry CUF-specific attributes
@@ -421,13 +393,14 @@ class STProcedure(STNode,Tagged):
 class STDirective(STNode):
     def __init__(self,parent,firstRecord,firstRecordFirstStatement,directiveNo,sentinel="!$cuf"):
         STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
-        self._sentinel            = sentinel
-        self._directiveNo         = directiveNo
+        self._sentinel        = sentinel
+        self._directiveNo     = directiveNo
+        self._firstDirective  = self._records[0]["statements"][0]
     def singleLineStatement(self):
         """
         Express the statement as lower case single-line statement
         """
-        return self._records[0]["statements"]
+        return self._firstDirective
 
 class STLoopKernel(STNode):
     def __init__(self,parent,firstRecord,firstRecordFirstStatement):
@@ -470,7 +443,7 @@ class STLoopKernel(STNode):
             stream = self.streamFStr
         if self.gridFStr == None or self.blockFStr == None or LOOP_KERNEL_DEFAULT_LAUNCHER == "cpu": # use auto or cpu launcher 
             result="""{indent}! extracted to HIP C++ file
-  {indent}CALL {0}_{launcher}({1},{2},{3})""".format(self.kernelLauncherName(),self._sharedMemFStr,stream,\
+  {indent}CALL {0}_{launcher}({1},{2},{3})""".format(self.kernelLauncherName(),self.sharedMemFStr,stream,\
               ",".join(self.kernelArgNames),indent=indent,launcher=LOOP_KERNEL_DEFAULT_LAUNCHER)
         else:
             result="""{indent}! extracted to HIP C++ file
@@ -491,26 +464,6 @@ class STDeclaration(STNode):
         self._vars            = [name.lower() for name in self._ttdeclaration.variableNames()]
     def createCodegenContext(self):
         return translator.createIndexRecordsFromDeclaration(self._ttdeclaration)
-    def considerInS2STranslation(self,indexHints=[]):
-        interestingQualifiers = ["device","pinned","managed"]
-        if not self._ignoreInS2STranslation:
-            if len(self._preamble) or len(self._epilog):
-                return True
-            for l in self.statements():
-                lineLower = l.lower()
-                for q in interestingQualifiers:
-                    if q in lineLower:
-                        return True
-            if len(indexHints):
-                for varName in self._vars:
-                    indexVar,discovered = scoper.searchIndexForVariable(\
-                      indexHints,self._parent.tag(),\
-                        translator.createIndexSearchTagForVariable(varName))
-                    if discovered:
-                        for q in interestingQualifiers:
-                            if indexVar[q] == True:
-                                return True
-        return False 
     def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
         """
         if device and allocatable, remove device, add pointer

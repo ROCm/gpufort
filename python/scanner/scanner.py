@@ -208,7 +208,7 @@ def parseFile(records,index,fortranFilepath):
         except Exception as e:
             print(e)
         descend_(new)
-    def Structure_leave(tokens):
+    def Structure_leave():
         nonlocal currentNode
         nonlocal currentRecord
         nonlocal keepRecording
@@ -240,7 +240,7 @@ def parseFile(records,index,fortranFilepath):
             descend_(new) 
             keepRecording = True
         doLoopCtr += 1
-    def DoLoop_leave(tokens):
+    def DoLoop_leave():
         nonlocal currentNode
         nonlocal currentRecord
         nonlocal currentStatementNo
@@ -365,7 +365,7 @@ def parseFile(records,index,fortranFilepath):
         new = STCudaKernelCall(currentNode,currentRecord,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
         appendIfNotRecording_(new)
-    def AccDirective(tokens):
+    def AccDirective():
         nonlocal translationEnabled
         nonlocal currentNode
         nonlocal currentRecord
@@ -397,7 +397,7 @@ def parseFile(records,index,fortranFilepath):
         else:
            # append new directive
            appendIfNotRecording_(new)
-    def CufLoopKernel(tokens):
+    def CufLoopKernel():
         nonlocal translationEnabled
         nonlocal currentNode
         nonlocal currentRecord
@@ -426,7 +426,7 @@ def parseFile(records,index,fortranFilepath):
                 new  = STAccLoopKernel(currentNode,currentRecord,currentStatementNo)
                 new._ignoreInS2STranslation = not translationEnabled
                 appendIfNotRecording_(new)
-    def GpufortControl(tokens):
+    def GpufortControl():
         nonlocal currentStatement
         nonlocal translationEnabled
         logDetection_("gpufortran control statement")
@@ -513,27 +513,38 @@ def parseFile(records,index,fortranFilepath):
         condition2 = len(currentRecord["includedRecords"]) or not currentRecord["isPreprocessorDirective"]
         if condition1 and condition2:
             for currentStatementNo,currentStatement in enumerate(currentRecord["statements"]):
-                # host code
+                currentStatementStripped = currentStatement.replace(" ","").replace("\t","").lower()
+                for expr in ["program","module","subroutine","function","type"]:
+                     if currentStatementStripped.startswith("end"+expr):
+                         Structure_leave()
+                if currentStatementStripped.startswith("enddo"):
+                    DoLoop_leave()
+                for commentChar in "!*c":
+                    if currentStatementStripped.startswith(commentChar+"$acc"):
+                        AccDirective()
+                    if currentStatementStripped.startswith(commentChar+"$gpufort"):
+                        GpufortControl()
                 if "cuf" in SOURCE_DIALECTS:
-                    scanString("attributes",attributes)
-                    scanString("cudaLibCall",cudaLibCall)
-                    scanString("cudaKernelCall",cudaKernelCall)
-     
-                # scan for more complex expressions first      
-                scanString("assignmentBegin",assignmentBegin)
-                scanString("memcpy",memcpy)
-                scanString("allocated",ALLOCATED)
-                scanString("deallocate",DEALLOCATE) 
-                scanString("allocate",ALLOCATE) 
-                scanString("nonZeroCheck",nonZeroCheck)
-                #scanString("cpp_ifdef",cpp_ifdef)
-                #scanString("cpp_defined",cpp_defined)
+                    if "attributes" in currentStatementStripped:
+                        scanString("attributes",attributes)
+                    if "cu" in currentStatementStripped:
+                        scanString("cudaLibCall",cudaLibCall)
+                    if "<<<" in currentStatementStripped:
+                        scanString("cudaKernelCall",cudaKernelCall)
+                    for commentChar in "!*c":
+                        if currentStatementStripped.startswith(commentChar+"$cuf"):
+                            CufLoopKernel()
+                if "=" in currentStatementStripped:
+                    scanString("assignmentBegin",assignmentBegin)
+                    scanString("memcpy",memcpy)
+                if "allocate" in currentStatementStripped:
+                     scanString("allocated",ALLOCATED)
+                     scanString("deallocate",DEALLOCATE) 
+                     scanString("allocate",ALLOCATE) 
+                     scanString("nonZeroCheck",nonZeroCheck)
                 
-                # host/device environments  
-                #tryToParseString("callEnd",callEnd)
-                if not tryToParseString("structureEnd|ENDDO|gpufort_control",structureEnd|ENDDO|gpufort_control):
-                    tryToParseString("use|CONTAINS|IMPLICIT|declaration|ACC_START|cuf_kernel_do|DO|moduleStart|programStart|functionStart|subroutineStart",\
-                       use|CONTAINS|IMPLICIT|declaration|ACC_START|cuf_kernel_do|DO|moduleStart|programStart|functionStart|subroutineStart)
+                tryToParseString("use|CONTAINS|IMPLICIT|declaration|cuf_kernel_do|DO|moduleStart|programStart|functionStart|subroutineStart",\
+                   use|CONTAINS|IMPLICIT|declaration|cuf_kernel_do|DO|moduleStart|programStart|functionStart|subroutineStart)
                 if keepRecording:
                    try:
                       currentNode.addRecord(currentRecord)

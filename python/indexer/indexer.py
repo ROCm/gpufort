@@ -394,7 +394,7 @@ def __parseFile(fileLines,filepath):
     for currentLine in fileLines:
         utils.logging.logDebug3(LOG_PREFIX,"__parseFile","process statement '{}'".format(currentLine))
         # typeStart must be tried before datatype_reg
-        currentLineStripped = currentLine.replace(" ","")
+        currentLineStripped = currentLine.replace(" ","").replace("\t","")
         for expr in ["endmodule","endsubroutine","endfunction","endtype"]:
              if currentLineStripped.startswith(expr):
                  End()

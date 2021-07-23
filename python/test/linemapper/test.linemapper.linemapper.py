@@ -40,9 +40,9 @@ class TestIndexer(unittest.TestCase):
         options = "-DCUDA -DCUDA2"
         records                   = linemapper.readFile("test1.f90",options)
         result_lines              = linemapper.renderFile(records,stage="lines")
-        result_raw_statements         = linemapper.renderFile(records,stage="raw_statements")
-        result_statements = linemapper.renderFile(records,stage="statements")
-        testdata_lines              = """
+        result_raw_statements     = linemapper.renderFile(records,stage="raw_statements")
+        result_statements         = linemapper.renderFile(records,stage="statements")
+        testdata_lines            = """
         program main
 
         if ( 1 > 0 ) print *, size8(c)
@@ -53,7 +53,7 @@ class TestIndexer(unittest.TestCase):
         
         end program main
         """
-        testdata_statements         = """
+        testdata_raw_statements = """
         program main
         
         if ( 1 > 0 ) then
@@ -66,7 +66,7 @@ class TestIndexer(unittest.TestCase):
         
         end program main
         """
-        testdata_expandedStatements = """
+        testdata_statements = """
         program main
         
         if ( 1 > 0 ) then
@@ -87,8 +87,8 @@ class TestIndexer(unittest.TestCase):
             return text.replace(" ","").replace("\t","").replace("\n","").replace("\r","")
 
         self.assertEqual(clean_(result_lines),clean_(testdata_lines))
+        self.assertEqual(clean_(result_raw_statements),clean_(testdata_raw_statements))
         self.assertEqual(clean_(result_statements),clean_(testdata_statements))
-        self.assertEqual(clean_(result_expandedStatements),clean_(testdata_expandedStatements))
       
 if __name__ == '__main__':
     unittest.main() 

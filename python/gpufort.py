@@ -115,26 +115,22 @@ def parseRawCommandLineArguments():
 
 def parseConfig(configFilepath):
     """
-    Load user-supplied config fule.
+    Load user-supplied config file.
     """
-    prolog = """
-global LOG_LEVEL
-global LOG_FORMAT_PATTERN
-global ONLY_CREATE_GPUFORT_MODULE_FILES
-global SKIP_CREATE_GPUFORT_MODULE_FILES
-global ONLY_MODIFY_TRANSLATION_SOURCE
-global ONLY_GENERATE_KERNELS
-global POST_CLI_ACTIONS
-global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
-global INCLUDE_DIRS
-""".strip()
-    epilog = ""
+    gpufortPythonDir=os.path.dirname(os.path.realpath(__file__))
+    optionsFile = "gpufort_options.py.in"
+    prolog = ""
+    for line in open(gpufortPythonDir+"/"+optionsFile,"r").readlines():
+        if line and line[0].isalpha() and line[0].isupper():
+            prolog += "global "+line.split("=")[0].rstrip(" \t") + "\n"
+    #print(prolog)
+    prolog.rstrip("\n")
     try:
         if configFilepath.strip()[0]=="/":
             CONFIG_FILE = configFilepath
         else:
             CONFIG_FILE=os.path.dirname(os.path.realpath(__file__))+"/"+configFilepath
-        exec(prolog + "\n" + open(CONFIG_FILE).read()+ epilog)
+        exec(prolog + "\n" + open(CONFIG_FILE).read())
         msg = "config file '{}' found and successfully parsed".format(CONFIG_FILE)
         utils.logging.logInfo(LOG_PREFIX,"parseConfig",msg)
     except FileNotFoundError:

@@ -47,9 +47,6 @@ class STNode:
         self._children               = []
         self._parent                 = parent
         self._ignoreInS2STranslation = False 
-        # transformation
-        self._prolog = set() 
-        self._epilog   = set()
     def __getRecordContent(self,key,firstRecordFirstElem=0,lastRecordLastElem=-1):
         # TODO add docu
         result = []
@@ -63,7 +60,6 @@ class STNode:
                 result += record[key][:ubound]
             else:
                 result += record[key]
-        print(result)
         return result
     def addRecord(self,record):
         """Adds a record if it differs from the last record."""
@@ -179,22 +175,14 @@ class STNode:
         for tokens,start,end in expression.scanString(text):
              result.append(text[start:end])
         return result
-    def prolog(self):
-        """Some node transformations may require additional definitions
-        such as the definition of macros.
-        They write these definitions to the preamble so that
-        a higher-level function can use them and place
-        them at an appropriate location.
-        """
-        return "\n".join([el.rstrip() for el in self._prolog])
-    def epilog(self):
-        """Some node transformations may require additional definitions
-        such as the definition of macros.
-        They write these definitions to the preamble so that
-        a higher-level function can use them and place
-        them at an appropriate location.
-        """
-        return "\n".join([el.rstrip() for el in self._epilog])
+    def addToProlog(self,line):
+        """Add some prolog lines to the first record."""
+        if not line in self._records[0]["prolog"]:
+            self._records[0]["prolog"].append(line)
+    def addToEpilog(self,line):
+        """Add some epilog lines to the first record."""
+        if not line in self._records[-1]["epilog"]:
+            self._records[-1]["epilog"].append(line)
     def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
         """Transforms statements associated with underlying records (hook)
         :param line: An excerpt from a Fortran file, possibly multiple lines
@@ -265,16 +253,8 @@ class STNode:
             joinedLines                = "".join(self.lines())
             joinedStatements           = "\n".join(self.statements())
             transformedCode, modified  = self.transform(joinedLines,joinedStatements,statementsFullyCoverLines,indexHints)
-            if modified or len(self._prolog) or len(self._epilog):
-                assert not (len(self._prolog) and len(self._epilog))
-                assert not len(self._prolog) or haveFirstInFirstRecord
-                assert not len(self._epilog) or haveLastInLastRecord
-                if modified:
-                    self.__modifyRecords(transformedCode)
-                if len(self._prolog):
-                    self._records[0]["prolog"] += list(self._prolog) 
-                if len(self._epilog):
-                    self._records[0]["epilog"] += list(self._epilog) 
+            if modified:
+                self.__modifyRecords(transformedCode)
 
 class STRoot(STNode):
     def __init__(self):

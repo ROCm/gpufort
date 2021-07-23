@@ -54,11 +54,12 @@ def __translateSource(infilepath,stree,records,index):
     hipModuleName = basename.replace(".","_").replace("-","_") + "_kernels"
     scanner.postprocess(stree,hipModuleName,index)
     
-    # transform statements; wrtites to 'records'
+    # transform statements; to 'records'
     def transform_(stnode):
         stnode.transformStatements(index)
         for child in stnode._children:
             transform_(child)
+    transform_(stree)
     transform_(stree)
 
     # write the file

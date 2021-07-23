@@ -283,18 +283,18 @@ def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionS
             except Exception as e:
                 raise e
         elif regionStack1[-1]: # inActiveRegion
-                # Convert line to statememts
-                statements1 = __convertLinesToStatements(lines)
-                # 2. Apply macros to statements
-                statements2  = []
-                for stmt1 in statements1:
-                    statements2.append(__expandMacros(stmt1,macroStack))
-                # 3. Above processing might introduce multiple statements per line againa.
-                # Hence, convert each element of statements2 to single statements again
-                statements3 = []
-                for stmt2 in statements2:
-                    for stmt3 in __convertLinesToStatements([stmt2]):
-                        statements3.append(stmt3)
+            # Convert line to statememts
+            statements1 = __convertLinesToStatements(lines)
+            # 2. Apply macros to statements
+            statements2  = []
+            for stmt1 in statements1:
+                statements2.append(__expandMacros(stmt1,macroStack))
+            # 3. Above processing might introduce multiple statements per line againa.
+            # Hence, convert each element of statements2 to single statements again
+            statements3 = []
+            for stmt2 in statements2:
+                for stmt3 in __convertLinesToStatements([stmt2]):
+                    statements3.append(stmt3)
     
         #if len(includedRecords) or (not isPreprocessorDirective and regionStack1[-1]):
         record = {
@@ -385,6 +385,23 @@ def __groupModifiedRecords(records):
         for record in record["includedRecords"]:
             result = result or hasEpilog_(record)
         return result
+    def toString_(listOfStrings):
+        return "\n".join([el.rstrip("\n") for el in listOfStrings if el is not None]) + "\n"
+    def collectSubst_(record):
+        subst = []
+        if len(record["prolog"]):
+            subst += record["prolog"]
+        if len(record["includedRecords"]):
+            for record in record["includedRecords"]:
+                subst += collectSubst_(record)
+        elif record["modified"]:
+            subst += record["statements"]
+        else: # for included records
+            subst += record["lines"]
+        if len(record["epilog"]):
+            subst += record["epilog"]
+        return subst
+
     def appendCurrentBlockIfNonEmpty_():
         # append current block if it is not empty
         # or does only contain blank lines.
@@ -397,35 +414,25 @@ def __groupModifiedRecords(records):
             block = dict(EMPTY_BLOCK) # shallow copy
             block["minLineno"] = currentRecords[0]["lineno"]
             block["maxLineno"] = maxLineno_(currentRecords[-1])
-
-            def collectSubst_(record):
-                if len(record["includedRecords"]):
-                    for record in record["includedRecords"]:
-                        return collectSubst_(record)
-                elif record["modified"]:
-                    return "\n".join([stmt.rstrip("\n") for stmt in record["statements"] if stmt is not None])
-                else: # for included records
-                    return "".join(record["lines"])
-
+            
+            subst = []
             for record in currentRecords:
-                block["orig"]  += "".join(record["lines"]).rstrip("\n") + "\n"
-                if len(record["prolog"]):
-                    block["subst"] = "\n".join(record["prolog"]) + "\n"
-                subst = collectSubst_(record)
-                if len(subst):
-                    block["subst"] += subst.rstrip("\n") + "\n"
-                if len(record["epilog"]):
-                    block["subst"] = "\n".join(record["epilog"]) + "\n"
+                block["orig"]  += toString_(record["lines"])
+                subst          += collectSubst_(record)
             # special treatment for single-record blocks which are not modified
-            # but have prolog or epilog
-            if len(currentRecords) == 1 and not currentRecords[0]["modified"]:
-                assert hasProlog_(currentRecords[0]) or hasProlog_(currentRecords[0])
-                block["only_prolog"] = hasProlog_(currentRecords[0])
-                block["only_epilog"] = hasEpilog_(currentRecords[0])
+            # and are no #include statements but have prolog or epilog
+            if len(currentRecords) == 1 and not currentRecords[0]["modified"] and not\
+               len(currentRecords[0]["includedRecords"]):
+                record = currentRecords[0]
+                #assert hasProlog_(record) or hasProlog_(record)
+                block["only_prolog"] = hasProlog_(record)
+                block["only_epilog"] = hasEpilog_(record)
                 if block["only_epilog"]: # xor
                     block["only_epilog"] = not block["only_prolog"]
                     block["only_prolog"] = False
-                block["subst"]       = "\n".join(record["prolog"] + record["epilog"]) + "\n"
+                block["subst"] = toString_(record["prolog"] + record["epilog"])
+            else:
+                block["subst"] = toString_(subst)
             blocks.append(block)
 
     # 1. find contiguous blocks of modified or blank lines

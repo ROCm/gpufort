@@ -178,8 +178,9 @@ selectCaseBlock = Optional(identifier) + Group(SELECT + CASE + LPAR + selectExpr
      ENDSELECT
 
 ## Do Loop
-doLoop = DO + assignment + COMMA + arithmeticExpression + Optional(COMMA + arithmeticExpression,default="1") + block + ENDDO 
-whileLoop = DO + WHILE + LPAR + arithmeticLogicalExpression + RPAR + block + ENDDO 
+doLoopStart = Regex(r"(\w+:)?\s*do",re.IGNORECASE).suppress()
+doLoop      = doLoopStart + assignment + COMMA + arithmeticExpression + Optional(COMMA + arithmeticExpression,default="1") + block + ENDDO 
+whileLoop   = doLoopStart + WHILE + LPAR + arithmeticLogicalExpression + RPAR + block + ENDDO 
 
 # TODO Dominic: Simplify
 ## Declaration  // example: "real(kind=8), device, host, parameter :: rhx, rhy"
@@ -219,8 +220,7 @@ DIMENSION = DIMENSION.suppress()
 
 PUBLIC,PRIVATE,EXTERNAL,INTRINSIC = makeCaselessLiteral(\
   "public,private,external,intrinsic")
-simpleAttribute = MatchFirst(makeCaselessLiteral(\
-  "public,private,external,intrinsic,value,parameter,allocatable,pointer,save,target,shared,device,pinned,managed,optional,vartype,contiguous"))
+simpleAttribute = Regex(r"\b(public|private|external|intrinsic|value|parameter|allocatable|pointer|save|target|shared|device|pinned|managed|optional|vartype|contiguous)\b",re.IGNORECASE)
 # TODO identify how many what dimension(5) means. Range 1:5?
 dimensionValue     = matrixRange | arithmeticExpression | Literal("*")
 bounds             = Group(LPAR + delimitedList(dimensionValue) + RPAR)
@@ -314,6 +314,3 @@ typeStart = TYPE.suppress() + Optional(COMMA + typeAttributeList,default=[]) + O
 typeEnd   = Regex(r"\bend\s*type\b",re.IGNORECASE).suppress() + Optional(identifier).suppress()
 
 structureEnd = END + ~(NONSTRUCTURE) + Optional(FUNCTION|SUBROUTINE|MODULE).suppress() + Optional(identifier).suppress()
-# preprocessor
-cpp_defined      = CASELESS_LITERAL("defined").suppress() + LPAR + identifier + RPAR 
-cpp_ifdef        = CASELESS_LITERAL("ifdef").suppress() + identifier 

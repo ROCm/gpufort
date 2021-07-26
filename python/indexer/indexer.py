@@ -47,6 +47,7 @@ def __readFortranFile(filepath,preprocOptions):
        output  = subprocess.check_output(command,shell=True).decode("UTF-8")
        # remove Fortran line continuation and directive continuation
        output = pContinuation.sub(" ",output.lower()) 
+       output = output.replace(";","\n") # convert multi-statement lines to multiple lines; preprocessing removed comments
        
        # filter statements
        filteredLines = []
@@ -82,10 +83,6 @@ def __parseFile(fileLines,filepath):
     datatype_reg = Regex(r"\b(type\s*\(|character|integer|logical|real|complex|double\s+precision)\b")
 
     index = []
-
-    # Currently, we are only interested in a modules declarations
-    # and its derived types.
-    # Later, we might also parse routines
 
     accessLock   = threading.Lock()
     utils.logging.logDebug(LOG_PREFIX,"__parseFile","create thread pool of size {} for process variable declarations".format(\
@@ -384,29 +381,19 @@ def __parseFile(fileLines,filepath):
            utils.logging.logDebug3(LOG_PREFIX,"__parseFile","did not find expression '{}' in statement '{}'".format(expressionName,currentLine))
            utils.logging.logDebug4(LOG_PREFIX,"__parseFile",str(e))
            return False
-    
-    def tryToParseString2(expressionName,expression):
-        try:
-           expression.parseString(currentLine)
-           return True
-        except ParseBaseException as e: 
-           utils.logging.logDebug3(LOG_PREFIX,"__parseFile","did not find expression '{}' in statement '{}'".format(expressionName,currentLine))
-           utils.logging.logDebug4(LOG_PREFIX,"__parseFile",str(e))
-           return False
 
     for currentLine in fileLines:
         utils.logging.logDebug3(LOG_PREFIX,"__parseFile","process statement '{}'".format(currentLine))
         # typeStart must be tried before datatype_reg
-        currentLineStripped = currentLine.replace(" ","")
+        currentLineStripped = currentLine.replace(" ","").replace("\t","")
         for expr in ["endmodule","endsubroutine","endfunction","endtype"]:
              if currentLineStripped.startswith(expr):
                  End()
         for commentChar in "!*c":
             if currentLineStripped.startswith(commentChar+"$accdeclare"):
                 AccDeclare()
-        tryToParseString2("declaration",datatype_reg)
-        tryToParseString("typeStart|use|attributes|moduleStart|programStart|functionStart|subroutineStart",\
-          typeStart|use|attributes|moduleStart|programStart|functionStart|subroutineStart)
+        tryToParseString("declaration|typeStart|use|attributes|moduleStart|programStart|functionStart|subroutineStart",\
+          datatype_reg|typeStart|use|attributes|moduleStart|programStart|functionStart|subroutineStart)
     taskExecutor.shutdown(wait=True) # waits till all tasks have been completed
 
     # apply attributes and acc variable modifications

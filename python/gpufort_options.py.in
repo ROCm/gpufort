@@ -11,7 +11,6 @@ PROFILING_OUTPUT_NUM_FUNCTIONS = 50
 ONLY_CREATE_GPUFORT_MODULE_FILES = False # Only create and write GPUFORT module files and no other output.
 SKIP_CREATE_GPUFORT_MODULE_FILES = False # Skip creating and writing GPUFORT module files.
 
-WRAP_IN_IFDEF                  = False
 ONLY_MODIFY_TRANSLATION_SOURCE = False # Do only modify the translation source. 
 ONLY_GENERATE_KERNELS          = False # Do only generate/extract HIP C++ kernels. (Only makes sense if destination language is HIP.)
 
@@ -22,4 +21,3 @@ PRETTIFY_MODIFIED_TRANSLATION_SOURCE = False # Prettify the translation source a
                                              # (Does not change the actual source but the modified version of it.)
 __GPUFORT_INC_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),"../include")
 INCLUDE_DIRS = [ __GPUFORT_INC_DIR ]
-

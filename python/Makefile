@@ -1,16 +1,22 @@
-GRAMMAR_TRANSLATOR_TEST_COLLECTIONS_PREFIXES  := test.grammar_translator.openacc test.grammar_translator.cudafortran
+GRAMMAR_TRANSLATOR_TEST_COLLECTIONS_PREFIXES  := test.grammar_translator.openacc test.grammar_translator.cudafortran \
+	test.grammar_translator.linemapper
 GRAMMAR_TEST_COLLECTIONS                      := $(addsuffix .grammar,$(GRAMMAR_TRANSLATOR_TEST_COLLECTIONS_PREFIXES))
 TRANSLATOR_TEST_COLLECTIONS                   := $(addsuffix .translator,$(GRAMMAR_TRANSLATOR_TEST_COLLECTIONS_PREFIXES))
+
 INDEXER_TEST_COLLECTIONS = test.indexer
+
+LINEMAPPER_TEST_COLLECTIONS = test.linemapper
 
 TEST_COLLECTIONS = $(GRAMMAR_TEST_COLLECTIONS)\
 		    $(TRANSLATOR_TEST_COLLECTIONS)\
-		    $(INDEXER_TEST_COLLECTIONS)
+		    $(INDEXER_TEST_COLLECTIONS)\
+		    $(LINEMAPPER_TEST_COLLECTIONS)
 
-.PHONY: test test.grammar test.translator test.indexer\
+.PHONY: test test.grammar test.translator test.indexer test.linemapper\
 	 $(GRAMMAR_TEST_COLLECTIONS)\
 	 $(TRANSLATOR_TEST_COLLECTIONS)\
-	 $(INDEXER_TEST_COLLECTIONS)
+	 $(INDEXER_TEST_COLLECTIONS)\
+	 $(LINEMAPPER_TEST_COLLECTIONS)
 
 test: $(TEST_COLLECTIONS)
 	echo $(TEST_COLLECTIONS)
@@ -26,5 +32,11 @@ $(TRANSLATOR_TEST_COLLECTIONS): %:
 	make -C $(shell echo "$@" | sed "s,\.translator\>,,g" | sed "s,\.,/,g") test.translator
 
 test.indexer: $(INDEXER_TEST_COLLECTIONS)
+
 $(INDEXER_TEST_COLLECTIONS): %:
 	make -C $(shell echo "$@" | sed "s,\.,/,g") test.indexer clean
+
+test.linemapper: $(LINEMAPPER_TEST_COLLECTIONS)
+
+$(LINEMAPPER_TEST_COLLECTIONS): %:
+	make -C $(shell echo "$@" | sed "s,\.,/,g") test.linemapper clean

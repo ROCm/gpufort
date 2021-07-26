@@ -124,6 +124,7 @@ def parseLoopKernel(fortranSnippet,scope=[],maxRecursions=30):
     Return a csnippet equivalent to the original Fortran code.
     """
     global KEYWORDS 
+    global LOG_PREFIX
 
     recursionsLeft=0
     def simplifyLoopKernelUntilItCanGetParsed(fortranSnippet,recursionsToGo):
@@ -153,9 +154,9 @@ def parseLoopKernel(fortranSnippet,scope=[],maxRecursions=30):
         return computeConstruct
     except Exception as e:
         #raise e
-        utils.logging.logError("failed to convert kernel:\n{}".format(fortranSnippet))
-        utils.logging.logError(str(e))
-        return EmptyComputeConstruct(fsnippet)
+        utils.logging.logError(LOG_PREFIX,"parseLoopKernel","failed to convert kernel:\n{}".format(fortranSnippet))
+        utils.logging.logError(LOG_PREFIX,"parseLoopKernel",str(e))
+        return EmptyComputeConstruct(fortranSnippet)
 
 class EmptyProcedureBody():
     def cStr(self):
@@ -166,6 +167,7 @@ def parseProcedureBody(fortranSnippet,scope,indexRecord,resultName="",maxRecursi
     Parse a function/subroutine body.
     """
     global KEYWORDS 
+    global LOG_PREFIX
 
     recursionsLeft=0
     def simplifyProcedureBodyUntilItCanGetParsed(fortranSnippet,recursionsToGo):

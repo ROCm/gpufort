@@ -21,10 +21,12 @@ LOOP_KERNEL_DEFAULT_LAUNCHER = "auto" # "auto" or "cpu"
 HIP_MODULE_NAME        = "hipfort"
 HIP_MATH_MODULE_PREFIX = HIP_MODULE_NAME+"_"
 
-GPUFORT_IFDEF        = "__GPUFORT"
 CUDA_IFDEF           = "CUDA"
 CUBLAS_VERSION       = 1
 KEEP_CUDA_LIB_NAMES = False
 
 ACC_DEV_PREFIX="dev_"
 ACC_DEV_SUFFIX=""
+    
+LINE_GROUPS_ENABLE              = True # group modified lines such that they appear in the block when wrapping them in ifdefs.
+LINE_GROUPS_INCLUDE_BLANK_LINES = True # Include intermediate blank lines into a line group.

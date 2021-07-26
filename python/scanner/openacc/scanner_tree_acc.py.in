@@ -3,8 +3,6 @@
 class AccBackendBase:
     def __init__(self,stnode):
         self._stnode = stnode
-    def gpufortFStr():
-        assert False, "Not implemented!"
 
 ACC_BACKENDS             = {} 
 ACC_LOOP_KERNEL_BACKENDS = {} 
@@ -32,19 +30,9 @@ class STAccDirective(STDirective):
     
     https://www.openacc.org/sites/default/files/inline-files/OpenACC.2.7.pdf)
     """
-    def __init__(self,parent,lineno,lines,directiveNo):
-        STDirective.__init__(self,parent,lineno,lines,directiveNo,sentinel="!$acc")
+    def __init__(self,parent,firstRecord,firstRecordFirstStatement,directiveNo):
+        STDirective.__init__(self,parent,firstRecord,firstRecordFirstStatement,directiveNo,sentinel="!$acc")
         self._defaultPresentVars = []
-    def considerInS2STranslation(self,indexHints=[]):
-        """
-        Consider this object when transforming host code.
-        :return: The default implementation returns False if the parent
-                 of the object is a device subroutine.
-        """
-        if STDirective.considerInS2STranslation(self):
-            return not isinstance(self._parent, STAccDirective) or not self._parent.isParallelLoopDirective()
-        else:
-            return False
     def findSubstring(self,token):
         return token in self.singleLineStatement()
     def findAnySubstring(self,tokens):
@@ -112,24 +100,20 @@ class STAccDirective(STDirective):
          isParallelLoopDirective=self.isParallelLoopDirective()
          ).strip().replace("\n","")
     __repr__ = __str__ 
-    def gpufortFStr(self,indexHints=[]):
+    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
         checkedDialect = checkDestinationDialect(DESTINATION_DIALECT)
-        return ACC_BACKENDS[checkedDialect](self).gpufortFStr(indexHints)
-
+        return ACC_BACKENDS[checkedDialect](self).transform(\
+                joinedLines,joinedStatements,statementsFullyCoverLines,indexHints)
 class STAccLoopKernel(STAccDirective,STLoopKernel):
-    def __init__(self,parent,lineno,lines,directiveNo):
-        STAccDirective.__init__(self,parent,lineno,lines,directiveNo)
-        STLoopKernel.__init__(self,parent,lineno,lines)
-    def lines(self):
-        """
-        :note: used for grouping scanner tree objects
-        """
-        return self._lines
-    def gpufortFStr(self,indexHints=[],destinationDialect=""):
+    def __init__(self,parent,firstRecord,firstRecordFirstStatement,directiveNo):
+        STAccDirective.__init__(self,parent,firstRecord,firstRecordFirstStatement,directiveNo)
+        STLoopKernel.__init__(self,parent,firstRecord,firstRecordFirstStatement)
+    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[],destinationDialect=""):
         """
         :param destinationDialect: allows to override default if this kernel
                                    should be translated via another backend.
         """
         checkedDialect = checkDestinationDialect(\
             DESTINATION_DIALECT if not len(destinationDialect) else destinationDialect)
-        return ACC_LOOP_KERNEL_BACKENDS[checkedDialect](self).gpufortFStr(indexHints)
+        return ACC_LOOP_KERNEL_BACKENDS[checkedDialect](self).transform(\
+                joinedLines,joinedStatements,statementsFullyCoverLines,indexHints)

@@ -1,0 +1,19 @@
+LOG_PREFIX="linemapper.linemapper" # prefix for logging
+
+PATTERN_LINE_CONTINUATION=r"([\&]\s*\n)|(\n[!c\*]\$\w+\&)" # line continuation pattern. The linemapper's preprocessor removes them.
+
+ERROR_HANDLING="strict"   # 'strict': program terminates with error. Otherwise, a warning is printed.
+
+USER_DEFINED_MACROS = [] # manually add macro definitions: dicts with entries 'name' (str), 'args' (list of str), and 'subst' (str)
+
+ONLY_APPLY_USER_DEFINED_MACROS = False # Only apply user defined macros (incl. compiler options) and turn off other preprocessing (-> all code is active)
+
+INDENT_WIDTH_WHITESPACE=2 # number of indent chars if indentation uses whitespaces
+INDENT_WIDTH_TABS=1       # number of indent chars if indentation uses tabs
+
+DEFAULT_INDENT_CHAR=' '   # The default index char to use if no other char was detected (' ' or '\t').
+
+LINE_GROUPING_ENABLE              = True
+LINE_GROUPING_INCLUDE_BLANK_LINES = True
+LINE_GROUPING_WRAP_IN_IFDEF       = True        # Introduce ifdef-else-endif preprocessor block around modified lines and keep the original in the else branch. 
+LINE_GROUPING_IFDEF_MACRO         = "__GPUFORT" # Macro to use in the ifdef directive.

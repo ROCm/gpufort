@@ -20,15 +20,19 @@ program testSaxpy
   x = 1.0; y = 2.0; a = 2.0
   x_d = x
   y_d = y
-  
+
+#define xi x_d(i)
+
   !$cuf kernel do(1) <<<grid, tBlock>>>
   do i=1,size(y_d,1)
-    y_d(i) = y_d(i) + a*x_d(i)
+    y_d(i) = y_d(i) + a*xi
   end do
 
   y = y_d
 
   deallocate(x_d,y_d)
 
-  write(*,*) 'Max error: ', maxval(abs(y-4.0))
+#define max_err(a) maxval(abs(a-4.0))
+
+  write(*,*) 'Max error: ', max_err(y) 
 end program testSaxpy

@@ -12,6 +12,7 @@ import utils.logging
 import utils.fileutils
 import scanner.scanner as scanner
 import indexer.indexer as indexer
+import linemapper.linemapper as linemapper
 import translator.translator as translator
 import fort2hip.fort2hip as fort2hip
 
@@ -41,52 +42,37 @@ def createIndex(searchDirs,options,filepath):
     utils.logging.logLeaveFunction(LOG_PREFIX,"createIndex")
     return index
 
-def translateFortranSource(fortranFilepath,stree,index,wrapInIfdef):
-    global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
+def __translateSource(infilepath,stree,records,index):
     global LOG_PREFIX
+    global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
     global SKIP_CREATE_GPUFORT_MODULE_FILES
     
-    utils.logging.logEnterFunction(LOG_PREFIX,"translateFortranSource",\
-      {"fortranFilepath":fortranFilepath,"wrapInIfdef":wrapInIfdef})
+    utils.logging.logEnterFunction(LOG_PREFIX,"__translateSource",{"infilepath":infilepath})
     
-    # derive code line groups from original tree
-    groups = scanner.groupObjects(stree,index)
-    # first pass to update some scanner tree nodes
-    for group in groups.values():
-        group.generateCode(index,wrapInIfdef)
-    # post process before grouping again
-    basename      = os.path.basename(fortranFilepath).split(".")[0]
+    # post process
+    basename      = os.path.basename(infilepath).split(".")[0]
     hipModuleName = basename.replace(".","_").replace("-","_") + "_kernels"
     scanner.postprocess(stree,hipModuleName,index)
     
-    # group again with updated tree
-    groups = scanner.groupObjects(stree,index)
+    # transform statements; to 'records'
+    def transform_(stnode):
+        stnode.transformStatements(index)
+        for child in stnode._children:
+            transform_(child)
+    transform_(stree)
 
-    # now process file
-    outputLines = []
-    nextLinesToSkip = 0
-    with open(fortranFilepath,"r") as fortranFile:
-        lines = scanner.handleIncludeStatements(fortranFilepath,fortranFile.readlines())
-        for lineno,line in enumerate(lines):
-            if lineno in groups:
-                lines, linesToSkip = groups[lineno].generateCode(index,wrapInIfdef)
-                nextLinesToSkip = linesToSkip 
-                outputLines += lines
-            elif nextLinesToSkip > 0:
-                nextLinesToSkip -= 1
-            else:
-                outputLines.append(line)
-    parts = os.path.splitext(fortranFilepath)
-    modifiedFortranFilepath = "{}.hipified.f90".format(parts[0])
-    with open(modifiedFortranFilepath,"w") as outfile:
-         for line in outputLines:
-              outfile.write(line.strip("\n") + "\n")
+    # write the file
+    parts = os.path.splitext(infilepath)
+    outfilepath = "{}.hipified.f90".format(parts[0])
+    linemapper.writeModifiedFile(outfilepath,infilepath,records)
+
+    # prettify the file
     if PRETTIFY_MODIFIED_TRANSLATION_SOURCE:
-        utils.fileutils.prettifyFFile(modifiedFortranFilepath)
-    msg = "created hipified input file: ".ljust(40) + modifiedFortranFilepath
-    utils.logging.logInfo(LOG_PREFIX,"translateFortranSource",msg)
+        utils.fileutils.prettifyFFile(outfilepath)
+    msg = "created hipified input file: ".ljust(40) + outfilepath
+    utils.logging.logInfo(LOG_PREFIX,"__translateSource",msg)
     
-    utils.logging.logLeaveFunction(LOG_PREFIX,"translateFortranSource")
+    utils.logging.logLeaveFunction(LOG_PREFIX,"__translateSource")
 
 def parseRawCommandLineArguments():
     """
@@ -128,27 +114,22 @@ def parseRawCommandLineArguments():
 
 def parseConfig(configFilepath):
     """
-    Load user-supplied config fule.
+    Load user-supplied config file.
     """
-    prolog = """
-global LOG_LEVEL
-global LOG_FORMAT_PATTERN
-global ONLY_CREATE_GPUFORT_MODULE_FILES
-global SKIP_CREATE_GPUFORT_MODULE_FILES
-global WRAP_IN_IFDEF
-global ONLY_MODIFY_TRANSLATION_SOURCE
-global ONLY_GENERATE_KERNELS
-global POST_CLI_ACTIONS
-global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
-global INCLUDE_DIRS
-""".strip()
-    epilog = ""
+    gpufortPythonDir=os.path.dirname(os.path.realpath(__file__))
+    optionsFile = "gpufort_options.py.in"
+    prolog = ""
+    for line in open(gpufortPythonDir+"/"+optionsFile,"r").readlines():
+        if line and line[0].isalpha() and line[0].isupper():
+            prolog += "global "+line.split("=")[0].rstrip(" \t") + "\n"
+    #print(prolog)
+    prolog.rstrip("\n")
     try:
         if configFilepath.strip()[0]=="/":
             CONFIG_FILE = configFilepath
         else:
             CONFIG_FILE=os.path.dirname(os.path.realpath(__file__))+"/"+configFilepath
-        exec(prolog + "\n" + open(CONFIG_FILE).read()+ epilog)
+        exec(prolog + "\n" + open(CONFIG_FILE).read())
         msg = "config file '{}' found and successfully parsed".format(CONFIG_FILE)
         utils.logging.logInfo(LOG_PREFIX,"parseConfig",msg)
     except FileNotFoundError:
@@ -176,7 +157,7 @@ def parseCommandLineArguments():
     
     parser.add_argument("input",help="The input file.",type=str,nargs="?",default=None)
     parser.add_argument("-c,--only-create-mod-files",dest="onlyCreateGpufortModuleFiles",action="store_true",help="Only generate GPUFORT modules files. No other output is generated.")
-    parser.add_argument("-s,--skip-create-mod-files",dest="skipCreateGpufortModuleFiles",action="store_true",help="Skip generating GPUFORT modulesles, e.g. if they already exist. Mutually exclusive")
+    parser.add_argument("-s,--skip-create-mod-files",dest="skipCreateGpufortModuleFiles",action="store_true",help="Skip generating GPUFORT modules, e.g. if they already exist. Mutually exclusive")
     parser.add_argument("-o,--output", help="The output file. Interface module and HIP C++ implementation are named accordingly. GPUFORT module files are generated too.", default=sys.stdout, required=False, type=argparse.FileType("w"))
     parser.add_argument("--working-dir",dest="workingDir",default=os.getcwd(),type=str,help="Set working directory.") # shadow arg
     parser.add_argument("-d,--search-dirs", dest="searchDirs", help="Module search dir", nargs="*",  required=False, default=[], type=str)
@@ -195,7 +176,8 @@ def parseCommandLineArguments():
     # logging
     group_logging = parser.add_argument_group('Logging')
     group_logging.add_argument("--log-level",dest="logLevel",required=False,type=str,default="",help="Set log level. Overrides config value.")
-    group_logging.add_argument("-v,--verbose",dest="verbose",required=False,action="store_true",default="",help="Print all log messages to error output stream too.")
+    group_logging.add_argument("--log-filter",dest="logFilter",required=False,type=str,default=None,help="Filter the log output according to a regular expression.")
+    group_logging.add_argument("-v",dest="verbose",required=False,action="store_true",default="",help="Print all log messages to error output stream too.")
     
     parser.set_defaults(printConfigDefaults=False,dumpIndex=False,\
       wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyTranslationSource=False,\
@@ -211,6 +193,7 @@ def parseCommandLineArguments():
           "fort2hip/fort2hip_options.py.in",
           "indexer/indexer_options.py.in",
           "indexer/scoper_options.py.in",
+          "linemapper/linemapper_options.py.in",
           "utils/logging_options.py.in"
         ]
         print("\nCONFIGURABLE GPUFORT OPTIONS (DEFAULT VALUES):")
@@ -276,12 +259,14 @@ def parseCommandLineArguments():
         ONLY_MODIFY_TRANSLATION_SOURCE = True
     # wrap modified lines in ifdef
     if args.wrapInIfdef:
-        WRAP_IN_IFDEF = True
+        linemapper.FILE_MODIFICATION_WRAP_IN_IFDEF = True
     # logging
     if len(args.logLevel):
         LOG_LEVEL = args.logLevel
     if args.verbose:
         utils.logging.VERBOSE = args.verbose
+    if args.logFilter != None:
+        utils.logging.LOG_FILTER = args.logFilter
     # other
     if args.cublasV2:
         scanner.CUBLAS_VERSION = 2
@@ -343,7 +328,8 @@ if __name__ == "__main__":
     #
     index = createIndex(INCLUDE_DIRS,defines,inputFilepath)
     if not ONLY_CREATE_GPUFORT_MODULE_FILES:
-        stree = scanner.parseFile(inputFilepath,index)    
+        records = linemapper.readFile(inputFilepath,defines)
+        stree   = scanner.parseFile(records,index,inputFilepath)    
  
         # extract kernels
         outputFilePrefix = ".".join(inputFilepath.split(".")[:-1])
@@ -357,7 +343,7 @@ if __name__ == "__main__":
         
         # modify original file
         if not ONLY_GENERATE_KERNELS:
-            translateFortranSource(inputFilepath,stree,index,WRAP_IN_IFDEF) 
+            __translateSource(inputFilepath,stree,records,index) 
     #
     if ENABLE_PROFILING:
         profiler.disable() 

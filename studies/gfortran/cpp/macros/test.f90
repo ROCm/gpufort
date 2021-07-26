@@ -1,6 +1,12 @@
 program main 
 use testmod
-        
+
+#define whitespace_in_args(a  , b, c, d ) (a)*(b)*(c)*(d)
+#define whitespace_in_subst(a1  , B, c, d )                   (a1)*(B)*(c)*(d)
+
+print *, whitespace_in_args(1,2,3,4)
+print *, whitespace_in_subst(1,2,3,4)
+
 #define simple_macro print*,"hallo"
 ! parameterized macros replace all expressions 
 ! \b<identifier>\b (\b: word boundary) by the  

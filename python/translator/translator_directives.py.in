@@ -122,6 +122,14 @@ class IComputeConstruct():
         return []
     def inoutArraysInBody(self,converter=makeFStr):
         return []
+    def localScalars(self):
+        return []
+    def reductionCandidates(self,scope=[]):
+        return []
+    def loopVars(self):
+        return []
+    def problemSize(self):
+        return []
     def asyncNowait(): 
         """value != CLAUSE_NOT_FOUND means True"""
         return CLAUSE_NOT_FOUND
@@ -184,10 +192,10 @@ class EmptyComputeConstruct(IComputeConstruct):
     def identifiersInBody(self,converter=makeFStr):
         valueType = lvalue | rvalue
         identifierNames = []
-        for ident in valueType.scanString(self._fSnippet): # includes the identifiers of the function calls
+        for ident,_,__ in valueType.scanString(self._fSnippet): # includes the identifiers of the function calls
             name      = converter(ident._value)
             nameLower = name.lower()
-            definition,foundInIndex = scoper.searchIndexForVariable(scope,createIndexSearchTagForVariable(nameLower))
+            definition,foundInIndex = scoper.searchScopeForVariable(self._scope,createIndexSearchTagForVariable(nameLower))
             if (foundInIndex or\
                (not nameLower in KEYWORDS and\
                not nameLower in GPUFORT_CPP_ROUTINES)) and\

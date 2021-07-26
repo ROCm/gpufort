@@ -119,9 +119,8 @@ def parseFile(records,index,fortranFilepath):
     def logDetection_(kind):
         nonlocal currentNode
         nonlocal currentRecord
-        nonlocal currentStatementNo
         utils.logging.logDebug2(LOG_PREFIX,"parseFile","[current-node={}:{}] found {} in line {}: '{}'".format(\
-                currentNode._kind,currentNode._name,kind,currentStatementNo+1,currentRecord["lines"][0]))
+                currentNode._kind,currentNode._name,kind,currentRecord["lineno"],currentRecord["lines"][0]))
 
     def appendIfNotRecording_(new):
         nonlocal currentNode
@@ -143,7 +142,7 @@ def parseFile(records,index,fortranFilepath):
             parentNodeId += ":"+currentNode._parent._name
 
         utils.logging.logDebug(LOG_PREFIX,"parseFile","[current-node={0}] enter {1} in line {2}: '{3}'".format(\
-          parentNodeId,currentNodeId,currentStatementNo+1,currentRecord["lines"][0]))
+          parentNodeId,currentNodeId,currentRecord["lineno"],currentRecord["lines"][0]))
     def ascend_():
         nonlocal currentNode
         nonlocal currentFile
@@ -159,7 +158,7 @@ def parseFile(records,index,fortranFilepath):
             parentNodeId += ":"+currentNode._parent._name
         
         utils.logging.logDebug(LOG_PREFIX,"parseFile","[current-node={0}] leave {1} in line {2}: '{3}'".format(\
-          parentNodeId,currentNodeId,currentStatementNo+1,currentRecord["lines"][0]))
+          parentNodeId,currentNodeId,currentRecord["lineno"],currentRecord["lines"][0]))
         currentNode = currentNode._parent
    
     # parse actions
@@ -226,7 +225,7 @@ def parseFile(records,index,fortranFilepath):
         return not keepRecording and\
             (type(currentNode) is STAccDirective) and\
             (currentNode.isKernelsDirective())
-    def DoLoop_visit(tokens):
+    def DoLoop_visit():
         nonlocal translationEnabled
         nonlocal currentNode
         nonlocal currentRecord
@@ -255,7 +254,7 @@ def parseFile(records,index,fortranFilepath):
                 currentNode.completeInit()
                 ascend_()
                 keepRecording = False
-    def Declaration(tokens):
+    def Declaration():
         nonlocal translationEnabled
         nonlocal currentNode
         nonlocal currentRecord
@@ -407,6 +406,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal directiveNo
         logDetection_("CUDA Fortran loop kernel directive")
         new = STCufLoopKernel(currentNode,currentRecord,currentStatementNo,directiveNo)
+        new._kind = "cuf-kernel-do"
         new._ignoreInS2STranslation = not translationEnabled
         new._doLoopCtrMemorised=doLoopCtr
         directiveNo += 1
@@ -440,16 +440,14 @@ def parseFile(records,index,fortranFilepath):
     programStart.setParseAction(Program_visit)
     functionStart.setParseAction(Function_visit)
     subroutineStart.setParseAction(Subroutine_visit)
-    structureEnd.setParseAction(Structure_leave)
     
-    DO.setParseAction(DoLoop_visit)
-    ENDDO.setParseAction(DoLoop_leave)
- 
     use.setParseAction(UseStatement)
     CONTAINS.setParseAction(PlaceHolder)
     IMPLICIT.setParseAction(PlaceHolder)
     
-    declaration.setParseAction(Declaration)
+    datatype_reg = Regex(r"\s*\b(type\s*\(\s*\w+\s*\)|character|integer|logical|real|complex|double\s+precision)\b") 
+    datatype_reg.setParseAction(Declaration)
+    
     attributes.setParseAction(Attributes)
     ALLOCATED.setParseAction(Allocated)
     ALLOCATE.setParseAction(Allocate)
@@ -459,7 +457,6 @@ def parseFile(records,index,fortranFilepath):
     nonZeroCheck.setParseAction(NonZeroCheck)
 
     # CUDA Fortran 
-    cuf_kernel_do.setParseAction(CufLoopKernel)
     cudaLibCall.setParseAction(CudaLibCall)
     cudaKernelCall.setParseAction(CudaKernelCall)
 
@@ -472,6 +469,7 @@ def parseFile(records,index,fortranFilepath):
 
     currentFile = str(fortranFilepath)
     currentNode._children.clear()
+
     def scanString(expressionName,expression):
         """
         These expressions might be hidden behind a single-line if.
@@ -482,7 +480,7 @@ def parseFile(records,index,fortranFilepath):
 
         matched = len(expression.searchString(currentStatement,1))
         if matched:
-           utils.logging.logDebug3(LOG_PREFIX,"parseFile.scanString","FOUND expression '{}' in line {}: '{}'".format(expressionName,currentRecord["lineno"],currentRecord["lines"][0].rstrip()))
+           utils.logging.logDebug3(LOG_PREFIX,"parseFile.scanString","found expression '{}' in line {}: '{}'".format(expressionName,currentRecord["lineno"],currentRecord["lines"][0].rstrip()))
         else:
            utils.logging.logDebug4(LOG_PREFIX,"parseFile.scanString","did not find expression '{}' in line {}: '{}'".format(expressionName,currentRecord["lineno"],currentRecord["lines"][0].rstrip()))
         return matched
@@ -500,58 +498,93 @@ def parseFile(records,index,fortranFilepath):
         
         try:
            expression.parseString(currentStatement)
-           utils.logging.logDebug3(LOG_PREFIX,"parseFile.tryToParseString","FOUND expression '{}' in line {}: '{}'".format(expressionName,currentRecord["lineno"],currentRecord["lines"][0].rstrip()))
+           utils.logging.logDebug3(LOG_PREFIX,"parseFile.tryToParseString","found expression '{}' in line {}: '{}'".format(expressionName,currentRecord["lineno"],currentRecord["lines"][0].rstrip()))
            return True
         except ParseBaseException as e: 
            utils.logging.logDebug4(LOG_PREFIX,"parseFile.tryToParseString","did not find expression '{}' in line '{}'".format(expressionName,currentRecord["lines"][0]))
            utils.logging.logDebug5(LOG_PREFIX,"parseFile.tryToParseString",str(e))
            return False
 
-    # actual loop
+
+    def isEndStatement_(tokens,kind):
+        result = currentTokens[0] == "end"+kind
+        if not result and len(tokens):
+            result = currentTokens[0] == "end" and currentTokens[1] == kind
+        return result
+
+    # parser loop
     for currentRecord in records:
         condition1 = currentRecord["isActive"]
         condition2 = len(currentRecord["includedRecords"]) or not currentRecord["isPreprocessorDirective"]
         if condition1 and condition2:
             for currentStatementNo,currentStatement in enumerate(currentRecord["statements"]):
-                currentStatementStripped = currentStatement.replace(" ","").replace("\t","").lower()
-                for expr in ["program","module","subroutine","function","type"]:
-                     if currentStatementStripped.startswith("end"+expr):
-                         Structure_leave()
-                if currentStatementStripped.startswith("enddo"):
-                    DoLoop_leave()
-                for commentChar in "!*c":
-                    if currentStatementStripped.startswith(commentChar+"$acc"):
-                        AccDirective()
-                    if currentStatementStripped.startswith(commentChar+"$gpufort"):
-                        GpufortControl()
-                if "cuf" in SOURCE_DIALECTS:
-                    if "attributes" in currentStatementStripped:
-                        scanString("attributes",attributes)
-                    if "cu" in currentStatementStripped:
-                        scanString("cudaLibCall",cudaLibCall)
-                    if "<<<" in currentStatementStripped:
-                        scanString("cudaKernelCall",cudaKernelCall)
-                    for commentChar in "!*c":
-                        if currentStatementStripped.startswith(commentChar+"$cuf"):
-                            CufLoopKernel()
-                if "=" in currentStatementStripped:
-                    scanString("assignmentBegin",assignmentBegin)
-                    scanString("memcpy",memcpy)
-                if "allocate" in currentStatementStripped:
-                     scanString("allocated",ALLOCATED)
-                     scanString("deallocate",DEALLOCATE) 
-                     scanString("allocate",ALLOCATE) 
-                     scanString("nonZeroCheck",nonZeroCheck)
+                utils.logging.logDebug4(LOG_PREFIX,"parseFile","parsing statement '{}' associated with lines [{},{}]".format(currentStatement.rstrip(),\
+                    currentRecord["lineno"],currentRecord["lineno"]+len(currentRecord["lines"])-1))
                 
-                tryToParseString("use|CONTAINS|IMPLICIT|declaration|cuf_kernel_do|DO|moduleStart|programStart|functionStart|subroutineStart",\
-                   use|CONTAINS|IMPLICIT|declaration|cuf_kernel_do|DO|moduleStart|programStart|functionStart|subroutineStart)
-                if keepRecording:
-                   try:
-                      currentNode.addRecord(currentRecord)
-                      currentNode._lastStatementIndex = currentStatementNo
-                   except Exception as e:
-                      utils.logging.logError(LOG_PREFIX,"parseFile","While parsing file {}".format(currentFile))
-                      raise e
+                currentTokens = re.split(r"\s+|\t+",currentStatement.lower().strip(" \t"))
+                currentStatementStripped           = "".join(currentTokens)
+                currentStatementStrippedNoComments = currentStatementStripped.split("!")[0]
+                if len(currentTokens):
+                    if currentTokens[0].startswith("end"):
+                        for kind in ["program","module","subroutine","function","type"]:
+                            if isEndStatement_(currentTokens,kind):
+                                 Structure_leave()
+                        if isEndStatement_(currentTokens,"do"):
+                            DoLoop_leave()
+                    if "acc" in SOURCE_DIALECTS:
+                        for commentChar in "!*c":
+                            if currentStatementStripped.startswith(commentChar+"$acc"):
+                                AccDirective()
+                            if currentStatementStripped.startswith(commentChar+"$gpufort"):
+                                GpufortControl()
+                    if "cuf" in SOURCE_DIALECTS:
+                        if "attributes" in currentStatementStrippedNoComments:
+                            tryToParseString("attributes",attributes)
+                        if "cu" in currentStatementStrippedNoComments:
+                            scanString("cudaLibCall",cudaLibCall)
+                        if "<<<" in currentStatementStrippedNoComments:
+                            tryToParseString("cudaKernelCall",cudaKernelCall)
+                        for commentChar in "!*c":
+                            if currentStatementStripped.startswith(commentChar+"$cuf"):
+                                CufLoopKernel()
+                    if "=" in currentStatementStrippedNoComments:
+                        if not tryToParseString("memcpy",memcpy):
+                            tryToParseString("assignment",assignmentBegin)
+                            tryToParseString("nonZeroCheck",nonZeroCheck)
+                    if "allocated" in currentStatementStrippedNoComments:
+                        tryToParseString("allocated",ALLOCATED)
+                    elif "deallocate" in currentStatementStrippedNoComments:
+                        tryToParseString("deallocate",DEALLOCATE) 
+                    elif "allocate" in currentStatementStrippedNoComments:
+                        tryToParseString("allocate",ALLOCATE) 
+                    
+                    pDoLoopBegin = re.compile(r"(\w+:)?\s*do")
+                    if pDoLoopBegin.match(currentStatementStripped):
+                        DoLoop_visit()    
+                    
+                    if currentTokens[0] == "use":
+                        tryToParseString("use",use)
+                    elif currentTokens[0] == "implicit":
+                        tryToParseString("implicit",IMPLICIT)
+                    elif currentTokens[0] == "module":
+                        tryToParseString("module",moduleStart)
+                    elif currentTokens[0] == "program":
+                        tryToParseString("program",programStart)
+                    if "function" in currentTokens:
+                        tryToParseString("function",functionStart)
+                    if "subroutine" in currentTokens:
+                        tryToParseString("subroutine",subroutineStart)
+                    for expr in ["type","character","integer","logical","real","complex","double"]:
+                        if expr in currentTokens[0]:
+                            tryToParseString("declaration",datatype_reg)
+                            break 
+                    if keepRecording:
+                       try:
+                          currentNode.addRecord(currentRecord)
+                          currentNode._lastStatementIndex = currentStatementNo
+                       except Exception as e:
+                          utils.logging.logError(LOG_PREFIX,"parseFile","While parsing file {}".format(currentFile))
+                          raise e
     assert type(currentNode) is STRoot
     utils.logging.logLeaveFunction(LOG_PREFIX,"parseFile")
     return currentNode

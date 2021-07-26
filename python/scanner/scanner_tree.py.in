@@ -48,16 +48,17 @@ class STNode:
         self._parent                 = parent
         self._ignoreInS2STranslation = False 
     def __getRecordContent(self,key,firstRecordFirstElem=0,lastRecordLastElem=-1):
-        # TODO add docu
+        """Collects entries for the given key from all records associated
+        with this node."""
         result = []
         for i,record in enumerate(self._records):
             if i == 0: 
                 result += record[key][firstRecordFirstElem:]
             elif i == len(self._records)-1:
-                ubound = lastRecordLastElem
-                if lastRecordLastElem != -1:
-                    ubound += 1
-                result += record[key][:ubound]
+                if lastRecordLastElem == -1:
+                    result += record[key]
+                else:
+                    result += record[key][0:lastRecordLastElem+1]
             else:
                 result += record[key]
         return result
@@ -249,7 +250,7 @@ class STNode:
             haveLastInLastRecord      = self._lastStatementIndex  == -1 or\
                                         self._lastStatementIndex  == len(self._records[-1]["statements"])-1
             statementsFullyCoverLines = haveFirstInFirstRecord and haveLastInLastRecord
-
+        
             joinedLines                = "".join(self.lines())
             joinedStatements           = "\n".join(self.statements())
             transformedCode, modified  = self.transform(joinedLines,joinedStatements,statementsFullyCoverLines,indexHints)

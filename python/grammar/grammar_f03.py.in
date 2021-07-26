@@ -178,8 +178,9 @@ selectCaseBlock = Optional(identifier) + Group(SELECT + CASE + LPAR + selectExpr
      ENDSELECT
 
 ## Do Loop
-doLoop = DO + assignment + COMMA + arithmeticExpression + Optional(COMMA + arithmeticExpression,default="1") + block + ENDDO 
-whileLoop = DO + WHILE + LPAR + arithmeticLogicalExpression + RPAR + block + ENDDO 
+doLoopStart = Regex(r"(\w+:)?\s*do",re.IGNORECASE).suppress()
+doLoop      = doLoopStart + assignment + COMMA + arithmeticExpression + Optional(COMMA + arithmeticExpression,default="1") + block + ENDDO 
+whileLoop   = doLoopStart + WHILE + LPAR + arithmeticLogicalExpression + RPAR + block + ENDDO 
 
 # TODO Dominic: Simplify
 ## Declaration  // example: "real(kind=8), device, host, parameter :: rhx, rhy"

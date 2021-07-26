@@ -60,7 +60,6 @@ def __translateSource(infilepath,stree,records,index):
         for child in stnode._children:
             transform_(child)
     transform_(stree)
-    transform_(stree)
 
     # write the file
     parts = os.path.splitext(infilepath)
@@ -178,7 +177,7 @@ def parseCommandLineArguments():
     group_logging = parser.add_argument_group('Logging')
     group_logging.add_argument("--log-level",dest="logLevel",required=False,type=str,default="",help="Set log level. Overrides config value.")
     group_logging.add_argument("--log-filter",dest="logFilter",required=False,type=str,default=None,help="Filter the log output according to a regular expression.")
-    group_logging.add_argument("-v,--verbose",dest="verbose",required=False,action="store_true",default="",help="Print all log messages to error output stream too.")
+    group_logging.add_argument("-v",dest="verbose",required=False,action="store_true",default="",help="Print all log messages to error output stream too.")
     
     parser.set_defaults(printConfigDefaults=False,dumpIndex=False,\
       wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyTranslationSource=False,\

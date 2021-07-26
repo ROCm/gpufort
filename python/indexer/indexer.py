@@ -381,15 +381,6 @@ def __parseFile(fileLines,filepath):
            utils.logging.logDebug3(LOG_PREFIX,"__parseFile","did not find expression '{}' in statement '{}'".format(expressionName,currentLine))
            utils.logging.logDebug4(LOG_PREFIX,"__parseFile",str(e))
            return False
-    
-    def tryToParseString2(expressionName,expression):
-        try:
-           expression.parseString(currentLine)
-           return True
-        except ParseBaseException as e: 
-           utils.logging.logDebug3(LOG_PREFIX,"__parseFile","did not find expression '{}' in statement '{}'".format(expressionName,currentLine))
-           utils.logging.logDebug4(LOG_PREFIX,"__parseFile",str(e))
-           return False
 
     for currentLine in fileLines:
         utils.logging.logDebug3(LOG_PREFIX,"__parseFile","process statement '{}'".format(currentLine))
@@ -401,9 +392,8 @@ def __parseFile(fileLines,filepath):
         for commentChar in "!*c":
             if currentLineStripped.startswith(commentChar+"$accdeclare"):
                 AccDeclare()
-        tryToParseString2("declaration",datatype_reg)
-        tryToParseString("typeStart|use|attributes|moduleStart|programStart|functionStart|subroutineStart",\
-          typeStart|use|attributes|moduleStart|programStart|functionStart|subroutineStart)
+        tryToParseString("declaration|typeStart|use|attributes|moduleStart|programStart|functionStart|subroutineStart",\
+          datatype_reg|typeStart|use|attributes|moduleStart|programStart|functionStart|subroutineStart)
     taskExecutor.shutdown(wait=True) # waits till all tasks have been completed
 
     # apply attributes and acc variable modifications

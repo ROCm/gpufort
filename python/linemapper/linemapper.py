@@ -515,8 +515,12 @@ def writeModifiedFile(outfilePath,infilePath,records):
                         output += "#ifdef {0}\n{1}\n#endif\n{2}\n".format(\
                           LINE_GROUPING_IFDEF_MACRO,subst,original)
                     else:
-                        output += "#ifdef {0}\n{1}\n#else\n{2}\n#endif\n".format(\
-                          LINE_GROUPING_IFDEF_MACRO,subst,original)
+                        if len(block["subst"].strip(" \n\t")):
+                            output += "#ifdef {0}\n{1}\n#else\n{2}\n#endif\n".format(\
+                              LINE_GROUPING_IFDEF_MACRO,subst,original)
+                        else:
+                            output += "#ifndef {0}\n{2}\n#endif\n".format(\
+                              LINE_GROUPING_IFDEF_MACRO,subst,original)
                 else:
                     output = subst + "\n"
                     if block["only_epilog"]:

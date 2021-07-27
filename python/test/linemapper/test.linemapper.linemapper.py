@@ -12,20 +12,20 @@ LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
 utils.logging.VERBOSE    = False
 utils.logging.initLogging("log.log",LOG_FORMAT,"warning")
 
-ENABLE_PROFILING = False
+PROFILING_ENABLE = False
 
 index = []
 
 class TestIndexer(unittest.TestCase):
     def setUp(self):
-        global ENABLE_PROFILING
-        if ENABLE_PROFILING:
+        global PROFILING_ENABLE
+        if PROFILING_ENABLE:
             self._profiler = cProfile.Profile()
             self._profiler.enable()
         self._started_at = time.time()
     def tearDown(self):
-        global ENABLE_PROFILING
-        if ENABLE_PROFILING:
+        global PROFILING_ENABLE
+        if PROFILING_ENABLE:
             self._profiler.disable() 
             s = io.StringIO()
             sortby = 'cumulative'

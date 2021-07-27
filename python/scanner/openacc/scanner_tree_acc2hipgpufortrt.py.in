@@ -27,6 +27,16 @@ HIP_GPUFORT_RT_ACC_PRESENT = "{indent}{devVar} = gpufort_acc_present({var})\n"
 # wait
 HIP_GPUFORT_RT_ACC_WAIT = "{indent}call gpufort_acc_wait({queue}{asyncr})\n"
 
+MAPPING_CLAUSE_2_TEMPLATE_MAP = {
+  "create": HIP_GPUFORT_RT_ACC_CREATE,
+  "no_create": HIP_GPUFORT_RT_ACC_NO_CREATE,
+  "delete": HIP_GPUFORT_RT_ACC_DELETE,
+  "copyin": HIP_GPUFORT_RT_ACC_COPYIN,
+  "copy": HIP_GPUFORT_RT_ACC_COPY,
+  "copyout": HIP_GPUFORT_RT_ACC_COPYOUT,
+  "present": HIP_GPUFORT_RT_ACC_PRESENT
+}
+
 def devVarName(var):
     #tokens = var.split("%")
     #tokens[-1] = ACC_DEV_PREFIX+tokens[-1]+ACC_DEV_SUFFIX
@@ -61,36 +71,24 @@ class Acc2HipGpufortRT(AccBackendBase):
         :rtype: bool
         """
         return len(translator.acc_clause_finalize.searchString(self.singleLineStatement(),1))
-    def _handleSimpleMapping(self,expression,template):
+    def _handleMappingClauses(self):
         """
         """
         result = ""
         tempVars = set()
         indent = self._stnode.firstLineIndent()
         #
-        for parseResult in expression.scanString(self._stnode.singleLineStatement()):
-            clause = parseResult[0][0]
-            varNames       = clause.varNames()
-            varExpressions = clause.varExpressions()
-            for i,varExpr in enumerate(varExpressions):
-                deviceptr = devVarName(varNames[i])
-                result += template.format(indent=indent,var=varExpr,devVar=deviceptr,asyncr=self._handleAsync())
-                tempVars.add(deviceptr)
+        for parseResult in translator.acc_mapping_clause.scanString(self._stnode.singleLineStatement()):
+            clause         = parseResult[0][0]
+            if clause.kind() in MAPPING_CLAUSE_2_TEMPLATE_MAP:
+                varNames       = clause.varNames()
+                varExpressions = clause.varExpressions()
+                for i,varExpr in enumerate(varExpressions):
+                    deviceptr = devVarName(varNames[i])
+                    template = MAPPING_CLAUSE_2_TEMPLATE_MAP[clause.kind()]
+                    result += template.format(indent=indent,var=varExpr,devVar=deviceptr,asyncr=self._handleAsync())
+                    tempVars.add(deviceptr)
         return result, len(result), tempVars
-    def _handlePresent(self):
-        return self._handleSimpleMapping(translator.acc_clause_present,HIP_GPUFORT_RT_ACC_PRESENT)
-    def _handleCreate(self):
-        return self._handleSimpleMapping(translator.acc_clause_create,HIP_GPUFORT_RT_ACC_CREATE)
-    def _handleNoCreate(self):
-        return self._handleSimpleMapping(translator.acc_clause_no_create,HIP_GPUFORT_RT_ACC_NO_CREATE)
-    def _handleDelete(self):
-        return self._handleSimpleMapping(translator.acc_clause_delete,HIP_GPUFORT_RT_ACC_DELETE)
-    def _handleCopy(self):
-        return self._handleSimpleMapping(translator.acc_clause_copy,HIP_GPUFORT_RT_ACC_COPY)
-    def _handleCopyin(self):
-        return self._handleSimpleMapping(translator.acc_clause_copyin,HIP_GPUFORT_RT_ACC_COPY)
-    def _handleCopyout(self):
-        return self._handleSimpleMapping(translator.acc_clause_copyout,HIP_GPUFORT_RT_ACC_COPYOUT)
     def _handleDefault(self):
         """
         Emits a acc_clause_present command for every variable in the list
@@ -194,42 +192,7 @@ class Acc2HipGpufortRT(AccBackendBase):
 
         ## Other directives/clauses
         # create
-        partialResult, transformed, tempVars = self._handleCreate()
-        if transformed:
-            result += partialResult
-            allTempVars.update(tempVars)
-        # no_create
-        partialResult, transformed, tempVars = self._handleNoCreate()
-        if transformed:
-            result += partialResult
-            allTempVars.update(tempVars)
-        # present
-        partialResult, transformed, tempVars = self._handlePresent()
-        if transformed:
-            result += partialResult
-            allTempVars.update(tempVars)
-        # default
-        partialResult, transformed, tempVars = self._handleDefault()
-        if transformed:
-            result += partialResult
-            allTempVars.update(tempVars)
-        # delete
-        partialResult, transformed, tempVars = self._handleDelete()
-        if transformed:
-            result += partialResult
-            allTempVars.update(tempVars)
-        # copy
-        partialResult, transformed, tempVars = self._handleCopy()
-        if transformed:
-            result += partialResult
-            allTempVars.update(tempVars)
-        # copyin
-        partialResult, transformed, tempVars = self._handleCopyin()
-        if transformed:
-            result += partialResult
-            allTempVars.update(tempVars)
-        # copyout
-        partialResult, transformed, tempVars = self._handleCopyout()
+        partialResult, transformed, tempVars = self._handleMappingClauses()
         if transformed:
             result += partialResult
             allTempVars.update(tempVars)

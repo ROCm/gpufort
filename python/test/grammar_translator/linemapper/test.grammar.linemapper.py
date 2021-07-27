@@ -14,17 +14,17 @@ import linemapper.linemapper as linemapper
 #LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
 #utils.logging.VERBOSE    = False
 
-ENABLE_PROFILING = False
+PROFILING_ENABLE = False
 
 class TestPreprocessorGrammar(unittest.TestCase):
     def setUp(self):
         self._started_at = time.time()
         self._extra      = ""
-        if ENABLE_PROFILING:
+        if PROFILING_ENABLE:
             self._profiler = cProfile.Profile()
             self._profiler.enable()
     def tearDown(self):
-        if ENABLE_PROFILING:
+        if PROFILING_ENABLE:
             self._profiler.disable() 
             s = io.StringIO()
             sortby = 'cumulative'

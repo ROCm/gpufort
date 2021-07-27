@@ -39,30 +39,30 @@ def __readFortranFile(filepath,preprocOptions):
 
     utils.logging.logEnterFunction(LOG_PREFIX,"__readFortranFile",{"filepath":filepath,"preprocOptions":preprocOptions})
     
-    def considerLine(strippedLine):
-        passesFilter = pFilter.match(strippedLine) != None
+    def considerStatement(strippedStatement):
+        passesFilter = pFilter.match(strippedStatement) != None
         return passesFilter
     try:
        command = PREPROCESS_FORTRAN_FILE.format(file=filepath,options=preprocOptions)
        output  = subprocess.check_output(command,shell=True).decode("UTF-8")
        # remove Fortran line continuation and directive continuation
        output = pContinuation.sub(" ",output.lower()) 
-       output = output.replace(";","\n") # convert multi-statement lines to multiple lines; preprocessing removed comments
+       output = output.replace(";","\n") # convert multi-statement lines to multiple lines with a single statement; preprocessing removed comments
        
        # filter statements
-       filteredLines = []
+       filteredStatements = []
        for line in output.split("\n"):
-           strippedLine = line.strip().rstrip("\n")
-           if considerLine(strippedLine):
-               utils.logging.logDebug3(LOG_PREFIX,"__readFortranFile","select statement '{}'".format(strippedLine))
-               filteredLines.append(strippedLine)
+           strippedStatement = line.strip(" \t\n")
+           if considerStatement(strippedStatement):
+               utils.logging.logDebug3(LOG_PREFIX,"__readFortranFile","select statement '{}'".format(strippedStatement))
+               filteredStatements.append(strippedStatement)
            else:
-               utils.logging.logDebug3(LOG_PREFIX,"__readFortranFile","ignore statement '{}'".format(strippedLine))
+               utils.logging.logDebug3(LOG_PREFIX,"__readFortranFile","ignore statement '{}'".format(strippedStatement))
     except subprocess.CalledProcessError as cpe:
         raise cpe
     
     utils.logging.logLeaveFunction(LOG_PREFIX,"__readFortranFile")
-    return filteredLines
+    return filteredStatements
 
 class __Node():
     def __init__(self,kind,name,data,parent=None):
@@ -74,7 +74,7 @@ class __Node():
         return "{}: {}".format(self._name,self._data)
     __repr__ = __str__
 
-def __parseFile(fileLines,filepath):
+def __parseFile(fileStatements,filepath):
     global PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE
     global PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE 
 
@@ -186,7 +186,7 @@ def __parseFile(fileLines,filepath):
     # Parser events
     root        = __Node("root","root",data=index,parent=None)
     currentNode = root
-    currentLine = None
+    currentStatement = None
 
     def createBaseEntry_(kind,name,filepath):
         entry = {}
@@ -200,28 +200,28 @@ def __parseFile(fileLines,filepath):
         return entry
     def logEnterNode_():
         nonlocal currentNode
-        nonlocal currentLine
+        nonlocal currentStatement
         utils.logging.logDebug(LOG_PREFIX,"__parseFile","[current-node={0}:{1}] enter {2} '{3}' in statement: '{4}'".format(\
           currentNode._parent._kind,currentNode._parent._name,
           currentNode._kind,currentNode._name,\
-          currentLine))
+          currentStatement))
     def logLeaveNode_():
         nonlocal currentNode
-        nonlocal currentLine
+        nonlocal currentStatement
         utils.logging.logDebug(LOG_PREFIX,"__parseFile","[current-node={0}:{1}] leave {0} '{1}' in statement: '{2}'".format(\
           currentNode._data["kind"],currentNode._data["name"],\
-          currentLine))
+          currentStatement))
     def logDetection_(kind):
         nonlocal currentNode
-        nonlocal currentLine
+        nonlocal currentStatement
         utils.logging.logDebug2(LOG_PREFIX,"__parseFile","[current-node={}:{}] found {} in statement: '{}'".format(\
-                currentNode._kind,currentNode._name,kind,currentLine))
+                currentNode._kind,currentNode._name,kind,currentStatement))
    
     # direct parsing
     def End():
         nonlocal root
         nonlocal currentNode
-        nonlocal currentLine
+        nonlocal currentStatement
         logDetection_("end of program/module/subroutine/function")
         if currentNode._kind != "root":
             logLeaveNode_()
@@ -247,14 +247,14 @@ def __parseFile(fileLines,filepath):
     #host|device,name,[args]
     def SubroutineStart(tokens):
         global LOG_PREFIX
-        nonlocal currentLine
+        nonlocal currentStatement
         nonlocal currentNode
         logDetection_("start of subroutine")
         if currentNode._kind in ["root","module","program","subroutine","function"]:
             name = tokens[1]
             subroutine = createBaseEntry_("subroutine",name,filepath)
-            subroutine["attributes"]  = [q.lower() for q in tokens[0]]
-            subroutine["dummyArgs"]   = list(tokens[2])
+            subroutine["attributes"]      = [q.lower() for q in tokens[0]]
+            subroutine["dummyArgs"]       = list(tokens[2])
             if currentNode._kind == "root":
                 currentNode._data.append(subroutine)
             else:
@@ -263,19 +263,19 @@ def __parseFile(fileLines,filepath):
             logEnterNode_()
         else:
             utils.logging.logWarning(LOG_PREFIX,"__parseFile","found subroutine in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
-              format(currentLine,currentNode._kind))
+              format(currentStatement,currentNode._kind))
     #host|device,name,[args],result
     def FunctionStart(tokens):
         global LOG_PREFIX
-        nonlocal currentLine
+        nonlocal currentStatement
         nonlocal currentNode
         logDetection_("start of function")
         if currentNode._kind in ["root","module","program","subroutine","function"]:
             name = tokens[1]
             function = createBaseEntry_("function",name,filepath)
-            function["attributes"]  = [q.lower() for q in tokens[0]]
-            function["dummyArgs"]   = list(tokens[2])
-            function["resultName"]  = name if tokens[3] is None else tokens[3]
+            function["attributes"]      = [q.lower() for q in tokens[0]]
+            function["dummyArgs"]       = list(tokens[2])
+            function["resultName"]      = name if tokens[3] is None else tokens[3]
             if currentNode._kind == "root":
                 currentNode._data.append(function)
             else:
@@ -284,10 +284,10 @@ def __parseFile(fileLines,filepath):
             logEnterNode_()
         else:
             utils.logging.logWarning(LOG_PREFIX,"__parseFile","found function in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
-              format(currentLine,currentNode._kind))
+              format(currentStatement,currentNode._kind))
     def TypeStart(tokens):
         global LOG_PREFIX
-        nonlocal currentLine
+        nonlocal currentStatement
         nonlocal currentNode
         logDetection_("start of type")
         if currentNode._kind in ["module","program","subroutine","function"]:
@@ -303,7 +303,7 @@ def __parseFile(fileLines,filepath):
             logEnterNode_()
         else:
             utils.logging.logWarning(LOG_PREFIX,"__parseFile","found derived type in '{}' but parent is {}; expected program or module parent.".\
-                    format(currentLine,currentNode._kind))
+                    format(currentStatement,currentNode._kind))
     def Use(tokens):
         nonlocal currentNode
         logDetection_("use statement")
@@ -322,14 +322,14 @@ def __parseFile(fileLines,filepath):
     def Declaration(tokens):
         nonlocal root
         nonlocal currentNode
-        nonlocal currentLine
+        nonlocal currentStatement
         nonlocal taskExecutor
         nonlocal totalNumTasks
-        #print(currentLine)
+        #print(currentStatement)
         logDetection_("declaration")
         if currentNode != root:
             totalNumTasks += 1
-            taskExecutor.submit(ParseDeclarationTask_,currentNode,currentLine) 
+            taskExecutor.submit(ParseDeclarationTask_,currentNode,currentStatement) 
     def Attributes(tokens):
         """
         Add attributes to previously declared variables in same scope/declaration list.
@@ -337,11 +337,11 @@ def __parseFile(fileLines,filepath):
         """
         nonlocal root
         nonlocal currentNode
-        nonlocal currentLine
-        #print(currentLine)
+        nonlocal currentStatement
+        #print(currentStatement)
         logDetection_("attributes statement")
         if currentNode != root:
-            job = ParseAttributesJob_(currentNode,currentLine) 
+            job = ParseAttributesJob_(currentNode,currentStatement) 
             postParsingJobs.append(job)
     def AccDeclare():
         """
@@ -351,13 +351,33 @@ def __parseFile(fileLines,filepath):
         # TODO investigate if target of attribute must be in same scope or not!
         nonlocal root
         nonlocal currentNode
-        nonlocal currentLine
+        nonlocal currentStatement
         logDetection_("acc declare directive")
         if currentNode != root:
-            job = ParseAccDeclareJob_(currentNode,currentLine) 
+            job = ParseAccDeclareJob_(currentNode,currentStatement) 
             postParsingJobs.append(job)
-            # 'use kinds, only: dp, sp => sp2' --> [None, 'kinds', [['dp', None], ['sp', 'sp2']]]
     
+    def AccRoutine():
+        """
+        Add attributes to previously declared variables in same scope.
+        Does not modify scope of other variables.
+        """
+        # TODO investigate if target of attribute must be in same scope or not!
+        nonlocal root
+        nonlocal currentNode
+        nonlocal currentStatement
+        logDetection_("acc routine directive")
+        if currentNode != root:
+            parseResult = translator.acc_routine.parseString(currentStatement)[0]
+            if parseResult.parallelism() == "seq":
+                currentNode._data["attributes"] += ["host","device"]
+            elif parseResult.parallelism() == "gang":
+                currentNode._data["attributes"] += ["host","device:gang"]
+            elif parseResult.parallelism() == "worker":
+                currentNode._data["attributes"] += ["host","device:worker"]
+            elif parseResult.parallelism() == "vector":
+                currentNode._data["attributes"] += ["host","device:vector"]
+
     moduleStart.setParseAction(ModuleStart)
     typeStart.setParseAction(TypeStart)
     programStart.setParseAction(ProgramStart)
@@ -370,30 +390,58 @@ def __parseFile(fileLines,filepath):
     datatype_reg.setParseAction(Declaration)
     use.setParseAction(Use)
     attributes.setParseAction(Attributes)
-    
-    acc_declare.setParseAction(AccDeclare)
 
     def tryToParseString(expressionName,expression):
         try:
-           expression.parseString(currentLine)
+           expression.parseString(currentStatement)
            return True
         except ParseBaseException as e: 
-           utils.logging.logDebug3(LOG_PREFIX,"__parseFile","did not find expression '{}' in statement '{}'".format(expressionName,currentLine))
+           utils.logging.logDebug3(LOG_PREFIX,"__parseFile","did not find expression '{}' in statement '{}'".format(expressionName,currentStatement))
            utils.logging.logDebug4(LOG_PREFIX,"__parseFile",str(e))
            return False
 
-    for currentLine in fileLines:
-        utils.logging.logDebug3(LOG_PREFIX,"__parseFile","process statement '{}'".format(currentLine))
-        # typeStart must be tried before datatype_reg
-        currentLineStripped = currentLine.replace(" ","").replace("\t","")
-        for expr in ["endmodule","endsubroutine","endfunction","endtype"]:
-             if currentLineStripped.startswith(expr):
+    def isEndStatement_(tokens,kind):
+        result = tokens[0] == "end"+kind
+        if not result and len(tokens):
+            result = tokens[0] == "end" and tokens[1] == kind
+        return result
+
+    for currentStatement in fileStatements:
+        utils.logging.logDebug3(LOG_PREFIX,"__parseFile","process statement '{}'".format(currentStatement))
+        currentTokens             = re.split(r"\s+|\t+",currentStatement.lower().strip(" \t"))
+        currentStatementStripped  = "".join(currentTokens)
+        for expr in ["program","module","subroutine","function","type"]:
+            if isEndStatement_(currentTokens,expr):
                  End()
         for commentChar in "!*c":
-            if currentLineStripped.startswith(commentChar+"$accdeclare"):
-                AccDeclare()
-        tryToParseString("declaration|typeStart|use|attributes|moduleStart|programStart|functionStart|subroutineStart",\
-          datatype_reg|typeStart|use|attributes|moduleStart|programStart|functionStart|subroutineStart)
+            if currentTokens[0] == commentChar+"$acc":
+                if currentTokens[1] == "declare":
+                    AccDeclare()
+                elif currentTokens[1] == "routine":
+                    AccRoutine()
+        if currentTokens[0] == "use":
+            tryToParseString("use",use)
+        #elif currentTokens[0] == "implicit":
+        #    tryToParseString("implicit",IMPLICIT)
+        elif currentTokens[0] == "module":
+            tryToParseString("module",moduleStart)
+        elif currentTokens[0] == "program":
+            tryToParseString("program",programStart)
+        elif currentTokens[0].startswith("type"): # type a ; type, bind(c) :: a
+            tryToParseString("type",typeStart)
+        elif currentTokens[0].startswith("attributes"): # attributes(device) :: a
+            tryToParseString("attributes",attributes)
+        # cannot be combined with above checks
+        if "function" in currentTokens:
+            tryToParseString("function",functionStart)
+        elif "subroutine" in currentTokens:
+            tryToParseString("subroutine",subroutineStart)
+        for expr in ["type","character","integer","logical","real","complex","double"]: # type(dim3) :: a 
+           if expr in currentTokens[0]:
+               tryToParseString("declaration",datatype_reg)
+               break
+        #tryToParseString("declaration|typeStart|use|attributes|moduleStart|programStart|functionStart|subroutineStart",\
+        #  datatype_reg|typeStart|use|attributes|moduleStart|programStart|functionStart|subroutineStart)
     taskExecutor.shutdown(wait=True) # waits till all tasks have been completed
 
     # apply attributes and acc variable modifications

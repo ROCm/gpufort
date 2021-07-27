@@ -17,54 +17,53 @@ ACC_REDUCTION_OP   = oneOf("+ * max min iand ior ieor .and. .or. .eqv. .neqv.",c
 accVarList = LPAR + Group(delimitedList(allocateRValue)) + RPAR
 
 # clauses
-acc_clause_gang             = GANG + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
-acc_clause_worker           = WORKER + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
-acc_clause_vector           = VECTOR + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
-acc_clause_num_gangs        = NUM_GANGS + LPAR + integer + RPAR 
-acc_clause_num_workers      = NUM_WORKERS + LPAR + integer + RPAR 
-acc_clause_vector_length    = VECTOR_LENGTH + LPAR + integer + RPAR
+acc_clause_gang          = GANG + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
+acc_clause_worker        = WORKER + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
+acc_clause_vector        = VECTOR + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
+acc_clause_num_gangs     = NUM_GANGS + LPAR + integer + RPAR 
+acc_clause_num_workers   = NUM_WORKERS + LPAR + integer + RPAR 
+acc_clause_vector_length = VECTOR_LENGTH + LPAR + integer + RPAR
 
-acc_clause_device_type      = DEVICE_TYPE + LPAR + Group(delimitedList(identifier | Literal("*"))) + RPAR
-acc_clause_if               = IF + LPAR + arithmeticLogicalExpression + RPAR
-acc_clause_copy             = COPY    + accVarList
-acc_clause_copyin           = COPYIN  + accVarList
-acc_clause_copyout          = COPYOUT + accVarList
+acc_clause_device_type   = DEVICE_TYPE + LPAR + Group(delimitedList(identifier | Literal("*"))) + RPAR
+acc_clause_if            = IF + LPAR + arithmeticLogicalExpression + RPAR
 
-acc_clause_create           = CREATE          + accVarList
-acc_clause_no_create        = NO_CREATE       + accVarList
-acc_clause_present          = PRESENT         + accVarList
-acc_clause_deviceptr        = DEVICEPTR       + accVarList
-acc_clause_attach           = ATTACH          + accVarList
-acc_clause_detach           = DETACH          + accVarList
-acc_clause_use_device       = USE_DEVICE      + accVarList
-acc_clause_private          = PRIVATE         + accVarList
-acc_clause_delete           = DELETE          + accVarList
-acc_clause_private          = PRIVATE         + accVarList
-acc_clause_first_private    = FIRST_PRIVATE   + accVarList 
-acc_clause_host             = ( HOST | SELF)  + accVarList
-acc_clause_device_resident  = DEVICE_RESIDENT + accVarList
-acc_clause_link             = LINK            + accVarList
-acc_clause_default          = DEFAULT         + LPAR + (CASELESS_LITERAL("none") | CASELESS_LITERAL("present")) + RPAR # do not suppress
-acc_clause_reduction        = REDUCTION       + LPAR + ACC_REDUCTION_OP + Suppress(":") + Group(delimitedList(allocateRValue)) + RPAR
-acc_clause_collapse         = COLLAPSE        + LPAR + integer + RPAR
-acc_clause_self             = SELF            + LPAR + arithmeticLogicalExpression + RPAR
-acc_clause_bind             = BIND            + LPAR + identifier + RPAR
-acc_clause_tile             = TILE            + LPAR + Group(integer + Suppress(",") + integer) + RPAR
-acc_clause_wait             = WAIT            + Optional(delimitedList(arithmeticExpression), default=[])
-acc_clause_async            = ASYNC           + Optional(LPAR + rvalue + RPAR, default = CLAUSE_VALUE_NOT_SPECIFIED) 
+# copy           
+# copyin         
+# copyout        
+# create         
+# no_create      
+# present        
+# deviceptr      
+# attach         
+# detach         
+# use_device     
+# delete         
+# private        
+# first_private  
+# host           
+# device_resident
+# link           
+acc_mapping_clause  = identifier.copy() + accVarList
 
-acc_clause_seq,acc_clause_auto,acc_clause_independent,acc_clause_read,acc_clause_write,acc_clause_capture,acc_clause_nohost,acc_clause_finalize,acc_clause_if_present = makeCaselessLiteral("seq,auto,independent,read,write,capture,nohost,finalize,if_present",suppress=False)
+acc_clause_default   = DEFAULT         + LPAR + (CASELESS_LITERAL("none") | CASELESS_LITERAL("present")) + RPAR # do not suppress
+acc_clause_reduction = REDUCTION       + LPAR + ACC_REDUCTION_OP + Suppress(":") + Group(delimitedList(allocateRValue)) + RPAR
+acc_clause_collapse  = COLLAPSE        + LPAR + integer + RPAR
+acc_clause_self      = SELF            + LPAR + arithmeticLogicalExpression + RPAR # for compute constructs; not for update
+acc_clause_bind      = BIND            + LPAR + identifier + RPAR
+acc_clause_tile      = TILE            + LPAR + Group(integer + Suppress(",") + integer) + RPAR
+acc_clause_wait      = WAIT            + Optional(delimitedList(arithmeticExpression), default=[])
+acc_clause_async     = ASYNC           + Optional(LPAR + rvalue + RPAR, default = CLAUSE_VALUE_NOT_SPECIFIED) 
+
+#acc_clause_seq,acc_clause_auto,acc_clause_independent,acc_clause_read,acc_clause_write,acc_clause_capture,acc_clause_nohost,acc_clause_finalize,acc_clause_if_present = makeCaselessLiteral("seq,auto,independent,read,write,capture,nohost,finalize,if_present",suppress=False)
+
+acc_ident_clause = Regex(r"\b(seq|auto|independent|read|write|capture|nohost|finalize|if_present)\b",re.IGNORECASE)
 
 # ACC LoopKernel directive
 ACC_START = PRAGMA + ACC 
 ACC_END   = ACC_START.copy() + END
 
-acc_clause = acc_clause_if | acc_clause_self | acc_clause_host | acc_clause_async | acc_clause_wait | acc_clause_num_gangs | acc_clause_num_workers | acc_clause_vector_length | acc_clause_device_type |\
-    acc_clause_copy | acc_clause_copyin | acc_clause_copyout | acc_clause_create | acc_clause_present | acc_clause_deviceptr | acc_clause_default |\
-    acc_clause_private | acc_clause_first_private | acc_clause_no_create | acc_clause_delete | acc_clause_reduction | acc_clause_detach | acc_clause_collapse |\
-    acc_clause_use_device | acc_clause_bind | acc_clause_device_resident | acc_clause_link | acc_clause_tile | acc_clause_seq | acc_clause_auto |\
-    acc_clause_independent | acc_clause_gang | acc_clause_worker | acc_clause_vector | acc_clause_read | acc_clause_write | acc_clause_capture |\
-    acc_clause_nohost | acc_clause_finalize | acc_clause_if_present 
+acc_clause = acc_clause_if | acc_clause_self | acc_clause_async | acc_clause_wait | acc_clause_num_gangs | acc_clause_num_workers | acc_clause_vector_length | acc_clause_device_type |\
+    acc_clause_default | acc_clause_reduction | acc_clause_collapse | acc_clause_bind | acc_clause_tile | acc_clause_gang | acc_clause_worker | acc_clause_vector | acc_mapping_clause | acc_ident_clause
 
 accClauseList = Group(Optional(OneOrMore(Optional(ACC_START + Literal("&")).suppress() + acc_clause), default=[]))
 

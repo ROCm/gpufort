@@ -8,13 +8,14 @@ import indexer.indexer as indexer
 import indexer.scoper as scoper
 import utils.logging
 
-LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
+log_format = "[%(levelname)s]\tgpufort:%(message)s"
+log_level = "debug2"
 utils.logging.VERBOSE    = False
-utils.logging.initLogging("log.log",LOG_FORMAT,"warning")
+utils.logging.initLogging("log.log",log_format,log_level)
 
 gfortranOptions="-DCUDA"
 
-ENABLE_PROFILING = False
+PROFILING_ENABLE = False
 
 index = []
 
@@ -29,12 +30,12 @@ class TestIndexer(unittest.TestCase):
     def test_0_donothing(self):
         pass 
     def test_1_indexer_scan_files(self):
-        if ENABLE_PROFILING:
+        if PROFILING_ENABLE:
             profiler = cProfile.Profile()
             profiler.enable()
         indexer.scanFile("test_modules.f90",gfortranOptions,self._index)
         indexer.scanFile("test1.f90",gfortranOptions,self._index)
-        if ENABLE_PROFILING:
+        if PROFILING_ENABLE:
             profiler.disable() 
             s = io.StringIO()
             sortby = 'cumulative'
@@ -132,12 +133,18 @@ class TestIndexer(unittest.TestCase):
         self.assertIsNotNone(func2)
         self.assertEqual(func2["kind"],"function")
         self.assertEqual(func2["resultName"],"res")
-        self.assertEqual(len(func2["subprograms"]),1)
-        # nested subprogram    
+        self.assertEqual(len(func2["subprograms"]),2)
+        # nested subprogram 1 
         func3 = next((sub for sub in func2["subprograms"] if sub["name"] == "func3".lower()),None)
         self.assertEqual(func3["kind"],"function")
         self.assertEqual(func3["resultName"],"func3")
         self.assertEqual(len(func3["subprograms"]),0)
+        # nested subprogram 2
+        func4 = next((sub for sub in func2["subprograms"] if sub["name"] == "func4".lower()),None)
+        self.assertEqual(func4["kind"],"function")
+        self.assertEqual(func4["resultName"],"func4")
+        self.assertEqual(len(func4["subprograms"]),0)
+        self.assertEqual(func4["attributes"],["host","device"])
       
 if __name__ == '__main__':
     unittest.main() 

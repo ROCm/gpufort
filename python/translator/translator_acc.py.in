@@ -39,47 +39,16 @@ class TTAccClauseSelf(TTNode):
         self._condition = tokens[0]
     def condition(self):
         return makeFStr(self._condition)
-class TTSimpleMapping(TTNode):
+class TTAccMappingClause(TTNode):
     def _assignFields(self,tokens):
-        self._varList = tokens[0].asList()
+        self._kind    = tokens[0]
+        self._varList = tokens[1].asList()
+    def kind(self):
+        return self._kind
     def varNames(self,converter=makeFStr):
         return [ var.varName(converter) for var in self._varList ]
     def varExpressions(self,converter=makeFStr):
         return [ converter(var) for var in self._varList ]
-class TTAccClauseCopy(TTSimpleMapping):
-    pass
-class TTAccClauseCopyin(TTSimpleMapping):
-    pass
-class TTAccClauseCopyout(TTSimpleMapping):
-    pass
-class TTAccClauseCreate(TTSimpleMapping):
-    pass
-class TTAccClauseNo_create(TTSimpleMapping):
-    pass
-class TTAccClausePresent(TTSimpleMapping):
-    pass
-class TTAccClauseDeviceptr(TTSimpleMapping):
-    pass
-class TTAccClauseAttach(TTSimpleMapping):
-    pass
-class TTAccClauseDetach(TTSimpleMapping):
-    pass
-class TTAccClausePrivate(TTSimpleMapping):
-    pass
-class TTAccClauseFirstprivate(TTSimpleMapping):
-    pass
-class TTAccClauseUseDevice(TTSimpleMapping):
-    pass
-class TTAccClauseDevice(TTSimpleMapping):
-    pass
-class TTAccClauseHost(TTSimpleMapping):
-    pass
-class TTAccClauseLink(TTSimpleMapping):
-    pass
-class TTAccClauseDelete(TTSimpleMapping):
-    pass
-class TTAccClauseDeviceResident(TTSimpleMapping):
-    pass
 class TTAccClauseDefault(TTNode):
     def _assignFields(self,tokens):
         self._value = tokens
@@ -99,9 +68,6 @@ class TTAccClauseReduction(TTNode):
             # "+" "*" "max" "min" "iand" "ior" "ieor" ".and." ".or." ".eqv." ".neqv."
         result[op] = [makeFStr(var) for var in self._vars] 
         return result
-class TTAccClauseRoutine(TTNode):
-    def _assignFields(self,tokens):
-        pass
 class TTAccClauseBind(TTNode):
     def _assignFields(self,tokens):
         pass
@@ -129,14 +95,15 @@ class TTAccClauseAsync(TTNode):
 #
 # Directives
 #
-
 class TTAccDirectiveBase(TTNode):
     def _assignFields(self,tokens):
-        self._clauses = tokens
-    def _handleSimpleMapping(self,clauseType,converter=makeFStr):
+        self._clauses = tokens[0]
+    def handleMappingClause(self,clauseKinds,converter=makeFStr):
         result = []
-        for clause in findAll(self._clauses,clauseType):
-            result += clause.varExpressions()
+        for clause in self._clauses:
+            if type(clause) == TTAccMappingClause and\
+                    clause.kind() in clauseKinds:
+                result += clause.varExpressions()
         return result
     def _format(self,fSnippet):
         return formatDirective(fSnippet,80) 
@@ -176,25 +143,25 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
         else:
             return CLAUSE_NOT_FOUND
     def deviceptrs(self):
-        return self._handleSimpleMapping(TTAccClauseDeviceptr)
+        return self.handleMappingClause(["deviceptr"])
     def createAllocVars(self):
-        return self._handleSimpleMapping(TTAccClauseCreate)
+        return self.handleMappingClause(["create"])
     def no_createVars(self):
-        return self._handleSimpleMapping(TTAccClauseNo_create)
+        return self.handleMappingClause(["no_create"])
     def presentVars(self):
-        return self._handleSimpleMapping(TTAccClausePresent)
+        return self.handleMappingClause(["present"])
     def copyMapToFromVars(self):
-        return self._handleSimpleMapping(TTAccClauseCopy)
+        return self.handleMappingClause(["copy"])
     def copyinMapToVars(self):
-        return self._handleSimpleMapping(TTAccClauseCopyin)
+        return self.handleMappingClause(["copyin"])
     def copyoutMapFromVars(self):
-        return self._handleSimpleMapping(TTAccClauseCopyout)
+        return self.handleMappingClause(["copyout"])
     def attachVars(self):
-        return self._handleSimpleMapping(TTAccClauseAttach)
+        return self.handleMappingClause(["attach"])
     def detachVars(self):
-        return self._handleSimpleMapping(TTAccClauseDetach)
+        return self.handleMappingClause(["detach"])
     def deleteReleaseVars(self):
-        return self._handleSimpleMapping(TTAccClauseDelete)
+        return self.handleMappingClause(["delete"])
     def ifCondition(self):
         clause = findFirst(self._clauses,TTAccClauseIf)
         if not clause is None:
@@ -307,26 +274,21 @@ class TTAccDeclare(TTAccDirectiveBase):
     There is '!$acc routine' for routines.
     """
     def mapAllocVariables(self):
-        return self._handleSimpleMapping(TTAccClauseCreate)
+        return self.handleMappingClause(["create"])
     def mapToVariables(self):
-        return self._handleSimpleMapping(TTAccClauseCopyin)
+        return self.handleMappingClause(["copyin"])
     def mapFromVariables(self):
-        return self._handleSimpleMapping(TTAccClauseCopyout)
+        return self.handleMappingClause(["copyout"])
     def mapTofromVariables(self):
-        return self._handleSimpleMapping(TTAccClauseCopy)
+        return self.handleMappingClause(["copy"])
     def ompFStr(self):
-        toList =\
-          self._handleSimpleMapping(TTAccClauseCreate) +\
-          self._handleSimpleMapping(TTAccClauseCopy) +\
-          self._handleSimpleMapping(TTAccClauseCopyin) +\
-          self._handleSimpleMapping(TTAccClauseAttach) +\
-          self._handleSimpleMapping(TTAccClauseCopyout) +\
-          self._handleSimpleMapping(TTAccClauseDetach)
+        toList = self.handleMappingClause(\
+          ["create","copy","copyin","attach","copyout","detach"])
     
         # TODO: not sure about this mapping       
-        toList += self._handleSimpleMapping(TTAccClauseDeviceResident)
+        toList += self.handleMappingClause(["device_resident"])
 
-        linkList = self._handleSimpleMapping(TTAccClauseLink)
+        linkList = self.handleMappingClause(["link"])
         
         result = "!$omp target declare"
         if len(toList):
@@ -338,6 +300,12 @@ class TTAccDeclare(TTAccDirectiveBase):
 class TTAccRoutine(TTAccDirectiveBase):
     def _assignFields(self,tokens):
         self._id, self._clauses = tokens
+    def parallelism(self):
+        result = [c for c in self._clauses if c in ["seq","gang","worker"]]
+        if len(result):
+            return result[0]
+        else:
+            return "seq"
     def ompFStr(self,additions=""):
         """ additions can be used to pass 'notinbranch' 'inbranch'"""
         result = "!$omp target declare"
@@ -442,7 +410,7 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
                 result[key] += value
         return result
     def privateVars(self,converter=makeFStr):
-        return self._handleSimpleMapping(TTAccClausePrivate,converter)
+        return self.handleMappingClause(["private"],converter)
     def ompFStr(self,loopType="do",parallelRegion="",prefix="!$omp"):
         result = prefix
         def parallelismClause(clause):
@@ -501,9 +469,9 @@ class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase,IComputeConstru
       default( none | present )
     """
     def privateVars(self,converter=makeFStr):
-        return self._handleSimpleMapping(TTAccClausePrivate,converter)
+        return self.handleMappingClause(["private"],converter)
     def firstprivateVars(self,converter=makeFStr):
-        return self._handleSimpleMapping(TTAccClauseFirstprivate,converter)
+        return self.handleMappingClause(["firstprivate"],converter)
     def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={},prefix="!$omp target"):
         result   = prefix
         dataPart = " "+TTAccDataManagementDirectiveBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,"")
@@ -554,32 +522,16 @@ acc_clause_vector_length.setParseAction(TTAccClauseVectorLength)
 acc_clause_device_type.setParseAction(TTAccClauseDeviceType)
 acc_clause_if.setParseAction(TTAccClauseIf)
 
-acc_clause_copy.setParseAction(TTAccClauseCopy)
-acc_clause_copyin.setParseAction(TTAccClauseCopyin)
-acc_clause_copyout.setParseAction(TTAccClauseCopyout)
-
-acc_clause_create.setParseAction(TTAccClauseCreate)
-acc_clause_no_create.setParseAction(TTAccClauseNo_create)
-acc_clause_present.setParseAction(TTAccClausePresent)
-acc_clause_deviceptr.setParseAction(TTAccClauseDeviceptr)
-acc_clause_attach.setParseAction(TTAccClauseAttach)
-acc_clause_detach.setParseAction(TTAccClauseDetach)
 acc_clause_default.setParseAction(TTAccClauseDefault)
-acc_clause_use_device.setParseAction(TTAccClauseUseDevice)
-acc_clause_private.setParseAction(TTAccClausePrivate)
-acc_clause_reduction.setParseAction(TTAccClauseReduction)
-acc_clause_delete.setParseAction(TTAccClauseDelete)
-acc_clause_private.setParseAction(TTAccClausePrivate)
-acc_clause_first_private.setParseAction(TTAccClauseFirstprivate)
 acc_clause_collapse.setParseAction(TTAccClauseCollapse)
-acc_clause_host.setParseAction(TTAccClauseHost)
 acc_clause_self.setParseAction(TTAccClauseSelf)
 acc_clause_bind.setParseAction(TTAccClauseBind)
-acc_clause_device_resident.setParseAction(TTAccClauseDeviceResident)
-acc_clause_link.setParseAction(TTAccClauseLink)
+acc_clause_reduction.setParseAction(TTAccClauseReduction)
 acc_clause_tile.setParseAction(TTAccClauseTile)
 acc_clause_wait.setParseAction(TTAccClauseWait)
 acc_clause_async.setParseAction(TTAccClauseAsync)
+
+acc_mapping_clause.setParseAction(TTAccMappingClause)
 
 # directive action
 acc_update.setParseAction(TTAccUpdate) 

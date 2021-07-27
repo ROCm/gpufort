@@ -49,6 +49,14 @@ contains
       integer :: e(n,n) ! scoper: should hide the e in module
       func3 = a 
     end function
+    
+    function func4(a)
+      !$acc routine seq
+      real,intent(in) :: a ! scoper: should hide the a in scoper
+      integer :: func3
+      integer :: e(n,n) ! scoper: should hide the e in module
+      func3 = a 
+    end function
   end function
   
 end module nested_subprograms

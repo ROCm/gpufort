@@ -8,13 +8,14 @@ import indexer.indexer as indexer
 import indexer.scoper as scoper
 import utils.logging
 
-LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
+log_format = "[%(levelname)s]\tgpufort:%(message)s"
+log_level = "debug2"
 utils.logging.VERBOSE    = False
-utils.logging.initLogging("log.log",LOG_FORMAT,"warning")
+utils.logging.initLogging("log.log",log_format,log_level)
 
 gfortranOptions="-DCUDA"
 
-ENABLE_PROFILING = False
+PROFILING_ENABLE = False
 
 index = []
 
@@ -29,12 +30,12 @@ class TestIndexer(unittest.TestCase):
     def test_0_donothing(self):
         pass 
     def test_1_indexer_scan_files(self):
-        if ENABLE_PROFILING:
+        if PROFILING_ENABLE:
             profiler = cProfile.Profile()
             profiler.enable()
         indexer.scanFile("test_modules.f90",gfortranOptions,self._index)
         indexer.scanFile("test1.f90",gfortranOptions,self._index)
-        if ENABLE_PROFILING:
+        if PROFILING_ENABLE:
             profiler.disable() 
             s = io.StringIO()
             sortby = 'cumulative'

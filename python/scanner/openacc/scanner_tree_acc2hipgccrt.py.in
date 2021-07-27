@@ -51,22 +51,21 @@ HIP_GCC_RT_MAP_PRESENT           = "goacc_map_present({var})"
 class Acc2HipGccRT(AccBackendBase):
     def _createMappings(self,parseResult,prefix=",mappings="):
         mappings=[]
-        for clause in translator.findAll(parseResult,translator.TTAccClausePresent):
-            mappings += [HIP_GCC_RT_MAP_PRESENT.format(var=expr) for expr in clause.varExpressions()]
-        for clause in translator.findAll(parseResult,translator.TTAccClauseCreate):
-            mappings += [HIP_GCC_RT_MAP_CREATE.format(var=expr) for expr in clause.varExpressions()]
-        for clause in translator.findAll(parseResult,translator.TTAccClauseNo_create):
-            mappings += [HIP_GCC_RT_MAP_NO_CREATE.format(var=expr) for expr in clause.varExpressions()]
-        for clause in translator.findAll(parseResult,translator.TTAccClauseDelete):
-            mappings += [HIP_GCC_RT_MAP_DELETE.format(var=expr) for expr in clause.varExpressions()]
-        for clause in translator.findAll(parseResult,translator.TTAccClauseCopy):
-            mappings += [HIP_GCC_RT_MAP_COPY.format(var=expr) for expr in clause.varExpressions()]
-        for clause in translator.findAll(parseResult,translator.TTAccClauseCopyin):
-            mappings += [HIP_GCC_RT_MAP_COPYIN.format(var=expr) for expr in clause.varExpressions()]
-        for clause in translator.findAll(parseResult,translator.TTAccClauseCopyout):
-            mappings += [HIP_GCC_RT_MAP_COPYOUT.format(var=expr) for expr in clause.varExpressions()]
-        for clause in translator.findAll(parseResult,translator.TTAccClausePresent):
-            mappings += [HIP_GCC_RT_MAP_PRESENT.format(var=expr) for expr in clause.varExpressions()]
+        for clause in translator.findAll(parseResult,translator.TTAccMappingClause):
+            if clause.kind() == "present":
+                mappings += [HIP_GCC_RT_MAP_PRESENT.format(var=expr) for expr in clause.varExpressions()]
+            elif clause.kind() == "create":
+                mappings += [HIP_GCC_RT_MAP_CREATE.format(var=expr) for expr in clause.varExpressions()]
+            elif clause.kind() == "no_create":
+                mappings += [HIP_GCC_RT_MAP_NO_CREATE.format(var=expr) for expr in clause.varExpressions()]
+            elif clause.kind() == "delete":
+                mappings += [HIP_GCC_RT_MAP_DELETE.format(var=expr) for expr in clause.varExpressions()]
+            elif clause.kind() == "copy":
+                mappings += [HIP_GCC_RT_MAP_COPY.format(var=expr) for expr in clause.varExpressions()]
+            elif clause.kind() == "copyin":
+                mappings += [HIP_GCC_RT_MAP_COPYIN.format(var=expr) for expr in clause.varExpressions()]
+            elif clause.kind() == "copyout":
+                mappings += [HIP_GCC_RT_MAP_COPYOUT.format(var=expr) for expr in clause.varExpressions()]
         if len(mappings):
             return prefix+"["+",".join(mappings)+"]"
         else:

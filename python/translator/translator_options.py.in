@@ -13,8 +13,6 @@ MAX_DIRECTIVE_LINE_WIDTH = 80
 UNCONVERTED = "TODO(gpufort) UNCONVERTED - Please adjust yourself!"
 DEPEND_TODO = "TODO(gpufort) - specify depend inputs"
 
-__FLOAT_COMPLEX="hipFloatComplex"
-__DOUBLE_COMPLEX="hipDoubleComplex"
 
 FORTRAN_2_C_TYPE_MAP = { 
   "character": {
@@ -22,10 +20,10 @@ FORTRAN_2_C_TYPE_MAP = {
     "c_char": "char"
   },
   "complex" : { 
-    "": __FLOAT_COMPLEX,
+    "": "hipFloatComplex",
     "16": None,
-    "8": __DOUBLE_COMPLEX,
-    "4": __FLOAT_COMPLEX,
+    "8": "hipDoubleComplex",
+    "4": "hipFloatComplex",
     "2": None,
     "1": None,
     "c_float_complex": "hipFloatComplex",

@@ -145,13 +145,18 @@ def parseCommandLineArguments():
     Parse command line arguments after all changes and argument transformations by the config file have been applied.
     """
     global LOG_LEVEL
-    global SKIP_CREATE_GPUFORT_MODULE_FILES
+    global LOG_FORMAT
+    global LOG_PREFIX
+    global PROFILING_ENABLE
+    global PROFILING_OUTPUT_NUM_FUNCTIONS
     global ONLY_CREATE_GPUFORT_MODULE_FILES
-    global ONLY_GENERATE_KERNELS
+    global SKIP_CREATE_GPUFORT_MODULE_FILES
     global ONLY_MODIFY_TRANSLATION_SOURCE
+    global ONLY_GENERATE_KERNELS
+    global POST_CLI_ACTIONS
+    global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
     global INCLUDE_DIRS
-    global WRAP_IN_IFDEF
-      
+
     # parse command line arguments
     parser = argparse.ArgumentParser(description="S2S translation tool for CUDA Fortran and Fortran+X")
     
@@ -173,15 +178,18 @@ def parseCommandLineArguments():
     group_config.add_argument("--print-config-defaults",dest="printConfigDefaults",action="store_true",help="Print config defaults. "+\
             "Config values can be overriden by providing a config file. A number of config values can be overwritten via this CLI.")
     group_config.add_argument("--config-file",default=None,type=argparse.FileType("r"),dest="configFile",help="Provide a config file.")
-    # logging
-    group_logging = parser.add_argument_group('Logging')
-    group_logging.add_argument("--log-level",dest="logLevel",required=False,type=str,default="",help="Set log level. Overrides config value.")
-    group_logging.add_argument("--log-filter",dest="logFilter",required=False,type=str,default=None,help="Filter the log output according to a regular expression.")
-    group_logging.add_argument("-v",dest="verbose",required=False,action="store_true",default="",help="Print all log messages to error output stream too.")
-    
+    # developer options
+    group_developer = parser.add_argument_group('Developer options (logging, profiling, ...)')
+    group_developer.add_argument("-v",dest="verbose",required=False,action="store_true",default="",help="Print all log messages to error output stream too.")
+    group_developer.add_argument("--log-level",dest="logLevel",required=False,type=str,default="",help="Set log level. Overrides config value.")
+    group_developer.add_argument("--log-filter",dest="logFilter",required=False,type=str,default=None,help="Filter the log output according to a regular expression.")
+    group_developer.add_argument("--prof",dest="profilingEnable",required=False,action="store_true",help="Profile gpufort.")
+    group_developer.add_argument("--prof-num-functions",dest="profilingNumFunctions",required=False,type=int,default=50,help="The number of python functions to include into the summary [default=50].")
+
     parser.set_defaults(printConfigDefaults=False,dumpIndex=False,\
       wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyTranslationSource=False,\
-      onlyCreateGpufortModuleFiles=False,skipCreateGpufortModuleFiles=False,verbose=False)
+      onlyCreateGpufortModuleFiles=False,skipCreateGpufortModuleFiles=False,verbose=False,\
+      profilingEnable=False)
     args, unknownArgs = parser.parse_known_args()
 
     if args.printConfigDefaults:
@@ -260,13 +268,17 @@ def parseCommandLineArguments():
     # wrap modified lines in ifdef
     if args.wrapInIfdef:
         linemapper.FILE_MODIFICATION_WRAP_IN_IFDEF = True
-    # logging
+    # developer: logging
     if len(args.logLevel):
         LOG_LEVEL = args.logLevel
     if args.verbose:
         utils.logging.VERBOSE = args.verbose
     if args.logFilter != None:
         utils.logging.LOG_FILTER = args.logFilter
+    # developer: profiling:
+    if args.profilingEnable:
+        PROFILING_ENABLE = True
+        PROFILING_OUTPUT_NUM_FUNCTIONS = args.profilingNumFunctions
     # other
     if args.cublasV2:
         scanner.CUBLAS_VERSION = 2
@@ -322,7 +334,7 @@ if __name__ == "__main__":
         sys.exit(2)
 
     # scanner must be invoked after index creation
-    if ENABLE_PROFILING:
+    if PROFILING_ENABLE:
         profiler = cProfile.Profile()
         profiler.enable()
     #
@@ -345,7 +357,7 @@ if __name__ == "__main__":
         if not ONLY_GENERATE_KERNELS:
             __translateSource(inputFilepath,stree,records,index) 
     #
-    if ENABLE_PROFILING:
+    if PROFILING_ENABLE:
         profiler.disable() 
         s = io.StringIO()
         sortby = 'cumulative'

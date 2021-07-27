@@ -505,11 +505,10 @@ def parseFile(records,index,fortranFilepath):
            utils.logging.logDebug5(LOG_PREFIX,"parseFile.tryToParseString",str(e))
            return False
 
-
     def isEndStatement_(tokens,kind):
-        result = currentTokens[0] == "end"+kind
+        result = tokens[0] == "end"+kind
         if not result and len(tokens):
-            result = currentTokens[0] == "end" and currentTokens[1] == kind
+            result = tokens[0] == "end" and tokens[1] == kind
         return result
 
     # parser loop

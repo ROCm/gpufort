@@ -17,15 +17,15 @@ ACC_REDUCTION_OP   = oneOf("+ * max min iand ior ieor .and. .or. .eqv. .neqv.",c
 accVarList = LPAR + Group(delimitedList(allocateRValue)) + RPAR
 
 # clauses
-acc_clause_gang             = GANG + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
-acc_clause_worker           = WORKER + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
-acc_clause_vector           = VECTOR + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
-acc_clause_num_gangs        = NUM_GANGS + LPAR + integer + RPAR 
-acc_clause_num_workers      = NUM_WORKERS + LPAR + integer + RPAR 
-acc_clause_vector_length    = VECTOR_LENGTH + LPAR + integer + RPAR
+acc_clause_gang          = GANG + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
+acc_clause_worker        = WORKER + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
+acc_clause_vector        = VECTOR + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
+acc_clause_num_gangs     = NUM_GANGS + LPAR + integer + RPAR 
+acc_clause_num_workers   = NUM_WORKERS + LPAR + integer + RPAR 
+acc_clause_vector_length = VECTOR_LENGTH + LPAR + integer + RPAR
 
-acc_clause_device_type      = DEVICE_TYPE + LPAR + Group(delimitedList(identifier | Literal("*"))) + RPAR
-acc_clause_if               = IF + LPAR + arithmeticLogicalExpression + RPAR
+acc_clause_device_type   = DEVICE_TYPE + LPAR + Group(delimitedList(identifier | Literal("*"))) + RPAR
+acc_clause_if            = IF + LPAR + arithmeticLogicalExpression + RPAR
 
 # copy           
 # copyin         
@@ -45,14 +45,14 @@ acc_clause_if               = IF + LPAR + arithmeticLogicalExpression + RPAR
 # link           
 acc_mapping_clause  = identifier.copy() + accVarList
 
-acc_clause_default          = DEFAULT         + LPAR + (CASELESS_LITERAL("none") | CASELESS_LITERAL("present")) + RPAR # do not suppress
-acc_clause_reduction        = REDUCTION       + LPAR + ACC_REDUCTION_OP + Suppress(":") + Group(delimitedList(allocateRValue)) + RPAR
-acc_clause_collapse         = COLLAPSE        + LPAR + integer + RPAR
-acc_clause_self             = SELF            + LPAR + arithmeticLogicalExpression + RPAR # for compute constructs; not for update
-acc_clause_bind             = BIND            + LPAR + identifier + RPAR
-acc_clause_tile             = TILE            + LPAR + Group(integer + Suppress(",") + integer) + RPAR
-acc_clause_wait             = WAIT            + Optional(delimitedList(arithmeticExpression), default=[])
-acc_clause_async            = ASYNC           + Optional(LPAR + rvalue + RPAR, default = CLAUSE_VALUE_NOT_SPECIFIED) 
+acc_clause_default   = DEFAULT         + LPAR + (CASELESS_LITERAL("none") | CASELESS_LITERAL("present")) + RPAR # do not suppress
+acc_clause_reduction = REDUCTION       + LPAR + ACC_REDUCTION_OP + Suppress(":") + Group(delimitedList(allocateRValue)) + RPAR
+acc_clause_collapse  = COLLAPSE        + LPAR + integer + RPAR
+acc_clause_self      = SELF            + LPAR + arithmeticLogicalExpression + RPAR # for compute constructs; not for update
+acc_clause_bind      = BIND            + LPAR + identifier + RPAR
+acc_clause_tile      = TILE            + LPAR + Group(integer + Suppress(",") + integer) + RPAR
+acc_clause_wait      = WAIT            + Optional(delimitedList(arithmeticExpression), default=[])
+acc_clause_async     = ASYNC           + Optional(LPAR + rvalue + RPAR, default = CLAUSE_VALUE_NOT_SPECIFIED) 
 
 #acc_clause_seq,acc_clause_auto,acc_clause_independent,acc_clause_read,acc_clause_write,acc_clause_capture,acc_clause_nohost,acc_clause_finalize,acc_clause_if_present = makeCaselessLiteral("seq,auto,independent,read,write,capture,nohost,finalize,if_present",suppress=False)
 

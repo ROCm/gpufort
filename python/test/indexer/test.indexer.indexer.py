@@ -133,12 +133,18 @@ class TestIndexer(unittest.TestCase):
         self.assertIsNotNone(func2)
         self.assertEqual(func2["kind"],"function")
         self.assertEqual(func2["resultName"],"res")
-        self.assertEqual(len(func2["subprograms"]),1)
-        # nested subprogram    
+        self.assertEqual(len(func2["subprograms"]),2)
+        # nested subprogram 1 
         func3 = next((sub for sub in func2["subprograms"] if sub["name"] == "func3".lower()),None)
         self.assertEqual(func3["kind"],"function")
         self.assertEqual(func3["resultName"],"func3")
         self.assertEqual(len(func3["subprograms"]),0)
+        # nested subprogram 2
+        func4 = next((sub for sub in func2["subprograms"] if sub["name"] == "func4".lower()),None)
+        self.assertEqual(func4["kind"],"function")
+        self.assertEqual(func4["resultName"],"func4")
+        self.assertEqual(len(func4["subprograms"]),0)
+        self.assertEqual(func4["attributes"],["host","device"])
       
 if __name__ == '__main__':
     unittest.main() 

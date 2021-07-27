@@ -68,9 +68,6 @@ class TTAccClauseReduction(TTNode):
             # "+" "*" "max" "min" "iand" "ior" "ieor" ".and." ".or." ".eqv." ".neqv."
         result[op] = [makeFStr(var) for var in self._vars] 
         return result
-class TTAccClauseRoutine(TTNode):
-    def _assignFields(self,tokens):
-        pass
 class TTAccClauseBind(TTNode):
     def _assignFields(self,tokens):
         pass
@@ -303,6 +300,12 @@ class TTAccDeclare(TTAccDirectiveBase):
 class TTAccRoutine(TTAccDirectiveBase):
     def _assignFields(self,tokens):
         self._id, self._clauses = tokens
+    def parallelism(self):
+        result = [c for c in self._clauses if c in ["seq","gang","worker"]]
+        if len(result):
+            return result[0]
+        else:
+            return "seq"
     def ompFStr(self,additions=""):
         """ additions can be used to pass 'notinbranch' 'inbranch'"""
         result = "!$omp target declare"

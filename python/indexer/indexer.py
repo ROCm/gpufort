@@ -253,8 +253,8 @@ def __parseFile(fileStatements,filepath):
         if currentNode._kind in ["root","module","program","subroutine","function"]:
             name = tokens[1]
             subroutine = createBaseEntry_("subroutine",name,filepath)
-            subroutine["attributes"]  = [q.lower() for q in tokens[0]]
-            subroutine["dummyArgs"]   = list(tokens[2])
+            subroutine["attributes"]      = [q.lower() for q in tokens[0]]
+            subroutine["dummyArgs"]       = list(tokens[2])
             if currentNode._kind == "root":
                 currentNode._data.append(subroutine)
             else:
@@ -273,9 +273,9 @@ def __parseFile(fileStatements,filepath):
         if currentNode._kind in ["root","module","program","subroutine","function"]:
             name = tokens[1]
             function = createBaseEntry_("function",name,filepath)
-            function["attributes"]  = [q.lower() for q in tokens[0]]
-            function["dummyArgs"]   = list(tokens[2])
-            function["resultName"]  = name if tokens[3] is None else tokens[3]
+            function["attributes"]      = [q.lower() for q in tokens[0]]
+            function["dummyArgs"]       = list(tokens[2])
+            function["resultName"]      = name if tokens[3] is None else tokens[3]
             if currentNode._kind == "root":
                 currentNode._data.append(function)
             else:
@@ -368,9 +368,16 @@ def __parseFile(fileStatements,filepath):
         nonlocal currentStatement
         logDetection_("acc routine directive")
         if currentNode != root:
-            parseResult = translator.acc_routine.parseString(self._inputText)[0]
+            parseResult = translator.acc_routine.parseString(currentStatement)[0]
+            if parseResult.parallelism() == "seq":
+                currentNode._data["attributes"] += ["host","device"]
+            elif parseResult.parallelism() == "gang":
+                currentNode._data["attributes"] += ["host","device:gang"]
+            elif parseResult.parallelism() == "worker":
+                currentNode._data["attributes"] += ["host","device:worker"]
+            elif parseResult.parallelism() == "vector":
+                currentNode._data["attributes"] += ["host","device:vector"]
 
-    
     moduleStart.setParseAction(ModuleStart)
     typeStart.setParseAction(TypeStart)
     programStart.setParseAction(ProgramStart)

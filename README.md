@@ -42,7 +42,7 @@ Currently, we thus recommended to download and build HIPFORT yourself.
 To install HIPFORT, we first download the sources:
 
 ```bash
-git clone git@github.com:RocmSoftwarePlatform/hipfort.git
+git clone https://github.com/ROCmSoftwarePlatform/hipfort.git
 ```
 
 Next we install HIPFORT to `/opt/rocm/hipfort` (recommended) via `cmake`.

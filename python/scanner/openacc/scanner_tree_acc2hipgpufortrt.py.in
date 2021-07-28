@@ -184,8 +184,8 @@ class Acc2HipGpufortRT(AccBackendBase):
         ## Enter region commands must come first
         emitEnterRegion = stnode.isEnterDirective()
         emitEnterRegion = emitEnterRegion or stnode.isDataDirective()
-        emitEnterRegion = emitEnterRegion or stnode.isParallelDirective()
-        emitEnterRegion = emitEnterRegion or stnode.isParallelLoopDirective() 
+        #emitEnterRegion = emitEnterRegion or stnode.isParallelDirective()
+        #emitEnterRegion = emitEnterRegion or stnode.isParallelLoopDirective() 
         emitEnterRegion = emitEnterRegion or stnode.isKernelsDirective()
         if emitEnterRegion:
             result += HIP_GPUFORT_RT_ACC_ENTER_REGION.format(indent=indent)
@@ -211,7 +211,7 @@ class Acc2HipGpufortRT(AccBackendBase):
         ## Exit region commands must come last
         emitExitRegion = stnode.isExitDirective()
         emitExitRegion = emitExitRegion or (stnode.isEndDirective() and stnode.findSubstring("kernels") and not stnode.findSubstring("loop"))
-        emitExitRegion = emitExitRegion or (stnode.isEndDirective() and stnode.findSubstring("parallel") and not stnode.findSubstring("loop"))
+        #emitExitRegion = emitExitRegion or (stnode.isEndDirective() and stnode.findSubstring("parallel") and not stnode.findSubstring("loop"))
         emitExitRegion = emitExitRegion or (stnode.isEndDirective() and stnode.findSubstring("data"))
         if emitExitRegion:
             result += HIP_GPUFORT_RT_ACC_EXIT_REGION.format(indent=indent)
@@ -252,7 +252,8 @@ class AccLoopKernel2HipGpufortRT(Acc2HipGpufortRT):
         queue = self._handleAsync(None,"")
         if not len(queue):
             result += "\n" + HIP_GPUFORT_RT_ACC_WAIT.format(indent=indent,queue=queue,asyncr="")
-        if stnode.isParallelLoopDirective() or stnode.isKernelsLoopDirective():
+        #if stnode.isParallelLoopDirective() or stnode.isKernelsLoopDirective():
+        if stnode.isKernelsLoopDirective():
            result += "\n"+HIP_GPUFORT_RT_ACC_EXIT_REGION.format(indent=indent)
 
         # wrap in ifdef if necessary

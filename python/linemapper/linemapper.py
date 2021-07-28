@@ -349,7 +349,7 @@ def __initMacros(options):
 
 def __groupModifiedRecords(records):
     """Find contiguous blocks of modified lines and blank lines between them."""
-    global LINE_GROUPING_ENABLE
+    global LINE_GROUPING_WRAP_IN_IFDEF
     global LINE_GROUPING_INCLUDE_BLANK_LINES
     
     utils.logging.logEnterFunction(LOG_PREFIX,"__groupModifiedRecords")
@@ -441,7 +441,7 @@ def __groupModifiedRecords(records):
     for i,record in enumerate(records):
         lineno = record["lineno"]
         if wasModified_(record) or hasProlog_(record) or hasEpilog_(record):
-            if not LINE_GROUPING_ENABLE or not bordersPreviousRecord_(record):
+            if not LINE_GROUPING_WRAP_IN_IFDEF or not bordersPreviousRecord_(record):
                 appendCurrentBlockIfNonEmpty_()
                 currentRecords = []
             currentRecords.append(record)
@@ -522,11 +522,12 @@ def writeModifiedFile(outfilePath,infilePath,records):
                             output += "#ifndef {0}\n{2}\n#endif\n".format(\
                               LINE_GROUPING_IFDEF_MACRO,subst,original)
                 else:
-                    output = subst + "\n"
                     if block["only_epilog"]:
-                        output = original + "\n" + output
+                        output += original + "\n" + subst + "\n"
                     elif block["only_prolog"]:
-                        output += original + "\n"
+                        output += subst + "\n" + original + "\n"
+                    else:
+                        output += subst + "\n"
                 blockId +=1
             elif linesToSkip > 0:
                 linesToSkip -= 1

@@ -56,15 +56,16 @@ def __postprocessAcc(stree,hipModuleName):
     
     utils.logging.logEnterFunction(LOG_PREFIX,"__postprocessAcc",{"hipModuleName":hipModuleName})
     
-    # acc detection
     directives = stree.findAll(filter=lambda node: isinstance(node,STAccDirective), recursively=True)
     for directive in directives:
          stnode = directive._parent.findFirst(filter=lambda child : not child._ignoreInS2STranslation and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
+         # add acc use statements
          if not stnode is None:
              indent = stnode.firstLineIndent()
              accRuntimeModuleName = RUNTIME_MODULE_NAMES[DESTINATION_DIALECT]
              if accRuntimeModuleName != None and len(accRuntimeModuleName):
-                 stnode.addToProlog("{0}use iso_c_binding\n{0}use {1}\n".format(indent,accRuntimeModuleName))
+                 stnode.addToProlog("{0}use {1}\n".format(indent,accRuntimeModuleName))
+        #if type(directive._parent
     utils.logging.logLeaveFunction(LOG_PREFIX,"__postprocessAcc")
     
 def __postprocessCuf(stree,hipModuleName):

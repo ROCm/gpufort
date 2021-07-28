@@ -420,13 +420,13 @@ class STLoopKernel(STNode):
         except:
             stream = self.streamFStr
         if self.gridFStr == None or self.blockFStr == None or LOOP_KERNEL_DEFAULT_LAUNCHER == "cpu": # use auto or cpu launcher 
-            result="""{indent}! extracted to HIP C++ file
-  {indent}CALL {0}_{launcher}({1},{2},{3})""".format(self.kernelLauncherName(),self.sharedMemFStr,stream,\
-              ",".join(self.kernelArgNames),indent=indent,launcher=LOOP_KERNEL_DEFAULT_LAUNCHER)
+            result="{indent}! extracted to HIP C++ file\n{indent}call {0}_{launcher}({1},{2},{3})".format(\
+              self.kernelLauncherName(),self.sharedMemFStr,stream,\
+                ",".join(self.kernelArgNames),indent=indent,launcher=LOOP_KERNEL_DEFAULT_LAUNCHER)
         else:
-            result="""{indent}! extracted to HIP C++ file
-  {indent}CALL {0}({1},{2},{3},{4},{5})""".format(self.kernelLauncherName(),self.gridFStr,self.blockFStr,self.sharedMemFStr,stream,\
-            ",".join(self.kernelArgNames),indent=indent)
+            result="{indent}! extracted to HIP C++ file\n{indent}call {0}({1},{2},{3},{4},{5})".format(\
+              self.kernelLauncherName(),self.gridFStr,self.blockFStr,self.sharedMemFStr,stream,\
+                ",".join(self.kernelArgNames),indent=indent)
         return result, True
 
 class STDeclaration(STNode):

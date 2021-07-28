@@ -267,7 +267,7 @@ def parseCommandLineArguments():
         ONLY_MODIFY_TRANSLATION_SOURCE = True
     # wrap modified lines in ifdef
     if args.wrapInIfdef:
-        linemapper.FILE_MODIFICATION_WRAP_IN_IFDEF = True
+        linemapper.LINE_GROUPING_WRAP_IN_IFDEF = True
     # developer: logging
     if len(args.logLevel):
         LOG_LEVEL = args.logLevel

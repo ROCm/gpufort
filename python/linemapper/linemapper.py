@@ -295,6 +295,11 @@ def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionS
             for stmt2 in statements2:
                 for stmt3 in __convertLinesToStatements([stmt2]):
                     statements3.append(stmt3)
+                    # TODO(Dominic): In case, we really need to assume that people write Fortran code
+                    # such as `module mymod; integer :: myint; end module` and we therefore might
+                    # require epilog/prolog per line, this will be the place where replace 
+                    # the string stmt3 by a dictionary.
+                    # (If we would do this, we can actually also record positional information in a next step.)
     
         #if len(includedRecords) or (not isPreprocessorDirective and regionStack1[-1]):
         record = {

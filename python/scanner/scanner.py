@@ -208,7 +208,7 @@ def parseFile(records,index,fortranFilepath):
         except Exception as e:
             print(e)
         descend_(new)
-    def Structure_leave():
+    def End():
         nonlocal currentNode
         nonlocal currentRecord
         nonlocal keepRecording
@@ -219,6 +219,18 @@ def parseFile(records,index,fortranFilepath):
             currentNode._lastStatementIndex = currentStatementNo
             currentNode.completeInit()
             keepRecording = False
+        if not keepRecording and type(currentNode) in [STProcedure,STProgram]:
+            new = STEndOrReturn(currentNode,currentRecord,currentStatementNo)
+            appendIfNotRecording_(new)
+        ascend_()
+    def Return():
+        nonlocal currentNode
+        nonlocal currentRecord
+        nonlocal keepRecording
+        logDetection_("return statement")
+        if not keepRecording and type(currentNode) in [STProcedure,STProgram]:
+            new = STEndOrReturn(currentNode,currentRecord,currentStatementNo)
+            appendIfNotRecording_(new)
         ascend_()
     def inKernelsAccRegionAndNotRecording():
         nonlocal currentNode
@@ -528,7 +540,7 @@ def parseFile(records,index,fortranFilepath):
                     if currentTokens[0].startswith("end"):
                         for kind in ["program","module","subroutine","function","type"]:
                             if isEndStatement_(currentTokens,kind):
-                                 Structure_leave()
+                                 End()
                         if isEndStatement_(currentTokens,"do"):
                             DoLoop_leave()
                     if "acc" in SOURCE_DIALECTS:
@@ -570,6 +582,8 @@ def parseFile(records,index,fortranFilepath):
                         tryToParseString("module",moduleStart)
                     elif currentTokens[0] == "program":
                         tryToParseString("program",programStart)
+                    elif currentTokens[0] == "return":
+                         Return()
                     if "function" in currentTokens:
                         tryToParseString("function",functionStart)
                     if "subroutine" in currentTokens:

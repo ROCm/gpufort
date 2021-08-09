@@ -125,8 +125,8 @@ extern "C" void {{ifacePrefix}}(dim3* grid, dim3* block, const int sharedMem, hi
   hipLaunchKernelGGL(({{krnlPrefix}}), *grid, *block, sharedMem, stream, {{kernel.kernelCallArgNames | join(",")}});
 {{ reductions_finalize(kernel,"*") }}
 
-{{ synchronize(krnlPrefix) }}
 {% if kernel.generateDebugCode %}
+  {{ synchronize(krnlPrefix) }}
   #if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_{{krnlPrefix}})
   {% for array in kernel.outputArrays %}
   {{ print_array(krnlPrefix+":gpu","out","true","true",array.name,array.rank) }}
@@ -162,8 +162,8 @@ extern "C" void {{ifacePrefix}}_auto(const int sharedMem, hipStream_t stream,{{k
   hipLaunchKernelGGL(({{krnlPrefix}}), grid, block, sharedMem, stream, {{kernel.kernelCallArgNames | join(",")}});
 {{ reductions_finalize(kernel,"") }}
 
-{{ synchronize(krnlPrefix) }}
 {% if kernel.generateDebugCode %}
+  {{ synchronize(krnlPrefix) }}
   #if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_{{krnlPrefix}})
   {% for array in kernel.outputArrays %}
   {{ print_array(krnlPrefix+":gpu","out","true","true",array.name,array.rank) }}

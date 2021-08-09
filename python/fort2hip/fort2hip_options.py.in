@@ -2,21 +2,19 @@
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 LOG_PREFIX = "fort2hip.fort2hip" # log prefix
 
-FORTRAN_MODULE_PREAMBLE=""
+FORTRAN_MODULE_PREAMBLE="" # Preamble to write at the top of the generated Fortran module file.
 
 DEFAULT_BLOCK_SIZES = { 1 : [128], 2 : [128,1,1], 3: [128,1,1] }
 DEFAULT_LAUNCH_BOUNDS = "128,1" # Default launch bounds. Empty string or None to unset."
  
-GENERATE_KERNEL_LAUNCHER = True     # Generate kernel launch routines that are callable from Fortran.
-                                    # Set to 'False' in order to categorically disable generation of kernel launch routines.
-GENERATE_CPU_KERNEL_LAUNCHER = True # Generate CPU kernel launch routines that are callable from Fortran.
-                                    # Overruled by GENERATE_KERNEL_LAUNCHER
-GENERATE_DEBUG_CODE             = True  # Generate debug routine calls into the code that can be used 
-                                        # to print out kernel argument values or device array elements and norms.
+EMIT_KERNEL_LAUNCHER     = True  # Generate kernel launch routines that are callable from Fortran.
+                                 # Set to 'False' in order to categorically disable generation of kernel launch routines.
+EMIT_CPU_IMPLEMENTATION  = False # Generate CPU kernel launch routines from Fortran loopnests. (EMIT_KERNEL_LAUNCHER must be set to True too.)
+EMIT_DEBUG_CODE          = False # Generate debug routine calls into the code that can be used 
+                                 # to print out kernel argument values or device array elements and norms.
 
-PRETTIFY_GENERATED_FORTRAN_CODE = False # Prettify the generated Fortran code with fprettify
+PRETTIFY_EMITTED_FORTRAN_CODE = False # Prettify the emitted Fortran code with fprettify
 
-PRETTIFY_GENERATED_C_CODE       = True  # Prettify the generated HIP C++ code with clang-format.
+PRETTIFY_EMITTED_C_CODE       = False  # Prettify the emitted HIP C++ code with clang-format.
 CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140, BinPackArguments: false, BinPackParameters: false, AllowAllArgumentsOnNextLine: false, AllowAllParametersOfDeclarationOnNextLine: false}\"" 
    # Format style that is passed to clang-format
-

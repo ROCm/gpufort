@@ -194,6 +194,9 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
     """
     utils.logging.logEnterFunction(LOG_PREFIX,"__updateContextFromLoopKernels")
     
+    generateLauncher    = EMIT_KERNEL_LAUNCHER
+    generateCPULauncher = generateLauncher and EMIT_CPU_IMPLEMENTATION
+    
     hipContext["haveReductions"] = False
     for stkernel in loopKernels:
         parentTag = stkernel._parent.tag()
@@ -244,7 +247,7 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
                     if len(arg["cSize"]):
                         stkernel.appendDefaultPresentVar(name)
             hipContext["haveReductions"] |= isReductionVar
-        # C LoopKernel
+        # C loop kernel
         dimensions  = kernelParseResult.numDimensions()
         block = __convertDim3(kernelParseResult.numThreadsInBlock(),dimensions)
         # TODO more logging
@@ -255,9 +258,9 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         hipKernelDict["isLoopKernel"]          = True
         hipKernelDict["modifier"]              = "__global__"
         hipKernelDict["returnType"]            = "void"
-        hipKernelDict["generateDebugCode"]     = GENERATE_DEBUG_CODE
-        hipKernelDict["generateLauncher"]      = GENERATE_KERNEL_LAUNCHER
-        hipKernelDict["generateCPULauncher"]   = GENERATE_KERNEL_LAUNCHER and GENERATE_CPU_KERNEL_LAUNCHER
+        hipKernelDict["generateDebugCode"]     = EMIT_DEBUG_CODE
+        hipKernelDict["generateLauncher"]      = generateLauncher 
+        hipKernelDict["generateCPULauncher"]   = generateCPULauncher
         if DEFAULT_LAUNCH_BOUNDS != None and len(DEFAULT_LAUNCH_BOUNDS):
             hipKernelDict["launchBounds"]      = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS)
         else:
@@ -286,7 +289,6 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         hipKernelDict["outputArrays"]          = inputArrays
         hipContext["kernels"].append(hipKernelDict)
 
-        generateLauncher   = GENERATE_KERNEL_LAUNCHER
         if generateLauncher:
             # Fortran interface with automatic derivation of stkernel launch parameters
             fInterfaceDictAuto = {}
@@ -328,45 +330,47 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
             fInterfaceDictManual["args"]    += kernelArgs
             fInterfaceDictManual["argNames"] = [arg["name"] for arg in fInterfaceDictManual["args"]]
             fInterfaceDictManual["doTest"]   = False
-
-            # External CPU interface
-            fCPUInterfaceDict = copy.deepcopy(fInterfaceDictAuto)
-            fCPUInterfaceDict["fName"] = kernelLauncherName + "_cpu" 
-            fCPUInterfaceDict["cName"] = kernelLauncherName + "_cpu"
-            fCPUInterfaceDict["doTest"] = False
-
-            # Internal CPU routine
-            fCPURoutineDict = copy.deepcopy(fInterfaceDictAuto)
-            fCPURoutineDict["fName"]    = kernelLauncherName + "_cpu1" 
-            fCPURoutineDict["cName"]    = kernelLauncherName + "_cpu1"
             
-            # rename copied modified args
-            for i,val in enumerate(fCPURoutineDict["args"]):
-                varName = val["name"]
-                if val.get("isArray",False):
-                    fCPURoutineDict["args"][i]["name"] = "d_{}".format(varName)
-
-            fCPURoutineDict["argNames"] = [a["name"] for a in fCPURoutineDict["args"]]
-            fCPURoutineDict["args"]    += localCpuRoutineArgs # ordering important
-            # add mallocs, memcpys , frees
-            prolog = ""
-            epilog = "\n"
-            for arg in localCpuRoutineArgs:
-                 if len(arg.get("bounds","")): # is local Fortran array
-                   localArray = arg["name"]
-                   # device to host
-                   prolog += "allocate({var}({bounds}))\n".format(var=localArray,bounds=arg["bounds"])
-                   prolog += "CALL hipCheck(hipMemcpy(c_loc({var}),d_{var},{bpe}_8*SIZE({var}),hipMemcpyDeviceToHost))\n".format(var=localArray,bpe=arg["bytesPerElement"])
-                   # host to device
-                   epilog += "CALL hipCheck(hipMemcpy(d_{var},c_loc({var}),{bpe}_8*SIZE({var}),hipMemcpyHostToDevice))\n".format(var=localArray,bpe=arg["bytesPerElement"])
-                   epilog += "deallocate({var})\n".format(var=localArray)
-            fCPURoutineDict["body"] = prolog + fSnippet.rstrip("\n") + epilog
-
-            # Add all definitions to context
             fContext["interfaces"].append(fInterfaceDictManual)
             fContext["interfaces"].append(fInterfaceDictAuto)
-            fContext["interfaces"].append(fCPUInterfaceDict)
-            fContext["routines"].append(fCPURoutineDict)
+
+            if generateCPULauncher:
+                # External CPU interface
+                fCPUInterfaceDict = copy.deepcopy(fInterfaceDictAuto)
+                fCPUInterfaceDict["fName"] = kernelLauncherName + "_cpu" 
+                fCPUInterfaceDict["cName"] = kernelLauncherName + "_cpu"
+                fCPUInterfaceDict["doTest"] = False
+
+                # Internal CPU routine
+                fCPURoutineDict = copy.deepcopy(fInterfaceDictAuto)
+                fCPURoutineDict["fName"]    = kernelLauncherName + "_cpu1" 
+                fCPURoutineDict["cName"]    = kernelLauncherName + "_cpu1"
+                
+                # rename copied modified args
+                for i,val in enumerate(fCPURoutineDict["args"]):
+                    varName = val["name"]
+                    if val.get("isArray",False):
+                        fCPURoutineDict["args"][i]["name"] = "d_{}".format(varName)
+
+                fCPURoutineDict["argNames"] = [a["name"] for a in fCPURoutineDict["args"]]
+                fCPURoutineDict["args"]    += localCpuRoutineArgs # ordering important
+                # add mallocs, memcpys , frees
+                prolog = ""
+                epilog = "\n"
+                for arg in localCpuRoutineArgs:
+                     if len(arg.get("bounds","")): # is local Fortran array
+                       localArray = arg["name"]
+                       # device to host
+                       prolog += "allocate({var}({bounds}))\n".format(var=localArray,bounds=arg["bounds"])
+                       prolog += "CALL hipCheck(hipMemcpy(c_loc({var}),d_{var},{bpe}_8*SIZE({var}),hipMemcpyDeviceToHost))\n".format(var=localArray,bpe=arg["bytesPerElement"])
+                       # host to device
+                       epilog += "CALL hipCheck(hipMemcpy(d_{var},c_loc({var}),{bpe}_8*SIZE({var}),hipMemcpyHostToDevice))\n".format(var=localArray,bpe=arg["bytesPerElement"])
+                       epilog += "deallocate({var})\n".format(var=localArray)
+                fCPURoutineDict["body"] = prolog + fSnippet.rstrip("\n") + epilog
+
+                # Add all definitions to context
+                fContext["interfaces"].append(fCPUInterfaceDict)
+                fContext["routines"].append(fCPURoutineDict)
     
     utils.logging.logLeaveFunction(LOG_PREFIX,"__updateContextFromLoopKernels")
 
@@ -376,12 +380,16 @@ def __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fConte
     deviceProcedures is a list of STProcedure objects.
     hipContext, fContext are inout arguments for generating C/Fortran files, respectively.
     """
+    global EMIT_KERNEL_LAUNCHER
+    global EMIT_CPU_IMPLEMENTATION
+    global EMIT_DEBUG_CODE
+
     utils.logging.logEnterFunction(LOG_PREFIX,"__updateContextFromDeviceProcedures")
     
     for stprocedure in deviceProcedures:
-        scope         = scoper.createScope(index,stprocedure.tag())
-        indexRecord   = stprocedure._indexRecord
-        isFunction    = indexRecord["kind"] == "function"
+        scope       = scoper.createScope(index,stprocedure.tag())
+        indexRecord = stprocedure._indexRecord
+        isFunction  = indexRecord["kind"] == "function"
         
         fBody = stprocedure.getBody()
         
@@ -402,7 +410,7 @@ def __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fConte
         # TODO: look up functions and subroutines called internally and supply to parseResult before calling cStr()
     
         ## general
-        generateLauncher   = GENERATE_KERNEL_LAUNCHER and stprocedure.isKernelSubroutine()
+        generateLauncher   = EMIT_KERNEL_LAUNCHER and stprocedure.isKernelSubroutine()
         kernelName         = indexRecord["name"]
         kernelLauncherName = "launch_" + kernelName
         loopVars = []; localLValues = []
@@ -422,17 +430,17 @@ def __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fConte
 
         # C routine and C stprocedure launcher
         hipKernelDict = {}
-        hipKernelDict["generateDebugCode"]     = GENERATE_DEBUG_CODE
-        hipKernelDict["generateLauncher"]      = generateLauncher
-        hipKernelDict["generateCPULauncher"]   = False
-        hipKernelDict["modifier"]              = "__global__" if stprocedure.isKernelSubroutine() else "__device__"
-        hipKernelDict["launchBounds"]          = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS) if stprocedure.isKernelSubroutine() else ""
-        hipKernelDict["returnType"]            = resultType
-        hipKernelDict["isLoopKernel"]          = False
-        hipKernelDict["kernelName"]            = kernelName
-        hipKernelDict["macros"]                = macros
-        hipKernelDict["cBody"]                 = parseResult.cStr()
-        hipKernelDict["fBody"]                 = "".join(stprocedure.lines())
+        hipKernelDict["generateDebugCode"]   = EMIT_DEBUG_CODE
+        hipKernelDict["generateLauncher"]    = generateLauncher
+        hipKernelDict["generateCPULauncher"] = False
+        hipKernelDict["modifier"]            = "__global__" if stprocedure.isKernelSubroutine() else "__device__"
+        hipKernelDict["launchBounds"]        = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS) if stprocedure.isKernelSubroutine() else ""
+        hipKernelDict["returnType"]          = resultType
+        hipKernelDict["isLoopKernel"]        = False
+        hipKernelDict["kernelName"]          = kernelName
+        hipKernelDict["macros"]              = macros
+        hipKernelDict["cBody"]               = parseResult.cStr()
+        hipKernelDict["fBody"]               = "".join(stprocedure.lines())
         hipKernelDict["kernelArgs"] = []
         # device procedures take all C args as reference or pointer
         # kernel proceduers take all C args as value or (device) pointer
@@ -526,7 +534,7 @@ def __renderTemplates(outputFilePrefix,hipContext,fContext):
     #pprint.pprint(hipContext)
     hipImplementationFilePath = "{0}.kernels.hip.cpp".format(outputFilePrefix)
     model.HipImplementationModel().generateCode(hipImplementationFilePath,hipContext)
-    if PRETTIFY_GENERATED_C_CODE:
+    if PRETTIFY_EMITTED_C_CODE:
         utils.fileutils.prettifyCFile(hipImplementationFilePath,CLANG_FORMAT_STYLE)
     msg = "created HIP C++ implementation file: ".ljust(40) + hipImplementationFilePath
     utils.logging.logInfo(LOG_PREFIX,"__renderTemplates",msg)
@@ -547,7 +555,7 @@ def __renderTemplates(outputFilePrefix,hipContext,fContext):
         # Fortran interface/testing module
         moduleFilePath = "{0}.kernels.f08".format(outputFilePrefix)
         model.InterfaceModuleModel().generateCode(moduleFilePath,fContext)
-        if PRETTIFY_GENERATED_FORTRAN_CODE:
+        if PRETTIFY_EMITTED_FORTRAN_CODE:
             utils.fileutils.prettifyFFile(moduleFilePath)
         msg = "created interface/testing module: ".ljust(40) + moduleFilePath
         utils.logging.logInfo(LOG_PREFIX,"__renderTemplates",msg)
@@ -557,7 +565,7 @@ def __renderTemplates(outputFilePrefix,hipContext,fContext):
            # Fortran test program
            testFilePath = "{0}.kernels.TEST.f08".format(outputFilePrefix)
            model.InterfaceModuleTestModel().generateCode(testFilePath,fContext)
-           if PRETTIFY_GENERATED_FORTRAN_CODE:
+           if PRETTIFY_EMITTED_FORTRAN_CODE:
                utils.fileutils.prettifyFFile(testFilePath)
            msg = "created interface module test file: ".ljust(40) + testFilePath
            utils.logging.logInfo(LOG_PREFIX,"__renderTemplates",msg)

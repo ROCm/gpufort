@@ -106,8 +106,7 @@
 
 {% if kernel.generateLauncher -%}
 extern "C" void {{ifacePrefix}}(dim3* grid, dim3* block, const int sharedMem, hipStream_t stream,{{kernel.interfaceArgs | join(",")}}) {
-{{ reductions_prepare(kernel,"*") }}
-{% if kernel.generateDebugCode %}
+{{ reductions_prepare(kernel,"*") }}{% if kernel.generateDebugCode %}
   #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{krnlPrefix}})
   std::cout << "{{krnlPrefix}}:gpu:args:";
   GPUFORT_PRINT_ARGS((*grid).x,(*grid).y,(*grid).z,(*block).x,(*block).y,(*block).z,sharedMem,stream,{{kernel.kernelCallArgNames | join(",")}});
@@ -120,11 +119,10 @@ extern "C" void {{ifacePrefix}}(dim3* grid, dim3* block, const int sharedMem, hi
   {% for array in kernel.inputArrays %}
   {{ print_array(krnlPrefix+":gpu","in","false","true",array.name,array.rank) }}
   {% endfor %}
-  #endif{% endif %}
+  #endif{% endif +%}
   // launch kernel
   hipLaunchKernelGGL(({{krnlPrefix}}), *grid, *block, sharedMem, stream, {{kernel.kernelCallArgNames | join(",")}});
 {{ reductions_finalize(kernel,"*") }}
-
 {% if kernel.generateDebugCode %}
   {{ synchronize(krnlPrefix) }}
   #if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_{{krnlPrefix}})
@@ -142,8 +140,7 @@ extern "C" void {{ifacePrefix}}(dim3* grid, dim3* block, const int sharedMem, hi
 extern "C" void {{ifacePrefix}}_auto(const int sharedMem, hipStream_t stream,{{kernel.interfaceArgs | join(",")}}) {
 {{ make_block(kernel) }}
 {{ make_grid(kernel) }}   
-{{ reductions_prepare(kernel,"") }}
-{% if kernel.generateDebugCode %}
+{{ reductions_prepare(kernel,"") }}{% if kernel.generateDebugCode %}
   #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{krnlPrefix}})
   std::cout << "{{krnlPrefix}}:gpu:args:";
   GPUFORT_PRINT_ARGS(grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedMem,stream,{{kernel.kernelCallArgNames | join(",")}});
@@ -156,12 +153,10 @@ extern "C" void {{ifacePrefix}}_auto(const int sharedMem, hipStream_t stream,{{k
   {% for array in kernel.inputArrays %}
   {{ print_array(krnlPrefix+":gpu","in","false","true",array.name,array.rank) }}
   {% endfor %}
-  #endif
-{% endif %}
+  #endif{% endif +%}
   // launch kernel
   hipLaunchKernelGGL(({{krnlPrefix}}), grid, block, sharedMem, stream, {{kernel.kernelCallArgNames | join(",")}});
 {{ reductions_finalize(kernel,"") }}
-
 {% if kernel.generateDebugCode %}
   {{ synchronize(krnlPrefix) }}
   #if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_{{krnlPrefix}})
@@ -193,11 +188,9 @@ extern "C" void {{ifacePrefix}}_cpu(const int sharedMem, hipStream_t stream,{{ke
   {% for array in kernel.inputArrays %}
   {{ print_array(krnlPrefix+":cpu","in","false","true",array.name,array.rank) }}
   {% endfor %}
-  #endif
-{% endif %}
+  #endif{% endif +%}
   // launch kernel
   {{ifacePrefix}}_cpu1(sharedMem, stream, {{kernel.cpuKernelCallArgNames | join(",")}});
-
 {% if kernel.generateDebugCode %}
   #if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_{{krnlPrefix}})
   {% for array in kernel.outputArrays %}
@@ -210,7 +203,7 @@ extern "C" void {{ifacePrefix}}_cpu(const int sharedMem, hipStream_t stream,{{ke
   #endif
 {% endif %}
 }{% endif %}
-{% endif %}
+{% endif +%}
 // END {{krnlPrefix}}
 
 {% endfor %}{# kernels #}

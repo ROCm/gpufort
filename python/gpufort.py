@@ -152,7 +152,8 @@ def parseCommandLineArguments():
     global ONLY_CREATE_GPUFORT_MODULE_FILES
     global SKIP_CREATE_GPUFORT_MODULE_FILES
     global ONLY_MODIFY_TRANSLATION_SOURCE
-    global ONLY_GENERATE_KERNELS
+    global ONLY_EMIT_KERNELS_AND_LAUNCHERS
+    global ONLY_EMIT_KERNELS
     global POST_CLI_ACTIONS
     global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
     global INCLUDE_DIRS
@@ -161,23 +162,28 @@ def parseCommandLineArguments():
     parser = argparse.ArgumentParser(description="S2S translation tool for CUDA Fortran and Fortran+X")
     
     parser.add_argument("input",help="The input file.",type=str,nargs="?",default=None)
-    parser.add_argument("-c,--only-create-mod-files",dest="onlyCreateGpufortModuleFiles",action="store_true",help="Only generate GPUFORT modules files. No other output is generated.")
-    parser.add_argument("-s,--skip-create-mod-files",dest="skipCreateGpufortModuleFiles",action="store_true",help="Skip generating GPUFORT modules, e.g. if they already exist. Mutually exclusive")
-    parser.add_argument("-o,--output", help="The output file. Interface module and HIP C++ implementation are named accordingly. GPUFORT module files are generated too.", default=sys.stdout, required=False, type=argparse.FileType("w"))
+    parser.add_argument("-c,--only-create-mod-files",dest="onlyCreateGpufortModuleFiles",action="store_true",help="Only create GPUFORT modules files. No other output is created.")
+    parser.add_argument("-s,--skip-create-mod-files",dest="skipCreateGpufortModuleFiles",action="store_true",help="Skip creating GPUFORT modules, e.g. if they already exist. Mutually exclusive with '-c' option.")
+    parser.add_argument("-o,--output", help="The output file. Interface module and HIP C++ implementation are named accordingly. GPUFORT module files are created too.", default=sys.stdout, required=False, type=argparse.FileType("w"))
     parser.add_argument("--working-dir",dest="workingDir",default=os.getcwd(),type=str,help="Set working directory.") # shadow arg
-    parser.add_argument("-d,--search-dirs", dest="searchDirs", help="Module search dir", nargs="*",  required=False, default=[], type=str)
+    parser.add_argument("-d,--search-dirs", dest="searchDirs", help="Module search dir. Alternative -I<path> can be used (multiple times).", nargs="*",  required=False, default=[], type=str)
     parser.add_argument("-w,--wrap-in-ifdef",dest="wrapInIfdef",action="store_true",help="Wrap converted lines into ifdef in host code.")
     parser.add_argument("-E,--destination-dialect",dest="destinationDialect",default=None,type=str,help="One of: {}".format(", ".join(scanner.SUPPORTED_DESTINATION_DIALECTS)))
-    parser.add_argument("-m,--only-modify-host-code",dest="onlyModifyTranslationSource",action="store_true",help="Only modify host code; do not generate kernels.")
-    group_hip = parser.add_argument_group('Fortran to HIP translation')
-    group_hip.add_argument("-k,--only-generate-kernels",dest="onlyGenerateKernels",action="store_true",help="Only generate kernels; do not modify host code.")
-    group_cuf = parser.add_argument_group('CUDA Fortran')
-    group_cuf.add_argument("--cublas-v2",dest="cublasV2",action="store_true",help="Assume cublas v2 function signatures that use a handle. Overrides config value.")
     # config options: shadow arguments that are actually taken care of by raw argument parsing
     group_config = parser.add_argument_group('Config file')
     group_config.add_argument("--print-config-defaults",dest="printConfigDefaults",action="store_true",help="Print config defaults. "+\
             "Config values can be overriden by providing a config file. A number of config values can be overwritten via this CLI.")
     group_config.add_argument("--config-file",default=None,type=argparse.FileType("r"),dest="configFile",help="Provide a config file.")
+    # fort2hip
+    group_fort2hip = parser.add_argument_group('Fortran-to-HIP')
+    group_fort2hip.add_argument("-m,--only-modify-host-code",dest="onlyModifyTranslationSource",action="store_true",help="Only modify host code; do not generate kernels [default=False].")
+    group_fort2hip.add_argument("-k,--only-emit-kernels-and-launchers",dest="onlyEmitKernelsAndLaunchers",action="store_true",help="Only emit kernels and kernel launchers; do not modify host code [default: (default) config value]..")
+    group_fort2hip.add_argument("-K,--only-emit-kernels",dest="onlyEmitKernels",action="store_true",help="Only emit kernels; do not emit kernel launchers and do not modify host code [default: (default) config value].")
+    group_fort2hip.add_argument("-C,--emit-cpu-impl",dest="emitCPUImplementation",action="store_true",help="Per detected loop kernel, also extract the CPU implementation  [default: (default) config value].")
+    group_fort2hip.add_argument("-G,--emit-debug-code",dest="emitDebugCode",action="store_true",help="Generate debug code into the kernel launchers that allows to print kernel arguments, launch parameters, input/output array norms and elements, or to synchronize a kernel [default: (default) config value].")
+    # CUDA Fortran
+    group_cuf = parser.add_argument_group('CUDA Fortran')
+    group_cuf.add_argument("--cublas-v2",dest="cublasV2",action="store_true",help="Assume cublas v2 function signatures that use a handle. Overrides config value.")
     # developer options
     group_developer = parser.add_argument_group('Developer options (logging, profiling, ...)')
     group_developer.add_argument("-v",dest="verbose",required=False,action="store_true",default="",help="Print all log messages to error output stream too.")
@@ -187,7 +193,9 @@ def parseCommandLineArguments():
     group_developer.add_argument("--prof-num-functions",dest="profilingNumFunctions",required=False,type=int,default=50,help="The number of python functions to include into the summary [default=50].")
 
     parser.set_defaults(printConfigDefaults=False,dumpIndex=False,\
-      wrapInIfdef=False,cublasV2=False,onlyGenerateKernels=False,onlyModifyTranslationSource=False,\
+      wrapInIfdef=False,cublasV2=False,
+      onlyEmitKernelsAndLaunchers=False,onlyEmitKernels=False,onlyModifyTranslationSource=False,\
+      emitCPUImplementation=False,emitDebugCode=False,\
       onlyCreateGpufortModuleFiles=False,skipCreateGpufortModuleFiles=False,verbose=False,\
       profilingEnable=False)
     args, unknownArgs = parser.parse_known_args()
@@ -232,8 +240,10 @@ def parseCommandLineArguments():
         print("ERROR: "+msg,file=sys.stderr)
         sys.exit(2)
     # mutually exclusive arguments
-    if args.onlyGenerateKernels and args.onlyModifyTranslationSource:
-        msg = "switches '--only-generate-kernels' and 'only-modify-host-code' are mutually exclusive."
+    if ( int(args.onlyEmitKernelsAndLaunchers) +\
+         int(args.onlyEmitKernels) +\
+         int(args.onlyModifyTranslationSource) )  > 1:
+        msg = "switches '--only-emit-kernels', '--only-emit-kernels-and-launchers', and 'only-modify-host-code' are mutually exclusive."
         print("ERROR: "+msg,file=sys.stderr)
         sys.exit(2)
     # check if input is set
@@ -260,9 +270,12 @@ def parseCommandLineArguments():
         ONLY_CREATE_GPUFORT_MODULE_FILES = True
     if args.skipCreateGpufortModuleFiles: 
         SKIP_CREATE_GPUFORT_MODULE_FILES = True
+    # fort2hip
     # only generate kernels / modify source 
-    if args.onlyGenerateKernels:
-        ONLY_GENERATE_KERNELS = True
+    if args.onlyEmitKernelsAndLaunchers:
+        ONLY_EMIT_KERNELS_AND_LAUNCHERS = True
+    if args.onlyEmitKernels:
+        ONLY_EMIT_KERNELS = True
     if args.onlyModifyTranslationSource:
         ONLY_MODIFY_TRANSLATION_SOURCE = True
     # wrap modified lines in ifdef
@@ -340,6 +353,15 @@ if __name__ == "__main__":
     #
     index = createIndex(INCLUDE_DIRS,defines,inputFilepath)
     if not ONLY_CREATE_GPUFORT_MODULE_FILES:
+        # configure fort2hip
+        if ONLY_EMIT_KERNELS_AND_LAUNCHERS:
+            fort2hip.EMIT_KERNEL_LAUNCHER = True
+        if ONLY_EMIT_KERNELS:
+            fort2hip.EMIT_KERNEL_LAUNCHER = False
+        if args.emitCPUImplementation:
+            fort2hip.EMIT_CPU_IMPLEMENTATION = True
+        if args.emitDebugCode:
+            fort2hip.EMIT_DEBUG_CODE = True
         records = linemapper.readFile(inputFilepath,defines)
         stree   = scanner.parseFile(records,index,inputFilepath)    
  
@@ -354,7 +376,7 @@ if __name__ == "__main__":
           generateCode=not ONLY_MODIFY_TRANSLATION_SOURCE)
         
         # modify original file
-        if not ONLY_GENERATE_KERNELS:
+        if not (ONLY_EMIT_KERNELS or ONLY_EMIT_KERNELS_AND_LAUNCHERS):
             __translateSource(inputFilepath,stree,records,index) 
     #
     if PROFILING_ENABLE:

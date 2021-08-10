@@ -121,7 +121,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentNode
         nonlocal currentRecord
         utils.logging.logDebug2(LOG_PREFIX,"parseFile","[current-node={}:{}] found {} in line {}: '{}'".format(\
-                currentNode._kind,currentNode._name,kind,currentRecord["lineno"],currentRecord["lines"][0]))
+                currentNode.kind,currentNode.name,kind,currentRecord["lineno"],currentRecord["lines"][0]))
 
     def appendIfNotRecording_(new):
         nonlocal currentNode
@@ -135,12 +135,12 @@ def parseFile(records,index,fortranFilepath):
         currentNode.append(new)
         currentNode=new
         
-        currentNodeId = currentNode._kind
-        if currentNode._name != None:
-            currentNodeId += " '"+currentNode._name+"'"
-        parentNodeId = currentNode._parent._kind
-        if currentNode._parent._name != None:
-            parentNodeId += ":"+currentNode._parent._name
+        currentNodeId = currentNode.kind
+        if currentNode.name != None:
+            currentNodeId += " '"+currentNode.name+"'"
+        parentNodeId = currentNode._parent.kind
+        if currentNode._parent.name != None:
+            parentNodeId += ":"+currentNode._parent.name
 
         utils.logging.logDebug(LOG_PREFIX,"parseFile","[current-node={0}] enter {1} in line {2}: '{3}'".format(\
           parentNodeId,currentNodeId,currentRecord["lineno"],currentRecord["lines"][0]))
@@ -151,12 +151,12 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentStatementNo
         assert not currentNode._parent is None, "In file {}: parent of {} is none".format(currentFile,type(currentNode))
         
-        currentNodeId = currentNode._kind
-        if currentNode._name != None:
-            currentNodeId += " '"+currentNode._name+"'"
-        parentNodeId = currentNode._parent._kind
-        if currentNode._parent._name != None:
-            parentNodeId += ":"+currentNode._parent._name
+        currentNodeId = currentNode.kind
+        if currentNode.name != None:
+            currentNodeId += " '"+currentNode.name+"'"
+        parentNodeId = currentNode._parent.kind
+        if currentNode._parent.name != None:
+            parentNodeId += ":"+currentNode._parent.name
         
         utils.logging.logDebug(LOG_PREFIX,"parseFile","[current-node={0}] leave {1} in line {2}: '{3}'".format(\
           parentNodeId,currentNodeId,currentRecord["lineno"],currentRecord["lines"][0]))
@@ -292,7 +292,7 @@ def parseFile(records,index,fortranFilepath):
         logDetection_("use statement")
         new = STUseStatement(currentNode,currentRecord,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
-        new._name = translator.makeFStr(tokens[1]) # just get the name, ignore specific includes
+        new.name = translator.makeFStr(tokens[1]) # just get the name, ignore specific includes
         appendIfNotRecording_(new)
     def PlaceHolder(tokens):
         nonlocal translationEnabled
@@ -398,7 +398,7 @@ def parseFile(records,index,fortranFilepath):
         elif new.isParallelLoopDirective() or new.isKernelsLoopDirective() or\
              (not new.isEndDirective() and new.isParallelDirective()):
             new = STAccLoopKernel(currentNode,currentRecord,currentStatementNo,directiveNo)
-            new._kind = "acc-compute-construct"
+            new.kind = "acc-compute-construct"
             new._ignoreInS2STranslation = not translationEnabled
             new._doLoopCtrMemorised=doLoopCtr
             descend_(new)  # descend also appends 
@@ -419,7 +419,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal directiveNo
         logDetection_("CUDA Fortran loop kernel directive")
         new = STCufLoopKernel(currentNode,currentRecord,currentStatementNo,directiveNo)
-        new._kind = "cuf-kernel-do"
+        new.kind = "cuf-kernel-do"
         new._ignoreInS2STranslation = not translationEnabled
         new._doLoopCtrMemorised=doLoopCtr
         directiveNo += 1

@@ -371,13 +371,12 @@ if __name__ == "__main__":
         stree   = scanner.parseFile(records,index,inputFilepath)    
  
         # extract kernels
-        outputFilePrefix = ".".join(inputFilepath.split(".")[:-1])
-        basename         =  os.path.basename(outputFilePrefix)
+        outputFilePrefix = os.path.dirname(inputFilepath)
         if "hip" in scanner.DESTINATION_DIALECT: 
             kernelsToConvertToHip = ["*"]
         else:
             kernelsToConvertToHip = scanner.KERNELS_TO_CONVERT_TO_HIP
-        fort2hip.createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename,\
+        fort2hip.createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,\
           generateCode=not ONLY_MODIFY_TRANSLATION_SOURCE)
         
         # modify original file

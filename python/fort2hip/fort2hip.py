@@ -502,7 +502,7 @@ def __renderTemplates(outputFilePrefix,hipContext,fContext):
     
     # HIP kernel file
     #pprint.pprint(hipContext)
-    hipImplementationFilePath = "{0}.kernels.hip.cpp".format(outputFilePrefix)
+    hipImplementationFilePath = "{0}.hip.cpp".format(outputFilePrefix)
     model.HipImplementationModel().generateCode(hipImplementationFilePath,hipContext)
     if PRETTIFY_EMITTED_C_CODE:
         utils.fileutils.prettifyCFile(hipImplementationFilePath,CLANG_FORMAT_STYLE)
@@ -523,7 +523,7 @@ def __renderTemplates(outputFilePrefix,hipContext,fContext):
 
     if len(fContext["interfaces"]):
         # Fortran interface/testing module
-        moduleFilePath = "{0}.kernels.f08".format(outputFilePrefix)
+        moduleFilePath = "{0}.f08".format(outputFilePrefix)
         model.InterfaceModuleModel().generateCode(moduleFilePath,fContext)
         if PRETTIFY_EMITTED_FORTRAN_CODE:
             utils.fileutils.prettifyFFile(moduleFilePath)
@@ -533,7 +533,7 @@ def __renderTemplates(outputFilePrefix,hipContext,fContext):
         # TODO disable tests for now
         if False:
            # Fortran test program
-           testFilePath = "{0}.kernels.TEST.f08".format(outputFilePrefix)
+           testFilePath = "{0}.TEST.f08".format(outputFilePrefix)
            model.InterfaceModuleTestModel().generateCode(testFilePath,fContext)
            if PRETTIFY_EMITTED_FORTRAN_CODE:
                utils.fileutils.prettifyFFile(testFilePath)
@@ -544,7 +544,7 @@ def __renderTemplates(outputFilePrefix,hipContext,fContext):
 
 # API
 
-def createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename,generateCode):
+def createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,generateCode):
     """
     :param stree:        [inout] the scanner tree holds nodes that store the Fortran code lines of the kernels
     :param generateCode: generate code or just feed kernel signature information
@@ -557,7 +557,6 @@ def createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename
     utils.logging.logEnterFunction(LOG_PREFIX,"createHipKernels",\
       {"kernelsToConvertToHip":" ".join(kernelsToConvertToHip),\
        "outputFilePrefix": outputFilePrefix,\
-       "basename": basename,\
        "generateCode":generateCode})
 
     if not len(kernelsToConvertToHip):
@@ -572,32 +571,35 @@ def createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,basename
                 kernel.kernelName() in kernelsToConvertToHip
         return condition1 and condition2
 
-    # Context for HIP implementation
-    hipContext = {}
-    hipContext["includes"] = [ "hip/hip_runtime.h", "hip/hip_complex.h" ]
-    hipContext["kernels"] = []
-    
-    # Context for Fortran interface/implementation
-    fContext = {}
-    moduleName = basename.replace(".","_").replace("-","_") + "_kernels"
-    fContext["name"]       = moduleName
-    fContext["preamble"]   = FORTRAN_MODULE_PREAMBLE
-    fContext["used"]       = ["hipfort","hipfort_check"]
-    fContext["interfaces"] = []
-    fContext["routines"]   = []
+    # TODO create one file per module/program
+    programOrModules = stree.findAll(filter=lambda child: type(child) in [scanner.STProgram,scanner.STModule], recursively=False)
+    for stmodule in programOrModules:
+         hipModuleName = stmodule.name + "_hip"
+         # extract kernels
+         loopKernels      = stmodule.findAll(filter=lambda child: isinstance(child, scanner.STLoopKernel) and select(child), recursively=True)
+         deviceProcedures = stmodule.findAll(filter=lambda child: type(child) is scanner.STProcedure and child.mustBeAvailableOnDevice() and select(child), recursively=True)
 
-    # extract kernels
-    loopKernels      = stree.findAll(filter=lambda child: isinstance(child, scanner.STLoopKernel) and select(child), recursively=True)
-    deviceProcedures = stree.findAll(filter=lambda child: type(child) is scanner.STProcedure and child.mustBeAvailableOnDevice() and select(child), recursively=True)
-
-    if (len(loopKernels) or len(deviceProcedures)):
-        utils.logging.logDebug2(LOG_PREFIX,"createHipKernels",\
-          "detected loop kernels: {}; detected device subprograms {}".format(\
-          len(loopKernels),len(deviceProcedures)))
-        
-        __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext)
-        __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext)
-        if generateCode:
-            __renderTemplates(outputFilePrefix,hipContext,fContext)
+         if (len(loopKernels) or len(deviceProcedures)):
+             utils.logging.logDebug2(LOG_PREFIX,"createHipKernels",\
+               "detected loop kernels: {}; detected device subprograms {}".format(\
+               len(loopKernels),len(deviceProcedures)))
+             
+             # Context for HIP implementation
+             hipContext = {}
+             hipContext["includes"] = [ "hip/hip_runtime.h", "hip/hip_complex.h" ]
+             hipContext["kernels"] = []
+             
+             # Context for Fortran interface/implementation
+             fContext = {}
+             fContext["name"]       = hipModuleName
+             fContext["preamble"]   = FORTRAN_MODULE_PREAMBLE
+             fContext["used"]       = ["hipfort","hipfort_check"]
+             fContext["interfaces"] = []
+             fContext["routines"]   = []
+             
+             __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext)
+             __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext)
+             if generateCode:
+                 __renderTemplates(outputFilePrefix+"/"+hipModuleName,hipContext,fContext)
 
     utils.logging.logLeaveFunction(LOG_PREFIX,"createHipKernels")

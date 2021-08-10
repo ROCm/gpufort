@@ -26,24 +26,24 @@ class Tagged:
         """
         Construct a tag that can be used to search the index.
         """
-        result = self._name.lower()
+        result = self.name.lower()
         def recursiveParentLookup(curr):
             nonlocal result
             if type(curr) != STRoot:
-                result = curr._name.lower() + ":" + result
+                result = curr.name.lower() + ":" + result
                 recursiveParentLookup(curr._parent)
         recursiveParentLookup(self._parent)        
         return result
 
 class STNode:
     def __init__(self,parent,firstRecord,firstStatementIndex=0):
-        self._records = []
+        self.name                    = None
+        self.kind                    = None
+        self._records                = []
         if firstRecord != None:
             self._records.append(firstRecord)
         self._firstStatementIndex    = firstStatementIndex
         self._lastStatementIndex     = firstStatementIndex # inclusive
-        self._name                   = None
-        self._kind                   = None
         self._children               = []
         self._parent                 = parent
         self._ignoreInS2STranslation = False 
@@ -267,14 +267,14 @@ class STRoot(STNode):
 class STModule(STNode,Tagged):
     def __init__(self,name,parent,firstRecord,firstRecordFirstStatement):
         STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
-        self._name = name.lower()
-        self._kind = "module"
+        self.name = name.lower()
+        self.kind = "module"
 
 class STProgram(STNode,Tagged):
     def __init__(self,name,parent,firstRecord,firstRecordFirstStatement):
         STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
-        self._name = name.lower()
-        self._kind = "program"
+        self.name = name.lower()
+        self.kind = "program"
 
 class STUseStatement(STNode):
     def __init__(self,parent,firstRecord,firstRecordFirstStatement):
@@ -296,13 +296,13 @@ class STUseStatement(STNode):
 class STPlaceHolder(STNode):
     def __init__(self,parent,firstRecord,firstRecordFirstStatement):
         STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
-        self._name = None
+        self.name = None
 
 class STProcedure(STNode,Tagged):
     def __init__(self,name,kind,parent,firstRecord,firstRecordFirstStatement,index):
         STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
-        self._name = name
-        self._kind = kind
+        self.name = name
+        self.kind = kind
         # check attributes
         self._indexRecord, _ = scoper.searchIndexForSubprogram(index,self._parent.tag(),name)
     def __extractBody(self):
@@ -409,7 +409,7 @@ class STLoopKernel(STNode):
         self.__originalStatements = self.statements()
     def kernelName(self):
         """Derive a name for the kernel"""
-        return LOOP_KERNEL_NAME_TEMPLATE.format(parent=self._parent._name.lower(),lineno=self.minLineno(),hash=self.__hash())
+        return LOOP_KERNEL_NAME_TEMPLATE.format(parent=self._parent.name.lower(),lineno=self.minLineno(),hash=self.__hash())
     def kernelLauncherName(self):
         return "launch_{}".format(self.kernelName())
     def getSnippet(self):

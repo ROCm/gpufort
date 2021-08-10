@@ -15,6 +15,13 @@ import utils.fileutils
 
 INDEXER_ERROR_CODE = 1000
 
+def GET_DEFAULT_BLOCK_DIMS(kernelName,dim):
+    block_dims = { 1 : [128], 2 : [128,1,1], 3: [128,1,1] }
+    return block_dims[dim]
+
+def GET_DEFAULT_LAUNCH_BOUNDS(kernelName):
+    return None
+
 fort2hipDir = os.path.dirname(__file__)
 exec(open("{0}/fort2hip_options.py.in".format(fort2hipDir)).read())
 
@@ -252,8 +259,8 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         block = __convertDim3(kernelParseResult.numThreadsInBlock(),dimensions)
         # TODO more logging
         if not len(block):
-            defaultBlockSize = DEFAULT_BLOCK_SIZES 
-            block = __convertDim3(defaultBlockSize[dimensions],dimensions)
+            defaultBlockSize = GET_BLOCK_DIMS(kernelName,dimensions)
+            block = __convertDim3(defaultBlockSize,dimensions)
         hipKernelDict = {}
         hipKernelDict["isLoopKernel"]          = True
         hipKernelDict["modifier"]              = "__global__"
@@ -261,8 +268,10 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         hipKernelDict["generateDebugCode"]     = EMIT_DEBUG_CODE
         hipKernelDict["generateLauncher"]      = generateLauncher 
         hipKernelDict["generateCPULauncher"]   = generateCPULauncher
-        if DEFAULT_LAUNCH_BOUNDS != None and len(DEFAULT_LAUNCH_BOUNDS):
-            hipKernelDict["launchBounds"]      = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS)
+        
+        launchBounds = GET_LAUNCH_BOUNDS(kernelName)
+        if launchBounds != None and len(launchBounds):
+            hipKernelDict["launchBounds"]      = "__launch_bounds__({})".format(launchBounds)
         else:
             hipKernelDict["launchBounds"]      = ""
         hipKernelDict["size"]                  = __convertDim3(kernelParseResult.problemSize(),dimensions,doFilter=False)
@@ -430,11 +439,15 @@ def __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fConte
 
         # C routine and C stprocedure launcher
         hipKernelDict = {}
+        launchBounds = GET_LAUNCH_BOUNDS(kernelName)
+        if launchBounds != None and len(launchBounds) and stprocedure.isKernelSubroutine():
+            hipKernelDict["launchBounds"]      = "__launch_bounds__({})".format(launchBounds)
+        else:
+            hipKernelDict["launchBounds"]      = ""
         hipKernelDict["generateDebugCode"]   = EMIT_DEBUG_CODE
         hipKernelDict["generateLauncher"]    = generateLauncher
         hipKernelDict["generateCPULauncher"] = False
         hipKernelDict["modifier"]            = "__global__" if stprocedure.isKernelSubroutine() else "__device__"
-        hipKernelDict["launchBounds"]        = "__launch_bounds__({})".format(DEFAULT_LAUNCH_BOUNDS) if stprocedure.isKernelSubroutine() else ""
         hipKernelDict["returnType"]          = resultType
         hipKernelDict["isLoopKernel"]        = False
         hipKernelDict["kernelName"]          = kernelName
@@ -480,49 +493,6 @@ def __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fConte
             fInterfaceDictManual["argNames"] = [arg["name"] for arg in fInterfaceDictManual["args"]]
             fInterfaceDictManual["doTest"]   = True
             fContext["interfaces"].append(fInterfaceDictManual)
- 
-            #TODO(12/05/2021): Check if it makes sense to generate a CPU version of a global kernel
-            #We can do it in the OpenACC case
-
-            ## External CPU interface
-            #fCPUInterfaceDict = copy.deepcopy(fInterfaceDictManual)
-            #fCPUInterfaceDict["fName"]  = kernelLauncherName + "_cpu" 
-            #fCPUInterfaceDict["cName"]  = kernelLauncherName + "_cpu"
-            #fCPUInterfaceDict["args"]   = kernelArgs
-            #fCPUInterfaceDict["doTest"] = False
-
-            ## Internal CPU routine
-            #fCPURoutineDict = copy.deepcopy(fInterfaceDictManual)
-            #fCPURoutineDict["fName"]    = kernelLauncherName + "_cpu1" 
-            #fCPURoutineDict["cName"]    = kernelLauncherName + "_cpu1"
-            #fCPURoutineDict["args"]     = kernelArgs
-            #fCPURoutineDict["argNames"] = [arg["name"] for arg in fCPURoutineDict["args"]]
-
-            ## rename copied modified args
-            #for i,val in enumerate(fCPURoutineDict["args"]):
-            #    varName = val["name"]
-            #    if val.get("isArray",False):
-            #        fCPURoutineDict["args"][i]["name"] = "d_{}".format(varName)
-
-            #fCPURoutineDict["argNames"] = [a["name"] for a in fCPURoutineDict["args"]]
-            #fCPURoutineDict["args"]    += localCpuRoutineArgs # ordering important
-            ## add mallocs, memcpys , frees
-            #prolog = ""
-            #epilog = ""
-            #for arg in localCpuRoutineArgs:
-            #     if len(arg.get("bounds","")): # is local Fortran array
-            #       localArray = arg["name"]
-            #       # device to host
-            #       prolog += "allocate({var}({bounds}))\n".format(var=localArray,bounds=arg["bounds"])
-            #       prolog += "CALL hipCheck(hipMemcpy(c_loc({var}),d_{var},{bpe}_8*SIZE({var}),hipMemcpyDeviceToHost))\n".format(var=localArray,bpe=arg["bytesPerElement"])
-            #       # host to device
-            #       epilog += "CALL hipCheck(hipMemcpy(d_{var},c_loc({var}),{bpe}_8*SIZE({var}),hipMemcpyHostToDevice))\n".format(var=localArray,bpe=arg["bytesPerElement"])
-            #       epilog += "deallocate({var})\n".format(var=localArray)
-            #fCPURoutineDict["body"] = prolog + fBody + epilog
-
-            # Add all definitions to context
-            #fContext["interfaces"].append(fCPUInterfaceDict)
-            #fContext["routines"].append(fCPURoutineDict)
     
     utils.logging.logEnterFunction(LOG_PREFIX,"__updateContextFromDeviceProcedures")
 

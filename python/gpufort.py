@@ -161,6 +161,7 @@ def parseCommandLineArguments():
     # parse command line arguments
     parser = argparse.ArgumentParser(description="S2S translation tool for CUDA Fortran and Fortran+X")
     
+    # General options
     parser.add_argument("input",help="The input file.",type=str,nargs="?",default=None)
     parser.add_argument("-c,--only-create-mod-files",dest="onlyCreateGpufortModuleFiles",action="store_true",help="Only create GPUFORT modules files. No other output is created.")
     parser.add_argument("-s,--skip-create-mod-files",dest="skipCreateGpufortModuleFiles",action="store_true",help="Skip creating GPUFORT modules, e.g. if they already exist. Mutually exclusive with '-c' option.")
@@ -168,22 +169,26 @@ def parseCommandLineArguments():
     parser.add_argument("--working-dir",dest="workingDir",default=os.getcwd(),type=str,help="Set working directory.") # shadow arg
     parser.add_argument("-d,--search-dirs", dest="searchDirs", help="Module search dir. Alternative -I<path> can be used (multiple times).", nargs="*",  required=False, default=[], type=str)
     parser.add_argument("-w,--wrap-in-ifdef",dest="wrapInIfdef",action="store_true",help="Wrap converted lines into ifdef in host code.")
-    parser.add_argument("-E,--destination-dialect",dest="destinationDialect",default=None,type=str,help="One of: {}".format(", ".join(scanner.SUPPORTED_DESTINATION_DIALECTS)))
+    parser.add_argument("-E,--dest-dialect",dest="destinationDialect",default=None,type=str,help="One of: {}".format(", ".join(scanner.SUPPORTED_DESTINATION_DIALECTS)))
+    
     # config options: shadow arguments that are actually taken care of by raw argument parsing
     group_config = parser.add_argument_group('Config file')
     group_config.add_argument("--print-config-defaults",dest="printConfigDefaults",action="store_true",help="Print config defaults. "+\
             "Config values can be overriden by providing a config file. A number of config values can be overwritten via this CLI.")
     group_config.add_argument("--config-file",default=None,type=argparse.FileType("r"),dest="configFile",help="Provide a config file.")
+    
     # fort2hip
     group_fort2hip = parser.add_argument_group('Fortran-to-HIP')
-    group_fort2hip.add_argument("-m,--only-modify-host-code",dest="onlyModifyTranslationSource",action="store_true",help="Only modify host code; do not generate kernels [default=False].")
-    group_fort2hip.add_argument("-k,--only-emit-kernels-and-launchers",dest="onlyEmitKernelsAndLaunchers",action="store_true",help="Only emit kernels and kernel launchers; do not modify host code [default: (default) config value]..")
-    group_fort2hip.add_argument("-K,--only-emit-kernels",dest="onlyEmitKernels",action="store_true",help="Only emit kernels; do not emit kernel launchers and do not modify host code [default: (default) config value].")
+    group_fort2hip.add_argument("-m,--only-modify-host-code",dest="onlyModifyTranslationSource",action="store_true",help="Only modify host code; do not generate kernels [default: False].")
+    group_fort2hip.add_argument("-k,--only-emit-kernels-and-launchers",dest="onlyEmitKernelsAndLaunchers",action="store_true",help="Only emit kernels and kernel launchers; do not modify host code [default: False].")
+    group_fort2hip.add_argument("-K,--only-emit-kernels",dest="onlyEmitKernels",action="store_true",help="Only emit kernels; do not emit kernel launchers and do not modify host code [default: False].")
     group_fort2hip.add_argument("-C,--emit-cpu-impl",dest="emitCPUImplementation",action="store_true",help="Per detected loop kernel, also extract the CPU implementation  [default: (default) config value].")
     group_fort2hip.add_argument("-G,--emit-debug-code",dest="emitDebugCode",action="store_true",help="Generate debug code into the kernel launchers that allows to print kernel arguments, launch parameters, input/output array norms and elements, or to synchronize a kernel [default: (default) config value].")
+    
     # CUDA Fortran
     group_cuf = parser.add_argument_group('CUDA Fortran')
     group_cuf.add_argument("--cublas-v2",dest="cublasV2",action="store_true",help="Assume cublas v2 function signatures that use a handle. Overrides config value.")
+    
     # developer options
     group_developer = parser.add_argument_group('Developer options (logging, profiling, ...)')
     group_developer.add_argument("-v",dest="verbose",required=False,action="store_true",default="",help="Print all log messages to error output stream too.")

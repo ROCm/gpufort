@@ -45,7 +45,7 @@ def checkDestinationDialect(destinationDialect):
         utils.logging.logError(LOG_PREFIX,"checkDestinationDialect",msg)
         sys.exit(SCANNER_ERROR_CODE)
 
-def __postprocessAcc(stree,hipModuleName):
+def __postprocessAcc(stree):
     """
     Add use statements as well as handles plus their creation and destruction for certain
     math libraries.
@@ -54,7 +54,7 @@ def __postprocessAcc(stree,hipModuleName):
     global DESTINATION_DIALECT
     global RUNTIME_MODULE_NAMES
     
-    utils.logging.logEnterFunction(LOG_PREFIX,"__postprocessAcc",{"hipModuleName":hipModuleName})
+    utils.logging.logEnterFunction(LOG_PREFIX,"__postprocessAcc")
     
     directives = stree.findAll(filter=lambda node: isinstance(node,STAccDirective), recursively=True)
     for directive in directives:
@@ -68,14 +68,14 @@ def __postprocessAcc(stree,hipModuleName):
         #if type(directive._parent
     utils.logging.logLeaveFunction(LOG_PREFIX,"__postprocessAcc")
     
-def __postprocessCuf(stree,hipModuleName):
+def __postprocessCuf(stree):
     """
     Add use statements as well as handles plus their creation and destruction for certain
     math libraries.
     """
     global LOG_PREFIX
     global CUBLAS_VERSION 
-    utils.logging.logEnterFunction(LOG_PREFIX,"__postprocessCuf",{"hipModuleName":hipModuleName})
+    utils.logging.logEnterFunction(LOG_PREFIX,"__postprocessCuf")
     # cublas_v1 detection
     if CUBLAS_VERSION == 1:
         def hasCublasCall(child):
@@ -498,7 +498,7 @@ def parseFile(records,index,fortranFilepath):
            utils.logging.logDebug4(LOG_PREFIX,"parseFile.scanString","did not find expression '{}' in line {}: '{}'".format(expressionName,currentRecord["lineno"],currentRecord["lines"][0].rstrip()))
         return matched
     
-    def tryToParseString(expressionName,expression):
+    def tryToParseString(expressionName,expression,parseAll=False):
         """
         These expressions might never be hidden behind a single-line if or might
         never be an argument of another calls.
@@ -507,10 +507,10 @@ def parseFile(records,index,fortranFilepath):
         """
         nonlocal currentRecord
         nonlocal currentStatementNo
-        nonlocal currentStatement
+        nonlocal currentStatementStrippedNoComments
         
         try:
-           expression.parseString(currentStatement)
+           expression.parseString(currentStatementStrippedNoComments,parseAll)
            utils.logging.logDebug3(LOG_PREFIX,"parseFile.tryToParseString","found expression '{}' in line {}: '{}'".format(expressionName,currentRecord["lineno"],currentRecord["lines"][0].rstrip()))
            return True
         except ParseBaseException as e: 
@@ -523,6 +523,8 @@ def parseFile(records,index,fortranFilepath):
         if not result and len(tokens):
             result = tokens[0] == "end" and tokens[1] == kind
         return result
+    
+    pDoLoopBegin = re.compile(r"(\w+:)?\s*do")
 
     # parser loop
     for currentRecord in records:
@@ -534,7 +536,7 @@ def parseFile(records,index,fortranFilepath):
                     currentRecord["lineno"],currentRecord["lineno"]+len(currentRecord["lines"])-1))
                 
                 currentTokens = re.split(r"\s+|\t+",currentStatement.lower().strip(" \t"))
-                currentStatementStripped           = "".join(currentTokens)
+                currentStatementStripped           = " ".join(currentTokens)
                 currentStatementStrippedNoComments = currentStatementStripped.split("!")[0]
                 if len(currentTokens):
                     if currentTokens[0].startswith("end"):
@@ -545,9 +547,9 @@ def parseFile(records,index,fortranFilepath):
                             DoLoop_leave()
                     if "acc" in SOURCE_DIALECTS:
                         for commentChar in "!*c":
-                            if currentStatementStripped.startswith(commentChar+"$acc"):
+                            if currentTokens[0]==commentChar+"$acc":
                                 AccDirective()
-                            if currentStatementStripped.startswith(commentChar+"$gpufort"):
+                            elif currentTokens[0]==commentChar+"$gpufort":
                                 GpufortControl()
                     if "cuf" in SOURCE_DIALECTS:
                         if "attributes" in currentStatementStrippedNoComments:
@@ -557,20 +559,19 @@ def parseFile(records,index,fortranFilepath):
                         if "<<<" in currentStatementStrippedNoComments:
                             tryToParseString("cudaKernelCall",cudaKernelCall)
                         for commentChar in "!*c":
-                            if currentStatementStripped.startswith(commentChar+"$cuf"):
+                            if currentTokens[0]==commentChar+"$cuf":
                                 CufLoopKernel()
                     if "=" in currentStatementStrippedNoComments:
-                        if not tryToParseString("memcpy",memcpy):
+                        if not tryToParseString("memcpy",memcpy,parseAll=True):
                             tryToParseString("assignment",assignmentBegin)
-                            tryToParseString("nonZeroCheck",nonZeroCheck)
+                            scanString("nonZeroCheck",nonZeroCheck)
                     if "allocated" in currentStatementStrippedNoComments:
-                        tryToParseString("allocated",ALLOCATED)
+                        scanString("allocated",ALLOCATED)
                     elif "deallocate" in currentStatementStrippedNoComments:
                         tryToParseString("deallocate",DEALLOCATE) 
                     elif "allocate" in currentStatementStrippedNoComments:
                         tryToParseString("allocate",ALLOCATE) 
                     
-                    pDoLoopBegin = re.compile(r"(\w+:)?\s*do")
                     if pDoLoopBegin.match(currentStatementStripped):
                         DoLoop_visit()    
                     
@@ -603,29 +604,38 @@ def parseFile(records,index,fortranFilepath):
     utils.logging.logLeaveFunction(LOG_PREFIX,"parseFile")
     return currentNode
 
-def postprocess(stree,hipModuleName,index):
+def postprocess(stree,index):
     """
     Add use statements as well as handles plus their creation and destruction for certain
     math libraries.
     """
-    utils.logging.logEnterFunction(LOG_PREFIX,"postprocess",{"hipModuleName":hipModuleName})
+    utils.logging.logEnterFunction(LOG_PREFIX,"postprocess")
     if "hip" in DESTINATION_DIALECT or len(KERNELS_TO_CONVERT_TO_HIP):
-        # insert use kernel statements at appropriate point
-        def isLoopKernel(child):
+        # todo:
+        # for mod/prog in stree:
+        #   modName <- mod/prog.name
+        #   for kernels in body:
+        #
+        
+        # insert use statements at appropriate point
+        def isAccelerated(child):
             return isinstance(child,STLoopKernel) or\
                    (type(child) is STProcedure and child.isKernelSubroutine())
-        kernels = stree.findAll(filter=isLoopKernel, recursively=True)
-        for kernel in kernels:
-            if "hip" in DESTINATION_DIALECT or\
-              kernel.minLineno() in kernelsToConvertToHip or\
-              kernel.kernelName() in kernelsToConvertToHip:
-                stnode = kernel._parent.findFirst(filter=lambda child: type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
-                assert not stnode is None
-                indent = stnode.firstLineIndent()
-                stnode.addToProlog("{0}use {1}\n".format(indent,hipModuleName))
+        
+        for stmodule in stree.findAll(filter=lambda child: type(child) in [STModule,STProgram],recursively=False):
+            moduleName = stmodule.name 
+            kernels    = stmodule.findAll(filter=isAccelerated, recursively=True)
+            for kernel in kernels:
+                if "hip" in DESTINATION_DIALECT or\
+                  kernel.minLineno() in kernelsToConvertToHip or\
+                  kernel.kernelName() in kernelsToConvertToHip:
+                    stnode = kernel._parent.findFirst(filter=lambda child: type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
+                    assert not stnode is None
+                    indent = stnode.firstLineIndent()
+                    stnode.addToProlog("{0}use {1}_hip\n".format(indent,moduleName))
    
     if "cuf" in SOURCE_DIALECTS:
-         __postprocessCuf(stree,hipModuleName)
+         __postprocessCuf(stree)
     if "acc" in SOURCE_DIALECTS:
-         __postprocessAcc(stree,hipModuleName)
+         __postprocessAcc(stree)
     utils.logging.logLeaveFunction(LOG_PREFIX,"postprocess")

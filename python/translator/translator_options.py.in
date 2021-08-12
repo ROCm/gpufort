@@ -92,9 +92,9 @@ FORTRAN_TYPE_2_BYTES_MAP = { # x86_64
     "4":  "2*4",
     "2":  "2*2",
     "1":  "2*1",
-    "c_float_complex": "4",
-    "c_double_complex": "8",
-    "c_long_double_complex": "16"
+    "c_float_complex": "2*4",
+    "c_double_complex": "2*8",
+    "c_long_double_complex": "2*16"
   },
   "real" : { 
     "": "4",

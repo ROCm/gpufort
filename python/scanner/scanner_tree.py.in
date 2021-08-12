@@ -705,7 +705,7 @@ class STCudaKernelCall(STNode):
                 for rank in range(1,maxRank+1):
                     kernelArgs.append("lbound({0},{1})".format(exprFStr,rank))
             kernelLaunchInfo = translator.cudaKernelCall.parseString(self.firstStatement())[0]
-            subst="CALL launch_{0}({1},{2},{3},{4},{5})".format(\
+            subst="call launch_{0}({1},{2},{3},{4},{5})".format(\
               kernelLaunchInfo.kernelNameFStr(),\
               kernelLaunchInfo.gridFStr(),
               kernelLaunchInfo.blockFStr(),\

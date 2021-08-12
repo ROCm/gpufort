@@ -2,58 +2,51 @@
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 import os
 import pprint
-import logging
 
 import jinja2
+
+import addtoplevelpath
+import utils.logging
     
-LOADER = jinja2.FileSystemLoader(os.path.realpath(os.path.dirname(__file__)))
-ENV    = jinja2.Environment(loader=LOADER, trim_blocks=True, lstrip_blocks=True, undefined=jinja2.StrictUndefined)
+class BaseModel():
+    def __init__(self,template):
+        self._template = template
+    def generateCode(self,context={}):
+        LOADER = jinja2.FileSystemLoader(os.path.realpath(os.path.dirname(__file__)))
+        ENV    = jinja2.Environment(loader=LOADER, trim_blocks=True, lstrip_blocks=True, undefined=jinja2.StrictUndefined)
 
-def renderAsString(templateName, context):
-    """Return a template rendered as a String using the given context"""
-    template = ENV.get_template(templateName)
-    
-    try:
-        return template.render(context)
-    except Exception:
-        pp = pprint.PrettyPrinter(depth=8)
-        logging.logError("could not render template '%s'" % templateName)
-        logging.logError("used context:")
-        logging.logError(pp.pformat(context))
-        raise
+        template = ENV.get_template(self._template)
+        try:
+            return template.render(context)
+        except Exception as e:
+            utils.logging.logError("fort2hip.model","BaseModel.generateCode","could not render template '%s'" % self._template)
+            raise e
+    def generateFile(self,outputFilePath,context={}):
+        with open(absolutePath, "w") as output:
+            output.write(generateCode(context))
+        return absolutePath, context
 
-def render(templateName, outputFilePath, context):
-    """Render a template to outputFilename using the given context.
-    Always overwrite.
-    """
-    absolutePath  = outputFilePath
-    canonicalPath = os.path.realpath(absolutePath)
-    
-    with open(canonicalPath, "w") as output:
-        output.write(renderAsString(templateName, context))
-    return canonicalPath, context
+class HipImplementationModel(BaseModel):
+    def __init__(self):
+        BaseModel.__init__(self,"templates/HipImplementation.template.cpp")
 
-class HipImplementationModel():
-    def generateCode(self,outputFilePath,context):
-        return render("templates/HipImplementation.template.cpp", outputFilePath, context)
+class InterfaceModuleModel(BaseModel):
+    def __init__(self):
+        BaseModel.__init__(self,"templates/InterfaceModule.template.f03")
 
-class InterfaceModuleModel():
-    def generateCode(self,outputFilePath,context):
-        return render("templates/InterfaceModule.template.f03", outputFilePath, context)
+class InterfaceModuleTestModel(BaseModel):
+    def __init__(self):
+        BaseModel.__init__(self,"templates/InterfaceModuleTest.template.f03")
 
-class InterfaceModuleTestModel():
-    def generateCode(self,outputFilePath,context):
-        return render("templates/InterfaceModuleTest.template.f03", outputFilePath, context) 
+class GpufortHeaderModel(BaseModel):
+    def __init__(self):
+        BaseModel.__init__(self,"templates/Gpufort.template.h")
 
-class GpufortHeaderModel():
-    def generateCode(self,outputFilePath,context={}):
-        return render("templates/Gpufort.template.h", outputFilePath, context) 
-
-class GpufortReductionsHeaderModel():
-    def generateCode(self,outputFilePath,context={}):
-        return render("templates/GpufortReductions.template.h", outputFilePath, context) 
+class GpufortReductionsHeaderModel(BaseModel):
+    def __init__(self):
+        BaseModel.__init__(self,"templates/GpufortReductions.template.h")
 
 #model = GpufortHeaderModel()
-#model.generateCode("gpufort.h")
+#model.generateFile("gpufort.h")
 #model = GpufortReductionsHeaderModel()
-#model.generateCode("gpufort_reductions.h")
+#model.generateFile("gpufort_reductions.h")

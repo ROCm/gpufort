@@ -42,17 +42,14 @@ def createIndex(searchDirs,options,filepath):
     utils.logging.logLeaveFunction(LOG_PREFIX,"createIndex")
     return index
 
-def __translateSource(infilepath,stree,records,index):
+def __translateSource(infilepath,stree,records,index,preamble):
     global LOG_PREFIX
     global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
-    global SKIP_CREATE_GPUFORT_MODULE_FILES
     
     utils.logging.logEnterFunction(LOG_PREFIX,"__translateSource",{"infilepath":infilepath})
     
     # post process
-    basename      = os.path.basename(infilepath).split(".")[0]
-    hipModuleName = basename.replace(".","_").replace("-","_") + "_kernels"
-    scanner.postprocess(stree,hipModuleName,index)
+    scanner.postprocess(stree,index)
     
     # transform statements; to 'records'
     def transform_(stnode):
@@ -64,7 +61,7 @@ def __translateSource(infilepath,stree,records,index):
     # write the file
     parts = os.path.splitext(infilepath)
     outfilepath = "{}.hipified.f90".format(parts[0])
-    linemapper.writeModifiedFile(outfilepath,infilepath,records)
+    linemapper.writeModifiedFile(outfilepath,infilepath,records,preamble)
 
     # prettify the file
     if PRETTIFY_MODIFIED_TRANSLATION_SOURCE:
@@ -371,17 +368,19 @@ if __name__ == "__main__":
         stree   = scanner.parseFile(records,index,inputFilepath)    
  
         # extract kernels
-        outputFilePrefix = os.path.dirname(inputFilepath)
         if "hip" in scanner.DESTINATION_DIALECT: 
             kernelsToConvertToHip = ["*"]
         else:
             kernelsToConvertToHip = scanner.KERNELS_TO_CONVERT_TO_HIP
-        fort2hip.createHipKernels(stree,index,kernelsToConvertToHip,outputFilePrefix,\
-          generateCode=not ONLY_MODIFY_TRANSLATION_SOURCE)
-        
+        fortranModuleFilepath =\
+          fort2hip.createHipKernels(stree,index,kernelsToConvertToHip,inputFilepath,\
+           generateCode=not ONLY_MODIFY_TRANSLATION_SOURCE)
         # modify original file
+        if fortranModuleFilepath != None:
+            preamble = "#include \"{}\"".format(\
+              os.path.basename(fortranModuleFilepath))
         if not (ONLY_EMIT_KERNELS or ONLY_EMIT_KERNELS_AND_LAUNCHERS):
-            __translateSource(inputFilepath,stree,records,index) 
+            __translateSource(inputFilepath,stree,records,index,preamble) 
     #
     if PROFILING_ENABLE:
         profiler.disable() 

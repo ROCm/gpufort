@@ -314,10 +314,10 @@ class TTCufAllocate(TTNode): # TODO not specific to CUF
             else:
                 size = ",".join(array.countsFStr())            # element counts per dimension
             if arrayQualifiers[i] == "device":
-                line = "{2}CALL hipCheck(hipMalloc({0}, {1}))".format(array.varName(),size,indent)
+                line = "{2}call hipCheck(hipMalloc({0}, {1}))".format(array.varName(),size,indent)
                 result.append(line)
             elif arrayQualifiers[i] == "pinned":
-                line = "{2}CALL hipCheck(hipHostMalloc({0}, {1}, 0))".format(array.varName(),size,indent)
+                line = "{2}call hipCheck(hipHostMalloc({0}, {1}, 0))".format(array.varName(),size,indent)
                 result.append(line)
             else:
                 otherArrays.append(makeFStr(array)) 
@@ -363,10 +363,10 @@ class TTCufDeallocate(TTNode): # TODO not specific to CUF
         
         for i,array in enumerate(self._vars):
             if arrayQualifiers[i] == "device":
-                line =  "{1}CALL hipCheck(hipFree({0}))".format(array.varName(),indent)
+                line =  "{1}call hipCheck(hipFree({0}))".format(array.varName(),indent)
                 result.append(line)
             elif arrayQualifiers[i] == "pinned":
-                line = "{1}CALL hipCheck(hipHostFree({0}))".format(array.varName(),indent)
+                line = "{1}call hipCheck(hipHostFree({0}))".format(array.varName(),indent)
                 result.append(line)
             else:
                 otherArrays.append(makeFStr(array)) 
@@ -452,7 +452,7 @@ class TTCufMemcpyIntrinsic(TTNode,CufMemcpyBase):
         args.append(self.destFStr(destOnDevice,bytesPerElement))
         args.append(self.srcFStr(srcOnDevice,bytesPerElement))
         args.append(self.memcpyKind(destOnDevice,srcOnDevice))
-        return "{indent}CALL hipCheck({api}({args}))".format(api=api,args=", ".join(args),indent=indent) 
+        return "{indent}call hipCheck({api}({args}))".format(api=api,args=", ".join(args),indent=indent) 
 
 class TTCufCudaMemcpy(TTNode,CufMemcpyBase):
     # dest,src,count,[,stream] # kind is inferred from dest and src

@@ -2,6 +2,8 @@ fort2hip.CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140, BinPackArg
 
 fort2hip.EMIT_DEBUG_CODE = False
 
+fort2hip.PRETTIFY_EMITTED_FORTRAN_CODE = True
+
 def myBlockDims(kernelName,dims):
     return [512]
 

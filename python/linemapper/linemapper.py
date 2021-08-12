@@ -491,7 +491,7 @@ def readFile(fortranFilepath,options=""):
     except Exception as e:
         raise e
 
-def writeModifiedFile(outfilePath,infilePath,records):
+def writeModifiedFile(outfilePath,infilePath,records,preamble=""):
     """TODO docu"""
     global LINE_GROUPING_WRAP_IN_IFDEF
     global LINE_GROUPING_MACRO
@@ -538,6 +538,13 @@ def writeModifiedFile(outfilePath,infilePath,records):
                 linesToSkip -= 1
             else:
                 output += line
+    if preamble != None and len(preamble):
+        if LINE_GROUPING_WRAP_IN_IFDEF:
+            preamble2 = "#ifdef {}\n{}\n#endif".format(\
+              LINE_GROUPING_IFDEF_MACRO,preamble.rstrip("\n"))
+        else:
+            preamble2 = preamble.rstrip("\n")
+        output = preamble2+"\n" + output
     with open(outfilePath,"w") as outfile:
         outfile.write(output.rstrip("\n"))
     

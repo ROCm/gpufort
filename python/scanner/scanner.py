@@ -64,7 +64,7 @@ def __postprocessAcc(stree):
              indent = stnode.firstLineIndent()
              accRuntimeModuleName = RUNTIME_MODULE_NAMES[DESTINATION_DIALECT]
              if accRuntimeModuleName != None and len(accRuntimeModuleName):
-                 stnode.addToProlog("{0}use {1}\n".format(indent,accRuntimeModuleName))
+                 stnode.addToProlog("{0}use {1}\n{0}use iso_c_binding\n".format(indent,accRuntimeModuleName))
         #if type(directive._parent
     utils.logging.logLeaveFunction(LOG_PREFIX,"__postprocessAcc")
     
@@ -535,12 +535,15 @@ def parseFile(records,index,fortranFilepath):
                 utils.logging.logDebug4(LOG_PREFIX,"parseFile","parsing statement '{}' associated with lines [{},{}]".format(currentStatement.rstrip(),\
                     currentRecord["lineno"],currentRecord["lineno"]+len(currentRecord["lines"])-1))
                 
-                currentTokens = re.split(r"\s+|\t+",currentStatement.lower().strip(" \t"))
-                currentStatementStripped           = " ".join(currentTokens)
+                currentTokens1 = re.split(r"\s+|\t+",currentStatement.lower().strip(" \t"))
+                currentTokens  = []
+                for tk in currentTokens1:
+                    currentTokens += [part for part in re.split('([(),]|::)',tk) if len(part)]
+                currentStatementStripped           = " ".join(currentTokens1)
                 currentStatementStrippedNoComments = currentStatementStripped.split("!")[0]
                 if len(currentTokens):
                     if currentTokens[0].startswith("end"):
-                        for kind in ["program","module","subroutine","function","type"]:
+                        for kind in ["program","module","subroutine","function"]: # ignore types/interfaces here
                             if isEndStatement_(currentTokens,kind):
                                  End()
                         if isEndStatement_(currentTokens,"do"):
@@ -589,10 +592,11 @@ def parseFile(records,index,fortranFilepath):
                         tryToParseString("function",functionStart)
                     if "subroutine" in currentTokens:
                         tryToParseString("subroutine",subroutineStart)
-                    for expr in ["type","character","integer","logical","real","complex","double"]:
-                        if expr in currentTokens[0]:
-                            tryToParseString("declaration",datatype_reg)
-                            break 
+                    if currentTokens[0] in ["character","integer","logical","real","complex","double"]:
+                        tryToParseString("declaration",datatype_reg)
+                        break
+                    if currentTokens[0] == "type" and currentTokens[1] == "(":
+                        tryToParseString("declaration",datatype_reg)
                     if keepRecording:
                        try:
                           currentNode.addRecord(currentRecord)
@@ -604,7 +608,7 @@ def parseFile(records,index,fortranFilepath):
     utils.logging.logLeaveFunction(LOG_PREFIX,"parseFile")
     return currentNode
 
-def postprocess(stree,index):
+def postprocess(stree,index,hipModuleSuffix):
     """
     Add use statements as well as handles plus their creation and destruction for certain
     math libraries.
@@ -632,7 +636,7 @@ def postprocess(stree,index):
                     stnode = kernel._parent.findFirst(filter=lambda child: type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
                     assert not stnode is None
                     indent = stnode.firstLineIndent()
-                    stnode.addToProlog("{0}use {1}_hip\n".format(indent,moduleName))
+                    stnode.addToProlog("{}use {}{}\n".format(indent,moduleName,hipModuleSuffix))
    
     if "cuf" in SOURCE_DIALECTS:
          __postprocessCuf(stree)

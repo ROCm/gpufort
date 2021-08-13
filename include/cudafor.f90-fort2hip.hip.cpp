@@ -1,0 +1,1 @@
+#include "cudafor-fort2hip.hip.cpp"

@@ -22,9 +22,8 @@ class BaseModel():
             utils.logging.logError("fort2hip.model","BaseModel.generateCode","could not render template '%s'" % self._template)
             raise e
     def generateFile(self,outputFilePath,context={}):
-        with open(absolutePath, "w") as output:
-            output.write(generateCode(context))
-        return absolutePath, context
+        with open(outputFilePath, "w") as output:
+            output.write(self.generateCode(context))
 
 class HipImplementationModel(BaseModel):
     def __init__(self):

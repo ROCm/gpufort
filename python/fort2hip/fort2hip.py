@@ -499,23 +499,6 @@ def __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fConte
     
     utils.logging.logEnterFunction(LOG_PREFIX,"__updateContextFromDeviceProcedures")
 
-def __generateGpufortHeaders(outputFileDir,haveReductions):
-    # TODO should only be written once and put into GPUFORT include dir
-    utils.logging.logEnterFunction(LOG_PREFIX,"__renderTemplates",\
-      {"outputFilePrefix": outputFilePrefix})
-    
-    # header files
-    outputDir = os.path.dirname(hipImplementationFilePath)
-    gpufortHeaderFilePath = outputDir + "/gpufort.h"
-    model.GpufortHeaderModel().generateFile(gpufortHeaderFilePath)
-    msg = "created gpufort main header: ".ljust(40) + gpufortHeaderFilePath
-    utils.logging.logInfo(LOG_PREFIX,"__renderTemplates",msg)
-    if haveReductions:
-        gpufortReductionsHeaderFilePath = outputDir + "/gpufort_reductions.h"
-        model.GpufortReductionsHeaderModel().generateFile(gpufortReductionsHeaderFilePath)
-        msg = "created gpufort reductions header file: ".ljust(40) + gpufortReductionsHeaderFilePath
-        utils.logging.logInfo(LOG_PREFIX,"__renderTemplates",msg)
-
 def __writeFile(outfilePath,kind,content):
     utils.logging.logEnterFunction(LOG_PREFIX,"__writeFile")
     
@@ -526,9 +509,40 @@ def __writeFile(outfilePath,kind,content):
     
     utils.logging.logLeaveFunction(LOG_PREFIX,"__writeFile")
 
+
+def __createIncludesFromUsedModules(index,moduleName):
+    """Create include statement for a module's used modules that are present in the index."""
+    imodule = next((irecord for irecord in index if irecord["name"] == moduleName),None)
+    if imodule == None:
+        utils.logging.logError(LOG_PREFIX,"generateHipFiles","did not find record module '{}'.".format(moduleName))
+        sys.exit() # TODO add error code
+    usedModules  = [irecord["name"] for irecord in imodule["usedModules"]]
+    includes     = []
+    for irecord in index:
+        if irecord["name"] in usedModules:
+            includes.append(irecord["name"] + HIP_FILE_EXT)
+    return includes
 # API
 
-def createHipKernels(stree,index,kernelsToConvertToHip,translationSourcePath,generateCode):
+def generateGpufortHeaders(outputDir):
+    """Create the header files that all GPUFORT HIP kernels rely on."""
+    utils.logging.logEnterFunction(LOG_PREFIX,"__renderTemplates",\
+      {"outputDir": outputDir})
+    
+    gpufortHeaderFilePath = outputDir + "/gpufort.h"
+    model.GpufortHeaderModel().generateFile(gpufortHeaderFilePath)
+    msg = "created gpufort main header: ".ljust(40) + gpufortHeaderFilePath
+    utils.logging.logInfo(LOG_PREFIX,"__renderTemplates",msg)
+    
+    gpufortReductionsHeaderFilePath = outputDir + "/gpufort_reductions.h"
+    model.GpufortReductionsHeaderModel().generateFile(gpufortReductionsHeaderFilePath)
+    msg = "created gpufort reductions header file: ".ljust(40) + gpufortReductionsHeaderFilePath
+    utils.logging.logInfo(LOG_PREFIX,"__renderTemplates",msg)
+
+    utils.logging.logLeaveFunction(LOG_PREFIX,"generateGpufortHeaders")
+
+
+def generateHipFiles(stree,index,kernelsToConvertToHip,translationSourcePath,generateCode):
     """
     :param stree:        [inout] the scanner tree holds nodes that store the Fortran code lines of the kernels
     :param generateCode: generate code or just feed kernel signature information
@@ -542,105 +556,114 @@ def createHipKernels(stree,index,kernelsToConvertToHip,translationSourcePath,gen
     global CLANG_FORMAT_STYLE
     global FORTRAN_MODULE_FILE_EXT
     global HIP_FILE_EXT    
+    global FORTRAN_MODULE_SUFFIX
 
-    utils.logging.logEnterFunction(LOG_PREFIX,"createHipKernels",\
+    utils.logging.logEnterFunction(LOG_PREFIX,"generateHipFiles",\
       {"kernelsToConvertToHip":" ".join(kernelsToConvertToHip),\
        "translationSourcePath": translationSourcePath,\
        "generateCode":generateCode})
-
-    if not len(kernelsToConvertToHip):
-        return
-   
-    def select(kernel):
+    def select_(kernel):
         nonlocal kernelsToConvertToHip
-        condition1 = not kernel._ignoreInS2STranslation
-        condition2 = \
-                kernelsToConvertToHip[0] == "*" or\
-                kernel.minLineno() in kernelsToConvertToHip or\
-                kernel.kernelName() in kernelsToConvertToHip
-        return condition1 and condition2
+        if not len(kernelsToConvertToHip):
+            return False
+        else: 
+            condition1 = not kernel._ignoreInS2STranslation
+            condition2 = \
+                    kernelsToConvertToHip[0] == "*" or\
+                    kernel.minLineno() in kernelsToConvertToHip or\
+                    kernel.kernelName() in kernelsToConvertToHip
+            return condition1 and condition2
     def loopKernelFilter_(child):
-        return isinstance(child, scanner.STLoopKernel) and select(child)
+        return isinstance(child, scanner.STLoopKernel) and select_(child)
     def deviceProcedureFilter_(child):
         return type(child) is scanner.STProcedure and\
-          child.mustBeAvailableOnDevice() and select(child)
+          child.mustBeAvailableOnDevice() and select_(child)
 
-    fortranModuleFilepath = translationSourcePath + FORTRAN_MODULE_FILE_EXT
-    mainHipFilepath       = translationSourcePath + HIP_FILE_EXT
+    fortranModuleFilepath = None
+    mainHipFilepath       = None
     outputDir             = os.path.dirname(translationSourcePath)
-    
+   
+    haveReductions     = False
     hipModuleFilenames = []
     fortranModules     = []
     programOrModules = stree.findAll(filter=lambda child: type(child) in [scanner.STProgram,scanner.STModule], recursively=False)
     for stmodule in programOrModules:
-         # file names & paths
-         hipModuleName     = stmodule.name
-         hipModuleFilename = hipModuleName + HIP_FILE_EXT
-         hipModuleFilenames.append(hipModuleFilename)
-         hipModuleFilepath = outputDir+"/"+hipModuleFilename
-         # extract kernels
-         loopKernels      = stmodule.findAll(filter=loopKernelFilter_, recursively=True)
-         deviceProcedures = stmodule.findAll(filter=deviceProcedureFilter_, recursively=True)
-
-         if (len(loopKernels) or len(deviceProcedures)):
-             utils.logging.logDebug2(LOG_PREFIX,"createHipKernels",\
-               "detected loop kernels: {}; detected device subprograms {}".format(\
-               len(loopKernels),len(deviceProcedures)))
-
-             # Context for HIP implementation
-             hipContext = {}
-             hipContext["includes"] = [ "hip/hip_runtime.h", "hip/hip_complex.h" ]
-             hipContext["kernels"] = []
-             
-             # Context for Fortran interface/implementation
-             fContext = {}
-             fContext["name"]     = hipModuleName
-             fContext["preamble"] = ""
-             fContext["used"]    = []
-             #fContext["preamble"]   = FORTRAN_MODULE_PREAMBLE
-             #fContext["used"]       = ["hipfort","hipfort_check"]
-             fContext["interfaces"] = []
-             fContext["routines"]   = []
-             
-             __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext)
-             __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext)
-             
-             if generateCode:
-                 __writeFile(\
-                    hipModuleFilepath,"HIP C++ implementation file",\
-                    model.HipImplementationModel().generateCode(hipContext))
-                 if PRETTIFY_EMITTED_C_CODE:
-                     utils.fileutils.prettifyCFile(hipModuleFilepath,CLANG_FORMAT_STYLE)
-                 if len(fContext["interfaces"]):
-                    fortranModules.append(\
-                      model.InterfaceModuleModel().generateCode(fContext))
-    if generateCode:
-        # GPUFORT headers
-        gpufortHeaderFilepath = outputDir + "/gpufort.h"
-        __writeFile(\
-           gpufortHeaderFilepath,"GPUFORT header file",\
-           model.GpufortHeaderModel().generateCode())
-        if hipContext["haveReductions"]:
-            gpufortReductionsHeaderFilepath = outputDir + "/gpufort_reductions.h"
-            __writeFile(\
-               gpufortReductionsHeaderFilepath,"GPUFORT header file",\
-               model.GpufortReductionsHeaderModel().generateCode())
+        # file names & paths
+        moduleName        = stmodule.name.lower()
+        hipModuleFilename = moduleName + HIP_FILE_EXT
+        hipModuleFilenames.append(hipModuleFilename)
+        hipModuleFilepath = outputDir+"/"+hipModuleFilename
+        guard             = hipModuleFilename.replace(".","_").replace("-","_").upper() 
+        # extract kernels
+        loopKernels      = stmodule.findAll(filter=loopKernelFilter_, recursively=True)
+        deviceProcedures = stmodule.findAll(filter=deviceProcedureFilter_, recursively=True)
+        # TODO: Also extract derived types
+        # derivedtypes = ....
         
+        # TODO handle includes
+        includes = __createIncludesFromUsedModules(index,moduleName)
+        if len(loopKernels) or len(deviceProcedures):
+            utils.logging.logDebug2(LOG_PREFIX,"generateHipFiles",\
+              "detected loop kernels: {}; detected device subprograms {}".format(\
+              len(loopKernels),len(deviceProcedures)))
+
+            # Context for HIP implementation
+            hipContext = {}
+            hipContext["guard"]    = guard 
+            hipContext["includes"] = [ "hip/hip_runtime.h", "hip/hip_complex.h" ] + includes
+            hipContext["kernels"]  = []
+            
+            # Context for Fortran interface/implementation
+            fContext = {}
+            fContext["name"]     = moduleName + FORTRAN_MODULE_SUFFIX
+            fContext["preamble"] = ""
+            #fContext["preamble"]   = FORTRAN_MODULE_PREAMBLE
+            fContext["used"]       = ["hipfort"]
+            if EMIT_CPU_IMPLEMENTATION:
+                fContext["used"].append("hipfort_check")
+
+            fContext["interfaces"] = []
+            fContext["routines"]   = []
+            
+            __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext)
+            __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext)
+            
+            if generateCode:
+                haveReductions = haveReductions or hipContext["haveReductions"]
+
+                __writeFile(\
+                   hipModuleFilepath,"HIP C++ implementation file",\
+                   model.HipImplementationModel().generateCode(hipContext))
+                if PRETTIFY_EMITTED_C_CODE:
+                    utils.fileutils.prettifyCFile(hipModuleFilepath,CLANG_FORMAT_STYLE)
+                if len(fContext["interfaces"]):
+                   fortranModules.append(\
+                     model.InterfaceModuleModel().generateCode(fContext))
+        else:
+            content = "\n".join(["#include \"{}\"".format(filename) for filename in includes])
+            if len(content):
+                content = "#ifndef {0}\n#define {0}\n{1}\n#endif // {0}".format(
+                  guard,content)
+            __writeFile(\
+               hipModuleFilepath,"HIP C++ implementation file",content)
+
+    if generateCode:
         # main HIP file
+        mainHipFilepath = translationSourcePath + HIP_FILE_EXT
         content = "\n".join(["#include \"{}\"".format(filename) for filename in hipModuleFilenames])
         __writeFile(mainHipFilepath,"main HIP C++ file",content)
 
         # Fortran module file
         if len(fortranModules):
-            # TODO generate defines for non-integral types
-            content = "\n".join(fortranModules)
+            fortranModuleFilepath = translationSourcePath + FORTRAN_MODULE_FILE_EXT
+            content               = "\n".join(fortranModules)
             if len(FORTRAN_MODULE_PREAMBLE):
                 content = FORTRAN_MODULE_PREAMBLE + "\n" + content
             __writeFile(fortranModuleFilepath,"interface/testing module",content)
             if PRETTIFY_EMITTED_FORTRAN_CODE:
                 utils.fileutils.prettifyFFile(fortranModuleFilepath)
-            return fortranModuleFilepath
     
-    return None
+    utils.logging.logLeaveFunction(LOG_PREFIX,"generateHipFiles")
+    
+    return fortranModuleFilepath, mainHipFilepath
 
-    utils.logging.logLeaveFunction(LOG_PREFIX,"createHipKernels")

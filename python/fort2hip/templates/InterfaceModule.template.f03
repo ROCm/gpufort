@@ -14,12 +14,7 @@
 {#                                -[qualifiers:str]      #}
 {#                                -name:str              #}
 module {{name}}
-{% for module in used %}  use {{module}}
-{% endfor %}
-  implicit none
-
 {{preamble | indent(2,True)}}
-
 {% if enums is defined and enums|length > 0 %}
 {% for type in enums %}
   enum, bind(c)

@@ -6,6 +6,9 @@ LOG_PREFIX = "fort2hip.fort2hip"
 FORTRAN_MODULE_PREAMBLE = "" 
         # Preamble to write at the top of the generated Fortran module file.
 
+FORTRAN_MODULE_SUFFIX = "_fort2hip"
+        # Suffix for generated hip modules.
+
 FORTRAN_MODULE_FILE_EXT = "-fort2hip.f08"
         # Suffix appended to the generated Fortran module.
 

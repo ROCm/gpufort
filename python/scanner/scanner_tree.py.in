@@ -280,6 +280,7 @@ class STUseStatement(STNode):
     def __init__(self,parent,firstRecord,firstRecordFirstStatement):
         STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
     def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
+        # TODO clean
         indent  = self.firstLineIndent() 
         snippet = joinedStatements
         useCuda = False
@@ -289,7 +290,7 @@ class STUseStatement(STNode):
                 useCuda = True
                 if libLower == "cudafor":
                     snippet = re.sub(r"\bcudafor\b",HIP_MODULE_NAME,snippet,re.IGNORECASE)
-                    snippet = snippet.rstrip("\n")+"\n" + "{0}use iso_c_binding".format(indent) 
+                    snippet = snippet.rstrip("\n")+"\n" + "{0}use hipfort_check".format(indent) 
                 snippet = re.sub(r"\bcu(\w+)\b",HIP_MATH_MODULE_PREFIX+r"hip\1",snippet,re.IGNORECASE)
         return snippet, useCuda
 

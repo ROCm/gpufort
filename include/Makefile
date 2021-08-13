@@ -1,2 +1,12 @@
+.PHONY: all headers modules
+
+all: headers modules
+
+headers:
+	gpufort --create-gpufort-headers
+
 modules:
-	gpufort -c cudafor.f90
+	gpufort -K cudafor.f90
+
+make clean:
+	rm -rf *.gpufort_mod *-fort2hip.* *-gpufort.* *.h

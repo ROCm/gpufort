@@ -11,7 +11,8 @@
 {#                 -[reductions:dict]                    #}
 {#                 -[cBody:str]                          #}
 {#                 -[fBody:str]                          #}
-
+#ifndef {{ guard }}
+#define {{ guard }}
 {% for file in includes %}
 #include "{{file}}"
 {% endfor %}
@@ -207,3 +208,4 @@ extern "C" void {{ifacePrefix}}_cpu(const int sharedMem, hipStream_t stream,{{ke
 // END {{krnlPrefix}}
 
 {% endfor %}{# kernels #}
+#endif // {{ guard }} 

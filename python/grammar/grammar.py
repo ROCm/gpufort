@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 import os, sys
+import re
 
 # third-party modules
 from pyparsing import *

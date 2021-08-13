@@ -400,38 +400,40 @@ def __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fConte
     
     for stprocedure in deviceProcedures:
         scope       = scoper.createScope(index,stprocedure.tag())
-        indexRecord = stprocedure._indexRecord
-        isFunction  = indexRecord["kind"] == "function"
+        iprocedure  = stprocedure._indexRecord
+        isFunction  = iprocedure["kind"] == "function"
         
+        hipContext["includes"] += __createIncludesFromUsedModules(iprocedure,index)
+
         fBody = stprocedure.getBody()
         
         if isFunction:
             resultName = indexValue["resultName"]
-            resultVar = next([var for var in indexRecord["variables"] if var["name"] == indexValue["resultName"]],None)
+            resultVar = next([var for var in iprocedure["variables"] if var["name"] == indexValue["resultName"]],None)
             if resultVar != None:
                 resultType = resultVar["cType"]
-                parseResult = translator.parseProcedureBody(fBody,scope,indexRecord,resultVar["name"])
+                parseResult = translator.parseProcedureBody(fBody,scope,iprocedure,resultVar["name"])
             else:
                 msg = "could not identify return value for function ''"
                 utils.logging.logError(msg)
                 sys.exit(INDEXER_ERROR_CODE)
         else:
             resultType = "void"
-            parseResult = translator.parseProcedureBody(fBody,scope,indexRecord)
+            parseResult = translator.parseProcedureBody(fBody,scope,iprocedure)
 
         # TODO: look up functions and subroutines called internally and supply to parseResult before calling cStr()
     
         ## general
         generateLauncher   = EMIT_KERNEL_LAUNCHER and stprocedure.isKernelSubroutine()
-        kernelName         = indexRecord["name"]
+        kernelName         = iprocedure["name"]
         kernelLauncherName = "launch_" + kernelName
         loopVars = []; localLValues = []
 
         # sort identifiers: put dummy args first
         # TODO(dominic): More detailed analysis what to do with non-dummy args
-        dummyArgs = indexRecord["dummyArgs"]
+        dummyArgs = iprocedure["dummyArgs"]
         nonDummyArgs = []
-        for indexedVar in indexRecord["variables"]:
+        for indexedVar in iprocedure["variables"]:
             if indexedVar["name"] not in dummyArgs:  
                 nonDummyArgs.append(indexedVar["name"])
         identifiers = dummyArgs + nonDummyArgs
@@ -510,13 +512,9 @@ def __writeFile(outfilePath,kind,content):
     utils.logging.logLeaveFunction(LOG_PREFIX,"__writeFile")
 
 
-def __createIncludesFromUsedModules(index,moduleName):
-    """Create include statement for a module's used modules that are present in the index."""
-    imodule = next((irecord for irecord in index if irecord["name"] == moduleName),None)
-    if imodule == None:
-        utils.logging.logError(LOG_PREFIX,"generateHipFiles","did not find record module '{}'.".format(moduleName))
-        sys.exit() # TODO add error code
-    usedModules  = [irecord["name"] for irecord in imodule["usedModules"]]
+def __createIncludesFromUsedModules(indexRecord,index):
+    """Create include statement for a module's/subprogram's used modules that are present in the index."""
+    usedModules  = [irecord["name"] for irecord in indexRecord["usedModules"]]
     includes     = []
     for irecord in index:
         if irecord["name"] in usedModules:
@@ -601,7 +599,11 @@ def generateHipFiles(stree,index,kernelsToConvertToHip,translationSourcePath,gen
         # derivedtypes = ....
         
         # TODO handle includes
-        includes = __createIncludesFromUsedModules(index,moduleName)
+        imodule = next((irecord for irecord in index if irecord["name"] == moduleName),None)
+        if imodule == None:
+            utils.logging.logError(LOG_PREFIX,"generateHipFiles","could not find record for module '{}'.".format(moduleName))
+            sys.exit() # TODO add error code
+        includes = __createIncludesFromUsedModules(imodule,index)
         if len(loopKernels) or len(deviceProcedures):
             utils.logging.logDebug2(LOG_PREFIX,"generateHipFiles",\
               "detected loop kernels: {}; detected device subprograms {}".format(\

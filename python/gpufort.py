@@ -400,6 +400,8 @@ if __name__ == "__main__":
         if fortranModuleFilepath != None:
             preamble = "#include \"{}\"".format(\
               os.path.basename(fortranModuleFilepath))
+        else:
+            preamble = None
         if not (ONLY_EMIT_KERNELS or ONLY_EMIT_KERNELS_AND_LAUNCHERS):
             __translateSource(inputFilepath,stree,records,index,preamble) 
     #

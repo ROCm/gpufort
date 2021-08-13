@@ -48,15 +48,9 @@ contains
        y(i) = y(i) + a*x(i)
      endif
    end subroutine
-   
-   attributes(device) subroutine deviceFun(a,x,y,N)
-     implicit none
-     integer :: N
-     real :: x, y, a
-     y = y + a*x
-   end subroutine
 
    attributes(global) subroutine gpuKernel(a,x,y,N)
+     use devicelib
      implicit none
      integer :: i,N
      real :: x(N), y(N), a

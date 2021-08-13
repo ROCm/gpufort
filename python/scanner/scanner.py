@@ -200,13 +200,10 @@ def parseFile(records,index,fortranFilepath):
         nonlocal keepRecording
         nonlocal index
         logDetection_("subroutine")
-        try:
-           new = STProcedure(tokens[1],"subroutine",\
-               currentNode,currentRecord,currentStatementNo,index)
-           new._ignoreInS2STranslation = not translationEnabled
-           keepRecording = new.keepRecording()
-        except Exception as e:
-            print(e)
+        new = STProcedure(tokens[1],"subroutine",\
+            currentNode,currentRecord,currentStatementNo,index)
+        new._ignoreInS2STranslation = not translationEnabled
+        keepRecording = new.keepRecording()
         descend_(new)
     def End():
         nonlocal currentNode
@@ -542,68 +539,66 @@ def parseFile(records,index,fortranFilepath):
                 currentStatementStripped           = " ".join(currentTokens1)
                 currentStatementStrippedNoComments = currentStatementStripped.split("!")[0]
                 if len(currentTokens):
+                    # constructs
                     if currentTokens[0].startswith("end"):
                         for kind in ["program","module","subroutine","function"]: # ignore types/interfaces here
                             if isEndStatement_(currentTokens,kind):
                                  End()
                         if isEndStatement_(currentTokens,"do"):
                             DoLoop_leave()
-                    if "acc" in SOURCE_DIALECTS:
-                        for commentChar in "!*c":
-                            if currentTokens[0]==commentChar+"$acc":
-                                AccDirective()
-                            elif currentTokens[0]==commentChar+"$gpufort":
-                                GpufortControl()
-                    if "cuf" in SOURCE_DIALECTS:
-                        if "attributes" in currentStatementStrippedNoComments:
-                            tryToParseString("attributes",attributes)
-                        if "cu" in currentStatementStrippedNoComments:
-                            scanString("cudaLibCall",cudaLibCall)
-                        if "<<<" in currentStatementStrippedNoComments:
-                            tryToParseString("cudaKernelCall",cudaKernelCall)
-                        for commentChar in "!*c":
-                            if currentTokens[0]==commentChar+"$cuf":
-                                CufLoopKernel()
-                    if "=" in currentStatementStrippedNoComments:
-                        if not tryToParseString("memcpy",memcpy,parseAll=True):
-                            tryToParseString("assignment",assignmentBegin)
-                            scanString("nonZeroCheck",nonZeroCheck)
-                    if "allocated" in currentStatementStrippedNoComments:
-                        scanString("allocated",ALLOCATED)
-                    elif "deallocate" in currentStatementStrippedNoComments:
-                        tryToParseString("deallocate",DEALLOCATE) 
-                    elif "allocate" in currentStatementStrippedNoComments:
-                        tryToParseString("allocate",ALLOCATE) 
-                    
                     if pDoLoopBegin.match(currentStatementStripped):
                         DoLoop_visit()    
-                    
-                    if currentTokens[0] == "use":
-                        tryToParseString("use",use)
-                    elif currentTokens[0] == "implicit":
-                        tryToParseString("implicit",IMPLICIT)
-                    elif currentTokens[0] == "module":
-                        tryToParseString("module",moduleStart)
-                    elif currentTokens[0] == "program":
-                        tryToParseString("program",programStart)
-                    elif currentTokens[0] == "return":
-                         Return()
-                    if "function" in currentTokens:
-                        tryToParseString("function",functionStart)
-                    if "subroutine" in currentTokens:
-                        tryToParseString("subroutine",subroutineStart)
-                    if currentTokens[0] in ["character","integer","logical","real","complex","double"]:
-                        tryToParseString("declaration",datatype_reg)
-                        break
-                    if currentTokens[0] == "type" and currentTokens[1] == "(":
-                        tryToParseString("declaration",datatype_reg)
-                    if keepRecording:
-                       try:
-                          currentNode.addRecord(currentRecord)
-                          currentNode._lastStatementIndex = currentStatementNo
-                       except Exception as e:
-                          utils.logging.logError(LOG_PREFIX,"parseFile","While parsing file {}".format(currentFile))
-                          raise e
+                    # single-statements
+                    if not keepRecording:
+                        if "acc" in SOURCE_DIALECTS:
+                            for commentChar in "!*c":
+                                if currentTokens[0]==commentChar+"$acc":
+                                    AccDirective()
+                                elif currentTokens[0]==commentChar+"$gpufort":
+                                    GpufortControl()
+                        if "cuf" in SOURCE_DIALECTS:
+                            if "attributes" in currentStatementStrippedNoComments:
+                                tryToParseString("attributes",attributes)
+                            if "cu" in currentStatementStrippedNoComments:
+                                scanString("cudaLibCall",cudaLibCall)
+                            if "<<<" in currentStatementStrippedNoComments:
+                                tryToParseString("cudaKernelCall",cudaKernelCall)
+                            for commentChar in "!*c":
+                                if currentTokens[0]==commentChar+"$cuf":
+                                    CufLoopKernel()
+                        if "=" in currentStatementStrippedNoComments:
+                            if not tryToParseString("memcpy",memcpy,parseAll=True):
+                                tryToParseString("assignment",assignmentBegin)
+                                scanString("nonZeroCheck",nonZeroCheck)
+                        if "allocated" in currentStatementStrippedNoComments:
+                            scanString("allocated",ALLOCATED)
+                        elif "deallocate" in currentStatementStrippedNoComments:
+                            tryToParseString("deallocate",DEALLOCATE) 
+                        elif "allocate" in currentStatementStrippedNoComments:
+                            tryToParseString("allocate",ALLOCATE) 
+                        if currentTokens[0] == "use":
+                            tryToParseString("use",use)
+                        elif currentTokens[0] == "implicit":
+                            tryToParseString("implicit",IMPLICIT)
+                        elif currentTokens[0] == "module":
+                            tryToParseString("module",moduleStart)
+                        elif currentTokens[0] == "program":
+                            tryToParseString("program",programStart)
+                        elif currentTokens[0] == "return":
+                             Return()
+                        if "function" in currentTokens:
+                            tryToParseString("function",functionStart)
+                        if "subroutine" in currentTokens:
+                            tryToParseString("subroutine",subroutineStart)
+                        if currentTokens[0] in ["character","integer","logical","real","complex","double"]:
+                            tryToParseString("declaration",datatype_reg)
+                            break
+                        if currentTokens[0] == "type" and currentTokens[1] == "(":
+                            tryToParseString("declaration",datatype_reg)
+                    else:
+                        currentNode.addRecord(currentRecord)
+                        currentNode._lastStatementIndex = currentStatementNo
+
     assert type(currentNode) is STRoot
     utils.logging.logLeaveFunction(LOG_PREFIX,"parseFile")
     return currentNode

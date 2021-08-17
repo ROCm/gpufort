@@ -6,7 +6,7 @@ def bytes(fType,kind,default=None):
     kindLower = kind.lower()
     return FORTRAN_TYPE_2_BYTES_MAP.get(fType.lower(),{ kindLower : default }).get(kindLower, "UNKNOWN")
 
-ADDITIONS = "cuf kernel kind" # TODO
+ADDITIONS = "cuf kernel kind amax1 amin1" # TODO
 KEYWORDS = " ".join([CUDA_FORTRAN_KEYWORDS_STR, FORTRAN_INTRINSICS_STR, F08_KEYWORDS_STR, ADDITIONS])
 KEYWORDS = KEYWORDS.lower().split(" ")
 

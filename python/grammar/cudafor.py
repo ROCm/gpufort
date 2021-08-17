@@ -202,6 +202,7 @@ minval
 product
 sum""".split("\n")
 FORTRAN_INTRINSICS += ["ubound","lbound"]
+FORTRAN_INTRINSICS += ["amax1","amin1","float","nint"]
 
 # Host modules
 HOST_MODULES="""cudafor

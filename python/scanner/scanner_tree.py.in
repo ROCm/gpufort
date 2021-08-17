@@ -80,7 +80,7 @@ class STNode:
             strippedLine = line.lstrip("\t ")
             if strippedLine[0] in ["*","c","C","!"] and not\
                strippedLine[1] == "$": 
-                 lines.remove("line")
+                 lines.remove(line)
     def removeWhitespaces(self,lines):
         """Remove any whitespace and line continuation characters."""
         for i,line in enumerate(lines):

@@ -90,12 +90,12 @@ funcRValue       <<= matrixRange | arithmeticLogicalExpression
 # TODO check type of variable when translating
 # see http://userweb.eng.gla.ac.uk/peter.smart/com/com/f77-conv.htm
 # for now, always assume conversion between complex and float types 
-REAL,DBLE,CMPLX,DCMPLX,AIMAG,CONJG,DCONJG = makeCaselessLiteral("real,dble,cmplx,dcmplx,aimag,conjg,dconjg",suppress=True)
+REAL,FLOAT,DBLE,CMPLX,DCMPLX,AIMAG,CONJG,DCONJG = makeCaselessLiteral("real,float,dble,cmplx,dcmplx,aimag,conjg,dconjg",suppress=True)
 singleArgPlusKind = LPAR + (~funcKind+arithmeticExpression) + Optional(funcKind,default=None) + RPAR # emits 2 tokens: *,*,*
 doubleArgPlusKind = LPAR + (~funcKind+arithmeticExpression) + Optional(COMMA + (~funcKind+arithmeticExpression),default="0") +\
                            Optional(funcKind,default=None) + RPAR # emits 2 tokens: *,*,*
 
-convertToExtractReal   = REAL   + singleArgPlusKind # emits 2 tokens,
+convertToExtractReal   = ( REAL | FLOAT ) + singleArgPlusKind # emits 2 tokens,
 convertToDouble        = DBLE   + singleArgPlusKind # emits 2 tokens, 
 convertToComplex       = CMPLX  + doubleArgPlusKind # emits 3 tokens, op (x,y) -> x+iy | c.x = x, c.y = b  ; op: x -> (x,0) -> x+i0 -> | c.x = x, c.y =0
 convertToDoubleComplex = DCMPLX + doubleArgPlusKind # emits 3 tokens, op (x,y) -> x+iy | c.x = x, c.y = b  ; op: x -> (x,0) -> x+i0 -> | c.x = x, c.y =0
@@ -121,7 +121,6 @@ WHILE,IF,THEN,DO,END,SELECT,CASE,DEFAULT,WHERE,FORALL,FOREACH = makeCaselessLite
  "while,if,then,do,end,select,case,default,where,forall,foreach",suppress=True)
 ELSE = CASELESS_LITERAL("else").suppress()
 ENDIF     = END + IF.copy() # Otherwise parse actions apply
-ENDDO     = END + DO.copy()
 ENDSELECT = END + SELECT.copy()
 
 singleLineIfBody = Forward()
@@ -178,9 +177,10 @@ selectCaseBlock = Optional(identifier) + Group(SELECT + CASE + LPAR + selectExpr
      ENDSELECT
 
 ## Do Loop
+doLoopEnd   = Regex(r"end\s*do(\s+\w+)?",re.IGNORECASE).suppress()
 doLoopStart = Regex(r"(\w+:)?\s*do",re.IGNORECASE).suppress()
-doLoop      = doLoopStart + assignment + COMMA + arithmeticExpression + Optional(COMMA + arithmeticExpression,default="1") + block + ENDDO 
-whileLoop   = doLoopStart + WHILE + LPAR + arithmeticLogicalExpression + RPAR + block + ENDDO 
+doLoop      = doLoopStart + assignment + COMMA + arithmeticExpression + Optional(COMMA + arithmeticExpression,default="1") + block + doLoopEnd
+whileLoop   = doLoopStart + WHILE + LPAR + arithmeticLogicalExpression + RPAR + block + doLoopEnd
 
 # TODO Dominic: Simplify
 ## Declaration  // example: "real(kind=8), device, host, parameter :: rhx, rhy"

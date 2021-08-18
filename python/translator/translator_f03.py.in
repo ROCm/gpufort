@@ -540,7 +540,7 @@ class TTAssignment(TTNode):
             loopNestStart += "! TODO(gpufort) please check if this conversion was done correctly\n"
             loopNestStart += "! original: {}\n".format(originalFStr)
             result = loopNestStart + self.fStr()+"\n" + loopNestEnd
-            return doLoop.parseString(result)[0]
+            return annotatedDoLoop.parseString(result)[0]
         else:
             return self
     def cStr(self,unpack=False):

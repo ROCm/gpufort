@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+TERM = Regex(r"\n").suppress()
+
 LPAR,RPAR = map(Suppress, "()")
 EQ,ELEM,COMMA,DOT,UNDERSCORE = map(Suppress, "=%,._")
 PEQ=Suppress("=>")
@@ -119,7 +121,7 @@ inquiryFunction <<= sizeInquiry | lboundInquiry | uboundInquiry
 ### If statement
 WHILE,IF,THEN,DO,END,SELECT,CASE,DEFAULT,WHERE,FORALL,FOREACH = makeCaselessLiteral(
  "while,if,then,do,end,select,case,default,where,forall,foreach",suppress=True)
-ELSE = CASELESS_LITERAL("else").suppress()
+ELSE      = CASELESS_LITERAL("else").suppress()
 ENDIF     = END + IF.copy() # Otherwise parse actions apply
 ENDSELECT = END + SELECT.copy()
 
@@ -176,11 +178,15 @@ selectCaseBlock = Optional(identifier) + Group(SELECT + CASE + LPAR + selectExpr
          block ) +\
      ENDSELECT
 
-## Do Loop
-doLoopEnd   = Regex(r"end\s*do(\s+\w+)?",re.IGNORECASE).suppress()
-doLoopStart = Regex(r"(\w+:)?\s*do",re.IGNORECASE).suppress()
-doLoop      = doLoopStart + assignment + COMMA + arithmeticExpression + Optional(COMMA + arithmeticExpression,default="1") + block + doLoopEnd
-whileLoop   = doLoopStart + WHILE + LPAR + arithmeticLogicalExpression + RPAR + block + doLoopEnd
+## Do/while Loop
+doLoopEnd     = Regex(r"end\s*do(\s+\w+)?",re.IGNORECASE).suppress()
+doLoopStart   = Regex(r"(\w+:)?\s*do",re.IGNORECASE).suppress()
+
+doLoopHead    = doLoopStart + assignment + COMMA + arithmeticExpression + Optional(COMMA + arithmeticExpression,default="1")
+doLoop        = doLoopHead + block + doLoopEnd
+
+whileLoopHead = doLoopStart   + WHILE + LPAR + arithmeticLogicalExpression + RPAR 
+whileLoop     = whileLoopHead + block + doLoopEnd
 
 # TODO Dominic: Simplify
 ## Declaration  // example: "real(kind=8), device, host, parameter :: rhx, rhy"

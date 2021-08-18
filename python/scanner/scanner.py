@@ -532,11 +532,8 @@ def parseFile(records,index,fortranFilepath):
                 utils.logging.logDebug4(LOG_PREFIX,"parseFile","parsing statement '{}' associated with lines [{},{}]".format(currentStatement.rstrip(),\
                     currentRecord["lineno"],currentRecord["lineno"]+len(currentRecord["lines"])-1))
                 
-                currentTokens1 = re.split(r"\s+|\t+",currentStatement.lower().strip(" \t"))
-                currentTokens  = []
-                for tk in currentTokens1:
-                    currentTokens += [part for part in re.split('([(),]|::)',tk) if len(part)]
-                currentStatementStripped           = " ".join(currentTokens1)
+                currentTokens                      = pyparsingutils.tokenize(currentStatement.lower())
+                currentStatementStripped           = " ".join(currentTokens)
                 currentStatementStrippedNoComments = currentStatementStripped.split("!")[0]
                 if len(currentTokens):
                     # constructs
@@ -546,7 +543,7 @@ def parseFile(records,index,fortranFilepath):
                                  End()
                         if isEndStatement_(currentTokens,"do"):
                             DoLoop_leave()
-                    if pDoLoopBegin.match(currentStatementStripped):
+                    if pDoLoopBegin.match(currentStatementStrippedNoComments):
                         DoLoop_visit()    
                     # single-statements
                     if not keepRecording:
@@ -557,24 +554,24 @@ def parseFile(records,index,fortranFilepath):
                                 elif currentTokens[0]==commentChar+"$gpufort":
                                     GpufortControl()
                         if "cuf" in SOURCE_DIALECTS:
-                            if "attributes" in currentStatementStrippedNoComments:
+                            if "attributes" in currentTokens:
                                 tryToParseString("attributes",attributes)
                             if "cu" in currentStatementStrippedNoComments:
                                 scanString("cudaLibCall",cudaLibCall)
-                            if "<<<" in currentStatementStrippedNoComments:
+                            if "<<<" in currentTokens:
                                 tryToParseString("cudaKernelCall",cudaKernelCall)
                             for commentChar in "!*c":
                                 if currentTokens[0]==commentChar+"$cuf":
                                     CufLoopKernel()
-                        if "=" in currentStatementStrippedNoComments:
+                        if "=" in currentTokens:
                             if not tryToParseString("memcpy",memcpy,parseAll=True):
                                 tryToParseString("assignment",assignmentBegin)
                                 scanString("nonZeroCheck",nonZeroCheck)
-                        if "allocated" in currentStatementStrippedNoComments:
+                        if "allocated" in currentTokens:
                             scanString("allocated",ALLOCATED)
-                        elif "deallocate" in currentStatementStrippedNoComments:
+                        elif "deallocate" in currentTokens:
                             tryToParseString("deallocate",DEALLOCATE) 
-                        elif "allocate" in currentStatementStrippedNoComments:
+                        elif "allocate" in currentTokens:
                             tryToParseString("allocate",ALLOCATE) 
                         if currentTokens[0] == "use":
                             tryToParseString("use",use)

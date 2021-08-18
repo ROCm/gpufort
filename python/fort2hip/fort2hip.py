@@ -208,11 +208,10 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
     for stkernel in loopKernels:
         parentTag = stkernel._parent.tag()
         scope     = scoper.createScope(index,parentTag)
-       
-        fSnippet = stkernel.getSnippet()
-
+   
         # translate and analyze kernels
-        kernelParseResult = translator.parseLoopKernel(fSnippet,scope)
+        kernelParseResult = translator.parseLoopKernel(\
+                stkernel.getSnippet(),scope)
 
         kernelArgs, cKernelLocalVars, macros, inputArrays, localCpuRoutineArgs =\
           __deriveKernelArguments(scope,\
@@ -282,10 +281,11 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         hipKernelDict["kernelName"]            = kernelName
         hipKernelDict["macros"]                = macros
         hipKernelDict["cBody"]                 = kernelParseResult.cStr()
+        originalSnippet = "".join(stkernel.lines())
         if PRETTIFY_EMITTED_FORTRAN_CODE:
-            hipKernelDict["fBody"]                 = utils.fileutils.prettifyFCode(fSnippet)
+            hipKernelDict["fBody"]                 = utils.fileutils.prettifyFCode(originalSnippet)
         else:
-            hipKernelDict["fBody"]                 = fSnippet
+            hipKernelDict["fBody"]                 = originalSnippet
         hipKernelDict["kernelArgs"]            = ["{} {}{}{}".format(a["cType"],a["name"],a["cSize"],a["cSuffix"]) for a in kernelArgs]
         hipKernelDict["kernelCallArgNames"]    = kernelCallArgNames
         hipKernelDict["cpuKernelCallArgNames"] = cpuKernelCallArgNames

@@ -27,6 +27,19 @@ class TTNode(object):
         pass
     #__repr__ = __str__
 
+class TTContainer(TTNode):
+    """
+    Container node for manual parser construction.
+    """
+    def __init__(self):
+        TTNode.__init__(self,"","",[])
+        self.children = []
+    def cStr():
+        result = ""
+        for child in children:
+            result += makeCStr(child)
+        return result
+
 def findAllMatching(body,filterExpr=lambda x: True,N=-1):
     """
     Find all nodes in tree of type 'searchedType'.

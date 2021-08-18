@@ -96,7 +96,7 @@ class STNode:
         result = self.__getRecordContent("statements",\
           self._firstStatementIndex,self._lastStatementIndex)
         if not includeNoneEntries:
-            return [stmt for stmt in result if stmt != None]
+            return [stmt.rstrip("\n\t ;") for stmt in result if stmt != None]
     def minLineno(self):
         """
         :return: Inclusive first line number belonging to this object.
@@ -413,9 +413,11 @@ class STLoopKernel(STNode):
         return LOOP_KERNEL_NAME_TEMPLATE.format(parent=self._parent.name.lower(),lineno=self.minLineno(),hash=self.__hash())
     def kernelLauncherName(self):
         return "launch_{}".format(self.kernelName())
-    def getSnippet(self):
-        """Creates a snippet from the (original) statements associated with this node"""
-        return "\n".join([stmt.rstrip("\n") for stmt in self.__originalStatements])
+    def getSnippet(self,separator):
+        """Creates a snippet from the (original) statements associated with this node
+        :param str separator: character that is placed between the statements ('\n' or ';')
+        """
+        return separator.join([stmt.rstrip("\n") for stmt in self.__originalStatements])
     def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
         indent = self.firstLineIndent()
         try:

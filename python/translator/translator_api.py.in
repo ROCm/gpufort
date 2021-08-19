@@ -15,8 +15,8 @@ def createIndexRecordsFromDeclaration(ttdeclaration):
         varName    = ttdeclaredvariable.name().lower()
         varContext = {}
         # basic 
-        fType = makeFStr(ttdeclaration._datatype.type())
-        kind  = makeFStr(ttdeclaration._datatype.kind())
+        fType = make_f_str(ttdeclaration._datatype.type())
+        kind  = make_f_str(ttdeclaration._datatype.kind())
         bpe   = bytes(fType,kind,default=None)
         varContext["name"]                       = varName
         varContext["fType"]                      = fType
@@ -37,7 +37,7 @@ def createIndexRecordsFromDeclaration(ttdeclaration):
         varContext["declareOnTarget"]           = False
         # arrays
         varContext["rank"]                       = 0
-        dimensionQualifier = findAll(ttdeclaration._qualifiers,TTDimensionQualifier)
+        dimensionQualifier = find_all(ttdeclaration._qualifiers,TTDimensionQualifier)
         if ttdeclaredvariable.hasBounds() or len(dimensionQualifier):
             varContext["fInterfaceType"] = "type(c_ptr)"
             if len(dimensionQualifier):
@@ -83,11 +83,11 @@ def changeKind(varContext,kind):
     varContext["totalBytes"] = None if bpe is None else bpe+"*("+varContext["totalCount"]+")"
 
 def convertArithmeticExpression(fortranSnippet):
-    return ( matrixArithmeticExpression | complexArithmeticExpression | arithmeticExpression ).parseString(fortranSnippet)[0].cStr()
+    return ( matrixArithmeticExpression | complexArithmeticExpression | arithmeticExpression ).parseString(fortranSnippet)[0].c_str()
 
 def parseAttributes(ttattributes):
-    attribute    = makeFStr(ttattributes._qualifiers[0]).lower()
-    modifiedVars = [makeFStr(var).lower() for var in ttattributes._rhs]
+    attribute    = make_f_str(ttattributes._qualifiers[0]).lower()
+    modifiedVars = [make_f_str(var).lower() for var in ttattributes._rhs]
     return attribute, modifiedVars 
 
 def createIndexSearchTagForVariable(variableExpression):
@@ -159,7 +159,7 @@ def parseLoopKernel(fortranSnippet,scope=[],maxRecursions=30):
         return EmptyComputeConstruct(fortranSnippet)
 
 class EmptyProcedureBody():
-    def cStr(self):
+    def c_str(self):
         return "" 
 
 def parseProcedureBody(fortranSnippet,scope,indexRecord,resultName="",maxRecursions=10):

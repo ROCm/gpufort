@@ -17,4 +17,4 @@ test.run(
 )
 
 for v in testdata:
-    print(translator.funcCall.parseString(v)[0].cStr())
+    print(translator.funcCall.parseString(v)[0].c_str())

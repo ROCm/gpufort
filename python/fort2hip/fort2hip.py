@@ -228,7 +228,7 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         hipContext["haveReductions"] = False # |= len(reductionOps)
         kernelCallArgNames    = []
         cpuKernelCallArgNames = []
-        reductions            = kernelParseResult.gangTeamReductions(translator.makeCStr)
+        reductions            = kernelParseResult.gangTeamReductions(translator.make_c_str)
         reductionVars         = []
         for arg in kernelArgs:
             name  = arg["name"]
@@ -280,7 +280,7 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         hipKernelDict["blockDims"  ]           = [ "{}_block{}".format(kernelName,x["dim"]) for x in block ]
         hipKernelDict["kernelName"]            = kernelName
         hipKernelDict["macros"]                = macros
-        hipKernelDict["cBody"]                 = kernelParseResult.cStr()
+        hipKernelDict["cBody"]                 = kernelParseResult.c_str()
         originalSnippet = "".join(stkernel.lines())
         if PRETTIFY_EMITTED_FORTRAN_CODE:
             hipKernelDict["fBody"]                 = utils.fileutils.prettifyFCode(originalSnippet)
@@ -292,7 +292,7 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
         hipKernelDict["reductions"]            = reductionVars
         hipKernelDict["kernelLocalVars"]       = ["{} {}{}".format(a["cType"],a["name"],a["cSize"]) for a in cKernelLocalVars]
         hipKernelDict["interfaceName"]         = kernelLauncherName
-        hipKernelDict["interfaceComment"]      = "" # kernelLaunchInfo.cStr()
+        hipKernelDict["interfaceComment"]      = "" # kernelLaunchInfo.c_str()
         hipKernelDict["interfaceArgs"]         = hipKernelDict["kernelArgs"]
         hipKernelDict["interfaceArgNames"]     = [arg["name"] for arg in kernelArgs] # excludes the stream;
         hipKernelDict["inputArrays"]           = inputArrays
@@ -421,7 +421,7 @@ def __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fConte
             resultType = "void"
             parseResult = translator.parseProcedureBody(fBody,scope,iprocedure)
 
-        # TODO: look up functions and subroutines called internally and supply to parseResult before calling cStr()
+        # TODO: look up functions and subroutines called internally and supply to parseResult before calling c_str()
     
         ## general
         generateLauncher   = EMIT_KERNEL_LAUNCHER and stprocedure.isKernelSubroutine()
@@ -457,7 +457,7 @@ def __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fConte
         hipKernelDict["isLoopKernel"]        = False
         hipKernelDict["kernelName"]          = kernelName
         hipKernelDict["macros"]              = macros
-        hipKernelDict["cBody"]               = parseResult.cStr()
+        hipKernelDict["cBody"]               = parseResult.c_str()
         hipKernelDict["fBody"]               = "".join(stprocedure.lines())
         hipKernelDict["kernelArgs"] = []
         # device procedures take all C args as reference or pointer
@@ -584,7 +584,7 @@ def generateHipFiles(stree,index,kernelsToConvertToHip,translationSourcePath,gen
     haveReductions     = False
     hipModuleFilenames = []
     fortranModules     = []
-    programOrModules = stree.findAll(filter=lambda child: type(child) in [scanner.STProgram,scanner.STModule], recursively=False)
+    programOrModules = stree.find_all(filter=lambda child: type(child) in [scanner.STProgram,scanner.STModule], recursively=False)
     for stmodule in programOrModules:
         # file names & paths
         moduleName        = stmodule.name.lower()
@@ -593,8 +593,8 @@ def generateHipFiles(stree,index,kernelsToConvertToHip,translationSourcePath,gen
         hipModuleFilepath = outputDir+"/"+hipModuleFilename
         guard             = hipModuleFilename.replace(".","_").replace("-","_").upper() 
         # extract kernels
-        loopKernels      = stmodule.findAll(filter=loopKernelFilter_, recursively=True)
-        deviceProcedures = stmodule.findAll(filter=deviceProcedureFilter_, recursively=True)
+        loopKernels      = stmodule.find_all(filter=loopKernelFilter_, recursively=True)
+        deviceProcedures = stmodule.find_all(filter=deviceProcedureFilter_, recursively=True)
         # TODO: Also extract derived types
         # derivedtypes = ....
         
@@ -668,4 +668,3 @@ def generateHipFiles(stree,index,kernelsToConvertToHip,translationSourcePath,gen
     utils.logging.logLeaveFunction(LOG_PREFIX,"generateHipFiles")
     
     return fortranModuleFilepath, mainHipFilepath
-

@@ -18,21 +18,21 @@ test.run(
    raiseException = True
 )
 v = testdata[0]
-print(translator.memcpy.parseString(v)[0].fStr(False,True,8))
+print(translator.memcpy.parseString(v)[0].f_str(False,True,8))
 
-assert translator.memcpy.parseString(v)[0].fStr(True,True,8).replace(" ","")   == "hipMemcpy(a,b,1_8*(8)*(n),hipMemcpyDeviceToDevice)"
-assert translator.memcpy.parseString(v)[0].fStr(False,True,8).replace(" ","")  == "hipMemcpy(c_loc(a),b,1_8*(8)*(n),hipMemcpyDeviceToHost)"
-assert translator.memcpy.parseString(v)[0].fStr(True,False,8).replace(" ","")  == "hipMemcpy(a,c_loc(b),1_8*(8)*(n),hipMemcpyHostToDevice)"
-assert translator.memcpy.parseString(v)[0].fStr(False,False,8).replace(" ","") == "hipMemcpy(c_loc(a),c_loc(b),1_8*(8)*(n),hipMemcpyHostToHost)"
+assert translator.memcpy.parseString(v)[0].f_str(True,True,8).replace(" ","")   == "hipMemcpy(a,b,1_8*(8)*(n),hipMemcpyDeviceToDevice)"
+assert translator.memcpy.parseString(v)[0].f_str(False,True,8).replace(" ","")  == "hipMemcpy(c_loc(a),b,1_8*(8)*(n),hipMemcpyDeviceToHost)"
+assert translator.memcpy.parseString(v)[0].f_str(True,False,8).replace(" ","")  == "hipMemcpy(a,c_loc(b),1_8*(8)*(n),hipMemcpyHostToDevice)"
+assert translator.memcpy.parseString(v)[0].f_str(False,False,8).replace(" ","") == "hipMemcpy(c_loc(a),c_loc(b),1_8*(8)*(n),hipMemcpyHostToHost)"
 
 v = testdata[1]
-assert translator.memcpy.parseString(v)[0].fStr(True,True,8).replace(" ","")   == "hipMemcpy(type0%a,type1%b,1_8*(8)*(n),hipMemcpyDeviceToDevice)"
-assert translator.memcpy.parseString(v)[0].fStr(False,True,8).replace(" ","")  == "hipMemcpy(c_loc(type0%a),type1%b,1_8*(8)*(n),hipMemcpyDeviceToHost)"
-assert translator.memcpy.parseString(v)[0].fStr(True,False,8).replace(" ","")  == "hipMemcpy(type0%a,c_loc(type1%b),1_8*(8)*(n),hipMemcpyHostToDevice)"
-assert translator.memcpy.parseString(v)[0].fStr(False,False,8).replace(" ","") == "hipMemcpy(c_loc(type0%a),c_loc(type1%b),1_8*(8)*(n),hipMemcpyHostToHost)"
-#print(translator.memcpy.parseString(v)[0].fStr(True,True,8).replace(" ","")  ) 
-#print(translator.memcpy.parseString(v)[0].fStr(False,True,8).replace(" ","") )
-#print(translator.memcpy.parseString(v)[0].fStr(True,False,8).replace(" ","") ) 
-#print(translator.memcpy.parseString(v)[0].fStr(False,False,8).replace(" ",""))
+assert translator.memcpy.parseString(v)[0].f_str(True,True,8).replace(" ","")   == "hipMemcpy(type0%a,type1%b,1_8*(8)*(n),hipMemcpyDeviceToDevice)"
+assert translator.memcpy.parseString(v)[0].f_str(False,True,8).replace(" ","")  == "hipMemcpy(c_loc(type0%a),type1%b,1_8*(8)*(n),hipMemcpyDeviceToHost)"
+assert translator.memcpy.parseString(v)[0].f_str(True,False,8).replace(" ","")  == "hipMemcpy(type0%a,c_loc(type1%b),1_8*(8)*(n),hipMemcpyHostToDevice)"
+assert translator.memcpy.parseString(v)[0].f_str(False,False,8).replace(" ","") == "hipMemcpy(c_loc(type0%a),c_loc(type1%b),1_8*(8)*(n),hipMemcpyHostToHost)"
+#print(translator.memcpy.parseString(v)[0].f_str(True,True,8).replace(" ","")  ) 
+#print(translator.memcpy.parseString(v)[0].f_str(False,True,8).replace(" ","") )
+#print(translator.memcpy.parseString(v)[0].f_str(True,False,8).replace(" ","") ) 
+#print(translator.memcpy.parseString(v)[0].f_str(False,False,8).replace(" ",""))
 
 print("SUCCESS")

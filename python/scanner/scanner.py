@@ -56,9 +56,9 @@ def __postprocessAcc(stree):
     
     utils.logging.logEnterFunction(LOG_PREFIX,"__postprocessAcc")
     
-    directives = stree.findAll(filter=lambda node: isinstance(node,STAccDirective), recursively=True)
+    directives = stree.find_all(filter=lambda node: isinstance(node,STAccDirective), recursively=True)
     for directive in directives:
-         stnode = directive._parent.findFirst(filter=lambda child : not child._ignoreInS2STranslation and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
+         stnode = directive._parent.find_first(filter=lambda child : not child._ignoreInS2STranslation and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
          # add acc use statements
          if not stnode is None:
              indent = stnode.firstLineIndent()
@@ -80,7 +80,7 @@ def __postprocessCuf(stree):
     if CUBLAS_VERSION == 1:
         def hasCublasCall(child):
             return type(child) is STCudaLibCall and child.hasCublas()
-        cublasCalls = stree.findAll(filter=hasCublasCall, recursively=True)
+        cublasCalls = stree.find_all(filter=hasCublasCall, recursively=True)
         #print(cublasCalls)
         for call in cublasCalls:
             begin = call._parent.findLast(filter=lambda child : type(child) in [STUseStatement,STDeclaration])
@@ -88,7 +88,7 @@ def __postprocessCuf(stree):
             begin.addToEpilog("{0}type(c_ptr) :: hipblasHandle = c_null_ptr\n".format(indent))
             #print(begin._records)       
  
-            localCublasCalls = call._parent.findAll(filter=hasCublasCall, recursively=False)
+            localCublasCalls = call._parent.find_all(filter=hasCublasCall, recursively=False)
             first = localCublasCalls[0]
             indent = self.firstLineIndent()
             first.addToProlog("{0}hipblasCreate(hipblasHandle)\n".format(indent))
@@ -289,7 +289,7 @@ def parseFile(records,index,fortranFilepath):
         logDetection_("use statement")
         new = STUseStatement(currentNode,currentRecord,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
-        new.name = translator.makeFStr(tokens[1]) # just get the name, ignore specific includes
+        new.name = translator.make_f_str(tokens[1]) # just get the name, ignore specific includes
         appendIfNotRecording_(new)
     def PlaceHolder(tokens):
         nonlocal translationEnabled
@@ -431,7 +431,7 @@ def parseFile(records,index,fortranFilepath):
         logDetection_("assignment")
         if inKernelsAccRegionAndNotRecording():
             parseResult = translator.assignmentBegin.parseString(currentStatement)
-            lvalue = translator.findFirst(parseResult,translator.TTLValue)
+            lvalue = translator.find_first(parseResult,translator.TTLValue)
             if not lvalue is None and lvalue.hasMatrixRangeArgs():
                 new  = STAccLoopKernel(currentNode,currentRecord,currentStatementNo)
                 new._ignoreInS2STranslation = not translationEnabled
@@ -618,14 +618,14 @@ def postprocess(stree,index,hipModuleSuffix):
             return isinstance(child,STLoopKernel) or\
                    (type(child) is STProcedure and child.isKernelSubroutine())
         
-        for stmodule in stree.findAll(filter=lambda child: type(child) in [STModule,STProgram],recursively=False):
+        for stmodule in stree.find_all(filter=lambda child: type(child) in [STModule,STProgram],recursively=False):
             moduleName = stmodule.name 
-            kernels    = stmodule.findAll(filter=isAccelerated, recursively=True)
+            kernels    = stmodule.find_all(filter=isAccelerated, recursively=True)
             for kernel in kernels:
                 if "hip" in DESTINATION_DIALECT or\
                   kernel.minLineno() in kernelsToConvertToHip or\
                   kernel.kernelName() in kernelsToConvertToHip:
-                    stnode = kernel._parent.findFirst(filter=lambda child: type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
+                    stnode = kernel._parent.find_first(filter=lambda child: type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
                     assert not stnode is None
                     indent = stnode.firstLineIndent()
                     stnode.addToProlog("{}use {}{}\n".format(indent,moduleName,hipModuleSuffix))

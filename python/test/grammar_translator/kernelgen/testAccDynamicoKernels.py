@@ -29,7 +29,7 @@ translator.LOOP_COLLAPSE_STRATEGY="collapse"
 #print(k1)
 #print(grammar.accLoopKernel.parseString(k1))
 #result = translator.accLoopKernel.parseString(k1)[0]
-#print(result.cStr())
+#print(result.c_str())
 #print(result.problemSize())
 
 print("k1:")
@@ -53,4 +53,4 @@ print(problemSize[0])
 #    results = translator.accConstruct.parseString(k1data[i])
 #    print(results)
 #    results[0].printTokens()
-#    print(results[0].cStr())
+#    print(results[0].c_str())

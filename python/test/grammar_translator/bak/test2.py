@@ -9,11 +9,11 @@ LIST_OF_TENSORS.clear()
 
 testString = "a + d + c + d * (a+c)"
 result = arithmeticExpression.parseString(testString)
-print(result[0].cStr())
+print(result[0].c_str())
 
 testString = "a(i,sin(y)%x2) = b + d + c + d * (a+c)"
 result = assignment.parseString(testString)
-print(result[0].cStr())
+print(result[0].c_str())
 
 testDo="""
 do i=1,n
@@ -28,7 +28,7 @@ enddo
 enddo"""
 
 result = doLoop.parseString(testDo)
-print(result[0].cStr())
+print(result[0].c_str())
 
 
 testWhile="""
@@ -46,7 +46,7 @@ enddo
 enddo"""
 
 result = whileLoop.parseString(testWhile)
-print(result[0].cStr())
+print(result[0].c_str())
 
 testCufLoopKernel="""
 !$cuf kernel do(2) <<<*,*, 0, dfft%bstreams(batch_id)>>>
@@ -69,4 +69,4 @@ enddo"""
 
 #print(testCufKernels)
 result = cufLoopKernel.parseString(testCufLoopKernel)
-print(result[0].cStr())
+print(result[0].c_str())

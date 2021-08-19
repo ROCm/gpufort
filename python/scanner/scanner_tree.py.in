@@ -138,7 +138,7 @@ class STNode:
 
         recursiveParentLookup(self)        
         return result
-    def findAll(self,filter=lambda child : True,recursively=False):
+    def find_all(self,filter=lambda child : True,recursively=False):
         result = []
         def descend(curr):
             for child in curr._children:
@@ -148,7 +148,7 @@ class STNode:
                     descend(child)
         descend(self)       
         return result
-    def findFirst(self,filter=lambda child: True):
+    def find_first(self,filter=lambda child: True):
         for child in self._children:
             if filter(child):
                 return child
@@ -444,7 +444,7 @@ class STDeclaration(STNode):
     """
     def __init__(self,parent,firstRecord,firstRecordFirstStatement):
         STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
-        self._ttdeclaration   = translator.declaration.parseString(self.firstStatement())[0]
+        self._ttdeclaration   = translator.fortran_declaration.parseString(self.firstStatement())[0]
         self._vars            = [name.lower() for name in self._ttdeclaration.variableNames()]
     def createCodegenContext(self):
         return translator.createIndexRecordsFromDeclaration(self._ttdeclaration)
@@ -464,8 +464,8 @@ class STDeclaration(STNode):
         else:
             index = copy.copy(scoper.EMPTY)
             index["variables"] = self.createCodegenContext()
-        originalDatatype          = translator.makeFStr(self._ttdeclaration._datatype)
-        originalQualifiers        = [translator.makeFStr(q).lower() for q in self._ttdeclaration._qualifiers]
+        originalDatatype          = translator.make_f_str(self._ttdeclaration._datatype)
+        originalQualifiers        = [translator.make_f_str(q).lower() for q in self._ttdeclaration._qualifiers]
         unchangedVariables        = []  
         newDevicePointerVariables = []
         newHostPointerVariables   = []
@@ -505,7 +505,7 @@ class STDeclaration(STNode):
 
         # TODO handle side effects if no allocatable present
         if len(newDevicePointerVariables) + len(newHostPointerVariables) < len(self._ttdeclaration._rhs): 
-            result = indent + self._ttdeclaration.fStr(extraIgnoreList=newDevicePointerVariables+newHostPointerVariables) +\
+            result = indent + self._ttdeclaration.f_str(extraIgnoreList=newDevicePointerVariables+newHostPointerVariables) +\
                      result
         if len(newDevicePointerVariables) or len(newHostPointerVariables):
             return result.lstrip("\n"), True
@@ -537,7 +537,7 @@ class STNonZeroCheck(STNode):
             onDevice    = scoper.indexVariableIsOnDevice(indexVar)
             transformed |= onDevice
             if onDevice:
-                subst = parseResult.fStr() # TODO backend specific
+                subst = parseResult.f_str() # TODO backend specific
                 result = result.replace(result[start:end],subst)
         return result, transformed
 
@@ -550,7 +550,7 @@ class STAllocated(STNode):
             indexVar,_ = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
               translator.createIndexSearchTagForVariable(varName))
             onDevice    = scoper.indexVariableIsOnDevice(indexVar)
-            return (parseResult.fStr(), onDevice) # TODO backend specific
+            return (parseResult.f_str(), onDevice) # TODO backend specific
         result, transformed = utils.pyparsingutils.replaceAll(snippet,translator.allocated,repl)
         assert result != None
         return result, transformed
@@ -664,7 +664,7 @@ class STCudaLibCall(STNode):
                 return (subst, True)
             snippet,_ = utils.pyparsingutils.replaceAll(snippet,translator.cufCudaMemcpyVariant,replMemcpy)
         def replCublas(parseResult):
-            subst = parseResult.fStr(indent)
+            subst = parseResult.f_str(indent)
             return (subst, True)
         snippet,haveCublas = utils.pyparsingutils.replaceAll(snippet,translator.cublasCall,replCublas)
         if haveCublas:
@@ -692,13 +692,13 @@ class STCudaKernelCall(STNode):
             for ttexpr in parseResult._args:
                 # expand array arguments
                 maxRank = 0
-                for rvalue in translator.findAll(ttexpr,translator.TTRValue):
+                for rvalue in translator.find_all(ttexpr,translator.TTRValue):
                     # TODO lookup the subprogram first 
                     indexVar, discovered = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
                        translator.createIndexSearchTagForVariable(rvalue.name()))
                     if discovered:
                         maxRank = max(maxRank,indexVar["rank"])
-                exprFStr = translator.makeFStr(ttexpr)
+                exprFStr = translator.make_f_str(ttexpr)
                 if maxRank > 0:
                     kernelArgs.append("c_loc("+exprFStr+")")
                 else:

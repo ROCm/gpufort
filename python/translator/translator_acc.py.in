@@ -4,17 +4,17 @@
 #from translator.translator_f03 import *
 
 class TTAccClauseGang(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._value = tokens[0]
     def value(self):
         return self._value
 class TTAccClauseWorker(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._value = tokens[0]
     def value(self):
         return self._value
 class TTAccClauseVector(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._value = tokens[0]
     def value(self):
         return self._value
@@ -25,80 +25,80 @@ class TTAccClauseNumWorkers(TTAccClauseWorker):
 class TTAccClauseVectorLength(TTAccClauseVector):
     pass
 class TTAccClauseDeviceType(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._deviceTypes = tokens
     def deviceTypes(self):
         return self._deviceTypes
 class TTAccClauseIf(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._condition = tokens[0]
     def condition(self):
-        return makeFStr(self._condition)
+        return make_f_str(self._condition)
 class TTAccClauseSelf(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._condition = tokens[0]
     def condition(self):
-        return makeFStr(self._condition)
+        return make_f_str(self._condition)
 class TTAccMappingClause(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._kind    = tokens[0]
         self._varList = tokens[1].asList()
     def kind(self):
         return self._kind
-    def varNames(self,converter=makeFStr):
+    def varNames(self,converter=make_f_str):
         return [ var.varName(converter) for var in self._varList ]
-    def varExpressions(self,converter=makeFStr):
+    def varExpressions(self,converter=make_f_str):
         return [ converter(var) for var in self._varList ]
 class TTAccClauseDefault(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._value = tokens
     def value(self):
         return self._value
 class TTAccClauseReduction(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._operator, self._vars = tokens
-    def reductions(self,converter=makeFStr):
+    def reductions(self,converter=make_f_str):
         result          = {}
         op              = converter(self._operator)
-        if converter == makeCStr:
+        if converter == make_c_str:
             # post-process
             op = op.replace(".","")
             op = op.replace("+","add")
             op = op.replace("*","mult")
             # "+" "*" "max" "min" "iand" "ior" "ieor" ".and." ".or." ".eqv." ".neqv."
-        result[op] = [makeFStr(var) for var in self._vars] 
+        result[op] = [make_f_str(var) for var in self._vars] 
         return result
 class TTAccClauseBind(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         pass
 class TTAccClauseTile(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._tilesPerDim = tokens[0]
     def values():
         return self._tilesPerDim
 class TTAccClauseCollapse(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._value = tokens[0]
     def value(self):
         return int(self._value._value)
 class TTAccClauseWait(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._expressions = list(tokens[0])
     def expressions(self):
-        return [makeFStr(expr) for expr in self._expressions]
+        return [make_f_str(expr) for expr in self._expressions]
 class TTAccClauseAsync(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._expression = tokens[0]
     def expression(self):
-        return makeFStr(self._expression)
+        return make_f_str(self._expression)
 
 #
 # Directives
 #
 class TTAccDirectiveBase(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._clauses = tokens[0]
-    def handleMappingClause(self,clauseKinds,converter=makeFStr):
+    def handleMappingClause(self,clauseKinds,converter=make_f_str):
         result = []
         for clause in self._clauses:
             if type(clause) == TTAccMappingClause and\
@@ -137,9 +137,9 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
       finalize
     """
     def asyncNowait(self): 
-        clause = findFirst(self._clauses,TTAccClauseAsync)
+        clause = find_first(self._clauses,TTAccClauseAsync)
         if not clause is None:
-            return makeFStr(clause.expression())
+            return make_f_str(clause.expression())
         else:
             return CLAUSE_NOT_FOUND
     def deviceptrs(self):
@@ -163,19 +163,19 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
     def deleteReleaseVars(self):
         return self.handleMappingClause(["delete"])
     def ifCondition(self):
-        clause = findFirst(self._clauses,TTAccClauseIf)
+        clause = find_first(self._clauses,TTAccClauseIf)
         if not clause is None:
-            return [makeFStr(e) for e in clause.expression()]
+            return [make_f_str(e) for e in clause.expression()]
         else:
             return ""
     def selfCondition(self):
-        clause = findFirst(self._clauses,TTAccClauseSelf)
+        clause = find_first(self._clauses,TTAccClauseSelf)
         if not clause is None:
-            return [makeFStr(e) for e in clause.expression()]
+            return [make_f_str(e) for e in clause.expression()]
         else:
             return ""
     def presentByDefault(self):
-        clause = findFirst(self._clauses,TTAccClauseDefault)
+        clause = find_first(self._clauses,TTAccClauseDefault)
         if not clause is None:
             return clause.value() == "present"
         else:
@@ -298,7 +298,7 @@ class TTAccDeclare(TTAccDirectiveBase):
         return self._format(result)
 
 class TTAccRoutine(TTAccDirectiveBase):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._id, self._clauses = tokens
     def parallelism(self):
         result = [c for c in self._clauses if c in ["seq","gang","worker"]]
@@ -309,13 +309,13 @@ class TTAccRoutine(TTAccDirectiveBase):
     def ompFStr(self,additions=""):
         """ additions can be used to pass 'notinbranch' 'inbranch'"""
         result = "!$omp target declare"
-        #if findFirst(self._clauses,TTAccClauseGang) != None:
+        #if find_first(self._clauses,TTAccClauseGang) != None:
         #    pass
-        #elif findFirst(self._clauses,TTAccClauseWorker) != None:
+        #elif find_first(self._clauses,TTAccClauseWorker) != None:
         #    pass
-        if findFirst(self._clauses,TTAccClauseVector) != None:
+        if find_first(self._clauses,TTAccClauseVector) != None:
             if self._id != None:
-                result += " simd("+makeFStr(self._id)+")"
+                result += " simd("+make_f_str(self._id)+")"
             else:
                 result += " simd "
         #if not "device_type" in additions:
@@ -327,8 +327,8 @@ class TTAccRoutine(TTAccDirectiveBase):
 class TTAccUpdate(TTAccDirectiveBase):
     def ompFStr(self):
         result = "!$omp target update"
-        hostClause   = findFirst(self._clauses,TTAccClauseHost)
-        deviceClause = findFirst(self._clauses,TTAccClauseDevice)
+        hostClause   = find_first(self._clauses,TTAccClauseHost)
+        deviceClause = find_first(self._clauses,TTAccClauseDevice)
         if hostClause != None:
             result += " to("+",".join(hostClause.varNames())+")"
         if deviceClause != None:
@@ -338,7 +338,7 @@ class TTAccUpdate(TTAccDirectiveBase):
 class TTAccWait(TTAccDirectiveBase):
     def waitArgs(self):
         """ Can be used to deduce task dependencies """
-        clause = findFirst(self._clauses,TTAccClauseWait)
+        clause = find_first(self._clauses,TTAccClauseWait)
         if clause is None:
             return None
         else:
@@ -371,23 +371,23 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
       private( var-list )
       reduction( operator:var-list )
     """
-    def _assignFields(self,tokens):
-        TTAccDirectiveBase._assignFields(self,tokens)
+    def _assign_fields(self,tokens):
+        TTAccDirectiveBase._assign_fields(self,tokens)
         self._loopHandlesMutualClauses = True    # can be unset by TTAccParallelLoop or TTAccKernelsLoop
     def numCollapse(self):
-        clause = findFirst(self._clauses,TTAccClauseCollapse)
+        clause = find_first(self._clauses,TTAccClauseCollapse)
         return 1 if clause is None else clause.value()
     def tileSizes(self):
         assert False, "Not implemented!"
         return [1]
     def numGangsTeamsBlocks(self):
-        clauses = findAllMatching(self._clauses,lambda x: isinstance(x,TTAccClauseGang),2)
+        clauses = find_all_matching(self._clauses,lambda x: isinstance(x,TTAccClauseGang),2)
         return [CLAUSE_NOT_FOUND] if clause is None else [max([c.value() for c in clauses])]
     def numWorkers(self):
-        clauses = findAllMatching(self._clauses,lambda x: isinstance(x,TTAccClauseWorker),2)
+        clauses = find_all_matching(self._clauses,lambda x: isinstance(x,TTAccClauseWorker),2)
         return CLAUSE_NOT_FOUND if clause is None else max([c.value() for c in clauses])
     def simdlenVectorLength(self):
-        clauses = findAllMatching(self._clauses,lambda x: isinstance(x,TTAccClauseVector),2)
+        clauses = find_all_matching(self._clauses,lambda x: isinstance(x,TTAccClauseVector),2)
         return CLAUSE_NOT_FOUND if clause is None else max([c.value() for c in clauses])
     def numThreadsInBlock(self):
         workers   = self.numWorkers()
@@ -398,18 +398,18 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
             return [workers[0] * vectorLen[0]]
     def dataIndependentIterations(self):
         """ Always assume data independent if no seq clause is used """
-        clause = findFirstMatching(self._clauses,lambda x: x=="seq")
+        clause = find_first_matching(self._clauses,lambda x: x=="seq")
         return True if clause is None else False
-    def reductions(self,converter=makeFStr):
+    def reductions(self,converter=make_f_str):
         result = {}
-        for clause in findAll(self._clauses,TTAccClauseReduction):
+        for clause in find_all(self._clauses,TTAccClauseReduction):
             contrib = clause.reductions(converter)
             for key,value in contrib.items():
                 if not key in result:
                     result[key] = []
                 result[key] += value
         return result
-    def privateVars(self,converter=makeFStr):
+    def privateVars(self,converter=make_f_str):
         return self.handleMappingClause(["private"],converter)
     def ompFStr(self,loopType="do",parallelRegion="",prefix="!$omp"):
         result = prefix
@@ -418,13 +418,13 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
                    type(clause) is TTAccClauseWorker or\
                    type(clause) is TTAccClauseVector
         if self._loopHandlesMutualClauses:
-            for clause in findAllMatching(self._clauses,parallelismClause):
+            for clause in find_all_matching(self._clauses,parallelismClause):
                 if type(clause) is TTAccClauseGang:
                     result += " teams distribute"
         if len(parallelRegion):
             result += " "+parallelRegion
         result += " "+loopType
-        for clause in findAllMatching(self._clauses,parallelismClause):
+        for clause in find_all_matching(self._clauses,parallelismClause):
             if type(clause) is TTAccClauseWorker: # TODO not sure about this
                 pass
             elif type(clause) is TTAccClauseVector:
@@ -435,7 +435,7 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
             privateVars = self.privateVars() 
             if len(privateVars):
                 result += " private("+",".join(privateVars)+")" 
-        reductions = self.reductions(makeFStr)
+        reductions = self.reductions(make_f_str)
         if len(reductions):
             for op,values in reductions.items():
                 result += " reduction("+op+":"+",".join(values)+")" 
@@ -468,9 +468,9 @@ class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase,IComputeConstru
       firstprivate( var-list )
       default( none | present )
     """
-    def privateVars(self,converter=makeFStr):
+    def privateVars(self,converter=make_f_str):
         return self.handleMappingClause(["private"],converter)
-    def firstprivateVars(self,converter=makeFStr):
+    def firstprivateVars(self,converter=make_f_str):
         return self.handleMappingClause(["firstprivate"],converter)
     def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={},prefix="!$omp target"):
         result   = prefix
@@ -482,8 +482,8 @@ class TTAccParallel(TTAccComputeConstructBase):
         return self._format(TTAccComputeConstructBase.ompFStr(self,arraysInBody,inoutArraysInBody,depend,prefix))
 
 class TTAccParallelLoop(TTAccParallel,TTAccLoop):
-    def _assignFields(self,tokens):
-        TTAccDirectiveBase._assignFields(self,tokens)
+    def _assign_fields(self,tokens):
+        TTAccDirectiveBase._assign_fields(self,tokens)
         self._loopHandlesMutualClauses = False
     def ompFStr(self,arraysInBody=[],inoutArraysInBody=[],depend={},loopType="do"):
         """
@@ -503,7 +503,7 @@ class TTAccKernelsLoop(TTAccParallelLoop):
 
 # end directives
 class TTAccEndData(TTAccDirectiveBase):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         pass
     def ompFStr(self):
         return self._format("!$omp end target data")

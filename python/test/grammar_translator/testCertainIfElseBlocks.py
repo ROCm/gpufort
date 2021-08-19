@@ -212,7 +212,7 @@ for i,v in enumerate(testdata):
     vMod = translator.prepareFortranSnippet(v)
     result = translator.ifElseBlock.parseString(vMod)
     #result = translator.block.parseString(vMod)
-    print("{}:\n{}".format(i,translator.makeCStr(result)))
+    print("{}:\n{}".format(i,translator.make_c_str(result)))
 
 #test.run(
 #   expression     = translator.ifElseBlock,

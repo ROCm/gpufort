@@ -113,7 +113,7 @@ def __parseFile(fileStatements,filepath):
         #
         variables =\
           translator.createIndexRecordsFromDeclaration(\
-            translator.declaration.parseString(inputText)[0])
+            translator.fortran_declaration.parseString(inputText)[0])
         accessLock.acquire()
         parentNode._data["variables"] += variables
         accessLock.release()
@@ -309,11 +309,11 @@ def __parseFile(fileStatements,filepath):
         logDetection_("use statement")
         if currentNode._kind != "root":
             usedModule = {}
-            usedModule["name"] = translator.makeFStr(tokens[1])
+            usedModule["name"] = translator.make_f_str(tokens[1])
             usedModule["only"] = []
             for pair in tokens[2]:
-                original = translator.makeFStr(pair[0])
-                renamed = original if pair[1] is None else translator.makeFStr(pair[1])
+                original = translator.make_f_str(pair[0])
+                renamed = original if pair[1] is None else translator.make_f_str(pair[1])
                 usedModule["only"].append({ "original": original, "renamed": renamed })
             currentNode._data["usedModules"].append(usedModule) # TODO only include what is necessary
     
@@ -536,4 +536,3 @@ def loadGpufortModuleFiles(inputDirs,index):
                      index.append(modIndex)
     
     utils.logging.logLeaveFunction(LOG_PREFIX,"loadGpufortModuleFiles")
-

@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
-TERM = Regex(r"\n").suppress()
-
 LPAR,RPAR = map(Suppress, "()")
 EQ,ELEM,COMMA,DOT,UNDERSCORE = map(Suppress, "=%,._")
 PEQ=Suppress("=>")
@@ -41,7 +39,7 @@ conversion      = Forward()
 inquiryFunction = Forward()
 
 rvalue = OPTSIGN + (conversion | inquiryFunction | complexArithmeticExpression | derivedTypeElem | funcCall | identifier | logical | character | number)  # |: ordered OR, order is important
-subroutineCall = CALL + funcCall
+fortran_subroutine_call = CALL + funcCall
 
 # assignments
 lArithOperator  = MatchFirst(L_ARITH_OPERATOR);
@@ -72,11 +70,12 @@ assignment      = lvalue + EQ + arithmeticExpression # ! emits 2 tokens: *,*
 
 MATLPAR                    = Regex(r"\(\/|\[").suppress()
 MATRPAR                    = Regex(r"\/\)|\]").suppress()
-matrixArithmeticExpression = MATLPAR + Group(delimitedList(arithmeticExpression)) + MATRPAR
 matrixAssignment           = lvalue + EQ + matrixArithmeticExpression
 
 complexArithmeticExpression <<= LPAR + Group(arithmeticExpression + COMMA + arithmeticExpression) + RPAR 
 complexAssignment = lvalue + EQ + complexArithmeticExpression
+
+fortran_assignment = matrixAssignment | complexAssignment | assignment
 
 singleColon   = (Literal(":") + ~Literal(":")).suppress()
 stride        = singleColon + arithmeticExpression
@@ -125,15 +124,7 @@ ELSE      = CASELESS_LITERAL("else").suppress()
 ENDIF     = END + IF.copy() # Otherwise parse actions apply
 ENDSELECT = END + SELECT.copy()
 
-singleLineIfBody = Forward()
 block = Forward() # forward declaration
-
-# Example:
-#
-#  IF (x < 50) Grade = 'a'
-#
-# IMPORTANT: We do not want the THEN and ELSE tokens, hence the ~
-singleLineIf = IF + LPAR + arithmeticLogicalExpression + RPAR + ~THEN + singleLineIfBody + Optional(Literal(";"),default="")
 
 # Example:
 #
@@ -148,16 +139,8 @@ singleLineIf = IF + LPAR + arithmeticLogicalExpression + RPAR + ~THEN + singleLi
 #  ELSE
 #     Grade = 'a'
 #  END IF
-ifElseIf = Optional(ELSE,default="") + IF + LPAR + arithmeticLogicalExpression + RPAR + THEN
-ifElseBlock = ifElseIf | ELSE | ENDIF
-
-ifBranch     = Group(IF + LPAR + arithmeticLogicalExpression + RPAR + THEN + block)
-elseIfBranch = Group(ELSE.suppress() + IF + LPAR + arithmeticLogicalExpression + RPAR + THEN + block)
-elseBranch   = Group(ELSE.suppress() + block)
-ifElseBlock = ifBranch +\
-     Optional(Group(OneOrMore(elseIfBranch)),default=[]) +\
-     Optional(elseBranch,default=None) +\
-     ENDIF
+fortran_if_else_if = Optional(ELSE,default="") + IF + LPAR + arithmeticLogicalExpression + RPAR + THEN
+fortran_else       = ELSE
 
 #[name:] select case (expression) 
 #   case (selector1)          
@@ -168,25 +151,19 @@ ifElseBlock = ifBranch +\
 #   case default          
 #   ! more statements          
 #   ...   
-#end select [name]OH
-selectExpression = logical | number | character | identifier | arithmeticLogicalExpression
-selectExpression
-selectCaseBlock = Optional(identifier) + Group(SELECT + CASE + LPAR + selectExpression + RPAR) +\
-     OneOrMore(CASE + LPAR + (logical | number | character) + RPAR +\
-         block) +\
-     Group(Optional(CASE + DEFAULT) +\
-         block ) +\
-     ENDSELECT
+#end select [name]
+fortran_select_case     = Regex(r"(\w+:)?\s*select\s+case\s*(",re.IGNORECASE).suppress() + arithmeticLogicalExpression + RPAR
+fortran_case            = Regex(r"case\s*(") + arithmeticLogicalExpression + RPAR
+fortran_case_default    = Regex(r"case\s+default")
+fortran_end_select_case = Regex(r"end\s*select(\s+\w+)?",re.IGNORECASE).suppress()
 
 ## Do/while Loop
 doLoopEnd     = Regex(r"end\s*do(\s+\w+)?",re.IGNORECASE).suppress()
 doLoopStart   = Regex(r"(\w+:)?\s*do",re.IGNORECASE).suppress()
 
-doLoopHead    = doLoopStart + assignment + COMMA + arithmeticExpression + Optional(COMMA + arithmeticExpression,default="1")
-doLoop        = doLoopHead + block + doLoopEnd
+fortan_do    = doLoopStart + assignment + COMMA + arithmeticExpression + Optional(COMMA + arithmeticExpression,default="1")
 
-whileLoopHead = doLoopStart   + WHILE + LPAR + arithmeticLogicalExpression + RPAR 
-whileLoop     = whileLoopHead + block + doLoopEnd
+fortan_do_while = doLoopStart   + WHILE + LPAR + arithmeticLogicalExpression + RPAR 
 
 # TODO Dominic: Simplify
 ## Declaration  // example: "real(kind=8), device, host, parameter :: rhx, rhy"
@@ -237,7 +214,7 @@ qualifier          = intentQualifier | dimensionQualifier | simpleAttribute
 qualifierList      = Group(delimitedList(qualifier))
 declaredVariable   = Group( identifier + Optional(bounds,default=None) + Optional(( EQ | PEQ )  + ( matrixArithmeticExpression | complexArithmeticExpression | arithmeticExpression ), default=None)) # ! emits [*,[*],*]
 declarationLhs = datatype + Optional(COMMA + qualifierList,default=[]) + COLONS
-declaration = declarationLhs + Group(delimitedList(declaredVariable))   # ! emits *,[*],[*]
+fortran_declaration = declarationLhs + Group(delimitedList(declaredVariable))   # ! emits *,[*],[*]
 #precisionDeclaredVariable = identifier + EQ + CASELESS_LITERAL("selected_kind").suppress() + LPAR + integer + COMMA + integer + RPAR # ! emits [*,[*],*]
 #precisionDeclaration      = integerType + COMMA + qualifierList + COLONS + Group(delimitedList(precisionDeclaredVariableVariable))   # ! emits *,[*],[*]
 

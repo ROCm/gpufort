@@ -128,7 +128,7 @@ class Acc2HipGpufortRT(AccBackendBase):
         #        #print(dest[1])
         #        for rvalue in dest[1]:
         #            #print(rvalue)
-        #            varExpr = rvalue.fStr()
+        #            varExpr = rvalue.f_str()
         #            deviceptr = devVarName(varExpr)
         #            result += template.format(indent=indent,var=varExpr,devVar=deviceptr,asyncr=asyncr)
         return result, len(result), tempVars

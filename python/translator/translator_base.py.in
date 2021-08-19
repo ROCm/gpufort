@@ -18,12 +18,14 @@ class TTNode(object):
     def __init__(self, s, loc, tokens):
        self._input    = s
        self._location = loc
-       self._assignFields(tokens)
+       self.indent = ""
+       self.parent = None
+       self._assign_fields(tokens)
     def __str__(self):
        return self.__class__.__name__ + ':' + str(self.__dict__)
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         pass
-    def cStr(self):
+    def c_str(self):
         pass
     #__repr__ = __str__
 
@@ -31,16 +33,20 @@ class TTContainer(TTNode):
     """
     Container node for manual parser construction.
     """
-    def __init__(self):
-        TTNode.__init__(self,"","",[])
-        self.children = []
-    def cStr():
+    def __init__(self,s="",loc=0,tokens=[]):
+        self._input    = s
+        self._location = loc
+        self.indent = ""
+        self.parent = None
+        self.body = [] # must come before TTNode.__init__ call
+        self._assign_fields(tokens)
+    def c_str(self):
         result = ""
-        for child in children:
-            result += makeCStr(child)
+        for child in self.body:
+            result += make_c_str(child)
         return result
 
-def findAllMatching(body,filterExpr=lambda x: True,N=-1):
+def find_all_matching(body,filterExpr=lambda x: True,N=-1):
     """
     Find all nodes in tree of type 'searchedType'.
     """
@@ -60,17 +66,17 @@ def findAllMatching(body,filterExpr=lambda x: True,N=-1):
     descend(body)       
     return result
 
-def findFirstMatching(body,filterExpr=lambda x: True):
+def find_first_matching(body,filterExpr=lambda x: True):
     """
     Find first node in tree where the filte returns true.
     """
-    result = findAllMatching(body,filterExpr,N=1)
+    result = find_all_matching(body,filterExpr,N=1)
     if len(result):
         return result[0]
     else:
         return None
 
-def findAll(body,searchedType,N=-1):
+def find_all(body,searchedType,N=-1):
     """
     Find all nodes in tree of type 'searchedType'.
     """
@@ -90,44 +96,44 @@ def findAll(body,searchedType,N=-1):
     descend(body)       
     return result
 
-def findFirst(body,searchedType):
+def find_first(body,searchedType):
     """
     Find first node in tree of type 'searchedType'.
     """
-    result = findAll(body,searchedType,N=1)
+    result = find_all(body,searchedType,N=1)
     if len(result):
         return result[0]
     else:
         return None
 
-def makeCStr(obj):
+def make_c_str(obj):
     if obj is None:
       return ""
     try:
-        return obj.cStr().lower()
+        return obj.c_str().lower()
     except Exception as e:
         if isinstance(obj,ParseResults) or\
            isinstance(obj,list):
             result = ""
             for child in obj:
-                result += makeCStr(child)
+                result += make_c_str(child)
             return result
         elif type(obj) in [bool,int,float,str]:
             return str(obj).lower()
         else:
             raise e
 
-def makeFStr(obj):
+def make_f_str(obj):
     if obj is None:
        return ""
     try:
-        return obj.fStr()
+        return obj.f_str()
     except Exception as e:
         if isinstance(obj,ParseResults) or\
            isinstance(obj,list):
             result = ""
             for child in obj:
-                result += makeFStr(child)
+                result += make_f_str(child)
             return result
         elif type(obj) in [int,float,str]:
             return str(obj)
@@ -135,7 +141,7 @@ def makeFStr(obj):
             raise e
 
 def flattenBody(body):
-    #TODO: Check if this is the same as makeCStr()
+    #TODO: Check if this is the same as make_c_str()
     def descend(statement):
         term = ""
         if isinstance(statement,ParseResults) or\
@@ -145,9 +151,8 @@ def flattenBody(body):
             return term
         elif isinstance(statement,TTNode):
            try:
-               return statement.cStr() 
+               return statement.c_str() 
            except Exception as e:
-               #print(statement)
                raise e
         else:
            return ""

@@ -5,35 +5,35 @@
 
 #CUDA Fortran
 class TTCppIfdef(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._ppVar = tokens
     def pPVar(self):
         """
         For checking if this a CUDA preprocessor variable
         """
         return self._ppVar
-    def fStr(self,hipVar):
+    def f_str(self,hipVar):
         return "#if defined({0}) || defined({1})".format(self._ppVar,hipVar)
 
 class TTCppDefined(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._ppVar = tokens
     def pPVar(self):
         """
         For checking if this a CUDA preprocessor variable
         """
         return self._ppVar
-    def fStr(self,hipVar):
+    def f_str(self,hipVar):
         return "( defined({0}) || defined({1}) )".format(self._ppVar,hipVar)
 
 class TTAttributes(TTNode,Attributed):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._qualifiers, self._rhs = tokens
-    def cStr(self):
+    def c_str(self):
         return ""
 
 class TTCudaKernelCall(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         def postprocessDim3(dim3):
             try:
                 intVal = int(dim3)
@@ -51,11 +51,11 @@ class TTCudaKernelCall(TTNode):
         self._stream      = tokens[1][3]
         self._args        = tokens[2]
     def kernelNameFStr(self):
-        return makeFStr(self._kernelName)
+        return make_f_str(self._kernelName)
     def gridFStr(self):
-        return makeFStr(self._grid)
+        return make_f_str(self._grid)
     def blockFStr(self):
-        return makeFStr(self._block)
+        return make_f_str(self._block)
     def useDefaultStream(self):
         try:
             return int(self._stream) < 1
@@ -65,12 +65,12 @@ class TTCudaKernelCall(TTNode):
         if self.useDefaultStream():
             return "c_null_ptr"
         else:
-            return makeFStr(self._stream)
+            return make_f_str(self._stream)
     def sharedMemFStr(self):
-        return makeFStr(self._sharedMem)
+        return make_f_str(self._sharedMem)
 
 class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._parentDirective    = None
         self._numOuterLoopsToMap = int(tokens[0])
         self._grid               = tokens[1][0]
@@ -79,9 +79,9 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
         self._stream             = tokens[1][3]
     def allArraysAreOnDevice(self):
         return True
-    def stream(self,converter=makeFStr):
+    def stream(self,converter=make_f_str):
         return converter(self._stream)
-    def sharedMem(self,converter=makeFStr):
+    def sharedMem(self,converter=make_f_str):
         return converter(self._sharedMem)
     def useDefaultStream(self):
         try:
@@ -105,11 +105,11 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
         return self._numOuterLoopsToMap
     def gridExpressionFStr(self):
         """ only CUF """
-        return makeFStr(self._grid)
+        return make_f_str(self._grid)
     def blockExpressionFStr(self):
         """ only CUF """
-        return makeFStr(self._block)
-    def numGangsTeamsBlocks(self,converter=makeFStr):
+        return make_f_str(self._block)
+    def numGangsTeamsBlocks(self,converter=make_f_str):
         if self._grid == "*":
             return [CLAUSE_NOT_FOUND]*self._numOuterLoopsToMap
         elif isinstance(self._block,IValue):
@@ -120,7 +120,7 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
             return result
         else:
             return [converter(gridDim) for gridDim in self._grid]
-    def numThreadsInBlock(self,converter=makeFStr):
+    def numThreadsInBlock(self,converter=make_f_str):
         if self._block == "*":
             return [CLAUSE_NOT_FOUND]*self._numOuterLoopsToMap
         elif isinstance(self._block,IValue):
@@ -131,13 +131,13 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
             return result
         else:
             return [converter(blockDim) for blockDim in self._block]
-    def cStr(self):
+    def c_str(self):
         result  = "// NOTE: The following information was given in the orignal CUDA Fortran kernel pragma:\n"
-        result += "// - Nested outer-most do-loops that are directly mapped to threads: {}\n".format(makeCStr(self._numOuterLoopsToMap))
-        result += "// - Number of blocks: {}. ('-1' means not specified)\n".format(makeCStr(self._grid))
-        result += "// - Threads per block: {}. ('-1' means not specified)\n".format(makeCStr(self._block))
-        result += "// - Shared Memory: {}\n".format(makeFStr(self._sharedMem))
-        result += "// - Stream: {}\n".format(makeFStr(self._stream))
+        result += "// - Nested outer-most do-loops that are directly mapped to threads: {}\n".format(make_c_str(self._numOuterLoopsToMap))
+        result += "// - Number of blocks: {}. ('-1' means not specified)\n".format(make_c_str(self._grid))
+        result += "// - Threads per block: {}. ('-1' means not specified)\n".format(make_c_str(self._block))
+        result += "// - Shared Memory: {}\n".format(make_f_str(self._sharedMem))
+        result += "// - Stream: {}\n".format(make_f_str(self._stream))
         return result
     def ompFStr(self,arraysInBody=set(),inoutArraysInBody=set(),reduction={},depend={},loopType="do"):
         result = "!$omp target teams distribute parallel "+loopType  
@@ -179,12 +179,12 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
         return result
 
 class TTAllocateRValue(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._var    = tokens[0]
         self._bounds = None
         if len(tokens) == 2:
             self._bounds = tokens[1]
-    def varName(self,converter=makeFStr):
+    def varName(self,converter=make_f_str):
         """
         A name that can be used to generate macros
         and to look up the corresponding definitions.
@@ -199,7 +199,7 @@ class TTAllocateRValue(TTNode):
         else:
             # TODO(gpufort): Add Warning
             return "TODO(gpufort): UNKNOWN"
-    def size(self,bytesPerElement=1,converter=makeCStr):
+    def size(self,bytesPerElement=1,converter=make_c_str):
         if self._bounds != None:
             return self._bounds.size(bytesPerElement,converter)
         else:
@@ -207,17 +207,17 @@ class TTAllocateRValue(TTNode):
             return "TODO(gpufort): UNKNOWN"
     def countsFStr(self):
         if self._bounds != None:
-            return self._bounds.specifiedCounts(makeFStr)
+            return self._bounds.specifiedCounts(make_f_str)
         else:
             # TODO(gpufort): Add Warning
             return "TODO(gpufort): UNKNOWN"
-    def cStr(self):
-        assert False, "TTAllocateRValue: 'cStr(self)' not implemented"
-    def fStr(self):
+    def c_str(self):
+        assert False, "TTAllocateRValue: 'c_str(self)' not implemented"
+    def f_str(self):
         if self._bounds != None:
-            return makeFStr(self._var) + makeFStr(self._bounds)
+            return make_f_str(self._var) + make_f_str(self._bounds)
         else:
-            return makeFStr(self._var)
+            return make_f_str(self._var)
 
 class TTCufAllocated(TTNode):
     """
@@ -228,30 +228,30 @@ class TTCufAllocated(TTNode):
     For Fortran pointer variables, we need the `associated(<var>)`
     intrinsic to check if they are associated with any memory.
     """
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._var = tokens[0]
     def varName(self):
         return self._var.varName()
-    def fStr(self,varIsCPtr=False):
+    def f_str(self,varIsCPtr=False):
         if varIsCPtr:
-            return "c_associated({0})".format(makeFStr(self._var))
+            return "c_associated({0})".format(make_f_str(self._var))
         else:
-            return "associated({0})".format(makeFStr(self._var))
+            return "associated({0})".format(make_f_str(self._var))
 
 class TTCufNonZeroCheck(TTNode):
     """
     For `type(c_ptr)` variables that replace CUDA Fortran stream and , the standard non-zero check
     does not work. We need to replace this by `c_associated(var)`.
     """
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._lhs = tokens
     def lhsFStr(self):
-        return makeFStr(self._lhs)
-    def fStr(self,lhsIsCPtr=False):
+        return make_f_str(self._lhs)
+    def f_str(self,lhsIsCPtr=False):
         if lhsIsCPtr:
-            return "c_associated({0})".format(makeFStr(self._lhs))
+            return "c_associated({0})".format(make_f_str(self._lhs))
         else:
-            return "associated({0})".format(makeFStr(self._lhs))
+            return "associated({0})".format(make_f_str(self._lhs))
 
 class TTCufPointerAssignment(TTNode):
     """
@@ -261,13 +261,13 @@ class TTCufPointerAssignment(TTNode):
     Calling function needs to check if at least one (should be both in any case)
     pointer is pointing to data on the device. 
     """
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._lhs, self._rhs = tokens
     def lhsFStr(self):
-        return makeFStr(self._lhs)
+        return make_f_str(self._lhs)
     def rhsFStr(self):
-        return makeFStr(self._rhs)
-    def fStr(self,varsAreCPtrs=False,lhsBoundVariableNames=[]):
+        return make_f_str(self._rhs)
+    def f_str(self,varsAreCPtrs=False,lhsBoundVariableNames=[]):
         if varsAreCPtrs:
             lhsName = self.lhsFStr()
             rhsName = self.rhsFStr()
@@ -284,7 +284,7 @@ class TTCufAllocate(TTNode): # TODO not specific to CUF
     Most information needs to be provided from calling function in order
     to convert this call to a hip malloc.
     """
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._vars = tokens
     def variableNames(self):
         """
@@ -310,7 +310,7 @@ class TTCufAllocate(TTNode): # TODO not specific to CUF
         otherArrays  = []
         for i,array in enumerate(self._vars):
             if varsAreCPtrs: 
-                size = array.size(bytesPerElement[i],makeFStr) # total size in bytes
+                size = array.size(bytesPerElement[i],make_f_str) # total size in bytes
             else:
                 size = ",".join(array.countsFStr())            # element counts per dimension
             if arrayQualifiers[i] == "device":
@@ -320,7 +320,7 @@ class TTCufAllocate(TTNode): # TODO not specific to CUF
                 line = "{2}call hipCheck(hipHostMalloc({0}, {1}, 0))".format(array.varName(),size,indent)
                 result.append(line)
             else:
-                otherArrays.append(makeFStr(array)) 
+                otherArrays.append(make_f_str(array)) 
             if varsAreCPtrs and not arrayQualifiers[i] in ["pinned","device"]:
                 result += array.boundVariableAssignments(array.varName())
         if len(otherArrays):
@@ -335,7 +335,7 @@ class TTCufDeallocate(TTNode): # TODO not specific to CUF
     Most information needs to be provided from calling function in order
     to convert this call to a hip malloc.
     """
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._vars             = tokens
     def configure(self,bytesPerElement, arrayQualifiers):
         self._arrayQualifiers = arrayQualifiers
@@ -369,7 +369,7 @@ class TTCufDeallocate(TTNode): # TODO not specific to CUF
                 line = "{1}call hipCheck(hipHostFree({0}))".format(array.varName(),indent)
                 result.append(line)
             else:
-                otherArrays.append(makeFStr(array)) 
+                otherArrays.append(make_f_str(array)) 
         if len(otherArrays):
             line = "{1}deallocate({0})".format(",".join(otherArrays),indent)
             result.append(line)
@@ -386,22 +386,22 @@ class CufMemcpyBase():
         """
         :return: simply returns the Fortran pointer representation of the destination. 
         """
-        return makeFStr(self._dest)  
+        return make_f_str(self._dest)  
     def srcFStr(self,onDevice,bytesPerElement):
         """
         :return: the Fortran pointer representation of the source.
         """
-        return makeFStr(self._src)  
+        return make_f_str(self._src)  
     def destNameFStr(self):
         """
         :return: name of destination variable; may contain '%' if derived type member.
         """
-        return makeFStr(self._dest._var)
+        return make_f_str(self._dest._var)
     def srcNameFStr(self):
         """
         :return: name of source variable; may contain '%' if derived type member.
         """
-        return makeFStr(self._src._var)
+        return make_f_str(self._src._var)
     def destHasArgs(self):
         """
         :return: name of destination variable; may contain '%' if derived type member.
@@ -419,7 +419,7 @@ class CufMemcpyBase():
         compatible with `integer(c_size_t)`.
         """
         assert name in self.__dict__
-        size = makeFStr(self.__dict__[name])
+        size = make_f_str(self.__dict__[name])
         if bytesPerElement != 1:
             return "1_8 * ({0}) * ({1})".format(size,bytesPerElement)
         else:
@@ -437,11 +437,11 @@ class CufMemcpyBase():
         if str(self._stream) == "0":
             return "c_null_ptr"
         else:
-            return makeFStr(self._stream)
+            return make_f_str(self._stream)
 
 class TTCufMemcpyIntrinsic(TTNode,CufMemcpyBase):
     # dest,src,count,[,stream] # kind is inferred from dest and src
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._dest       = tokens[0]
         self._src        = tokens[1]
         self._bounds     = tokens[0]._bounds
@@ -456,7 +456,7 @@ class TTCufMemcpyIntrinsic(TTNode,CufMemcpyBase):
 
 class TTCufCudaMemcpy(TTNode,CufMemcpyBase):
     # dest,src,count,[,stream] # kind is inferred from dest and src
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         #print(tokens)
         self._api        = tokens[0] 
         self._dest       = tokens[1]
@@ -472,12 +472,12 @@ class TTCufCudaMemcpy(TTNode,CufMemcpyBase):
         args.append(self.sizeFStr("_count", bytesPerElement)) 
         args.append(self.memcpyKind(destOnDevice,srcOnDevice))
         if "Async" in api:
-             args.append(makeFStr(self._stream))
+             args.append(make_f_str(self._stream))
         return "{api}({args})".format(api=api,args=",".join(args))
 
 class TTCufCudaMemcpy2D(TTNode,CufMemcpyBase):
     # dest,dpitch(count),src,spitch(count),width(count),height(count)[,stream] # kind is inferred from dest and src
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._api        = tokens[0]
         self._dest       = tokens[1]
         self._dpitch     = tokens[2]
@@ -503,7 +503,7 @@ class TTCufCudaMemcpy2D(TTNode,CufMemcpyBase):
 
 class TTCufCudaMemcpy3D(TTNode,CufMemcpyBase):
     # dest,dpitch(count),src,spitch(count),width(count),height(count),depth(count),[,stream] # kind is inferred from dest and src
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._api        = tokens[0]
         self._dest       = tokens[1]
         self._dpitch     = tokens[2]
@@ -514,7 +514,7 @@ class TTCufCudaMemcpy3D(TTNode,CufMemcpyBase):
         self._depth      = tokens[7]
         self._memcpyKind = tokens[8]
         self._stream     = tokens[9]
-    def fStr(self,destOnDevice,srcOnDevice,bytesPerElement=1,indent=""):
+    def f_str(self,destOnDevice,srcOnDevice,bytesPerElement=1,indent=""):
         api = self.hipAPI()
         args = []
         args.append(self.destFStr(destOnDevice,bytesPerElement))
@@ -530,18 +530,18 @@ class TTCufCudaMemcpy3D(TTNode,CufMemcpyBase):
         return "{api}({args})".format(api=api,args=",".join(args))
 
 class TTCufCublasCall(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._api    = tokens[0] # does not include cublas
         self._args   = tokens[1]
     def hipFStr(self,indent=""):
         global CUBLAS_VERSION 
-        api = "hipblas" + makeFStr(self._api)
+        api = "hipblas" + make_f_str(self._api)
         args = []
         if CUBLAS_VERSION == 1:
             args.append("hipblasHandle")
         else:
             api = api.split("_")[0] # remove _v2 if present
-        args += [makeFStr(arg) for arg in self._args]
+        args += [make_f_str(arg) for arg in self._args]
         result = "{2}{0}({1})".format(api,",".join(args),indent)
         cublasOperationType = Regex("'[NTCntc]'").setParseAction(lambda tokens: "HIPBLAS_OP_"+tokens[0].strip("'").upper())
         result = cublasOperationType.transformString(result)

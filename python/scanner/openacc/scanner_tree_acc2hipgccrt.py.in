@@ -51,7 +51,7 @@ HIP_GCC_RT_MAP_PRESENT           = "goacc_map_present({var})"
 class Acc2HipGccRT(AccBackendBase):
     def _createMappings(self,parseResult,prefix=",mappings="):
         mappings=[]
-        for clause in translator.findAll(parseResult,translator.TTAccMappingClause):
+        for clause in translator.find_all(parseResult,translator.TTAccMappingClause):
             if clause.kind() == "present":
                 mappings += [HIP_GCC_RT_MAP_PRESENT.format(var=expr) for expr in clause.varExpressions()]
             elif clause.kind() == "create":
@@ -71,7 +71,7 @@ class Acc2HipGccRT(AccBackendBase):
         else:
             return ""
     def _handleAsync(self,parseResult,prefix=",asyncr="):
-        clause = translator.findFirst(parseResult,translator.TTAccClauseAsync)
+        clause = translator.find_first(parseResult,translator.TTAccClauseAsync)
         if clause != None:
             value = clause.expression()
             if str(value) == str(CLAUSE_VALUE_NOT_SPECIFIED):
@@ -81,7 +81,7 @@ class Acc2HipGccRT(AccBackendBase):
         else:
             return ""
     def _handleWait(self,parseResult,prefix=",wait=",wrapInBrackets=True):
-        clause = translator.findFirst(parseResult,translator.TTAccClauseWait)
+        clause = translator.find_first(parseResult,translator.TTAccClauseWait)
         if clause != None:
             result = ",".join(clause.expressions())
             if wrapInBrackets:
@@ -90,7 +90,7 @@ class Acc2HipGccRT(AccBackendBase):
         else:
             return ""
     def _handleDevice(self,parseResult):
-        clause = translator.findFirst(parseResult,translator.TTAccClauseDevice)
+        clause = translator.find_first(parseResult,translator.TTAccClauseDevice)
         if clause != None:
             result = ",".join(clause.expressions())
             if wrapInBrackets:
@@ -99,7 +99,7 @@ class Acc2HipGccRT(AccBackendBase):
         else:
             return ""
     def _handleIf(self,parseResult):
-        clause = translator.findFirst(parseResult,translator.TTAccClauseIf)
+        clause = translator.find_first(parseResult,translator.TTAccClauseIf)
         if clause != None:
             return clause.condition()
         else:

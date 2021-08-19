@@ -24,72 +24,70 @@ class ILoopAnnotation():
         return CLAUSE_NOT_FOUND
     def dataIndependentIterations(self):
         return True
-    def privateVars(self,converter=makeFStr): 
+    def privateVars(self,converter=make_f_str): 
         """ CUF,ACC: all scalars are private by default """ 
         return []
-    def lastprivateVars(self,converter=makeFStr): 
+    def lastprivateVars(self,converter=make_f_str): 
         """ only OMP """
         return []
-    def reductions(self,converter=makeFStr): 
+    def reductions(self,converter=make_f_str): 
         """ CUF: Scalar lvalues are reduced by default """
         return {}
-    def sharedVars(self,converter=makeFStr): 
+    def sharedVars(self,converter=make_f_str): 
         """ only OMP """
         return []
     def allArraysAreOnDevice(self):
         """ only True for CUF kernel do directive """
         return False
 
-class TTDoLoop(TTNode):
-    def _assignFields(self,tokens):
+class TTDoLoop(TTContainer):
+    def _assign_fields(self,tokens):
         # Assignment, number | variable
-        self._annotation, self._begin, self._end, self._step, self._body = tokens
+        self.annotation, self._begin, self._end, self._step, self.body = tokens
         self._threadIndex = None # "z","y","x"
-        if self._annotation is None:
-            self._annotation = ILoopAnnotation()
-    def annotation(self):
-        return self._annotation
+        if self.annotation is None:
+            self.annotation = ILoopAnnotation()
     def setHipThreadIndex(self,name):
         self._threadIndex = name
     def hipThreadIndexCStr(self):
         indexVar = self.loopVar()
-        begin    = makeCStr(self._begin._rhs) # array indexing is corrected in index macro
-        step     = makeCStr(self._step)
+        begin    = make_c_str(self._begin._rhs) # array indexing is corrected in index macro
+        step     = make_c_str(self._step)
         return "int {var} = {begin} + ({step})*(threadIdx.{idx} + blockIdx.{idx} * blockDim.{idx});\n".format(\
                 var=indexVar,begin=begin,idx=self._threadIndex,step=step)
     def collapsedLoopIndexCStr(self,denominator):
         indexVar = self.loopVar()
         tid      = self._threadIndex
         assert not tid is None
-        begin    = makeCStr(self._begin._rhs)
+        begin    = make_c_str(self._begin._rhs)
         size     = self.problemSizeCStr()
-        step     = makeCStr(self._step)
+        step     = make_c_str(self._step)
         # int i<n> = begin<n> + step<n>*(i<denominator<n>> % size<n>)
         return "int {var} = {begin} + ({step})*({tid}{denom} % {size});\n".format(\
                 var=indexVar,begin=begin,tid=tid,denom=denominator,size=size,step=step)
     def problemSizeCStr(self):
         if self._step == "1":
             return "(1 + (({end}) - ({begin})))".format(\
-                begin=makeCStr(self._begin._rhs),end=makeCStr(self._end),step=makeCStr(self._step) )
+                begin=make_c_str(self._begin._rhs),end=make_c_str(self._end),step=make_c_str(self._step) )
         else:
             return "(1 + (({end}) - ({begin}))/({step}))".format(\
-                begin=makeCStr(self._begin._rhs),end=makeCStr(self._end),step=makeCStr(self._step))
+                begin=make_c_str(self._begin._rhs),end=make_c_str(self._end),step=make_c_str(self._step))
     def hipThreadBoundCStr(self) :
         indexVar = self.loopVar()
-        begin    = makeCStr(self._begin._rhs)
-        end      = makeCStr(self._end)
-        step     = makeCStr(self._step)
+        begin    = make_c_str(self._begin._rhs)
+        end      = make_c_str(self._end)
+        step     = make_c_str(self._step)
         return "loop_cond({0},{1},{2})".format(indexVar, end, step)
-    def loopVar(self,converter=makeCStr):
+    def loopVar(self,converter=make_c_str):
         return converter(self._begin._lhs)
-    def cStr(self):
+    def c_str(self):
         indexVar    = self.loopVar()
-        begin       = makeCStr(self._begin._rhs) # array indexing is corrected in index macro
-        end         = makeCStr(self._end)
-        step        = makeCStr(self._step)
-        bodyContent = flattenBody(self._body) 
+        begin       = make_c_str(self._begin._rhs) # array indexing is corrected in index macro
+        end         = make_c_str(self._end)
+        step        = make_c_str(self._step)
+        bodyContent = flattenBody(self.body) 
         if self._threadIndex == None:
-            #print(self._body)
+            #print(self.body)
             return "for (int {0}={1}; {0} <= {2}; {0} += {3}) {{\n  {4}\n}}".format(indexVar, begin, end, step, bodyContent)
         else:
             return bodyContent
@@ -109,18 +107,18 @@ class IComputeConstruct():
         return [CLAUSE_NOT_FOUND]
     def numThreadsInBlock(self):
         return [CLAUSE_NOT_FOUND]
-    def gangTeamPrivateVars(self,converter=makeFStr): 
+    def gangTeamPrivateVars(self,converter=make_f_str): 
         return []
-    def gangTeamFirstprivateVars(self,converter=makeFStr): 
+    def gangTeamFirstprivateVars(self,converter=make_f_str): 
         return []
-    def gangTeamReductions(self,converter=makeFStr): 
+    def gangTeamReductions(self,converter=make_f_str): 
         """ CUF,ACC: all scalars are private by default """ 
         return {}
-    def identifiersInBody(self,converter=makeFStr):
+    def identifiersInBody(self,converter=make_f_str):
         return []
-    def arraysInBody(self,converter=makeFStr):
+    def arraysInBody(self,converter=make_f_str):
         return []
-    def inoutArraysInBody(self,converter=makeFStr):
+    def inoutArraysInBody(self,converter=make_f_str):
         return []
     def localScalars(self):
         return []
@@ -133,9 +131,9 @@ class IComputeConstruct():
     def asyncNowait(): 
         """value != CLAUSE_NOT_FOUND means True"""
         return CLAUSE_NOT_FOUND
-    def stream(self,converter=makeFStr):
+    def stream(self,converter=make_f_str):
         return "c_null_ptr"
-    def sharedMem(self,converter=makeFStr):
+    def sharedMem(self,converter=make_f_str):
         return "0"
     def useDefaultStream(self):
         return True
@@ -178,7 +176,7 @@ class IComputeConstruct():
     def presentByDefault(self):
         """ only ACC parallel """
         return True
-    def cStr(self):
+    def c_str(self):
         return ""
 
 class EmptyComputeConstruct(IComputeConstruct):
@@ -189,7 +187,7 @@ class EmptyComputeConstruct(IComputeConstruct):
     def __init__(self,fSnippet):
         self._fSnippet   = fSnippet
         self._scope      = scoper.EMPTY_SCOPE
-    def identifiersInBody(self,converter=makeFStr):
+    def identifiersInBody(self,converter=make_f_str):
         valueType = lvalue | rvalue
         identifierNames = []
         for ident,_,__ in valueType.scanString(self._fSnippet): # includes the identifiers of the function calls
@@ -204,22 +202,23 @@ class EmptyComputeConstruct(IComputeConstruct):
         return identifierNames
 
 class TTLoopKernel(TTNode,IComputeConstruct):
-    def _assignFields(self,tokens):
-        self._parentDirective, self._body = tokens
-        self._firstLoopAnnotation = self._body.annotation()
-        if self._parentDirective is None:
-            assert type(self._body) is TTDoLoop
-            self._parentDirective = self._firstLoopAnnotation
+    def _assign_fields(self,tokens):
+        self._parentDirective, self.body = tokens
         self._scope = scoper.EMPTY_SCOPE
+    def __firstLoopAnnotation(self):        
+        return self.body.annotation
+    def __parentDirective(self):
+        if self._parentDirective is None:
+            return self._firstLoopAnnotation()
     def loopVars(self):
         identifierNames = []
-        doLoops  = findAll(self._body,TTDoLoop)
+        doLoops  = find_all(self.body,TTDoLoop)
         for loop in doLoops:
-            identifierNames.append(loop.loopVar(makeFStr))
+            identifierNames.append(loop.loopVar(make_f_str))
         return identifierNames
     def __searchValueInBody(self,searchFilter,scope,minRank=-1e20):
         #TODO exclude other annotations as well from this search
-        def findAllMatchingExcludeDirectives(body,filterExpr=lambda x: True,N=-1):
+        def find_all_matchingExcludeDirectives(body,filterExpr=lambda x: True,N=-1):
             """
             Find all nodes in tree of type 'searchedType'.
             """
@@ -240,8 +239,8 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             return result
         
         identifierNames = [] 
-        for valueType in findAllMatchingExcludeDirectives(self._body,searchFilter): # includes the identifiers of the function calls
-            name = makeFStr(valueType.name())
+        for valueType in find_all_matchingExcludeDirectives(self.body,searchFilter): # includes the identifiers of the function calls
+            name = make_f_str(valueType.name())
             nameLower = name.lower()
             definition,foundInIndex = scoper.searchScopeForVariable(\
               scope,createIndexSearchTagForVariable(nameLower))
@@ -292,12 +291,12 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         initializedScalars = [] 
 
         # depth first search
-        assignments = findAllMatching(self._body,
+        assignments = find_all_matching(self.body,
                 lambda node: type(node) in [TTAssignment,TTComplexAssignment,TTMatrixAssignment])
         for assignment in assignments:   
             # lhs scalars
             lvalue     = assignment._lhs._value
-            lvalueName = makeFStr(lvalue)
+            lvalueName = make_f_str(lvalue)
             if type(lvalue) is TTIdentifier: # could still be a matrix
                 definition,foundInIndex = scoper.searchScopeForVariable(\
                   scope,createIndexSearchTagForVariable(lvalueName))
@@ -305,9 +304,9 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                         not lvalueName.lower() in scalarsReadSoFar:
                             initializedScalars.append(lvalueName) # read and initialized in 
             # rhs scalars
-            rhsIdentifiers = findAll(assignment._rhs,TTIdentifier)
+            rhsIdentifiers = find_all(assignment._rhs,TTIdentifier)
             for ttidentifier in rhsIdentifiers:
-                nameLower = ttidentifier.fStr().lower()
+                nameLower = ttidentifier.f_str().lower()
                 definition,foundInScope = scoper.searchScopeForVariable(scope,\
                   createIndexSearchTagForVariable(nameLower))
                 if (not foundInIndex or definition["rank"] == 0) and\
@@ -333,18 +332,18 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         _,reductionCandidates = self.__localScalarsAndReductionCandidates(self._scope)
         return reductionCandidates
     def problemSize(self):
-        numOuterLoopsToMap = int(self._parentDirective.numCollapse())
+        numOuterLoopsToMap = int(self.__parentDirective().numCollapse())
         if LOOP_COLLAPSE_STRATEGY == "grid" or numOuterLoopsToMap == 1:
             numOuterLoopsToMap = min(3,numOuterLoopsToMap)
             result = ["-1"]*numOuterLoopsToMap
-            doLoops = findAll(self._body,TTDoLoop)
+            doLoops = find_all(self.body,TTDoLoop)
             for i,loop in enumerate(doLoops):
                 if i < numOuterLoopsToMap:
                     result[i] = loop.problemSizeCStr()
             return result
         else: # "collapse"
             result = ""
-            doLoops = findAll(self._body,TTDoLoop)
+            doLoops = find_all(self.body,TTDoLoop)
             for loop in reversed(doLoops[0:numOuterLoopsToMap]):
                 if len(result):
                     result += "*"
@@ -355,59 +354,59 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 return ["-1"]
     def asyncNowait(): 
         """value != CLAUSE_NOT_FOUND means True"""
-        return self._parentDirective.asyncNowait() 
+        return self.__parentDirective().asyncNowait() 
     def depend(self): 
-        return self._parentDirective.depend()
+        return self.__parentDirective().depend()
     def deviceTypes(self): 
-        return self._parentDirective.deviceTypes()
+        return self.__parentDirective().deviceTypes()
     def ifCondition(self): 
-        return self._parentDirective.ifCondition()
+        return self.__parentDirective().ifCondition()
     def selfCondition(self): 
-        return self._parentDirective.selfCondition
+        return self.__parentDirective().selfCondition
     def deviceptrs(self,scope=[]):
-        if self._parentDirective.allArraysAreOnDevice():
+        if self.__parentDirective().allArraysAreOnDevice():
             return self.arraysInBody(scope)
         else:
-            return self._parentDirective.deviceptrs()
+            return self.__parentDirective().deviceptrs()
     def createAllocVars(self):
-        return self._parentDirective.createAllocVars()
+        return self.__parentDirective().createAllocVars()
     def no_createVars(self):
-        return self._parentDirective.no_createVars()
+        return self.__parentDirective().no_createVars()
     def presentVars(self):
-        return self._parentDirective.presentVars()
+        return self.__parentDirective().presentVars()
     def deleteReleaseVars(self):
-        return self._parentDirective.deleteReleaseVars()
+        return self.__parentDirective().deleteReleaseVars()
     def copyMapToFromVars(self):
-        return self._parentDirective.copyMapToFromVars()
+        return self.__parentDirective().copyMapToFromVars()
     def copyinMapToVars(self):
-        return self._parentDirective.copyinMapToVars()
+        return self.__parentDirective().copyinMapToVars()
     def copyoutMapFromVars(self):
-        return self._parentDirective.copyoutMapFromVars()
+        return self.__parentDirective().copyoutMapFromVars()
     def attachVars(self):
-        return self._parentDirective.attachVars()
+        return self.__parentDirective().attachVars()
     def detachVars(self):
-        return self._parentDirective.detachVars()
+        return self.__parentDirective().detachVars()
     def presentByDefault(self): 
-        return self._parentDirective.presentByDefault()
+        return self.__parentDirective().presentByDefault()
     def gridExpressionFStr(self):
         """ only CUF """
-        return self._firstLoopAnnotation.gridExpressionFStr()
+        return self.__firstLoopAnnotation().gridExpressionFStr()
     def blockExpressionFStr(self):
         """ only CUF """
-        return self._firstLoopAnnotation.blockExpressionFStr()
-    def gangTeamPrivateVars(self,converter=makeFStr): 
-        return self._parentDirective.gangTeamPrivateVars(converter)
-    def gangTeamFirstprivateVars(self,converter=makeFStr): 
-        return self._parentDirective.gangTeamFirstprivateVars(converter)
-    def gangTeamReductions(self,converter=makeFStr): 
-        if type(self._firstLoopAnnotation) is TTCufKernelDo:
+        return self.__firstLoopAnnotation().blockExpressionFStr()
+    def gangTeamPrivateVars(self,converter=make_f_str): 
+        return self.__parentDirective().gangTeamPrivateVars(converter)
+    def gangTeamFirstprivateVars(self,converter=make_f_str): 
+        return self.__parentDirective().gangTeamFirstprivateVars(converter)
+    def gangTeamReductions(self,converter=make_f_str): 
+        if type(self.__firstLoopAnnotation()) is TTCufKernelDo:
             return { "UNKNOWN" : self.reductionCandidates() } # TODO default reduction type should be configurable
         else:
-            return self._firstLoopAnnotation.reductions(converter)
-    def stream(self,converter=makeFStr):
-        return self._parentDirective.stream(converter)
-    def sharedMem(self,converter=makeFStr):
-        return self._parentDirective.sharedMem(converter)
+            return self.__firstLoopAnnotation().reductions(converter)
+    def stream(self,converter=make_f_str):
+        return self.__parentDirective().stream(converter)
+    def sharedMem(self,converter=make_f_str):
+        return self.__parentDirective().sharedMem(converter)
     def ompFStr(self,fSnippet):
         """
         :note: The string used for parsing was preprocessed. Hence
@@ -429,7 +428,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         reduction         = self.gangTeamReductions()
         depend            = self.depend()
 
-        if type(self._parentDirective) is TTCufKernelDo:
+        if type(self.__parentDirective()) is TTCufKernelDo:
             def cufKernelDoRepl(parseResult):
                 nonlocal arraysInBody
                 nonlocal inoutArraysInBody
@@ -473,32 +472,32 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             result,_ = utils.pyparsingutils.eraseAll(result,\
                     ACC_END_PARALLEL_LOOP | ACC_END_KERNELS_LOOP)
             return result
-    def cStr(self):
+    def c_str(self):
         """
         This routine generates an HIP kernel body.
         """
         # 0. Clarify types of function calls / tensor access that are not 
         # members of a struct
-        for expr in findAll(self._body,IValue):
+        for expr in find_all(self.body,IValue):
              if type(expr._value) is TTFunctionCallOrTensorAccess:
                  _, discovered = scoper.searchIndexForVariable(self._scope,createIndexSearchTagForVariable(expr.name()))
                  if discovered:
                      expr._value._isTensorAccess = True3
         # TODO look up correct signature of called device functions from index
         # 1.1 Collapsing
-        numOuterLoopsToMap = int(self._parentDirective.numCollapse())
+        numOuterLoopsToMap = int(self.__parentDirective().numCollapse())
         if LOOP_COLLAPSE_STRATEGY == "grid" and numOuterLoopsToMap <= 3:
             dim=numOuterLoopsToMap
         else: # "collapse" or numOuterLoopsToMap > 3
             dim=1
         tidx = "__gidx{dim}".format(dim=dim)
         # 1. unpack colon (":") expressions 
-        for expr in findAll(self._body,TTStatement): 
+        for expr in find_all(self.body,TTStatement): 
             if type(expr._statement[0]) is TTAssignment:
                 expr._statement[0] = expr._statement[0].convertToDoLoopNestIfNecessary()
         # 2. Identify reduced variables
-        for expr in findAll(self._body,TTAssignment):
-            for var in findAllMatching(expr,lambda x: isinstance(x,IValue)):
+        for expr in find_all(self.body,TTAssignment):
+            for var in find_all_matching(expr,lambda x: isinstance(x,IValue)):
                 if type(var._value) in [TTDerivedTypeMember,TTIdentifier]:
                     for op,reducedVariables in self.gangTeamReductions().items():
                         if var.name().lower() in [el.lower() for el in reducedVariables]:
@@ -507,11 +506,11 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             # identify reduction op
         reductionPreamble = ""
         # 2.1. Add init preamble for reduced variables
-        for kind,reducedVariables in self.gangTeamReductions(makeCStr).items():
+        for kind,reducedVariables in self.gangTeamReductions(make_c_str).items():
             for var in reducedVariables: 
                 reductionPreamble += "reduce_op_{kind}::init({var}[{tidx}]);\n".format(kind=kind,var=var,tidx=tidx)
         # 3. collapse and transform do-loops
-        doLoops = findAll(self._body,TTDoLoop)
+        doLoops = find_all(self.body,TTDoLoop)
         if numOuterLoopsToMap == 1 or (LOOP_COLLAPSE_STRATEGY == "grid" and numOuterLoopsToMap <= 3):
             if numOuterLoopsToMap > 3:
                 utils.logging.logWarn("loop collapse strategy grid chosen with nested loops > 3")
@@ -543,11 +542,8 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 denominatorFactors.append(loop.problemSizeCStr())
                 conditions.append(loop.hipThreadBoundCStr())
         cSnippet = "{0}{2}if ({1}) {{\n{3}}}".format(\
-            indices,"&&".join(conditions),reductionPreamble,makeCStr(self._body))
+            indices,"&&".join(conditions),reductionPreamble,make_c_str(self.body))
         return postprocessCSnippet(cSnippet)
-
-annotatedDoLoop.setParseAction(TTDoLoop)
-loopKernel.setParseAction(TTLoopKernel)
 
 def formatDirective(directiveLine,maxLineWidth):
     result   = ""

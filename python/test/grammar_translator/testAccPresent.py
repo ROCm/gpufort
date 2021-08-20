@@ -7,15 +7,15 @@ import test
 import translator.translator as translator
 
 
-print(translator.dimensionValue.copy().setParseAction(lambda tokens: "'{}'".format(translator.make_f_str(tokens[0]))).transformString(":,llb:lle"))
-print(translator.dimensionValue.copy().setParseAction(lambda tokens: "'{}'".format(translator.make_f_str(tokens[0]))).transformString("(:,llb:lle)"))
-print(translator.dimensionValue.copy().setParseAction(lambda tokens: "'{}'".format(translator.make_f_str(tokens[0]))).transformString("ue_gradivu_e(:,llb:lle)"))
+print(translator.dimension_value.copy().setParseAction(lambda tokens: "'{}'".format(translator.make_f_str(tokens[0]))).transformString(":,llb:lle"))
+print(translator.dimension_value.copy().setParseAction(lambda tokens: "'{}'".format(translator.make_f_str(tokens[0]))).transformString("(:,llb:lle)"))
+print(translator.dimension_value.copy().setParseAction(lambda tokens: "'{}'".format(translator.make_f_str(tokens[0]))).transformString("ue_gradivu_e(:,llb:lle)"))
 print(translator.acc_present.parseString("present( ue_gradivu_e(:,llb:lle), Ai(:), ne(:,:), le(:), de(:))"))
 
 testdata = []
 
 test.run(
-   expression     = (translator.complexAssignment | translator.matrixAssignment | translator.assignment),
+   expression     = (translator.complex_assignment | translator.matrix_assignment | translator.assignment),
    testdata       = testdata,
    tag            = None,
    raiseException = True

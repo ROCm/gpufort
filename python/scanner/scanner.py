@@ -80,9 +80,9 @@ def __postprocessCuf(stree):
     if CUBLAS_VERSION == 1:
         def hasCublasCall(child):
             return type(child) is STCudaLibCall and child.hasCublas()
-        cublasCalls = stree.find_all(filter=hasCublasCall, recursively=True)
-        #print(cublasCalls)
-        for call in cublasCalls:
+        cuf_cublas_calls = stree.find_all(filter=hascuf_cublas_call, recursively=True)
+        #print(cuf_cublas_calls)
+        for call in cuf_cublas_calls:
             begin = call._parent.findLast(filter=lambda child : type(child) in [STUseStatement,STDeclaration])
             indent = self.firstLineIndent()
             begin.addToEpilog("{0}type(c_ptr) :: hipblasHandle = c_null_ptr\n".format(indent))
@@ -369,7 +369,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentStatementNo
         nonlocal keepRecording
         logDetection_("CUDA kernel call")
-        kernelName, kernelLaunchArgs, args, finishesOnFirstLine = tokens 
+        kernelName, kernel_launch_args, args, finishesOnFirstLine = tokens 
         assert type(currentNode) in [STModule,STProcedure,STProgram], "type is: "+str(type(currentNode))
         new = STCudaKernelCall(currentNode,currentRecord,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
@@ -430,7 +430,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentStatement
         logDetection_("assignment")
         if inKernelsAccRegionAndNotRecording():
-            parseResult = translator.assignmentBegin.parseString(currentStatement)
+            parseResult = translator.assignment_begin.parseString(currentStatement)
             lvalue = translator.find_first(parseResult,translator.TTLValue)
             if not lvalue is None and lvalue.hasMatrixRangeArgs():
                 new  = STAccLoopKernel(currentNode,currentRecord,currentStatementNo)
@@ -446,10 +446,10 @@ def parseFile(records,index,fortranFilepath):
             translationEnabled = False
     
     # TODO completely remove / comment out !$acc end kernels
-    moduleStart.setParseAction(Module_visit)
-    programStart.setParseAction(Program_visit)
-    functionStart.setParseAction(Function_visit)
-    subroutineStart.setParseAction(Subroutine_visit)
+    module_start.setParseAction(Module_visit)
+    program_start.setParseAction(Program_visit)
+    function_start.setParseAction(Function_visit)
+    subroutine_start.setParseAction(Subroutine_visit)
     
     use.setParseAction(UseStatement)
     CONTAINS.setParseAction(PlaceHolder)
@@ -463,16 +463,16 @@ def parseFile(records,index,fortranFilepath):
     ALLOCATE.setParseAction(Allocate)
     DEALLOCATE.setParseAction(Deallocate)
     memcpy.setParseAction(Memcpy)
-    #pointerAssignment.setParseAction(PointerAssignment)
-    nonZeroCheck.setParseAction(NonZeroCheck)
+    #pointer_assignment.setParseAction(pointer_assignment)
+    non_zero_check.setParseAction(non_zero_check)
 
     # CUDA Fortran 
-    cudaLibCall.setParseAction(CudaLibCall)
-    cudaKernelCall.setParseAction(CudaKernelCall)
+    cuda_lib_call.setParseAction(CudaLibCall)
+    cuf_kernel_call.setParseAction(CudaKernelCall)
 
     # OpenACC
     ACC_START.setParseAction(AccDirective)
-    assignmentBegin.setParseAction(Assignment)
+    assignment_begin.setParseAction(Assignment)
 
     # GPUFORT control
     gpufort_control.setParseAction(GpufortControl)
@@ -557,16 +557,16 @@ def parseFile(records,index,fortranFilepath):
                             if "attributes" in currentTokens:
                                 tryToParseString("attributes",attributes)
                             if "cu" in currentStatementStrippedNoComments:
-                                scanString("cudaLibCall",cudaLibCall)
+                                scanString("cuda_lib_call",cuda_lib_call)
                             if "<<<" in currentTokens:
-                                tryToParseString("cudaKernelCall",cudaKernelCall)
+                                tryToParseString("cuf_kernel_call",cuf_kernel_call)
                             for commentChar in "!*c":
                                 if currentTokens[0]==commentChar+"$cuf":
                                     CufLoopKernel()
                         if "=" in currentTokens:
                             if not tryToParseString("memcpy",memcpy,parseAll=True):
-                                tryToParseString("assignment",assignmentBegin)
-                                scanString("nonZeroCheck",nonZeroCheck)
+                                tryToParseString("assignment",assignment_begin)
+                                scanString("non_zero_check",non_zero_check)
                         if "allocated" in currentTokens:
                             scanString("allocated",ALLOCATED)
                         elif "deallocate" in currentTokens:
@@ -578,15 +578,15 @@ def parseFile(records,index,fortranFilepath):
                         elif currentTokens[0] == "implicit":
                             tryToParseString("implicit",IMPLICIT)
                         elif currentTokens[0] == "module":
-                            tryToParseString("module",moduleStart)
+                            tryToParseString("module",module_start)
                         elif currentTokens[0] == "program":
-                            tryToParseString("program",programStart)
+                            tryToParseString("program",program_start)
                         elif currentTokens[0] == "return":
                              Return()
                         if "function" in currentTokens:
-                            tryToParseString("function",functionStart)
+                            tryToParseString("function",function_start)
                         if "subroutine" in currentTokens:
-                            tryToParseString("subroutine",subroutineStart)
+                            tryToParseString("subroutine",subroutine_start)
                         if currentTokens[0] in ["character","integer","logical","real","complex","double"]:
                             tryToParseString("declaration",datatype_reg)
                             break

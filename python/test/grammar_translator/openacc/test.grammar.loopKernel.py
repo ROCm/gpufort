@@ -81,7 +81,7 @@ end do
 
 for snippet in testdata:
     try:
-        grammar.loopKernel.parseString(snippet)
+        grammar.loop_kernel.parseString(snippet)
     except Exception as e:
         print(" - FAILED",file=sys.stderr)
         print("failed to parse '{}'".format(snippet),file=sys.stderr)

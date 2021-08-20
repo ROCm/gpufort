@@ -24,4 +24,5 @@ exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "translator_f
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "translator_directives.py.in")).read())
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "translator_cuf.py.in")).read())
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "translator_acc.py.in")).read())
+exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "translator_parser.py.in")).read())
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "translator_api.py.in")).read())

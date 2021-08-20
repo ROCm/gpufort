@@ -378,14 +378,14 @@ def __parseFile(fileStatements,filepath):
             elif parseResult.parallelism() == "vector":
                 currentNode._data["attributes"] += ["host","device:vector"]
 
-    moduleStart.setParseAction(ModuleStart)
-    typeStart.setParseAction(TypeStart)
-    programStart.setParseAction(ProgramStart)
-    functionStart.setParseAction(FunctionStart)
-    subroutineStart.setParseAction(SubroutineStart)
+    module_start.setParseAction(module_start)
+    type_start.setParseAction(type_start)
+    program_start.setParseAction(program_start)
+    function_start.setParseAction(function_start)
+    subroutine_start.setParseAction(subroutine_start)
 
-    typeEnd.setParseAction(End)
-    structureEnd.setParseAction(End)
+    type_end.setParseAction(End)
+    structure_end.setParseAction(End)
 
     datatype_reg.setParseAction(Declaration)
     use.setParseAction(Use)
@@ -424,24 +424,24 @@ def __parseFile(fileStatements,filepath):
         #elif currentTokens[0] == "implicit":
         #    tryToParseString("implicit",IMPLICIT)
         elif currentTokens[0] == "module":
-            tryToParseString("module",moduleStart)
+            tryToParseString("module",module_start)
         elif currentTokens[0] == "program":
-            tryToParseString("program",programStart)
+            tryToParseString("program",program_start)
         elif currentTokens[0].startswith("type"): # type a ; type, bind(c) :: a
-            tryToParseString("type",typeStart)
+            tryToParseString("type",type_start)
         elif currentTokens[0].startswith("attributes"): # attributes(device) :: a
             tryToParseString("attributes",attributes)
         # cannot be combined with above checks
         if "function" in currentTokens:
-            tryToParseString("function",functionStart)
+            tryToParseString("function",function_start)
         elif "subroutine" in currentTokens:
-            tryToParseString("subroutine",subroutineStart)
+            tryToParseString("subroutine",subroutine_start)
         for expr in ["type","character","integer","logical","real","complex","double"]: # type(dim3) :: a 
            if expr in currentTokens[0]:
                tryToParseString("declaration",datatype_reg)
                break
-        #tryToParseString("declaration|typeStart|use|attributes|moduleStart|programStart|functionStart|subroutineStart",\
-        #  datatype_reg|typeStart|use|attributes|moduleStart|programStart|functionStart|subroutineStart)
+        #tryToParseString("declaration|type_start|use|attributes|module_start|program_start|function_start|subroutine_start",\
+        #  datatype_reg|type_start|use|attributes|module_start|program_start|function_start|subroutine_start)
     taskExecutor.shutdown(wait=True) # waits till all tasks have been completed
 
     # apply attributes and acc variable modifications

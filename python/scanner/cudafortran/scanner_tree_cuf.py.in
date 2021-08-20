@@ -6,7 +6,7 @@ class CufBackendBase:
 
 CUF_LOOP_KERNEL_BACKENDS = {} 
 
-def registerCufBackend(name,loopKernelGeneratorClass,runtimeModuleName):
+def registerCufBackend(name,loop_kernelGeneratorClass,runtimeModuleName):
     global SUPPORTED_DESTINATION_DIALECTS
     global RUNTIME_MODULE_NAMES
     global CUF_LOOP_KERNEL_BACKENDS
@@ -14,7 +14,7 @@ def registerCufBackend(name,loopKernelGeneratorClass,runtimeModuleName):
     if not name in SUPPORTED_DESTINATION_DIALECTS:
         SUPPORTED_DESTINATION_DIALECTS.append(name)
     RUNTIME_MODULE_NAMES[name]     = runtimeModuleName
-    CUF_LOOP_KERNEL_BACKENDS[name] = loopKernelGeneratorClass
+    CUF_LOOP_KERNEL_BACKENDS[name] = loop_kernelGeneratorClass
 
 exec(open("{0}/cudafortran/scanner_tree_cuf2omp.py.in".format(scannerDir)).read())
 exec(open("{0}/cudafortran/scanner_tree_cuf2hip.py.in".format(scannerDir)).read())

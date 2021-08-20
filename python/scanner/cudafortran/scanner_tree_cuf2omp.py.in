@@ -7,11 +7,11 @@ class CufLoopKernel2Omp(CufBackendBase):
         fully covered by the statements.
         """
         try:
-           parseResult = translator.loopKernel.parseString(joinedStatements)[0]
+           parseResult = translator.loop_kernel.parseString(joinedStatements)[0]
            snippet     = joinedLines if statementsFullyCoverLines else joinedStatements
            return parseResult.ompFStr(snippet), True 
         except Exception as e:
-           print("failed: "+fSnippet) #TODO error handling
+           print("failed: "+f_snippet) #TODO error handling
            raise e
            return "", False 
 

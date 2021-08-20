@@ -184,13 +184,13 @@ class EmptyComputeConstruct(IComputeConstruct):
     Fallback for failed full parse.
     Inteneded to reveal as much information as possible
     """
-    def __init__(self,fSnippet):
-        self._fSnippet   = fSnippet
+    def __init__(self,f_snippet):
+        self._f_snippet   = f_snippet
         self._scope      = scoper.EMPTY_SCOPE
     def identifiersInBody(self,converter=make_f_str):
         valueType = lvalue | rvalue
         identifierNames = []
-        for ident,_,__ in valueType.scanString(self._fSnippet): # includes the identifiers of the function calls
+        for ident,_,__ in valueType.scanString(self._f_snippet): # includes the identifiers of the function calls
             name      = converter(ident._value)
             nameLower = name.lower()
             definition,foundInIndex = scoper.searchScopeForVariable(self._scope,createIndexSearchTagForVariable(nameLower))
@@ -204,7 +204,7 @@ class EmptyComputeConstruct(IComputeConstruct):
 class TTLoopKernel(TTNode,IComputeConstruct):
     def _assign_fields(self,tokens):
         self._parentDirective, self.body = tokens
-        self._scope = scoper.EMPTY_SCOPE
+        self.scope = scoper.EMPTY_SCOPE
     def __firstLoopAnnotation(self):        
         return self.body.annotation
     def __parentDirective(self):
@@ -256,26 +256,26 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         :return: all identifiers of LValue and RValues in the body.
         """
         if len(scope):
-            self._scope = scope
+            self.scope = scope
         def searchFilter(node):
             return isinstance(node, IValue) and\
                    type(node._value) in [TTDerivedTypeMember,TTIdentifier,TTFunctionCallOrTensorAccess]
-        result = self.__searchValueInBody(searchFilter,self._scope)
+        result = self.__searchValueInBody(searchFilter,self.scope)
         return result
     def arraysInBody(self,scope=[]):
         if len(scope):
-            self._scope = scope
+            self.scope = scope
         def searchFilter(node):
             return isinstance(node,IValue) and\
                     type(node._value) is TTFunctionCallOrTensorAccess 
-        return self.__searchValueInBody(searchFilter,self._scope,1)
+        return self.__searchValueInBody(searchFilter,self.scope,1)
     def inoutArraysInBody(self,scope=[]):
         if len(scope):
-            self._scope = scope
+            self.scope = scope
         def searchFilter(node):
             return type(node) is TTLValue and\
                     type(node._value) is TTFunctionCallOrTensorAccess 
-        return self.__searchValueInBody(searchFilter,self._scope,1)
+        return self.__searchValueInBody(searchFilter,self.scope,1)
     def __localScalarsAndReductionCandidates(self,scope):
         """
         local variable      - scalar variable that is not read before the assignment (and is no derived type member)
@@ -323,13 +323,13 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         return localScalars, reductionCandidates
     def localScalars(self,scope=[]):
         if len(scope):
-            self._scope = scope
-        localScalars,_ = self.__localScalarsAndReductionCandidates(self._scope)
+            self.scope = scope
+        localScalars,_ = self.__localScalarsAndReductionCandidates(self.scope)
         return localScalars 
     def reductionCandidates(self,scope=[]):
         if len(scope):
-            self._scope = scope
-        _,reductionCandidates = self.__localScalarsAndReductionCandidates(self._scope)
+            self.scope = scope
+        _,reductionCandidates = self.__localScalarsAndReductionCandidates(self.scope)
         return reductionCandidates
     def problemSize(self):
         numOuterLoopsToMap = int(self.__parentDirective().numCollapse())
@@ -407,7 +407,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         return self.__parentDirective().stream(converter)
     def sharedMem(self,converter=make_f_str):
         return self.__parentDirective().sharedMem(converter)
-    def ompFStr(self,fSnippet):
+    def ompFStr(self,f_snippet):
         """
         :note: The string used for parsing was preprocessed. Hence
                we pass the original Fortran snippet here.
@@ -435,7 +435,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 nonlocal reduction
                 return parseResult.ompFStr(arraysInBody,inoutArraysInBody,reduction,depend), True
             
-            result,_ = utils.pyparsingutils.replaceFirst(fSnippet,\
+            result,_ = utils.pyparsingutils.replaceFirst(f_snippet,\
                 cuf_kernel_do,\
                 cufKernelDoRepl)
             return result
@@ -460,7 +460,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 nonlocal reduction
                 return parseResult.strip()+"!$omp end target", True
             
-            result,_ = utils.pyparsingutils.replaceFirst(fSnippet,\
+            result,_ = utils.pyparsingutils.replaceFirst(f_snippet,\
                     acc_parallel | acc_parallel_loop | acc_kernels | acc_kernels_loop,\
                     accComputeRepl)
             result,_ = utils.pyparsingutils.replaceAll(result,\
@@ -480,7 +480,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         # members of a struct
         for expr in find_all(self.body,IValue):
              if type(expr._value) is TTFunctionCallOrTensorAccess:
-                 _, discovered = scoper.searchIndexForVariable(self._scope,createIndexSearchTagForVariable(expr.name()))
+                 _, discovered = scoper.searchIndexForVariable(self.scope,createIndexSearchTagForVariable(expr.name()))
                  if discovered:
                      expr._value._isTensorAccess = True3
         # TODO look up correct signature of called device functions from index
@@ -541,9 +541,9 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                     indices += loop.collapsedLoopIndexCStr("")
                 denominatorFactors.append(loop.problemSizeCStr())
                 conditions.append(loop.hipThreadBoundCStr())
-        cSnippet = "{0}{2}if ({1}) {{\n{3}}}".format(\
+        c_snippet = "{0}{2}if ({1}) {{\n{3}}}".format(\
             indices,"&&".join(conditions),reductionPreamble,make_c_str(self.body))
-        return postprocessCSnippet(cSnippet)
+        return postprocessC_snippet(c_snippet)
 
 def formatDirective(directiveLine,maxLineWidth):
     result   = ""

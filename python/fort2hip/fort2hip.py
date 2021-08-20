@@ -194,9 +194,9 @@ def __deriveKernelArguments(scope, identifiers, localVars, loopVars, whiteList=[
     utils.logging.logLeaveFunction(LOG_PREFIX,"__deriveKernelArguments")
     return kernelArgs, cKernelLocalVars, macros, inputArrays, localCpuRoutineArgs
     
-def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
+def __updateContextFromloop_kernels(loop_kernels,index,hipContext,fContext):
     """
-    loopKernels is a list of STCufLoopKernel objects.
+    loop_kernels is a list of STCufloop_kernel objects.
     hipContext, fContext are inout arguments for generating C/Fortran files, respectively.
     """
     utils.logging.logEnterFunction(LOG_PREFIX,"__updateContextFromLoopKernels")
@@ -205,12 +205,12 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
     generateCPULauncher = generateLauncher and EMIT_CPU_IMPLEMENTATION
     
     hipContext["haveReductions"] = False
-    for stkernel in loopKernels:
+    for stkernel in loop_kernels:
         parentTag = stkernel._parent.tag()
         scope     = scoper.createScope(index,parentTag)
    
         # translate and analyze kernels
-        kernelParseResult = translator.parseLoopKernel(\
+        kernelParseResult = translator.parse_loop_kernel(\
                 stkernel.getSnippet(),scope)
 
         kernelArgs, cKernelLocalVars, macros, inputArrays, localCpuRoutineArgs =\
@@ -316,7 +316,7 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
 
             # for test
             fInterfaceDictAuto["doTest"]   = False # True
-            fInterfaceDictAuto["testComment"] = ["Fortran implementation:"] + fSnippet.split("\n")
+            fInterfaceDictAuto["testComment"] = ["Fortran implementation:"] + f_snippet.split("\n")
             #fInterfaceDictAuto["testComment"] = ["","Hints:","Device variables in scope:"] + ["".join(declared.lines()).lower() for declared in deviceVarsInScope]
 
             #######################################################################
@@ -378,7 +378,7 @@ def __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext):
                        # host to device
                        epilog += "CALL hipCheck(hipMemcpy(d_{var},c_loc({var}),{bpe}_8*SIZE({var}),hipMemcpyHostToDevice))\n".format(var=localArray,bpe=arg["bytesPerElement"])
                        epilog += "deallocate({var})\n".format(var=localArray)
-                fCPURoutineDict["body"] = prolog + fSnippet.rstrip("\n") + epilog
+                fCPURoutineDict["body"] = prolog + f_snippet.rstrip("\n") + epilog
 
                 # Add all definitions to context
                 fContext["interfaces"].append(fCPUInterfaceDict)
@@ -412,14 +412,14 @@ def __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fConte
             resultVar = next([var for var in iprocedure["variables"] if var["name"] == indexValue["resultName"]],None)
             if resultVar != None:
                 resultType = resultVar["cType"]
-                parseResult = translator.parseProcedureBody(fBody,scope,iprocedure,resultVar["name"])
+                parseResult = translator.parse_procedure_body(fBody,scope,iprocedure,resultVar["name"])
             else:
                 msg = "could not identify return value for function ''"
                 utils.logging.logError(msg)
                 sys.exit(INDEXER_ERROR_CODE)
         else:
             resultType = "void"
-            parseResult = translator.parseProcedureBody(fBody,scope,iprocedure)
+            parseResult = translator.parse_procedure_body(fBody,scope,iprocedure)
 
         # TODO: look up functions and subroutines called internally and supply to parseResult before calling c_str()
     
@@ -571,7 +571,7 @@ def generateHipFiles(stree,index,kernelsToConvertToHip,translationSourcePath,gen
                     kernel.minLineno() in kernelsToConvertToHip or\
                     kernel.kernelName() in kernelsToConvertToHip
             return condition1 and condition2
-    def loopKernelFilter_(child):
+    def loop_kernelFilter_(child):
         return isinstance(child, scanner.STLoopKernel) and select_(child)
     def deviceProcedureFilter_(child):
         return type(child) is scanner.STProcedure and\
@@ -593,7 +593,7 @@ def generateHipFiles(stree,index,kernelsToConvertToHip,translationSourcePath,gen
         hipModuleFilepath = outputDir+"/"+hipModuleFilename
         guard             = hipModuleFilename.replace(".","_").replace("-","_").upper() 
         # extract kernels
-        loopKernels      = stmodule.find_all(filter=loopKernelFilter_, recursively=True)
+        loop_kernels      = stmodule.find_all(filter=loop_kernelFilter_, recursively=True)
         deviceProcedures = stmodule.find_all(filter=deviceProcedureFilter_, recursively=True)
         # TODO: Also extract derived types
         # derivedtypes = ....
@@ -604,10 +604,10 @@ def generateHipFiles(stree,index,kernelsToConvertToHip,translationSourcePath,gen
             utils.logging.logError(LOG_PREFIX,"generateHipFiles","could not find record for module '{}'.".format(moduleName))
             sys.exit() # TODO add error code
         includes = __createIncludesFromUsedModules(imodule,index)
-        if len(loopKernels) or len(deviceProcedures):
+        if len(loop_kernels) or len(deviceProcedures):
             utils.logging.logDebug2(LOG_PREFIX,"generateHipFiles",\
               "detected loop kernels: {}; detected device subprograms {}".format(\
-              len(loopKernels),len(deviceProcedures)))
+              len(loop_kernels),len(deviceProcedures)))
 
             # Context for HIP implementation
             hipContext = {}
@@ -627,7 +627,7 @@ def generateHipFiles(stree,index,kernelsToConvertToHip,translationSourcePath,gen
             fContext["interfaces"] = []
             fContext["routines"]   = []
             
-            __updateContextFromLoopKernels(loopKernels,index,hipContext,fContext)
+            __updateContextFromloop_kernels(loop_kernels,index,hipContext,fContext)
             __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext)
             
             if generateCode:

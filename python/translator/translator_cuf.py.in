@@ -543,8 +543,8 @@ class TTCufCublasCall(TTNode):
             api = api.split("_")[0] # remove _v2 if present
         args += [make_f_str(arg) for arg in self._args]
         result = "{2}{0}({1})".format(api,",".join(args),indent)
-        cublasOperationType = Regex("'[NTCntc]'").setParseAction(lambda tokens: "HIPBLAS_OP_"+tokens[0].strip("'").upper())
-        result = cublasOperationType.transformString(result)
+        cublas_operation_type = Regex("'[NTCntc]'").setParseAction(lambda tokens: "HIPBLAS_OP_"+tokens[0].strip("'").upper())
+        result = cublas_operation_type.transformString(result)
         return result
 
 ## Link actions
@@ -554,19 +554,19 @@ cuf_kernel_do.setParseAction(TTCufKernelDo)
 
 attributes.setParseAction(TTAttributes)
 
-allocateRValue.setParseAction(TTAllocateRValue)
-memCpyValue.setParseAction(TTAllocateRValue)
+allocate_rvalue.setParseAction(TTAllocateRValue)
+memcpy_value.setParseAction(TTAllocateRValue)
 allocate.setParseAction(TTCufAllocate)
 allocated.setParseAction(TTCufAllocated)
 deallocate.setParseAction(TTCufDeallocate)
 
 memcpy.setParseAction(TTCufMemcpyIntrinsic)
-nonZeroCheck.setParseAction(TTCufNonZeroCheck)
-#pointerAssignment.setParseAction(TTCufPointerAssignment)
+non_zero_check.setParseAction(TTCufNonZeroCheck)
+#pointer_assignment.setParseAction(TTCufpointer_assignment)
 
-cufCudaMemcpy.setParseAction(TTCufCudaMemcpy)
-cufCudaMemcpy2D.setParseAction(TTCufCudaMemcpy2D)
-cufCudaMemcpy3D.setParseAction(TTCufCudaMemcpy3D)
+cuf_cudamemcpy.setParseAction(TTCufCudaMemcpy)
+cuf_cudamemcpy2D.setParseAction(TTCufCudaMemcpy2D)
+cuf_cudamemcpy3D.setParseAction(TTCufCudaMemcpy3D)
 
-cublasCall.setParseAction(TTCufCublasCall)
-cudaKernelCall.setParseAction(TTCudaKernelCall)
+cuf_cublas_call.setParseAction(TTCufCublasCall)
+cuf_kernel_call.setParseAction(TTCudaKernelCall)

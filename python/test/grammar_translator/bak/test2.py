@@ -8,7 +8,7 @@ from pyparsing import ParseResults
 LIST_OF_TENSORS.clear()
 
 testString = "a + d + c + d * (a+c)"
-result = arithmeticExpression.parseString(testString)
+result = arithmetic_expression.parseString(testString)
 print(result[0].c_str())
 
 testString = "a(i,sin(y)%x2) = b + d + c + d * (a+c)"

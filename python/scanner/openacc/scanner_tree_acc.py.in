@@ -7,7 +7,7 @@ class AccBackendBase:
 ACC_BACKENDS             = {} 
 ACC_LOOP_KERNEL_BACKENDS = {} 
 
-def registerAccBackend(name,directiveGeneratorClass,loopKernelGeneratorClass,runtimeModuleName):
+def registerAccBackend(name,directiveGeneratorClass,loop_kernelGeneratorClass,runtimeModuleName):
     global SUPPORTED_DESTINATION_DIALECTS
     global RUNTIME_MODULE_NAMES
     global ACC_BACKENDS
@@ -17,7 +17,7 @@ def registerAccBackend(name,directiveGeneratorClass,loopKernelGeneratorClass,run
         SUPPORTED_DESTINATION_DIALECTS.append(name)
     RUNTIME_MODULE_NAMES[name]     = runtimeModuleName
     ACC_BACKENDS[name]             = directiveGeneratorClass 
-    ACC_LOOP_KERNEL_BACKENDS[name] = loopKernelGeneratorClass
+    ACC_LOOP_KERNEL_BACKENDS[name] = loop_kernelGeneratorClass
 
 exec(open("{0}/openacc/scanner_tree_acc2omp.py.in".format(scannerDir)).read())
 exec(open("{0}/openacc/scanner_tree_acc2hipgpufortrt.py.in".format(scannerDir)).read())

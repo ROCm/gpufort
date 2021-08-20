@@ -22,11 +22,11 @@ testdata.append("size(a%y,dim=1)")
 testdata.append("size(a(i,j)%z,dim=1,kind=4)")
 
 for entry in testdata:
-    print(translator.inquiryFunction.parseString(entry)[0].c_str())
+    print(translator.inquiry_function.parseString(entry)[0].c_str())
 
 test.run(
-   expression     = translator.inquiryFunction,
+   expression     = translator.inquiry_function,
    testdata       = testdata,
-   tag            = "inquiryFunction",
+   tag            = "inquiry_function",
    raiseException = True
 )

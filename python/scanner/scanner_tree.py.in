@@ -529,7 +529,7 @@ class STNonZeroCheck(STNode):
     def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]): # TODO
         result = snippet
         transformed = False
-        for tokens,start,end in translator.nonZeroCheck.scanString(result):
+        for tokens,start,end in translator.non_zero_check.scanString(result):
             parseResult = tokens[0]
             lhsName     = parseResult.lhsFStr()
             indexVar,_  = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
@@ -647,7 +647,7 @@ class STCudaLibCall(STNode):
         global CUBLAS_VERSION 
         global KEEP_CUDA_LIB_NAMES
         snippet     = joinedStatements
-        oldfSnippet = snippet
+        oldf_snippet = snippet
         indent      = self.firstLineIndent()
         transformed = False
         if not KEEP_CUDA_LIB_NAMES:
@@ -662,11 +662,11 @@ class STCudaLibCall(STNode):
                 srcOnDevice  = scoper.indexVariableIsOnDevice(srcIndexedVar)
                 subst = parseResult.hipFStr(destOnDevice,srcOnDevice)
                 return (subst, True)
-            snippet,_ = utils.pyparsingutils.replaceAll(snippet,translator.cufCudaMemcpyVariant,replMemcpy)
+            snippet,_ = utils.pyparsingutils.replaceAll(snippet,translator.cuf_cudamemcpyVariant,replMemcpy)
         def replCublas(parseResult):
             subst = parseResult.f_str(indent)
             return (subst, True)
-        snippet,haveCublas = utils.pyparsingutils.replaceAll(snippet,translator.cublasCall,replCublas)
+        snippet,haveCublas = utils.pyparsingutils.replaceAll(snippet,translator.cuf_cublas_call,replCublas)
         if haveCublas:
             self._hasCublas = True
         for elem in CUDA_RUNTIME_ENUMS:
@@ -677,7 +677,7 @@ class STCudaLibCall(STNode):
              snippet = replaceIgnoreCase(elem,elem.replace("cuda","hip"),snippet)
         for elem in CUDA_MATH_LIB_FUNCTIONS:
              snippet = replaceIgnoreCase(elem,elem.replace("cu","hip"),snippet)
-        transformed = snippet.lower() != oldfSnippet 
+        transformed = snippet.lower() != oldf_snippet 
         return snippet, transformed
 
 class STCudaKernelCall(STNode):
@@ -686,7 +686,7 @@ class STCudaKernelCall(STNode):
     """
     def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
         snippet = joinedStatements
-        for tokens,start,end in translator.cudaKernelCall.scanString(snippet):
+        for tokens,start,end in translator.cuf_kernel_call.scanString(snippet):
             parseResult = tokens[0]
             kernelArgs  = []
             for ttexpr in parseResult._args:
@@ -707,7 +707,7 @@ class STCudaKernelCall(STNode):
                     kernelArgs.append("size({0},{1})".format(exprFStr,rank))
                 for rank in range(1,maxRank+1):
                     kernelArgs.append("lbound({0},{1})".format(exprFStr,rank))
-            kernelLaunchInfo = translator.cudaKernelCall.parseString(self.firstStatement())[0]
+            kernelLaunchInfo = translator.cuf_kernel_call.parseString(self.firstStatement())[0]
             subst="call launch_{0}({1},{2},{3},{4},{5})".format(\
               kernelLaunchInfo.kernelNameFStr(),\
               kernelLaunchInfo.gridFStr(),

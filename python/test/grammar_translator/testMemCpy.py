@@ -4,7 +4,7 @@
 import test
 import translator.translator
 
-translator.matrixRanges.parseString("(1:n)")
+translator.matrix_ranges.parseString("(1:n)")
 
 testdata ="""
 a(1:n) = b(1:n)

@@ -70,9 +70,9 @@ end do
 
 for snippet in testdata:
     try:
-        result = translator.loopKernel.parseString(snippet)[0]
+        result = translator.loop_kernel.parseString(snippet)[0]
         print(result.ompFStr(snippet))
-        #result = translator.loopKernel.parseString(snippet)[0]
+        #result = translator.loop_kernel.parseString(snippet)[0]
     except Exception as e:
         print(" - FAILED",file=sys.stderr)
         print("failed to parse '{}'".format(snippet),file=sys.stderr)

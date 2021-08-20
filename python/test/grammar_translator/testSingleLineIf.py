@@ -4,7 +4,7 @@
 import test
 import translator.translator
 
-translator.matrixRanges.parseString("(1:n)")
+translator.matrix_ranges.parseString("(1:n)")
 
 testdata ="""
 if ( allocated(A_d) ) deallocate(A_d)

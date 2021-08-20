@@ -33,15 +33,15 @@ translator.LOOP_COLLAPSE_STRATEGY="collapse"
 #print(result.problemSize())
 
 print("k1:")
-cSnippet, problemSize, kernelLaunchInfo, identifierNames, localLValues, loopVars, reduction =\
-        translator.parseLoopKernel(k1)
-print(cSnippet)
+c_snippet, problemSize, kernelLaunchInfo, identifierNames, localLValues, loopVars, reduction =\
+        translator.parse_loop_kernel(k1)
+print(c_snippet)
 print(problemSize[0])
 
 print("k2:")
-cSnippet, problemSize, kernelLaunchInfo, identifierNames, localLValues, loopVars, reduction =\
-        translator.parseLoopKernel(k2)
-print(cSnippet)
+c_snippet, problemSize, kernelLaunchInfo, identifierNames, localLValues, loopVars, reduction =\
+        translator.parse_loop_kernel(k2)
+print(c_snippet)
 print(problemSize[0])
 
 #for i in range(len(k1data)):

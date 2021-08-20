@@ -9,7 +9,7 @@ testdata = []
 
 
 test.run(
-   expression     = translator.sizeOf,
+   expression     = translator.size_of,
    testdata       = testdata,
    tag            = "declaration-{}".format(lib),
    raiseException = True

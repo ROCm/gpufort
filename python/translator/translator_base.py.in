@@ -175,19 +175,19 @@ def convertToCType(fType,kind,default=None):
 pIgnore = re.compile(COMMENT+"|\&")
 pElseIf = re.compile(r"elseif", re.IGNORECASE)
 
-def prepareFortranSnippet(fortranSnippet):
+def prepareFortran_snippet(fortran_snippet):
     """
     Converts the Fortran snippet to lower case as
     we convert into a case-sensitive C language (preserves case in comments).
     Furthermore, applies a number of hacks that were necessary to get the parser work.
     """
-    result = pIgnore.sub("",fortranSnippet)
+    result = pIgnore.sub("",fortran_snippet)
     result = pElseIf.sub("else if",result)
     # replace power (**) expression by func call expression
     result = power.transformString(result)
     return result
 
-def postprocessCSnippet(cSnippet):
+def postprocessC_snippet(c_snippet):
     toHip = GPUFORT_CPP_ROUTINES 
     toHip.update({
        "threadidx.x" : "(1+threadIdx.x)",
@@ -214,5 +214,5 @@ def postprocessCSnippet(cSnippet):
        "sign"       : "copysign",
     })
     for key,subst in toHip.items():
-        cSnippet = re.sub(r"\b"+key+r"\b",subst,cSnippet)
-    return cSnippet
+        c_snippet = re.sub(r"\b"+key+r"\b",subst,c_snippet)
+    return c_snippet

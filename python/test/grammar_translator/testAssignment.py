@@ -9,7 +9,7 @@ import translator.translator
 for lib in ["PW","FFTXlib"]:
     testdata = open("testdata/assignment-{}.txt".format(lib),"r").readlines()
     test.run(
-       expression     = (translator.matrixAssignment | translator.assignment),
+       expression     = (translator.matrix_assignment | translator.assignment),
        testdata       = testdata,
        tag            = "assignment-{}".format(lib),
        raiseException = False

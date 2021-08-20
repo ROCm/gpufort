@@ -105,10 +105,10 @@ class Acc2HipGccRT(AccBackendBase):
         else:
             return ""
     def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[],handleIf=False):
-        fSnippet = joinedStatements
+        f_snippet = joinedStatements
         result = ""
         try:
-           parseResult = translator.accHostDirective.parseString(fSnippet)[0]
+           parseResult = translator.acc_host_directive.parseString(f_snippet)[0]
            #
            if type(parseResult) in [translator.TTAccData,\
                    translator.TTAccParallel,translator.TTAccParallelLoop,
@@ -142,12 +142,12 @@ class Acc2HipGccRT(AccBackendBase):
            elif type(parseResult) is translator.TTAccDeclare:
               pass
            else:
-              print("failed: "+fSnippet) #TODO
-              return fSnippet, False 
+              print("failed: "+f_snippet) #TODO
+              return f_snippet, False 
            return "call "+result+"\n", True 
         except Exception as e:
-           print("failed: "+fSnippet) #TODO
-           return fSnippet, False 
+           print("failed: "+f_snippet) #TODO
+           return f_snippet, False 
 
 class AccLoopKernel2HipGccRT(Acc2HipGccRT):
     def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
@@ -167,8 +167,8 @@ class AccLoopKernel2HipGccRT(Acc2HipGccRT):
             result += indent + "call " + HIP_GCC_RT_GOACC_DATA_END+"\n"
 
         # wrap in if-then-else-endif if necessary
-        fSnippet = joinedStatements
-        parseResult = translator.accHostDirective.parseString(fSnippet)[0]
+        f_snippet = joinedStatements
+        parseResult = translator.acc_host_directive.parseString(f_snippet)[0]
         condition = self._handleIf(parseResult)
         if len(condition):
             result = "if ( {condition} ) then\n{result}\nelse\n {original}\n endif".format(\

@@ -159,7 +159,7 @@ class TTFunctionCallOrTensorAccess(TTNode):
         self._name = tokens[0]
         self._args = tokens[1]
         self._isTensorAccess = Unknown3
-    def matrixRangeArgs(self):
+    def matrix_rangeArgs(self):
         """
         Returns all matrix range args in the order of their appeareance.
         """
@@ -225,9 +225,9 @@ class IValue:
             return self._value.lastElementHasMatrixRangeArgs()
         else:
             return False
-    def matrixRangeArgs(self):
+    def matrix_rangeArgs(self):
         if type(self._value) is TTFunctionCallOrTensorAccess:
-            return self._value.matrixRangeArgs()
+            return self._value.matrix_rangeArgs()
         elif type(self._value) is TTDerivedTypeMember:
             return self._value.lastElementMatrixRangeArgs()
         else:
@@ -410,7 +410,7 @@ class TTDerivedTypeMember(TTNode):
         while type(current) is TTDerivedTypeMember:
             current = current._element
         if type(current) is TTFunctionCallOrTensorAccess:
-            return current.matrixRangeArgs()
+            return current.matrix_rangeArgs()
         else:
             return []
     def lastElementHasMatrixRangeArgs(self):
@@ -517,16 +517,16 @@ class TTAssignment(TTNode):
         loopNestStart = ""
         loopNestEnd   = ""
         originalFStr = self.f_str()
-        for i,matrixRange in enumerate(self._lhs.matrixRangeArgs()):
+        for i,matrix_range in enumerate(self._lhs.matrix_rangeArgs()):
             loopVarName = "_"+chr(ord('a')+i) # Fortran names cannot start with "_"
-            matrixRange.setLoopVar(loopVarName)
-            lbound = matrixRange.lBound()
+            matrix_range.setLoopVar(loopVarName)
+            lbound = matrix_range.lBound()
             if not len(lbound):
                 lbound = "{name}_lb{i}".format(name=name,i=i+1)
-            ubound = matrixRange.uBound()
+            ubound = matrix_range.uBound()
             if not len(ubound):
                 ubound = "({lbound} + {name}_n{i} - 1)".format(lbound=lbound,name=name,i=i+1)
-            stride = matrixRange.stride()
+            stride = matrix_range.stride()
             if not len(stride):
                 stride="1"
             loopNestStart = "do {var}={lb},{ub},{step}\n".format(var=loopVarName,lb=lbound,ub=ubound,step=stride) + loopNestStart
@@ -534,13 +534,13 @@ class TTAssignment(TTNode):
         if len(loopNestStart):
             # TODO put into options
             for rvalue in find_all(self._rhs,searchedType=TTRValue):
-                for i,matrixRange in enumerate(rvalue.matrixRangeArgs()):
+                for i,matrix_range in enumerate(rvalue.matrix_rangeArgs()):
                  loopVarName = "_"+chr(ord('a')+i) # Fortran names cannot start with "_"
-                 matrixRange.setLoopVar(loopVarName)
+                 matrix_range.setLoopVar(loopVarName)
             loopNestStart += "! TODO(gpufort) please check if this conversion was done correctly\n"
             loopNestStart += "! original: {}\n".format(originalFStr)
             result = loopNestStart + self.f_str()+"\n" + loopNestEnd
-            return annotatedDoLoop.parseString(result)[0]
+            return annotated_do_loop.parseString(result)[0]
         else:
             return self
     def c_str(self,unpack=False):
@@ -598,7 +598,7 @@ class TTMatrixAssignment(TTNode):
 
 class TTIntentQualifier(TTNode):
     def _assign_fields(self,tokens):
-        #print("found intentQualifier")
+        #print("found intent_qualifier")
         #print(tokens[0])
         self._intent = tokens[0][0]
     def c_str(self):
@@ -663,13 +663,13 @@ class TTBounds(TTNode):
     Spawned from grammar:
     
     ```python
-    dimensionList  = delimitedList(dimensionValue)
+    dimensionList  = delimitedList(dimension_value)
     ```
  
     where
     
     ```python 
-    dimensionValue = ( matrixRange | arithmeticExpression | Literal("*"))
+    dimension_value = ( matrix_range | arithmetic_expression | Literal("*"))
     ```
     """
     def _assign_fields(self,tokens):
@@ -832,7 +832,7 @@ class TTDeclaredVariable(TTNode):
     Spawned from grammar:
     
     ```python
-    declarationVariable = Group( identifier + Optional(LPAR + dimensionList + RPAR,default=[]) + Optional(EQ + ( matrixArithmeticExpression | complexArithmeticExpression | arithmeticExpression ), default=None)) # ! emits [*,[*],*]
+    declarationVariable = Group( identifier + Optional(LPAR + dimensionList + RPAR,default=[]) + Optional(EQ + ( matrix_arithmetic_expression | complex_arithmetic_expression | arithmetic_expression ), default=None)) # ! emits [*,[*],*]
     ```
     """
     def _assign_fields(self,tokens):
@@ -893,7 +893,7 @@ class TTDeclaration(TTNode,Attributed):
     Spawned from grammar:
 
     ```python
-    declaration = datatype + Optional(COMMA + qualifierList,default=[]) + COLONS + Group(delimitedList(declarationVariable))   # ! emits *,[*],[*]
+    declaration = datatype + Optional(COMMA + qualifier_list,default=[]) + COLONS + Group(delimitedList(declarationVariable))   # ! emits *,[*],[*]
     ```
     """
     def _assign_fields(self,tokens):
@@ -943,9 +943,9 @@ class TTDeclaration(TTNode,Attributed):
         :return: number of elements of the (multi-dimensional) array 'name' (per dimension).
         :rtype: list of str
         """
-        dimensionQualifier = find_all(self._qualifiers,TTDimensionQualifier)
-        if len(dimensionQualifier):
-            return dimensionQualifier[0]._bounds.specifiedCounts()
+        dimension_qualifier = find_all(self._qualifiers,TTdimension_qualifier)
+        if len(dimension_qualifier):
+            return dimension_qualifier[0]._bounds.specifiedCounts()
         else:
             for ttdeclaredvariable in self._rhs:
                  if ttdeclaredvariable.name().lower() == name.lower():
@@ -961,9 +961,9 @@ class TTDeclaration(TTNode,Attributed):
         :see: TTBounds.boundVariableNames, arrayVariableNames
         :rtype: list
         """
-        dimensionQualifier = find_all(self._qualifiers,TTDimensionQualifier)
-        if len(dimensionQualifier):
-            return dimensionQualifier[0]._bounds.boundVariableNames(name,make_f_str)
+        dimension_qualifier = find_all(self._qualifiers,TTdimension_qualifier)
+        if len(dimension_qualifier):
+            return dimension_qualifier[0]._bounds.boundVariableNames(name,make_f_str)
         else:
             for ttdeclaredvariable in self._rhs:
                  if ttdeclaredvariable.name().lower() == name.lower():
@@ -979,9 +979,9 @@ class TTDeclaration(TTNode,Attributed):
         :see: TTBounds.boundVariableNames, arrayVariableNames
         :rtype: list
         """
-        dimensionQualifier = find_all(self._qualifiers,TTDimensionQualifier)
-        if len(dimensionQualifier):
-            return dimensionQualifier[0]._bounds.boundVariableAssignments(name,make_f_str)
+        dimension_qualifier = find_all(self._qualifiers,TTdimension_qualifier)
+        if len(dimension_qualifier):
+            return dimension_qualifier[0]._bounds.boundVariableAssignments(name,make_f_str)
         else:
             for ttdeclaredvariable in self._rhs:
                  if ttdeclaredvariable.name().lower() == name.lower():
@@ -996,9 +996,9 @@ class TTDeclaration(TTNode,Attributed):
 
         :see: TTBounds.indexStr(), arrayVariableNames
         """
-        dimensionQualifier = find_all(self._qualifiers,TTDimensionQualifier)
-        if len(dimensionQualifier):
-            return dimensionQualifier[0]._bounds.indexStr(name)
+        dimension_qualifier = find_all(self._qualifiers,TTdimension_qualifier)
+        if len(dimension_qualifier):
+            return dimension_qualifier[0]._bounds.indexStr(name)
         else:
             for ttdeclaredvariable in self._rhs:
                  if ttdeclaredvariable.name().lower() == name.lower():
@@ -1012,9 +1012,9 @@ class TTDeclaration(TTNode,Attributed):
 
         :see: TTBounds.indexStr(), arrayVariableNames
         """
-        dimensionQualifier = find_all(self._qualifiers,TTDimensionQualifier)
-        if len(dimensionQualifier):
-            return dimensionQualifier[0]._bounds.indexMacroStr(name,converter,usePlaceHolders)
+        dimension_qualifier = find_all(self._qualifiers,TTdimension_qualifier)
+        if len(dimension_qualifier):
+            return dimension_qualifier[0]._bounds.indexMacroStr(name,converter,usePlaceHolders)
         else:
             for ttdeclaredvariable in self._rhs:
                  if ttdeclaredvariable.name().lower() == name.lower():
@@ -1066,9 +1066,9 @@ class TTDeclaration(TTNode,Attributed):
         dimensionBounds = ""
         ignoredVars     = 0
         if len(self._qualifiers):
-           dimensionQualifier = find_all(self._qualifiers,TTDimensionQualifier)
-           if len(dimensionQualifier):
-                dimensionBounds = make_c_str(dimensionQualifier[0])
+           dimension_qualifier = find_all(self._qualifiers,TTdimension_qualifier)
+           if len(dimension_qualifier):
+                dimensionBounds = make_c_str(dimension_qualifier[0])
            comment = " /* Fortran qualifiers: {0} */".format(",".join([make_f_str(el) for el in self._qualifiers]))
         for ttdeclaredvariable in self._rhs:
             if not ttdeclaredvariable.name(make_c_str) in ignoreList: 
@@ -1143,9 +1143,9 @@ class TTWhile(TTContainer):
 class TTProcedureBody(TTContainer):
     def _assign_fields(self,tokens):
         self.body    = tokens[0]
-        self._scope  = []
-        self._ignoredVars = []
-        self._resultName  = ""
+        self.scope  = []
+        self.ignoredVars = []
+        self.resultName  = ""
     def c_str(self):
         """
         :return: body of a procedure as C/C++ code.
@@ -1159,83 +1159,81 @@ class TTProcedureBody(TTContainer):
         """
         # 0. Clarify types of function calls / tensor access that are not 
         # members of a struct
-        if len(self._scope):
+        if len(self.scope):
             for expr in find_all_matching(self.body,filterExpr=lambda x: isinstance(x,IValue)):
                  if type(expr._value) is TTFunctionCallOrTensorAccess:
-                     _, discovered = scoper.searchScopeForVariable(self._scope,createIndexSearchTagForVariable(expr.name()))
+                     _, discovered = scoper.searchScopeForVariable(self.scope,createIndexSearchTagForVariable(expr.name()))
                      if discovered:
                          expr._value._isTensorAccess = True3
         # 1. Remove function argument definitions and precision definitions
         # from body before converting body to C code.
+
+        # TODO Potentially simpler/more transparent to generate local variables from index and ignore in code.
+
         declarations = find_all(self.body,TTDeclaration)
         for ttdeclaration in declarations:
-            ttdeclaration._ignoreList = list(self._ignoredVars)
+            ttdeclaration._ignoreList = list(self.ignoredVars)
             for name in ttdeclaration.variableNames():
                 if "selected_real_kind" in ttdeclaration.rhsCStr(name).lower():
                     ttdeclaration._ignoreList.append(name)
         # 2. Propagate result variable name to return statements
-        if len(self._resultName):
+        if len(self.resultName):
             for expr in find_all(self.body,TTReturn):
                  expr._resultName = resultName  
         cBody = make_c_str(self.body)
-        if len(self._resultName):
+        if len(self.resultName):
              cBody += "\nreturn "+resultName+";"
         return postprocessCSnippet(cBody)
 
 ## Link actions
-#printStatement.setParseAction(TTCommentedOut)
+#print_statement.setParseAction(TTCommentedOut)
 comment.setParseAction(TTCommentedOut)
 
 logical.setParseAction(TTLogical)
 integer.setParseAction(TTNumber)
 number.setParseAction(TTNumber)
-lArithOperator.setParseAction(TTOperator)
-#rArithOperator.setParseAction(TTOperator)
+l_arith_operator.setParseAction(TTOperator)
+#r_arith_operator.setParseAction(TTOperator)
 conditionOp.setParseAction(TTOperator)
 identifier.setParseAction(TTIdentifier)
 rvalue.setParseAction(TTRValue)
 lvalue.setParseAction(TTLValue)
-simpleDerivedTypeMember.setParseAction(TTDerivedTypeMember)
-derivedTypeElem.setParseAction(TTDerivedTypeMember)
-funcCall.setParseAction(TTFunctionCallOrTensorAccess)
+simple_derived_type_member.setParseAction(TTDerivedTypeMember)
+derived_type_elem.setParseAction(TTDerivedTypeMember)
+func_call.setParseAction(TTFunctionCallOrTensorAccess)
 
-convertToExtractReal.setParseAction(TTConvertToExtractReal)
-convertToDouble.setParseAction(TTConvertToDouble)
-convertToComplex.setParseAction(TTConvertToComplex)
-convertToDoubleComplex.setParseAction(TTConvertToDoubleComplex)
-extractImag.setParseAction(TTExtractImag)
+convert_to_extract_real.setParseAction(TTConvertToExtractReal)
+convert_to_double.setParseAction(TTConvertToDouble)
+convert_to_complex.setParseAction(TTConvertToComplex)
+convert_to_double_complex.setParseAction(TTConvertToDoubleComplex)
+extract_imag.setParseAction(TTExtractImag)
 conjugate.setParseAction(TTConjugate)
-conjugateDoubleComplex.setParseAction(TTConjugate) # same action
+conjugate_double_complex.setParseAction(TTConjugate) # same action
 
-sizeInquiry.setParseAction(TTSizeInquiry)
-lboundInquiry.setParseAction(TTLboundInquiry)
-uboundInquiry.setParseAction(TTUboundInquiry)
+size_inquiry.setParseAction(TTSizeInquiry)
+lbound_inquiry.setParseAction(TTLboundInquiry)
+ubound_inquiry.setParseAction(TTUboundInquiry)
 
 datatype_comment.setParseAction(TTDatatype_Comment)
 datatype_convert.setParseAction(TTDatatype_Convert)
 
-matrixRange.setParseAction(TTMatrixRange)
+matrix_range.setParseAction(TTMatrixRange)
 bounds.setParseAction(TTBounds)
-matrixRanges.setParseAction(TTBounds)
-dimensionQualifier.setParseAction(TTDimensionQualifier)
-intentQualifier.setParseAction(TTIntentQualifier)
+matrix_ranges.setParseAction(TTBounds)
+dimension_qualifier.setParseAction(TTDimensionQualifier)
+intent_qualifier.setParseAction(TTIntentQualifier)
 
-declaredVariable.setParseAction(TTDeclaredVariable)
-arithmeticExpression.setParseAction(TTArithmeticExpression)
-arithmeticLogicalExpression.setParseAction(TTArithmeticExpression)
-complexArithmeticExpression.setParseAction(TTComplexArithmeticExpression)
-powerValue1.setParseAction(TTRValue)
+declared_variable.setParseAction(TTDeclaredVariable)
+arithmetic_expression.setParseAction(TTArithmeticExpression)
+arithmetic_logical_expression.setParseAction(TTArithmeticExpression)
+complex_arithmetic_expression.setParseAction(TTComplexArithmeticExpression)
+power_value1.setParseAction(TTRValue)
 power.setParseAction(TTPower)
 assignment.setParseAction(TTAssignment)
-matrixAssignment.setParseAction(TTMatrixAssignment)
-complexAssignment.setParseAction(TTComplexAssignment)
+matrix_assignment.setParseAction(TTMatrixAssignment)
+complex_assignment.setParseAction(TTComplexAssignment)
 
 # statements
-statement.setParseAction(TTStatement)
-
-use.setParseAction(TTIgnore)
-returnStatement.setParseAction(TTReturn)
-procedureBody.setParseAction(TTProcedureBody) 
-
+return_statement.setParseAction(TTReturn)
 fortran_subroutine_call.setParseAction(TTSubroutineCall)
 fortran_declaration.setParseAction(TTDeclaration)

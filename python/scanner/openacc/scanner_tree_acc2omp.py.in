@@ -7,7 +7,7 @@ class Acc2Omp(AccBackendBase):
            def repl(parseResult):
                 return parseResult.ompFStr(), True
            result,_ = utils.pyparsingutils.replaceFirst(snippet,\
-                    translator.accSimpleDirective,\
+                    translator.acc_simple_directive,\
                     repl)
            return result, True 
         except Exception as e:
@@ -22,7 +22,7 @@ class AccLoopKernel2Omp(AccBackendBase):
         else:
             snippet = joinedStatements
         try:
-           parseResult = translator.loopKernel.parseString(snippet)[0]
+           parseResult = translator.loop_kernel.parseString(snippet)[0]
            return parseResult.ompFStr(snippet), True 
         except Exception as e:
            print("failed: "+snippet) # TODO error handling

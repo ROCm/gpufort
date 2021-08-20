@@ -7,25 +7,25 @@ import test
 import translator.translator as translator
 #import grammar as translator
 
-#print(translator.declaredVariable.parseString("f_d ( : )")[0]._bounds._bounds[0].__dict__)
-#print(translator.declaredVariable.parseString("f_d ( -5: )")[0]._bounds._bounds[0].__dict__)
-#print(translator.declaredVariable.parseString("f_d ( :5 )")[0]._bounds._bounds[0].__dict__)
-#print(translator.declaredVariable.parseString("f_d ( :5:2 )")[0]._bounds._bounds[0].__dict__)
-#print(translator.declaredVariable.parseString("f_d ( 1:5:2 )")[0]._bounds._bounds[0].__dict__)
+#print(translator.declared_variable.parseString("f_d ( : )")[0]._bounds._bounds[0].__dict__)
+#print(translator.declared_variable.parseString("f_d ( -5: )")[0]._bounds._bounds[0].__dict__)
+#print(translator.declared_variable.parseString("f_d ( :5 )")[0]._bounds._bounds[0].__dict__)
+#print(translator.declared_variable.parseString("f_d ( :5:2 )")[0]._bounds._bounds[0].__dict__)
+#print(translator.declared_variable.parseString("f_d ( 1:5:2 )")[0]._bounds._bounds[0].__dict__)
 
-#print(translator.arithmeticExpression.parseString("ldx * ldy * ldz")[0])
-#print(translator.declaredVariable.parseString("f_d ( ldx )")[0].f_str())
-#print(translator.declaredVariable.parseString("f_d ( ldx, ldy, ldz)")[0].f_str())
-#print(translator.declaredVariable.parseString("f_d ( ldx * ldy * ldz )")[0])
+#print(translator.arithmetic_expression.parseString("ldx * ldy * ldz")[0])
+#print(translator.declared_variable.parseString("f_d ( ldx )")[0].f_str())
+#print(translator.declared_variable.parseString("f_d ( ldx, ldy, ldz)")[0].f_str())
+#print(translator.declared_variable.parseString("f_d ( ldx * ldy * ldz )")[0])
 
 print("hallo")
-print(translator.declaredVariable.parseString("f_d ( ldx * ldy * ldz )")[0]._bounds.specifiedBounds())
+print(translator.declared_variable.parseString("f_d ( ldx * ldy * ldz )")[0]._bounds.specifiedBounds())
 print("hallo")
-print(translator.declaredVariable.parseString("f_d ( -k:k, 5 )")[0]._bounds.indexStr("f_d",True))
+print(translator.declared_variable.parseString("f_d ( -k:k, 5 )")[0]._bounds.indexStr("f_d",True))
 print("hallo")
-print(translator.declaredVariable.parseString("f_d ( -k:k, 5 )")[0]._bounds.indexStr("f_d"))
+print(translator.declared_variable.parseString("f_d ( -k:k, 5 )")[0]._bounds.indexStr("f_d"))
 
-print(translator.declaredVariable.parseString("i, k, j, err, idir, ip,  ii, jj, istat")[0])
+print(translator.declared_variable.parseString("i, k, j, err, idir, ip,  ii, jj, istat")[0])
 #print("THIS: "+str(translator.fortran_declaration.parseString("INTEGER, INTENT(IN) :: isign, ldx, ldy, nx, ny, nzl")[3]))
 #print("THIS: "+str(translator.fortran_declaration.parseString("INTEGER, INTENT(IN) :: isign")[3]))
 #print("THIS: "+str(translator.fortran_declaration.parseString("INTEGER :: isign")[3]))

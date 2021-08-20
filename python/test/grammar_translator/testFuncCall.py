@@ -10,11 +10,11 @@ a0(1)
 """.strip(" ").strip("\n").split("\n")
 
 test.run(
-   expression     = translator.funcCall,
+   expression     = translator.func_call,
    testdata       = testdata,
-   tag            = "funcCall",
+   tag            = "func_call",
    raiseException = True
 )
 
 for v in testdata:
-    print(translator.funcCall.parseString(v)[0].c_str())
+    print(translator.func_call.parseString(v)[0].c_str())

@@ -105,8 +105,8 @@ class TTAccDirectiveBase(TTNode):
                     clause.kind() in clauseKinds:
                 result += clause.varExpressions()
         return result
-    def _format(self,fSnippet):
-        return formatDirective(fSnippet,80) 
+    def _format(self,f_snippet):
+        return formatDirective(f_snippet,80) 
     def ompFStr(self):
         assert False, "Not implemented"     
 

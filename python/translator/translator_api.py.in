@@ -9,6 +9,10 @@ def createIndexRecordsFromDeclaration(ttdeclaration):
     to the (HIP) kernel code generation
     and the Fortran-C interface code generation.
     """
+    global LOG_PREFIX
+
+    utils.logging.logEnterFunction(LOG_PREFIX,"createIndexRecordsFromDeclaration")
+    
     context = []
     hasDimension = ttdeclaration.hasDimension()
     for ttdeclaredvariable in ttdeclaration._rhs:
@@ -37,8 +41,8 @@ def createIndexRecordsFromDeclaration(ttdeclaration):
         varContext["declareOnTarget"]           = False
         # arrays
         varContext["rank"]                       = 0
-        dimension_qualifier = find_all(ttdeclaration._qualifiers,TTdimension_qualifier)
-        if ttdeclared_variable.hasBounds() or len(dimension_qualifier):
+        dimension_qualifier = find_all(ttdeclaration._qualifiers,TTDimensionQualifier)
+        if ttdeclaredvariable.hasBounds() or len(dimension_qualifier):
             varContext["fInterfaceType"] = "type(c_ptr)"
             if len(dimension_qualifier):
                 ttbounds = dimension_qualifier[0]._bounds
@@ -69,6 +73,9 @@ def createIndexRecordsFromDeclaration(ttdeclaration):
                 # TODO 
                 pass
         context.append(varContext)
+    
+    utils.logging.logLeaveFunction(LOG_PREFIX,"createIndexRecordsFromDeclaration")
+    
     return context
 
 def changeKind(varContext,kind):

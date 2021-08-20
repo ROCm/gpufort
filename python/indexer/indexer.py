@@ -107,13 +107,19 @@ def __parseFile(fileStatements,filepath):
         :note: the term 'task' should highlight that this is a function
         that is directly submitted to a thread in the worker pool.
         """
+        global LOG_PREFIX
         nonlocal accessLock
         msg = "begin to parse variable declaration '{}'".format(inputText)
         logEnterJobOrTask_(parentNode, msg)
         #
-        variables =\
-          translator.createIndexRecordsFromDeclaration(\
-            translator.fortran_declaration.parseString(inputText)[0])
+        try:
+            print(translator.fortran_declaration.parseString(inputText)[0])
+            variables =\
+              translator.createIndexRecordsFromDeclaration(\
+                translator.fortran_declaration.parseString(inputText)[0])
+        except Exception as e:
+            utils.logging.logError(LOG_PREFIX,"__parseFile.ParseDeclarationTask_","failed: "+str(e))
+            sys.exit()
         accessLock.acquire()
         parentNode._data["variables"] += variables
         accessLock.release()

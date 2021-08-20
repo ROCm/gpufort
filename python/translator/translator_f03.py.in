@@ -943,7 +943,7 @@ class TTDeclaration(TTNode,Attributed):
         :return: number of elements of the (multi-dimensional) array 'name' (per dimension).
         :rtype: list of str
         """
-        dimension_qualifier = find_all(self._qualifiers,TTdimension_qualifier)
+        dimension_qualifier = find_all(self._qualifiers,TTDimensionQualifier)
         if len(dimension_qualifier):
             return dimension_qualifier[0]._bounds.specifiedCounts()
         else:
@@ -961,7 +961,7 @@ class TTDeclaration(TTNode,Attributed):
         :see: TTBounds.boundVariableNames, arrayVariableNames
         :rtype: list
         """
-        dimension_qualifier = find_all(self._qualifiers,TTdimension_qualifier)
+        dimension_qualifier = find_all(self._qualifiers,TTDimensionQualifier)
         if len(dimension_qualifier):
             return dimension_qualifier[0]._bounds.boundVariableNames(name,make_f_str)
         else:
@@ -979,7 +979,7 @@ class TTDeclaration(TTNode,Attributed):
         :see: TTBounds.boundVariableNames, arrayVariableNames
         :rtype: list
         """
-        dimension_qualifier = find_all(self._qualifiers,TTdimension_qualifier)
+        dimension_qualifier = find_all(self._qualifiers,TTDimensionQualifier)
         if len(dimension_qualifier):
             return dimension_qualifier[0]._bounds.boundVariableAssignments(name,make_f_str)
         else:
@@ -996,7 +996,7 @@ class TTDeclaration(TTNode,Attributed):
 
         :see: TTBounds.indexStr(), arrayVariableNames
         """
-        dimension_qualifier = find_all(self._qualifiers,TTdimension_qualifier)
+        dimension_qualifier = find_all(self._qualifiers,TTDimensionQualifier)
         if len(dimension_qualifier):
             return dimension_qualifier[0]._bounds.indexStr(name)
         else:
@@ -1012,7 +1012,7 @@ class TTDeclaration(TTNode,Attributed):
 
         :see: TTBounds.indexStr(), arrayVariableNames
         """
-        dimension_qualifier = find_all(self._qualifiers,TTdimension_qualifier)
+        dimension_qualifier = find_all(self._qualifiers,TTDimensionQualifier)
         if len(dimension_qualifier):
             return dimension_qualifier[0]._bounds.indexMacroStr(name,converter,usePlaceHolders)
         else:
@@ -1066,7 +1066,7 @@ class TTDeclaration(TTNode,Attributed):
         dimensionBounds = ""
         ignoredVars     = 0
         if len(self._qualifiers):
-           dimension_qualifier = find_all(self._qualifiers,TTdimension_qualifier)
+           dimension_qualifier = find_all(self._qualifiers,TTDimensionQualifier)
            if len(dimension_qualifier):
                 dimensionBounds = make_c_str(dimension_qualifier[0])
            comment = " /* Fortran qualifiers: {0} */".format(",".join([make_f_str(el) for el in self._qualifiers]))

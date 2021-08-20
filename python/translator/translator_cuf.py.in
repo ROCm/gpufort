@@ -562,7 +562,7 @@ deallocate.setParseAction(TTCufDeallocate)
 
 memcpy.setParseAction(TTCufMemcpyIntrinsic)
 non_zero_check.setParseAction(TTCufNonZeroCheck)
-#pointer_assignment.setParseAction(TTCufpointer_assignment)
+#pointer_assignment.setParseAction(TTCufPointerAssignment)
 
 cuf_cudamemcpy.setParseAction(TTCufCudaMemcpy)
 cuf_cudamemcpy2D.setParseAction(TTCufCudaMemcpy2D)

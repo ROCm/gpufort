@@ -211,7 +211,7 @@ def __updateContextFromloop_kernels(loop_kernels,index,hipContext,fContext):
    
         # translate and analyze kernels
         kernelParseResult = translator.parse_loop_kernel(\
-                stkernel.getSnippet(),scope)
+            stkernel.code,scope)
 
         kernelArgs, cKernelLocalVars, macros, inputArrays, localCpuRoutineArgs =\
           __deriveKernelArguments(scope,\
@@ -405,21 +405,20 @@ def __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fConte
         
         hipContext["includes"] += __createIncludesFromUsedModules(iprocedure,index)
 
-        fBody = stprocedure.getBody()
-        
+        fBody = "\n".join(stprocedure.code)
         if isFunction:
             resultName = indexValue["resultName"]
             resultVar = next([var for var in iprocedure["variables"] if var["name"] == indexValue["resultName"]],None)
             if resultVar != None:
                 resultType = resultVar["cType"]
-                parseResult = translator.parse_procedure_body(fBody,scope,iprocedure,resultVar["name"])
+                parseResult = translator.parse_procedure_body(stprocedure.code,scope,iprocedure,resultVar["name"])
             else:
                 msg = "could not identify return value for function ''"
                 utils.logging.logError(msg)
                 sys.exit(INDEXER_ERROR_CODE)
         else:
             resultType = "void"
-            parseResult = translator.parse_procedure_body(fBody,scope,iprocedure)
+            parseResult = translator.parse_procedure_body(stprocedure.code,scope,iprocedure)
 
         # TODO: look up functions and subroutines called internally and supply to parseResult before calling c_str()
     

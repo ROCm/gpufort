@@ -172,9 +172,6 @@ def convertToCType(fType,kind,default=None):
     kindLower = kind.lower()
     return FORTRAN_2_C_TYPE_MAP.get(fType.lower(),{ kindLower : default }).get(kindLower, "UNKNOWN")
 
-pIgnore = re.compile(COMMENT+"|\&")
-pElseIf = re.compile(r"elseif", re.IGNORECASE)
-
 def prepareFortran_snippet(fortran_snippet):
     """
     Converts the Fortran snippet to lower case as
@@ -183,7 +180,6 @@ def prepareFortran_snippet(fortran_snippet):
     """
     result = pIgnore.sub("",fortran_snippet)
     result = pElseIf.sub("else if",result)
-    # replace power (**) expression by func call expression
     result = power.transformString(result)
     return result
 

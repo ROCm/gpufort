@@ -304,39 +304,17 @@ class STProcedure(STNode,Tagged):
         STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
         self.name = name
         self.kind = kind
+        self.code = []
         # check attributes
         self._indexRecord, _ = scoper.searchIndexForSubprogram(index,self._parent.tag(),name)
-    def __extractBody(self):
-        def beginOfBody_(stmts):
-            """
-            starts from the begin
-            """
-            stmtno = 0
-            while(not "use" in stmts[stmtno].lower() and\
-                  not "implicit" in stmts[stmtno].lower() and\
-                  not "::" in stmts[stmtno].lower()):
-                stmtno += 1
-            return stmtno
-        def endOfBody_(stmts):
-            """
-            starts from the end
-            """
-            stmtno = len(stmts)-1
-            while(not "end" in stmts[stmtno].lower()):
-                stmtno -= 1
-            return stmtno
-        
-        allStatements = self.statements()    
-        return "\n".join(allStatements[beginOfBody_(allStatements):endOfBody_(allStatements)])
     def __mustBeAvailableOnHost(self):
         return not len(self._indexRecord["attributes"]) or\
                "host" in self._indexRecord["attributes"]
     def __attributesPresent(self):
         return len(self._indexRecord["attributes"])
     def completeInit(self):
-        self._body = self.__extractBody()
-    def getBody(self):
-        return self._body 
+        # exclude begin/end statement of procedure
+        self.code = self.statements()[1:-1] # implies copy
     def hasAttribute(self,attribute):
         return attribute in self._indexRecord["attributes"]
     def isKernelSubroutine(self):
@@ -392,8 +370,8 @@ class STLoopKernel(STNode):
         self.sharedMemFStr        = "0" # set from extraction routine
         self.streamFStr           = "c_null_ptr" # set from extraction routine
         self.kernelArgNames       = [] # set from extraction routine
+        self.code                 = []
         self._doLoopCtrMemorised  = -1
-        self.__originalStatements = []
     def __hash(self):
         """Compute hash code for this kernel. Must be done before any transformations are performed."""
         statements    = list(self.__originalStatements) # copy
@@ -402,22 +380,12 @@ class STLoopKernel(STNode):
         snippet       = "".join(statements)
         return hashlib.md5(snippet.encode()).hexdigest()[0:6]
     def completeInit(self):
-        """Complete the initialization
-        
-        This routine is called after all associated records have
-        been added to this node.
-        """
-        self.__originalStatements = self.statements()
+        self.code = self.statements()
     def kernelName(self):
         """Derive a name for the kernel"""
         return LOOP_KERNEL_NAME_TEMPLATE.format(parent=self._parent.name.lower(),lineno=self.minLineno(),hash=self.__hash())
     def kernelLauncherName(self):
         return "launch_{}".format(self.kernelName())
-    def getSnippet(self,separator):
-        """Creates a snippet from the (original) statements associated with this node
-        :param str separator: character that is placed between the statements ('\n' or ';')
-        """
-        return separator.join([stmt.rstrip("\n") for stmt in self.__originalStatements])
     def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
         indent = self.firstLineIndent()
         try:

@@ -126,14 +126,13 @@ def createIndexSearchTagForVariable(variableExpression):
 # TODO parsing and translation is similar but analysis differs between the different kernel
 # types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)
 # while they are specified with ACC,OMP.
-def parse_loop_kernel(fortran_snippet,scope=[],maxRecursions=30):
+def parse_loop_kernel(fortran_statements,scope=[],maxRecursions=30):
     """
     Return a csnippet equivalent to the original Fortran code.
     """
     global LOG_PREFIX
 
-    fortran_snippet = prepareFortranSnippet(fortran_snippet)
-    ttloopkernel = __parse_fortran_code(fortran_snippet).body[0]
+    ttloopkernel = __parse_fortran_code(fortran_statements).body[0]
     ttloopkernel.scope = scope
     return ttloopkernel
 
@@ -141,17 +140,15 @@ class EmptyProcedureBody():
     def c_str(self):
         return "" 
 
-def parse_procedure_body(fortran_snippet,scope,indexRecord,resultName="",maxRecursions=10):
+def parse_procedure_body(fortran_statements,scope,indexRecord,resultName="",maxRecursions=10):
     """
     Parse a function/subroutine body.
     """
     global KEYWORDS 
     global LOG_PREFIX
 
-    fortran_snippet = prepareFortranSnippet(fortran_snippet)
-    parse_result = __parse_fortran_code(fortran_snippet).body[0]
-
+    ttprocedurebody = __parse_fortran_code(fortran_statements).body[0]
     ttprocedurebody.scope        = scope 
     ttprocedurebody.resultName   = resultName
     ttprocedurebody.ignoredVars += indexRecord["dummyArgs"]
-    return parse_result
+    return ttprocedurebody

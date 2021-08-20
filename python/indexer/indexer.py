@@ -113,7 +113,6 @@ def __parseFile(fileStatements,filepath):
         logEnterJobOrTask_(parentNode, msg)
         #
         try:
-            print(translator.fortran_declaration.parseString(inputText)[0])
             variables =\
               translator.createIndexRecordsFromDeclaration(\
                 translator.fortran_declaration.parseString(inputText)[0])

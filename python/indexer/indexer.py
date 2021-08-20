@@ -378,11 +378,11 @@ def __parseFile(fileStatements,filepath):
             elif parseResult.parallelism() == "vector":
                 currentNode._data["attributes"] += ["host","device:vector"]
 
-    module_start.setParseAction(module_start)
-    type_start.setParseAction(type_start)
-    program_start.setParseAction(program_start)
-    function_start.setParseAction(function_start)
-    subroutine_start.setParseAction(subroutine_start)
+    module_start.setParseAction(ModuleStart)
+    type_start.setParseAction(TypeStart)
+    program_start.setParseAction(ProgramStart)
+    function_start.setParseAction(FunctionStart)
+    subroutine_start.setParseAction(SubroutineStart)
 
     type_end.setParseAction(End)
     structure_end.setParseAction(End)

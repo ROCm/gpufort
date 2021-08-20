@@ -78,9 +78,9 @@ def __postprocessCuf(stree):
     utils.logging.logEnterFunction(LOG_PREFIX,"__postprocessCuf")
     # cublas_v1 detection
     if CUBLAS_VERSION == 1:
-        def hasCublasCall(child):
+        def has_cublas_call_(child):
             return type(child) is STCudaLibCall and child.hasCublas()
-        cuf_cublas_calls = stree.find_all(filter=hascuf_cublas_call, recursively=True)
+        cuf_cublas_calls = stree.find_all(filter=has_cublas_call_, recursively=True)
         #print(cuf_cublas_calls)
         for call in cuf_cublas_calls:
             begin = call._parent.findLast(filter=lambda child : type(child) in [STUseStatement,STDeclaration])
@@ -532,7 +532,7 @@ def parseFile(records,index,fortranFilepath):
                 utils.logging.logDebug4(LOG_PREFIX,"parseFile","parsing statement '{}' associated with lines [{},{}]".format(currentStatement.rstrip(),\
                     currentRecord["lineno"],currentRecord["lineno"]+len(currentRecord["lines"])-1))
                 
-                currentTokens                      = pyparsingutils.tokenize(currentStatement.lower())
+                currentTokens                      = utils.pyparsingutils.tokenize(currentStatement.lower())
                 currentStatementStripped           = " ".join(currentTokens)
                 currentStatementStrippedNoComments = currentStatementStripped.split("!")[0]
                 if len(currentTokens):

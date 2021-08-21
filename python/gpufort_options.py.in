@@ -12,7 +12,7 @@ POST_CLI_ACTIONS = []
 # logging
 LOG_LEVEL  = "warning"
         # Log level; only print warnings by default.
-LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s [file:%(filename)s]"
+LOG_FORMAT = "[%(levelname)s][infile:%(filename)s] gpufort:%(message)s"
         # Log format
 LOG_PREFIX = "gpufort"
         # Prefix for all log output

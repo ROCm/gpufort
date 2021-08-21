@@ -306,17 +306,17 @@ class STProcedure(STNode,Tagged):
         self.kind = kind
         self.code = []
         # check attributes
-        self._indexRecord, _ = scoper.searchIndexForSubprogram(index,self._parent.tag(),name)
+        self.indexRecord, _ = scoper.searchIndexForSubprogram(index,self._parent.tag(),name)
     def __mustBeAvailableOnHost(self):
-        return not len(self._indexRecord["attributes"]) or\
-               "host" in self._indexRecord["attributes"]
+        return not len(self.indexRecord["attributes"]) or\
+               "host" in self.indexRecord["attributes"]
     def __attributesPresent(self):
-        return len(self._indexRecord["attributes"])
+        return len(self.indexRecord["attributes"])
     def completeInit(self):
         # exclude begin/end statement of procedure
         self.code = self.statements()[1:-1] # implies copy
     def hasAttribute(self,attribute):
-        return attribute in self._indexRecord["attributes"]
+        return attribute in self.indexRecord["attributes"]
     def isKernelSubroutine(self):
         return self.hasAttribute("global")
     def mustBeAvailableOnDevice(self):
@@ -441,7 +441,7 @@ class STDeclaration(STNode):
         indent = self.firstLineIndent()
         # argument names if declared in procedure
         if isinstance(self._parent, STProcedure):
-            argNames = list(self._parent._indexRecord["dummyArgs"])
+            argNames = list(self._parent.indexRecord["dummyArgs"])
         else:
             argNames = []
         result = ""
@@ -480,7 +480,6 @@ class STDeclaration(STNode):
         else:
             return "", False
             
-
 class STAttributes(STNode):
     """
     CUDA Fortran specific intrinsic that needs to be removed/commented out

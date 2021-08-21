@@ -133,6 +133,7 @@ def parse_loop_kernel(fortran_statements,scope=[],maxRecursions=30):
     global LOG_PREFIX
 
     ttloopkernel = __parse_fortran_code(fortran_statements).body[0]
+    
     ttloopkernel.scope = scope
     return ttloopkernel
 
@@ -147,7 +148,9 @@ def parse_procedure_body(fortran_statements,scope,indexRecord,resultName="",maxR
     global KEYWORDS 
     global LOG_PREFIX
 
-    ttprocedurebody = __parse_fortran_code(fortran_statements).body[0]
+    parse_result    = __parse_fortran_code(fortran_statements)
+    ttprocedurebody = TTProcedureBody("",0,[parse_result.body])
+    
     ttprocedurebody.scope        = scope 
     ttprocedurebody.resultName   = resultName
     ttprocedurebody.ignoredVars += indexRecord["dummyArgs"]

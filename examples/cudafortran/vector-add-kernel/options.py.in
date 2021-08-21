@@ -6,6 +6,6 @@ LOG_LEVEL="warning"
 
 utils.logging.VERBOSE = True
 
-utils.logging.LOG_FILTER = "scanner"
+#utils.logging.LOG_FILTER = "scanner"
 
 utils.logging.SKIP_CREATE_GPUFORT_MODULE_FILES = True

@@ -167,8 +167,8 @@ def __parse_fortran_code(statements,scope=[]):
     for stmt1 in statements:
         # TODO move somewhere else
         # replace power (**) expression by func call expression
-        stmt    = __preprocess_fortran_statement(stmt1)
-        tokens  = utils.pyparsingutils.tokenize(stmt.lower(),padded_size=6)
+        stmt   = __preprocess_fortran_statement(stmt1)
+        tokens = utils.pyparsingutils.tokenize(stmt.lower(),padded_size=6)
         # strip of ! from tokens.index("!")
         if "!" in stmt:
             stmt_no_comment = stmt.split("!")[0]

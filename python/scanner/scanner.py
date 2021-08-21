@@ -121,7 +121,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentNode
         nonlocal currentRecord
         utils.logging.logDebug2(LOG_PREFIX,"parseFile","[current-node={}:{}] found {} in line {}: '{}'".format(\
-                currentNode.kind,currentNode.name,kind,currentRecord["lineno"],currentRecord["lines"][0]))
+                currentNode.kind,currentNode.name,kind,currentRecord["lineno"],currentRecord["lines"][0].rstrip("\n")))
 
     def appendIfNotRecording_(new):
         nonlocal currentNode
@@ -143,7 +143,7 @@ def parseFile(records,index,fortranFilepath):
             parentNodeId += ":"+currentNode._parent.name
 
         utils.logging.logDebug(LOG_PREFIX,"parseFile","[current-node={0}] enter {1} in line {2}: '{3}'".format(\
-          parentNodeId,currentNodeId,currentRecord["lineno"],currentRecord["lines"][0]))
+          parentNodeId,currentNodeId,currentRecord["lineno"],currentRecord["lines"][0].rstrip("\n")))
     def ascend_():
         nonlocal currentNode
         nonlocal currentFile
@@ -159,7 +159,7 @@ def parseFile(records,index,fortranFilepath):
             parentNodeId += ":"+currentNode._parent.name
         
         utils.logging.logDebug(LOG_PREFIX,"parseFile","[current-node={0}] leave {1} in line {2}: '{3}'".format(\
-          parentNodeId,currentNodeId,currentRecord["lineno"],currentRecord["lines"][0]))
+          parentNodeId,currentNodeId,currentRecord["lineno"],currentRecord["lines"][0].rstrip("\n")))
         currentNode = currentNode._parent
    
     # parse actions
@@ -354,7 +354,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentStatementNo
         nonlocal keepRecording
         logDetection_("CUDA API call")
-        cudaApi, args, finishesOnFirstLine = tokens 
+        cudaApi, args = tokens 
         if not type(currentNode) in [STCudaLibCall,STCudaKernelCall]:
             new = STCudaLibCall(currentNode,currentRecord,currentStatementNo)
             new._ignoreInS2STranslation = not translationEnabled
@@ -369,7 +369,7 @@ def parseFile(records,index,fortranFilepath):
         nonlocal currentStatementNo
         nonlocal keepRecording
         logDetection_("CUDA kernel call")
-        kernelName, kernel_launch_args, args, finishesOnFirstLine = tokens 
+        kernelName, kernel_launch_args, args = tokens 
         assert type(currentNode) in [STModule,STProcedure,STProgram], "type is: "+str(type(currentNode))
         new = STCudaKernelCall(currentNode,currentRecord,currentStatementNo)
         new._ignoreInS2STranslation = not translationEnabled
@@ -537,7 +537,7 @@ def parseFile(records,index,fortranFilepath):
                 currentStatementStrippedNoComments = currentStatementStripped.split("!")[0]
                 if len(currentTokens):
                     # constructs
-                    if currentTokens[0].startswith("end"):
+                    if currentTokens[0] == "end":
                         for kind in ["program","module","subroutine","function"]: # ignore types/interfaces here
                             if isEndStatement_(currentTokens,kind):
                                  End()
@@ -569,10 +569,15 @@ def parseFile(records,index,fortranFilepath):
                                 scanString("non_zero_check",non_zero_check)
                         if "allocated" in currentTokens:
                             scanString("allocated",ALLOCATED)
-                        elif "deallocate" in currentTokens:
+                        if "deallocate" in currentTokens:
                             tryToParseString("deallocate",DEALLOCATE) 
-                        elif "allocate" in currentTokens:
+                        if "allocate" in currentTokens:
                             tryToParseString("allocate",ALLOCATE) 
+                        if "function" in currentTokens:
+                            tryToParseString("function",function_start)
+                        if "subroutine" in currentTokens:
+                            tryToParseString("subroutine",subroutine_start)
+                        # 
                         if currentTokens[0] == "use":
                             tryToParseString("use",use)
                         elif currentTokens[0] == "implicit":
@@ -583,14 +588,10 @@ def parseFile(records,index,fortranFilepath):
                             tryToParseString("program",program_start)
                         elif currentTokens[0] == "return":
                              Return()
-                        if "function" in currentTokens:
-                            tryToParseString("function",function_start)
-                        if "subroutine" in currentTokens:
-                            tryToParseString("subroutine",subroutine_start)
-                        if currentTokens[0] in ["character","integer","logical","real","complex","double"]:
+                        elif currentTokens[0] in ["character","integer","logical","real","complex","double"]:
                             tryToParseString("declaration",datatype_reg)
                             break
-                        if currentTokens[0] == "type" and currentTokens[1] == "(":
+                        elif currentTokens[0] == "type" and currentTokens[1] == "(":
                             tryToParseString("declaration",datatype_reg)
                     else:
                         currentNode.addRecord(currentRecord)

@@ -399,7 +399,7 @@ def __update_context_from_device_procedures(deviceProcedures,index,hipContext,fC
     
     for stprocedure in deviceProcedures:
         scope       = scoper.createScope(index,stprocedure.tag())
-        iprocedure  = stprocedure._indexRecord
+        iprocedure  = stprocedure.indexRecord
         isFunction  = iprocedure["kind"] == "function"
         
         hipContext["includes"] += __createIncludesFromUsedModules(iprocedure,index)
@@ -410,16 +410,19 @@ def __update_context_from_device_procedures(deviceProcedures,index,hipContext,fC
             resultVar = next([var for var in iprocedure["variables"] if var["name"] == indexValue["resultName"]],None)
             if resultVar != None:
                 resultType = resultVar["cType"]
-                parseResult = translator.parse_procedure_body(stprocedure.code,scope,iprocedure,resultVar["name"])
+                parse_result = translator.parse_procedure_body(stprocedure.code,scope,iprocedure,resultVar["name"])
             else:
                 msg = "could not identify return value for function ''"
                 utils.logging.logError(msg)
                 sys.exit(INDEXER_ERROR_CODE)
         else:
             resultType = "void"
-            parseResult = translator.parse_procedure_body(stprocedure.code,scope,iprocedure)
+            parse_result = translator.parse_procedure_body(stprocedure.code,scope,iprocedure)
 
-        # TODO: look up functions and subroutines called internally and supply to parseResult before calling c_str()
+
+        print(parse_result.c_str())
+
+        # TODO: look up functions and subroutines called internally and supply to parse_result before calling c_str()
     
         ## general
         generateLauncher   = EMIT_KERNEL_LAUNCHER and stprocedure.isKernelSubroutine()
@@ -455,7 +458,7 @@ def __update_context_from_device_procedures(deviceProcedures,index,hipContext,fC
         hipKernelDict["isLoopKernel"]        = False
         hipKernelDict["kernelName"]          = kernelName
         hipKernelDict["macros"]              = macros
-        hipKernelDict["cBody"]               = parseResult.c_str()
+        hipKernelDict["cBody"]               = parse_result.c_str()
         hipKernelDict["fBody"]               = "".join(stprocedure.lines())
         hipKernelDict["kernelArgs"] = []
         # device procedures take all C args as reference or pointer
@@ -484,7 +487,7 @@ def __update_context_from_device_procedures(deviceProcedures,index,hipContext,fC
             fInterfaceDictManual = {}
             fInterfaceDictManual["cName"]       = kernelLauncherName
             fInterfaceDictManual["fName"]       = kernelLauncherName
-            fInterfaceDictManual["testComment"] = ["Fortran implementation:"] + stprocedure.lines()
+            fInterfaceDictManual["testComment"] = ["Fortran implementation:"] + stprocedure.code
             fInterfaceDictManual["type"]        = "subroutine"
             fInterfaceDictManual["args"]        = [
                 {"type" : "type(dim3)", "qualifiers" : ["intent(in)"], "name" : "grid"},

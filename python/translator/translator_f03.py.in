@@ -901,7 +901,7 @@ class TTDeclaration(TTNode,Attributed):
     def _assign_fields(self,tokens):
         #declaration = datatype + Optional(COMMA + attributeList,default=[]) + COLONS + Group(delimitedList(declarationVariable))   # ! emits *,[*],[*]
         self._datatype, self._qualifiers, self._rhs = tokens
-        self._ignoreList = []
+        self.ignoreList = []
     def fType(self):
         """
         Fortran basetype of the datatype.
@@ -1043,7 +1043,7 @@ class TTDeclaration(TTNode,Attributed):
         The ignore list can be used to filter out some
         variables
         """
-        ignoreList = map(str.lower, self._ignoreList + extraIgnoreList)
+        ignoreList = map(str.lower, self.ignoreList + extraIgnoreList)
         qualifiersStr = ", " if len(self._qualifiers) else ""
         qualifiersStr += ", ".join([make_f_str(q) for q in self._qualifiers])
         result = "{0}{1} :: ".format(make_f_str(self._datatype),qualifiersStr)
@@ -1063,7 +1063,7 @@ class TTDeclaration(TTNode,Attributed):
         that we want to convert.
         """
         # TODO do we still need this if we have the full index at hand?
-        ignoreList      = [make_c_str(var) for var in (self._ignoreList + extraIgnoreList)]
+        ignoreList      = [make_c_str(var) for var in (self.ignoreList + extraIgnoreList)]
         result          = ""
         comment         = ""
         dimensionBounds = ""
@@ -1124,11 +1124,11 @@ class TTIfElseBlock(TTContainer):
     pass
 class TTIfElseIf(TTContainer):
     def _assign_fields(self,tokens):
-        self._else, self.condition = tokens
+        self._else, self._condition, self.body = tokens
     def c_str(self):
         bodyContent = flattenBody(self.body) 
         return "{0}{1}if ({2}) {{\n{3}\n{0}}}".format(\
-            self.indent,self._else,make_c_str(condition),bodyContent) 
+            self.indent,self._else,make_c_str(self._condition),bodyContent) 
 class TTElse(TTContainer):
     def c_str(self):
         bodyContent = flattenBody(self.body) 
@@ -1146,8 +1146,8 @@ class TTWhile(TTContainer):
 
 class TTProcedureBody(TTContainer):
     def _assign_fields(self,tokens):
-        self.body    = tokens[0]
-        self.scope  = []
+        self.body        = tokens[0]
+        self.scope       = []
         self.ignoredVars = []
         self.resultName  = ""
     def c_str(self):
@@ -1187,7 +1187,7 @@ class TTProcedureBody(TTContainer):
         cBody = make_c_str(self.body)
         if len(self.resultName):
              cBody += "\nreturn "+resultName+";"
-        return postprocessCSnippet(cBody)
+        return cBody
 
 ## Link actions
 #print_statement.setParseAction(TTCommentedOut)

@@ -25,6 +25,12 @@ class TTNode(object):
        return self.__class__.__name__ + ':' + str(self.__dict__)
     def _assign_fields(self,tokens):
         pass
+    def children(self):
+        result = []
+        for key,value in self.__dict__.items():
+            if key != "parent":
+                result.append(value)
+        return result
     def c_str(self):
         pass
     #__repr__ = __str__
@@ -40,6 +46,10 @@ class TTContainer(TTNode):
         self.parent = None
         self.body = [] # must come before TTNode.__init__ call
         self._assign_fields(tokens)
+    def append(self,node):
+        self.body.append(node)
+    def children(self):
+        return self.body
     def c_str(self):
         result = ""
         for child in self.body:
@@ -51,7 +61,7 @@ def find_all_matching(body,filterExpr=lambda x: True,N=-1):
     Find all nodes in tree of type 'searchedType'.
     """
     result = []
-    def descend(curr):
+    def descend_(curr):
         if N > 0 and len(result) > N:
             return
         if filterExpr(curr):
@@ -59,11 +69,11 @@ def find_all_matching(body,filterExpr=lambda x: True,N=-1):
         if isinstance(curr,ParseResults) or\
            isinstance(curr,list):
             for el in curr:
-                descend(el)
+                descend_(el)
         elif isinstance(curr,TTNode):
-            for value in curr.__dict__.values():
-                descend(value)
-    descend(body)       
+            for child in curr.children():
+                descend_(child)
+    descend_(body)       
     return result
 
 def find_first_matching(body,filterExpr=lambda x: True):
@@ -91,8 +101,8 @@ def find_all(body,searchedType,N=-1):
             for el in curr:
                 descend(el)
         elif isinstance(curr,TTNode):
-            for value in curr.__dict__.values():
-                descend(value)
+            for child in curr.children():
+                descend(child)
     descend(body)       
     return result
 

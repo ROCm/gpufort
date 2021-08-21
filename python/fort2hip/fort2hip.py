@@ -315,7 +315,7 @@ def __update_context_from_loop_kernels(loop_kernels,index,hipContext,fContext):
 
             # for test
             fInterfaceDictAuto["doTest"]   = False # True
-            fInterfaceDictAuto["testComment"] = ["Fortran implementation:"] + f_snippet.split("\n")
+            fInterfaceDictAuto["testComment"] = ["Fortran implementation:"] + stkernel.code
             #fInterfaceDictAuto["testComment"] = ["","Hints:","Device variables in scope:"] + ["".join(declared.lines()).lower() for declared in deviceVarsInScope]
 
             #######################################################################
@@ -377,7 +377,7 @@ def __update_context_from_loop_kernels(loop_kernels,index,hipContext,fContext):
                        # host to device
                        epilog += "CALL hipCheck(hipMemcpy(d_{var},c_loc({var}),{bpe}_8*SIZE({var}),hipMemcpyHostToDevice))\n".format(var=localArray,bpe=arg["bytesPerElement"])
                        epilog += "deallocate({var})\n".format(var=localArray)
-                fCPURoutineDict["body"] = prolog + f_snippet.rstrip("\n") + epilog
+                fCPURoutineDict["body"] = prolog + "".join(stkernel.code).rstrip("\n") + epilog
 
                 # Add all definitions to context
                 fContext["interfaces"].append(fCPUInterfaceDict)

@@ -44,9 +44,9 @@ class TTDoLoop(TTContainer):
     def _assign_fields(self,tokens):
         # Assignment, number | variable
         self.annotation, self._begin, self._end, self._step, self.body = tokens
-        self._threadIndex = None # "z","y","x"
-        if self.annotation is None:
+        if self.annotation == None:
             self.annotation = ILoopAnnotation()
+        self._threadIndex = None # "z","y","x"
     def setHipThreadIndex(self,name):
         self._threadIndex = name
     def hipThreadIndexCStr(self):
@@ -87,7 +87,6 @@ class TTDoLoop(TTContainer):
         step        = make_c_str(self._step)
         bodyContent = flattenBody(self.body) 
         if self._threadIndex == None:
-            #print(self.body)
             return "for (int {0}={1}; {0} <= {2}; {0} += {3}) {{\n  {4}\n}}".format(indexVar, begin, end, step, bodyContent)
         else:
             return bodyContent
@@ -205,11 +204,13 @@ class TTLoopKernel(TTNode,IComputeConstruct):
     def _assign_fields(self,tokens):
         self._parentDirective, self.body = tokens
         self.scope = scoper.EMPTY_SCOPE
-    def __firstLoopAnnotation(self):        
+    def __firstLoopAnnotation(self):
         return self.body.annotation
     def __parentDirective(self):
-        if self._parentDirective is None:
+        if self._parentDirective == None:
             return self._firstLoopAnnotation()
+        else:
+            return self._parentDirective
     def loopVars(self):
         identifierNames = []
         doLoops  = find_all(self.body,TTDoLoop)
@@ -218,12 +219,12 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         return identifierNames
     def __searchValueInBody(self,searchFilter,scope,minRank=-1e20):
         #TODO exclude other annotations as well from this search
-        def find_all_matchingExcludeDirectives(body,filterExpr=lambda x: True,N=-1):
+        def find_all_matching_exclude_directives_(body,filterExpr=lambda x: True,N=-1):
             """
             Find all nodes in tree of type 'searchedType'.
             """
             result = []
-            def descend(curr):
+            def descend_(curr):
                 if (N > 0 and len(result) > N) or isinstance(curr,ILoopAnnotation):
                     return
                 if filterExpr(curr):
@@ -231,15 +232,15 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 if isinstance(curr,ParseResults) or\
                    isinstance(curr,list):
                     for el in curr:
-                        descend(el)
+                        descend_(el)
                 elif isinstance(curr,TTNode):
-                    for value in curr.__dict__.values():
-                        descend(value)
-            descend(body)
+                    for el in curr.children():
+                        descend_(el)
+            descend_(body)
             return result
         
         identifierNames = [] 
-        for valueType in find_all_matchingExcludeDirectives(self.body,searchFilter): # includes the identifiers of the function calls
+        for valueType in find_all_matching_exclude_directives_(self.body,searchFilter): # includes the identifiers of the function calls
             name = make_f_str(valueType.name())
             nameLower = name.lower()
             definition,foundInIndex = scoper.searchScopeForVariable(\
@@ -298,18 +299,18 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             lvalue     = assignment._lhs._value
             lvalueName = make_f_str(lvalue)
             if type(lvalue) is TTIdentifier: # could still be a matrix
-                definition,foundInIndex = scoper.searchScopeForVariable(\
+                definition,found_in_scope = scoper.searchScopeForVariable(\
                   scope,createIndexSearchTagForVariable(lvalueName))
-                if not foundInIndex or definition["rank"] == 0 and\
+                if not found_in_scope or definition["rank"] == 0 and\
                         not lvalueName.lower() in scalarsReadSoFar:
                             initializedScalars.append(lvalueName) # read and initialized in 
             # rhs scalars
             rhsIdentifiers = find_all(assignment._rhs,TTIdentifier)
             for ttidentifier in rhsIdentifiers:
                 nameLower = ttidentifier.f_str().lower()
-                definition,foundInScope = scoper.searchScopeForVariable(scope,\
+                definition,found_in_scope = scoper.searchScopeForVariable(scope,\
                   createIndexSearchTagForVariable(nameLower))
-                if (not foundInIndex or definition["rank"] == 0) and\
+                if (not found_in_scope or definition["rank"] == 0) and\
                         nameLower != lvalueName.lower(): # do not include name of lhs if lhs appears in rhs
                             scalarsReadSoFar.append(nameLower)
         # initialized scalars that are not read (except in same statement) are likely reductions

@@ -374,7 +374,7 @@ class STLoopKernel(STNode):
         self._doLoopCtrMemorised  = -1
     def __hash(self):
         """Compute hash code for this kernel. Must be done before any transformations are performed."""
-        statements    = list(self.__originalStatements) # copy
+        statements    = list(self.code) # copy
         self.removeComments(statements)
         self.removeWhitespaces(statements)
         snippet       = "".join(statements)

@@ -182,13 +182,13 @@ def __parse_fortran_code(statements,scope=[]):
             try:
                 if is_ignored_fortran_directive_(tokens):
                     ignore_("directive")
-                elif is_fortran_offload_region_directive_(tokens):
-                    parse_result = parallel_region_start.parseString(stmt,parseAll=True)
-                    curr_offload_region = parse_result[0]
-                elif is_fortran_offload_region_plus_loop_directive_(tokens):
+                elif is_fortran_offload_region_plus_loop_directive_(tokens): # most complex first
                     parse_result = loop_annotation.parseString(stmt,parseAll=True)
                     curr_offload_region = parse_result[0]
                     curr_offload_loop   = parse_result[0] 
+                elif is_fortran_offload_region_directive_(tokens):
+                    parse_result = parallel_region_start.parseString(stmt,parseAll=True)
+                    curr_offload_region = parse_result[0]
                 elif is_fortran_offload_loop_directive_(tokens):
                     parse_result = loop_annotation.parseString(stmt,parseAll=True)
                     curr_offload_loop = parse_result[0] 
@@ -210,9 +210,13 @@ def __parse_fortran_code(statements,scope=[]):
                 do_loop_tokens = [ curr_offload_loop ] + parse_result.asList() + [[]]
                 do_loop = TTDoLoop(stmt,0,do_loop_tokens)
                 if curr_offload_region != None:
-                    append_(TTLoopKernel(stmt_no_comment,"", [curr_offload_region, do_loop]))
+                    descend_(TTLoopKernel(stmt_no_comment,"", [curr_offload_region, do_loop]),\
+                            "offloaded do loop")
+                    do_loop.parent = curr
+                    curr           = do_loop
                     curr_offload_region = None
-                descend_(do_loop,"do loop")
+                else:
+                    descend_(do_loop,"do loop")
                 curr_offload_loop   = None
             except Exception as e:
                 error_("do loop",e)
@@ -274,5 +278,4 @@ def __parse_fortran_code(statements,scope=[]):
             append_(parse_result[0],"subroutine call")
         else:
             error_("unknown and not ignored")
-    print(ttree)
     return ttree

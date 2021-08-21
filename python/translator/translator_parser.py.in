@@ -119,19 +119,25 @@ def __parse_fortran_code(statements,scope=[]):
     # tree creation ops
     def append_(node,kind=None):
         nonlocal curr
+        nonlocal level
         node.parent = curr
+        node.indent = " "*level*2
         curr.body.append(node)
         if kind != None:
             utils.logging.logDebug(LOG_PREFIX,"__parse_fortran_code.append_","found {} in statement '{}'".format(kind,stmt))
     def descend_(node,kind):
         nonlocal curr
         nonlocal stmt
+        nonlocal level
+        level += 1
         append_(node)
         curr = node
         utils.logging.logDebug(LOG_PREFIX,"__parse_fortran_code.append_","enter {} in statement '{}'".format(kind,stmt))
     def ascend_(kind):
         nonlocal curr
         nonlocal stmt
+        nonlocal level
+        level = min(level-1,0)
         curr = curr.parent
         utils.logging.logDebug(LOG_PREFIX,"__parse_fortran_code.append_","leave {} in statement '{}'".format(kind,stmt))
     
@@ -157,6 +163,7 @@ def __parse_fortran_code(statements,scope=[]):
     curr                = ttree
     curr_offload_region = None 
     curr_offload_loop   = None
+    level               = 0
     for stmt1 in statements:
         # TODO move somewhere else
         # replace power (**) expression by func call expression

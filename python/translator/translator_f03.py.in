@@ -504,6 +504,7 @@ class TTPower(TTNode):
 class TTAssignment(TTNode):
     def _assign_fields(self,tokens):
         self._lhs, self._rhs = tokens
+        self.indent = ""
     def convertToDoLoopNestIfNecessary(self):
         """
         - step through bounds
@@ -517,6 +518,7 @@ class TTAssignment(TTNode):
         loopNestStart = ""
         loopNestEnd   = ""
         originalFStr = self.f_str()
+        # TODO fix should be moved into parser preprocessing stage
         for i,matrix_range in enumerate(self._lhs.matrix_rangeArgs()):
             loopVarName = "_"+chr(ord('a')+i) # Fortran names cannot start with "_"
             matrix_range.setLoopVar(loopVarName)
@@ -551,7 +553,7 @@ class TTAssignment(TTNode):
         if unpack:
            return self.convertToDoLoopNestIfNecessary().c_str()
         else:
-           return self._lhs.c_str() + "=" + flattenArithmeticExpression(self._rhs) + ";\n"
+           return self.indent + self._lhs.c_str() + "=" + flattenArithmeticExpression(self._rhs) + ";\n"
     def f_str(self,unpack=False):
         """
         """
@@ -1060,6 +1062,7 @@ class TTDeclaration(TTNode,Attributed):
         variables, e._g. if these are parameters of a subroutine
         that we want to convert.
         """
+        # TODO do we still need this if we have the full index at hand?
         ignoreList      = [make_c_str(var) for var in (self._ignoreList + extraIgnoreList)]
         result          = ""
         comment         = ""
@@ -1074,12 +1077,13 @@ class TTDeclaration(TTNode,Attributed):
             if not ttdeclaredvariable.name(make_c_str) in ignoreList: 
                 ignoredVars += 1
                 if isFunctionArgument:
-                    result += "{0} {1},".format(make_c_str(self._datatype),ttdeclaredvariable.c_str(includeBounds,includeRhs),comment)
+                    result += "{{indent}}{0} {1},".format(make_c_str(self._datatype),ttdeclaredvariable.c_str(includeBounds,includeRhs),comment)
                 else:
                     datatype = make_c_str(self._datatype)
                     if self.hasStringQualifier("shared"):
                         datatype = "__shared__ " + datatype
-                    result += "{0} {1}{2};{3}\n".format(datatype,ttdeclaredvariable.c_str(includeBounds,includeRhs),dimensionBounds,comment) 
+                    result += "{{indent}}{0} {1}{2};{3}\n".format(datatype,ttdeclaredvariable.c_str(includeBounds,includeRhs),dimensionBounds,comment) 
+        result = result.format(indent=self.indent) 
         if ignoredVars < len(self._rhs):
             if isFunctionArgument:
                 return result

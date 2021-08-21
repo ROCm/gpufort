@@ -14,7 +14,7 @@ def tokenize(statement,padded_size=0):
     tokens1 = re.split(r"\s+|\t+",statement)
     tokens  = []
     for tk in tokens1:
-        tokens += [part for part in re.split('(end|else|!\$?|(c|\*)\$|[(),]|::?|=>?|(<|>)=?|(/|=)=|(\.\w+\.))',tk,0,re.IGNORECASE)]
+        tokens += [part for part in re.split('(end|else|!\$?|(c|\*)\$|[(),]|::?|=>?|<<<|>>>|(<|>)=?|(/|=)=|(\.\w+\.))',tk,0,re.IGNORECASE)]
     result = [tk for tk in tokens if tk != None and len(tk)]
     if padded_size > 0 and len(result) < padded_size:
         return result + [""]*(padded_size-len(result))

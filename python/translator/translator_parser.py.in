@@ -4,7 +4,7 @@ def __preprocess_fortran_statement(statement):
     # TODO handle directly via arithmetic expression grammar
     """
     result = statement
-    if "**" in result1:
+    if "**" in result:
         result = power.transformString(result)
     return result
 
@@ -48,7 +48,7 @@ def __parse_fortran_code(statements,scope=[]):
         return statement[0] == "#" 
     def is_fortran_directive_(tokens,statement):
         return tokens[0] in ["!$","*$","c$"]
-    def is_ignored_fortran_directive_(tokens,statement):
+    def is_ignored_fortran_directive_(tokens):
         return tokens[1:2+1] == ["acc","end"] and\
                tokens[3] in ["kernels","parallel","loop"]
     def is_fortran_offload_region_directive_(tokens):
@@ -102,9 +102,9 @@ def __parse_fortran_code(statements,scope=[]):
         #assert not is_else_if_then_(tokens)
         return tokens[0] == "else"
     def is_do_while_(tokens):
-        cond1 = tokens_p[0:1+1] == ["do","while"]
-        cond2 = tokens_p[0].isidentifier() and tokens_p[1] == ":" and\
-                tokens_p[2:3+1] == ["do","while"]
+        cond1 = tokens[0:1+1] == ["do","while"]
+        cond2 = tokens[0].isidentifier() and tokens[1] == ":" and\
+                tokens[2:3+1] == ["do","while"]
         return cond1 or cond2
     def is_do_(tokens):
         cond1 = tokens[0] == "do"
@@ -117,10 +117,12 @@ def __parse_fortran_code(statements,scope=[]):
         return cond1 and cond2
 
     # tree creation ops
-    def append_(node):
+    def append_(node,kind=None):
         nonlocal curr
         node.parent = curr
         curr.body.append(node)
+        if kind != None:
+            utils.logging.logDebug(LOG_PREFIX,"__parse_fortran_code.append_","found {} in statement '{}'".format(kind,stmt))
     def descend_(node,kind):
         nonlocal curr
         nonlocal stmt
@@ -130,7 +132,7 @@ def __parse_fortran_code(statements,scope=[]):
     def ascend_(kind):
         nonlocal curr
         nonlocal stmt
-        curr = node.parent
+        curr = curr.parent
         utils.logging.logDebug(LOG_PREFIX,"__parse_fortran_code.append_","leave {} in statement '{}'".format(kind,stmt))
     
     # error handling
@@ -204,7 +206,7 @@ def __parse_fortran_code(statements,scope=[]):
                 error_("do-while loop",e)
         elif is_do_(tokens):
             try: 
-                parse_result   = fortran_do_loop.parseString(stmt_no_comment,parseAll=True)
+                parse_result   = fortran_do.parseString(stmt_no_comment,parseAll=True)
                 do_loop_tokens = [ curr_offload_loop ] + parse_result.asList() + [[]]
                 do_loop = TTDoLoop(stmt,0,do_loop_tokens)
                 if curr_offload_region != None:
@@ -224,7 +226,7 @@ def __parse_fortran_code(statements,scope=[]):
                 error_("if",e)
         elif is_else_if_then_(tokens):
             assert type(curr) is TTIfElseIf
-            ascend_()
+            ascend_("if")
             try: 
                 parse_result = fortran_if_else_if.parseString(stmt_no_comment,parseAll=True)
                 descend_(TTIfElseIf(stmt_no_comment,0,parse_result.asList()+[[]]),"else-if branch")
@@ -232,7 +234,7 @@ def __parse_fortran_code(statements,scope=[]):
                 error_("else-if",e)
         elif is_else_(tokens):
             assert type(curr) is TTIfElseIf
-            ascend_()
+            ascend_("if/else-if")
             descend_(TTElse(stmt_no_comment,0,[]),"else branch")
         # select-case
         elif is_select_case_(tokens):
@@ -243,7 +245,7 @@ def __parse_fortran_code(statements,scope=[]):
                 error_("select-case",e)
         elif is_case_(tokens):
             if type(curr) is TTCase:
-                ascend_()
+                ascend_("case")
             try: 
                 parse_result = fortran_case.parseString(stmt_no_comment,parseAll=True)
                 descend_(TTCase(stmt_no_comment,0,parse_result.asList()+[[]]),"case")
@@ -251,11 +253,11 @@ def __parse_fortran_code(statements,scope=[]):
                 error_("else-if",e)
         elif is_case_default_(tokens):
             if type(curr) is TTCase:
-                ascend_()
+                ascend_("case")
             descend_(TTCase(stmt_no_comment,0,[[]]),"case default")
         # end
         elif is_end_(tokens,["do","if","select"]):
-            ascend_()
+            ascend_(tokens[1])
         # decl
         elif is_declaration_(tokens): 
             parse_result = fortran_declaration.parseString(stmt_no_comment,parseAll=True)
@@ -266,10 +268,11 @@ def __parse_fortran_code(statements,scope=[]):
         # assignment
         elif is_assignment_(tokens):
             parse_result = fortran_assignment.parseString(stmt_no_comment,parseAll=True)
-            append(parse_result[0],"assignment")
+            append_(parse_result[0],"assignment")
         elif is_subroutine_call_(tokens):
             parse_result = fortran_subroutine_call.parseString(stmt_no_comment,parseAll=True)
             append_(parse_result[0],"subroutine call")
         else:
             error_("unknown and not ignored")
+    print(ttree)
     return ttree

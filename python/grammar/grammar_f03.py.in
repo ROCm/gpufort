@@ -12,7 +12,6 @@ CALL,ATTRIBUTES,LEN,KIND,DIM = makeCaselessLiteral("call,attributes,len,kind,dim
 
 identifier = pyparsing_common.identifier.copy()
 integer    = pyparsing_common.integer.copy()
-#number     = Regex(r"[+-]?(?:\.|\d+\.?)\d*([dDeE][+-]?\d+)?(_\w+)?\b") # \b necessary?
 number     = Regex(r"[+-]?(?:\.|\d+\.?)\d*([dDeE][+-]?\d+)?(_\w+)?") # Adapted from https://stackoverflow.com/a/49890855; original wouldn't match <number>_DP
 logical    = Regex(r"\.[tT][rR][uU][eE]\.|\.[fF][aA][lL][sS][eE]\.")
 character  = QuotedString('"', escQuote='\\') | QuotedString("'", escQuote="\\")
@@ -79,7 +78,7 @@ complex_assignment = lvalue + EQ + complex_arithmetic_expression
 fortran_assignment = matrix_assignment | complex_assignment | assignment
 
 single_colon   = (Literal(":") + ~Literal(":")).suppress()
-stride        = single_colon + arithmetic_expression
+stride         = single_colon + arithmetic_expression
 matrix_range0  = single_colon.copy().setParseAction(lambda tokens: [None,None])           
 matrix_range1a = (arithmetic_expression + single_colon).setParseAction(lambda tokens: [None,tokens[0]]) 
 matrix_range1b = (single_colon + arithmetic_expression).setParseAction(lambda tokens: [tokens[0],None])
@@ -156,9 +155,9 @@ fortran_case_default    = Regex(r"case\s+default")
 fortran_end_select_case = Regex(r"end\s*select(\s+\w+)?",re.IGNORECASE).suppress()
 
 ## Do/while Loop
-do_loop_start   = Regex(r"(\w+:)?\s*do",re.IGNORECASE).suppress()
-fortan_do       = do_loop_start + assignment + COMMA + arithmetic_expression + Optional(COMMA + arithmetic_expression,default="1")
-fortan_do_while = do_loop_start   + WHILE + LPAR + arithmetic_logical_expression + RPAR 
+do_loop_start    = Regex(r"(\w+:)?\s*do",re.IGNORECASE).suppress()
+fortran_do       = do_loop_start + assignment + COMMA + arithmetic_expression + Optional(COMMA + arithmetic_expression,default="1")
+fortran_do_while = do_loop_start + WHILE + LPAR + arithmetic_logical_expression + RPAR 
 
 # TODO Dominic: Simplify
 ## Declaration  // example: "real(kind=8), device, host, parameter :: rhx, rhy"

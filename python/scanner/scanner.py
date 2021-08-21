@@ -549,9 +549,9 @@ def parseFile(records,index,fortranFilepath):
                     if not keepRecording:
                         if "acc" in SOURCE_DIALECTS:
                             for commentChar in "!*c":
-                                if currentTokens[0]==commentChar+"$acc":
+                                if currentTokens[0:2]==[commentChar+"$","acc"]:
                                     AccDirective()
-                                elif currentTokens[0]==commentChar+"$gpufort":
+                                elif currentTokens[0:2]==[commentChar+"$","gpufort"]:
                                     GpufortControl()
                         if "cuf" in SOURCE_DIALECTS:
                             if "attributes" in currentTokens:
@@ -561,7 +561,7 @@ def parseFile(records,index,fortranFilepath):
                             if "<<<" in currentTokens:
                                 tryToParseString("cuf_kernel_call",cuf_kernel_call)
                             for commentChar in "!*c":
-                                if currentTokens[0]==commentChar+"$cuf":
+                                if currentTokens[0:2]==[commentChar+"$","cuf"]:
                                     CufLoopKernel()
                         if "=" in currentTokens:
                             if not tryToParseString("memcpy",memcpy,parseAll=True):

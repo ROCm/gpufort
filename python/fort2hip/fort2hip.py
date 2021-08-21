@@ -194,7 +194,7 @@ def __deriveKernelArguments(scope, identifiers, localVars, loopVars, whiteList=[
     utils.logging.logLeaveFunction(LOG_PREFIX,"__deriveKernelArguments")
     return kernelArgs, cKernelLocalVars, macros, inputArrays, localCpuRoutineArgs
     
-def __updateContextFromloop_kernels(loop_kernels,index,hipContext,fContext):
+def __update_context_from_loop_kernels(loop_kernels,index,hipContext,fContext):
     """
     loop_kernels is a list of STCufloop_kernel objects.
     hipContext, fContext are inout arguments for generating C/Fortran files, respectively.
@@ -210,8 +210,7 @@ def __updateContextFromloop_kernels(loop_kernels,index,hipContext,fContext):
         scope     = scoper.createScope(index,parentTag)
    
         # translate and analyze kernels
-        kernelParseResult = translator.parse_loop_kernel(\
-            stkernel.code,scope)
+        kernelParseResult = translator.parse_loop_kernel(stkernel.code,scope)
 
         kernelArgs, cKernelLocalVars, macros, inputArrays, localCpuRoutineArgs =\
           __deriveKernelArguments(scope,\
@@ -387,7 +386,7 @@ def __updateContextFromloop_kernels(loop_kernels,index,hipContext,fContext):
     utils.logging.logLeaveFunction(LOG_PREFIX,"__updateContextFromLoopKernels")
 
 # TODO check if this can be combined with other routine
-def __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext):
+def __update_context_from_device_procedures(deviceProcedures,index,hipContext,fContext):
     """
     deviceProcedures is a list of STProcedure objects.
     hipContext, fContext are inout arguments for generating C/Fortran files, respectively.
@@ -396,7 +395,7 @@ def __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fConte
     global EMIT_CPU_IMPLEMENTATION
     global EMIT_DEBUG_CODE
 
-    utils.logging.logEnterFunction(LOG_PREFIX,"__updateContextFromDeviceProcedures")
+    utils.logging.logEnterFunction(LOG_PREFIX,"__update_context_from_device_procedures")
     
     for stprocedure in deviceProcedures:
         scope       = scoper.createScope(index,stprocedure.tag())
@@ -498,7 +497,7 @@ def __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fConte
             fInterfaceDictManual["doTest"]   = True
             fContext["interfaces"].append(fInterfaceDictManual)
     
-    utils.logging.logEnterFunction(LOG_PREFIX,"__updateContextFromDeviceProcedures")
+    utils.logging.logEnterFunction(LOG_PREFIX,"__update_context_from_device_procedures")
 
 def __writeFile(outfilePath,kind,content):
     utils.logging.logEnterFunction(LOG_PREFIX,"__writeFile")
@@ -626,8 +625,8 @@ def generateHipFiles(stree,index,kernelsToConvertToHip,translationSourcePath,gen
             fContext["interfaces"] = []
             fContext["routines"]   = []
             
-            __updateContextFromloop_kernels(loop_kernels,index,hipContext,fContext)
-            __updateContextFromDeviceProcedures(deviceProcedures,index,hipContext,fContext)
+            __update_context_from_loop_kernels(loop_kernels,index,hipContext,fContext)
+            __update_context_from_device_procedures(deviceProcedures,index,hipContext,fContext)
             
             if generateCode:
                 haveReductions = haveReductions or hipContext["haveReductions"]

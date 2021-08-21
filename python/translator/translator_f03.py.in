@@ -1066,7 +1066,6 @@ class TTDeclaration(TTNode,Attributed):
         result          = ""
         comment         = ""
         dimensionBounds = ""
-        ignoredVars     = 0
         if len(self._qualifiers):
            dimension_qualifier = find_all(self._qualifiers,TTDimensionQualifier)
            if len(dimension_qualifier):
@@ -1074,22 +1073,18 @@ class TTDeclaration(TTNode,Attributed):
            comment = " /* Fortran qualifiers: {0} */".format(",".join([make_f_str(el) for el in self._qualifiers]))
         for ttdeclaredvariable in self._rhs:
             if not ttdeclaredvariable.name(make_c_str) in ignoreList: 
-                ignoredVars += 1
                 if isFunctionArgument:
                     result += "{{indent}}{0} {1},".format(make_c_str(self._datatype),ttdeclaredvariable.c_str(includeBounds,includeRhs),comment)
                 else:
                     datatype = make_c_str(self._datatype)
-                    if self.hasStringQualifier("shared"):
+                    if self.hasStringQualifier("shared"): # never a function argument
                         datatype = "__shared__ " + datatype
                     result += "{{indent}}{0} {1}{2};{3}\n".format(datatype,ttdeclaredvariable.c_str(includeBounds,includeRhs),dimensionBounds,comment) 
         result = result.format(indent=self.indent) 
-        if ignoredVars < len(self._rhs):
-            if isFunctionArgument:
-                return result
-            else:
-                return result.rstrip(",")
+        if isFunctionArgument:
+            return result
         else:
-            return ""
+            return result.rstrip(",")
 
 class TTStatement(TTNode):
     """

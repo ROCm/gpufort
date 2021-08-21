@@ -33,10 +33,15 @@ def __parse_fortran_code(statements,scope=[]):
     global LOG_PREFIX
 
     # tree node flagging
+    def is_declaration_(tokens):
+        return\
+            tokens[0] in ["type","integer","real","complex","logical","character"] or\
+            tokens[0:1+1] == ["double","precision"]
     def is_ignored_statement_(tokens):
         """All statements beginning with the tokens below are ignored.
         """
-        return tokens[0] in ["write","print","character","use","implicit"]
+        return tokens[0] in ["write","print","character","use","implicit"] or\
+               is_declaration_(tokens)
     def is_blank_line_(statement):
         return not len(statement.strip())
     def is_comment_(tokens,statement):
@@ -64,11 +69,6 @@ def __parse_fortran_code(statements,scope=[]):
     def is_fortran_offload_loop_directive_(tokens):
         return\
             tokens[1:2+1] == ["acc","loop"]
-    def is_declaration_(tokens):
-        return\
-            tokens[0] in ["type","integer","real","complex","logical","character"] or\
-            tokens[0:1+1] == ["double","precision"]
-        return cond1 or cond2
     def is_assignment_(tokens):
         #assert not is_declaration_(tokens)
         #assert not is_do_(tokens)
@@ -270,17 +270,9 @@ def __parse_fortran_code(statements,scope=[]):
         # end
         elif is_end_(tokens,["do","if","select"]):
             ascend_(tokens[1])
-        # decl
-        elif is_declaration_(tokens): 
-            try: 
-                parse_result = fortran_declaration.parseString(stmt_no_comment,parseAll=True)
-                append_(parse_result[0],"declaration")
-            except Exception as e:
-                error_("declaration",e)
-        # assignment
+        # single statements
         elif is_pointer_assignment_(tokens):
             error_("pointer assignment")
-        # assignment
         elif is_assignment_(tokens):
             try: 
                 parse_result = fortran_assignment.parseString(stmt_no_comment,parseAll=True)

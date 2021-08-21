@@ -121,24 +121,25 @@ def __parse_fortran_code(statements,scope=[]):
         nonlocal curr
         nonlocal level
         node.parent = curr
-        node.indent = " "*level*2
+        node.indent = "  "*level
         curr.body.append(node)
         if kind != None:
             utils.logging.logDebug(LOG_PREFIX,"__parse_fortran_code.append_","found {} in statement '{}'".format(kind,stmt))
-    def descend_(node,kind):
+    def descend_(node,kind,inc_level=True):
         nonlocal curr
         nonlocal stmt
         nonlocal level
-        level += 1
         append_(node)
         curr = node
+        if inc_level:
+            level += 1
         utils.logging.logDebug(LOG_PREFIX,"__parse_fortran_code.append_","enter {} in statement '{}'".format(kind,stmt))
     def ascend_(kind):
         nonlocal curr
         nonlocal stmt
         nonlocal level
+        curr  = curr.parent
         level = min(level-1,0)
-        curr = curr.parent
         utils.logging.logDebug(LOG_PREFIX,"__parse_fortran_code.append_","leave {} in statement '{}'".format(kind,stmt))
     
     # error handling
@@ -271,18 +272,27 @@ def __parse_fortran_code(statements,scope=[]):
             ascend_(tokens[1])
         # decl
         elif is_declaration_(tokens): 
-            parse_result = fortran_declaration.parseString(stmt_no_comment,parseAll=True)
-            append_(parse_result[0],"declaration")
+            try: 
+                parse_result = fortran_declaration.parseString(stmt_no_comment,parseAll=True)
+                append_(parse_result[0],"declaration")
+            except Exception as e:
+                error_("declaration",e)
         # assignment
         elif is_pointer_assignment_(tokens):
             error_("pointer assignment")
         # assignment
         elif is_assignment_(tokens):
-            parse_result = fortran_assignment.parseString(stmt_no_comment,parseAll=True)
-            append_(parse_result[0],"assignment")
+            try: 
+                parse_result = fortran_assignment.parseString(stmt_no_comment,parseAll=True)
+                append_(parse_result[0],"assignment")
+            except Exception as e:
+                error_("assignment",e)
         elif is_subroutine_call_(tokens):
-            parse_result = fortran_subroutine_call.parseString(stmt_no_comment,parseAll=True)
-            append_(parse_result[0],"subroutine call")
+            try: 
+                parse_result = fortran_subroutine_call.parseString(stmt_no_comment,parseAll=True)
+                append_(parse_result[0],"subroutine call")
+            except Exception as e:
+                error_("subroutine call",e)
         else:
             error_("unknown and not ignored")
     return ttree

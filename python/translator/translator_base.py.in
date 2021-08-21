@@ -53,8 +53,8 @@ class TTContainer(TTNode):
     def c_str(self):
         result = ""
         for child in self.body:
-            result += make_c_str(child)
-        return result
+            result += make_c_str(child).rstrip()+"\n"
+        return result.rstrip()
 
 def find_all_matching(body,filterExpr=lambda x: True,N=-1):
     """

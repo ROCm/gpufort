@@ -53,8 +53,8 @@ class TTDoLoop(TTContainer):
         indexVar = self.loopVar()
         begin    = make_c_str(self._begin._rhs) # array indexing is corrected in index macro
         step     = make_c_str(self._step)
-        return "int {var} = {begin} + ({step})*(threadIdx.{idx} + blockIdx.{idx} * blockDim.{idx});\n".format(\
-                var=indexVar,begin=begin,idx=self._threadIndex,step=step)
+        return "{indent}int {var} = {begin} + ({step})*(threadIdx.{idx} + blockIdx.{idx} * blockDim.{idx});\n".format(\
+                indent=indent,var=indexVar,begin=begin,idx=self._threadIndex,step=step)
     def collapsedLoopIndexCStr(self,denominator):
         indexVar = self.loopVar()
         tid      = self._threadIndex

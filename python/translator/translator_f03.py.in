@@ -437,7 +437,7 @@ class TTSubroutineCall(TTNode):
         self._subroutine=tokens[0]
     def c_str(self):
         self._subroutine._isTensorAccess = False3
-        return self._subroutine.c_str()+";"
+        return self.indent+self._subroutine.c_str()+";"
 
 class TTOperator(TTNode):
     def _assign_fields(self,tokens):
@@ -504,7 +504,6 @@ class TTPower(TTNode):
 class TTAssignment(TTNode):
     def _assign_fields(self,tokens):
         self._lhs, self._rhs = tokens
-        self.indent = ""
     def convertToDoLoopNestIfNecessary(self):
         """
         - step through bounds
@@ -551,7 +550,7 @@ class TTAssignment(TTNode):
         matrix ranges ([...]:[...]) are found.
         """
         if unpack:
-           return self.convertToDoLoopNestIfNecessary().c_str()
+           return self.indent+self.convertToDoLoopNestIfNecessary().c_str()
         else:
            return self.indent + self._lhs.c_str() + "=" + flattenArithmeticExpression(self._rhs) + ";\n"
     def f_str(self,unpack=False):
@@ -1131,7 +1130,7 @@ class TTIfElseIf(TTContainer):
             self.indent,self._else,make_c_str(self._condition),bodyContent) 
 class TTElse(TTContainer):
     def c_str(self):
-        bodyContent = flattenBody(self.body) 
+        bodyContent = TTContainer.c_str(self) 
         return "{0}else {{\n{1}\n{0}}}".format(\
             self.indent,bodyContent)
 
@@ -1139,7 +1138,7 @@ class TTWhile(TTContainer):
     def _assign_fields(self,tokens):
         self._condition, self.body = tokens
     def c_str(self):    
-        bodyContent = flattenBody(self.body)
+        bodyContent = TTContainer.c_str(self) 
         conditionContent = make_c_str(self._condition)
         c_str = "while ({0}) {{\n  {1}\n}}".format(conditionContent,bodyContent) 
         return c_str

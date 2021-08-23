@@ -1,4 +1,4 @@
-def __preprocess_fortran_statement(statement):
+def _intrnl_preprocess_fortran_statement(statement):
     """Performs the following operations:
     - replace power (**) expression by func call expression
     # TODO handle directly via arithmetic expression grammar
@@ -8,7 +8,7 @@ def __preprocess_fortran_statement(statement):
         result = power.transformString(result)
     return result
 
-def __parse_fortran_code(statements,scope=[]):
+def _intrnl_parse_fortran_code(statements,scope=[]):
     """
     :param list for
     
@@ -168,7 +168,7 @@ def __parse_fortran_code(statements,scope=[]):
     for stmt1 in statements:
         # TODO move somewhere else
         # replace power (**) expression by func call expression
-        stmt   = __preprocess_fortran_statement(stmt1)
+        stmt   = _intrnl_preprocess_fortran_statement(stmt1)
         tokens = utils.pyparsingutils.tokenize(stmt.lower(),padded_size=6)
         # strip of ! from tokens.index("!")
         if "!" in stmt:

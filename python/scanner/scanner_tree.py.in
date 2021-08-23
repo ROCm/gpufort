@@ -441,24 +441,24 @@ class STDeclaration(STNode):
         indent = self.firstLineIndent()
         # argument names if declared in procedure
         if isinstance(self._parent, STProcedure):
-            argNames = list(self._parent.indexRecord["dummyArgs"])
+            argnames = list(self._parent.indexRecord["dummy_args"])
         else:
-            argNames = []
+            argnames = []
         result = ""
         for varName in self._vars:
              indexVar,discovered = scoper.searchIndexForVariable(\
                index,self._parent.tag(),\
-                 translator.createIndexSearchTagForVariable(varName))
+                 translator.create_index_search_tag_for_variable(varName))
              rank           = indexVar["rank"]
-             hasDevice      = indexVar["device"] == True
-             hasPinned      = indexVar["pinned"] == True
-             hasAllocatable = indexVar["allocatable"] == True  
+             hasDevice      = ["device"] in ivar["qualifiers"]
+             hasPinned      = ["pinned"] in ivar["qualifiers"]
+             hasAllocatable = ["allocatable"] in ivar["qualifiers"]  
              # clean qualifiers
              newQualifiers = []
              for q in originalQualifiers:
                 if not q in ["target","pinned","device","allocatable"] and not q.startswith("dimension"):
                     newQualifiers.append(q)
-             if varName in argNames: 
+             if varName in argnames: 
                  newQualifiers.append("target")
              else:
                  newQualifiers.append("pointer")
@@ -500,7 +500,7 @@ class STNonZeroCheck(STNode):
             parseResult = tokens[0]
             lhsName     = parseResult.lhsFStr()
             indexVar,_  = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
-              translator.createIndexSearchTagForVariable(lhsName))
+              translator.create_index_search_tag_for_variable(lhsName))
             onDevice    = scoper.indexVariableIsOnDevice(indexVar)
             transformed |= onDevice
             if onDevice:
@@ -515,7 +515,7 @@ class STAllocated(STNode):
         def repl(parseResult):
             varName    = parseResult.varName()
             indexVar,_ = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
-              translator.createIndexSearchTagForVariable(varName))
+              translator.create_index_search_tag_for_variable(varName))
             onDevice    = scoper.indexVariableIsOnDevice(indexVar)
             return (parseResult.f_str(), onDevice) # TODO backend specific
         result, transformed = utils.pyparsingutils.replaceAll(snippet,translator.allocated,repl)
@@ -534,10 +534,10 @@ class STAllocate(STNode):
             arrayQualifiers = []
             for arrayName in parseResult.variableNames():
                 indexVar,_  = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
-                  translator.createIndexSearchTagForVariable(arrayName))
-                bytesPerElement.append(indexVar["bytesPerElement"])
+                  translator.create_index_search_tag_for_variable(arrayName))
+                bytesPerElement.append(indexVar["bytes_per_element"])
                 onDevice   = scoper.indexVariableIsOnDevice(indexVar)
-                pinned     = indexVar["pinned"] == True
+                pinned     = ["pinned"] in ivar["qualifiers"]
                 if onDevice: 
                     arrayQualifiers.append("device")
                 elif pinned: 
@@ -564,9 +564,9 @@ class STDeallocate(STNode):
             arrayQualifiers = []
             for arrayName in parseResult.variableNames():
                 indexVar,_  = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
-                  translator.createIndexSearchTagForVariable(arrayName))
+                  translator.create_index_search_tag_for_variable(arrayName))
                 onDevice   = scoper.indexVariableIsOnDevice(indexVar)
-                pinned     = indexVar["pinned"] == True
+                pinned     = ["pinned"] in ivar["qualifiers"]
                 if onDevice: 
                     arrayQualifiers.append("device")
                 elif pinned: 
@@ -586,12 +586,12 @@ class STMemcpy(STNode):
             destName = parseResult.destNameFStr()
             srcName  = parseResult.srcNameFStr()
             destIndexedVar,_ = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
-              translator.createIndexSearchTagForVariable(destName))
+              translator.create_index_search_tag_for_variable(destName))
             srcIndexedVar,_  = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
-              translator.createIndexSearchTagForVariable(srcName))
+              translator.create_index_search_tag_for_variable(srcName))
             destOnDevice = scoper.indexVariableIsOnDevice(destIndexedVar)
             srcOnDevice  = scoper.indexVariableIsOnDevice(srcIndexedVar)
-            bytesPerElement = destIndexedVar["bytesPerElement"]
+            bytesPerElement = destIndexedVar["bytes_per_element"]
             if destOnDevice or srcOnDevice:
                 subst = parseResult.hipFStr(destOnDevice,srcOnDevice)
                 return (subst,True)
@@ -622,9 +622,9 @@ class STCudaLibCall(STNode):
                 destName = parseResult.destNameFStr()
                 srcName  = parseResult.srcNameFStr()
                 destIndexedVar,_ = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
-                  translator.createIndexSearchTagForVariable(destName))
+                  translator.create_index_search_tag_for_variable(destName))
                 srcIndexedVar ,_ = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
-                  translator.createIndexSearchTagForVariable(srcName))
+                  translator.create_index_search_tag_for_variable(srcName))
                 destOnDevice = scoper.indexVariableIsOnDevice(destIndexedVar)
                 srcOnDevice  = scoper.indexVariableIsOnDevice(srcIndexedVar)
                 subst = parseResult.hipFStr(destOnDevice,srcOnDevice)
@@ -662,7 +662,7 @@ class STCudaKernelCall(STNode):
                 for rvalue in translator.find_all(ttexpr,translator.TTRValue):
                     # TODO lookup the subprogram first 
                     indexVar, discovered = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
-                       translator.createIndexSearchTagForVariable(rvalue.name()))
+                       translator.create_index_search_tag_for_variable(rvalue.name()))
                     if discovered:
                         maxRank = max(maxRank,indexVar["rank"])
                 exprFStr = translator.make_f_str(ttexpr)

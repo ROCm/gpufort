@@ -2,6 +2,69 @@
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 # extensions for directive-based programming
 
+def _intrnl_search_values_in_body(ttcontainer,searchFilter,scope,minRank=-1):
+    #TODO exclude other annotations as well from this search
+    #TODO improve
+    def find_all_matching_exclude_directives_(body,filterExpr=lambda x: True,N=-1):
+        """
+        Find all nodes in tree of type 'searchedType'.
+        """
+        result = []
+        def descend_(curr):
+            if (N > 0 and len(result) > N) or isinstance(curr,ILoopAnnotation):
+                return
+            if filterExpr(curr):
+                result.append(curr)
+            if isinstance(curr,ParseResults) or\
+               isinstance(curr,list):
+                for el in curr:
+                    descend_(el)
+            elif isinstance(curr,TTNode):
+                for el in curr.children():
+                    descend_(el)
+        descend_(ttcontainer.body)
+        return result
+    
+    varnames = [] 
+    for ttvalue in find_all_matching_exclude_directives_(ttcontainer.body,searchFilter): # includes the identifiers of the function calls
+        name = make_f_str(ttvalue.name())
+        name = name.lower()
+        ivar,foundInScope = scoper.searchScopeForVariable(\
+          scope,create_index_search_tag_for_variable(name))
+        if (foundInScope or\
+            (not name in KEYWORDS and\
+            not name in GPUFORT_CPP_ROUTINES)) and\
+            ivar["rank"] >= minRank and\
+            not name in varnames: # using set destroys order
+                 varnames.append(name)
+    return varnames
+
+def _intrnl_variables_in_body(ttcontainer,scope=[]):
+    """:return: all identifiers of LValue and RValues in the body."""
+    def searchFilter(node):
+        return isinstance(node, IValue) and\
+               type(node._value) in [TTDerivedTypeMember,TTIdentifier,TTFunctionCallOrTensorAccess]
+    result = _intrnl_search_values_in_body(ttcontainer,searchFilter,scope)
+    return result
+def _intrnl_arrays_in_body(ttcontainer,scope=[]):
+    def searchFilter(node):
+        return isinstance(node,IValue) and\
+                type(node._value) is TTFunctionCallOrTensorAccess 
+    return _intrnl_search_values_in_body(ttcontainer,searchFilter,scope,1)
+def _intrnl_inout_arrays_in_body(ttcontainer,scope=[]):
+    def searchFilter(node):
+        return type(node) is TTLValue and\
+                type(node._value) is TTFunctionCallOrTensorAccess 
+    return _intrnl_search_values_in_body(ttcontainer,searchFilter,scope,1)
+
+def _intrnl_flag_tensors(ttcontainer,scope=[]):
+    """Clarify types of function calls / tensor access that are not members of a struct."""
+    for expr in find_all(ttcontainer.body,IValue):
+        if type(expr._value) is TTFunctionCallOrTensorAccess:
+            _, discovered = scoper.searchScopeForVariable(scope,create_index_search_tag_for_variable(expr.name()))
+            if discovered:
+                expr._value._isTensorAccess = True3
+
 class ILoopAnnotation():
     def numCollapse(self):
         return CLAUSE_NOT_FOUND
@@ -54,7 +117,7 @@ class TTDoLoop(TTContainer):
         begin    = make_c_str(self._begin._rhs) # array indexing is corrected in index macro
         step     = make_c_str(self._step)
         return "{indent}int {var} = {begin} + ({step})*(threadIdx.{idx} + blockIdx.{idx} * blockDim.{idx});\n".format(\
-                indent=indent,var=indexVar,begin=begin,idx=self._threadIndex,step=step)
+                indent=self.indent,var=indexVar,begin=begin,idx=self._threadIndex,step=step)
     def collapsedLoopIndexCStr(self,denominator):
         indexVar = self.loopVar()
         tid      = self._threadIndex
@@ -63,8 +126,8 @@ class TTDoLoop(TTContainer):
         size     = self.problemSizeCStr()
         step     = make_c_str(self._step)
         # int i<n> = begin<n> + step<n>*(i<denominator<n>> % size<n>)
-        return "int {var} = {begin} + ({step})*({tid}{denom} % {size});\n".format(\
-                var=indexVar,begin=begin,tid=tid,denom=denominator,size=size,step=step)
+        return "{indent}int {var} = {begin} + ({step})*({tid}{denom} % {size});\n".format(\
+                indent=self.indent,var=indexVar,begin=begin,tid=tid,denom=denominator,size=size,step=step)
     def problemSizeCStr(self):
         if self._step == "1":
             return "(1 + (({end}) - ({begin})))".format(\
@@ -85,9 +148,9 @@ class TTDoLoop(TTContainer):
         begin       = make_c_str(self._begin._rhs) # array indexing is corrected in index macro
         end         = make_c_str(self._end)
         step        = make_c_str(self._step)
-        bodyContent = flattenBody(self.body) 
+        bodyContent = TTContainer.c_str(self)
         if self._threadIndex == None:
-            return "for (int {0}={1}; {0} <= {2}; {0} += {3}) {{\n  {4}\n}}".format(indexVar, begin, end, step, bodyContent)
+            return "{indent}for (int {0}={1}; {0} <= {2}; {0} += {3}) {{\n{4}\n}}".format(self.indent,indexVar, begin, end, step, bodyContent)
         else:
             return bodyContent
 
@@ -113,11 +176,11 @@ class IComputeConstruct():
     def gangTeamReductions(self,converter=make_f_str): 
         """ CUF,ACC: all scalars are private by default """ 
         return {}
-    def identifiersInBody(self,converter=make_f_str):
+    def variables_in_body(self,scope=[]):
         return []
-    def arraysInBody(self,converter=make_f_str):
+    def arrays_in_body(self,scope=[]):
         return []
-    def inoutArraysInBody(self,converter=make_f_str):
+    def inout_arrays_in_body(self,scope=[]):
         return []
     def localScalars(self):
         return []
@@ -178,28 +241,6 @@ class IComputeConstruct():
     def c_str(self):
         return ""
 
-class EmptyComputeConstruct(IComputeConstruct):
-    """
-    Fallback for failed full parse.
-    Inteneded to reveal as much information as possible
-    """
-    def __init__(self,f_snippet):
-        self._f_snippet   = f_snippet
-        self._scope      = scoper.EMPTY_SCOPE
-    def identifiersInBody(self,converter=make_f_str):
-        valueType = lvalue | rvalue
-        identifierNames = []
-        for ident,_,__ in valueType.scanString(self._f_snippet): # includes the identifiers of the function calls
-            name      = converter(ident._value)
-            nameLower = name.lower()
-            definition,foundInIndex = scoper.searchScopeForVariable(self._scope,createIndexSearchTagForVariable(nameLower))
-            if (foundInIndex or\
-               (not nameLower in KEYWORDS and\
-               not nameLower in GPUFORT_CPP_ROUTINES)) and\
-               not name in identifierNames: # using set destroys order
-                identifierNames.append(name)
-        return identifierNames
-
 class TTLoopKernel(TTNode,IComputeConstruct):
     def _assign_fields(self,tokens):
         self._parentDirective, self.body = tokens
@@ -217,66 +258,18 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         for loop in doLoops:
             identifierNames.append(loop.loopVar(make_f_str))
         return identifierNames
-    def __searchValueInBody(self,searchFilter,scope,minRank=-1e20):
-        #TODO exclude other annotations as well from this search
-        def find_all_matching_exclude_directives_(body,filterExpr=lambda x: True,N=-1):
-            """
-            Find all nodes in tree of type 'searchedType'.
-            """
-            result = []
-            def descend_(curr):
-                if (N > 0 and len(result) > N) or isinstance(curr,ILoopAnnotation):
-                    return
-                if filterExpr(curr):
-                    result.append(curr)
-                if isinstance(curr,ParseResults) or\
-                   isinstance(curr,list):
-                    for el in curr:
-                        descend_(el)
-                elif isinstance(curr,TTNode):
-                    for el in curr.children():
-                        descend_(el)
-            descend_(body)
-            return result
-        
-        identifierNames = [] 
-        for valueType in find_all_matching_exclude_directives_(self.body,searchFilter): # includes the identifiers of the function calls
-            name = make_f_str(valueType.name())
-            nameLower = name.lower()
-            definition,foundInIndex = scoper.searchScopeForVariable(\
-              scope,createIndexSearchTagForVariable(nameLower))
-            if (foundInIndex or\
-                (not nameLower in KEYWORDS and\
-                not nameLower in GPUFORT_CPP_ROUTINES)) and\
-                definition["rank"] >= minRank and\
-                not name in identifierNames: # using set destroys order
-                     identifierNames.append(name)
-        return identifierNames
-    def identifiersInBody(self,scope=[]):
-        """
-        :return: all identifiers of LValue and RValues in the body.
-        """
+    def variables_in_body(self,scope=[]):
         if len(scope):
             self.scope = scope
-        def searchFilter(node):
-            return isinstance(node, IValue) and\
-                   type(node._value) in [TTDerivedTypeMember,TTIdentifier,TTFunctionCallOrTensorAccess]
-        result = self.__searchValueInBody(searchFilter,self.scope)
-        return result
-    def arraysInBody(self,scope=[]):
+        return _intrnl_variables_in_body(self.body,self.scope)
+    def arrays_in_body(self,scope=[]):
         if len(scope):
             self.scope = scope
-        def searchFilter(node):
-            return isinstance(node,IValue) and\
-                    type(node._value) is TTFunctionCallOrTensorAccess 
-        return self.__searchValueInBody(searchFilter,self.scope,1)
-    def inoutArraysInBody(self,scope=[]):
+        return _intrnl_arrays_in_body(self.body,self.scope)
+    def inout_arrays_in_body(self,scope=[]):
         if len(scope):
             self.scope = scope
-        def searchFilter(node):
-            return type(node) is TTLValue and\
-                    type(node._value) is TTFunctionCallOrTensorAccess 
-        return self.__searchValueInBody(searchFilter,self.scope,1)
+        return _intrnl_inout_arrays_in_body(self.body,self.scope)
     def __localScalarsAndReductionCandidates(self,scope):
         """
         local variable      - scalar variable that is not read before the assignment (and is no derived type member)
@@ -300,7 +293,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             lvalueName = make_f_str(lvalue)
             if type(lvalue) is TTIdentifier: # could still be a matrix
                 definition,found_in_scope = scoper.searchScopeForVariable(\
-                  scope,createIndexSearchTagForVariable(lvalueName))
+                  scope,create_index_search_tag_for_variable(lvalueName))
                 if not found_in_scope or definition["rank"] == 0 and\
                         not lvalueName.lower() in scalarsReadSoFar:
                             initializedScalars.append(lvalueName) # read and initialized in 
@@ -309,7 +302,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             for ttidentifier in rhsIdentifiers:
                 nameLower = ttidentifier.f_str().lower()
                 definition,found_in_scope = scoper.searchScopeForVariable(scope,\
-                  createIndexSearchTagForVariable(nameLower))
+                  create_index_search_tag_for_variable(nameLower))
                 if (not found_in_scope or definition["rank"] == 0) and\
                         nameLower != lvalueName.lower(): # do not include name of lhs if lhs appears in rhs
                             scalarsReadSoFar.append(nameLower)
@@ -366,7 +359,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         return self.__parentDirective().selfCondition
     def deviceptrs(self,scope=[]):
         if self.__parentDirective().allArraysAreOnDevice():
-            return self.arraysInBody(scope)
+            return self.arrays_in_body(scope)
         else:
             return self.__parentDirective().deviceptrs()
     def createAllocVars(self):
@@ -424,17 +417,17 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         # TODO find out relevant directives
         # TODO transform string
         # TODO preprocess Fortran colon expressions
-        inoutArraysInBody = self.inoutArraysInBody()
-        arraysInBody      = self.arraysInBody()
+        inout_arrays_in_body = self.inout_arrays_in_body()
+        arrays_in_body      = self.arrays_in_body()
         reduction         = self.gangTeamReductions()
         depend            = self.depend()
 
         if type(self.__parentDirective()) is TTCufKernelDo:
             def cufKernelDoRepl(parseResult):
-                nonlocal arraysInBody
-                nonlocal inoutArraysInBody
+                nonlocal arrays_in_body
+                nonlocal inout_arrays_in_body
                 nonlocal reduction
-                return parseResult.ompFStr(arraysInBody,inoutArraysInBody,reduction,depend), True
+                return parseResult.ompFStr(arrays_in_body,inoutarrays_in_body,reduction,depend), True
             
             result,_ = utils.pyparsingutils.replaceFirst(f_snippet,\
                 cuf_kernel_do,\
@@ -442,22 +435,22 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             return result
         else:
             def accComputeRepl(parseResult):
-                nonlocal arraysInBody
-                nonlocal inoutArraysInBody
+                nonlocal arrays_in_body
+                nonlocal inout_arrays_in_body
                 nonlocal reduction
-                return parseResult.ompFStr(arraysInBody,inoutArraysInBody,depend), True
+                return parseResult.ompFStr(arrays_in_body,inoutarrays_in_body,depend), True
             parallelRegion = "parallel" 
             def accLoopRepl(parseResult):
-                nonlocal arraysInBody
-                nonlocal inoutArraysInBody
+                nonlocal arrays_in_body
+                nonlocal inout_arrays_in_body
                 nonlocal reduction
                 nonlocal parallelRegion
                 result = parseResult.ompFStr("do",parallelRegion)
                 parallelRegion = ""
                 return result, True
             def accEndRepl(parseResult):
-                nonlocal arraysInBody
-                nonlocal inoutArraysInBody
+                nonlocal arrays_in_body
+                nonlocal inout_arrays_in_body
                 nonlocal reduction
                 return parseResult.strip()+"!$omp end target", True
             
@@ -479,11 +472,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         """
         # 0. Clarify types of function calls / tensor access that are not 
         # members of a struct
-        for expr in find_all(self.body,IValue):
-             if type(expr._value) is TTFunctionCallOrTensorAccess:
-                 _, discovered = scoper.searchIndexForVariable(self.scope,createIndexSearchTagForVariable(expr.name()))
-                 if discovered:
-                     expr._value._isTensorAccess = True3
+        __flag_tensors(self,self.scope)
         # TODO look up correct signature of called device functions from index
         # 1.1 Collapsing
         numOuterLoopsToMap = int(self.__parentDirective().numCollapse())
@@ -545,6 +534,46 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         c_snippet = "{0}{2}if ({1}) {{\n{3}}}".format(\
             indices,"&&".join(conditions),reductionPreamble,make_c_str(self.body))
         return postprocessC_snippet(c_snippet)
+
+class TTProcedureBody(TTContainer):
+    def _assign_fields(self,tokens):
+        self.body        = tokens[0]
+        self.scope       = []
+        self.result_name  = ""
+    def variables_in_body(self,scope=[]):
+        """
+        :return: all identifiers of LValue and RValues in the body.
+        """
+        if len(scope):
+            self.scope = scope
+        return _intrnl_variables_in_body(self,self.scope)
+    def arrays_in_body(self,scope=[]):
+        if len(scope):
+            self.scope = scope
+        return _intrnl_arrays_in_body(self,self.scope)
+    def inout_arrays_in_body(self,scope=[]):
+        if len(scope):
+            self.scope = scope
+        return _intrnl_inout_arrays_in_body(self,self.scope)
+    def c_str(self):
+        """
+        :return: body of a procedure as C/C++ code.
+        Non-empty result names will be propagated to
+        all return statements.
+        """
+        # 0. Clarify types of function calls / tensor access that are not 
+        # members of a struct
+        _intrnl_flag_tensors(self,self.scope)
+
+        # 2. Propagate result variable name to return statements
+        if len(self.result_name):
+            for expr in find_all(self.body,TTReturn):
+                 expr._result_name = result_name  
+        cBody = make_c_str(self.body)
+        
+        if len(self.result_name):
+             cBody += "\nreturn "+result_name+";"
+        return cBody
 
 def formatDirective(directiveLine,maxLineWidth):
     result   = ""

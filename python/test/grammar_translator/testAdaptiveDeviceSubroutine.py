@@ -599,9 +599,9 @@ successfullyParsed = []
 success = True
 for v in testdata: 
     try:
-       name,argNames,cBody = translator.convertDeviceSubroutine(v,20)
+       name,argnames,cBody = translator.convertDeviceSubroutine(v,20)
        print("{} -> {}".format(v,cBody))
-       print(argNames)
+       print(argnames)
        successfullyParsed.append(v)
     except Exception as e:
        print("failed to parse {}".format(v))

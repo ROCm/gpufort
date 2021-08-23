@@ -44,7 +44,7 @@ def createIndex(searchDirs,options,filepath):
     utils.logging.logLeaveFunction(LOG_PREFIX,"createIndex")
     return index
 
-def __translateSource(infilepath,stree,records,index,preamble):
+def _intrnl_translateSource(infilepath,stree,records,index,preamble):
     global LOG_PREFIX
     global MODIFIED_FILE_EXT
     global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
@@ -220,7 +220,7 @@ def parseCommandLineArguments():
         print(fortranConfig,file=sys.stdout)
         sys.exit()
     if args.createGpufortHeaders:
-        fort2hip.generateGpufortHeaders(os.getcwd())
+        fort2hip.generate_gpufort_headers(os.getcwd())
         sys.exit()
     if args.printConfigDefaults:
         gpufortPythonDir=os.path.dirname(os.path.realpath(__file__))
@@ -394,7 +394,7 @@ if __name__ == "__main__":
         else:
             kernelsToConvertToHip = scanner.KERNELS_TO_CONVERT_TO_HIP
         fortranModuleFilepath, mainHipFilepath =\
-          fort2hip.generateHipFiles(stree,index,kernelsToConvertToHip,inputFilepath,\
+          fort2hip.generate_hip_files(stree,index,kernelsToConvertToHip,inputFilepath,\
            generateCode=not ONLY_MODIFY_TRANSLATION_SOURCE)
         # modify original file
         if fortranModuleFilepath != None:
@@ -403,7 +403,7 @@ if __name__ == "__main__":
         else:
             preamble = None
         if not (ONLY_EMIT_KERNELS or ONLY_EMIT_KERNELS_AND_LAUNCHERS):
-            __translateSource(inputFilepath,stree,records,index,preamble) 
+            _intrnl_translateSource(inputFilepath,stree,records,index,preamble) 
     #
     if PROFILING_ENABLE:
         profiler.disable() 

@@ -45,7 +45,7 @@ def checkDestinationDialect(destinationDialect):
         utils.logging.logError(LOG_PREFIX,"checkDestinationDialect",msg)
         sys.exit(SCANNER_ERROR_CODE)
 
-def __postprocessAcc(stree):
+def _intrnl_postprocessAcc(stree):
     """
     Add use statements as well as handles plus their creation and destruction for certain
     math libraries.
@@ -68,7 +68,7 @@ def __postprocessAcc(stree):
         #if type(directive._parent
     utils.logging.logLeaveFunction(LOG_PREFIX,"__postprocessAcc")
     
-def __postprocessCuf(stree):
+def _intrnl_postprocessCuf(stree):
     """
     Add use statements as well as handles plus their creation and destruction for certain
     math libraries.
@@ -525,8 +525,8 @@ def parseFile(records,index,fortranFilepath):
 
     # parser loop
     for currentRecord in records:
-        condition1 = currentRecord["isActive"]
-        condition2 = len(currentRecord["includedRecords"]) or not currentRecord["isPreprocessorDirective"]
+        condition1 = currentRecord["is_active"]
+        condition2 = len(currentRecord["included_records"]) or not currentRecord["is_preprocessor_directive"]
         if condition1 and condition2:
             for currentStatementNo,currentStatement in enumerate(currentRecord["statements"]):
                 utils.logging.logDebug4(LOG_PREFIX,"parseFile","parsing statement '{}' associated with lines [{},{}]".format(currentStatement.rstrip(),\
@@ -632,7 +632,7 @@ def postprocess(stree,index,hipModuleSuffix):
                     stnode.addToProlog("{}use {}{}\n".format(indent,moduleName,hipModuleSuffix))
    
     if "cuf" in SOURCE_DIALECTS:
-         __postprocessCuf(stree)
+         _intrnl_postprocessCuf(stree)
     if "acc" in SOURCE_DIALECTS:
-         __postprocessAcc(stree)
+         _intrnl_postprocessAcc(stree)
     utils.logging.logLeaveFunction(LOG_PREFIX,"postprocess")

@@ -37,22 +37,22 @@ class TestScoper(unittest.TestCase):
         c   = scoper.searchIndexForVariable(index,"test1","c") # included from module 'simple'
         scoper.SCOPES.clear()
         t_b = scoper.searchIndexForVariable(index,"test1",\
-          translator.createIndexSearchTagForVariable("t%b")) # type of t included from module 'simple'
+          translator.create_index_search_tag_for_variable("t%b")) # type of t included from module 'simple'
         scoper.SCOPES.clear()
         tc_t1list_a = scoper.searchIndexForVariable(index,"test1",\
-          translator.createIndexSearchTagForVariable("tc%t1list(i)%a")) # type of t included from module 'simple'
+          translator.create_index_search_tag_for_variable("tc%t1list(i)%a")) # type of t included from module 'simple'
         scoper.SCOPES.clear()
         tc_t2list_t1list_a = scoper.searchIndexForVariable(index,"test1",
-          translator.createIndexSearchTagForVariable("tc%t2list(indexlist%j)%t1list(i)%a")) 
+          translator.create_index_search_tag_for_variable("tc%t2list(indexlist%j)%t1list(i)%a")) 
         scoper.SCOPES.clear()
     def test_3_scoper_search_for_variables_reuse_scope(self):
         c   = scoper.searchIndexForVariable(index,"test1","c") # included from module 'simple'
         t_b = scoper.searchIndexForVariable(index,"test1",\
-          translator.createIndexSearchTagForVariable("t%b")) # type of t included from module 'simple'
+          translator.create_index_search_tag_for_variable("t%b")) # type of t included from module 'simple'
         tc_t1list_a = scoper.searchIndexForVariable(index,"test1",\
-          translator.createIndexSearchTagForVariable("tc%t1list(i)%a")) # type of t included from module 'simple'
+          translator.create_index_search_tag_for_variable("tc%t1list(i)%a")) # type of t included from module 'simple'
         tc_t2list_t1list_a = scoper.searchIndexForVariable(index,"test1",
-          translator.createIndexSearchTagForVariable("tc%t2list(indexlist%j)%t1list(i)%a")) 
+          translator.create_index_search_tag_for_variable("tc%t2list(indexlist%j)%t1list(i)%a")) 
         scoper.SCOPES.clear()
     def test_4_scoper_search_for_subprograms(self):
         func2 = scoper.searchIndexForSubprogram(index,"test1","func2")

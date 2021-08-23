@@ -26,10 +26,10 @@ class TTSimpleToken(TTNode):
 
 class TTReturn(TTNode):
       def _assign_fields(self,tokens):
-          self._resultName = ""  
+          self._result_name = ""  
       def c_str(self): 
-          if len(self._resultName):
-              return "return "+self._resultName+";"
+          if len(self._result_name):
+              return "return "+self._result_name+";"
           else:
               return "return;"
       def f_str(self):
@@ -86,10 +86,10 @@ class TTDatatype_Comment(TTNode):
     def bytes(self):
         return "TODO unknown size"  
     def c_str(self):
-        fType  = make_f_str(self._type)
+        f_type  = make_f_str(self._type)
         kind   = make_f_str(self._kind)
         length = make_f_str(self._length)
-        return "// {}\n// {}(kind={},len={})".format(UNCONVERTED,fType,kind,length)
+        return "// {}\n// {}(kind={},len={})".format(UNCONVERTED,f_type,kind,length)
     def f_str(self):
         # comment only when generating c string
         result = make_f_str(self._type)
@@ -121,12 +121,12 @@ class TTDatatype_Convert(TTNode):
     def bytes(self):
         return bytes(make_f_str(self._type),make_f_str(self._kind))  
     def c_str(self):
-        fType = make_f_str(self._type)
+        f_type = make_f_str(self._type)
         kind = make_f_str(self._kind)
-        cType = convertToCType(fType,kind)
-        if cType == None:
-            return "// {}\n// {}".format(UNCONVERTED,fType,kind)
-        return cType
+        c_type = convertToCType(f_type,kind)
+        if c_type == None:
+            return "// {}\n// {}".format(UNCONVERTED,f_type,kind)
+        return c_type
     def f_str(self):
         result = str(self._type)
         haveKind = not self._kind is None 
@@ -347,8 +347,8 @@ class TTConvertToExtractReal (TTNode):
     def _assign_fields(self,tokens):
         self._ref, self._kind = tokens
     def c_str(self):
-        cType = convertToCType("real",self._kind).replace(" ","_") # TODO check if his anything else than double or float
-        return "make_{1}({0})".format(make_c_str(self._ref),cType) # rely on C++ compiler to make the correct type conversion
+        c_type = convertToCType("real",self._kind).replace(" ","_") # TODO check if his anything else than double or float
+        return "make_{1}({0})".format(make_c_str(self._ref),c_type) # rely on C++ compiler to make the correct type conversion
     def f_str(self):
         result ="REAL({0}".format(make_f_str(self._ref))
         if not self._kind is None:
@@ -367,8 +367,8 @@ class TTConvertToComplex(TTNode):
     def _assign_fields(self,tokens):
         self._x, self._y, self._kind = tokens
     def c_str(self):
-        cType = convertToCType("complex",self._kind,default=None,floatComplex="floatComplex",doubleComplex="doubleComplex")
-        return "make_{2}({0}, {1})".format(make_c_str(self._x),make_c_str(self._y),cType)
+        c_type = convertToCType("complex",self._kind,default=None,floatComplex="floatComplex",doubleComplex="doubleComplex")
+        return "make_{2}({0}, {1})".format(make_c_str(self._x),make_c_str(self._y),c_type)
     def f_str(self):
         result ="CMPLX({0},{1}".format(make_f_str(self._x),make_f_str(self._y))
         if not self._kind is None:
@@ -379,8 +379,8 @@ class TTConvertToDoubleComplex(TTNode):
     def _assign_fields(self,tokens):
         self._x, self._y, self._kind = tokens
     def c_str(self):
-        cType="doubleComplex"
-        return "make_{2}({0}, {1})".format(make_c_str(self._x),make_c_str(self._y),cType)
+        c_type="doubleComplex"
+        return "make_{2}({0}, {1})".format(make_c_str(self._x),make_c_str(self._y),c_type)
     def f_str(self):
         result ="DCMPLX({0},{1}".format(make_f_str(self._x),make_f_str(self._y))
         return result + ")"
@@ -491,7 +491,7 @@ class TTPower(TTNode):
         if type(self._base) is TTRValue:
             base = self._base._value
             sign = self._base._sign
-        return "{sign}__pow({base},{exp})".format(\
+        return "{sign}_intrnl_pow({base},{exp})".format(\
             sign=make_f_str(sign),base=make_f_str(base),
             exp=make_f_str(self._exp))
     
@@ -803,9 +803,9 @@ class TTBounds(TTNode):
             return "#undef {0}\n#define {0}({1}) inc_c_ptr({0}, {2})".format(variableName,",".join(macroArgs),index)
         else:
             return "#undef _idx_{0}\n#define _idx_{0}({1}) ({2})".format(variableName,",".join(macroArgs),index)
-    def indexMacroFStr(self,variableName,usePlaceHolders=False):
+    def index_macro_f_str(self,variableName,usePlaceHolders=False):
         return self.indexMacroStr(variableName,make_f_str,usePlaceHolders)
-    def indexMacroCStr(self,variableName,usePlaceHolders=False):
+    def index_macro_c_str(self,variableName,usePlaceHolders=False):
         return self.indexMacroStr(variableName,make_c_str,usePlaceHolders)
     def c_str(self):
         """
@@ -868,6 +868,11 @@ class TTDeclaredVariable(TTNode):
         return self.toStr(make_f_str,includeBounds,includeRhs)
 
 class Attributed():
+    def getStringQualifiers(self,name):
+        """
+        :param name: lower case string qualifier, i.e. no more complex qualifier such as 'dimension' or 'intent'.
+        """
+        return [q.lower() for q in self._qualifiers if type(q) is str]
     def hasStringQualifier(self,name):
         """
         :param name: lower case string qualifier, i.e. no more complex qualifier such as 'dimension' or 'intent'.
@@ -876,16 +881,6 @@ class Attributed():
         for q in self._qualifiers:
             result |= type(q) is str and q.lower() == name.lower()
         return result
-    def isDevicePointer(self):
-        return self.hasStringQualifier("device") and\
-               self.hasStringQualifier("pointer")
-    def isPinnedPointer(self):
-        return self.hasStringQualifier("pinned") and\
-               self.hasStringQualifier("pointer")
-    def isAllocatable(self):
-        return self.hasStringQualifier("allocatable")
-    def hasParameter(self):
-        return self.hasStringQualifier("parameter")
     def hasDimension(self):
         return len(find_all(self._qualifiers,TTDimensionQualifier))
 
@@ -901,7 +896,7 @@ class TTDeclaration(TTNode,Attributed):
         #declaration = datatype + Optional(COMMA + attributeList,default=[]) + COLONS + Group(delimitedList(declarationVariable))   # ! emits *,[*],[*]
         self._datatype, self._qualifiers, self._rhs = tokens
         self.ignoreList = []
-    def fType(self):
+    def f_type(self):
         """
         Fortran basetype of the datatype.
         """
@@ -1137,51 +1132,6 @@ class TTWhile(TTContainer):
         conditionContent = make_c_str(self._condition)
         c_str = "while ({0}) {{\n  {1}\n}}".format(conditionContent,bodyContent) 
         return c_str
-
-class TTProcedureBody(TTContainer):
-    def _assign_fields(self,tokens):
-        self.body        = tokens[0]
-        self.scope       = []
-        self.ignoredVars = []
-        self.resultName  = ""
-    def c_str(self):
-        """
-        :return: body of a procedure as C/C++ code.
-        
-        When converting declarations, all declared variables with a name in the
-        _ignoredVars member are ignored. All declared variables that store a precision
-        kind are ignored too.
-
-        Moreover, non-empty result names will be propagated to
-        all return statements.
-        """
-        # 0. Clarify types of function calls / tensor access that are not 
-        # members of a struct
-        if len(self.scope):
-            for expr in find_all_matching(self.body,filterExpr=lambda x: isinstance(x,IValue)):
-                 if type(expr._value) is TTFunctionCallOrTensorAccess:
-                     _, discovered = scoper.searchScopeForVariable(self.scope,createIndexSearchTagForVariable(expr.name()))
-                     if discovered:
-                         expr._value._isTensorAccess = True3
-        # 1. Remove function argument definitions and precision definitions
-        # from body before converting body to C code.
-
-        # TODO Potentially simpler/more transparent to generate local variables from index and ignore in code.
-
-        declarations = find_all(self.body,TTDeclaration)
-        for ttdeclaration in declarations:
-            ttdeclaration._ignoreList = list(self.ignoredVars)
-            for name in ttdeclaration.variableNames():
-                if "selected_real_kind" in ttdeclaration.rhsCStr(name).lower():
-                    ttdeclaration._ignoreList.append(name)
-        # 2. Propagate result variable name to return statements
-        if len(self.resultName):
-            for expr in find_all(self.body,TTReturn):
-                 expr._resultName = resultName  
-        cBody = make_c_str(self.body)
-        if len(self.resultName):
-             cBody += "\nreturn "+resultName+";"
-        return cBody
 
 ## Link actions
 #print_statement.setParseAction(TTCommentedOut)

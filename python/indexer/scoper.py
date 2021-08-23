@@ -19,28 +19,23 @@ ERR_SCOPER_LOOKUP_FAILED = 1002
 __UNKNOWN = "UNKNOWN"
 
 EMPTY_VARIABLE = {                         
-  "name"                       : __UNKNOWN,
-  "fType"                      : __UNKNOWN,
-  "kind"                       : __UNKNOWN,
-  "bytesPerElement"            : __UNKNOWN,
-  "cType"                      : __UNKNOWN,
-  "fInterfaceType"             : __UNKNOWN,
-  "fInterfaceQualifiers"       : __UNKNOWN,
-  "parameter"                  : __UNKNOWN,
-  "pointer"                    : __UNKNOWN,
-  "device"                     : __UNKNOWN,
-  "pinned"                     : __UNKNOWN,
-  "managed"                    : __UNKNOWN,
-  "allocatable"                : __UNKNOWN,
-  "declareOnTarget"            : __UNKNOWN,
-  "rank"                       : -1,
-  "unspecifiedBounds"          : __UNKNOWN,
-  "lbounds"                    : __UNKNOWN,
-  "counts"                     : __UNKNOWN,
-  "totalCount"                 : __UNKNOWN,
-  "totalBytes"                 : __UNKNOWN,
-  "indexMacro"                 : __UNKNOWN,
-  "indexMacroWithPlaceHolders" : __UNKNOWN
+  "name"                          : __UNKNOWN,
+  "f_type"                        : __UNKNOWN,
+  "kind"                          : __UNKNOWN,
+  "bytes_per_element"               : __UNKNOWN,
+  "c_type"                        : __UNKNOWN,
+  "f_interface_type"                : __UNKNOWN,
+  "f_interface_qualifiers"          : __UNKNOWN,
+  "qualifiers"                    : [],
+  "declare_on_target"               : __UNKNOWN,
+  "rank"                          : -1,
+  "unspecified_bounds"             : __UNKNOWN,
+  "lbounds"                       : __UNKNOWN,
+  "counts"                        : __UNKNOWN,
+  "total_count"                    : __UNKNOWN,
+  "total_bytes"                    : __UNKNOWN,
+  "index_macro"                   : __UNKNOWN,
+  "index_macro_with_placeholders" : __UNKNOWN
 }
 
 EMPTY_TYPE = {                         
@@ -51,19 +46,19 @@ EMPTY_TYPE = {
 EMPTY_SUBPROGRAM = {                         
   "kind"        : __UNKNOWN,
   "name"        : __UNKNOWN,
-  "resultName"  : __UNKNOWN,
+  "result_name" : __UNKNOWN,
   "attributes"  : [],
-  "dummyArgs"   : [],
+  "dummy_args"  : [],
   "variables"   : [],
   "subprograms" : [],
-  "usedModules" : []
+  "used_modules" : []
 }
 
 EMPTY_SCOPE = { "tag": "", "types" : [], "variables" : [], "subprograms" : [] } 
 
 __SCOPE_ENTRY_TYPES = ["subprograms","variables","types"]
 
-def __resolveDependencies(scope,indexRecord,index):
+def _intrnl_resolveDependencies(scope,indexRecord,index):
     """
     Include variable, type, and subprogram records from modules used
     by the current record (module,program or subprogram).
@@ -85,7 +80,7 @@ def __resolveDependencies(scope,indexRecord,index):
         :param dict moduleRecord: 
         """ 
         nonlocal index
-        for usedModule in moduleRecord["usedModules"]:
+        for usedModule in moduleRecord["used_modules"]:
             usedModuleFound = usedModule["name"] in MODULE_IGNORE_LIST
             # include definitions from other modules
             for module in index:
@@ -123,7 +118,7 @@ def __resolveDependencies(scope,indexRecord,index):
     handleUseStatements_(scope,indexRecord)
     utils.logging.logLeaveFunction(LOG_PREFIX,"__resolveDependencies")
 
-def __searchScopeForTypeOrSubprogram(scope,entryName,entryType,emptyRecord):
+def _intrnl_searchScopeForTypeOrSubprogram(scope,entryName,entryType,emptyRecord):
     """
     :param str entryType: either 'types' or 'subprograms'
     """
@@ -150,7 +145,7 @@ def __searchScopeForTypeOrSubprogram(scope,entryName,entryType,emptyRecord):
         utils.logging.logLeaveFunction(LOG_PREFIX,"__searchScopeForTypeOrSubprogram")
         return result, True
 
-def __searchIndexForTypeOrSubprogram(index,parentTag,entryName,entryType,emptyRecord):
+def _intrnl_searchIndexForTypeOrSubprogram(index,parentTag,entryName,entryType,emptyRecord):
     """
     :param str entryType: either 'types' or 'subprograms'
     """
@@ -159,7 +154,7 @@ def __searchIndexForTypeOrSubprogram(index,parentTag,entryName,entryType,emptyRe
       {"parentTag":parentTag,"entryName":entryName,"entryType":entryType})
 
     scope = createScope(index,parentTag)
-    return __searchScopeForTypeOrSubprogram(scope,entryName,entryType,emptyRecord)
+    return _intrnl_searchScopeForTypeOrSubprogram(scope,entryName,entryType,emptyRecord)
 
 # API
 def createScope(index,tag):
@@ -233,7 +228,7 @@ def createScope(index,tag):
             for currentRecord in currentRecordList:
                 if currentRecord["name"] == searchedName:
                     # 1. first include variables from included
-                    __resolveDependencies(newScope,currentRecord,index) 
+                    _intrnl_resolveDependencies(newScope,currentRecord,index) 
                     # 2. now include the current record's   
                     for entryType in __SCOPE_ENTRY_TYPES:
                         if entryType in currentRecord:
@@ -247,7 +242,7 @@ def createScope(index,tag):
 def searchScopeForVariable(scope,variableTag):
     """
     %param str variableTag% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c'. Note that all array indexing expressions must be stripped away.
-    :see: translator.translator.createIndexSearchTagForVariable(variableExpression)
+    :see: translator.translator.create_index_search_tag_for_variable(variableExpression)
     """
     global LOG_PREFIX
     utils.logging.logEnterFunction(LOG_PREFIX,"searchIndexForVariable",\
@@ -298,7 +293,7 @@ def searchScopeForType(scope,typeName):
     :param str typeName: lower case name of the searched type. Simple identifier such as 'mytype'.
     """
     utils.logging.logEnterFunction(LOG_PREFIX,"searchScopeForType",{"typeName":typeName})
-    result = __searchScopeForTypeOrSubprogram(scope,typeName,"types",EMPTY_TYPE)
+    result = _intrnl_searchScopeForTypeOrSubprogram(scope,typeName,"types",EMPTY_TYPE)
     utils.logging.logLeaveFunction(LOG_PREFIX,"searchScopeForType")
     return result
 
@@ -307,7 +302,7 @@ def searchScopeForSubprogram(scope,subprogramName):
     :param str subprogramName: lower case name of the searched subprogram. Simple identifier such as 'mysubroutine'.
     """
     utils.logging.logEnterFunction(LOG_PREFIX,"searchScopeForSubprogram",{"subprogramName":subprogramName})
-    result =  __searchScopeForTypeOrSubprogram(scope,subprogramName,"subprograms",EMPTY_SUBPROGRAM)
+    result =  _intrnl_searchScopeForTypeOrSubprogram(scope,subprogramName,"subprograms",EMPTY_SUBPROGRAM)
     utils.logging.logLeaveFunction(LOG_PREFIX,"searchScopeForSubprogram")
     return result
 
@@ -315,7 +310,7 @@ def searchIndexForVariable(index,parentTag,variableTag):
     """
     :param str parentTag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
     %param str variableTag% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c'. Note that all array indexing expressions must be stripped away.
-    :see: translator.translator.createIndexSearchTagForVariable(variableExpression)
+    :see: translator.translator.create_index_search_tag_for_variable(variableExpression)
     """
     global LOG_PREFIX
     utils.logging.logEnterFunction(LOG_PREFIX,"searchIndexForVariable",\
@@ -331,7 +326,7 @@ def searchIndexForType(index,parentTag,typeName):
     """
     utils.logging.logEnterFunction(LOG_PREFIX,"searchIndexForType",\
       {"parentTag":parentTag,"typeName":typeName})
-    result = __searchIndexForTypeOrSubprogram(index,parentTag,typeName,"types",EMPTY_TYPE)
+    result = _intrnl_searchIndexForTypeOrSubprogram(index,parentTag,typeName,"types",EMPTY_TYPE)
     utils.logging.logLeaveFunction(LOG_PREFIX,"searchIndexForType")
     return result
 
@@ -342,10 +337,10 @@ def searchIndexForSubprogram(index,parentTag,subprogramName):
     """
     utils.logging.logEnterFunction(LOG_PREFIX,"searchIndexForSubprogram",\
       {"parentTag":parentTag,"subprogramName":subprogramName})
-    result =  __searchIndexForTypeOrSubprogram(index,parentTag,subprogramName,"subprograms",EMPTY_SUBPROGRAM)
+    result =  _intrnl_searchIndexForTypeOrSubprogram(index,parentTag,subprogramName,"subprograms",EMPTY_SUBPROGRAM)
     utils.logging.logLeaveFunction(LOG_PREFIX,"searchIndexForSubprogram")
     return result
             
 def indexVariableIsOnDevice(indexVar):
-    return indexVar["device"] == True or\
-           indexVar["declareOnTarget"] in ["alloc","to","from","tofrom"]
+    return ["device"] in ivar["qualifiers"] or\
+           indexVar["declare_on_target"] in ["alloc","to","from","tofrom"]

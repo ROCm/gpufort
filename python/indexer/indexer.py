@@ -25,7 +25,7 @@ exec(open("{0}/indexer_options.py.in".format(indexerDir)).read())
 pFilter       = re.compile(FILTER) 
 pContinuation = re.compile(CONTINUATION_FILTER)
 
-def __readFortranFile(filepath,preprocOptions):
+def _intrnl_readFortranFile(filepath,preprocOptions):
     """
     Read and preprocess a Fortran file. Make all
     statements take a single line, i.e. remove all occurences
@@ -74,7 +74,7 @@ class __Node():
         return "{}: {}".format(self._name,self._data)
     __repr__ = __str__
 
-def __parseFile(fileStatements,filepath):
+def _intrnl_parseFile(fileStatements,filepath):
     global PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE
     global PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE 
 
@@ -168,22 +168,22 @@ def __parseFile(fileStatements,filepath):
                 for varName in parseResult.mapAllocVariables():
                     if varContext["name"] == varName:
                         accessLock.acquire()
-                        varContext["declareOnTarget"] = "alloc"
+                        varContext["declare_on_target"] = "alloc"
                         accessLock.release()
                 for varName in parseResult.mapToVariables():
                     if varContext["name"] == varName: 
                         accessLock.acquire()
-                        varContext["declareOnTarget"] = "to"
+                        varContext["declare_on_target"] = "to"
                         accessLock.release()
                 for varName in parseResult.mapFromVariables():
                     if varContext["name"] == varName: 
                         accessLock.acquire()
-                        varContext["declareOnTarget"] = "from"
+                        varContext["declare_on_target"] = "from"
                         accessLock.release()
                 for varName in parseResult.mapTofromVariables():
                     if varContext["name"] == varName: 
                         accessLock.acquire()
-                        varContext["declareOnTarget"] = "tofrom"
+                        varContext["declare_on_target"] = "tofrom"
                         accessLock.release()
             msg = "parsed acc declare directive '{}'".format(self._inputText)
             logLeaveJobOrTask_(self._parentNode, msg)
@@ -201,7 +201,7 @@ def __parseFile(fileStatements,filepath):
         entry["variables"]   = []
         entry["types"]       = []
         entry["subprograms"] = []
-        entry["usedModules"] = []
+        entry["used_modules"] = []
         return entry
     def logEnterNode_():
         nonlocal currentNode
@@ -259,7 +259,7 @@ def __parseFile(fileStatements,filepath):
             name = tokens[1]
             subroutine = createBaseEntry_("subroutine",name,filepath)
             subroutine["attributes"]      = [q.lower() for q in tokens[0]]
-            subroutine["dummyArgs"]       = list(tokens[2])
+            subroutine["dummy_args"]       = list(tokens[2])
             if currentNode._kind == "root":
                 currentNode._data.append(subroutine)
             else:
@@ -279,8 +279,8 @@ def __parseFile(fileStatements,filepath):
             name = tokens[1]
             function = createBaseEntry_("function",name,filepath)
             function["attributes"]      = [q.lower() for q in tokens[0]]
-            function["dummyArgs"]       = list(tokens[2])
-            function["resultName"]      = name if tokens[3] is None else tokens[3]
+            function["dummy_args"]       = list(tokens[2])
+            function["result_name"]      = name if tokens[3] is None else tokens[3]
             if currentNode._kind == "root":
                 currentNode._data.append(function)
             else:
@@ -320,7 +320,7 @@ def __parseFile(fileStatements,filepath):
                 original = translator.make_f_str(pair[0])
                 renamed = original if pair[1] is None else translator.make_f_str(pair[1])
                 usedModule["only"].append({ "original": original, "renamed": renamed })
-            currentNode._data["usedModules"].append(usedModule) # TODO only include what is necessary
+            currentNode._data["used_modules"].append(usedModule) # TODO only include what is necessary
     
     # delayed parsing
     
@@ -465,7 +465,7 @@ def __parseFile(fileStatements,filepath):
     utils.logging.logLeaveFunction(LOG_PREFIX,"__parseFile") 
     return index
 
-def __writeJsonFile(index,filepath):
+def _intrnl_writeJsonFile(index,filepath):
     global PRETTY_PRINT_INDEX_FILE
     global LOG_PREFIX    
     utils.logging.logEnterFunction(LOG_PREFIX,"__writeJsonFile",{"filepath":filepath}) 
@@ -478,7 +478,7 @@ def __writeJsonFile(index,filepath):
     
     utils.logging.logLeaveFunction(LOG_PREFIX,"__writeJsonFile") 
 
-def __readJsonFile(filepath):
+def _intrnl_readJsonFile(filepath):
     global LOG_PREFIX    
     utils.logging.logEnterFunction(LOG_PREFIX,"__readJsonFile",{"filepath":filepath}) 
     
@@ -494,10 +494,10 @@ def scanFile(filepath,preprocOptions,index):
     global LOG_PREFIX
     utils.logging.logEnterFunction(LOG_PREFIX,"scanFile",{"filepath":filepath,"preprocOptions":preprocOptions}) 
     
-    filteredLines = __readFortranFile(filepath,preprocOptions)
+    filteredLines = _intrnl_readFortranFile(filepath,preprocOptions)
     utils.logging.logDebug2(LOG_PREFIX,"scanFile","extracted the following lines:\n>>>\n{}\n<<<".format(\
         "\n".join(filteredLines)))
-    index += __parseFile(filteredLines,filepath)
+    index += _intrnl_parseFile(filteredLines,filepath)
     
     utils.logging.logLeaveFunction(LOG_PREFIX,"scanFile") 
 
@@ -514,7 +514,7 @@ def writeGpufortModuleFiles(index,outputDir):
     
     for mod in index:
         filepath = outputDir + "/" + mod["name"] + GPUFORT_MODULE_FILE_SUFFIX
-        __writeJsonFile(mod,filepath)
+        _intrnl_writeJsonFile(mod,filepath)
     
     utils.logging.logLeaveFunction(LOG_PREFIX,"writeGpufortModuleFiles")
 
@@ -537,7 +537,7 @@ def loadGpufortModuleFiles(inputDirs,index):
                          moduleAlreadyExists = True
                          break
                  if not moduleAlreadyExists:
-                     modIndex = __readJsonFile(os.path.join(inputDir, child))
+                     modIndex = _intrnl_readJsonFile(os.path.join(inputDir, child))
                      index.append(modIndex)
     
     utils.logging.logLeaveFunction(LOG_PREFIX,"loadGpufortModuleFiles")

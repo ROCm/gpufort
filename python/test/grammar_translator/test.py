@@ -20,7 +20,7 @@ def run(expression,testdata,tag,raiseException=False):
                print("failed to parse '{}'".format(v))
                failedToParse.append(v) 
                if raiseException:
-                   print("Error in line {}: '{}'".format(e.__getattr__("lineno"),e.__getattr__("line"))) 
+                   print("Error in line {}: '{}'".format(e._intrnl_getattr___("lineno"),e._intrnl_getattr___("line"))) 
                    #if isinstance(e,ParseException):
                    raise e
     if not tag is None: 

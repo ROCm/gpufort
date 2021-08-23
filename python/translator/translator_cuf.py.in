@@ -139,7 +139,7 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
         result += "// - Shared Memory: {}\n".format(make_f_str(self._sharedMem))
         result += "// - Stream: {}\n".format(make_f_str(self._stream))
         return result
-    def ompFStr(self,arraysInBody=set(),inoutArraysInBody=set(),reduction={},depend={},loopType="do"):
+    def ompFStr(self,arrays_in_body=set(),inoutarrays_in_body=set(),reduction={},depend={},loopType="do"):
         result = "!$omp target teams distribute parallel "+loopType  
 
         grid  = self.numGangsTeamsBlocks()
@@ -171,11 +171,11 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
                 for kind,variables in depend.items():
                     result += " depend("+kind+":"+",".join(variables)+")"
             else: 
-                inArraysInBody = [el for el in arraysInBody if el not in inoutArraysInBody]
+                inarrays_in_body = [el for el in arrays_in_body if el not in inoutarrays_in_body]
                 if len(inArraysInBody):
                     result += " depend("+kind+":"+",".join(inArraysInBody)+")"
-                if len(inoutArraysInBody):
-                    result += " depend("+kind+":"+",".join(inoutArraysInBody)+")"
+                if len(inout_arrays_in_body):
+                    result += " depend("+kind+":"+",".join(inout_arrays_in_body)+")"
         return result
 
 class TTAllocateRValue(TTNode):

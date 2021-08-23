@@ -9,7 +9,7 @@
 {#  -[interfaces:dict]-fName:str                         #}
 {#                    -cName:str                         #}
 {#                    -type:str ; function/subroutine    #}
-{#                    -[argNames:str]                    #}
+{#                    -[argnames:str]                    #}
 {#                    -[args:dict]-type:str              #}
 {#                                -[qualifiers:str]      #}
 {#                                -name:str              #}
@@ -31,7 +31,7 @@ module {{name}}
 {% if interfaces is defined and interfaces|length > 0 %}  interface
 
 {% for interface in interfaces %}
-    {{interface.type}} {{interface.fName}}({{interface.argNames | join(",&\n        ")}}) bind(c, name="{{interface.cName}}")
+    {{interface.type}} {{interface.fName}}({{interface.argnames | join(",&\n        ")}}) bind(c, name="{{interface.cName}}")
       use iso_c_binding
 {% for module in used %}      use {{module}}
 {% endfor %}
@@ -48,7 +48,7 @@ module {{name}}
 {% if routines is defined and routines|length > 0 %}  contains
 
 {% for routine in routines %}
-    {{routine.type}} {{routine.fName}}({{routine.argNames | join(",&\n        ") }}) bind(c, name="{{routine.cName}}")
+    {{routine.type}} {{routine.fName}}({{routine.argnames | join(",&\n        ") }}) bind(c, name="{{routine.cName}}")
       use iso_c_binding
 {% for module in used %}      use {{module}}
 {% endfor %}

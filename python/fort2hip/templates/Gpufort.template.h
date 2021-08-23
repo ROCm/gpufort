@@ -83,13 +83,13 @@ namespace {
   }
 }
 
-{% set maxRank = 7 -%}
-{%- for rank in range(1,maxRank+1) -%}
+{% set max_rank = 7 -%}
+{%- for rank in range(1,max_rank+1) -%}
 #define GPUFORT_PRINT_ARRAY{{rank}}(prefix,print_values,print_norms,A,{{ print_array_arglist("",rank) }}) gpufort_print_array{{rank}}(std::cout, prefix, print_values, print_norms, #A, A, {{ print_array_arglist("",rank) }})
 {% endfor -%}
 
 namespace {
-  {% for rank in range(1,maxRank+1) %}
+  {% for rank in range(1,max_rank+1) %}
   template<typename T>
   void gpufort_print_array{{rank}}(std::ostream& out, const char* prefix, const bool print_values, const bool print_norms, const char* label, T A[], {{ print_array_arglist("int ",rank) }}) {
     int n = {%- for col in range(1,rank+1) -%}n{{col}}{{ "*" if not loop.last }}{%- endfor -%};
@@ -140,12 +140,12 @@ namespace {
     return (stride>0) ? ( idx <= end ) : ( -idx <= -end );     
   }
 
-{% for floatType in ["float", "double"] %}  // make {{floatType}}
-{% for type in ["short int",  "unsigned short int",  "unsigned int",  "int",  "long int",  "unsigned long int",  "long long int",  "unsigned long long int",  "signed char",  "unsigned char",  "float",  "double",  "long double"] %} __device__ __forceinline__ {{floatType}} make_{{floatType}}(const {{type}}& a) {
-    return static_cast<{{floatType}}>(a);
+{% for floatType in ["float", "double"] %}  // make {{float_type}}
+{% for type in ["short int",  "unsigned short int",  "unsigned int",  "int",  "long int",  "unsigned long int",  "long long int",  "unsigned long long int",  "signed char",  "unsigned char",  "float",  "double",  "long double"] %} __device__ __forceinline__ {{float_type}} make_{{float_type}}(const {{type}}& a) {
+    return static_cast<{{float_type}}>(a);
   }
-{% endfor %}{% for type in ["hipFloatComplex", "hipDoubleComplex" ] %} __device__ __forceinline__ {{floatType}} make_{{floatType}}(const {{type}}& a) {
-    return static_cast<{{floatType}}>(a.x);
+{% endfor %}{% for type in ["hipFloatComplex", "hipDoubleComplex" ] %} __device__ __forceinline__ {{float_type}} make_{{float_type}}(const {{type}}& a) {
+    return static_cast<{{float_type}}>(a.x);
   }
 {% endfor %}
 {% endfor %} // conjugate complex type

@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
-def bytes(fType,kind,default=None):
-    assert type(fType) is str
+def bytes(f_type,kind,default=None):
+    assert type(f_type) is str
     assert type(kind) is str
     kindLower = kind.lower()
-    return FORTRAN_TYPE_2_BYTES_MAP.get(fType.lower(),{ kindLower : default }).get(kindLower, "UNKNOWN")
+    return FORTRAN_TYPE_2_BYTES_MAP.get(f_type.lower(),{ kindLower : default }).get(kindLower, "UNKNOWN")
 
 ADDITIONS = "cuf kernel kind amax1 amin1" # TODO
 KEYWORDS = " ".join([CUDA_FORTRAN_KEYWORDS_STR, FORTRAN_INTRINSICS_STR, F08_KEYWORDS_STR, ADDITIONS])
@@ -168,19 +168,19 @@ def flattenBody(body):
            return ""
     return descend(body)       
 
-def convertToCType(fType,kind,default=None):
+def convertToCType(f_type,kind,default=None):
     """
     :return: An equivalent C datatype for a given Fortran type, e.g. `double` for a `REAL*8`.
-    :param fType: The original Fortran type, e.g. `REAL` for a `REAL*8`.
+    :param f_type: The original Fortran type, e.g. `REAL` for a `REAL*8`.
     :param kind: The kind of the Fortran type, e.g. `8` for a `REAL*8`.
     :rtype: str
     """
-    assert type(fType) is str
+    assert type(f_type) is str
     if kind is None:
         kind = ""
     assert type(kind) is str, "{}, {}".format(kind,type(kind))
     kindLower = kind.lower()
-    return FORTRAN_2_C_TYPE_MAP.get(fType.lower(),{ kindLower : default }).get(kindLower, "UNKNOWN")
+    return FORTRAN_2_C_TYPE_MAP.get(f_type.lower(),{ kindLower : default }).get(kindLower, "UNKNOWN")
 
 def prepareFortran_snippet(fortran_snippet):
     """

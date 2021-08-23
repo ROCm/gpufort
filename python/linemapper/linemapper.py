@@ -12,7 +12,7 @@ linemapperDir = os.path.dirname(__file__)
 exec(open("{0}/linemapper_options.py.in".format(linemapperDir)).read())
 exec(open("{0}/grammar.py".format(linemapperDir)).read())
 
-def __evaluateDefined(inputString,macroStack):
+def _intrnl_evaluateDefined(inputString,macroStack):
     # expand macro; one at a time
     result = inputString
     macroNames = [ macro["name"] for macro in reversed(macroStack) ]
@@ -27,9 +27,9 @@ def __evaluateDefined(inputString,macroStack):
             break
     return result
 
-def __expandMacros(inputString,macroStack):
+def _intrnl_expandMacros(inputString,macroStack):
     # expand defined(...) expressions
-    result = __evaluateDefined(inputString,macroStack)
+    result = _intrnl_evaluateDefined(inputString,macroStack)
     # expand macro; one at a time
     macroNames = [ macro["name"] for macro in macroStack ]
     iterate    = True
@@ -57,11 +57,11 @@ def evaluateCondition(inputString,macroStack):
     :note: Input validation performed according to:
            https://realpython.com/python-eval-function/#minimizing-the-security-issues-of-eval
     """
-    transformedInputString = pp_ops.transformString(__expandMacros(inputString,macroStack))
+    transformedInputString = pp_ops.transformString(_intrnl_expandMacros(inputString,macroStack))
     code = compile(transformedInputString, "<string>", "eval") 
     return eval(code, {"__builtins__": {}},{}) > 0
 
-def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,regionStack2):
+def _intrnl_handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,regionStack2):
     """
     :param str fortranFilepath: needed to load included files where only relative path is specified
     :param list macroStack: A stack for storing/removing macro definition based on preprocessor directives.
@@ -89,7 +89,7 @@ def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,
     # strip away whitespace chars
     try:
         strippedFirstLine = lines[0].lstrip("# \t").lower()
-        singleLineStatement = __convertLinesToStatements(lines)[0] # does not make sense for define
+        singleLineStatement = _intrnl_convertLinesToStatements(lines)[0] # does not make sense for define
         if regionStack1[-1]:
            if strippedFirstLine.startswith("define"):
                utils.logging.logDebug3(LOG_PREFIX,"__handlePreprocessorDirective","found define in line '{}'".format(lines[0].rstrip("\n")))
@@ -118,7 +118,7 @@ def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,
                currentDir = os.path.dirname(fortranFilepath)
                if not filename.startswith("/") and len(currentDir):
                    filename = os.path.dirname(fortranFilepath) + "/" + filename
-               includedRecords = __preprocessAndNormalizeFortranFile(filename,macroStack,regionStack1,regionStack2)
+               includedRecords = _intrnl_preprocessAndNormalizeFortranFile(filename,macroStack,regionStack1,regionStack2)
                handled = True
         # if cond. true, push new region to stack
         if strippedFirstLine.startswith("if"):
@@ -174,7 +174,7 @@ def __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,
 
     return includedRecords
 
-def __convertLinesToStatements(lines):
+def _intrnl_convertLinesToStatements(lines):
     """Fortran lines can contain multiple statements that
     are separated by a semicolon.
     This routine unrolls such lines into multiple single statements.
@@ -219,7 +219,7 @@ def __convertLinesToStatements(lines):
             unrolledStatements.append(indentOffset + stmt.lstrip(indentChar))
     return unrolledStatements
 
-def __detectLineStarts(lines):
+def _intrnl_detectLineStarts(lines):
     """Fortran statements can be broken into multiple lines 
     via the '&'. This routine records in which line a statement
     (or multiple statements per line) begins.
@@ -244,7 +244,7 @@ def __detectLineStarts(lines):
     lineStarts.append(len(lines))
     return lineStarts
 
-def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionStack1,regionStack2):
+def _intrnl_preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionStack1,regionStack2):
     """:param list fileLines: Lines of a file, terminated with line break characters ('\n').
     :returns: a list of dicts with keys 'lineno', 'originalLines', 'statements'.
     """
@@ -264,7 +264,7 @@ def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionS
     assert DEFAULT_INDENT_CHAR in [' ','\t'], "Indent char must be whitespace ' ' or tab '\\t'"
 
     # 1. detect line starts
-    lineStarts = __detectLineStarts(fortranFileLines)
+    lineStarts = _intrnl_detectLineStarts(fortranFileLines)
 
     # 2. go through the blocks of buffered lines
     records = []
@@ -277,23 +277,23 @@ def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionS
         isPreprocessorDirective = lines[0].startswith("#")
         if isPreprocessorDirective and not ONLY_APPLY_USER_DEFINED_MACROS:
             try:
-                includedRecords = __handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,regionStack2)
+                includedRecords = _intrnl_handlePreprocessorDirective(lines,fortranFilepath,macroStack,regionStack1,regionStack2)
                 statements1 = []
                 statements3 = []
             except Exception as e:
                 raise e
         elif regionStack1[-1]: # inActiveRegion
             # Convert line to statememts
-            statements1 = __convertLinesToStatements(lines)
+            statements1 = _intrnl_convertLinesToStatements(lines)
             # 2. Apply macros to statements
             statements2  = []
             for stmt1 in statements1:
-                statements2.append(__expandMacros(stmt1,macroStack))
+                statements2.append(_intrnl_expandMacros(stmt1,macroStack))
             # 3. Above processing might introduce multiple statements per line againa.
             # Hence, convert each element of statements2 to single statements again
             statements3 = []
             for stmt2 in statements2:
-                for stmt3 in __convertLinesToStatements([stmt2]):
+                for stmt3 in _intrnl_convertLinesToStatements([stmt2]):
                     statements3.append(stmt3)
                     # TODO(Dominic): In case, we really need to assume that people write Fortran code
                     # such as `module mymod; integer :: myint; end module` and we therefore might
@@ -307,9 +307,9 @@ def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionS
           "lineno":                  lineStart+1, # key
           "lines":                   lines,
           "raw_statements":          statements1,
-          "includedRecords":         includedRecords,
-          "isPreprocessorDirective": isPreprocessorDirective,
-          "isActive":                regionStack1[-1],
+          "included_records":         includedRecords,
+          "is_preprocessor_directive": isPreprocessorDirective,
+          "is_active":                regionStack1[-1],
           # inout
           "statements":              statements3,
           "modified":                False,
@@ -322,7 +322,7 @@ def __preprocessAndNormalize(fortranFileLines,fortranFilepath,macroStack,regionS
     utils.logging.logLeaveFunction(LOG_PREFIX,"__preprocessAndNormalize")
     return records
 
-def __preprocessAndNormalizeFortranFile(fortranFilepath,macroStack,regionStack1,regionStack2):
+def _intrnl_preprocessAndNormalizeFortranFile(fortranFilepath,macroStack,regionStack1,regionStack2):
     """
     :throws: IOError if the specified file cannot be found/accessed.
     """
@@ -332,13 +332,13 @@ def __preprocessAndNormalizeFortranFile(fortranFilepath,macroStack,regionStack1,
 
     try:
         with open(fortranFilepath,"r") as infile:
-            records = __preprocessAndNormalize(infile.readlines(),fortranFilepath,macroStack,regionStack1,regionStack2)
+            records = _intrnl_preprocessAndNormalize(infile.readlines(),fortranFilepath,macroStack,regionStack1,regionStack2)
             utils.logging.logLeaveFunction(LOG_PREFIX,"__preprocessAndNormalizeFortranFile")
             return records
     except Exception as e:
             raise e
 
-def __initMacros(options):
+def _intrnl_initMacros(options):
     """init macro stack from compiler options and user-prescribed config values."""
     global USER_DEFINED_MACROS
 
@@ -352,14 +352,14 @@ def __initMacros(options):
         macroStack.append(macro)
     return macroStack
 
-def __groupModifiedRecords(records):
+def _intrnl_groupModifiedRecords(records):
     """Find contiguous blocks of modified lines and blank lines between them."""
     global LINE_GROUPING_WRAP_IN_IFDEF
     global LINE_GROUPING_INCLUDE_BLANK_LINES
     
     utils.logging.logEnterFunction(LOG_PREFIX,"__groupModifiedRecords")
 
-    EMPTY_BLOCK    = { "minLineno": -1, "maxLineno": -1, "orig": "", "subst": "",\
+    EMPTY_BLOCK    = { "min_lineno": -1, "max_lineno": -1, "orig": "", "subst": "",\
                        "only_prolog": False, "only_epilog": False}
     blocks         = []
     currentRecords = []
@@ -377,17 +377,17 @@ def __groupModifiedRecords(records):
         return len(record["lines"]) == 1 and not len(record["lines"][0].lstrip(" \t\n"))
     def wasModified_(record):
         modified = record["modified"]
-        for record in record["includedRecords"]:
+        for record in record["included_records"]:
             modified = modified or wasModified_(record)
         return modified
     def hasProlog_(record):
         result = len(record["prolog"])
-        for record in record["includedRecords"]:
+        for record in record["included_records"]:
             result = result or hasProlog_(record)
         return result
     def hasEpilog_(record):
         result = len(record["epilog"])
-        for record in record["includedRecords"]:
+        for record in record["included_records"]:
             result = result or hasEpilog_(record)
         return result
     def toString_(listOfStrings):
@@ -396,8 +396,8 @@ def __groupModifiedRecords(records):
         subst = []
         if len(record["prolog"]):
             subst += record["prolog"]
-        if len(record["includedRecords"]):
-            for record in record["includedRecords"]:
+        if len(record["included_records"]):
+            for record in record["included_records"]:
                 subst += collectSubst_(record)
         elif record["modified"]:
             subst += record["statements"]
@@ -417,8 +417,8 @@ def __groupModifiedRecords(records):
                 currentRecords.pop()
         if len(currentRecords): # len might have changed
             block = dict(EMPTY_BLOCK) # shallow copy
-            block["minLineno"] = currentRecords[0]["lineno"]
-            block["maxLineno"] = maxLineno_(currentRecords[-1])
+            block["min_lineno"] = currentRecords[0]["lineno"]
+            block["max_lineno"] = maxLineno_(currentRecords[-1])
             
             subst = []
             for record in currentRecords:
@@ -427,7 +427,7 @@ def __groupModifiedRecords(records):
             # special treatment for single-record blocks which are not modified
             # and are no #include statements but have prolog or epilog
             if len(currentRecords) == 1 and not currentRecords[0]["modified"] and not\
-               len(currentRecords[0]["includedRecords"]):
+               len(currentRecords[0]["included_records"]):
                 record = currentRecords[0]
                 #assert hasProlog_(record) or hasProlog_(record)
                 block["only_prolog"] = hasProlog_(record)
@@ -482,9 +482,9 @@ def readFile(fortranFilepath,options=""):
       "options":options
     })
 
-    macroStack = __initMacros(options)
+    macroStack = _intrnl_initMacros(options)
     try:
-        records = __preprocessAndNormalizeFortranFile(fortranFilepath,macroStack,\
+        records = _intrnl_preprocessAndNormalizeFortranFile(fortranFilepath,macroStack,\
            regionStack1=[True],regionStack2=[True]) # init value of regionStack[0] can be arbitrary
         utils.logging.logLeaveFunction(LOG_PREFIX,"readFile")
         return records
@@ -499,7 +499,7 @@ def writeModifiedFile(outfilePath,infilePath,records,preamble=""):
     utils.logging.logEnterFunction(LOG_PREFIX,"writeModifiedFile",\
       {"infilePath":infilePath,"outfilePath":outfilePath})
 
-    blocks = __groupModifiedRecords(records)
+    blocks = _intrnl_groupModifiedRecords(records)
 
     output      = ""
     blockId     = 0
@@ -507,9 +507,9 @@ def writeModifiedFile(outfilePath,infilePath,records,preamble=""):
     with open(infilePath,"r") as infile:
         for lineno,line in enumerate(infile.readlines(),start=1):
             if blockId < len(blocks) and\
-               lineno == blocks[blockId]["minLineno"]:
+               lineno == blocks[blockId]["min_lineno"]:
                 block       = blocks[blockId]
-                linesToSkip = block["maxLineno"] - block["minLineno"]
+                linesToSkip = block["max_lineno"] - block["min_lineno"]
                 subst       = block["subst"].rstrip("\n")
                 original    = block["orig"].rstrip("\n")
                 if LINE_GROUPING_WRAP_IN_IFDEF:
@@ -566,11 +566,11 @@ def renderFile(records,stage="statements",includeInactive=False,includePreproces
 
         result = ""
         for record in records:
-            condition1 = includeInactive or (record["isActive"])
-            condition2 = includePreprocessorDirectives or (len(record["includedRecords"]) or not record["isPreprocessorDirective"])
+            condition1 = includeInactive or (record["is_active"])
+            condition2 = includePreprocessorDirectives or (len(record["included_records"]) or not record["is_preprocessor_directive"])
             if condition1 and condition2:
-                if len(record["includedRecords"]):
-                    result += renderFile_(record["includedRecords"])
+                if len(record["included_records"]):
+                    result += renderFile_(record["included_records"])
                 else:
                     result += "".join(record[stage])
         return result

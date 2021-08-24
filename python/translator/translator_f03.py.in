@@ -868,7 +868,7 @@ class TTDeclaredVariable(TTNode):
         return self.toStr(make_f_str,includeBounds,includeRhs)
 
 class Attributed():
-    def getStringQualifiers(self,name):
+    def getStringQualifiers(self):
         """
         :param name: lower case string qualifier, i.e. no more complex qualifier such as 'dimension' or 'intent'.
         """

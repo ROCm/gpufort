@@ -75,7 +75,7 @@ def _intrnl_create_argument_context(ivar,argname,deviceptr_names=[],is_loop_kern
     :rtype: dict
     """
     arg = _intrnl_init_arg(argname,ivar["f_type"],ivar["kind"],[ "value" ],"",ivar["rank"]>0)
-    if ivar["parameter"] and not ivar["value"] is None:
+    if "parameter" in ivar["qualifiers"] and not ivar["value"] is None:
         arg["c_value"] = ivar["value"] 
     lbound_args = []  # additional arguments that we introduce if variable is an array
     count_args      = []

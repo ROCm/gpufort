@@ -25,14 +25,14 @@ def createIndexRecordsFromDeclaration(ttdeclaration):
         varContext["name"]                       = varName
         varContext["f_type"]                     = f_type
         varContext["kind"]                       = kind
-        varContext["bytes_per_element"]            = bpe 
+        varContext["bytes_per_element"]          = bpe 
         varContext["c_type"]                     = convertToCType(f_type,kind,"TODO unknown")
-        varContext["f_interface_type"]             = varContext["f_type"]
-        varContext["f_interface_qualifiers"]       = [ "value" ] # assume pass by value by default
+        varContext["f_interface_type"]           = varContext["f_type"]
+        varContext["f_interface_qualifiers"]     = [ "value" ] # assume pass by value by default
         # TODO pack into single variable
         varContext["qualifiers"]                 = ttdeclaration.getStringQualifiers()
         # ACC/OMP
-        varContext["declare_on_target"]            = False
+        varContext["declare_on_target"]          = False
         # arrays
         varContext["rank"]                       = 0
         dimension_qualifier = find_all(ttdeclaration._qualifiers,TTDimensionQualifier)
@@ -46,20 +46,20 @@ def createIndexRecordsFromDeclaration(ttdeclaration):
             varContext["rank"] = rank
             varContext["unspecified_bounds"] = ttbounds.hasUnspecifiedBounds()
             if varContext["unspecified_bounds"]: # TODO: return a mix of unspecified bounds and specified bounds in the future
-                varContext["lbounds"]                    = [ "{0}_lb{1}".format(varName,i) for i in range(1,rank+1) ]
-                varContext["counts"]                     = [ "{0}_n{1}".format(varName,i) for i in range(1,rank+1 ) ]
+                varContext["lbounds"]                       = [ "{0}_lb{1}".format(varName,i) for i in range(1,rank+1) ]
+                varContext["counts"]                        = [ "{0}_n{1}".format(varName,i) for i in range(1,rank+1 ) ]
                 varContext["index_macro_with_placeholders"] = ttbounds.index_macro_c_str(varName,usePlaceHolders=True)
-                varContext["index_macro"]                 = varContext["index_macro_with_placeholders"]
+                varContext["index_macro"]                   = varContext["index_macro_with_placeholders"]
             else:
-                varContext["lbounds"]                    = ttbounds.specifiedLowerBounds()
-                varContext["counts"]                     = ttbounds.specifiedCounts()
+                varContext["lbounds"]                       = ttbounds.specifiedLowerBounds()
+                varContext["counts"]                        = ttbounds.specifiedCounts()
                 varContext["index_macro_with_placeholders"] = ttbounds.index_macro_c_str(varName,usePlaceHolders=True) 
-                varContext["index_macro"]                 = ttbounds.index_macro_c_str(varName,usePlaceHolders=False)
+                varContext["index_macro"]                   = ttbounds.index_macro_c_str(varName,usePlaceHolders=False)
             varContext["total_count"]   = "*".join(varContext["counts"])
             varContext["total_bytes"]   = None if bpe is None else bpe+"*("+varContext["total_count"]+")"
         # handle parameters
         varContext["value"] = None
-        if ttdeclaration.hasParameter():
+        if "parameter" in varContext["qualifiers"]:
             if ttdeclaredvariable.rhsIsNumber():
                 varContext["value"] = ttdeclaredvariable.rhsCStr()
             else:
@@ -105,7 +105,7 @@ def create_index_search_tag_for_variable(variableExpression):
     if not "(" in variableExpression:
         return variableExpression.lower()
     else:
-        expr        = derived_type_elem
+        expr         = derived_type_elem
         parse_result = expr.parseString(variableExpression.lower())[0]
         def traverse(ttderivedtype):
             result = ttderivedtype._type.name().lower() + "%"

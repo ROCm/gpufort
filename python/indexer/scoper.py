@@ -80,7 +80,6 @@ def _intrnl_resolveDependencies(scope,indexRecord,index):
         :param dict imodule: 
         """ 
         nonlocal index
-        print(imodule)
         for used_module in imodule["used_modules"]:
             used_moduleFound = used_module["name"] in MODULE_IGNORE_LIST
             # include definitions from other modules

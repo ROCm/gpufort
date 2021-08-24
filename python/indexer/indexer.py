@@ -143,9 +143,9 @@ def _intrnl_parseFile(fileStatements,filepath):
             attribute, modifiedVars = \
                 translator.parseAttributes(translator.attributes.parseString(self._inputText)[0])
             for varContext in self._parentNode._data["variables"]:
-                if varContext["name"] in modifiedVars and attribute in varContext:
+                if varContext["name"] in modifiedVars:
                     accessLock.acquire()
-                    varContext[attribute] = True
+                    varContext["qualifiers"].append(attribute)
                     accessLock.release()
             #
             msg = "parsed attributes statement '{}'".format(self._inputText)

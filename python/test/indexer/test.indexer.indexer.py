@@ -9,8 +9,8 @@ import indexer.scoper as scoper
 import utils.logging
 
 log_format = "[%(levelname)s]\tgpufort:%(message)s"
-log_level = "debug2"
-utils.logging.VERBOSE    = False
+log_level             = "debug2"
+utils.logging.VERBOSE = False
 utils.logging.initLogging("log.log",log_format,log_level)
 
 gfortranOptions="-DCUDA"
@@ -77,13 +77,13 @@ class TestIndexer(unittest.TestCase):
         self.assertIsNotNone(n)
         self.assertEqual(n["c_type"],"int")
         self.assertEqual(n["rank"],0)
-        self.assertTrue(n["parameter"])
+        self.assertTrue("parameter" in n["qualifiers"])
         self.assertEqual(n["value"].replace("(","").replace(")",""),"100")
         c = next((var for var in simple["variables"] if var["name"] == "c".lower()),None)
         self.assertIsNotNone(c)
         self.assertEqual(c["c_type"],"float")
         self.assertEqual(c["rank"],2)
-        self.assertTrue(c["device"])
+        self.assertTrue("device" in c["qualifiers"])
         self.assertEqual(c["declare_on_target"],"alloc")
         mytype = next((typ for typ in simple["types"] if typ["name"] == "mytype".lower()),None)
         self.assertIsNotNone(mytype)
@@ -103,7 +103,7 @@ class TestIndexer(unittest.TestCase):
         self.assertIsNotNone(n)
         self.assertEqual(n["c_type"],"int")
         self.assertEqual(n["rank"],0)
-        self.assertTrue(n["parameter"])
+        self.assertTrue("parameter" in n["qualifiers"])
         self.assertEqual(n["value"].replace("(","").replace(")",""),"1000")
         e = next((var for var in nested_subprograms["variables"] if var["name"] == "e".lower()),None)
         self.assertIsNotNone(e)
@@ -113,7 +113,7 @@ class TestIndexer(unittest.TestCase):
         self.assertEqual(e["counts"][1].replace(" ",""),"n-(-n)+1")
         self.assertEqual(e["lbounds"][0],"-n")
         self.assertEqual(e["lbounds"][1],"-n")
-        self.assertFalse(e["device"])
+        self.assertFalse("device" in e["qualifiers"])
         self.assertFalse(e["declare_on_target"])
         mytype = next((typ for typ in nested_subprograms["types"] if typ["name"] == "mytype".lower()),None)
         self.assertIsNotNone(mytype)

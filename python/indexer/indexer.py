@@ -313,14 +313,14 @@ def _intrnl_parseFile(fileStatements,filepath):
         nonlocal currentNode
         logDetection_("use statement")
         if currentNode._kind != "root":
-            usedModule = {}
-            usedModule["name"] = translator.make_f_str(tokens[1])
-            usedModule["only"] = []
+            used_module = {}
+            used_module["name"] = translator.make_f_str(tokens[1])
+            used_module["only"] = []
             for pair in tokens[2]:
                 original = translator.make_f_str(pair[0])
                 renamed = original if pair[1] is None else translator.make_f_str(pair[1])
-                usedModule["only"].append({ "original": original, "renamed": renamed })
-            currentNode._data["used_modules"].append(usedModule) # TODO only include what is necessary
+                used_module["only"].append({ "original": original, "renamed": renamed })
+            currentNode._data["used_modules"].append(used_module) # TODO only include what is necessary
     
     # delayed parsing
     

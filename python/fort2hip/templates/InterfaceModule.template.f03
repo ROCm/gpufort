@@ -6,8 +6,8 @@
 {# *-name:str                                            #}
 {#  -[enums:dict]-[constants:dict]-name: str             #}          
 {#                                -value: str            #}           
-{#  -[interfaces:dict]-fName:str                         #}
-{#                    -cName:str                         #}
+{#  -[interfaces:dict]-f_name:str                         #}
+{#                    -c_name:str                         #}
 {#                    -type:str ; function/subroutine    #}
 {#                    -[argnames:str]                    #}
 {#                    -[args:dict]-type:str              #}
@@ -24,14 +24,12 @@ module {{name}}
 {% endif %}
 {% endfor %}
   end enum
-
 {% endfor %}
 {% endif %}
  
 {% if interfaces is defined and interfaces|length > 0 %}  interface
-
 {% for interface in interfaces %}
-    {{interface.type}} {{interface.fName}}({{interface.argnames | join(",&\n        ")}}) bind(c, name="{{interface.cName}}")
+    {{interface.type}} {{interface.f_name}}({{interface.argnames | join(",&\n        ")}}) bind(c, name="{{interface.c_name}}")
       use iso_c_binding
 {% for module in used %}      use {{module}}
 {% endfor %}
@@ -40,15 +38,11 @@ module {{name}}
       {{arg.type}}{%- if arg.qualifiers|length > 0 -%}, {%- endif -%}{{arg.qualifiers | join(",")}} :: {{arg.name}}
 {% endfor %}
     end {{interface.type}}
-
 {% endfor %}
   end interface{% endif %}
-
-
 {% if routines is defined and routines|length > 0 %}  contains
-
 {% for routine in routines %}
-    {{routine.type}} {{routine.fName}}({{routine.argnames | join(",&\n        ") }}) bind(c, name="{{routine.cName}}")
+    {{routine.type}} {{routine.f_name}}({{routine.argnames | join(",&\n        ") }}) bind(c, name="{{routine.c_name}}")
       use iso_c_binding
 {% for module in used %}      use {{module}}
 {% endfor %}
@@ -58,8 +52,6 @@ module {{name}}
 {% endfor %}
 {{routine.body | indent(6, True)}}
     end {{routine.type}}
-
 {% endfor %}
 {% endif %}
-
 end module {{name}}

@@ -446,10 +446,10 @@ class STDeclaration(STNode):
             argnames = []
         result = ""
         for varName in self._vars:
-             indexVar,discovered = scoper.searchIndexForVariable(\
+             ivar,discovered = scoper.searchIndexForVariable(\
                index,self._parent.tag(),\
                  translator.create_index_search_tag_for_variable(varName))
-             rank           = indexVar["rank"]
+             rank           = ivar["rank"]
              hasDevice      = ["device"] in ivar["qualifiers"]
              hasPinned      = ["pinned"] in ivar["qualifiers"]
              hasAllocatable = ["allocatable"] in ivar["qualifiers"]  
@@ -499,9 +499,9 @@ class STNonZeroCheck(STNode):
         for tokens,start,end in translator.non_zero_check.scanString(result):
             parseResult = tokens[0]
             lhsName     = parseResult.lhsFStr()
-            indexVar,_  = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
+            ivar,_  = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
               translator.create_index_search_tag_for_variable(lhsName))
-            onDevice    = scoper.indexVariableIsOnDevice(indexVar)
+            onDevice    = scoper.indexVariableIsOnDevice(ivar)
             transformed |= onDevice
             if onDevice:
                 subst = parseResult.f_str() # TODO backend specific
@@ -514,9 +514,9 @@ class STAllocated(STNode):
     def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]): # TODO
         def repl(parseResult):
             varName    = parseResult.varName()
-            indexVar,_ = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
+            ivar,_ = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
               translator.create_index_search_tag_for_variable(varName))
-            onDevice    = scoper.indexVariableIsOnDevice(indexVar)
+            onDevice    = scoper.indexVariableIsOnDevice(ivar)
             return (parseResult.f_str(), onDevice) # TODO backend specific
         result, transformed = utils.pyparsingutils.replaceAll(snippet,translator.allocated,repl)
         assert result != None
@@ -533,10 +533,10 @@ class STAllocate(STNode):
             bytesPerElement = []
             arrayQualifiers = []
             for arrayName in parseResult.variableNames():
-                indexVar,_  = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
+                ivar,_  = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
                   translator.create_index_search_tag_for_variable(arrayName))
-                bytesPerElement.append(indexVar["bytes_per_element"])
-                onDevice   = scoper.indexVariableIsOnDevice(indexVar)
+                bytesPerElement.append(ivar["bytes_per_element"])
+                onDevice   = scoper.indexVariableIsOnDevice(ivar)
                 pinned     = ["pinned"] in ivar["qualifiers"]
                 if onDevice: 
                     arrayQualifiers.append("device")
@@ -563,9 +563,9 @@ class STDeallocate(STNode):
             transformed     = False
             arrayQualifiers = []
             for arrayName in parseResult.variableNames():
-                indexVar,_  = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
+                ivar,_  = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
                   translator.create_index_search_tag_for_variable(arrayName))
-                onDevice   = scoper.indexVariableIsOnDevice(indexVar)
+                onDevice   = scoper.indexVariableIsOnDevice(ivar)
                 pinned     = ["pinned"] in ivar["qualifiers"]
                 if onDevice: 
                     arrayQualifiers.append("device")
@@ -661,10 +661,10 @@ class STCudaKernelCall(STNode):
                 maxRank = 0
                 for rvalue in translator.find_all(ttexpr,translator.TTRValue):
                     # TODO lookup the subprogram first 
-                    indexVar, discovered = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
+                    ivar, discovered = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
                        translator.create_index_search_tag_for_variable(rvalue.name()))
                     if discovered:
-                        maxRank = max(maxRank,indexVar["rank"])
+                        maxRank = max(maxRank,ivar["rank"])
                 exprFStr = translator.make_f_str(ttexpr)
                 if maxRank > 0:
                     kernelArgs.append("c_loc("+exprFStr+")")

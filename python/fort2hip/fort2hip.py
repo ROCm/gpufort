@@ -519,10 +519,10 @@ def _intrnl_writeFile(outfilePath,kind,content):
 
 def _intrnl_createIncludesFromUsedModules(indexRecord,index):
     """Create include statement for a module's/subprogram's used modules that are present in the index."""
-    usedModules  = [irecord["name"] for irecord in indexRecord["used_modules"]]
+    used_modules  = [irecord["name"] for irecord in indexRecord["used_modules"]]
     includes     = []
     for iuse in index:
-        if iuse["name"] in usedModules:
+        if iuse["name"] in used_modules:
             includes.append(iuse["name"] + HIP_FILE_EXT)
     return includes
 # API

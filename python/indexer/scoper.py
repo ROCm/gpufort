@@ -74,28 +74,29 @@ def _intrnl_resolveDependencies(scope,indexRecord,index):
 
     utils.logging.logEnterFunction(LOG_PREFIX,"__resolveDependencies")
 
-    def handleUseStatements_(scope,moduleRecord):
+    def handleUseStatements_(scope,imodule):
         """
         recursive function
-        :param dict moduleRecord: 
+        :param dict imodule: 
         """ 
         nonlocal index
-        for usedModule in moduleRecord["used_modules"]:
-            usedModuleFound = usedModule["name"] in MODULE_IGNORE_LIST
+        print(imodule)
+        for used_module in imodule["used_modules"]:
+            used_moduleFound = used_module["name"] in MODULE_IGNORE_LIST
             # include definitions from other modules
             for module in index:
-                if module["name"] == usedModule["name"]:
+                if module["name"] == used_module["name"]:
                     handleUseStatements_(scope,module) # recursivie call
 
-                    usedModuleFound   = True
-                    includeAllEntries = not len(usedModule["only"])
+                    used_moduleFound   = True
+                    includeAllEntries = not len(used_module["only"])
                     if includeAllEntries: # simple include
                         utils.logging.logDebug2(LOG_PREFIX,"__resolveDependencies.handleUseStatements",
-                          "use all definitions from module '{}'".format(moduleRecord["name"]))
+                          "use all definitions from module '{}'".format(imodule["name"]))
                         for entryType in __SCOPE_ENTRY_TYPES:
                             scope[entryType] += module[entryType]
                     else:
-                        for mapping in usedModule["only"]:
+                        for mapping in used_module["only"]:
                             for entryType in __SCOPE_ENTRY_TYPES:
                                 for entry in module[entryType]:
                                     if entry["name"] == mapping["original"]:
@@ -103,12 +104,12 @@ def _intrnl_resolveDependencies(scope,indexRecord,index):
                                           "__resolveDependencies.handleUseStatements",\
                                           "use {} '{}' as '{}' from module '{}'".format(\
                                           entryType[0:-1],mapping["original"],mapping["renamed"],\
-                                          moduleRecord["name"]))
+                                          imodule["name"]))
                                         copiedEntry = copy.deepcopy(entry)
                                         copiedEntry["name"] = mapping["renamed"]
                                         scope[entryType].append(copiedEntry)
-            if not usedModuleFound:
-                msg = "no index record for module '{}' could be found".format(usedModule["name"])
+            if not used_moduleFound:
+                msg = "no index record for module '{}' could be found".format(used_module["name"])
                 if ERROR_HANDLING == "strict":
                     utils.logging.logError(LOG_PREFIX,"__resolveDependencies",msg) 
                     sys.exit(ERR_INDEXER_RESOLVE_DEPENDENCIES_FAILED)
@@ -341,6 +342,6 @@ def searchIndexForSubprogram(index,parentTag,subprogramName):
     utils.logging.logLeaveFunction(LOG_PREFIX,"searchIndexForSubprogram")
     return result
             
-def indexVariableIsOnDevice(indexVar):
+def indexVariableIsOnDevice(ivar):
     return ["device"] in ivar["qualifiers"] or\
-           indexVar["declare_on_target"] in ["alloc","to","from","tofrom"]
+           ivar["declare_on_target"] in ["alloc","to","from","tofrom"]

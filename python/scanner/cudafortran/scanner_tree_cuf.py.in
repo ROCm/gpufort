@@ -6,18 +6,18 @@ class CufBackendBase:
 
 CUF_LOOP_KERNEL_BACKENDS = {} 
 
-def registerCufBackend(name,loop_kernelGeneratorClass,runtimeModuleName):
+def register_cuf_backend(name,loop_kernel_generator_class,runtime_module_name):
     global SUPPORTED_DESTINATION_DIALECTS
     global RUNTIME_MODULE_NAMES
     global CUF_LOOP_KERNEL_BACKENDS
     
     if not name in SUPPORTED_DESTINATION_DIALECTS:
         SUPPORTED_DESTINATION_DIALECTS.append(name)
-    RUNTIME_MODULE_NAMES[name]     = runtimeModuleName
-    CUF_LOOP_KERNEL_BACKENDS[name] = loop_kernelGeneratorClass
+    RUNTIME_MODULE_NAMES[name]     = runtime_module_name
+    CUF_LOOP_KERNEL_BACKENDS[name] = loop_kernel_generator_class
 
-exec(open("{0}/cudafortran/scanner_tree_cuf2omp.py.in".format(scannerDir)).read())
-exec(open("{0}/cudafortran/scanner_tree_cuf2hip.py.in".format(scannerDir)).read())
+exec(open("{0}/cudafortran/scanner_tree_cuf2omp.py.in".format(scanner_dir)).read())
+exec(open("{0}/cudafortran/scanner_tree_cuf2hip.py.in".format(scanner_dir)).read())
 
 class STCufDirective(STDirective):
     """
@@ -26,22 +26,22 @@ class STCufDirective(STDirective):
     
     https://www.openacc.org/sites/default/files/inline-files/OpenCUF.2.7.pdf)
     """
-    def __init__(self,parent,lineno,lines,directiveNo):
-        STDirective.__init__(self,parent,lineno,lines,directiveNo,sentinel="!$cuf")
+    def __init__(self,parent,lineno,lines,directive_no):
+        STDirective.__init__(self,parent,lineno,lines,directive_no,sentinel="!$cuf")
         self._defaultPresentVars = []
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
         assert False, "Currently, there are only CUF parallel directives"
 
 class STCufLoopKernel(STCufDirective,STLoopKernel):
-    def __init__(self,parent,lineno,lines,directiveNo):
-        STCufDirective.__init__(self,parent,lineno,lines,directiveNo)
+    def __init__(self,parent,lineno,lines,directive_no):
+        STCufDirective.__init__(self,parent,lineno,lines,directive_no)
         STLoopKernel.__init__(self,parent,lineno,lines)
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[],destinationDialect=""):
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[],destination_dialect=""):
         """
-        :param destinationDialect: allows to override default if this kernel
+        :param destination_dialect: allows to override default if this kernel
                                    should be translated via another backend.
         """
-        checkedDialect = checkDestinationDialect(\
-            DESTINATION_DIALECT if not len(destinationDialect) else destinationDialect)
-        return CUF_LOOP_KERNEL_BACKENDS[checkedDialect](self).transform(\
-          joinedLines,joinedStatements,statementsFullyCoverLines,indexHints)
+        checked_dialect = check_destination_dialect(\
+            DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
+        return CUF_LOOP_KERNEL_BACKENDS[checked_dialect](self).transform(\
+          joined_lines,joined_statements,statements_fully_cover_lines,index_hints)

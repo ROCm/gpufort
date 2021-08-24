@@ -2,7 +2,7 @@
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 
 # API
-def createIndexRecordsFromDeclaration(ttdeclaration):
+def create_indexRecordsFromDeclaration(ttdeclaration):
     """
     Per declared variable in the declaration, creates
     a context dictionary that can be easily piped
@@ -11,87 +11,87 @@ def createIndexRecordsFromDeclaration(ttdeclaration):
     """
     global LOG_PREFIX
 
-    utils.logging.logEnterFunction(LOG_PREFIX,"createIndexRecordsFromDeclaration")
+    utils.logging.log_enter_function(LOG_PREFIX,"create_indexRecordsFromDeclaration")
     
     context = []
-    hasDimension = ttdeclaration.hasDimension()
+    has_dimension = ttdeclaration.has_dimension()
     for ttdeclaredvariable in ttdeclaration._rhs:
-        varName    = ttdeclaredvariable.name().lower()
-        varContext = {}
+        var_name    = ttdeclaredvariable.name().lower()
+        var_context = {}
         # basic 
         f_type = make_f_str(ttdeclaration._datatype.type())
         kind  = make_f_str(ttdeclaration._datatype.kind())
         bpe   = bytes(f_type,kind,default=None)
-        varContext["name"]                       = varName
-        varContext["f_type"]                     = f_type
-        varContext["kind"]                       = kind
-        varContext["bytes_per_element"]          = bpe 
-        varContext["c_type"]                     = convertToCType(f_type,kind,"TODO unknown")
-        varContext["f_interface_type"]           = varContext["f_type"]
-        varContext["f_interface_qualifiers"]     = [ "value" ] # assume pass by value by default
+        var_context["name"]                       = var_name
+        var_context["f_type"]                     = f_type
+        var_context["kind"]                       = kind
+        var_context["bytes_per_element"]          = bpe 
+        var_context["c_type"]                     = convert_to_c_type(f_type,kind,"TODO unknown")
+        var_context["f_interface_type"]           = var_context["f_type"]
+        var_context["f_interface_qualifiers"]     = [ "value" ] # assume pass by value by default
         # TODO pack into single variable
-        varContext["qualifiers"]                 = ttdeclaration.getStringQualifiers()
+        var_context["qualifiers"]                 = ttdeclaration.get_string_qualifiers()
         # ACC/OMP
-        varContext["declare_on_target"]          = False
+        var_context["declare_on_target"]          = False
         # arrays
-        varContext["rank"]                       = 0
+        var_context["rank"]                       = 0
         dimension_qualifier = find_all(ttdeclaration._qualifiers,TTDimensionQualifier)
-        if ttdeclaredvariable.hasBounds() or len(dimension_qualifier):
-            varContext["f_interface_type"] = "type(c_ptr)"
+        if ttdeclaredvariable.has_bounds() or len(dimension_qualifier):
+            var_context["f_interface_type"] = "type(c_ptr)"
             if len(dimension_qualifier):
                 ttbounds = dimension_qualifier[0]._bounds
             else:
-                ttbounds = ttdeclaredvariable.getBounds()
+                ttbounds = ttdeclaredvariable.get_bounds()
             rank = ttbounds.rank()
-            varContext["rank"] = rank
-            varContext["unspecified_bounds"] = ttbounds.hasUnspecifiedBounds()
-            if varContext["unspecified_bounds"]: # TODO: return a mix of unspecified bounds and specified bounds in the future
-                varContext["lbounds"]                       = [ "{0}_lb{1}".format(varName,i) for i in range(1,rank+1) ]
-                varContext["counts"]                        = [ "{0}_n{1}".format(varName,i) for i in range(1,rank+1 ) ]
-                varContext["index_macro_with_placeholders"] = ttbounds.index_macro_c_str(varName,usePlaceHolders=True)
-                varContext["index_macro"]                   = varContext["index_macro_with_placeholders"]
+            var_context["rank"] = rank
+            var_context["unspecified_bounds"] = ttbounds.has_unspecified_bounds()
+            if var_context["unspecified_bounds"]: # TODO: return a mix of unspecified bounds and specified bounds in the future
+                var_context["lbounds"]                       = [ "{0}_lb{1}".format(var_name,i) for i in range(1,rank+1) ]
+                var_context["counts"]                        = [ "{0}_n{1}".format(var_name,i) for i in range(1,rank+1 ) ]
+                var_context["index_macro_with_placeholders"] = ttbounds.index_macro_c_str(var_name,use_place_holders=True)
+                var_context["index_macro"]                   = var_context["index_macro_with_placeholders"]
             else:
-                varContext["lbounds"]                       = ttbounds.specifiedLowerBounds()
-                varContext["counts"]                        = ttbounds.specifiedCounts()
-                varContext["index_macro_with_placeholders"] = ttbounds.index_macro_c_str(varName,usePlaceHolders=True) 
-                varContext["index_macro"]                   = ttbounds.index_macro_c_str(varName,usePlaceHolders=False)
-            varContext["total_count"]   = "*".join(varContext["counts"])
-            varContext["total_bytes"]   = None if bpe is None else bpe+"*("+varContext["total_count"]+")"
+                var_context["lbounds"]                       = ttbounds.specified_lower_bounds()
+                var_context["counts"]                        = ttbounds.specified_counts()
+                var_context["index_macro_with_placeholders"] = ttbounds.index_macro_c_str(var_name,use_place_holders=True) 
+                var_context["index_macro"]                   = ttbounds.index_macro_c_str(var_name,use_place_holders=False)
+            var_context["total_count"]   = "*".join(var_context["counts"])
+            var_context["total_bytes"]   = None if bpe is None else bpe+"*("+var_context["total_count"]+")"
         # handle parameters
-        varContext["value"] = None
-        if "parameter" in varContext["qualifiers"]:
-            if ttdeclaredvariable.rhsIsNumber():
-                varContext["value"] = ttdeclaredvariable.rhsCStr()
+        var_context["value"] = None
+        if "parameter" in var_context["qualifiers"]:
+            if ttdeclaredvariable.rhs_is_number():
+                var_context["value"] = ttdeclaredvariable.rhs_c_str()
             else:
-                #varContext["value"] = ttdeclaredvariable.rhsCStr()
+                #var_context["value"] = ttdeclaredvariable.rhs_c_str()
                 # TODO 
                 pass
-        context.append(varContext)
+        context.append(var_context)
     
-    utils.logging.logLeaveFunction(LOG_PREFIX,"createIndexRecordsFromDeclaration")
+    utils.logging.log_leave_function(LOG_PREFIX,"create_indexRecordsFromDeclaration")
     
     return context
 
-def changeKind(varContext,kind):
-    f_type = varContext["f_type"]
+def change_kind(var_context,kind):
+    f_type = var_context["f_type"]
     bpe   = bytes(f_type,kind,default=None)
-    varContext["kind"]                 = kind
-    varContext["bytes_per_element"]      = bpe 
-    varContext["c_type"]                = convertToCType(f_type,kind,"TODO unknown")
-    if varContext["rank"] == 0:
-      varContext["f_interface_type"] = varContext["c_type"]
+    var_context["kind"]                 = kind
+    var_context["bytes_per_element"]      = bpe 
+    var_context["c_type"]                = convert_to_c_type(f_type,kind,"TODO unknown")
+    if var_context["rank"] == 0:
+      var_context["f_interface_type"] = var_context["c_type"]
     #
-    varContext["total_bytes"] = None if bpe is None else bpe+"*("+varContext["total_count"]+")"
+    var_context["total_bytes"] = None if bpe is None else bpe+"*("+var_context["total_count"]+")"
 
-def convertArithmeticExpression(fortran_snippet):
+def convert_arithmetic_expression(fortran_snippet):
     return ( matrix_arithmetic_expression | complex_arithmetic_expression | arithmetic_expression ).parseString(fortran_snippet)[0].c_str()
 
-def parseAttributes(ttattributes):
+def parse_attributes(ttattributes):
     attribute    = make_f_str(ttattributes._qualifiers[0]).lower()
-    modifiedVars = [make_f_str(var).lower() for var in ttattributes._rhs]
-    return attribute, modifiedVars 
+    modified_vars = [make_f_str(var).lower() for var in ttattributes._rhs]
+    return attribute, modified_vars 
 
-def create_index_search_tag_for_variable(variableExpression):
+def create_index_search_tag_for_variable(variable_expression):
     """
     Creates tag from variable expressions such as 'A%b(i)%c' that
     can be used to search the index via the scoper module.
@@ -99,14 +99,14 @@ def create_index_search_tag_for_variable(variableExpression):
     All array indexing expressions are stripped away.
     A single identifer 'a' would be translated to the tag 'a'.
 
-    :param str variableExpression: a simple identifier such as 'a' or 'A_d' or a more complicated derived-type member variable expression such as 'a%b%c' or 'A%b(i)%c'.
-    :see: indexer.scoper.searchIndexForVariable
+    :param str variable_expression: a simple identifier such as 'a' or 'A_d' or a more complicated derived-type member variable expression such as 'a%b%c' or 'A%b(i)%c'.
+    :see: indexer.scoper.search_index_for_variable
     """
-    if not "(" in variableExpression:
-        return variableExpression.lower()
+    if not "(" in variable_expression:
+        return variable_expression.lower()
     else:
         expr         = derived_type_elem
-        parse_result = expr.parseString(variableExpression.lower())[0]
+        parse_result = expr.parseString(variable_expression.lower())[0]
         def traverse(ttderivedtype):
             result = ttderivedtype._type.name().lower() + "%"
             if type(ttderivedtype._element) == TTIdentifier or\
@@ -120,7 +120,7 @@ def create_index_search_tag_for_variable(variableExpression):
 # TODO parsing and translation is similar but analysis differs between the different kernel
 # types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)
 # while they are specified with ACC,OMP.
-def parse_loop_kernel(fortran_statements,scope=[],maxRecursions=30):
+def parse_loop_kernel(fortran_statements,scope=[],max_recursions=30):
     """
     Return a csnippet equivalent to the original Fortran code.
     """
@@ -131,7 +131,7 @@ def parse_loop_kernel(fortran_statements,scope=[],maxRecursions=30):
     ttloopkernel.scope = scope
     return ttloopkernel
 
-def parse_procedure_body(fortran_statements,scope=[],result_name="",maxRecursions=10):
+def parse_procedure_body(fortran_statements,scope=[],result_name="",max_recursions=10):
     """
     Parse a function/subroutine body.
     """

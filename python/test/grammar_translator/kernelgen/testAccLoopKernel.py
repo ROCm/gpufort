@@ -182,8 +182,8 @@ translator.LOOP_COLLAPSE_STRATEGY="collapse"
 #print(grammar.accLoopKernel.parseString(test))
 #result = translator.accLoopKernel.parseString(test)[0]
 #print(result.c_str())
-#print(result.problemSize())
-c_snippet, problemSize, kernelLaunchInfo, identifierNames, localLValues, loopVars, reduction =\
+#print(result.problem_size())
+c_snippet, problem_size, kernel_launch_info, identifier_names, localLValues, loop_vars, reduction =\
         translator.parse_loop_kernel(test)
 print(c_snippet)
 

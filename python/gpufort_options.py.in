@@ -7,7 +7,7 @@ INCLUDE_DIRS = [ __GPUFORT_INC_DIR ]
 POST_CLI_ACTIONS = [] 
        # List of actions to run after parsing the command line arguments
        # Note that config is read before parsing other command line arguments.
-       # Register functions with parameters (args,unknownArgs) (see: argparse.parse_known_args
+       # Register functions with parameters (args,unknown_args) (see: argparse.parse_known_args
 
 # logging
 LOG_LEVEL  = "warning"

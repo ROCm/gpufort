@@ -10,7 +10,7 @@ import utils.logging
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
 utils.logging.VERBOSE    = False
-utils.logging.initLogging("log.log",LOG_FORMAT,"warning")
+utils.logging.init_logging("log.log",LOG_FORMAT,"warning")
 
 PROFILING_ENABLE = False
 
@@ -38,10 +38,10 @@ class TestIndexer(unittest.TestCase):
         pass 
     def test_1_full_test(self):
         options = "-DCUDA -DCUDA2"
-        records                   = linemapper.readFile("test1.f90",options)
-        result_lines              = linemapper.renderFile(records,stage="lines")
-        result_raw_statements     = linemapper.renderFile(records,stage="raw_statements")
-        result_statements         = linemapper.renderFile(records,stage="statements")
+        records                   = linemapper.read_file("test1.f90",options)
+        result_lines              = linemapper.render_file(records,stage="lines")
+        result_raw_statements     = linemapper.render_file(records,stage="raw_statements")
+        result_statements         = linemapper.render_file(records,stage="statements")
         testdata_lines            = """
         program main
 
@@ -81,7 +81,7 @@ class TestIndexer(unittest.TestCase):
         """
         #print(result_lines)
         #print(result_statements)
-        #print(result_expandedStatements)
+        #print(result_expanded_statements)
 
         def clean_(text):
             return text.replace(" ","").replace("\t","").replace("\n","").replace("\r","")

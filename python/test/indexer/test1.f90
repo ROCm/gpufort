@@ -9,9 +9,9 @@ program test1
  use complex_types
  implicit none
  
- real                   :: floatScalar
- real(8)                :: doubleScalar
- integer,dimension(:,:) :: intArray2d
+ real                   :: float_scalar
+ real(8)                :: double_scalar
+ integer,dimension(:,:) :: int_array2d
 
  type(mytype) :: t
  

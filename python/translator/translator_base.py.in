@@ -3,8 +3,8 @@
 def bytes(f_type,kind,default=None):
     assert type(f_type) is str
     assert type(kind) is str
-    kindLower = kind.lower()
-    return FORTRAN_TYPE_2_BYTES_MAP.get(f_type.lower(),{ kindLower : default }).get(kindLower, "UNKNOWN")
+    kind_lower = kind.lower()
+    return FORTRAN_TYPE_2_BYTES_MAP.get(f_type.lower(),{ kind_lower : default }).get(kind_lower, "UNKNOWN")
 
 ADDITIONS = "cuf kernel kind amax1 amin1" # TODO
 KEYWORDS = " ".join([CUDA_FORTRAN_KEYWORDS_STR, FORTRAN_INTRINSICS_STR, F08_KEYWORDS_STR, ADDITIONS])
@@ -56,15 +56,15 @@ class TTContainer(TTNode):
             result += make_c_str(child).rstrip()+"\n"
         return result.rstrip()
 
-def find_all_matching(body,filterExpr=lambda x: True,N=-1):
+def find_all_matching(body,filter_expr=lambda x: True,N=-1):
     """
-    Find all nodes in tree of type 'searchedType'.
+    Find all nodes in tree of type 'searched_type'.
     """
     result = []
     def descend_(curr):
         if N > 0 and len(result) > N:
             return
-        if filterExpr(curr):
+        if filter_expr(curr):
             result.append(curr)
         if isinstance(curr,ParseResults) or\
            isinstance(curr,list):
@@ -76,25 +76,25 @@ def find_all_matching(body,filterExpr=lambda x: True,N=-1):
     descend_(body)       
     return result
 
-def find_first_matching(body,filterExpr=lambda x: True):
+def find_first_matching(body,filter_expr=lambda x: True):
     """
     Find first node in tree where the filte returns true.
     """
-    result = find_all_matching(body,filterExpr,N=1)
+    result = find_all_matching(body,filter_expr,N=1)
     if len(result):
         return result[0]
     else:
         return None
 
-def find_all(body,searchedType,N=-1):
+def find_all(body,searched_type,N=-1):
     """
-    Find all nodes in tree of type 'searchedType'.
+    Find all nodes in tree of type 'searched_type'.
     """
     result = []
     def descend(curr):
         if N > 0 and len(result) > N:
             return
-        if type(curr) is searchedType:
+        if type(curr) is searched_type:
             result.append(curr)
         if isinstance(curr,ParseResults) or\
            isinstance(curr,list):
@@ -106,11 +106,11 @@ def find_all(body,searchedType,N=-1):
     descend(body)       
     return result
 
-def find_first(body,searchedType):
+def find_first(body,searched_type):
     """
-    Find first node in tree of type 'searchedType'.
+    Find first node in tree of type 'searched_type'.
     """
-    result = find_all(body,searchedType,N=1)
+    result = find_all(body,searched_type,N=1)
     if len(result):
         return result[0]
     else:
@@ -150,7 +150,7 @@ def make_f_str(obj):
         else:
             raise e
 
-def flattenBody(body):
+def flatten_body(body):
     #TODO: Check if this is the same as make_c_str()
     def descend(statement):
         term = ""
@@ -168,7 +168,7 @@ def flattenBody(body):
            return ""
     return descend(body)       
 
-def convertToCType(f_type,kind,default=None):
+def convert_to_c_type(f_type,kind,default=None):
     """
     :return: An equivalent C datatype for a given Fortran type, e.g. `double` for a `REAL*8`.
     :param f_type: The original Fortran type, e.g. `REAL` for a `REAL*8`.
@@ -179,32 +179,32 @@ def convertToCType(f_type,kind,default=None):
     if kind is None:
         kind = ""
     assert type(kind) is str, "{}, {}".format(kind,type(kind))
-    kindLower = kind.lower()
-    return FORTRAN_2_C_TYPE_MAP.get(f_type.lower(),{ kindLower : default }).get(kindLower, "UNKNOWN")
+    kind_lower = kind.lower()
+    return FORTRAN_2_C_TYPE_MAP.get(f_type.lower(),{ kind_lower : default }).get(kind_lower, "UNKNOWN")
 
-def prepareFortran_snippet(fortran_snippet):
+def prepare_fortran_snippet(fortran_snippet):
     """
     Converts the Fortran snippet to lower case as
     we convert into a case-sensitive C language (preserves case in comments).
     Furthermore, applies a number of hacks that were necessary to get the parser work.
     """
     result = pIgnore.sub("",fortran_snippet)
-    result = pElseIf.sub("else if",result)
-    result = power.transformString(result)
+    result = p_else_if.sub("else if",result)
+    result = power.transform_string(result)
     return result
 
-def postprocessC_snippet(c_snippet):
-    toHip = GPUFORT_CPP_ROUTINES 
-    toHip.update({
+def postprocess_c_snippet(c_snippet):
+    to_hip = GPUFORT_CPP_ROUTINES 
+    to_hip.update({
        "threadidx.x" : "(1+threadIdx.x)",
        "threadidx.y" : "(1+threadIdx.y)",
        "threadidx.z" : "(1+threadIdx.z)",
-       "blockidx.x"  : "(1+blockIdx.x)",
-       "blockidx.y"  : "(1+blockIdx.y)",
-       "blockidx.z"  : "(1+blockIdx.z)",
+       "blockidx.x"  : "(1+block_idx.x)",
+       "blockidx.y"  : "(1+block_idx.y)",
+       "blockidx.z"  : "(1+block_idx.z)",
        "blockdim"    : "blockDim",
        "griddim"     : "gridDim",
-       "warpsize"    : "warpSize",
+       "warpsize"    : "warp_size",
        "syncthreads" : "__syncthreads",
        "atomicadd"  : "atomicAdd",
        "atomicsub"  : "atomicSub",
@@ -219,6 +219,6 @@ def postprocessC_snippet(c_snippet):
        "atomiccas"  : "atomicCas",
        "sign"       : "copysign",
     })
-    for key,subst in toHip.items():
+    for key,subst in to_hip.items():
         c_snippet = re.sub(r"\b"+key+r"\b",subst,c_snippet)
     return c_snippet

@@ -2,17 +2,17 @@
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 pAttributes = re.compile(r"attributes\s*\(\s*\w+\s*(,\s*\w+)?\s*\)\s*", flags=re.IGNORECASE)
 
-def removeTypePrefix(varName):
-    return varName.split("%")[-1]
+def remove_type_prefix(var_name):
+    return var_name.split("%")[-1]
 
-def replaceIgnoreCase(key,subst,text):
+def replace_ignore_case(key,subst,text):
     return re.sub(re.escape(key), subst, text, flags=re.IGNORECASE)
 
-def flattenList(items):
+def flatten_list(items):
     """Yield items from any nested iterable"""
     for x in items:
         if isinstance(x, Iterable) and not isinstance(x, (str, bytes)):
-            for sub_x in flattenList(x):
+            for sub_x in flatten_list(x):
                 yield sub_x
         else:
             yield x
@@ -27,116 +27,116 @@ class Tagged:
         Construct a tag that can be used to search the index.
         """
         result = self.name.lower()
-        def recursiveParentLookup(curr):
+        def recursive_parent_lookup(curr):
             nonlocal result
             if type(curr) != STRoot:
                 result = curr.name.lower() + ":" + result
-                recursiveParentLookup(curr._parent)
-        recursiveParentLookup(self._parent)        
+                recursive_parent_lookup(curr._parent)
+        recursive_parent_lookup(self._parent)        
         return result
 
 class STNode:
-    def __init__(self,parent,firstRecord,firstStatementIndex=0):
+    def __init__(self,parent,first_record,first_statementIndex=0):
         self.name                    = None
         self.kind                    = None
         self._records                = []
-        if firstRecord != None:
-            self._records.append(firstRecord)
-        self._firstStatementIndex    = firstStatementIndex
-        self._lastStatementIndex     = firstStatementIndex # inclusive
+        if first_record != None:
+            self._records.append(first_record)
+        self._first_statementIndex    = first_statementIndex
+        self._lastStatementIndex     = first_statementIndex # inclusive
         self._children               = []
         self._parent                 = parent
         self._ignoreInS2STranslation = False 
-    def __getRecordContent(self,key,firstRecordFirstElem=0,lastRecordLastElem=-1):
+    def __getRecordContent(self,key,first_recordFirstElem=0,last_recordLastElem=-1):
         """Collects entries for the given key from all records associated
         with this node."""
         result = []
         for i,record in enumerate(self._records):
             if i == 0: 
-                result += record[key][firstRecordFirstElem:]
+                result += record[key][first_recordFirstElem:]
             elif i == len(self._records)-1:
-                if lastRecordLastElem == -1:
+                if last_recordLastElem == -1:
                     result += record[key]
                 else:
-                    result += record[key][0:lastRecordLastElem+1]
+                    result += record[key][0:last_recordLastElem+1]
             else:
                 result += record[key]
         return result
-    def addRecord(self,record):
+    def add_record(self,record):
         """Adds a record if it differs from the last record."""
         if not len(self._records) or self._records[-1]["lineno"] < record["lineno"]:
             self._records.append(record)
-    def completeInit(self):
+    def complete_init(self):
         """Complete the initialization
         
         This routine is called after all associated records have
         been added to this node.
         """
         pass
-    def removeComments(self,lines):
+    def remove_comments(self,lines):
         """Remove comments but keep directives."""
         # TODO move somewhere else
         for line in list(lines): # shallow copy
-            strippedLine = line.lstrip("\t ")
-            if strippedLine[0] in ["*","c","C","!"] and not\
-               strippedLine[1] == "$": 
+            stripped_line = line.lstrip("\t ")
+            if stripped_line[0] in ["*","c","C","!"] and not\
+               stripped_line[1] == "$": 
                  lines.remove(line)
-    def removeWhitespaces(self,lines):
+    def remove_whitespaces(self,lines):
         """Remove any whitespace and line continuation characters."""
         for i,line in enumerate(lines):
             lines[i] = line.replace(" ","").replace("\t","").replace("\n","").replace("&","")
     def lines(self):
         return self.__getRecordContent("lines")
-    def statements(self,includeNoneEntries=False):
+    def statements(self,include_none_entries=False):
         """
         Extract the statements associated with this node from the records associated with this node.
-        :param bool includeNoneEntries: Also include entries that are None [default=False].
+        :param bool include_none_entries: Also include entries that are None [default=False].
         :note: None entries might have been introduced by other nodes transforming the same record(s).
         """
         result = self.__getRecordContent("statements",\
-          self._firstStatementIndex,self._lastStatementIndex)
-        if not includeNoneEntries:
+          self._first_statementIndex,self._lastStatementIndex)
+        if not include_none_entries:
             return [stmt.rstrip("\n\t ;") for stmt in result if stmt != None]
-    def minLineno(self):
+    def min_lineno(self):
         """
         :return: Inclusive first line number belonging to this object.
         """
         return self._records[0]["lineno"]
-    def maxLineno(self):
+    def max_lineno(self):
         """
         :return: Inclusive last line number belonging to this object.
         """
-        lastRecord = self._records[-1]
-        return lastRecord["lineno"]+len(lastRecord["lines"])-1
-    def firstLine(self):
+        last_record = self._records[-1]
+        return last_record["lineno"]+len(last_record["lines"])-1
+    def first_line(self):
         """
         :return: First line in first record.
         """
         return self._records[0]["lines"][0]
-    def firstLineIndent(self):
+    def first_lineIndent(self):
         """Indent chars at beginning of first line."""
-        firstLine      = self.firstLine()
-        numIndentChars = len(firstLine) - len(firstLine.lstrip(" \t"))
-        return firstLine[0:numIndentChars]
-    def firstStatement(self):
+        first_line      = self.first_line()
+        num_indent_chars = len(first_line) - len(first_line.lstrip(" \t"))
+        return first_line[0:num_indent_chars]
+    def first_statement(self):
         """
         :return: First line in first record.
         """
         return self._records[0]["statements"][0]
     def append(self,child):
         self._children.append(child)
-    def listOfParents(self):
+    def list_of_parents(self):
         """
         Returns a list that contains all
         parents of a node plus the node itself._
         """
         result = []
-        def recursiveParentLookup(curr):
+        def recursive_parent_lookup(curr):
             if curr != None:
                 result.append(curr)
-                recursiveParentLookup(curr._parent)
+                recursive_parent_lookup(curr._parent)
 
-        recursiveParentLookup(self)        
+        recursive_parent_lookup(self)        
         return result
     def find_all(self,filter=lambda child : True,recursively=False):
         result = []
@@ -153,12 +153,12 @@ class STNode:
             if filter(child):
                 return child
         return None
-    def findLast(self,filter=lambda child: True):
+    def find_last(self,filter=lambda child: True):
         for child in reversed(self._children):
             if filter(child):
                 return child
         return None
-    def extractFirst(self,text,expression):
+    def extract_first(self,text,expression):
         """
         Extract (first) part of the text that contains a given expression.
         :rtype: str
@@ -167,7 +167,7 @@ class STNode:
         for tokens,start,end in expression.scanString(text):
              return text[start:end]
         return ""
-    def extractAll(self,text,expression):
+    def extract_all(self,text,expression):
         """Extract all parts of the text that contain a given pyparsing expression.
         :rtype: list
         :return: All parts of the text that match the pyparsing expression
@@ -176,25 +176,25 @@ class STNode:
         for tokens,start,end in expression.scanString(text):
              result.append(text[start:end])
         return result
-    def addToProlog(self,line):
+    def add_to_prolog(self,line):
         """Add some prolog lines to the first record."""
         if not line in self._records[0]["prolog"]:
             self._records[0]["prolog"].append(line)
-    def addToEpilog(self,line):
+    def add_to_epilog(self,line):
         """Add some epilog lines to the first record."""
         if not line in self._records[-1]["epilog"]:
             self._records[-1]["epilog"].append(line)
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
         """Transforms statements associated with underlying records (hook)
         :param line: An excerpt from a Fortran file, possibly multiple lines
         :type line: str
         :return: If the text was changed at all
         :rtype: bool
         """
-        if statementsFullyCoverLines:
-            return joinedLines, False
+        if statements_fully_cover_lines:
+            return joined_lines, False
         else:
-            return joinedStatements, False
+            return joined_statements, False
     def __modifyRecords(self,substitution):
         """
         Replaces first statement associated with node in first associated record by 'subst' argument.
@@ -208,34 +208,34 @@ class STNode:
                if multiple statements per line are present and other nodes modify those, removing elements from the list
                of statements might mess with the indexing.
         """
-        firstRecordFirstElem = self._firstStatementIndex
-        lastRecordLastElem   = self._lastStatementIndex
+        first_recordFirstElem = self._first_statementIndex
+        last_recordLastElem   = self._lastStatementIndex
         # write subst into first record first statement
         self._records[0]["modified"]                         = True
-        self._records[0]["statements"][firstRecordFirstElem] = substitution
+        self._records[0]["statements"][first_recordFirstElem] = substitution
         assert len(self._records), "self._records should not be empty"
-        lastRecordUbound = lastRecordLastElem
-        if lastRecordUbound != -1:
-            lastRecordUbound += 1
-        def assignNone_(statements,lbound=0,ubound=-1):
+        last_recordUbound = last_recordLastElem
+        if last_recordUbound != -1:
+            last_recordUbound += 1
+        def assign_none_(statements,lbound=0,ubound=-1):
             if ubound == -1:
                 ubound = len(statements)
             for i in range(lbound,ubound):
                 statements[i] = None
         if len(self._records) == 1:
-            assignNone_(self._records[0]["statements"],firstRecordFirstElem+1,lastRecordUbound)
+            assign_none_(self._records[0]["statements"],first_recordFirstElem+1,last_recordUbound)
         else:
             self._records[-1]["modified"] = True
-            assignNone_(self._records[0]["statements"],firstRecordFirstElem+1)
-            assignNone_(self._records[-1]["statements"],0,lastRecordUbound)
+            assign_none_(self._records[0]["statements"],first_recordFirstElem+1)
+            assign_none_(self._records[-1]["statements"],0,last_recordUbound)
             for record in self._records[1:-1]: # upper bound exclusive
                 record["modified"] = True
-                assignNone_(record["statements"])
-    def transformStatements(self,indexHints=[]):
+                assign_none_(record["statements"])
+    def transform_statements(self,index_hints=[]):
         """
         Replaces original statements by generated code. Modifies the 'statements' 
         entries of the associated records.
-        :param list indexHints: TBA
+        :param list index_hints: TBA
         :note: When multiple records contain the expression associated with this note,
                the transformed code is written into the first associated statement in 
                the first record and the remaining associated statements in the first
@@ -246,16 +246,16 @@ class STNode:
         last in the record/line and that this statement is only modified once.
         """
         if not self._ignoreInS2STranslation:
-            haveFirstInFirstRecord    = self._firstStatementIndex == 0
-            haveLastInLastRecord      = self._lastStatementIndex  == -1 or\
+            have_first_in_first_record    = self._first_statementIndex == 0
+            have_last_in_last_record      = self._lastStatementIndex  == -1 or\
                                         self._lastStatementIndex  == len(self._records[-1]["statements"])-1
-            statementsFullyCoverLines = haveFirstInFirstRecord and haveLastInLastRecord
+            statements_fully_cover_lines = have_first_in_first_record and have_last_in_last_record
         
-            joinedLines                = "".join(self.lines())
-            joinedStatements           = "\n".join(self.statements())
-            transformedCode, modified  = self.transform(joinedLines,joinedStatements,statementsFullyCoverLines,indexHints)
+            joined_lines                = "".join(self.lines())
+            joined_statements           = "\n".join(self.statements())
+            transformed_code, modified  = self.transform(joined_lines,joined_statements,statements_fully_cover_lines,index_hints)
             if modified:
-                self.__modifyRecords(transformedCode)
+                self.__modifyRecords(transformed_code)
 
 class STEndOrReturn(STNode):
     pass
@@ -265,69 +265,69 @@ class STRoot(STNode):
         STNode.__init__(self,None,None,-1)
 
 class STModule(STNode,Tagged):
-    def __init__(self,name,parent,firstRecord,firstRecordFirstStatement):
-        STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
+    def __init__(self,name,parent,first_record,first_recordFirstStatement):
+        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
         self.name = name.lower()
         self.kind = "module"
 
 class STProgram(STNode,Tagged):
-    def __init__(self,name,parent,firstRecord,firstRecordFirstStatement):
-        STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
+    def __init__(self,name,parent,first_record,first_recordFirstStatement):
+        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
         self.name = name.lower()
         self.kind = "program"
 
 class STUseStatement(STNode):
-    def __init__(self,parent,firstRecord,firstRecordFirstStatement):
-        STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
+    def __init__(self,parent,first_record,first_recordFirstStatement):
+        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
         # TODO clean
-        indent  = self.firstLineIndent() 
-        snippet = joinedStatements
-        useCuda = False
+        indent  = self.first_lineIndent() 
+        snippet = joined_statements
+        use_cuda = False
         for lib in HOST_MODULES:
-            libLower = lib.lower()
-            if libLower in snippet.lower():
-                useCuda = True
-                if libLower == "cudafor":
+            lib_lower = lib.lower()
+            if lib_lower in snippet.lower():
+                use_cuda = True
+                if lib_lower == "cudafor":
                     snippet = re.sub(r"\bcudafor\b",HIP_MODULE_NAME,snippet,re.IGNORECASE)
                     snippet = snippet.rstrip("\n")+"\n" + "{0}use hipfort_check".format(indent) 
                 snippet = re.sub(r"\bcu(\w+)\b",HIP_MATH_MODULE_PREFIX+r"hip\1",snippet,re.IGNORECASE)
-        return snippet, useCuda
+        return snippet, use_cuda
 
 class STPlaceHolder(STNode):
-    def __init__(self,parent,firstRecord,firstRecordFirstStatement):
-        STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
+    def __init__(self,parent,first_record,first_recordFirstStatement):
+        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
         self.name = None
 
 class STProcedure(STNode,Tagged):
-    def __init__(self,name,kind,parent,firstRecord,firstRecordFirstStatement,index):
-        STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
+    def __init__(self,name,kind,parent,first_record,first_recordFirstStatement,index):
+        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
         self.name = name
         self.kind = kind
         self.code = []
         # check attributes
-        self.indexRecord, _ = scoper.searchIndexForSubprogram(index,self._parent.tag(),name)
-    def __mustBeAvailableOnHost(self):
-        return not len(self.indexRecord["attributes"]) or\
-               "host" in self.indexRecord["attributes"]
-    def __attributesPresent(self):
-        return len(self.indexRecord["attributes"])
-    def completeInit(self):
+        self.index_record, _ = scoper.search_index_for_subprogram(index,self._parent.tag(),name)
+    def __must_be_available_on_host(self):
+        return not len(self.index_record["attributes"]) or\
+               "host" in self.index_record["attributes"]
+    def __attributes_present(self):
+        return len(self.index_record["attributes"])
+    def complete_init(self):
         # exclude begin/end statement of procedure
         self.code = self.statements()[1:-1] # implies copy
-    def hasAttribute(self,attribute):
-        return attribute in self.indexRecord["attributes"]
-    def isKernelSubroutine(self):
-        return self.hasAttribute("global")
-    def mustBeAvailableOnDevice(self):
-        return self.hasAttribute("device") or\
-               self.hasAttribute("global")
-    def keepRecording(self):
+    def has_attribute(self,attribute):
+        return attribute in self.index_record["attributes"]
+    def is_kernel_subroutine(self):
+        return self.has_attribute("global")
+    def must_be_available_on_device(self):
+        return self.has_attribute("device") or\
+               self.has_attribute("global")
+    def keep_recording(self):
         """
         No recording if the function needs to be kept only on the host.
         """
-        return self.mustBeAvailableOnDevice()
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,index=[]):
+        return self.must_be_available_on_device()
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[]):
         """
         Treats CUF and OpenACC subroutines/functions that carry CUF-specific attributes
         or require a device version as specified in a directive.
@@ -336,87 +336,87 @@ class STProcedure(STNode,Tagged):
         when encountering a CUF device procedure that
         needs to be kept on the host too.
         """
-        attributesPresent       = self.__attributesPresent()
-        mustBeAvailableOnDevice = self.mustBeAvailableOnDevice()
-        mustBeAvailableOnHost   = self.__mustBeAvailableOnHost()
+        attributes_present       = self.__attributes_present()
+        must_be_available_on_device = self.must_be_available_on_device()
+        must_be_available_on_host   = self.__must_be_available_on_host()
 
-        original = joinedLines
-        if attributesPresent: # CUF case
-            if mustBeAvailableOnHost:
+        original = joined_lines
+        if attributes_present: # CUF case
+            if must_be_available_on_host:
                 return pAttributes.sub("", original), True
-            elif mustBeAvailableOnDevice: # and not mustBeAvailableOnHost
-                indent = self.firstLineIndent()
+            elif must_be_available_on_device: # and not must_be_available_on_host
+                indent = self.first_lineIndent()
                 return "{0}! extracted to HIP C++ file".format(indent), True
         else: 
             return original, False
 
 class STDirective(STNode):
-    def __init__(self,parent,firstRecord,firstRecordFirstStatement,directiveNo,sentinel="!$cuf"):
-        STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
+    def __init__(self,parent,first_record,first_recordFirstStatement,directive_no,sentinel="!$cuf"):
+        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
         self._sentinel        = sentinel
-        self._directiveNo     = directiveNo
+        self._directive_no     = directive_no
         self._firstDirective  = self._records[0]["statements"][0]
-    def singleLineStatement(self):
+    def single_line_statement(self):
         """
         Express the statement as lower case single-line statement
         """
         return self._firstDirective
 
 class STLoopKernel(STNode):
-    def __init__(self,parent,firstRecord,firstRecordFirstStatement):
-        STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
-        self.gridFStr             = None
-        self.blockFStr            = None
-        self.sharedMemFStr        = "0" # set from extraction routine
-        self.streamFStr           = "c_null_ptr" # set from extraction routine
-        self.kernelArgNames       = [] # set from extraction routine
+    def __init__(self,parent,first_record,first_recordFirstStatement):
+        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+        self.grid_f_str             = None
+        self.block_f_str            = None
+        self.shared_memFStr        = "0" # set from extraction routine
+        self.stream_f_str           = "c_null_ptr" # set from extraction routine
+        self.kernel_argNames       = [] # set from extraction routine
         self.code                 = []
-        self._doLoopCtrMemorised  = -1
+        self._do_loop_ctrMemorised  = -1
     def __hash(self):
         """Compute hash code for this kernel. Must be done before any transformations are performed."""
         statements    = list(self.code) # copy
-        self.removeComments(statements)
-        self.removeWhitespaces(statements)
+        self.remove_comments(statements)
+        self.remove_whitespaces(statements)
         snippet       = "".join(statements)
         return hashlib.md5(snippet.encode()).hexdigest()[0:6]
-    def completeInit(self):
+    def complete_init(self):
         self.code = self.statements()
-    def kernelName(self):
+    def kernel_name(self):
         """Derive a name for the kernel"""
-        return LOOP_KERNEL_NAME_TEMPLATE.format(parent=self._parent.name.lower(),lineno=self.minLineno(),hash=self.__hash())
-    def kernelLauncherName(self):
-        return "launch_{}".format(self.kernelName())
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
-        indent = self.firstLineIndent()
+        return LOOP_KERNEL_NAME_TEMPLATE.format(parent=self._parent.name.lower(),lineno=self.min_lineno(),hash=self.__hash())
+    def kernel_launcher_name(self):
+        return "launch_{}".format(self.kernel_name())
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
+        indent = self.first_lineIndent()
         try:
-            streamAsInt = int(self.streamFStr)
-            stream = "c_null_ptr" if streamAsInt < 1 else self.streamFStr
+            stream_as_int = int(self.stream_f_str)
+            stream = "c_null_ptr" if stream_as_int < 1 else self.stream_f_str
         except:
-            stream = self.streamFStr
-        if self.gridFStr == None or self.blockFStr == None or LOOP_KERNEL_DEFAULT_LAUNCHER == "cpu": # use auto or cpu launcher 
+            stream = self.stream_f_str
+        if self.grid_f_str == None or self.block_f_str == None or LOOP_KERNEL_DEFAULT_LAUNCHER == "cpu": # use auto or cpu launcher 
             result="{indent}! extracted to HIP C++ file\n{indent}call {0}_{launcher}({1},{2},{3})".format(\
-              self.kernelLauncherName(),self.sharedMemFStr,stream,\
-                ",".join(self.kernelArgNames),indent=indent,launcher=LOOP_KERNEL_DEFAULT_LAUNCHER)
+              self.kernel_launcher_name(),self.shared_memFStr,stream,\
+                ",".join(self.kernel_argNames),indent=indent,launcher=LOOP_KERNEL_DEFAULT_LAUNCHER)
         else:
             result="{indent}! extracted to HIP C++ file\n{indent}call {0}({1},{2},{3},{4},{5})".format(\
-              self.kernelLauncherName(),self.gridFStr,self.blockFStr,self.sharedMemFStr,stream,\
-                ",".join(self.kernelArgNames),indent=indent)
+              self.kernel_launcher_name(),self.grid_f_str,self.block_f_str,self.shared_memFStr,stream,\
+                ",".join(self.kernel_argNames),indent=indent)
         return result, True
 
 class STDeclaration(STNode):
     """
     Works with Fortran declarations such as
     ```Fortran
-    Complex(DP), allocatable, device :: devArray(:,:)
+    Complex(DP), allocatable, device :: dev_array(:,:)
     ```
     """
-    def __init__(self,parent,firstRecord,firstRecordFirstStatement):
-        STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
-        self._ttdeclaration   = translator.fortran_declaration.parseString(self.firstStatement())[0]
-        self._vars            = [name.lower() for name in self._ttdeclaration.variableNames()]
-    def createCodegenContext(self):
-        return translator.createIndexRecordsFromDeclaration(self._ttdeclaration)
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
+    def __init__(self,parent,first_record,first_recordFirstStatement):
+        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+        self._ttdeclaration   = translator.fortran_declaration.parseString(self.first_statement())[0]
+        self._vars            = [name.lower() for name in self._ttdeclaration.variable_names()]
+    def create_codegen_context(self):
+        return translator.create_indexRecordsFromDeclaration(self._ttdeclaration)
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
         """
         if device and allocatable, remove device, add pointer
         if device and fixed size array, remove device, add pointer, replace fixed bounds by other bounds
@@ -427,55 +427,55 @@ class STDeclaration(STNode):
            find first code line and add allocation to preamble if no dummy argument -> double pass
         if integer with stream kind, 
         """
-        if len(indexHints):
-            index = indexHints
+        if len(index_hints):
+            index = index_hints
         else:
             index = copy.copy(scoper.EMPTY)
-            index["variables"] = self.createCodegenContext()
-        originalDatatype          = translator.make_f_str(self._ttdeclaration._datatype)
-        originalQualifiers        = [translator.make_f_str(q).lower() for q in self._ttdeclaration._qualifiers]
-        unchangedVariables        = []  
-        newDevicePointerVariables = []
-        newHostPointerVariables   = []
+            index["variables"] = self.create_codegen_context()
+        original_datatype          = translator.make_f_str(self._ttdeclaration._datatype)
+        original_qualifiers        = [translator.make_f_str(q).lower() for q in self._ttdeclaration._qualifiers]
+        unchanged_variables        = []  
+        new_device_pointer_variables = []
+        new_host_pointer_variables   = []
         
-        indent = self.firstLineIndent()
+        indent = self.first_lineIndent()
         # argument names if declared in procedure
         if isinstance(self._parent, STProcedure):
-            argnames = list(self._parent.indexRecord["dummy_args"])
+            argnames = list(self._parent.index_record["dummy_args"])
         else:
             argnames = []
         result = ""
-        for varName in self._vars:
-             ivar,discovered = scoper.searchIndexForVariable(\
+        for var_name in self._vars:
+             ivar,discovered = scoper.search_index_for_variable(\
                index,self._parent.tag(),\
-                 translator.create_index_search_tag_for_variable(varName))
+                 translator.create_index_search_tag_for_variable(var_name))
              rank           = ivar["rank"]
-             hasDevice      = ["device"] in ivar["qualifiers"]
-             hasPinned      = ["pinned"] in ivar["qualifiers"]
-             hasAllocatable = ["allocatable"] in ivar["qualifiers"]  
+             has_device      = ["device"] in ivar["qualifiers"]
+             has_pinned      = ["pinned"] in ivar["qualifiers"]
+             has_allocatable = ["allocatable"] in ivar["qualifiers"]  
              # clean qualifiers
-             newQualifiers = []
-             for q in originalQualifiers:
+             new_qualifiers = []
+             for q in original_qualifiers:
                 if not q in ["target","pinned","device","allocatable"] and not q.startswith("dimension"):
-                    newQualifiers.append(q)
-             if varName in argnames: 
-                 newQualifiers.append("target")
+                    new_qualifiers.append(q)
+             if var_name in argnames: 
+                 new_qualifiers.append("target")
              else:
-                 newQualifiers.append("pointer")
+                 new_qualifiers.append("pointer")
              if rank > 0:
-                 newQualifiers.append("dimension(:"+",:"*(rank-1)+")")
-             if hasDevice and rank > 0:
-                 newDevicePointerVariables.append(varName)
-                 result += "\n" + indent + originalDatatype + "," + ",".join(newQualifiers) + " :: " + varName
-             elif hasPinned:
-                 newHostPointerVariables.append(varName)
-                 result += "\n" + indent + originalDatatype + "," + ",".join(newQualifiers) + " :: " + varName
+                 new_qualifiers.append("dimension(:"+",:"*(rank-1)+")")
+             if has_device and rank > 0:
+                 new_device_pointer_variables.append(var_name)
+                 result += "\n" + indent + original_datatype + "," + ",".join(new_qualifiers) + " :: " + var_name
+             elif has_pinned:
+                 new_host_pointer_variables.append(var_name)
+                 result += "\n" + indent + original_datatype + "," + ",".join(new_qualifiers) + " :: " + var_name
 
         # TODO handle side effects if no allocatable present
-        if len(newDevicePointerVariables) + len(newHostPointerVariables) < len(self._ttdeclaration._rhs): 
-            result = indent + self._ttdeclaration.f_str(extraIgnoreList=newDevicePointerVariables+newHostPointerVariables) +\
+        if len(new_device_pointer_variables) + len(new_host_pointer_variables) < len(self._ttdeclaration._rhs): 
+            result = indent + self._ttdeclaration.f_str(extra_ignore_list=new_device_pointer_variables+new_host_pointer_variables) +\
                      result
-        if len(newDevicePointerVariables) or len(newHostPointerVariables):
+        if len(new_device_pointer_variables) or len(new_host_pointer_variables):
             return result.lstrip("\n"), True
         else:
             return "", False
@@ -485,165 +485,165 @@ class STAttributes(STNode):
     CUDA Fortran specific intrinsic that needs to be removed/commented out
     in any case.
     """
-    def __init__(self,parent,firstRecord,firstRecordFirstStatement):
-        STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]): # TODO
+    def __init__(self,parent,first_record,first_recordFirstStatement):
+        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]): # TODO
         return "", True
 
 class STNonZeroCheck(STNode):
-    def __init__(self,parent,firstRecord,firstRecordFirstStatement):
-        STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]): # TODO
+    def __init__(self,parent,first_record,first_recordFirstStatement):
+        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]): # TODO
         result = snippet
         transformed = False
         for tokens,start,end in translator.non_zero_check.scanString(result):
-            parseResult = tokens[0]
-            lhsName     = parseResult.lhsFStr()
-            ivar,_  = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
-              translator.create_index_search_tag_for_variable(lhsName))
-            onDevice    = scoper.indexVariableIsOnDevice(ivar)
-            transformed |= onDevice
-            if onDevice:
-                subst = parseResult.f_str() # TODO backend specific
+            parse_result = tokens[0]
+            lhs_name     = parse_result.lhs_f_str()
+            ivar,_  = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
+              translator.create_index_search_tag_for_variable(lhs_name))
+            on_device    = scoper.index_variable_is_on_device(ivar)
+            transformed |= on_device
+            if on_device:
+                subst = parse_result.f_str() # TODO backend specific
                 result = result.replace(result[start:end],subst)
         return result, transformed
 
 class STAllocated(STNode):
-    def __init__(self,parent,firstRecord,firstRecordFirstStatement):
-        STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]): # TODO
-        def repl(parseResult):
-            varName    = parseResult.varName()
-            ivar,_ = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
-              translator.create_index_search_tag_for_variable(varName))
-            onDevice    = scoper.indexVariableIsOnDevice(ivar)
-            return (parseResult.f_str(), onDevice) # TODO backend specific
-        result, transformed = utils.pyparsingutils.replaceAll(snippet,translator.allocated,repl)
+    def __init__(self,parent,first_record,first_recordFirstStatement):
+        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]): # TODO
+        def repl(parse_result):
+            var_name    = parse_result.var_name()
+            ivar,_ = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
+              translator.create_index_search_tag_for_variable(var_name))
+            on_device    = scoper.index_variable_is_on_device(ivar)
+            return (parse_result.f_str(), on_device) # TODO backend specific
+        result, transformed = utils.pyparsingutils.replace_all(snippet,translator.allocated,repl)
         assert result != None
         return result, transformed
 
 class STAllocate(STNode):
-    def __init__(self,parent,firstRecord,firstRecordFirstStatement):
-        STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]): # TODO
-        indent = self.firstLineIndent()
-        def repl(parseResult):
+    def __init__(self,parent,first_record,first_recordFirstStatement):
+        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]): # TODO
+        indent = self.first_lineIndent()
+        def repl(parse_result):
             nonlocal indent
             transformed     = False
-            bytesPerElement = []
-            arrayQualifiers = []
-            for arrayName in parseResult.variableNames():
-                ivar,_  = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
-                  translator.create_index_search_tag_for_variable(arrayName))
-                bytesPerElement.append(ivar["bytes_per_element"])
-                onDevice   = scoper.indexVariableIsOnDevice(ivar)
+            bytes_per_element = []
+            array_qualifiers = []
+            for array_name in parse_result.variable_names():
+                ivar,_  = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
+                  translator.create_index_search_tag_for_variable(array_name))
+                bytes_per_element.append(ivar["bytes_per_element"])
+                on_device   = scoper.index_variable_is_on_device(ivar)
                 pinned     = ["pinned"] in ivar["qualifiers"]
-                if onDevice: 
-                    arrayQualifiers.append("device")
+                if on_device: 
+                    array_qualifiers.append("device")
                 elif pinned: 
-                    arrayQualifiers.append("pinned")
+                    array_qualifiers.append("pinned")
                 else:
-                    arrayQualifiers.append(None)
-                transformed |= onDevice | pinned
-            subst = parseResult.hipFStr(bytesPerElement,arrayQualifiers,indent=indent).lstrip(" ")
+                    array_qualifiers.append(None)
+                transformed |= on_device | pinned
+            subst = parse_result.hip_f_str(bytes_per_element,array_qualifiers,indent=indent).lstrip(" ")
             return (subst, transformed)
-        return utils.pyparsingutils.replaceAll(joinedStatements,translator.allocate,repl)
+        return utils.pyparsingutils.replace_all(joined_statements,translator.allocate,repl)
              
 class STDeallocate(STNode):
-    def __init__(self,parent,firstRecord,firstRecordFirstStatement):
-        STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]): # TODO
+    def __init__(self,parent,first_record,first_recordFirstStatement):
+        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]): # TODO
         """
-        :note: `wrapInIfDef` can be deactivated if a higher level function
+        :note: `wrap_in_if_def` can be deactivated if a higher level function
         embeds the outcome already in an `ifdef`.
         """
-        indent = self.firstLineIndent()
-        def repl(parseResult):
+        indent = self.first_lineIndent()
+        def repl(parse_result):
             nonlocal indent
             transformed     = False
-            arrayQualifiers = []
-            for arrayName in parseResult.variableNames():
-                ivar,_  = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
-                  translator.create_index_search_tag_for_variable(arrayName))
-                onDevice   = scoper.indexVariableIsOnDevice(ivar)
+            array_qualifiers = []
+            for array_name in parse_result.variable_names():
+                ivar,_  = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
+                  translator.create_index_search_tag_for_variable(array_name))
+                on_device   = scoper.index_variable_is_on_device(ivar)
                 pinned     = ["pinned"] in ivar["qualifiers"]
-                if onDevice: 
-                    arrayQualifiers.append("device")
+                if on_device: 
+                    array_qualifiers.append("device")
                 elif pinned: 
-                    arrayQualifiers.append("pinned")
+                    array_qualifiers.append("pinned")
                 else:
-                    arrayQualifiers.append(None)
-                transformed |= onDevice | pinned
-            subst = parseResult.hipFStr(arrayQualifiers,indent=indent).lstrip(" ")
+                    array_qualifiers.append(None)
+                transformed |= on_device | pinned
+            subst = parse_result.hip_f_str(array_qualifiers,indent=indent).lstrip(" ")
             return (subst, transformed)
-        return utils.pyparsingutils.replaceAll(joinedStatements,translator.deallocate,repl)
+        return utils.pyparsingutils.replace_all(joined_statements,translator.deallocate,repl)
          
 class STMemcpy(STNode):
-    def __init__(self,parent,firstRecord,firstRecordFirstStatement):
-        STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]): # TODO
-        def replMemcpy(parseResult):
-            destName = parseResult.destNameFStr()
-            srcName  = parseResult.srcNameFStr()
-            destIndexedVar,_ = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
-              translator.create_index_search_tag_for_variable(destName))
-            srcIndexedVar,_  = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
-              translator.create_index_search_tag_for_variable(srcName))
-            destOnDevice = scoper.indexVariableIsOnDevice(destIndexedVar)
-            srcOnDevice  = scoper.indexVariableIsOnDevice(srcIndexedVar)
-            bytesPerElement = destIndexedVar["bytes_per_element"]
-            if destOnDevice or srcOnDevice:
-                subst = parseResult.hipFStr(destOnDevice,srcOnDevice)
+    def __init__(self,parent,first_record,first_recordFirstStatement):
+        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]): # TODO
+        def repl_memcpy(parse_result):
+            dest_name = parse_result.dest_nameFStr()
+            src_name  = parse_result.src_nameFStr()
+            dest_indexed_var,_ = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
+              translator.create_index_search_tag_for_variable(dest_name))
+            src_indexed_var,_  = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
+              translator.create_index_search_tag_for_variable(src_name))
+            dest_on_device = scoper.index_variable_is_on_device(dest_indexed_var)
+            src_on_device  = scoper.index_variable_is_on_device(src_indexed_var)
+            bytes_per_element = dest_indexed_var["bytes_per_element"]
+            if dest_on_device or src_on_device:
+                subst = parse_result.hip_f_str(dest_on_device,src_on_device)
                 return (subst,True)
             else:
                 return ("",False) # no transformation; will not be considered
-        return utils.pyparsingutils.replaceAll(joinedStatements,translator.memcpy,replMemcpy)
+        return utils.pyparsingutils.replace_all(joined_statements,translator.memcpy,repl_memcpy)
 
 class STCudaLibCall(STNode):
-    def __init__(self,parent,firstRecord,firstRecordFirstStatement):
-        STNode.__init__(self,parent,firstRecord,firstRecordFirstStatement)
+    def __init__(self,parent,first_record,first_recordFirstStatement):
+        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
         self._cudaApi = ""
-        self._hasCublas = False
-    def hasCublas(self):
+        self._has_cublas = False
+    def has_cublas(self):
         """
         :return: Scanned code lines contain a cublas call.
         :rtype: bool
         """
-        return self._hasCublas
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
+        return self._has_cublas
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
         global CUBLAS_VERSION 
         global KEEP_CUDA_LIB_NAMES
-        snippet     = joinedStatements
+        snippet     = joined_statements
         oldf_snippet = snippet
-        indent      = self.firstLineIndent()
+        indent      = self.first_lineIndent()
         transformed = False
         if not KEEP_CUDA_LIB_NAMES:
-            def replMemcpy(parseResult):
-                destName = parseResult.destNameFStr()
-                srcName  = parseResult.srcNameFStr()
-                destIndexedVar,_ = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
-                  translator.create_index_search_tag_for_variable(destName))
-                srcIndexedVar ,_ = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
-                  translator.create_index_search_tag_for_variable(srcName))
-                destOnDevice = scoper.indexVariableIsOnDevice(destIndexedVar)
-                srcOnDevice  = scoper.indexVariableIsOnDevice(srcIndexedVar)
-                subst = parseResult.hipFStr(destOnDevice,srcOnDevice)
+            def repl_memcpy(parse_result):
+                dest_name = parse_result.dest_nameFStr()
+                src_name  = parse_result.src_nameFStr()
+                dest_indexed_var,_ = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
+                  translator.create_index_search_tag_for_variable(dest_name))
+                src_indexed_var ,_ = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
+                  translator.create_index_search_tag_for_variable(src_name))
+                dest_on_device = scoper.index_variable_is_on_device(dest_indexed_var)
+                src_on_device  = scoper.index_variable_is_on_device(src_indexed_var)
+                subst = parse_result.hip_f_str(dest_on_device,src_on_device)
                 return (subst, True)
-            snippet,_ = utils.pyparsingutils.replaceAll(snippet,translator.cuf_cudamemcpyVariant,replMemcpy)
-        def replCublas(parseResult):
-            subst = parseResult.f_str(indent)
+            snippet,_ = utils.pyparsingutils.replace_all(snippet,translator.cuf_cudamemcpy_variant,repl_memcpy)
+        def repl_cublas(parse_result):
+            subst = parse_result.f_str(indent)
             return (subst, True)
-        snippet,haveCublas = utils.pyparsingutils.replaceAll(snippet,translator.cuf_cublas_call,replCublas)
-        if haveCublas:
-            self._hasCublas = True
+        snippet,have_cublas = utils.pyparsingutils.replace_all(snippet,translator.cuf_cublas_call,repl_cublas)
+        if have_cublas:
+            self._has_cublas = True
         for elem in CUDA_RUNTIME_ENUMS:
-             snippet = replaceIgnoreCase(elem,elem.replace("cuda","hip").replace("CUDA","HIP"),snippet)
+             snippet = replace_ignore_case(elem,elem.replace("cuda","hip").replace("CUDA","HIP"),snippet)
         for elem in CUDA_LIB_ENUMS:
-             snippet = replaceIgnoreCase(elem,elem.replace("cu","hip").replace("CU","HIP"),snippet)
+             snippet = replace_ignore_case(elem,elem.replace("cu","hip").replace("CU","HIP"),snippet)
         for elem in ALL_HOST_ROUTINES: # runtime routines
-             snippet = replaceIgnoreCase(elem,elem.replace("cuda","hip"),snippet)
+             snippet = replace_ignore_case(elem,elem.replace("cuda","hip"),snippet)
         for elem in CUDA_MATH_LIB_FUNCTIONS:
-             snippet = replaceIgnoreCase(elem,elem.replace("cu","hip"),snippet)
+             snippet = replace_ignore_case(elem,elem.replace("cu","hip"),snippet)
         transformed = snippet.lower() != oldf_snippet 
         return snippet, transformed
 
@@ -651,37 +651,37 @@ class STCudaKernelCall(STNode):
     """TODO(gpufort): Fix
     Translates a CUDA kernel call to a call to a subroutine interface.
     """
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
-        snippet = joinedStatements
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
+        snippet = joined_statements
         for tokens,start,end in translator.cuf_kernel_call.scanString(snippet):
-            parseResult = tokens[0]
-            kernelArgs  = []
-            for ttexpr in parseResult._args:
+            parse_result = tokens[0]
+            kernel_args  = []
+            for ttexpr in parse_result._args:
                 # expand array arguments
-                maxRank = 0
+                max_rank = 0
                 for rvalue in translator.find_all(ttexpr,translator.TTRValue):
                     # TODO lookup the subprogram first 
-                    ivar, discovered = scoper.searchIndexForVariable(indexHints,self._parent.tag(),\
+                    ivar, discovered = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
                        translator.create_index_search_tag_for_variable(rvalue.name()))
                     if discovered:
-                        maxRank = max(maxRank,ivar["rank"])
-                exprFStr = translator.make_f_str(ttexpr)
-                if maxRank > 0:
-                    kernelArgs.append("c_loc("+exprFStr+")")
+                        max_rank = max(max_rank,ivar["rank"])
+                expr_f_str = translator.make_f_str(ttexpr)
+                if max_rank > 0:
+                    kernel_args.append("c_loc("+expr_f_str+")")
                 else:
-                    kernelArgs.append(exprFStr)
-                for rank in range(1,maxRank+1):
-                    kernelArgs.append("size({0},{1})".format(exprFStr,rank))
-                for rank in range(1,maxRank+1):
-                    kernelArgs.append("lbound({0},{1})".format(exprFStr,rank))
-            kernelLaunchInfo = translator.cuf_kernel_call.parseString(self.firstStatement())[0]
+                    kernel_args.append(expr_f_str)
+                for rank in range(1,max_rank+1):
+                    kernel_args.append("size({0},{1})".format(expr_f_str,rank))
+                for rank in range(1,max_rank+1):
+                    kernel_args.append("lbound({0},{1})".format(expr_f_str,rank))
+            kernel_launch_info = translator.cuf_kernel_call.parseString(self.first_statement())[0]
             subst="call launch_{0}({1},{2},{3},{4},{5})".format(\
-              kernelLaunchInfo.kernelNameFStr(),\
-              kernelLaunchInfo.gridFStr(),
-              kernelLaunchInfo.blockFStr(),\
-              kernelLaunchInfo.sharedMemFStr(),
-              kernelLaunchInfo.streamFStr(),\
-              ",".join(kernelArgs)
+              kernel_launch_info.kernel_nameFStr(),\
+              kernel_launch_info.grid_f_str(),
+              kernel_launch_info.block_f_str(),\
+              kernel_launch_info.shared_memFStr(),
+              kernel_launch_info.stream_f_str(),\
+              ",".join(kernel_args)
             )
             snippet = snippet.replace(snippet[start:end],subst)
             break

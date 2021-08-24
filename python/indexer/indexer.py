@@ -19,13 +19,13 @@ GRAMMAR_DIR = os.path.join(os.path.dirname(__file__),"../grammar")
 exec(open("{0}/grammar.py".format(GRAMMAR_DIR)).read())
 
 # configurable parameters
-indexerDir = os.path.dirname(__file__)
-exec(open("{0}/indexer_options.py.in".format(indexerDir)).read())
+indexer_dir = os.path.dirname(__file__)
+exec(open("{0}/indexer_options.py.in".format(indexer_dir)).read())
     
 pFilter       = re.compile(FILTER) 
 pContinuation = re.compile(CONTINUATION_FILTER)
 
-def _intrnl_readFortranFile(filepath,preprocOptions):
+def _intrnl_readFortranFile(filepath,preproc_options):
     """
     Read and preprocess a Fortran file. Make all
     statements take a single line, i.e. remove all occurences
@@ -33,36 +33,36 @@ def _intrnl_readFortranFile(filepath,preprocOptions):
     """
     global PREPROCESS_FORTRAN_FILE
     global pFilter
-    global pAntiFilter
+    global p_anti_filter
     global pContinuation
     global LOG_PREFIX
 
-    utils.logging.logEnterFunction(LOG_PREFIX,"__readFortranFile",{"filepath":filepath,"preprocOptions":preprocOptions})
+    utils.logging.log_enter_function(LOG_PREFIX,"__readFortranFile",{"filepath":filepath,"preproc_options":preproc_options})
     
-    def considerStatement(strippedStatement):
-        passesFilter = pFilter.match(strippedStatement) != None
-        return passesFilter
+    def consider_statement(stripped_statement):
+        passes_filter = pFilter.match(stripped_statement) != None
+        return passes_filter
     try:
-       command = PREPROCESS_FORTRAN_FILE.format(file=filepath,options=preprocOptions)
+       command = PREPROCESS_FORTRAN_FILE.format(file=filepath,options=preproc_options)
        output  = subprocess.check_output(command,shell=True).decode("UTF-8")
        # remove Fortran line continuation and directive continuation
        output = pContinuation.sub(" ",output.lower()) 
        output = output.replace(";","\n") # convert multi-statement lines to multiple lines with a single statement; preprocessing removed comments
        
        # filter statements
-       filteredStatements = []
+       filtered_statements = []
        for line in output.split("\n"):
-           strippedStatement = line.strip(" \t\n")
-           if considerStatement(strippedStatement):
-               utils.logging.logDebug3(LOG_PREFIX,"__readFortranFile","select statement '{}'".format(strippedStatement))
-               filteredStatements.append(strippedStatement)
+           stripped_statement = line.strip(" \t\n")
+           if consider_statement(stripped_statement):
+               utils.logging.log_debug3(LOG_PREFIX,"__readFortranFile","select statement '{}'".format(stripped_statement))
+               filtered_statements.append(stripped_statement)
            else:
-               utils.logging.logDebug3(LOG_PREFIX,"__readFortranFile","ignore statement '{}'".format(strippedStatement))
+               utils.logging.log_debug3(LOG_PREFIX,"__readFortranFile","ignore statement '{}'".format(stripped_statement))
     except subprocess.CalledProcessError as cpe:
         raise cpe
     
-    utils.logging.logLeaveFunction(LOG_PREFIX,"__readFortranFile")
-    return filteredStatements
+    utils.logging.log_leave_function(LOG_PREFIX,"__readFortranFile")
+    return filtered_statements
 
 class __Node():
     def __init__(self,kind,name,data,parent=None):
@@ -74,126 +74,126 @@ class __Node():
         return "{}: {}".format(self._name,self._data)
     __repr__ = __str__
 
-def _intrnl_parseFile(fileStatements,filepath):
+def _intrnl_parse_file(file_statements,filepath):
     global PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE
     global PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE 
 
-    utils.logging.logEnterFunction(LOG_PREFIX,"__parseFile",{"filepath":filepath})
+    utils.logging.log_enter_function(LOG_PREFIX,"__parse_file",{"filepath":filepath})
     # Regex
     datatype_reg = Regex(r"\b(type\s*\(|character|integer|logical|real|complex|double\s+precision)\b")
 
     index = []
 
-    accessLock   = threading.Lock()
-    utils.logging.logDebug(LOG_PREFIX,"__parseFile","create thread pool of size {} for process variable declarations".format(\
+    access_lock   = threading.Lock()
+    utils.logging.log_debug(LOG_PREFIX,"__parse_file","create thread pool of size {} for process variable declarations".format(\
       PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE))
-    taskExecutor = concurrent.futures.ThreadPoolExecutor(\
+    task_executor = concurrent.futures.ThreadPoolExecutor(\
       max_workers=PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE)
     # statistics
-    totalNumTasks = 0
+    total_num_tasks = 0
  
-    def logEnterJobOrTask_(parentNode,msg):
-        utils.logging.logDebug3(LOG_PREFIX,"__parseFile","[thread-id={3}][parent-node={0}:{1}] {2}".format(\
-              parentNode._kind, parentNode._name, msg,\
+    def log_enter_job_or_task_(parent_node,msg):
+        utils.logging.log_debug3(LOG_PREFIX,"__parse_file","[thread-id={3}][parent-node={0}:{1}] {2}".format(\
+              parent_node._kind, parent_node._name, msg,\
               threading.get_ident()))
         
-    def logLeaveJobOrTask_(parentNode,msg):
-        utils.logging.logDebug2(LOG_PREFIX+"__parseFile","[thread-id={3}][parent-node={0}:{1}] {2}".format(\
-              parentNode._kind, parentNode._name, msg,\
+    def log_leave_job_or_task_(parent_node,msg):
+        utils.logging.log_debug2(LOG_PREFIX+"__parse_file","[thread-id={3}][parent-node={0}:{1}] {2}".format(\
+              parent_node._kind, parent_node._name, msg,\
               threading.get_ident()))
     
-    def ParseDeclarationTask_(parentNode,inputText):
+    def ParseDeclarationTask_(parent_node,input_text):
         """
         :note: the term 'task' should highlight that this is a function
         that is directly submitted to a thread in the worker pool.
         """
         global LOG_PREFIX
-        nonlocal accessLock
-        msg = "begin to parse variable declaration '{}'".format(inputText)
-        logEnterJobOrTask_(parentNode, msg)
+        nonlocal access_lock
+        msg = "begin to parse variable declaration '{}'".format(input_text)
+        log_enter_job_or_task_(parent_node, msg)
         #
         try:
             variables =\
-              translator.createIndexRecordsFromDeclaration(\
-                translator.fortran_declaration.parseString(inputText)[0])
+              translator.create_indexRecordsFromDeclaration(\
+                translator.fortran_declaration.parseString(input_text)[0])
         except Exception as e:
-            utils.logging.logError(LOG_PREFIX,"__parseFile.ParseDeclarationTask_","failed: "+str(e))
+            utils.logging.log_error(LOG_PREFIX,"__parse_file.ParseDeclarationTask_","failed: "+str(e))
             sys.exit()
-        accessLock.acquire()
-        parentNode._data["variables"] += variables
-        accessLock.release()
+        access_lock.acquire()
+        parent_node._data["variables"] += variables
+        access_lock.release()
         #
-        msg = "parsed variable declaration '{}'".format(inputText)
-        logLeaveJobOrTask_(parentNode, msg)
+        msg = "parsed variable declaration '{}'".format(input_text)
+        log_leave_job_or_task_(parent_node, msg)
     
-    postParsingJobs = [] # jobs to run after the file was parsed statement by statement
+    post_parsing_jobs = [] # jobs to run after the file was parsed statement by statement
     class ParseAttributesJob_:
         """
         :note: the term 'job' should highlight that an object of this class
         is put into a list that is submitted to a worker thread pool at the end of the parsing.
         """
-        def __init__(self,parentNode,inputText):
-            self._parentNode = parentNode
-            self._inputText  = inputText
+        def __init__(self,parent_node,input_text):
+            self._parent_node = parent_node
+            self._input_text  = input_text
         def run(self):
-            nonlocal accessLock
-            msg = "begin to parse attributes statement '{}'".format(self._inputText)
-            logEnterJobOrTask_(self._parentNode, msg)
+            nonlocal access_lock
+            msg = "begin to parse attributes statement '{}'".format(self._input_text)
+            log_enter_job_or_task_(self._parent_node, msg)
             #
-            attribute, modifiedVars = \
-                translator.parseAttributes(translator.attributes.parseString(self._inputText)[0])
-            for varContext in self._parentNode._data["variables"]:
-                if varContext["name"] in modifiedVars:
-                    accessLock.acquire()
-                    varContext["qualifiers"].append(attribute)
-                    accessLock.release()
+            attribute, modified_vars = \
+                translator.parse_attributes(translator.attributes.parseString(self._input_text)[0])
+            for var_context in self._parent_node._data["variables"]:
+                if var_context["name"] in modified_vars:
+                    access_lock.acquire()
+                    var_context["qualifiers"].append(attribute)
+                    access_lock.release()
             #
-            msg = "parsed attributes statement '{}'".format(self._inputText)
-            logLeaveJobOrTask_(self._parentNode, msg)
+            msg = "parsed attributes statement '{}'".format(self._input_text)
+            log_leave_job_or_task_(self._parent_node, msg)
     class ParseAccDeclareJob_:
         """
         :note: the term 'job' should highlight that an object of this class
         is put into a list that is submitted to a worker thread pool at the end of the parsing.
         """
-        def __init__(self,parentNode,inputText):
-            self._parentNode = parentNode
-            self._inputText  = inputText
+        def __init__(self,parent_node,input_text):
+            self._parent_node = parent_node
+            self._input_text  = input_text
         def run(self):
-            nonlocal accessLock
-            msg = "begin to parse acc declare directive '{}'".format(self._inputText)
-            logEnterJobOrTask_(self._parentNode, msg)
+            nonlocal access_lock
+            msg = "begin to parse acc declare directive '{}'".format(self._input_text)
+            log_enter_job_or_task_(self._parent_node, msg)
             #
-            parseResult = translator.acc_declare.parseString(self._inputText)[0]
-            for varContext in self._parentNode._data["variables"]:
-                for varName in parseResult.mapAllocVariables():
-                    if varContext["name"] == varName:
-                        accessLock.acquire()
-                        varContext["declare_on_target"] = "alloc"
-                        accessLock.release()
-                for varName in parseResult.mapToVariables():
-                    if varContext["name"] == varName: 
-                        accessLock.acquire()
-                        varContext["declare_on_target"] = "to"
-                        accessLock.release()
-                for varName in parseResult.mapFromVariables():
-                    if varContext["name"] == varName: 
-                        accessLock.acquire()
-                        varContext["declare_on_target"] = "from"
-                        accessLock.release()
-                for varName in parseResult.mapTofromVariables():
-                    if varContext["name"] == varName: 
-                        accessLock.acquire()
-                        varContext["declare_on_target"] = "tofrom"
-                        accessLock.release()
-            msg = "parsed acc declare directive '{}'".format(self._inputText)
-            logLeaveJobOrTask_(self._parentNode, msg)
+            parse_result = translator.acc_declare.parseString(self._input_text)[0]
+            for var_context in self._parent_node._data["variables"]:
+                for var_name in parse_result.map_alloc_variables():
+                    if var_context["name"] == var_name:
+                        access_lock.acquire()
+                        var_context["declare_on_target"] = "alloc"
+                        access_lock.release()
+                for var_name in parse_result.map_to_variables():
+                    if var_context["name"] == var_name: 
+                        access_lock.acquire()
+                        var_context["declare_on_target"] = "to"
+                        access_lock.release()
+                for var_name in parse_result.map_from_variables():
+                    if var_context["name"] == var_name: 
+                        access_lock.acquire()
+                        var_context["declare_on_target"] = "from"
+                        access_lock.release()
+                for var_name in parse_result.map_tofrom_variables():
+                    if var_context["name"] == var_name: 
+                        access_lock.acquire()
+                        var_context["declare_on_target"] = "tofrom"
+                        access_lock.release()
+            msg = "parsed acc declare directive '{}'".format(self._input_text)
+            log_leave_job_or_task_(self._parent_node, msg)
 
     # Parser events
     root        = __Node("root","root",data=index,parent=None)
-    currentNode = root
-    currentStatement = None
+    current_node = root
+    current_statement = None
 
-    def createBaseEntry_(kind,name,filepath):
+    def create_base_entry_(kind,name,filepath):
         entry = {}
         entry["kind"]        = kind
         entry["name"]        = name
@@ -203,116 +203,116 @@ def _intrnl_parseFile(fileStatements,filepath):
         entry["subprograms"] = []
         entry["used_modules"] = []
         return entry
-    def logEnterNode_():
-        nonlocal currentNode
-        nonlocal currentStatement
-        utils.logging.logDebug(LOG_PREFIX,"__parseFile","[current-node={0}:{1}] enter {2} '{3}' in statement: '{4}'".format(\
-          currentNode._parent._kind,currentNode._parent._name,
-          currentNode._kind,currentNode._name,\
-          currentStatement))
-    def logLeaveNode_():
-        nonlocal currentNode
-        nonlocal currentStatement
-        utils.logging.logDebug(LOG_PREFIX,"__parseFile","[current-node={0}:{1}] leave {0} '{1}' in statement: '{2}'".format(\
-          currentNode._data["kind"],currentNode._data["name"],\
-          currentStatement))
-    def logDetection_(kind):
-        nonlocal currentNode
-        nonlocal currentStatement
-        utils.logging.logDebug2(LOG_PREFIX,"__parseFile","[current-node={}:{}] found {} in statement: '{}'".format(\
-                currentNode._kind,currentNode._name,kind,currentStatement))
+    def log_enter_node_():
+        nonlocal current_node
+        nonlocal current_statement
+        utils.logging.log_debug(LOG_PREFIX,"__parse_file","[current-node={0}:{1}] enter {2} '{3}' in statement: '{4}'".format(\
+          current_node._parent._kind,current_node._parent._name,
+          current_node._kind,current_node._name,\
+          current_statement))
+    def log_leave_node_():
+        nonlocal current_node
+        nonlocal current_statement
+        utils.logging.log_debug(LOG_PREFIX,"__parse_file","[current-node={0}:{1}] leave {0} '{1}' in statement: '{2}'".format(\
+          current_node._data["kind"],current_node._data["name"],\
+          current_statement))
+    def log_detection_(kind):
+        nonlocal current_node
+        nonlocal current_statement
+        utils.logging.log_debug2(LOG_PREFIX,"__parse_file","[current-node={}:{}] found {} in statement: '{}'".format(\
+                current_node._kind,current_node._name,kind,current_statement))
    
     # direct parsing
     def End():
         nonlocal root
-        nonlocal currentNode
-        nonlocal currentStatement
-        logDetection_("end of program/module/subroutine/function")
-        if currentNode._kind != "root":
-            logLeaveNode_()
-            currentNode = currentNode._parent
+        nonlocal current_node
+        nonlocal current_statement
+        log_detection_("end of program/module/subroutine/function")
+        if current_node._kind != "root":
+            log_leave_node_()
+            current_node = current_node._parent
     def ModuleStart(tokens):
         nonlocal root
-        nonlocal currentNode
+        nonlocal current_node
         name = tokens[0]
-        module = createBaseEntry_("module",name,filepath)
-        assert currentNode == root
-        currentNode._data.append(module)
-        currentNode = __Node("module",name,data=module,parent=currentNode)
-        logEnterNode_()
+        module = create_base_entry_("module",name,filepath)
+        assert current_node == root
+        current_node._data.append(module)
+        current_node = __Node("module",name,data=module,parent=current_node)
+        log_enter_node_()
     def ProgramStart(tokens):
         nonlocal root
-        nonlocal currentNode
+        nonlocal current_node
         name    = tokens[0]
-        program = createBaseEntry_("program",name,filepath)
-        assert currentNode._kind == "root"
-        currentNode._data.append(program)
-        currentNode = __Node("program",name,data=program,parent=currentNode)
-        logEnterNode_()
+        program = create_base_entry_("program",name,filepath)
+        assert current_node._kind == "root"
+        current_node._data.append(program)
+        current_node = __Node("program",name,data=program,parent=current_node)
+        log_enter_node_()
     #host|device,name,[args]
     def SubroutineStart(tokens):
         global LOG_PREFIX
-        nonlocal currentStatement
-        nonlocal currentNode
-        logDetection_("start of subroutine")
-        if currentNode._kind in ["root","module","program","subroutine","function"]:
+        nonlocal current_statement
+        nonlocal current_node
+        log_detection_("start of subroutine")
+        if current_node._kind in ["root","module","program","subroutine","function"]:
             name = tokens[1]
-            subroutine = createBaseEntry_("subroutine",name,filepath)
+            subroutine = create_base_entry_("subroutine",name,filepath)
             subroutine["attributes"]      = [q.lower() for q in tokens[0]]
             subroutine["dummy_args"]       = list(tokens[2])
-            if currentNode._kind == "root":
-                currentNode._data.append(subroutine)
+            if current_node._kind == "root":
+                current_node._data.append(subroutine)
             else:
-                currentNode._data["subprograms"].append(subroutine)
-            currentNode = __Node("subroutine",name,data=subroutine,parent=currentNode)
-            logEnterNode_()
+                current_node._data["subprograms"].append(subroutine)
+            current_node = __Node("subroutine",name,data=subroutine,parent=current_node)
+            log_enter_node_()
         else:
-            utils.logging.logWarning(LOG_PREFIX,"__parseFile","found subroutine in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
-              format(currentStatement,currentNode._kind))
+            utils.logging.log_warning(LOG_PREFIX,"__parse_file","found subroutine in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
+              format(current_statement,current_node._kind))
     #host|device,name,[args],result
     def FunctionStart(tokens):
         global LOG_PREFIX
-        nonlocal currentStatement
-        nonlocal currentNode
-        logDetection_("start of function")
-        if currentNode._kind in ["root","module","program","subroutine","function"]:
+        nonlocal current_statement
+        nonlocal current_node
+        log_detection_("start of function")
+        if current_node._kind in ["root","module","program","subroutine","function"]:
             name = tokens[1]
-            function = createBaseEntry_("function",name,filepath)
+            function = create_base_entry_("function",name,filepath)
             function["attributes"]      = [q.lower() for q in tokens[0]]
             function["dummy_args"]       = list(tokens[2])
             function["result_name"]      = name if tokens[3] is None else tokens[3]
-            if currentNode._kind == "root":
-                currentNode._data.append(function)
+            if current_node._kind == "root":
+                current_node._data.append(function)
             else:
-                currentNode._data["subprograms"].append(function)
-            currentNode = __Node("function",name,data=function,parent=currentNode)
-            logEnterNode_()
+                current_node._data["subprograms"].append(function)
+            current_node = __Node("function",name,data=function,parent=current_node)
+            log_enter_node_()
         else:
-            utils.logging.logWarning(LOG_PREFIX,"__parseFile","found function in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
-              format(currentStatement,currentNode._kind))
+            utils.logging.log_warning(LOG_PREFIX,"__parse_file","found function in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
+              format(current_statement,current_node._kind))
     def TypeStart(tokens):
         global LOG_PREFIX
-        nonlocal currentStatement
-        nonlocal currentNode
-        logDetection_("start of type")
-        if currentNode._kind in ["module","program","subroutine","function"]:
+        nonlocal current_statement
+        nonlocal current_node
+        log_detection_("start of type")
+        if current_node._kind in ["module","program","subroutine","function"]:
             assert len(tokens) == 2
             name = tokens[1]
-            derivedType = {}
-            derivedType["name"]      = name
-            derivedType["kind"]      = "type"
-            derivedType["variables"] = []
-            derivedType["types"] = []
-            currentNode._data["types"].append(derivedType)
-            currentNode = __Node("type",name,data=derivedType,parent=currentNode)
-            logEnterNode_()
+            derived_type = {}
+            derived_type["name"]      = name
+            derived_type["kind"]      = "type"
+            derived_type["variables"] = []
+            derived_type["types"] = []
+            current_node._data["types"].append(derived_type)
+            current_node = __Node("type",name,data=derived_type,parent=current_node)
+            log_enter_node_()
         else:
-            utils.logging.logWarning(LOG_PREFIX,"__parseFile","found derived type in '{}' but parent is {}; expected program or module parent.".\
-                    format(currentStatement,currentNode._kind))
+            utils.logging.log_warning(LOG_PREFIX,"__parse_file","found derived type in '{}' but parent is {}; expected program or module parent.".\
+                    format(current_statement,current_node._kind))
     def Use(tokens):
-        nonlocal currentNode
-        logDetection_("use statement")
-        if currentNode._kind != "root":
+        nonlocal current_node
+        log_detection_("use statement")
+        if current_node._kind != "root":
             used_module = {}
             used_module["name"] = translator.make_f_str(tokens[1])
             used_module["only"] = []
@@ -320,34 +320,34 @@ def _intrnl_parseFile(fileStatements,filepath):
                 original = translator.make_f_str(pair[0])
                 renamed = original if pair[1] is None else translator.make_f_str(pair[1])
                 used_module["only"].append({ "original": original, "renamed": renamed })
-            currentNode._data["used_modules"].append(used_module) # TODO only include what is necessary
+            current_node._data["used_modules"].append(used_module) # TODO only include what is necessary
     
     # delayed parsing
     
     def Declaration(tokens):
         nonlocal root
-        nonlocal currentNode
-        nonlocal currentStatement
-        nonlocal taskExecutor
-        nonlocal totalNumTasks
-        #print(currentStatement)
-        logDetection_("declaration")
-        if currentNode != root:
-            totalNumTasks += 1
-            taskExecutor.submit(ParseDeclarationTask_,currentNode,currentStatement) 
+        nonlocal current_node
+        nonlocal current_statement
+        nonlocal task_executor
+        nonlocal total_num_tasks
+        #print(current_statement)
+        log_detection_("declaration")
+        if current_node != root:
+            total_num_tasks += 1
+            task_executor.submit(ParseDeclarationTask_,current_node,current_statement) 
     def Attributes(tokens):
         """
         Add attributes to previously declared variables in same scope/declaration list.
         Does not modify scope of other variables.
         """
         nonlocal root
-        nonlocal currentNode
-        nonlocal currentStatement
-        #print(currentStatement)
-        logDetection_("attributes statement")
-        if currentNode != root:
-            job = ParseAttributesJob_(currentNode,currentStatement) 
-            postParsingJobs.append(job)
+        nonlocal current_node
+        nonlocal current_statement
+        #print(current_statement)
+        log_detection_("attributes statement")
+        if current_node != root:
+            job = ParseAttributesJob_(current_node,current_statement) 
+            post_parsing_jobs.append(job)
     def AccDeclare():
         """
         Add attributes to previously declared variables in same scope.
@@ -355,12 +355,12 @@ def _intrnl_parseFile(fileStatements,filepath):
         """
         # TODO investigate if target of attribute must be in same scope or not!
         nonlocal root
-        nonlocal currentNode
-        nonlocal currentStatement
-        logDetection_("acc declare directive")
-        if currentNode != root:
-            job = ParseAccDeclareJob_(currentNode,currentStatement) 
-            postParsingJobs.append(job)
+        nonlocal current_node
+        nonlocal current_statement
+        log_detection_("acc declare directive")
+        if current_node != root:
+            job = ParseAccDeclareJob_(current_node,current_statement) 
+            post_parsing_jobs.append(job)
     
     def AccRoutine():
         """
@@ -369,19 +369,19 @@ def _intrnl_parseFile(fileStatements,filepath):
         """
         # TODO investigate if target of attribute must be in same scope or not!
         nonlocal root
-        nonlocal currentNode
-        nonlocal currentStatement
-        logDetection_("acc routine directive")
-        if currentNode != root:
-            parseResult = translator.acc_routine.parseString(currentStatement)[0]
-            if parseResult.parallelism() == "seq":
-                currentNode._data["attributes"] += ["host","device"]
-            elif parseResult.parallelism() == "gang":
-                currentNode._data["attributes"] += ["host","device:gang"]
-            elif parseResult.parallelism() == "worker":
-                currentNode._data["attributes"] += ["host","device:worker"]
-            elif parseResult.parallelism() == "vector":
-                currentNode._data["attributes"] += ["host","device:vector"]
+        nonlocal current_node
+        nonlocal current_statement
+        log_detection_("acc routine directive")
+        if current_node != root:
+            parse_result = translator.acc_routine.parseString(current_statement)[0]
+            if parse_result.parallelism() == "seq":
+                current_node._data["attributes"] += ["host","device"]
+            elif parse_result.parallelism() == "gang":
+                current_node._data["attributes"] += ["host","device:gang"]
+            elif parse_result.parallelism() == "worker":
+                current_node._data["attributes"] += ["host","device:worker"]
+            elif parse_result.parallelism() == "vector":
+                current_node._data["attributes"] += ["host","device:vector"]
 
     module_start.setParseAction(ModuleStart)
     type_start.setParseAction(TypeStart)
@@ -396,79 +396,79 @@ def _intrnl_parseFile(fileStatements,filepath):
     use.setParseAction(Use)
     attributes.setParseAction(Attributes)
 
-    def tryToParseString(expressionName,expression):
+    def try_to_parse_string(expression_name,expression):
         try:
-           expression.parseString(currentStatement)
+           expression.parseString(current_statement)
            return True
         except ParseBaseException as e: 
-           utils.logging.logDebug3(LOG_PREFIX,"__parseFile","did not find expression '{}' in statement '{}'".format(expressionName,currentStatement))
-           utils.logging.logDebug4(LOG_PREFIX,"__parseFile",str(e))
+           utils.logging.log_debug3(LOG_PREFIX,"__parse_file","did not find expression '{}' in statement '{}'".format(expression_name,current_statement))
+           utils.logging.log_debug4(LOG_PREFIX,"__parse_file",str(e))
            return False
 
-    def isEndStatement_(tokens,kind):
+    def is_end_statement_(tokens,kind):
         result = tokens[0] == "end"+kind
         if not result and len(tokens):
             result = tokens[0] == "end" and tokens[1] == kind
         return result
 
-    for currentStatement in fileStatements:
-        utils.logging.logDebug3(LOG_PREFIX,"__parseFile","process statement '{}'".format(currentStatement))
-        currentTokens             = re.split(r"\s+|\t+",currentStatement.lower().strip(" \t"))
-        currentStatementStripped  = "".join(currentTokens)
+    for current_statement in file_statements:
+        utils.logging.log_debug3(LOG_PREFIX,"__parse_file","process statement '{}'".format(current_statement))
+        current_tokens             = re.split(r"\s+|\t+",current_statement.lower().strip(" \t"))
+        current_statementStripped  = "".join(current_tokens)
         for expr in ["program","module","subroutine","function","type"]:
-            if isEndStatement_(currentTokens,expr):
+            if is_end_statement_(current_tokens,expr):
                  End()
-        for commentChar in "!*c":
-            if currentTokens[0] == commentChar+"$acc":
-                if currentTokens[1] == "declare":
+        for comment_char in "!*c":
+            if current_tokens[0] == comment_char+"$acc":
+                if current_tokens[1] == "declare":
                     AccDeclare()
-                elif currentTokens[1] == "routine":
+                elif current_tokens[1] == "routine":
                     AccRoutine()
-        if currentTokens[0] == "use":
-            tryToParseString("use",use)
-        #elif currentTokens[0] == "implicit":
-        #    tryToParseString("implicit",IMPLICIT)
-        elif currentTokens[0] == "module":
-            tryToParseString("module",module_start)
-        elif currentTokens[0] == "program":
-            tryToParseString("program",program_start)
-        elif currentTokens[0].startswith("type"): # type a ; type, bind(c) :: a
-            tryToParseString("type",type_start)
-        elif currentTokens[0].startswith("attributes"): # attributes(device) :: a
-            tryToParseString("attributes",attributes)
+        if current_tokens[0] == "use":
+            try_to_parse_string("use",use)
+        #elif current_tokens[0] == "implicit":
+        #    try_to_parse_string("implicit",IMPLICIT)
+        elif current_tokens[0] == "module":
+            try_to_parse_string("module",module_start)
+        elif current_tokens[0] == "program":
+            try_to_parse_string("program",program_start)
+        elif current_tokens[0].startswith("type"): # type a ; type, bind(c) :: a
+            try_to_parse_string("type",type_start)
+        elif current_tokens[0].startswith("attributes"): # attributes(device) :: a
+            try_to_parse_string("attributes",attributes)
         # cannot be combined with above checks
-        if "function" in currentTokens:
-            tryToParseString("function",function_start)
-        elif "subroutine" in currentTokens:
-            tryToParseString("subroutine",subroutine_start)
+        if "function" in current_tokens:
+            try_to_parse_string("function",function_start)
+        elif "subroutine" in current_tokens:
+            try_to_parse_string("subroutine",subroutine_start)
         for expr in ["type","character","integer","logical","real","complex","double"]: # type(dim3) :: a 
-           if expr in currentTokens[0]:
-               tryToParseString("declaration",datatype_reg)
+           if expr in current_tokens[0]:
+               try_to_parse_string("declaration",datatype_reg)
                break
-        #tryToParseString("declaration|type_start|use|attributes|module_start|program_start|function_start|subroutine_start",\
+        #try_to_parse_string("declaration|type_start|use|attributes|module_start|program_start|function_start|subroutine_start",\
         #  datatype_reg|type_start|use|attributes|module_start|program_start|function_start|subroutine_start)
-    taskExecutor.shutdown(wait=True) # waits till all tasks have been completed
+    task_executor.shutdown(wait=True) # waits till all tasks have been completed
 
     # apply attributes and acc variable modifications
-    numPostParsingJobs = len(postParsingJobs)
-    if numPostParsingJobs > 0:
-        utils.logging.logDebug(LOG_PREFIX,"__parseFile","apply variable modifications (submit {} jobs to worker pool of size {})".format(\
-          numPostParsingJobs,PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE))
+    num_post_parsing_jobs = len(post_parsing_jobs)
+    if num_post_parsing_jobs > 0:
+        utils.logging.log_debug(LOG_PREFIX,"__parse_file","apply variable modifications (submit {} jobs to worker pool of size {})".format(\
+          num_post_parsing_jobs,PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE))
         with concurrent.futures.ThreadPoolExecutor(\
             max_workers=PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE)\
-                as jobExecutor:
-            for job in postParsingJobs:
-                jobExecutor.submit(job.run)
-        utils.logging.logDebug(LOG_PREFIX,"__parseFile","apply variable modifications --- done") 
-        postParsingJobs.clear()
+                as job_executor:
+            for job in post_parsing_jobs:
+                job_executor.submit(job.run)
+        utils.logging.log_debug(LOG_PREFIX,"__parse_file","apply variable modifications --- done") 
+        post_parsing_jobs.clear()
 
-    utils.logging.logLeaveFunction(LOG_PREFIX,"__parseFile") 
+    utils.logging.log_leave_function(LOG_PREFIX,"__parse_file") 
     return index
 
 def _intrnl_writeJsonFile(index,filepath):
     global PRETTY_PRINT_INDEX_FILE
     global LOG_PREFIX    
-    utils.logging.logEnterFunction(LOG_PREFIX,"__writeJsonFile",{"filepath":filepath}) 
+    utils.logging.log_enter_function(LOG_PREFIX,"__writeJsonFile",{"filepath":filepath}) 
     
     with open(filepath,"wb") as outfile:
          if PRETTY_PRINT_INDEX_FILE:
@@ -476,68 +476,68 @@ def _intrnl_writeJsonFile(index,filepath):
          else:
              outfile.write(orjson.dumps(index))
     
-    utils.logging.logLeaveFunction(LOG_PREFIX,"__writeJsonFile") 
+    utils.logging.log_leave_function(LOG_PREFIX,"__writeJsonFile") 
 
 def _intrnl_readJsonFile(filepath):
     global LOG_PREFIX    
-    utils.logging.logEnterFunction(LOG_PREFIX,"__readJsonFile",{"filepath":filepath}) 
+    utils.logging.log_enter_function(LOG_PREFIX,"__readJsonFile",{"filepath":filepath}) 
     
     with open(filepath,"rb") as infile:
-         utils.logging.logLeaveFunction(LOG_PREFIX,"__readJsonFile") 
+         utils.logging.log_leave_function(LOG_PREFIX,"__readJsonFile") 
          return orjson.loads(infile.read())
 
 # API
-def scanFile(filepath,preprocOptions,index):
+def scan_file(filepath,preproc_options,index):
     """
     Creates an index from a single file.
     """
     global LOG_PREFIX
-    utils.logging.logEnterFunction(LOG_PREFIX,"scanFile",{"filepath":filepath,"preprocOptions":preprocOptions}) 
+    utils.logging.log_enter_function(LOG_PREFIX,"scan_file",{"filepath":filepath,"preproc_options":preproc_options}) 
     
-    filteredLines = _intrnl_readFortranFile(filepath,preprocOptions)
-    utils.logging.logDebug2(LOG_PREFIX,"scanFile","extracted the following lines:\n>>>\n{}\n<<<".format(\
-        "\n".join(filteredLines)))
-    index += _intrnl_parseFile(filteredLines,filepath)
+    filtered_lines = _intrnl_readFortranFile(filepath,preproc_options)
+    utils.logging.log_debug2(LOG_PREFIX,"scan_file","extracted the following lines:\n>>>\n{}\n<<<".format(\
+        "\n".join(filtered_lines)))
+    index += _intrnl_parse_file(filtered_lines,filepath)
     
-    utils.logging.logLeaveFunction(LOG_PREFIX,"scanFile") 
+    utils.logging.log_leave_function(LOG_PREFIX,"scan_file") 
 
-def writeGpufortModuleFiles(index,outputDir):
+def write_gpufort_module_files(index,output_dir):
     """
     Per module / program found in the index
     write a GPUFORT module file.
     
     :param list index:    [in] Empty or non-empty list.
-    :param str outputDir: [in] Output directory.
+    :param str output_dir: [in] Output directory.
     """
     global LOG_PREFIX
-    utils.logging.logEnterFunction(LOG_PREFIX,"writeGpufortModuleFiles",{"outputDir":outputDir})
+    utils.logging.log_enter_function(LOG_PREFIX,"write_gpufort_module_files",{"output_dir":output_dir})
     
     for mod in index:
-        filepath = outputDir + "/" + mod["name"] + GPUFORT_MODULE_FILE_SUFFIX
+        filepath = output_dir + "/" + mod["name"] + GPUFORT_MODULE_FILE_SUFFIX
         _intrnl_writeJsonFile(mod,filepath)
     
-    utils.logging.logLeaveFunction(LOG_PREFIX,"writeGpufortModuleFiles")
+    utils.logging.log_leave_function(LOG_PREFIX,"write_gpufort_module_files")
 
-def loadGpufortModuleFiles(inputDirs,index):
+def load_gpufort_module_files(input_dirs,index):
     """
     Load gpufort module files and append to the index.
 
-    :param list inputDirs: [in] List of input directories (as strings).
+    :param list input_dirs: [in] List of input directories (as strings).
     :param list index:     [inout] Empty or non-empty list. Loaded data structure is appended.
     """
     global LOG_PREFIX
-    utils.logging.logEnterFunction(LOG_PREFIX,"loadGpufortModuleFiles",{"inputDirs":",".join(inputDirs)})
+    utils.logging.log_enter_function(LOG_PREFIX,"load_gpufort_module_files",{"input_dirs":",".join(input_dirs)})
     
-    for inputDir in inputDirs:
-         for child in os.listdir(inputDir):
+    for input_dir in input_dirs:
+         for child in os.listdir(input_dir):
              if child.endswith(GPUFORT_MODULE_FILE_SUFFIX):
-                 moduleAlreadyExists = False
+                 module_already_exists = False
                  for mod in index:
                      if mod == child.replace(GPUFORT_MODULE_FILE_SUFFIX,""):
-                         moduleAlreadyExists = True
+                         module_already_exists = True
                          break
-                 if not moduleAlreadyExists:
-                     modIndex = _intrnl_readJsonFile(os.path.join(inputDir, child))
-                     index.append(modIndex)
+                 if not module_already_exists:
+                     mod_index = _intrnl_readJsonFile(os.path.join(input_dir, child))
+                     index.append(mod_index)
     
-    utils.logging.logLeaveFunction(LOG_PREFIX,"loadGpufortModuleFiles")
+    utils.logging.log_leave_function(LOG_PREFIX,"load_gpufort_module_files")

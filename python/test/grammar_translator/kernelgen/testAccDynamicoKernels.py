@@ -30,19 +30,19 @@ translator.LOOP_COLLAPSE_STRATEGY="collapse"
 #print(grammar.accLoopKernel.parseString(k1))
 #result = translator.accLoopKernel.parseString(k1)[0]
 #print(result.c_str())
-#print(result.problemSize())
+#print(result.problem_size())
 
 print("k1:")
-c_snippet, problemSize, kernelLaunchInfo, identifierNames, localLValues, loopVars, reduction =\
+c_snippet, problem_size, kernel_launch_info, identifier_names, localLValues, loop_vars, reduction =\
         translator.parse_loop_kernel(k1)
 print(c_snippet)
-print(problemSize[0])
+print(problem_size[0])
 
 print("k2:")
-c_snippet, problemSize, kernelLaunchInfo, identifierNames, localLValues, loopVars, reduction =\
+c_snippet, problem_size, kernel_launch_info, identifier_names, localLValues, loop_vars, reduction =\
         translator.parse_loop_kernel(k2)
 print(c_snippet)
-print(problemSize[0])
+print(problem_size[0])
 
 #for i in range(len(k1data)):
 #    #print(str(i)+".",accKernels.parseString(k1data[i]))

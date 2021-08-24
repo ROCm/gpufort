@@ -24,7 +24,7 @@ func_kind = COMMA + ( KIND + EQ + Regex(r"[0-9]+|([sSdDqQ][pP])") ) | Regex(r"[s
 arglist = Group(delimitedList(Group(~func_kind + func_rvalue)))
 func_call = identifier + LPAR + Optional(arglist, default=[]) + RPAR # emits 2 tokens: *,*,*
 
-# derivedTypes
+# derived_types
 simple_struct_rvalue = Forward()
 simple_derived_type_member   = identifier + ELEM + simple_struct_rvalue
 simple_struct_rvalue <<= simple_derived_type_member | identifier
@@ -43,7 +43,7 @@ fortran_subroutine_call = CALL + func_call
 # assignments
 l_arith_operator  = MatchFirst(L_ARITH_OPERATOR);
 #r_arith_operator  = MatchFirst(R_ARITH_OPERATOR_STR);
-conditionOp=oneOf(COMP_OPERATOR_LOWER_STR,caseless=CASELESS)
+condition_op=oneOf(COMP_OPERATOR_LOWER_STR,caseless=CASELESS)
 arithmetic_expression = infixNotation(rvalue,
     [
       (l_arith_operator, 2, opAssoc.LEFT),
@@ -52,7 +52,7 @@ arithmetic_expression = infixNotation(rvalue,
 arithmetic_logical_expression = infixNotation(rvalue, #NOTE: Slower because of the additional operators
     [
       (l_arith_operator, 2, opAssoc.LEFT),
-      (conditionOp, 2, opAssoc.LEFT),
+      (condition_op, 2, opAssoc.LEFT),
     ],
 )
 

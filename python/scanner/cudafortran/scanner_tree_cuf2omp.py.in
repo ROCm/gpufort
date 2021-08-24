@@ -1,18 +1,18 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 class CufLoopKernel2Omp(CufBackendBase):
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
         """
         Analyze based on statements but modify original lines if these are
         fully covered by the statements.
         """
         try:
-           parseResult = translator.loop_kernel.parseString(joinedStatements)[0]
-           snippet     = joinedLines if statementsFullyCoverLines else joinedStatements
-           return parseResult.ompFStr(snippet), True 
+           parse_result = translator.loop_kernel.parseString(joined_statements)[0]
+           snippet     = joined_lines if statements_fully_cover_lines else joined_statements
+           return parse_result.omp_f_str(snippet), True 
         except Exception as e:
            print("failed: "+f_snippet) #TODO error handling
            raise e
            return "", False 
 
-registerCufBackend("omp",CufLoopKernel2Omp,None)
+register_cuf_backend("omp",CufLoopKernel2Omp,None)

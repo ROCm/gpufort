@@ -116,7 +116,7 @@ namespace {
   }{{"\n" if not loop.last}}{% endfor %}
 }
 // global thread indices for various dimensions
-#define __gidx(idx) (threadIdx.idx + blockIdx.idx * blockDim.idx) 
+#define __gidx(idx) (threadIdx.idx + block_idx.idx * blockDim.idx) 
 #define __gidx1 __gidx(x)
 #define __gidx2 (__gidx(x) + gridDim.x*blockDim.x*__gidx(y))
 #define __gidx3 (__gidx(x) + gridDim.x*blockDim.x*__gidx(y) + gridDim.x*blockDim.x*gridDim.y*blockDim.y*__gidx(z))

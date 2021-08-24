@@ -72,5 +72,5 @@ for i in range(len(testdata)):
     results = accConstruct.parseString(testdata[i])
     print(str(i+1)+".",results)
     results[0].printTokens()
-    print(flattenBody(results))
+    print(flatten_body(results))
     #print(results[0].c_str())

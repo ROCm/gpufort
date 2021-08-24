@@ -17,12 +17,12 @@ HIP_FILE_EXT = "-fort2hip.hip.cpp"
 
 GET_BLOCK_DIMS    = GET_DEFAULT_BLOCK_DIMS
         # Callback to provide default block dimensions for a given kernel.
-        # callback arguments: kernelName,filepath,lineno,dim
+        # callback arguments: kernel_name,filepath,lineno,dim
         # return: list of int with dim entries
 
 GET_LAUNCH_BOUNDS = GET_DEFAULT_LAUNCH_BOUNDS 
         # Callback to provide 'MAX_THREADS_PER_BLOCK, MIN_BLOCKS_PER_MP' for a given kernel.
-        # callback arguments: kernelName,filepath,lineno
+        # callback arguments: kernel_name,filepath,lineno
         # return: a string consisting of two comma-separated integer numbers, e.g. '128,1' or '256, 4'
  
 EMIT_KERNEL_LAUNCHER     = True  

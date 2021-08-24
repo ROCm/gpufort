@@ -68,5 +68,5 @@ enddo
 enddo"""
 
 #print(testCufKernels)
-result = cufLoopKernel.parseString(testCufLoopKernel)
+result = cuf_loop_kernel.parseString(testCufLoopKernel)
 print(result[0].c_str())

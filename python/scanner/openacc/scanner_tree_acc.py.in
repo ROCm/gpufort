@@ -7,7 +7,7 @@ class AccBackendBase:
 ACC_BACKENDS             = {} 
 ACC_LOOP_KERNEL_BACKENDS = {} 
 
-def registerAccBackend(name,directiveGeneratorClass,loop_kernelGeneratorClass,runtimeModuleName):
+def register_acc_backend(name,directive_generator_class,loop_kernel_generator_class,runtime_module_name):
     global SUPPORTED_DESTINATION_DIALECTS
     global RUNTIME_MODULE_NAMES
     global ACC_BACKENDS
@@ -15,13 +15,13 @@ def registerAccBackend(name,directiveGeneratorClass,loop_kernelGeneratorClass,ru
     
     if not name in SUPPORTED_DESTINATION_DIALECTS:
         SUPPORTED_DESTINATION_DIALECTS.append(name)
-    RUNTIME_MODULE_NAMES[name]     = runtimeModuleName
-    ACC_BACKENDS[name]             = directiveGeneratorClass 
-    ACC_LOOP_KERNEL_BACKENDS[name] = loop_kernelGeneratorClass
+    RUNTIME_MODULE_NAMES[name]     = runtime_module_name
+    ACC_BACKENDS[name]             = directive_generator_class 
+    ACC_LOOP_KERNEL_BACKENDS[name] = loop_kernel_generator_class
 
-exec(open("{0}/openacc/scanner_tree_acc2omp.py.in".format(scannerDir)).read())
-exec(open("{0}/openacc/scanner_tree_acc2hipgpufortrt.py.in".format(scannerDir)).read())
-exec(open("{0}/openacc/scanner_tree_acc2hipgccrt.py.in".format(scannerDir)).read())
+exec(open("{0}/openacc/scanner_tree_acc2omp.py.in".format(scanner_dir)).read())
+exec(open("{0}/openacc/scanner_tree_acc2hipgpufortrt.py.in".format(scanner_dir)).read())
+exec(open("{0}/openacc/scanner_tree_acc2hipgccrt.py.in".format(scanner_dir)).read())
 
 class STAccDirective(STDirective):
     """
@@ -30,90 +30,90 @@ class STAccDirective(STDirective):
     
     https://www.openacc.org/sites/default/files/inline-files/OpenACC.2.7.pdf)
     """
-    def __init__(self,parent,firstRecord,firstRecordFirstStatement,directiveNo):
-        STDirective.__init__(self,parent,firstRecord,firstRecordFirstStatement,directiveNo,sentinel="!$acc")
+    def __init__(self,parent,first_record,first_recordFirstStatement,directive_no):
+        STDirective.__init__(self,parent,first_record,first_recordFirstStatement,directive_no,sentinel="!$acc")
         self._defaultPresentVars = []
-    def findSubstring(self,token):
-        return token in self.singleLineStatement()
-    def findAnySubstring(self,tokens):
+    def find_substring(self,token):
+        return token in self.single_line_statement()
+    def find_any_substring(self,tokens):
         result = False
         for token in tokens:
-            result = result or self.findSubstring(token)
+            result = result or self.find_substring(token)
         return result
-    def findAllSubstrings(self,tokens):
+    def find_all_substrings(self,tokens):
         result = True
         for token in tokens:
-            result = result and self.findSubstring(token)
+            result = result and self.find_substring(token)
         return result
-    def isEndDirective(self):
-        return self.findSubstring("acc end")
-    def isDataDirective(self):
-        return self.findSubstring("acc data")
-    def isEnterDirective(self):
-        return self.findSubstring("acc enter")
-    def isExitDirective(self):
-        return self.findSubstring("acc exit")
-    def isInitDirective(self):
-        return self.findSubstring("acc init")
-    def isShutdownDirective(self):
-        return self.findSubstring("acc shutdown")
-    def isWaitDirective(self):
-        return self.findSubstring("acc wait")
-    def isLoopDirective(self):
-        return self.findSubstring("acc loop")
-    def isKernelsDirective(self):
-        return not self.findSubstring("acc kernels loop") and\
-            self.findSubstring("acc kernels")
-    def isParallelDirective(self):
-        return not self.findSubstring("acc parallel loop") and\
-            self.findSubstring("acc parallel")
-    def isLoopDirective(self):
-        return self.findSubstring("acc loop")
-    def isParallelLoopDirective(self):
-        return self.findSubstring("acc parallel loop")
-    def isKernelsLoopDirective(self):
-        return self.findSubstring("acc kernels loop")
+    def is_end_directive(self):
+        return self.find_substring("acc end")
+    def is_data_directive(self):
+        return self.find_substring("acc data")
+    def is_enter_directive(self):
+        return self.find_substring("acc enter")
+    def is_exit_directive(self):
+        return self.find_substring("acc exit")
+    def is_init_directive(self):
+        return self.find_substring("acc init")
+    def is_shutdown_directive(self):
+        return self.find_substring("acc shutdown")
+    def is_wait_directive(self):
+        return self.find_substring("acc wait")
+    def is_loop_directive(self):
+        return self.find_substring("acc loop")
+    def is_kernels_directive(self):
+        return not self.find_substring("acc kernels loop") and\
+            self.find_substring("acc kernels")
+    def is_parallel_directive(self):
+        return not self.find_substring("acc parallel loop") and\
+            self.find_substring("acc parallel")
+    def is_loop_directive(self):
+        return self.find_substring("acc loop")
+    def is_parallel_loop_directive(self):
+        return self.find_substring("acc parallel loop")
+    def is_kernels_loop_directive(self):
+        return self.find_substring("acc kernels loop")
     def __str__(self):
         return """
-{{ singleLineStatement={singleLineStatement},
-         isInitDirective={isInitDirective},
-         isShutdownDirective={isShutdownDirective},
-         isEndDirective={isEndDirective},
-         isEnterDirective={isEnterDirective},
-         isExitDirective={isExitDirective},
-         isWaitDirective={isWaitDirective},
-         isLoopDirective={isLoopDirective},
-         isParallelDirective={isParallelDirective},
-         isKernelsDirective={isKernelsDirective},
-         isParallelLoopDirective={isParallelLoopDirective} }}
+{{ single_line_statement={single_line_statement},
+         is_init_directive={is_init_directive},
+         is_shutdown_directive={is_shutdown_directive},
+         is_end_directive={is_end_directive},
+         is_enter_directive={is_enter_directive},
+         is_exit_directive={is_exit_directive},
+         is_wait_directive={is_wait_directive},
+         is_loop_directive={is_loop_directive},
+         is_parallel_directive={is_parallel_directive},
+         is_kernels_directive={is_kernels_directive},
+         is_parallel_loop_directive={is_parallel_loop_directive} }}
 """.format(
-         singleLineStatement=self.singleLineStatement(),
-         isInitDirective=self.isInitDirective(),
-         isShutdownDirective=self.isShutdownDirective(),
-         isEndDirective=self.isEndDirective(),
-         isEnterDirective=self.isEnterDirective(),
-         isExitDirective=self.isExitDirective(),
-         isWaitDirective=self.isWaitDirective(),
-         isLoopDirective=self.isLoopDirective(),
-         isParallelDirective=self.isParallelDirective(),
-         isKernelsDirective=self.isKernelsDirective(),
-         isParallelLoopDirective=self.isParallelLoopDirective()
+         single_line_statement=self.single_line_statement(),
+         is_init_directive=self.is_init_directive(),
+         is_shutdown_directive=self.is_shutdown_directive(),
+         is_end_directive=self.is_end_directive(),
+         is_enter_directive=self.is_enter_directive(),
+         is_exit_directive=self.is_exit_directive(),
+         is_wait_directive=self.is_wait_directive(),
+         is_loop_directive=self.is_loop_directive(),
+         is_parallel_directive=self.is_parallel_directive(),
+         is_kernels_directive=self.is_kernels_directive(),
+         is_parallel_loop_directive=self.is_parallel_loop_directive()
          ).strip().replace("\n","")
     __repr__ = __str__ 
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[]):
-        checkedDialect = checkDestinationDialect(DESTINATION_DIALECT)
-        return ACC_BACKENDS[checkedDialect](self).transform(\
-                joinedLines,joinedStatements,statementsFullyCoverLines,indexHints)
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
+        checked_dialect = check_destination_dialect(DESTINATION_DIALECT)
+        return ACC_BACKENDS[checked_dialect](self).transform(\
+                joined_lines,joined_statements,statements_fully_cover_lines,index_hints)
 class STAccLoopKernel(STAccDirective,STLoopKernel):
-    def __init__(self,parent,firstRecord,firstRecordFirstStatement,directiveNo):
-        STAccDirective.__init__(self,parent,firstRecord,firstRecordFirstStatement,directiveNo)
-        STLoopKernel.__init__(self,parent,firstRecord,firstRecordFirstStatement)
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines,indexHints=[],destinationDialect=""):
+    def __init__(self,parent,first_record,first_recordFirstStatement,directive_no):
+        STAccDirective.__init__(self,parent,first_record,first_recordFirstStatement,directive_no)
+        STLoopKernel.__init__(self,parent,first_record,first_recordFirstStatement)
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[],destination_dialect=""):
         """
-        :param destinationDialect: allows to override default if this kernel
+        :param destination_dialect: allows to override default if this kernel
                                    should be translated via another backend.
         """
-        checkedDialect = checkDestinationDialect(\
-            DESTINATION_DIALECT if not len(destinationDialect) else destinationDialect)
-        return ACC_LOOP_KERNEL_BACKENDS[checkedDialect](self).transform(\
-                joinedLines,joinedStatements,statementsFullyCoverLines,indexHints)
+        checked_dialect = check_destination_dialect(\
+            DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
+        return ACC_LOOP_KERNEL_BACKENDS[checked_dialect](self).transform(\
+                joined_lines,joined_statements,statements_fully_cover_lines,index_hints)

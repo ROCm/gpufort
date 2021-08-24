@@ -55,7 +55,7 @@ cuf_cudamemcpy2D      = ( CUDAMEMCPY2D | CUDAMEMCPY2DASYNC )  + LPAR + cuf_cudam
 # dest,dpitch(count),src,spitch(count),width(count),height(count),depth(count),[,stream] # kind is inferred from dest and src
 cuf_cudamemcpy3d_args  = separatedSequence([allocate_rvalue,arithmetic_expression,allocate_rvalue,arithmetic_expression,arithmetic_expression,arithmetic_expression,arithmetic_expression]) + cuda_memcpy_args_ext
 cuf_cudamemcpy3D      = ( CUDAMEMCPY3D | CUDAMEMCPY3DASYNC ) + LPAR + cuf_cudamemcpy3d_args + RPAR
-cuf_cudamemcpyVariant = cuf_cudamemcpy | cuf_cudamemcpy2D | cuf_cudamemcpy3D
+cuf_cudamemcpy_variant = cuf_cudamemcpy | cuf_cudamemcpy2D | cuf_cudamemcpy3D
 # cublas/analysis
 cublas_operation_type = Regex("'[NTCntc]'")#.setParseAction(lambda tokens: "hipblas_op_"+tokens[0].strip("'").upper())
 #cublas_arglist       = Group(delimitedList(cublas_operation_type | allocate_rvalue)) 

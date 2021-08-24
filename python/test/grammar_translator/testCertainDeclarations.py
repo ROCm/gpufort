@@ -19,11 +19,11 @@ import translator.translator as translator
 #print(translator.declared_variable.parseString("f_d ( ldx * ldy * ldz )")[0])
 
 print("hallo")
-print(translator.declared_variable.parseString("f_d ( ldx * ldy * ldz )")[0]._bounds.specifiedBounds())
+print(translator.declared_variable.parseString("f_d ( ldx * ldy * ldz )")[0]._bounds.specified_bounds())
 print("hallo")
-print(translator.declared_variable.parseString("f_d ( -k:k, 5 )")[0]._bounds.indexStr("f_d",True))
+print(translator.declared_variable.parseString("f_d ( -k:k, 5 )")[0]._bounds.index_str("f_d",True))
 print("hallo")
-print(translator.declared_variable.parseString("f_d ( -k:k, 5 )")[0]._bounds.indexStr("f_d"))
+print(translator.declared_variable.parseString("f_d ( -k:k, 5 )")[0]._bounds.index_str("f_d"))
 
 print(translator.declared_variable.parseString("i, k, j, err, idir, ip,  ii, jj, istat")[0])
 #print("THIS: "+str(translator.fortran_declaration.parseString("INTEGER, INTENT(IN) :: isign, ldx, ldy, nx, ny, nzl")[3]))
@@ -43,27 +43,27 @@ test.run(
    
 #print(translator.fortran_declaration.parseString(testdata[0])[0].rhs[0])
 
-print(translator.fortran_declaration.parseString("complex :: f_d ( : )")[0].arrayBoundVariableNamesFStr("f_d"))
-print(translator.fortran_declaration.parseString("complex :: f_d ( : )")[0].arrayVariableIndexMacroStr("f_d"))
+print(translator.fortran_declaration.parseString("complex :: f_d ( : )")[0].array_bound_variable_names_f_str("f_d"))
+print(translator.fortran_declaration.parseString("complex :: f_d ( : )")[0].array_variable_index_macro_str("f_d"))
 
-print(translator.fortran_declaration.parseString("complex :: f_d ( :,: )")[0].arrayBoundVariableNamesFStr("f_d"))
-print(translator.fortran_declaration.parseString("complex :: f_d ( :,: )")[0].arrayVariableIndexMacroStr("f_d"))
+print(translator.fortran_declaration.parseString("complex :: f_d ( :,: )")[0].array_bound_variable_names_f_str("f_d"))
+print(translator.fortran_declaration.parseString("complex :: f_d ( :,: )")[0].array_variable_index_macro_str("f_d"))
 
-print(translator.fortran_declaration.parseString("complex :: f_d ( 5,5 )")[0].arrayBoundVariableNamesFStr("f_d"))
-print(translator.fortran_declaration.parseString("complex :: f_d ( 5,5 )")[0].arrayVariableIndexMacroStr("f_d"))
+print(translator.fortran_declaration.parseString("complex :: f_d ( 5,5 )")[0].array_bound_variable_names_f_str("f_d"))
+print(translator.fortran_declaration.parseString("complex :: f_d ( 5,5 )")[0].array_variable_index_macro_str("f_d"))
 
-print(translator.createIndexRecordsFromDeclaration(\
+print(translator.create_indexRecordsFromDeclaration(\
         translator.fortran_declaration.parseString("complex :: f_d ( 5,5 )")[0]))
 
-print(translator.createIndexRecordsFromDeclaration(\
+print(translator.create_indexRecordsFromDeclaration(\
         translator.fortran_declaration.parseString("complex,pinned,device,managed,allocatable,pointer :: f_d ( 2:5,-1:5 )")[0]))
 
-context = translator.createIndexRecordsFromDeclaration(\
+context = translator.create_indexRecordsFromDeclaration(\
         translator.fortran_declaration.parseString("integer, parameter :: a = x , b = c*x, f_d = 5")[0])
 
 print(context)
-translator.changeKind(context[0],"8")
+translator.change_kind(context[0],"8")
 print(context)
 
-print(translator.createIndexRecordsFromDeclaration(\
+print(translator.create_indexRecordsFromDeclaration(\
         translator.fortran_declaration.parseString("complex,pointer :: f_d ( :,-2: )")[0]))

@@ -13,7 +13,7 @@ attributes(global) subroutine test_gpu(A_d,N)
     integer, intent(in) :: N
     real(DP), intent(inout) :: A_d(N)
 
-    i = 1 + threadIdx%x + blockIdx%x * blockDim%x
+    i = 1 + threadIdx%x + block_idx%x * blockDim%x
     if ( i <= 5 ) then
        A_d(i) = A_d(i) + 1
     endif
@@ -417,7 +417,7 @@ testdata.append(
     complex(8)                                        :: val
 
     ! ii,jj is index of top left corner of block
-    ii = (blockIdx%y-1) * blockDim%x + 1
+    ii = (block_idx%y-1) * blockDim%x + 1
     !print*, "ii ", ii
 
     myrsum = 0.0_8
@@ -426,7 +426,7 @@ testdata.append(
     tx = threadIdx%x
     ty = threadIdx%y
 
-!    if (ii + (blockIdx%x-1)*blockDim%x > N) return
+!    if (ii + (block_idx%x-1)*blockDim%x > N) return
 !
 !
 !    i = ii + tx - 1
@@ -437,7 +437,7 @@ testdata.append(
 !    xil = dimag(val)
 !
 !    ! Loop over columns (skip all lower triangular blocks)
-!!    do jj = ii + (blockIdx%x-1)*blockDim%x, N, gridDim%x*blockDim%x
+!!    do jj = ii + (block_idx%x-1)*blockDim%x, N, gridDim%x*blockDim%x
 !      j = jj + ty - 1
 !
 !      ! Load block into shared memory
@@ -584,7 +584,7 @@ testdata.append(
     complex(8)                                        :: val
     
     ! print*, "ii ", ii
-    ii = (blockIdx%y-1) * blockDim%x + 1
+    ii = (block_idx%y-1) * blockDim%x + 1
 
     if (i <= N) then
      istat = atomicadd(y(2*i - 1), myrsum)

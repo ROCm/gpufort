@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 class Acc2Omp(AccBackendBase):
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines):
-        snippet = joinedStatements
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines):
+        snippet = joined_statements
         try:
-           def repl(parseResult):
-                return parseResult.ompFStr(), True
-           result,_ = utils.pyparsingutils.replaceFirst(snippet,\
+           def repl(parse_result):
+                return parse_result.omp_f_str(), True
+           result,_ = utils.pyparsingutils.replace_first(snippet,\
                     translator.acc_simple_directive,\
                     repl)
            return result, True 
@@ -16,17 +16,17 @@ class Acc2Omp(AccBackendBase):
            return "", False 
 
 class AccLoopKernel2Omp(AccBackendBase):
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines):
-        if statementsFullyCoverLines:
-            snippet = joinedLines
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines):
+        if statements_fully_cover_lines:
+            snippet = joined_lines
         else:
-            snippet = joinedStatements
+            snippet = joined_statements
         try:
-           parseResult = translator.loop_kernel.parseString(snippet)[0]
-           return parseResult.ompFStr(snippet), True 
+           parse_result = translator.loop_kernel.parseString(snippet)[0]
+           return parse_result.omp_f_str(snippet), True 
         except Exception as e:
            print("failed: "+snippet) # TODO error handling
            raise e
            return "", False 
 
-registerAccBackend("omp",Acc2Omp,AccLoopKernel2Omp,None)
+register_acc_backend("omp",Acc2Omp,AccLoopKernel2Omp,None)

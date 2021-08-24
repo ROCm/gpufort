@@ -14,7 +14,7 @@ module test
         !
         integer :: i
  
-        i = 1 + threadIdx%x + blockIdx%x * blockDim%x
+        i = 1 + threadIdx%x + block_idx%x * blockDim%x
         if ( i <= 5 ) then
            A_d(i) = A_d(i) + 1
         endif
@@ -61,4 +61,3 @@ module test
     end subroutine test
 
 end module test
-

@@ -64,7 +64,7 @@ end do
 for snippet in testdata:
     try:
         result = translator.annotated_do_loop.parseString(snippet)[0]
-        print(translator.formatDirective(result._annotation.ompFStr(),80))
+        print(translator.format_directive(result._annotation.omp_f_str(),80))
         result = translator.loop_kernel.parseString(snippet)[0]
     except Exception as e:
         print(" - FAILED",file=sys.stderr)

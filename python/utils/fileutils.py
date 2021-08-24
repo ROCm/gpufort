@@ -7,7 +7,7 @@ import sys
 
 #CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140}\""
 
-def prettifyCCode(cCode,style):
+def prettify_c_code(cCode,style):
     """
     Requires clang-format 7.0+.
     
@@ -17,7 +17,7 @@ def prettifyCCode(cCode,style):
     command = "printf \"{0}\" | clang-format -style={1}".format(cCode.replace("%","%%"),style)
     return subprocess.check_output(command,shell=True).decode('ascii')
 
-def prettifyCFile(cPath,style):
+def prettify_c_file(cPath,style):
     """
     Requires clang-format 7.0+
     
@@ -27,7 +27,7 @@ def prettifyCFile(cPath,style):
     command = "clang-format -i -style={1} {0}".format(cPath,style) # writes inplace
     subprocess.check_output(command,shell=True).decode('ascii')
 
-def prettifyFCode(fCode):
+def prettify_f_code(fCode):
     """
     Requires fprettify
     """
@@ -35,7 +35,7 @@ def prettifyFCode(fCode):
     command += r"| fprettify -l 1000 | sed 's,\s*\([<>]\)\s*[<>]\s*[<>]\s*,\1\1\1,g'"
     return subprocess.check_output(command,shell=True).decode('ascii')
 
-def prettifyFFile(fPath):
+def prettify_f_file(fPath):
     """
     Requires fprettify
     """
@@ -44,13 +44,13 @@ def prettifyFFile(fPath):
     #return subprocess.check_output(command,shell=True).decode('ascii')
     #pass
 
-def readCFileWithoutComments(filepath,unifdefArgs=""):
+def read_c_fileWithoutComments(filepath,unifdef_args=""):
     """
     Requires gcc, unifdef
     """
     command="gcc -w -fmax-errors=100 -fpreprocessed -dD -E {0}".format(filepath)
-    if len(unifdefArgs):
-        command += " | unifdef {0}".format(unifdefArgs)
+    if len(unifdef_args):
+        command += " | unifdef {0}".format(unifdef_args)
     try: 
        output = subprocess.check_output(command,shell=True).decode('UTF-8')
     except subprocess.CalledProcessError as cpe:
@@ -60,13 +60,13 @@ def readCFileWithoutComments(filepath,unifdefArgs=""):
            output = cpe.output.decode("UTF-8")
     return output
 
-def readCFile(filepath,unifdefArgs=""):
+def read_c_file(filepath,unifdef_args=""):
     """
     Requires unifdef
     """
     command="cat {0}".format(filepath)
-    if len(unifdefArgs):
-        command += " | unifdef {0}".format(unifdefArgs)
+    if len(unifdef_args):
+        command += " | unifdef {0}".format(unifdef_args)
     try: 
        output = subprocess.check_output(command,shell=True).decode('UTF-8')
     except subprocess.CalledProcessError as cpe:

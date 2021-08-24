@@ -56,8 +56,8 @@ LIST_OF_TENSORS.clear()
 
 
 print (assignment.parseString("a = 5")[0].c_str())
-print (derivedTypeMember.parseString("threadidx%x3")[0])
-print (derivedTypeMember.parseString("threadidx%x3")[0].c_str())
+print (derived_typeMember.parseString("threadidx%x3")[0])
+print (derived_typeMember.parseString("threadidx%x3")[0].c_str())
 print (datatype.parseString("double precision")[0].c_str())
 print (declaration.parseString("real(kind=8) :: rhx, rhy")[0].c_str())
 
@@ -108,14 +108,14 @@ do j=1,n
 enddo
 enddo"""
 
-#parseResult = cufLoopKernel.parseString(testCufLoopKernel) 
+#parse_result = cuf_loop_kernel.parseString(testCufLoopKernel) 
 #print(testCufLoopKernel)
 
 #import inspect
 
-#print(parseResult[0])
-#print(parseResult[0].c_str())
-#print(cufLoopKernel.parseString(testCufLoopKernel))
+#print(parse_result[0])
+#print(parse_result[0].c_str())
+#print(cuf_loop_kernel.parseString(testCufLoopKernel))
 
 #def gen_dict_extract(key, var):
 #    if hasattr(var,'iteritems'):

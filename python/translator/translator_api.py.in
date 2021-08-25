@@ -17,71 +17,71 @@ def create_indexRecordsFromDeclaration(ttdeclaration):
     has_dimension = ttdeclaration.has_dimension()
     for ttdeclaredvariable in ttdeclaration._rhs:
         var_name    = ttdeclaredvariable.name().lower()
-        var_context = {}
+        ivar = {}
         # basic 
         f_type = make_f_str(ttdeclaration._datatype.type())
         kind  = make_f_str(ttdeclaration._datatype.kind())
         bpe   = bytes(f_type,kind,default=None)
-        var_context["name"]                       = var_name
-        var_context["f_type"]                     = f_type
-        var_context["kind"]                       = kind
-        var_context["bytes_per_element"]          = bpe 
-        var_context["c_type"]                     = convert_to_c_type(f_type,kind,"TODO unknown")
-        var_context["f_interface_type"]           = var_context["f_type"]
-        var_context["f_interface_qualifiers"]     = [ "value" ] # assume pass by value by default
+        ivar["name"]                       = var_name
+        ivar["f_type"]                     = f_type
+        ivar["kind"]                       = kind
+        ivar["bytes_per_element"]          = bpe 
+        ivar["c_type"]                     = convert_to_c_type(f_type,kind,"TODO unknown")
+        ivar["f_interface_type"]           = ivar["f_type"]
+        ivar["f_interface_qualifiers"]     = [ "value" ] # assume pass by value by default
         # TODO pack into single variable
-        var_context["qualifiers"]                 = ttdeclaration.get_string_qualifiers()
+        ivar["qualifiers"]                 = ttdeclaration.get_string_qualifiers()
         # ACC/OMP
-        var_context["declare_on_target"]          = False
+        ivar["declare_on_target"]          = False
         # arrays
-        var_context["rank"]                       = 0
+        ivar["rank"]                       = 0
         dimension_qualifier = find_all(ttdeclaration._qualifiers,TTDimensionQualifier)
         if ttdeclaredvariable.has_bounds() or len(dimension_qualifier):
-            var_context["f_interface_type"] = "type(c_ptr)"
+            ivar["f_interface_type"] = "type(c_ptr)"
             if len(dimension_qualifier):
                 ttbounds = dimension_qualifier[0]._bounds
             else:
                 ttbounds = ttdeclaredvariable.get_bounds()
             rank = ttbounds.rank()
-            var_context["rank"] = rank
-            var_context["unspecified_bounds"] = ttbounds.has_unspecified_bounds()
-            if var_context["unspecified_bounds"]: # TODO: return a mix of unspecified bounds and specified bounds in the future
-                var_context["lbounds"]                       = [ "{0}_lb{1}".format(var_name,i) for i in range(1,rank+1) ]
-                var_context["counts"]                        = [ "{0}_n{1}".format(var_name,i) for i in range(1,rank+1 ) ]
-                var_context["index_macro_with_placeholders"] = ttbounds.index_macro_c_str(var_name,use_place_holders=True)
-                var_context["index_macro"]                   = var_context["index_macro_with_placeholders"]
+            ivar["rank"] = rank
+            ivar["unspecified_bounds"] = ttbounds.has_unspecified_bounds()
+            if ivar["unspecified_bounds"]: # TODO: return a mix of unspecified bounds and specified bounds in the future
+                ivar["lbounds"]                       = [ "{0}_lb{1}".format(var_name,i) for i in range(1,rank+1) ]
+                ivar["counts"]                        = [ "{0}_n{1}".format(var_name,i) for i in range(1,rank+1 ) ]
+                ivar["index_macro_with_placeholders"] = ttbounds.index_macro_c_str(var_name,use_place_holders=True)
+                ivar["index_macro"]                   = ivar["index_macro_with_placeholders"]
             else:
-                var_context["lbounds"]                       = ttbounds.specified_lower_bounds()
-                var_context["counts"]                        = ttbounds.specified_counts()
-                var_context["index_macro_with_placeholders"] = ttbounds.index_macro_c_str(var_name,use_place_holders=True) 
-                var_context["index_macro"]                   = ttbounds.index_macro_c_str(var_name,use_place_holders=False)
-            var_context["total_count"]   = "*".join(var_context["counts"])
-            var_context["total_bytes"]   = None if bpe is None else bpe+"*("+var_context["total_count"]+")"
+                ivar["lbounds"]                       = ttbounds.specified_lower_bounds()
+                ivar["counts"]                        = ttbounds.specified_counts()
+                ivar["index_macro_with_placeholders"] = ttbounds.index_macro_c_str(var_name,use_place_holders=True) 
+                ivar["index_macro"]                   = ttbounds.index_macro_c_str(var_name,use_place_holders=False)
+            ivar["total_count"]   = "*".join(ivar["counts"])
+            ivar["total_bytes"]   = None if bpe is None else bpe+"*("+ivar["total_count"]+")"
         # handle parameters
-        var_context["value"] = None
-        if "parameter" in var_context["qualifiers"]:
+        ivar["value"] = None
+        if "parameter" in ivar["qualifiers"]:
             if ttdeclaredvariable.rhs_is_number():
-                var_context["value"] = ttdeclaredvariable.rhs_c_str()
+                ivar["value"] = ttdeclaredvariable.rhs_c_str()
             else:
-                #var_context["value"] = ttdeclaredvariable.rhs_c_str()
+                #ivar["value"] = ttdeclaredvariable.rhs_c_str()
                 # TODO 
                 pass
-        context.append(var_context)
+        context.append(ivar)
     
     utils.logging.log_leave_function(LOG_PREFIX,"create_indexRecordsFromDeclaration")
     
     return context
 
-def change_kind(var_context,kind):
-    f_type = var_context["f_type"]
-    bpe   = bytes(f_type,kind,default=None)
-    var_context["kind"]                 = kind
-    var_context["bytes_per_element"]      = bpe 
-    var_context["c_type"]                = convert_to_c_type(f_type,kind,"TODO unknown")
-    if var_context["rank"] == 0:
-      var_context["f_interface_type"] = var_context["c_type"]
+def change_kind(ivar,kind):
+    f_type                    = ivar["f_type"]
+    bpe                       = bytes(f_type,kind,default=None)
+    ivar["kind"]              = kind
+    ivar["bytes_per_element"] = bpe 
+    ivar["c_type"]            = convert_to_c_type(f_type,kind,"TODO unknown")
+    if ivar["rank"] == 0:
+      ivar["f_interface_type"] = ivar["c_type"]
     #
-    var_context["total_bytes"] = None if bpe is None else bpe+"*("+var_context["total_count"]+")"
+    ivar["total_bytes"] = None if bpe is None else bpe+"*("+ivar["total_count"]+")"
 
 def convert_arithmetic_expression(fortran_snippet):
     return ( matrix_arithmetic_expression | complex_arithmetic_expression | arithmetic_expression ).parseString(fortran_snippet)[0].c_str()

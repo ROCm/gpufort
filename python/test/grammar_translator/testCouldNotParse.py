@@ -22,4 +22,4 @@ a = b * 2,
 """
 
 result = notAssignment.searchString(input)
-print(result.as_list())
+print(result.asList())

@@ -44,12 +44,12 @@ def create_index(search_dirs,options,filepath):
     utils.logging.log_leave_function(LOG_PREFIX,"create_index")
     return index
 
-def _intrnl_translateSource(infilepath,stree,records,index,preamble):
+def _intrnl_translate_source(infilepath,stree,records,index,preamble):
     global LOG_PREFIX
     global MODIFIED_FILE_EXT
     global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
     
-    utils.logging.log_enter_function(LOG_PREFIX,"__translateSource",{"infilepath":infilepath})
+    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_translate_source",{"infilepath":infilepath})
     
     # post process
     scanner.postprocess(stree,index,fort2hip.FORTRAN_MODULE_SUFFIX)
@@ -69,9 +69,9 @@ def _intrnl_translateSource(infilepath,stree,records,index,preamble):
     if PRETTIFY_MODIFIED_TRANSLATION_SOURCE:
         utils.fileutils.prettify_f_file(outfilepath)
     msg = "created hipified input file: ".ljust(40) + outfilepath
-    utils.logging.log_info(LOG_PREFIX,"__translateSource",msg)
+    utils.logging.log_info(LOG_PREFIX,"_intrnl_translate_source",msg)
     
-    utils.logging.log_leave_function(LOG_PREFIX,"__translateSource")
+    utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_translate_source")
 
 def parse_raw_command_line_arguments():
     """
@@ -403,7 +403,7 @@ if __name__ == "__main__":
         else:
             preamble = None
         if not (ONLY_EMIT_KERNELS or ONLY_EMIT_KERNELS_AND_LAUNCHERS):
-            _intrnl_translateSource(input_filepath,stree,records,index,preamble) 
+            _intrnl_translate_source(input_filepath,stree,records,index,preamble) 
     #
     if PROFILING_ENABLE:
         profiler.disable() 

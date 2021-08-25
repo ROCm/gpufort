@@ -128,7 +128,7 @@ class TestPreprocessorGrammar(unittest.TestCase):
         numTests = len(testdata)
         for text in testdata:
             try:
-                result = grammar.pp_arithm_logic_expr.parseString(text,parse_all=True)
+                result = grammar.pp_arithm_logic_expr.parseString(text,parseAll=True)
                 numSuccess += 1
             except:
                 pass
@@ -142,7 +142,7 @@ class TestPreprocessorGrammar(unittest.TestCase):
         numTests += len(testdata)
         for text in testdata:
             try:
-                result = grammar.pp_arithm_logic_expr.parseString(text,parse_all=True)
+                result = grammar.pp_arithm_logic_expr.parseString(text,parseAll=True)
                 numSuccess += 1
             except Exception as e:
                 print(text)

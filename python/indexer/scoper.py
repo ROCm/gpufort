@@ -58,7 +58,7 @@ EMPTY_SCOPE = { "tag": "", "types" : [], "variables" : [], "subprograms" : [] }
 
 __SCOPE_ENTRY_TYPES = ["subprograms","variables","types"]
 
-def _intrnl_resolveDependencies(scope,index_record,index):
+def _intrnl_resolve_dependencies(scope,index_record,index):
     """
     Include variable, type, and subprogram records from modules used
     by the current record (module,program or subprogram).
@@ -72,7 +72,7 @@ def _intrnl_resolveDependencies(scope,index_record,index):
     global LOG_PREFIX    
     global ERROR_HANDLING
 
-    utils.logging.log_enter_function(LOG_PREFIX,"__resolveDependencies")
+    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_resolve_dependencies")
 
     def handle_use_statements_(scope,imodule):
         """
@@ -90,7 +90,7 @@ def _intrnl_resolveDependencies(scope,index_record,index):
                     used_module_found   = True
                     include_all_entries = not len(used_module["only"])
                     if include_all_entries: # simple include
-                        utils.logging.log_debug2(LOG_PREFIX,"__resolveDependencies.handle_use_statements",
+                        utils.logging.log_debug2(LOG_PREFIX,"_intrnl_resolve_dependencies.handle_use_statements",
                           "use all definitions from module '{}'".format(imodule["name"]))
                         for entry_type in __SCOPE_ENTRY_TYPES:
                             scope[entry_type] += module[entry_type]
@@ -100,7 +100,7 @@ def _intrnl_resolveDependencies(scope,index_record,index):
                                 for entry in module[entry_type]:
                                     if entry["name"] == mapping["original"]:
                                         utils.logging.log_debug2(LOG_PREFIX,
-                                          "__resolveDependencies.handle_use_statements",\
+                                          "_intrnl_resolve_dependencies.handle_use_statements",\
                                           "use {} '{}' as '{}' from module '{}'".format(\
                                           entry_type[0:-1],mapping["original"],mapping["renamed"],\
                                           imodule["name"]))
@@ -110,15 +110,15 @@ def _intrnl_resolveDependencies(scope,index_record,index):
             if not used_module_found:
                 msg = "no index record for module '{}' could be found".format(used_module["name"])
                 if ERROR_HANDLING == "strict":
-                    utils.logging.log_error(LOG_PREFIX,"__resolveDependencies",msg) 
+                    utils.logging.log_error(LOG_PREFIX,"_intrnl_resolve_dependencies",msg) 
                     sys.exit(ERR_INDEXER_RESOLVE_DEPENDENCIES_FAILED)
                 else:
-                    utils.logging.log_warning(LOG_PREFIX,"__resolveDependencies",msg)
+                    utils.logging.log_warning(LOG_PREFIX,"_intrnl_resolve_dependencies",msg)
 
     handle_use_statements_(scope,index_record)
-    utils.logging.log_leave_function(LOG_PREFIX,"__resolveDependencies")
+    utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_resolve_dependencies")
 
-def _intrnl_search_scope_for_typeOrSubprogram(scope,entry_name,entry_type,empty_record):
+def _intrnl_search_scope_for_type_or_subprogram(scope,entry_name,entry_type,empty_record):
     """
     :param str entry_type: either 'types' or 'subprograms'
     """
@@ -145,7 +145,7 @@ def _intrnl_search_scope_for_typeOrSubprogram(scope,entry_name,entry_type,empty_
         utils.logging.log_leave_function(LOG_PREFIX,"__search_scope_for_typeOrSubprogram")
         return result, True
 
-def _intrnl_search_index_for_typeOrSubprogram(index,parent_tag,entry_name,entry_type,empty_record):
+def _intrnl_search_index_for_type_or_subprogram(index,parent_tag,entry_name,entry_type,empty_record):
     """
     :param str entry_type: either 'types' or 'subprograms'
     """
@@ -154,7 +154,7 @@ def _intrnl_search_index_for_typeOrSubprogram(index,parent_tag,entry_name,entry_
       {"parent_tag":parent_tag,"entry_name":entry_name,"entry_type":entry_type})
 
     scope = create_scope(index,parent_tag)
-    return _intrnl_search_scope_for_typeOrSubprogram(scope,entry_name,entry_type,empty_record)
+    return _intrnl_search_scope_for_type_or_subprogram(scope,entry_name,entry_type,empty_record)
 
 # API
 def create_scope(index,tag):
@@ -228,7 +228,7 @@ def create_scope(index,tag):
             for current_record in current_recordList:
                 if current_record["name"] == searched_name:
                     # 1. first include variables from included
-                    _intrnl_resolveDependencies(new_scope,current_record,index) 
+                    _intrnl_resolve_dependencies(new_scope,current_record,index) 
                     # 2. now include the current record's   
                     for entry_type in __SCOPE_ENTRY_TYPES:
                         if entry_type in current_record:
@@ -293,7 +293,7 @@ def search_scope_for_type(scope,type_name):
     :param str type_name: lower case name of the searched type. Simple identifier such as 'mytype'.
     """
     utils.logging.log_enter_function(LOG_PREFIX,"search_scope_for_type",{"type_name":type_name})
-    result = _intrnl_search_scope_for_typeOrSubprogram(scope,type_name,"types",EMPTY_TYPE)
+    result = _intrnl_search_scope_for_type_or_subprogram(scope,type_name,"types",EMPTY_TYPE)
     utils.logging.log_leave_function(LOG_PREFIX,"search_scope_for_type")
     return result
 
@@ -302,7 +302,7 @@ def search_scope_for_subprogram(scope,subprogram_name):
     :param str subprogram_name: lower case name of the searched subprogram. Simple identifier such as 'mysubroutine'.
     """
     utils.logging.log_enter_function(LOG_PREFIX,"search_scope_for_subprogram",{"subprogram_name":subprogram_name})
-    result =  _intrnl_search_scope_for_typeOrSubprogram(scope,subprogram_name,"subprograms",EMPTY_SUBPROGRAM)
+    result =  _intrnl_search_scope_for_type_or_subprogram(scope,subprogram_name,"subprograms",EMPTY_SUBPROGRAM)
     utils.logging.log_leave_function(LOG_PREFIX,"search_scope_for_subprogram")
     return result
 
@@ -326,7 +326,7 @@ def search_index_for_type(index,parent_tag,type_name):
     """
     utils.logging.log_enter_function(LOG_PREFIX,"search_index_for_type",\
       {"parent_tag":parent_tag,"type_name":type_name})
-    result = _intrnl_search_index_for_typeOrSubprogram(index,parent_tag,type_name,"types",EMPTY_TYPE)
+    result = _intrnl_search_index_for_type_or_subprogram(index,parent_tag,type_name,"types",EMPTY_TYPE)
     utils.logging.log_leave_function(LOG_PREFIX,"search_index_for_type")
     return result
 
@@ -337,7 +337,7 @@ def search_index_for_subprogram(index,parent_tag,subprogram_name):
     """
     utils.logging.log_enter_function(LOG_PREFIX,"search_index_for_subprogram",\
       {"parent_tag":parent_tag,"subprogram_name":subprogram_name})
-    result =  _intrnl_search_index_for_typeOrSubprogram(index,parent_tag,subprogram_name,"subprograms",EMPTY_SUBPROGRAM)
+    result =  _intrnl_search_index_for_type_or_subprogram(index,parent_tag,subprogram_name,"subprograms",EMPTY_SUBPROGRAM)
     utils.logging.log_leave_function(LOG_PREFIX,"search_index_for_subprogram")
     return result
             

@@ -147,7 +147,10 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
         nonlocal stmt1
         utils.logging.log_error(LOG_PREFIX,"__parse_fortran_code","failed to parse {} expression '{}'".format(expr,stmt))
         if exception != None:
-            utils.logging.log_debug(LOG_PREFIX,"__parse_fortran_code",str(exception))
+            debug_msg = traceback.format_tb(exception.__traceback__)[0].rstrip().\
+                    replace("<string>",os.path.join(TRANSLATOR_DIR, "translator_parser.py.in"))
+            debug_msg += ": "+str(exception)
+            utils.logging.log_debug(LOG_PREFIX,"__parse_fortran_code",debug_msg)
         sys.exit(2) # TODO error code
     def warn_(expr,exception=None):
         nonlocal stmt1
@@ -166,8 +169,6 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
     curr_offload_loop   = None
     level               = 0
     for stmt1 in statements:
-        # TODO move somewhere else
-        # replace power (**) expression by func call expression
         stmt   = _intrnl_preprocess_fortran_statement(stmt1)
         tokens = utils.pyparsingutils.tokenize(stmt.lower(),padded_size=6)
         # strip of ! from tokens.index("!")
@@ -182,7 +183,7 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
         if is_ignored_statement_(tokens):
             ignore_("statement")
         elif is_comment_(tokens,stmt):
-            comment = re.split("!|c|\*",stmt,1,re.IGNORECASE)[1]
+            comment = re.split("!|c|\*",stmt1,1,re.IGNORECASE)[1]
             append_("// "+comment+"\n","comment")
         elif is_blank_line_(stmt):
             append_(stmt,"blank line")
@@ -191,14 +192,14 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
                 if is_ignored_fortran_directive_(tokens):
                     ignore_("directive")
                 elif is_fortran_offload_region_plus_loop_directive_(tokens): # most complex first
-                    parse_result = loop_annotation.parseString(stmt,parse_all=True)
+                    parse_result = loop_annotation.parseString(stmt,parseAll=True)
                     curr_offload_region = parse_result[0]
                     curr_offload_loop   = parse_result[0] 
                 elif is_fortran_offload_region_directive_(tokens):
-                    parse_result = parallel_region_start.parseString(stmt,parse_all=True)
+                    parse_result = parallel_region_start.parseString(stmt,parseAll=True)
                     curr_offload_region = parse_result[0]
                 elif is_fortran_offload_loop_directive_(tokens):
-                    parse_result = loop_annotation.parseString(stmt,parse_all=True)
+                    parse_result = loop_annotation.parseString(stmt,parseAll=True)
                     curr_offload_loop = parse_result[0] 
                 else:
                     warn_("directive",e)
@@ -208,20 +209,20 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
         # do/while
         elif is_do_while_(tokens):
             try: 
-                parse_result = fortan_do_while.parseString(stmt_no_comment,parse_all=True)
-                descend_(TTWhileLoop(stmt,0,parse_result.as_list()+[[]]),"do-while loop")
+                parse_result = fortan_do_while.parseString(stmt_no_comment,parseAll=True)
+                descend_(TTWhileLoop(stmt,0,parse_result.asList()+[[]]),"do-while loop")
             except Exception as e:
                 error_("do-while loop",e)
         elif is_do_(tokens):
             try: 
-                parse_result   = fortran_do.parseString(stmt_no_comment,parse_all=True)
-                do_loop_tokens = [ curr_offload_loop ] + parse_result.as_list() + [[]]
+                parse_result   = fortran_do.parseString(stmt_no_comment,parseAll=True)
+                do_loop_tokens = [ curr_offload_loop ] + parse_result.asList() + [[]]
                 do_loop = TTDoLoop(stmt,0,do_loop_tokens)
                 if curr_offload_region != None:
                     descend_(TTLoopKernel(stmt_no_comment,"", [curr_offload_region, do_loop]),\
                             "offloaded do loop")
-                    do_loop.parent = curr
-                    curr           = do_loop
+                    do_loop.parent      = curr
+                    curr                = do_loop
                     curr_offload_region = None
                 else:
                     descend_(do_loop,"do loop")
@@ -232,16 +233,16 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
         elif is_if_then_(tokens):
             try: 
                 descend_(TTIfElseBlock(),"if block")
-                parse_result = fortran_if_else_if.parseString(stmt_no_comment,parse_all=True)
-                descend_(TTIfElseIf(stmt_no_comment,0,parse_result.as_list()+[[]]),"if branch")
+                parse_result = fortran_if_else_if.parseString(stmt_no_comment,parseAll=True)
+                descend_(TTIfElseIf(stmt_no_comment,0,parse_result.asList()+[[]]),"if branch")
             except Exception as e:
                 error_("if",e)
         elif is_else_if_then_(tokens):
             assert type(curr) is TTIfElseIf
             ascend_("if")
             try: 
-                parse_result = fortran_if_else_if.parseString(stmt_no_comment,parse_all=True)
-                descend_(TTIfElseIf(stmt_no_comment,0,parse_result.as_list()+[[]]),"else-if branch")
+                parse_result = fortran_if_else_if.parseString(stmt_no_comment,parseAll=True)
+                descend_(TTIfElseIf(stmt_no_comment,0,parse_result.asList()+[[]]),"else-if branch")
             except Exception as e:
                 error_("else-if",e)
         elif is_else_(tokens):
@@ -251,16 +252,16 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
         # select-case
         elif is_select_case_(tokens):
             try: 
-                parse_result = fortran_select_case.parseString(stmt_no_comment,parse_all=True)
-                descend_(TTSelectCase(stmt_no_comment,0,parse_result.as_list()+[[]]),"select-case")
+                parse_result = fortran_select_case.parseString(stmt_no_comment,parseAll=True)
+                descend_(TTSelectCase(stmt_no_comment,0,parse_result.asList()+[[]]),"select-case")
             except Exception as e:
                 error_("select-case",e)
         elif is_case_(tokens):
             if type(curr) is TTCase:
                 ascend_("case")
             try: 
-                parse_result = fortran_case.parseString(stmt_no_comment,parse_all=True)
-                descend_(TTCase(stmt_no_comment,0,parse_result.as_list()+[[]]),"case")
+                parse_result = fortran_case.parseString(stmt_no_comment,parseAll=True)
+                descend_(TTCase(stmt_no_comment,0,parse_result.asList()+[[]]),"case")
             except Exception as e:
                 error_("else-if",e)
         elif is_case_default_(tokens):
@@ -275,13 +276,13 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
             error_("pointer assignment")
         elif is_assignment_(tokens):
             try: 
-                parse_result = fortran_assignment.parseString(stmt_no_comment,parse_all=True)
+                parse_result = fortran_assignment.parseString(stmt_no_comment,parseAll=True)
                 append_(parse_result[0],"assignment")
             except Exception as e:
                 error_("assignment",e)
         elif is_subroutine_call_(tokens):
             try: 
-                parse_result = fortran_subroutine_call.parseString(stmt_no_comment,parse_all=True)
+                parse_result = fortran_subroutine_call.parseString(stmt_no_comment,parseAll=True)
                 append_(parse_result[0],"subroutine call")
             except Exception as e:
                 error_("subroutine call",e)

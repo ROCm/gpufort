@@ -34,7 +34,7 @@ def init_logging(logfile_base_name,log_format,log_level):
     __LOG_FORMAT = log_format
 
     # add custom log levels:
-    _intrnl_registerAdditionalDebugLevels()
+    _intrnl_register_additional_debug_levels()
     log_dir = LOG_DIR
     if not LOG_DIR_CREATE and not os.path.exists(log_dir):
         msg = "directory for storing log files ('{}') does not exist".format(log_dir)
@@ -62,7 +62,7 @@ def init_logging(logfile_base_name,log_format,log_level):
         sys.exit(ERR_UTILS_LOGGING_LOG_DIR_DOES_NOT_EXIST)
     return logfile_path
 
-def _intrnl_registerAdditionalDebugLevels(max_level=5):
+def _intrnl_register_additional_debug_levels(max_level=5):
     for debug_level in range(2,max_level+1):
          label = "DEBUG"+str(debug_level)
          level = logging.DEBUG-debug_level+1
@@ -76,10 +76,10 @@ def _intrnl_registerAdditionalDebugLevels(max_level=5):
                  self._log(level, message, args, **kwargs)
          setattr(logging.getLoggerClass(), label.lower(), log_if_level_is_active_)
 
-def _intrnl_makeMessage(prefix,func_name,raw_msg):
+def _intrnl_make_message(prefix,func_name,raw_msg):
     return prefix+"."+func_name+"(...):\t"+raw_msg
 
-def _intrnl_printMessage(levelname,message):
+def _intrnl_print_message(levelname,message):
     print(__LOG_FORMAT.replace("%(levelname)s",levelname).\
       replace("%(message)s",message),file=sys.stderr)
 
@@ -88,37 +88,37 @@ def log_info(prefix,func_name,raw_msg):
     global VERBOSE
     global LOG_FILTER
     
-    msg = _intrnl_makeMessage(prefix,func_name,raw_msg)
+    msg = _intrnl_make_message(prefix,func_name,raw_msg)
     if LOG_FILTER == None or re.search(LOG_FILTER,msg):
         logging.getLogger("").info(msg)
         if VERBOSE and __LOG_LEVEL_AS_INT <= getattr(logging,"INFO"):
-            _intrnl_printMessage("INFO",msg)
+            _intrnl_print_message("INFO",msg)
 
 def log_error(prefix,func_name,raw_msg):
     global VERBOSE
     global LOG_FILTER
     
-    msg = _intrnl_makeMessage(prefix,func_name,raw_msg)
+    msg = _intrnl_make_message(prefix,func_name,raw_msg)
     if LOG_FILTER == None or re.search(LOG_FILTER,msg):
         logging.getLogger("").error(msg)
-        _intrnl_printMessage("ERROR",msg)
+        _intrnl_print_message("ERROR",msg)
 
 def log_warning(prefix,func_name,raw_msg):
     global __LOG_LEVEL_AS_INT
     global VERBOSE
     global LOG_FILTER
     
-    msg = _intrnl_makeMessage(prefix,func_name,raw_msg)
+    msg = _intrnl_make_message(prefix,func_name,raw_msg)
     if LOG_FILTER == None or re.search(LOG_FILTER,msg):
         logging.getLogger("").warning(msg)
-        _intrnl_printMessage("WARNING",msg)
+        _intrnl_print_message("WARNING",msg)
 
 def log_debug(prefix,func_name,raw_msg,debug_level=1):
     global __LOG_LEVEL_AS_INT
     global VERBOSE
     global LOG_FILTER
    
-    msg = _intrnl_makeMessage(prefix,func_name,raw_msg)
+    msg = _intrnl_make_message(prefix,func_name,raw_msg)
     if LOG_FILTER == None or re.search(LOG_FILTER,msg):
         if debug_level == 1:
            logging.getLogger("").debug(msg)
@@ -134,7 +134,7 @@ def log_debug(prefix,func_name,raw_msg,debug_level=1):
             assert False, "debug level not supported"
         if VERBOSE and __LOG_LEVEL_AS_INT <= getattr(logging,"DEBUG")-debug_level+1:
             levelname =  "DEBUG" if ( debug_level == 1 ) else ("DEBUG"+str(debug_level))
-            _intrnl_printMessage(levelname,msg)
+            _intrnl_print_message(levelname,msg)
 
 def log_debug1(prefix,func_name,msg):
     log_debug(prefix,func_name,msg,1)

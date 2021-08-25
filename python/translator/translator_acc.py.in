@@ -42,7 +42,7 @@ class TTAccClauseSelf(TTNode):
 class TTAccMappingClause(TTNode):
     def _assign_fields(self,tokens):
         self._kind    = tokens[0]
-        self._varList = tokens[1].as_list()
+        self._varList = tokens[1].asList()
     def kind(self):
         return self._kind
     def var_names(self,converter=make_f_str):

@@ -45,7 +45,7 @@ def check_destination_dialect(destination_dialect):
         utils.logging.log_error(LOG_PREFIX,"check_destination_dialect",msg)
         sys.exit(SCANNER_ERROR_CODE)
 
-def _intrnl_postprocessAcc(stree):
+def _intrnl_postprocess_acc(stree):
     """
     Add use statements as well as handles plus their creation and destruction for certain
     math libraries.
@@ -54,7 +54,7 @@ def _intrnl_postprocessAcc(stree):
     global DESTINATION_DIALECT
     global RUNTIME_MODULE_NAMES
     
-    utils.logging.log_enter_function(LOG_PREFIX,"__postprocessAcc")
+    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_postprocess_acc")
     
     directives = stree.find_all(filter=lambda node: isinstance(node,STAccDirective), recursively=True)
     for directive in directives:
@@ -66,16 +66,16 @@ def _intrnl_postprocessAcc(stree):
              if acc_runtime_module_name != None and len(acc_runtime_module_name):
                  stnode.add_to_prolog("{0}use {1}\n{0}use iso_c_binding\n".format(indent,acc_runtime_module_name))
         #if type(directive._parent
-    utils.logging.log_leave_function(LOG_PREFIX,"__postprocessAcc")
+    utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_postprocess_acc")
     
-def _intrnl_postprocessCuf(stree):
+def _intrnl_postprocess_cuf(stree):
     """
     Add use statements as well as handles plus their creation and destruction for certain
     math libraries.
     """
     global LOG_PREFIX
     global CUBLAS_VERSION 
-    utils.logging.log_enter_function(LOG_PREFIX,"__postprocessCuf")
+    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_postprocess_cuf")
     # cublas_v1 detection
     if CUBLAS_VERSION == 1:
         def has_cublas_call_(child):
@@ -95,7 +95,7 @@ def _intrnl_postprocessCuf(stree):
             last = local_cublas_calls[-1]
             indent = self.first_lineIndent()
             last.add_to_epilog("{0}hipblasDestroy(hipblasHandle)\n".format(indent))
-    utils.logging.log_leave_function(LOG_PREFIX,"__postprocessCuf")
+    utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_postprocess_cuf")
 
 
 # API
@@ -495,7 +495,7 @@ def parse_file(records,index,fortran_filepath):
            utils.logging.log_debug4(LOG_PREFIX,"parse_file.scanString","did not find expression '{}' in line {}: '{}'".format(expression_name,current_record["lineno"],current_record["lines"][0].rstrip()))
         return matched
     
-    def try_to_parse_string(expression_name,expression,parse_all=False):
+    def try_to_parse_string(expression_name,expression,parseAll=False):
         """
         These expressions might never be hidden behind a single-line if or might
         never be an argument of another calls.
@@ -507,7 +507,7 @@ def parse_file(records,index,fortran_filepath):
         nonlocal current_statementStrippedNoComments
         
         try:
-           expression.parseString(current_statementStrippedNoComments,parse_all)
+           expression.parseString(current_statementStrippedNoComments,parseAll)
            utils.logging.log_debug3(LOG_PREFIX,"parse_file.try_to_parse_string","found expression '{}' in line {}: '{}'".format(expression_name,current_record["lineno"],current_record["lines"][0].rstrip()))
            return True
         except ParseBaseException as e: 
@@ -564,7 +564,7 @@ def parse_file(records,index,fortran_filepath):
                                 if current_tokens[0:2]==[comment_char+"$","cuf"]:
                                     CufLoopKernel()
                         if "=" in current_tokens:
-                            if not try_to_parse_string("memcpy",memcpy,parse_all=True):
+                            if not try_to_parse_string("memcpy",memcpy,parseAll=True):
                                 try_to_parse_string("assignment",assignment_begin)
                                 scan_string("non_zero_check",non_zero_check)
                         if "allocated" in current_tokens:
@@ -632,7 +632,7 @@ def postprocess(stree,index,hip_module_suffix):
                     stnode.add_to_prolog("{}use {}{}\n".format(indent,module_name,hip_module_suffix))
    
     if "cuf" in SOURCE_DIALECTS:
-         _intrnl_postprocessCuf(stree)
+         _intrnl_postprocess_cuf(stree)
     if "acc" in SOURCE_DIALECTS:
-         _intrnl_postprocessAcc(stree)
+         _intrnl_postprocess_acc(stree)
     utils.logging.log_leave_function(LOG_PREFIX,"postprocess")

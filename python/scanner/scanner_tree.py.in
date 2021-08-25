@@ -47,7 +47,7 @@ class STNode:
         self._children               = []
         self._parent                 = parent
         self._ignoreInS2STranslation = False 
-    def __getRecordContent(self,key,first_recordFirstElem=0,last_recordLastElem=-1):
+    def __get_record_content(self,key,first_recordFirstElem=0,last_recordLastElem=-1):
         """Collects entries for the given key from all records associated
         with this node."""
         result = []
@@ -86,14 +86,14 @@ class STNode:
         for i,line in enumerate(lines):
             lines[i] = line.replace(" ","").replace("\t","").replace("\n","").replace("&","")
     def lines(self):
-        return self.__getRecordContent("lines")
+        return self.__get_record_content("lines")
     def statements(self,include_none_entries=False):
         """
         Extract the statements associated with this node from the records associated with this node.
         :param bool include_none_entries: Also include entries that are None [default=False].
         :note: None entries might have been introduced by other nodes transforming the same record(s).
         """
-        result = self.__getRecordContent("statements",\
+        result = self.__get_record_content("statements",\
           self._first_statementIndex,self._lastStatementIndex)
         if not include_none_entries:
             return [stmt.rstrip("\n\t ;") for stmt in result if stmt != None]
@@ -195,7 +195,7 @@ class STNode:
             return joined_lines, False
         else:
             return joined_statements, False
-    def __modifyRecords(self,substitution):
+    def __modify_records(self,substitution):
         """
         Replaces first statement associated with node in first associated record by 'subst' argument.
         Replaces all other other statements in first and all other records associated
@@ -255,7 +255,7 @@ class STNode:
             joined_statements           = "\n".join(self.statements())
             transformed_code, modified  = self.transform(joined_lines,joined_statements,statements_fully_cover_lines,index_hints)
             if modified:
-                self.__modifyRecords(transformed_code)
+                self.__modify_records(transformed_code)
 
 class STEndOrReturn(STNode):
     pass

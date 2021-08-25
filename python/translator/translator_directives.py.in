@@ -116,7 +116,7 @@ class TTDoLoop(TTContainer):
         ivar = self.loop_var()
         begin    = make_c_str(self._begin._rhs) # array indexing is corrected in index macro
         step     = make_c_str(self._step)
-        return "{indent}int {var} = {begin} + ({step})*(threadIdx.{idx} + block_idx.{idx} * blockDim.{idx});\n".format(\
+        return "{indent}int {var} = {begin} + ({step})*(threadIdx.{idx} + blockIdx.{idx} * blockDim.{idx});\n".format(\
                 indent=self.indent,var=ivar,begin=begin,idx=self._threadIndex,step=step)
     def collapsed_loop_index_c_str(self,denominator):
         ivar = self.loop_var()
@@ -245,9 +245,9 @@ class TTLoopKernel(TTNode,IComputeConstruct):
     def _assign_fields(self,tokens):
         self._parentDirective, self.body = tokens
         self.scope = scoper.EMPTY_SCOPE
-    def __firstLoopAnnotation(self):
+    def __first_loop_annotation(self):
         return self.body.annotation
-    def __parentDirective(self):
+    def __parent_directive(self):
         if self._parentDirective == None:
             return self._firstLoopAnnotation()
         else:
@@ -326,7 +326,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         _,reduction_candidates = self.__local_scalarsAndReductionCandidates(self.scope)
         return reduction_candidates
     def problem_size(self):
-        num_outer_loops_to_map = int(self.__parentDirective().num_collapse())
+        num_outer_loops_to_map = int(self.__parent_directive().num_collapse())
         if LOOP_COLLAPSE_STRATEGY == "grid" or num_outer_loops_to_map == 1:
             num_outer_loops_to_map = min(3,num_outer_loops_to_map)
             result = ["-1"]*num_outer_loops_to_map
@@ -348,59 +348,59 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 return ["-1"]
     def async_nowait(): 
         """value != CLAUSE_NOT_FOUND means True"""
-        return self.__parentDirective().async_nowait() 
+        return self.__parent_directive().async_nowait() 
     def depend(self): 
-        return self.__parentDirective().depend()
+        return self.__parent_directive().depend()
     def device_types(self): 
-        return self.__parentDirective().device_types()
+        return self.__parent_directive().device_types()
     def if_condition(self): 
-        return self.__parentDirective().if_condition()
+        return self.__parent_directive().if_condition()
     def self_condition(self): 
-        return self.__parentDirective().self_condition
+        return self.__parent_directive().self_condition
     def deviceptrs(self,scope=[]):
-        if self.__parentDirective().all_arrays_are_on_device():
+        if self.__parent_directive().all_arrays_are_on_device():
             return self.arrays_in_body(scope)
         else:
-            return self.__parentDirective().deviceptrs()
+            return self.__parent_directive().deviceptrs()
     def create_alloc_vars(self):
-        return self.__parentDirective().create_alloc_vars()
+        return self.__parent_directive().create_alloc_vars()
     def no_create_vars(self):
-        return self.__parentDirective().no_create_vars()
+        return self.__parent_directive().no_create_vars()
     def present_vars(self):
-        return self.__parentDirective().present_vars()
+        return self.__parent_directive().present_vars()
     def delete_release_vars(self):
-        return self.__parentDirective().delete_release_vars()
+        return self.__parent_directive().delete_release_vars()
     def copy_map_to_from_vars(self):
-        return self.__parentDirective().copy_map_to_from_vars()
+        return self.__parent_directive().copy_map_to_from_vars()
     def copyin_map_to_vars(self):
-        return self.__parentDirective().copyin_map_to_vars()
+        return self.__parent_directive().copyin_map_to_vars()
     def copyout_map_from_vars(self):
-        return self.__parentDirective().copyout_map_from_vars()
+        return self.__parent_directive().copyout_map_from_vars()
     def attach_vars(self):
-        return self.__parentDirective().attach_vars()
+        return self.__parent_directive().attach_vars()
     def detach_vars(self):
-        return self.__parentDirective().detach_vars()
+        return self.__parent_directive().detach_vars()
     def present_by_default(self): 
-        return self.__parentDirective().present_by_default()
+        return self.__parent_directive().present_by_default()
     def grid_expression_f_str(self):
         """ only CUF """
-        return self.__firstLoopAnnotation().grid_expression_f_str()
+        return self.__first_loop_annotation().grid_expression_f_str()
     def block_expression_f_str(self):
         """ only CUF """
-        return self.__firstLoopAnnotation().block_expression_f_str()
+        return self.__first_loop_annotation().block_expression_f_str()
     def gang_team_private_vars(self,converter=make_f_str): 
-        return self.__parentDirective().gang_team_private_vars(converter)
+        return self.__parent_directive().gang_team_private_vars(converter)
     def gang_team_firstprivate_vars(self,converter=make_f_str): 
-        return self.__parentDirective().gang_team_firstprivate_vars(converter)
+        return self.__parent_directive().gang_team_firstprivate_vars(converter)
     def gang_team_reductions(self,converter=make_f_str): 
-        if type(self.__firstLoopAnnotation()) is TTCufKernelDo:
+        if type(self.__first_loop_annotation()) is TTCufKernelDo:
             return { "UNKNOWN" : self.reduction_candidates() } # TODO default reduction type should be configurable
         else:
-            return self.__firstLoopAnnotation().reductions(converter)
+            return self.__first_loop_annotation().reductions(converter)
     def stream(self,converter=make_f_str):
-        return self.__parentDirective().stream(converter)
+        return self.__parent_directive().stream(converter)
     def shared_mem(self,converter=make_f_str):
-        return self.__parentDirective().shared_mem(converter)
+        return self.__parent_directive().shared_mem(converter)
     def omp_f_str(self,f_snippet):
         """
         :note: The string used for parsing was preprocessed. Hence
@@ -422,7 +422,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         reduction         = self.gang_team_reductions()
         depend            = self.depend()
 
-        if type(self.__parentDirective()) is TTCufKernelDo:
+        if type(self.__parent_directive()) is TTCufKernelDo:
             def cuf_kernel_do_repl(parse_result):
                 nonlocal arrays_in_body
                 nonlocal inout_arrays_in_body
@@ -475,7 +475,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         __flag_tensors(self,self.scope)
         # TODO look up correct signature of called device functions from index
         # 1.1 Collapsing
-        num_outer_loops_to_map = int(self.__parentDirective().num_collapse())
+        num_outer_loops_to_map = int(self.__parent_directive().num_collapse())
         if LOOP_COLLAPSE_STRATEGY == "grid" and num_outer_loops_to_map <= 3:
             dim=num_outer_loops_to_map
         else: # "collapse" or num_outer_loops_to_map > 3
@@ -569,11 +569,11 @@ class TTProcedureBody(TTContainer):
         if len(self.result_name):
             for expr in find_all(self.body,TTReturn):
                  expr._result_name = result_name  
-        cBody = make_c_str(self.body)
+        c_body = make_c_str(self.body)
         
         if len(self.result_name):
-             cBody += "\nreturn "+result_name+";"
-        return cBody
+             c_body += "\nreturn "+result_name+";"
+        return postprocess_c_snippet(c_body)
 
 def format_directive(directive_line,max_line_width):
     result   = ""

@@ -25,7 +25,7 @@ exec(open("{0}/indexer_options.py.in".format(indexer_dir)).read())
 pFilter       = re.compile(FILTER) 
 pContinuation = re.compile(CONTINUATION_FILTER)
 
-def _intrnl_readFortranFile(filepath,preproc_options):
+def _intrnl_read_fortran_file(filepath,preproc_options):
     """
     Read and preprocess a Fortran file. Make all
     statements take a single line, i.e. remove all occurences
@@ -37,7 +37,7 @@ def _intrnl_readFortranFile(filepath,preproc_options):
     global pContinuation
     global LOG_PREFIX
 
-    utils.logging.log_enter_function(LOG_PREFIX,"__readFortranFile",{"filepath":filepath,"preproc_options":preproc_options})
+    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_read_fortran_file",{"filepath":filepath,"preproc_options":preproc_options})
     
     def consider_statement(stripped_statement):
         passes_filter = pFilter.match(stripped_statement) != None
@@ -54,14 +54,14 @@ def _intrnl_readFortranFile(filepath,preproc_options):
        for line in output.split("\n"):
            stripped_statement = line.strip(" \t\n")
            if consider_statement(stripped_statement):
-               utils.logging.log_debug3(LOG_PREFIX,"__readFortranFile","select statement '{}'".format(stripped_statement))
+               utils.logging.log_debug3(LOG_PREFIX,"_intrnl_read_fortran_file","select statement '{}'".format(stripped_statement))
                filtered_statements.append(stripped_statement)
            else:
-               utils.logging.log_debug3(LOG_PREFIX,"__readFortranFile","ignore statement '{}'".format(stripped_statement))
+               utils.logging.log_debug3(LOG_PREFIX,"_intrnl_read_fortran_file","ignore statement '{}'".format(stripped_statement))
     except subprocess.CalledProcessError as cpe:
         raise cpe
     
-    utils.logging.log_leave_function(LOG_PREFIX,"__readFortranFile")
+    utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_read_fortran_file")
     return filtered_statements
 
 class __Node():
@@ -465,10 +465,10 @@ def _intrnl_parse_file(file_statements,filepath):
     utils.logging.log_leave_function(LOG_PREFIX,"__parse_file") 
     return index
 
-def _intrnl_writeJsonFile(index,filepath):
+def _intrnl_write_json_file(index,filepath):
     global PRETTY_PRINT_INDEX_FILE
     global LOG_PREFIX    
-    utils.logging.log_enter_function(LOG_PREFIX,"__writeJsonFile",{"filepath":filepath}) 
+    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_write_json_file",{"filepath":filepath}) 
     
     with open(filepath,"wb") as outfile:
          if PRETTY_PRINT_INDEX_FILE:
@@ -476,14 +476,14 @@ def _intrnl_writeJsonFile(index,filepath):
          else:
              outfile.write(orjson.dumps(index))
     
-    utils.logging.log_leave_function(LOG_PREFIX,"__writeJsonFile") 
+    utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_write_json_file") 
 
-def _intrnl_readJsonFile(filepath):
+def _intrnl_read_json_file(filepath):
     global LOG_PREFIX    
-    utils.logging.log_enter_function(LOG_PREFIX,"__readJsonFile",{"filepath":filepath}) 
+    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_read_json_file",{"filepath":filepath}) 
     
     with open(filepath,"rb") as infile:
-         utils.logging.log_leave_function(LOG_PREFIX,"__readJsonFile") 
+         utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_read_json_file") 
          return orjson.loads(infile.read())
 
 # API
@@ -494,7 +494,7 @@ def scan_file(filepath,preproc_options,index):
     global LOG_PREFIX
     utils.logging.log_enter_function(LOG_PREFIX,"scan_file",{"filepath":filepath,"preproc_options":preproc_options}) 
     
-    filtered_lines = _intrnl_readFortranFile(filepath,preproc_options)
+    filtered_lines = _intrnl_read_fortran_file(filepath,preproc_options)
     utils.logging.log_debug2(LOG_PREFIX,"scan_file","extracted the following lines:\n>>>\n{}\n<<<".format(\
         "\n".join(filtered_lines)))
     index += _intrnl_parse_file(filtered_lines,filepath)
@@ -514,7 +514,7 @@ def write_gpufort_module_files(index,output_dir):
     
     for mod in index:
         filepath = output_dir + "/" + mod["name"] + GPUFORT_MODULE_FILE_SUFFIX
-        _intrnl_writeJsonFile(mod,filepath)
+        _intrnl_write_json_file(mod,filepath)
     
     utils.logging.log_leave_function(LOG_PREFIX,"write_gpufort_module_files")
 
@@ -537,7 +537,7 @@ def load_gpufort_module_files(input_dirs,index):
                          module_already_exists = True
                          break
                  if not module_already_exists:
-                     mod_index = _intrnl_readJsonFile(os.path.join(input_dir, child))
+                     mod_index = _intrnl_read_json_file(os.path.join(input_dir, child))
                      index.append(mod_index)
     
     utils.logging.log_leave_function(LOG_PREFIX,"load_gpufort_module_files")

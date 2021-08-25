@@ -153,7 +153,7 @@ def _intrnl_derive_kernel_arguments(scope, varnames, local_vars, loop_vars, whit
                     if ivar["rank"] > 0:
                         arg["c_size"] = ivar["total_count"]
                     if "shared" in ivar["qualifiers"]:
-                        arg["c_type"] = "__shared__" + arg["c_type"] 
+                        arg["c_type"] = "__shared__ " + arg["c_type"] 
                     local_cpu_routine_args.append(arg)
                     c_kernel_local_vars.append(arg)
                 else:
@@ -201,7 +201,7 @@ def _intrnl_update_context_from_loop_kernels(loop_kernels,index,hip_context,fCon
     loop_kernels is a list of STCufloop_kernel objects.
     hip_context, fContext are inout arguments for generating C/Fortran files, respectively.
     """
-    utils.logging.log_enter_function(LOG_PREFIX,"__updateContextFromLoopKernels")
+    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_update_context_from_loop_kernels")
     
     generate_launcher    = EMIT_KERNEL_LAUNCHER
     generate_cpu_launcher = generate_launcher and EMIT_CPU_IMPLEMENTATION
@@ -387,7 +387,7 @@ def _intrnl_update_context_from_loop_kernels(loop_kernels,index,hip_context,fCon
                 fContext["interfaces"].append(f_cpu_interface_dict)
                 fContext["routines"].append(f_cpu_routine_dict)
     
-    utils.logging.log_leave_function(LOG_PREFIX,"__updateContextFromLoopKernels")
+    utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_update_context_from_loop_kernels")
 
 # TODO check if this can be combined with other routine
 def _intrnl_update_context_from_device_procedures(device_procedures,index,hip_context,fContext):
@@ -406,7 +406,7 @@ def _intrnl_update_context_from_device_procedures(device_procedures,index,hip_co
         iprocedure  = stprocedure.index_record
         is_function  = iprocedure["kind"] == "function"
         
-        hip_context["includes"] += _intrnl_createIncludesFromUsedModules(iprocedure,index)
+        hip_context["includes"] += _intrnl_create_includes_from_used_modules(iprocedure,index)
 
         fBody = "\n".join(stprocedure.code)
         if is_function:
@@ -506,18 +506,18 @@ def _intrnl_update_context_from_device_procedures(device_procedures,index,hip_co
     
     utils.logging.log_enter_function(LOG_PREFIX,"__update_context_from_device_procedures")
 
-def _intrnl_writeFile(outfile_path,kind,content):
-    utils.logging.log_enter_function(LOG_PREFIX,"__writeFile")
+def _intrnl_write_file(outfile_path,kind,content):
+    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_write_file")
     
     with open(outfile_path,"w") as outfile:
         outfile.write(content)
         msg = "created {}: ".format(kind).ljust(40) + outfile_path
-        utils.logging.log_info(LOG_PREFIX,"__writeFile",msg)
+        utils.logging.log_info(LOG_PREFIX,"_intrnl_write_file",msg)
     
-    utils.logging.log_leave_function(LOG_PREFIX,"__writeFile")
+    utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_write_file")
 
 
-def _intrnl_createIncludesFromUsedModules(index_record,index):
+def _intrnl_create_includes_from_used_modules(index_record,index):
     """Create include statement for a module's/subprogram's used modules that are present in the index."""
     used_modules  = [irecord["name"] for irecord in index_record["used_modules"]]
     includes     = []
@@ -529,18 +529,18 @@ def _intrnl_createIncludesFromUsedModules(index_record,index):
 
 def generate_gpufort_headers(output_dir):
     """Create the header files that all GPUFORT HIP kernels rely on."""
-    utils.logging.log_enter_function(LOG_PREFIX,"__renderTemplates",\
+    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_render_templates",\
       {"output_dir": output_dir})
     
     gpufort_header_file_path = output_dir + "/gpufort.h"
     model.GpufortHeaderModel().generate_file(gpufort_header_file_path)
     msg = "created gpufort main header: ".ljust(40) + gpufort_header_file_path
-    utils.logging.log_info(LOG_PREFIX,"__renderTemplates",msg)
+    utils.logging.log_info(LOG_PREFIX,"_intrnl_render_templates",msg)
     
     gpufort_reductions_header_file_path = output_dir + "/gpufort_reductions.h"
     model.GpufortReductionsHeaderModel().generate_file(gpufort_reductions_header_file_path)
     msg = "created gpufort reductions header file: ".ljust(40) + gpufort_reductions_header_file_path
-    utils.logging.log_info(LOG_PREFIX,"__renderTemplates",msg)
+    utils.logging.log_info(LOG_PREFIX,"_intrnl_render_templates",msg)
 
     utils.logging.log_leave_function(LOG_PREFIX,"generate_gpufort_headers")
 
@@ -608,7 +608,7 @@ def generate_hip_files(stree,index,kernels_to_convert_to_hip,translation_source_
         if imodule == None:
             utils.logging.log_error(LOG_PREFIX,"generate_hip_files","could not find record for module '{}'.".format(module_name))
             sys.exit() # TODO add error code
-        includes = _intrnl_createIncludesFromUsedModules(imodule,index)
+        includes = _intrnl_create_includes_from_used_modules(imodule,index)
         if len(loop_kernels) or len(device_procedures):
             utils.logging.log_debug2(LOG_PREFIX,"generate_hip_files",\
               "detected loop kernels: {}; detected device subprograms {}".format(\
@@ -637,7 +637,7 @@ def generate_hip_files(stree,index,kernels_to_convert_to_hip,translation_source_
             if generate_code:
                 have_reductions = have_reductions or hip_context["have_reductions"]
 
-                _intrnl_writeFile(\
+                _intrnl_write_file(\
                    hip_module_filepath,"HIP C++ implementation file",\
                    model.HipImplementationModel().generate_code(hip_context))
                 if PRETTIFY_EMITTED_C_CODE:
@@ -650,14 +650,14 @@ def generate_hip_files(stree,index,kernels_to_convert_to_hip,translation_source_
             if len(content):
                 content = "#ifndef {0}\n#define {0}\n{1}\n#endif // {0}".format(
                   guard,content)
-            _intrnl_writeFile(\
+            _intrnl_write_file(\
                hip_module_filepath,"HIP C++ implementation file",content)
 
     if generate_code:
         # main HIP file
         main_hip_filepath = translation_source_path + HIP_FILE_EXT
         content = "\n".join(["#include \"{}\"".format(filename) for filename in hip_module_filenames])
-        _intrnl_writeFile(main_hip_filepath,"main HIP C++ file",content)
+        _intrnl_write_file(main_hip_filepath,"main HIP C++ file",content)
 
         # Fortran module file
         if len(fortran_modules):
@@ -665,7 +665,7 @@ def generate_hip_files(stree,index,kernels_to_convert_to_hip,translation_source_
             content               = "\n".join(fortran_modules)
             if len(FORTRAN_MODULE_PREAMBLE):
                 content = FORTRAN_MODULE_PREAMBLE + "\n" + content
-            _intrnl_writeFile(fortran_module_filepath,"interface/testing module",content)
+            _intrnl_write_file(fortran_module_filepath,"interface/testing module",content)
             if PRETTIFY_EMITTED_FORTRAN_CODE:
                 utils.fileutils.prettify_f_file(fortran_module_filepath)
     

@@ -169,7 +169,7 @@ class TTFunctionCallOrTensorAccess(TTNode):
         If any matrix range args are present in the argument list.
         """
         return not find_first(self._args,searched_type=TTMatrixRange) is None
-    def __guessItIsFunction(self): 
+    def __guess_it_is_function(self): 
         """ 
         Tries to determine if the whole expression
         is function or not if no other hints are given
@@ -186,7 +186,7 @@ class TTFunctionCallOrTensorAccess(TTNode):
             return False
         else:
             return self.has_matrix_range_args() or\
-                   not self.__guessItIsFunction()
+                   not self.__guess_it_is_function()
     def name(self,mangle_args=False):
         if mangle_args:
             result = self.f_str().replace("(","_")
@@ -1113,6 +1113,7 @@ class TTIfElseBlock(TTContainer):
     pass
 class TTIfElseIf(TTContainer):
     def _assign_fields(self,tokens):
+        print(tokens)
         self._else, self._condition, self.body = tokens
     def c_str(self):
         body_content = flatten_body(self.body) 

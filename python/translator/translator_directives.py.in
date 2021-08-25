@@ -25,14 +25,16 @@ def _intrnl_search_values_in_body(ttcontainer,search_filter,scope,min_rank=-1):
     
     tags = [] 
     for ttvalue in find_all_matching_exclude_directives_(ttcontainer.body,search_filter): # includes the identifiers of the function calls
-        tag = ttvalue.f_str()
-        ivar,found_in_scope = scoper.search_scope_for_variable(scope,tag)
-        if (found_in_scope or\
-            (not tag in KEYWORDS and\
-            not tag in GPUFORT_CPP_ROUTINES)) and\
-            ivar["rank"] >= min_rank and\
-            not tag in tags: # using set destroys order
-                 tags.append(tag)
+        tag = scoper.create_index_search_tag_for_variable(ttvalue.f_str())
+        if not tag == "dim3" and\
+           not tag in KEYWORDS and\
+           not tag in DEVICE_PREDEFINED_VARIABLES and\
+           not tag in GPUFORT_CPP_ROUTINES:
+            ivar,found_in_scope = scoper.search_scope_for_variable(scope,tag)
+            if found_in_scope and\
+               ivar["rank"] >= min_rank and\
+               not tag in tags: # ordering important
+                tags.append(tag)
     return tags
 
 def _intrnl_variables_in_body(ttcontainer,scope=[]):
@@ -55,11 +57,11 @@ def _intrnl_inout_arrays_in_body(ttcontainer,scope=[]):
 
 def _intrnl_flag_tensors(ttcontainer,scope=[]):
     """Clarify types of function calls / tensor access that are not members of a struct."""
-    for expr in find_all(ttcontainer.body,IValue):
-        if type(expr._value) is TTFunctionCallOrTensorAccess:
-            _, discovered = scoper.search_scope_for_variable(scope,create_index_search_tag_for_variable(expr.name()))
+    for value in find_all(ttcontainer.body,IValue):
+        if type(value._value) is TTFunctionCallOrTensorAccess:
+            _, discovered = scoper.search_scope_for_variable(scope,value.f_str())
             if discovered:
-                expr._value._is_tensor_access = True3
+                value._value._is_tensor_access = True3
 
 class ILoopAnnotation():
     def num_collapse(self):
@@ -285,23 +287,21 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 lambda node: type(node) in [TTAssignment,TTComplexAssignment,TTMatrixAssignment])
         for assignment in assignments:   
             # lhs scalars
-            lvalue     = assignment._lhs._value
-            lvalue_name = make_f_str(lvalue)
+            lvalue      = assignment._lhs._value
+            lvalue_name = lvalue.f_str().lower()
             if type(lvalue) is TTIdentifier: # could still be a matrix
-                definition,found_in_scope = scoper.search_scope_for_variable(\
-                  scope,create_index_search_tag_for_variable(lvalue_name))
+                definition,found_in_scope = scoper.search_scope_for_variable(scope,lvalue_name)
                 if not found_in_scope or definition["rank"] == 0 and\
-                        not lvalue_name.lower() in scalars_read_so_far:
-                            initialized_scalars.append(lvalue_name) # read and initialized in 
+                   not lvalue_name in scalars_read_so_far:
+                    initialized_scalars.append(lvalue_name) # read and initialized in 
             # rhs scalars
             rhs_identifiers = find_all(assignment._rhs,TTIdentifier)
             for ttidentifier in rhs_identifiers:
-                name_lower = ttidentifier.f_str().lower()
-                definition,found_in_scope = scoper.search_scope_for_variable(scope,\
-                  create_index_search_tag_for_variable(name_lower))
+                rvalue_name = ttidentifier.f_str().lower()
+                definition,found_in_scope = scoper.search_scope_for_variable(scope,rvalue_name)
                 if (not found_in_scope or definition["rank"] == 0) and\
-                        name_lower != lvalue_name.lower(): # do not include name of lhs if lhs appears in rhs
-                            scalars_read_so_far.append(name_lower)
+                   rvalue_name != lvalue_name: # do not include name of rhs if lhs appears in rhs
+                    scalars_read_so_far.append(rvalue_name)
         # initialized scalars that are not read (except in same statement) are likely reductions
         # initialized scalars that are read again in other statements are likely local variables
         reduction_candidates = [name for name in initialized_scalars if name not in scalars_read_so_far]

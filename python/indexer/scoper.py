@@ -2,7 +2,7 @@
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 #!/usr/bin/env python3
 import addtoplevelpath
-import os,sys
+import os,sys,traceback
 import copy
 import re
 
@@ -310,12 +310,14 @@ def search_scope_for_variable(scope,variable_expression):
     result = lookup_from_left_to_right_(reversed(scope["variables"]))
     
     if result is None:
-        msg = "no entry found for variable '{}'.".format(variable_tag)
+        msg       = "no entry found for variable '{}'.".format(variable_tag)
         if ERROR_HANDLING  == "strict":
             utils.logging.log_error(LOG_PREFIX,"search_scope_for_variable",msg) 
+            traceback.print_stack()
             sys.exit(ERR_SCOPER_LOOKUP_FAILED)
         else:
             utils.logging.log_warning(LOG_PREFIX,"search_scope_for_variable",msg) 
+            traceback.print_stack()
         return EMPTY_VARIABLE, False
     else:
         utils.logging.log_debug2(LOG_PREFIX,"search_scope_for_variable",\
@@ -376,5 +378,5 @@ def search_index_for_subprogram(index,parent_tag,subprogram_name):
     return result
             
 def index_variable_is_on_device(ivar):
-    return ["device"] in ivar["qualifiers"] or\
+    return "device" in ivar["qualifiers"] or\
            ivar["declare_on_target"] in ["alloc","to","from","tofrom"]

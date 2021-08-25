@@ -97,12 +97,12 @@ double_arg_plus_kind = LPAR + (~func_kind+arithmetic_expression) + Optional(COMM
                            Optional(func_kind,default=None) + RPAR # emits 2 tokens: *,*,*
 
 convert_to_extract_real   = ( REAL | FLOAT ) + single_arg_plus_kind # emits 2 tokens,
-convert_to_double        = DBLE   + single_arg_plus_kind # emits 2 tokens, 
-convert_to_complex       = CMPLX  + double_arg_plus_kind # emits 3 tokens, op (x,y) -> x+iy | c.x = x, c.y = b  ; op: x -> (x,0) -> x+i0 -> | c.x = x, c.y =0
+convert_to_double         = DBLE   + single_arg_plus_kind # emits 2 tokens, 
+convert_to_complex        = CMPLX  + double_arg_plus_kind # emits 3 tokens, op (x,y) -> x+iy | c.x = x, c.y = b  ; op: x -> (x,0) -> x+i0 -> | c.x = x, c.y =0
 convert_to_double_complex = DCMPLX + double_arg_plus_kind # emits 3 tokens, op (x,y) -> x+iy | c.x = x, c.y = b  ; op: x -> (x,0) -> x+i0 -> | c.x = x, c.y =0
-extract_imag            = AIMAG  + single_arg_plus_kind # emits 1 tokens, op: x+iy -> y
-conjugate              = CONJG  + single_arg_plus_kind # emits 1 tokens, op: x+iy -> x-iy | c.y = -c.y
-conjugate_double_complex = DCONJG + single_arg_plus_kind # emits 1 tokens, op: x+iy -> x-iy | c.y = -c.y
+extract_imag              = AIMAG  + single_arg_plus_kind # emits 1 tokens, op: x+iy -> y
+conjugate                 = CONJG  + single_arg_plus_kind # emits 1 tokens, op: x+iy -> x-iy | c.y = -c.y
+conjugate_double_complex  = DCONJG + single_arg_plus_kind # emits 1 tokens, op: x+iy -> x-iy | c.y = -c.y
 
 conversion <<= convert_to_extract_real | convert_to_double | convert_to_complex | convert_to_double_complex | extract_imag | conjugate | conjugate_double_complex
 

@@ -124,9 +124,9 @@ def _intrnl_derive_kernel_arguments(scope, varnames, local_vars, loop_vars, is_l
 
     def include_arg_(name):
         name_lower = name.lower().strip()
-        print(name_lower)
         # Fortran var names never start with _; can be exploited when modifying code
         if name_lower.startswith("_") or\
+           name_lower == "dim3" or\
            name_lower in translator.DEVICE_PREDEFINED_VARIABLES:
             return False
         else:
@@ -435,7 +435,6 @@ def _intrnl_update_context_from_device_procedures(device_procedures,index,hip_co
         varnames   = [scoper.create_index_search_tag_for_variable(varexpr) for varexpr in parse_result.variables_in_body()]
         local_vars = [varname for varname in varnames if varname not in iprocedure["dummy_args"]]
         ordered_varnames = iprocedure["dummy_args"] + local_vars
-        print(ordered_varnames)
 
         # TODO also check 'used' variables from other modules; should be in scope
         # TODO also add implicit variables; should be in scope
@@ -596,7 +595,7 @@ def generate_hip_files(stree,index,kernels_to_convert_to_hip,translation_source_
         hip_module_filepath = output_dir+"/"+hip_module_filename
         guard               = "__"+hip_module_filename.replace(".","_").replace("-","_").upper()+"__"
         # extract kernels
-        loop_kernels     = stmodule.find_all(filter=loop_kernel_filter_, recursively=True)
+        loop_kernels      = stmodule.find_all(filter=loop_kernel_filter_, recursively=True)
         device_procedures = stmodule.find_all(filter=device_procedure_filter_, recursively=True)
         # TODO: Also extract derived types
         # derivedtypes = ....

@@ -4,13 +4,13 @@
 {# Jinja2 template for generating interface modules      #}
 {# This template works with data structures of the form :#}
 {# *-[includes:str]                                      #}
-{#  -[kernels:dict]-c_name:str                            #}
+{#  -[kernels:dict]-c_name:str                           #}
 {#                 -[kernel_args:dict]                   #}
 {#                 -[kernel_call_arg_names:str]          #}
 {#                 -[interface_args:dict]                #}
 {#                 -[reductions:dict]                    #}
-{#                 -[c_body:str]                          #}
-{#                 -[f_body:str]                          #}
+{#                 -[c_body:str]                         #}
+{#                 -[f_body:str]                         #}
 #ifndef {{ guard }}
 #define {{ guard }}
 {% for file in includes %}
@@ -80,19 +80,31 @@
 {% set krnl_prefix = kernel.kernel_name %}
 {% set iface_prefix = kernel.interface_name %}
 // BEGIN {{krnl_prefix}}
-  /* Fortran original: 
-{{kernel.f_body | indent(2, True)}}
-  */
-{{kernel.interface_comment | indent(2, True)}}
-{{kernel.modifier}} {{kernel.return_type}} {{kernel.launch_bounds}} {{krnl_prefix}}({{kernel.kernel_args | join(",")}}) {
-{% for def in kernel.macros %}{{def.expr}}
+/*
+   HIP C++ implementation of the function/loop body of:
+
+{{kernel.f_body | indent(3, True)}}
+*/
+{{kernel.interface_comment if (kernel.interface_comment|length>0)}}
+{{kernel.modifier}} {{kernel.return_type}} {{kernel.launch_bounds}} {{krnl_prefix}}(
+{% for arg in kernel.kernel_args %}
+{{ arg | indent(4,True) }}{{"," if not loop.last else ") {"}}
+{% endfor -%}
+{% for def in kernel.macros %}{{def.expr | indent(2,True) }}
 {% endfor %}
 {% for var in kernel.kernel_local_vars %}{{var | indent(2, True)}};
 {% endfor %}
 {{kernel.c_body | indent(2, True)}}
 }
 {% if kernel.generate_launcher -%}
-extern "C" void {{iface_prefix}}(dim3* grid, dim3* block, const int sharedmem, hipStream_t stream,{{kernel.interface_args | join(",")}}) {
+extern "C" void {{iface_prefix}}(
+    dim3* grid,
+    dim3* block,  
+    const int sharedmem, 
+    hipStream_t stream{{"," if (kernel.interface_args|length > 0) else ") {"}}
+{% for arg in kernel.interface_args %}
+{{ arg | indent(4,True) }}{{"," if not loop.last else ") {"}}
+{% endfor -%}
 {{ reductions_prepare(kernel,"*") }}{% if kernel.generate_debug_code %}
   #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{krnl_prefix}})
   std::cout << "{{krnl_prefix}}:gpu:args:";
@@ -124,7 +136,12 @@ extern "C" void {{iface_prefix}}(dim3* grid, dim3* block, const int sharedmem, h
 {% endif %}
 }
 {% if kernel.is_loop_kernel %}
-extern "C" void {{iface_prefix}}_auto(const int sharedmem, hipStream_t stream,{{kernel.interface_args | join(",")}}) {
+extern "C" void {{iface_prefix}}_auto(
+    const int sharedmem, 
+    hipStream_t stream{{"," if (kernel.interface_args|length > 0) else ") {"}}
+{% for arg in kernel.interface_args %}
+{{ arg | indent(4,True) }}{{"," if not loop.last else ") {"}}
+{% endfor -%}
 {{ make_block(kernel) }}
 {{ make_grid(kernel) }}   
 {{ reductions_prepare(kernel,"") }}{% if kernel.generate_debug_code %}
@@ -159,8 +176,18 @@ extern "C" void {{iface_prefix}}_auto(const int sharedmem, hipStream_t stream,{{
 }
 {% endif %}
 {% if kernel.generate_cpu_launcher -%}
-extern "C" void {{iface_prefix}}_cpu1(const int sharedmem, hipStream_t stream,{{kernel.interface_args | join(",")}});
-extern "C" void {{iface_prefix}}_cpu(const int sharedmem, hipStream_t stream,{{kernel.interface_args | join(",")}}) {
+extern "C" void {{iface_prefix}}_cpu1(
+    const int sharedmem, 
+    hipStream_t stream{{"," if (kernel.interface_args|length > 0) else ") {"}}
+{% for arg in kernel.interface_args %}
+{{ arg | indent(4,True) }}{{"," if not loop.last else ") {"}}
+{% endfor -%}
+extern "C" void {{iface_prefix}}_cpu(
+    const int sharedmem, 
+    hipStream_t stream{{"," if (kernel.interface_args|length > 0) else ") {"}}
+{% for arg in kernel.interface_args %}
+{{ arg | indent(4,True) }}{{"," if not loop.last else ") {"}}
+{% endfor -%}
 {% if kernel.generate_debug_code %}
   #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{krnl_prefix}})
   std::cout << "{{krnl_prefix}}:cpu:args:";

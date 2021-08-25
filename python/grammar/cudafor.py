@@ -118,7 +118,7 @@ sync memory
 lock
 unlock""".split("\n") + F03_KEYWORDS
 
-FORTRAN_VARIABLE_QUALIFIERS="allocatable pointer external parameter".split(" ")
+FORTRAN_VARIABLE_QUALIFIERS="allocatable pointer private public external parameter".split(" ")
 
 FORTRAN_INTRINSICS="""abs
 aimag
@@ -344,6 +344,18 @@ DEVICE_PREDEFINED_VARIABLES="""threadidx
 blockdim
 blockidx
 griddim
+threadidx%x
+threadidx%y
+threadidx%z
+blockdim%x
+blockdim%y
+blockdim%z
+blockidx%x
+blockidx%y
+blockidx%z
+griddim%x
+griddim%y
+griddim%z
 warpsize""".split("\n")
 
 # Synchronisation functions
@@ -536,7 +548,7 @@ __umul24
 __umulhi
 __usa""".split("\n")
 
-# libm routiines
+# libm routines
 LIBM_ROUTINES="""cbrt
 cbrtf
 ceil
@@ -604,7 +616,8 @@ ALL_DEVICE_ROUTINES = \
    DEVICE_WARP_VOTE_OPERATIONS +\
    DEVICE_SHUFFLE_FUNCTIONS +\
    DEVICE_ROUTINES + \
-   FORTRAN_INTRINSICS
+   FORTRAN_INTRINSICS +\
+   LIBM_ROUTINES
 
 CUDA_FORTRAN_KEYWORDS=F08_KEYWORDS+DEVICE_VARIABLE_QUALIFIERS+FUNCTION_QUALIFIERS
 CUDA_FORTRAN_VARIABLE_QUALIFIERS=FORTRAN_VARIABLE_QUALIFIERS + DEVICE_VARIABLE_QUALIFIERS

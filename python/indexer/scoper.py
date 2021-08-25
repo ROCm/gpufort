@@ -4,6 +4,7 @@
 import addtoplevelpath
 import os,sys
 import copy
+import re
 
 import orjson
 
@@ -157,6 +158,37 @@ def _intrnl_search_index_for_type_or_subprogram(index,parent_tag,entry_name,entr
     return _intrnl_search_scope_for_type_or_subprogram(scope,entry_name,entry_type,empty_record)
 
 # API
+def create_index_search_tag_for_variable(variable_expression):
+    """
+    Creates tag from variable expressions such as 'A%b(i)%c' that
+    can be used to search the index via the scoper module.
+    The example 'A%b(i)%c' is translated to a tag 'a%b%c' (lower case).
+    All array indexing expressions are stripped away.
+    A single identifer 'a' would be translated to the tag 'a'.
+
+    :param str variable_expression: a simple identifier such as 'a' or 'A_d' or a more complicated derived-type member variable expression such as 'a%b%c' or 'A%b(i)%c'.
+    :see: indexer.scoper.search_index_for_variable
+    """
+    if not "(" in variable_expression:
+        return variable_expression.lower()
+    else:
+        parts = re.split("([()%,])",variable_expression.lower())
+        open_brackets = 0
+        result = []
+        curr   = ""
+        for part in parts:
+            if part == "(":
+                open_brackets += 1
+            elif part == ")":
+                open_brackets -= 1
+            elif part == "%" and open_brackets == 0:
+                result.append(curr)
+                curr = ""
+            elif open_brackets == 0:
+                curr += part
+        result.append(curr)
+        return "%".join(result)
+
 def create_scope(index,tag):
     """
     :param str tag: a colon-separated list of strings. Ex: mymod:mysubroutine or mymod.
@@ -239,20 +271,20 @@ def create_scope(index,tag):
         utils.logging.log_leave_function(LOG_PREFIX,"create_scope")
         return new_scope
 
-def search_scope_for_variable(scope,variable_tag):
+def search_scope_for_variable(scope,variable_expression):
     """
-    %param str variable_tag% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c'. Note that all array indexing expressions must be stripped away.
-    :see: translator.translator.create_index_search_tag_for_variable(variable_expression)
+    %param str variable_tag% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c' or 'a%b(i,j)%c(a%i5)'.
     """
     global LOG_PREFIX
-    utils.logging.log_enter_function(LOG_PREFIX,"search_index_for_variable",\
-      {"variable_tag":variable_tag})
+    utils.logging.log_enter_function(LOG_PREFIX,"search_scope_for_variable",\
+      {"variable_expression":variable_expression})
 
     result = None
     # reverse access such that entries from the inner-most scope come first
     scope_types = reversed(scope["types"])
 
-    list_of_var_names = variable_tag.lower().split("%") 
+    variable_tag      = create_index_search_tag_for_variable(variable_expression)
+    list_of_var_names = variable_tag.split("%") 
     def lookup_from_left_to_right_(scope_variables,pos=0):
         """
         :note: recursive
@@ -266,8 +298,11 @@ def search_scope_for_variable(scope,variable_tag):
         else:
             try:
                 matching_type_var = next((var for var in scope_variables if var["name"] == var_name),None)
-                matching_type    = next((typ for typ in scope_types if typ["name"] == matching_type_var["kind"]),None)
-                result = lookup_from_left_to_right_(reversed(matching_type["variables"]),pos+1)
+                if matching_type_var != None:
+                    matching_type    = next((typ for typ in scope_types if typ["name"] == matching_type_var["kind"]),None)
+                    result = lookup_from_left_to_right_(reversed(matching_type["variables"]),pos+1)
+                else:
+                    result = None
             except Exception as e:
                 raise e
                 result = None
@@ -277,15 +312,15 @@ def search_scope_for_variable(scope,variable_tag):
     if result is None:
         msg = "no entry found for variable '{}'.".format(variable_tag)
         if ERROR_HANDLING  == "strict":
-            utils.logging.log_error(LOG_PREFIX,"search_index_for_variable",msg) 
+            utils.logging.log_error(LOG_PREFIX,"search_scope_for_variable",msg) 
             sys.exit(ERR_SCOPER_LOOKUP_FAILED)
         else:
-            utils.logging.log_warning(LOG_PREFIX,"search_index_for_variable",msg) 
+            utils.logging.log_warning(LOG_PREFIX,"search_scope_for_variable",msg) 
         return EMPTY_VARIABLE, False
     else:
-        utils.logging.log_debug2(LOG_PREFIX,"search_index_for_variable",\
+        utils.logging.log_debug2(LOG_PREFIX,"search_scope_for_variable",\
           "entry found for variable '{}'".format(variable_tag)) 
-        utils.logging.log_leave_function(LOG_PREFIX,"search_index_for_variable")
+        utils.logging.log_leave_function(LOG_PREFIX,"search_scope_for_variable")
         return result, True
 
 def search_scope_for_type(scope,type_name):
@@ -306,18 +341,17 @@ def search_scope_for_subprogram(scope,subprogram_name):
     utils.logging.log_leave_function(LOG_PREFIX,"search_scope_for_subprogram")
     return result
 
-def search_index_for_variable(index,parent_tag,variable_tag):
+def search_index_for_variable(index,parent_tag,variable_expression):
     """
     :param str parent_tag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
-    %param str variable_tag% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c'. Note that all array indexing expressions must be stripped away.
-    :see: translator.translator.create_index_search_tag_for_variable(variable_expression)
+    %param str variable_expression% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c'. Note that all array indexing expressions must be stripped away.
     """
     global LOG_PREFIX
     utils.logging.log_enter_function(LOG_PREFIX,"search_index_for_variable",\
-      {"parent_tag":parent_tag,"variable_tag":variable_tag})
+      {"parent_tag":parent_tag,"variable_expression":variable_expression})
 
     scope = create_scope(index,parent_tag)
-    return search_scope_for_variable(scope,variable_tag)
+    return search_scope_for_variable(scope,variable_expression)
 
 def search_index_for_type(index,parent_tag,type_name):
     """

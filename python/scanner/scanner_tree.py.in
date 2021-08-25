@@ -448,7 +448,7 @@ class STDeclaration(STNode):
         for var_name in self._vars:
              ivar,discovered = scoper.search_index_for_variable(\
                index,self._parent.tag(),\
-                 translator.create_index_search_tag_for_variable(var_name))
+                 var_name)
              rank           = ivar["rank"]
              has_device      = ["device"] in ivar["qualifiers"]
              has_pinned      = ["pinned"] in ivar["qualifiers"]
@@ -500,7 +500,7 @@ class STNonZeroCheck(STNode):
             parse_result = tokens[0]
             lhs_name     = parse_result.lhs_f_str()
             ivar,_  = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
-              translator.create_index_search_tag_for_variable(lhs_name))
+              lhs_name)
             on_device    = scoper.index_variable_is_on_device(ivar)
             transformed |= on_device
             if on_device:
@@ -515,7 +515,7 @@ class STAllocated(STNode):
         def repl(parse_result):
             var_name    = parse_result.var_name()
             ivar,_ = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
-              translator.create_index_search_tag_for_variable(var_name))
+              var_name)
             on_device    = scoper.index_variable_is_on_device(ivar)
             return (parse_result.f_str(), on_device) # TODO backend specific
         result, transformed = utils.pyparsingutils.replace_all(snippet,translator.allocated,repl)
@@ -534,7 +534,7 @@ class STAllocate(STNode):
             array_qualifiers = []
             for array_name in parse_result.variable_names():
                 ivar,_  = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
-                  translator.create_index_search_tag_for_variable(array_name))
+                  array_name)
                 bytes_per_element.append(ivar["bytes_per_element"])
                 on_device   = scoper.index_variable_is_on_device(ivar)
                 pinned     = ["pinned"] in ivar["qualifiers"]
@@ -564,7 +564,7 @@ class STDeallocate(STNode):
             array_qualifiers = []
             for array_name in parse_result.variable_names():
                 ivar,_  = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
-                  translator.create_index_search_tag_for_variable(array_name))
+                  array_name)
                 on_device   = scoper.index_variable_is_on_device(ivar)
                 pinned     = ["pinned"] in ivar["qualifiers"]
                 if on_device: 
@@ -586,9 +586,9 @@ class STMemcpy(STNode):
             dest_name = parse_result.dest_name_f_str()
             src_name  = parse_result.src_name_f_str()
             dest_indexed_var,_ = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
-              translator.create_index_search_tag_for_variable(dest_name))
+              dest_name)
             src_indexed_var,_  = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
-              translator.create_index_search_tag_for_variable(src_name))
+              src_name)
             dest_on_device = scoper.index_variable_is_on_device(dest_indexed_var)
             src_on_device  = scoper.index_variable_is_on_device(src_indexed_var)
             bytes_per_element = dest_indexed_var["bytes_per_element"]
@@ -622,9 +622,9 @@ class STCudaLibCall(STNode):
                 dest_name = parse_result.dest_name_f_str()
                 src_name  = parse_result.src_name_f_str()
                 dest_indexed_var,_ = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
-                  translator.create_index_search_tag_for_variable(dest_name))
+                  dest_name)
                 src_indexed_var ,_ = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
-                  translator.create_index_search_tag_for_variable(src_name))
+                  src_name)
                 dest_on_device = scoper.index_variable_is_on_device(dest_indexed_var)
                 src_on_device  = scoper.index_variable_is_on_device(src_indexed_var)
                 subst = parse_result.hip_f_str(dest_on_device,src_on_device)
@@ -662,7 +662,7 @@ class STCudaKernelCall(STNode):
                 for rvalue in translator.find_all(ttexpr,translator.TTRValue):
                     # TODO lookup the subprogram first 
                     ivar, discovered = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
-                       translator.create_index_search_tag_for_variable(rvalue.name()))
+                       rvalue.name())
                     if discovered:
                         max_rank = max(max_rank,ivar["rank"])
                 expr_f_str = translator.make_f_str(ttexpr)

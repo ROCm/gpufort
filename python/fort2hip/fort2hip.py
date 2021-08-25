@@ -124,7 +124,10 @@ def _intrnl_derive_kernel_arguments(scope, varnames, local_vars, loop_vars, is_l
 
     def include_arg_(name):
         name_lower = name.lower().strip()
-        if name_lower.startswith("_"): # Fortran var names never start with _; can be exploited when modifying code
+        print(name_lower)
+        # Fortran var names never start with _; can be exploited when modifying code
+        if name_lower.startswith("_") or\
+           name_lower in translator.DEVICE_PREDEFINED_VARIABLES:
             return False
         else:
             return True
@@ -133,7 +136,7 @@ def _intrnl_derive_kernel_arguments(scope, varnames, local_vars, loop_vars, is_l
     for name in varnames_lower:
         if include_arg_(name):
             ivar, discovered = scoper.search_scope_for_variable(\
-              scope,translator.create_index_search_tag_for_variable(name)) # TODO treat implicit here
+              scope,name) # TODO treat implicit here
             argname = name
             if not discovered:
                 arg = _intrnl_init_arg(name,"TODO declaration not found","",[],"TODO declaration not found")
@@ -283,7 +286,7 @@ def _intrnl_update_context_from_loop_kernels(loop_kernels,index,hip_context,fCon
         hip_kernel_dict["c_body"]                 = parse_result.c_str()
         original_snippet = "".join(stkernel.lines())
         if PRETTIFY_EMITTED_FORTRAN_CODE:
-            hip_kernel_dict["f_body"]             = utils.fileutils.prettify_f_code(original_snippet)
+            hip_kernel_dict["f_body"]                = utils.fileutils.prettify_f_code(original_snippet)
         else:
             hip_kernel_dict["f_body"]                = original_snippet
         hip_kernel_dict["kernel_args"]               = ["{} {}{}{}".format(a["c_type"],a["name"],a["c_size"],a["c_suffix"]) for a in kernel_args]
@@ -424,45 +427,41 @@ def _intrnl_update_context_from_device_procedures(device_procedures,index,hip_co
         # TODO: look up functions and subroutines called internally and supply to parse_result before calling c_str()
     
         ## general
-        generate_launcher   = EMIT_KERNEL_LAUNCHER and stprocedure.is_kernel_subroutine()
-        kernel_name         = iprocedure["name"]
+        generate_launcher    = EMIT_KERNEL_LAUNCHER and stprocedure.is_kernel_subroutine()
+        kernel_name          = iprocedure["name"]
         kernel_launcher_name = "launch_" + kernel_name
 
         # sort identifiers: put dummy args first
-        # TODO(dominic): More detailed analysis what to do with non-dummy args
-        dummy_args = iprocedure["dummy_args"]
-        varnames   = parse_result.variables_in_body()
-        local_vars = []
-        for ivar in iprocedure["variables"]:
-            if ivar["name"] not in dummy_args:  
-                local_vars.append(ivar["name"])
+        varnames   = [scoper.create_index_search_tag_for_variable(varexpr) for varexpr in parse_result.variables_in_body()]
+        local_vars = [varname for varname in varnames if varname not in iprocedure["dummy_args"]]
+        ordered_varnames = iprocedure["dummy_args"] + local_vars
+        print(ordered_varnames)
 
         # TODO also check 'used' variables from other modules; should be in scope
         # TODO also add implicit variables; should be in scope
 
         kernel_args, c_kernel_local_vars, macros, input_arrays, local_cpu_routine_args =\
           _intrnl_derive_kernel_arguments(scope,\
-            varnames,local_vars,[],\
+            ordered_varnames,local_vars,[],\
             False,deviceptr_names=[])
-        #print(argnames)
 
         # C routine and C stprocedure launcher
         hip_kernel_dict = {}
         launch_bounds = GET_LAUNCH_BOUNDS(kernel_name)
         if launch_bounds != None and len(launch_bounds) and stprocedure.is_kernel_subroutine():
-            hip_kernel_dict["launch_bounds"]      = "_intrnl_launch_bounds___({})".format(launch_bounds)
+            hip_kernel_dict["launch_bounds"]     = "_intrnl_launch_bounds___({})".format(launch_bounds)
         else:
-            hip_kernel_dict["launch_bounds"]      = ""
+            hip_kernel_dict["launch_bounds"]     = ""
         hip_kernel_dict["generate_debug_code"]   = EMIT_DEBUG_CODE
-        hip_kernel_dict["generate_launcher"]    = generate_launcher
+        hip_kernel_dict["generate_launcher"]     = generate_launcher
         hip_kernel_dict["generate_cpu_launcher"] = False
-        hip_kernel_dict["modifier"]            = "__global__" if stprocedure.is_kernel_subroutine() else "__device__"
-        hip_kernel_dict["return_type"]          = result_type
+        hip_kernel_dict["modifier"]              = "__global__" if stprocedure.is_kernel_subroutine() else "__device__"
+        hip_kernel_dict["return_type"]           = result_type
         hip_kernel_dict["is_loop_kernel"]        = False
-        hip_kernel_dict["kernel_name"]          = kernel_name
-        hip_kernel_dict["macros"]              = macros
-        hip_kernel_dict["c_body"]               = parse_result.c_str()
-        hip_kernel_dict["f_body"]               = "".join(stprocedure.lines())
+        hip_kernel_dict["kernel_name"]           = kernel_name
+        hip_kernel_dict["macros"]                = macros
+        hip_kernel_dict["c_body"]                = parse_result.c_str()
+        hip_kernel_dict["f_body"]                = "".join(stprocedure.lines()).rstrip("\n")
         hip_kernel_dict["kernel_args"] = []
         # device procedures take all C args as reference or pointer
         # kernel proceduers take all C args as value or (device) pointer
@@ -591,11 +590,11 @@ def generate_hip_files(stree,index,kernels_to_convert_to_hip,translation_source_
     program_or_modules = stree.find_all(filter=lambda child: type(child) in [scanner.STProgram,scanner.STModule], recursively=False)
     for stmodule in program_or_modules:
         # file names & paths
-        module_name        = stmodule.name.lower()
+        module_name         = stmodule.name.lower()
         hip_module_filename = module_name + HIP_FILE_EXT
         hip_module_filenames.append(hip_module_filename)
         hip_module_filepath = output_dir+"/"+hip_module_filename
-        guard             = hip_module_filename.replace(".","_").replace("-","_").upper() 
+        guard               = "__"+hip_module_filename.replace(".","_").replace("-","_").upper()+"__"
         # extract kernels
         loop_kernels     = stmodule.find_all(filter=loop_kernel_filter_, recursively=True)
         device_procedures = stmodule.find_all(filter=device_procedure_filter_, recursively=True)

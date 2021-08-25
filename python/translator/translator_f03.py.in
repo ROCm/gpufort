@@ -199,12 +199,7 @@ class IValue:
     def is_identifier(self):
         return type(self._value) is TTIdentifier      
     def name(self):
-        if type(self._value) is TTFunctionCallOrTensorAccess:
-            return self._value.name(False)
-        elif type(self._value) is TTDerivedTypeMember:
-            return self._value.name(False)
-        else:
-            return self._value.name(False)
+        return self._value.f_str()
     def has_matrix_range_args(self):
         """
         Functionality for scanner.
@@ -1101,10 +1096,9 @@ class TTIfElseBlock(TTContainer):
     pass
 class TTIfElseIf(TTContainer):
     def _assign_fields(self,tokens):
-        print(tokens)
         self._else, self._condition, self.body = tokens
     def c_str(self):
-        body_content = flatten_body(self.body) 
+        body_content = TTContainer.c_str(self) 
         return "{0}{1}if ({2}) {{\n{3}\n{0}}}".format(\
             self.indent,self._else,make_c_str(self._condition),body_content) 
 class TTElse(TTContainer):

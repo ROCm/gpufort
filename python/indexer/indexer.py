@@ -114,7 +114,7 @@ def _intrnl_parse_file(file_statements,filepath):
         #
         try:
             variables =\
-              translator.create_indexRecordsFromDeclaration(\
+              translator.create_index_records_from_declaration(\
                 translator.fortran_declaration.parseString(input_text)[0])
         except Exception as e:
             utils.logging.log_error(LOG_PREFIX,"__parse_file.ParseDeclarationTask_","failed: "+str(e))
@@ -414,7 +414,7 @@ def _intrnl_parse_file(file_statements,filepath):
     for current_statement in file_statements:
         utils.logging.log_debug3(LOG_PREFIX,"__parse_file","process statement '{}'".format(current_statement))
         current_tokens             = re.split(r"\s+|\t+",current_statement.lower().strip(" \t"))
-        current_statementStripped  = "".join(current_tokens)
+        current_statement_stripped  = "".join(current_tokens)
         for expr in ["program","module","subroutine","function","type"]:
             if is_end_statement_(current_tokens,expr):
                  End()

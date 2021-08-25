@@ -51,7 +51,7 @@ program test_{{name}}
       CALL hipCheck(hipMemcpy(???,c_loc(???),C_SIZEOF(???),hipMemcpyHostToDevice)) ! 
       ! ... might be more (or less) than two memcopies 
       ! TODO run the test
-      CALL {{interface.f_name}}(0,c_null_ptr,{{interface.argnames | join(",") }}) ! Modify shared_mem if other than default 0
+      CALL {{interface.f_name}}(0,c_null_ptr,{{interface.argnames | join(",") }}) ! Modify sharedmem if other than default 0
       CALL hipCheck(hipDeviceSynchronize())
       CALL {{interface.f_name | replace("_auto","") }}_cpu(0,c_null_ptr,{{interface.argnames | join(",") }})
     

@@ -72,14 +72,14 @@ def _intrnl_handle_preprocessor_directive(lines,fortran_filepath,macro_stack,reg
     """
     global LOG_PREFIX
     
-    def region_stackFormat(stack):
+    def region_stack_format(stack):
         return "-".join([str(int(el)) for el in stack])
     macro_names = ",".join([macro["name"] for macro in macro_stack])
     
     utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_handle_preprocessor_directive",\
       {"fortran-file-path": fortran_filepath,\
-       "region-stack-1":    region_stackFormat(region_stack1),\
-       "region-stack-2":    region_stackFormat(region_stack2),\
+       "region-stack-1":    region_stack_format(region_stack1),\
+       "region-stack-2":    region_stack_format(region_stack2),\
        "macro-names":       macro_names})
 
     included_records = []
@@ -326,14 +326,14 @@ def _intrnl_preprocess_and_normalize_fortran_file(fortran_filepath,macro_stack,r
     """
     :throws: IOError if the specified file cannot be found/accessed.
     """
-    utils.logging.log_enter_function(LOG_PREFIX,"__preprocess_and_normalizeFortranFile",{
+    utils.logging.log_enter_function(LOG_PREFIX,"__preprocess_and_normalize_fortran_file",{
       "fortran_filepath":fortran_filepath
     })
 
     try:
         with open(fortran_filepath,"r") as infile:
             records = _intrnl_preprocess_and_normalize(infile.readlines(),fortran_filepath,macro_stack,region_stack1,region_stack2)
-            utils.logging.log_leave_function(LOG_PREFIX,"__preprocess_and_normalizeFortranFile")
+            utils.logging.log_leave_function(LOG_PREFIX,"__preprocess_and_normalize_fortran_file")
             return records
     except Exception as e:
             raise e

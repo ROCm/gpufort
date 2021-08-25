@@ -28,7 +28,7 @@ class STCufDirective(STDirective):
     """
     def __init__(self,parent,lineno,lines,directive_no):
         STDirective.__init__(self,parent,lineno,lines,directive_no,sentinel="!$cuf")
-        self._defaultPresentVars = []
+        self._default_present_vars = []
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
         assert False, "Currently, there are only CUF parallel directives"
 

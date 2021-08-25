@@ -44,7 +44,7 @@ def prettify_f_file(fPath):
     #return subprocess.check_output(command,shell=True).decode('ascii')
     #pass
 
-def read_c_fileWithoutComments(filepath,unifdef_args=""):
+def read_c_file_without_comments(filepath,unifdef_args=""):
     """
     Requires gcc, unifdef
     """

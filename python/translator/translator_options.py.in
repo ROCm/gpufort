@@ -4,15 +4,41 @@
 LOG_PREFIX="translator.translator"
 
 COMMENT = r"(!|^\s*[\*cCdD])[^\$].+"
+
 GPUFORT_CPP_ROUTINES = { 
-  "__pow" : "pow"
+  "__pow"       : "pow",
+  "threadidx.x" : "(1+threadIdx.x)",
+  "threadidx.y" : "(1+threadIdx.y)",
+  "threadidx.z" : "(1+threadIdx.z)",
+  "blockidx.x"  : "(1+blockIdx.x)",
+  "blockidx.y"  : "(1+blockIdx.y)",
+  "blockidx.z"  : "(1+blockIdx.z)",
+  "blockdim.x"  : "blockDim.x",
+  "blockdim.y"  : "blockDim.y",
+  "blockdim.z"  : "blockDim.z",
+  "griddim.x"   : "gridDim.x",
+  "griddim.y"   : "gridDim.y",
+  "griddim.z"   : "gridDim.z",
+  "warpsize"    : "warp_size",
+  "syncthreads" : "__syncthreads",
+  "atomicadd"   : "atomicAdd",
+  "atomicsub"   : "atomicSub",
+  "atomicmax"   : "atomicMax",
+  "atomicmin"   : "atomicMin",
+  "atomicand"   : "atomicAnd",
+  "atomicor"    : "atomicOr",
+  "atomicxor"   : "atomicXor",
+  "atomicexch"  : "atomicExch",
+  "atomicinc"   : "atomicInc",
+  "atomicdec"   : "atomicDec",
+  "atomiccas"   : "atomicCas",
+  "sign"        : "copysign",
 }
 
 MAX_DIRECTIVE_LINE_WIDTH = 80
 
 UNCONVERTED = "TODO(gpufort) UNCONVERTED - Please adjust yourself!"
 DEPEND_TODO = "TODO(gpufort) - specify depend inputs"
-
 
 FORTRAN_2_C_TYPE_MAP = { 
   "character": {

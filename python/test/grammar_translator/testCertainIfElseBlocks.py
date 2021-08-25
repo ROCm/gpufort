@@ -5,7 +5,7 @@ import sys
 import test
 import translator.translator
 
-#print(_elseIfStatement.parseString("""  
+#print(_else_if_statement.parseString("""  
 #elseif ( lp < 16 ) then
 #    phi  = atan( g(2,ig)/g(1,ig) ) + pi
 #"""))

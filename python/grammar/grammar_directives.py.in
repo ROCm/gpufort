@@ -2,7 +2,7 @@
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 PRAGMA               = Regex(r"[!c\*]\$").suppress()
 generic_pragma        = Regex(r"[!c\*]\$\w+")
-generic_pragmaNewline = Regex(r"[!c\*]\$\w+\&")
+generic_pragma_newline = Regex(r"[!c\*]\$\w+\&")
 
 annotated_do_loop = Forward()
 

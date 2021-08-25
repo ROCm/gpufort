@@ -37,7 +37,7 @@ MAPPING_CLAUSE_2_TEMPLATE_MAP = {
   "present": HIP_GPUFORT_RT_ACC_PRESENT
 }
 
-def dev_varName(var):
+def dev_var_name(var):
     #tokens = var.split("%")
     #tokens[-1] = ACC_DEV_PREFIX+tokens[-1]+ACC_DEV_SUFFIX
     #return "%".join(tokens)
@@ -51,7 +51,7 @@ def dev_varName(var):
 
 class Acc2HipGpufortRT(AccBackendBase):
     # clauses 
-    def _handleAsync(self,queue=None,prefix=",asyncr="):
+    def _handle_async(self,queue=None,prefix=",asyncr="):
         """
         :return: Empty string if no queue was found
         :rtype: str
@@ -65,7 +65,7 @@ class Acc2HipGpufortRT(AccBackendBase):
         if len(result):
            result = prefix + result
         return result
-    def _handleFinalize(self):
+    def _handle_finalize(self):
         """
         :return: If a finalize clause is present
         :rtype: bool
@@ -76,7 +76,7 @@ class Acc2HipGpufortRT(AccBackendBase):
         """
         result = ""
         temp_vars = set()
-        indent = self._stnode.first_lineIndent()
+        indent = self._stnode.first_line_indent()
         #
         for parse_result in translator.acc_mapping_clause.scanString(self._stnode.single_line_statement()):
             clause         = parse_result[0][0]
@@ -84,40 +84,40 @@ class Acc2HipGpufortRT(AccBackendBase):
                 var_names       = clause.var_names()
                 var_expressions = clause.var_expressions()
                 for i,var_expr in enumerate(var_expressions):
-                    deviceptr = dev_varName(var_names[i])
+                    deviceptr = dev_var_name(var_names[i])
                     template = MAPPING_CLAUSE_2_TEMPLATE_MAP[clause.kind()]
-                    result += template.format(indent=indent,var=var_expr,dev_var=deviceptr,asyncr=self._handleAsync())
+                    result += template.format(indent=indent,var=var_expr,dev_var=deviceptr,asyncr=self._handle_async())
                     temp_vars.add(deviceptr)
         return result, len(result), temp_vars
-    def _handleDefault(self):
+    def _handle_default(self):
         """
         Emits a acc_clause_present command for every variable in the list
         """
         result   = ""
         temp_vars = set()
         template = HIP_GPUFORT_RT_ACC_PRESENT
-        indent   = self._stnode.first_lineIndent()
+        indent   = self._stnode.first_line_indent()
         for parse_result in translator.acc_clause_default.scanString(self._stnode.single_line_statement(),1):
             value = str(parse_result[0][0]).lower()
             #print(value)
             if value == "present":
-                for var_expr in self._defaultPresentVars:
-                    deviceptr = dev_varName(var_expr)
+                for var_expr in self._default_present_vars:
+                    deviceptr = dev_var_name(var_expr)
                     temp_vars.add(deviceptr)
                     result += template.format(indent=indent,var=var_expr,dev_var=deviceptr)
         return result, len(result), temp_vars
-    def _handleUpdate(self):
+    def _handle_update(self):
         """
         Emits a acc_clause_copy command for every variable in the list
         """
         result = ""
         temp_vars = set()
-        indent = self._stnode.first_lineIndent()
+        indent = self._stnode.first_line_indent()
         # update host
         #for parse_result in translator.acc_clause_update.scanString(self.single_line_statement()):
         #    #print(parse_result[0][0])
         #    #print(parse_result[0][1])
-        #    asyncr=self._handleAsync(parse_result[0][1])
+        #    asyncr=self._handle_async(parse_result[0][1])
         #    #print(asyncr)
         #    for dest in parse_result[0][0]:
         #        #print(dest)
@@ -129,17 +129,17 @@ class Acc2HipGpufortRT(AccBackendBase):
         #        for rvalue in dest[1]:
         #            #print(rvalue)
         #            var_expr = rvalue.f_str()
-        #            deviceptr = dev_varName(var_expr)
+        #            deviceptr = dev_var_name(var_expr)
         #            result += template.format(indent=indent,var=var_expr,dev_var=deviceptr,asyncr=asyncr)
         return result, len(result), temp_vars
-    def _handleWait(self):
+    def _handle_wait(self):
         """
         Emits a acc_clause_wait command for every variable in the list
         """
         result = ""
         temp_vars = set()
         # wait
-        indent = self._stnode.first_lineIndent()
+        indent = self._stnode.first_line_indent()
         template = HIP_GPUFORT_RT_ACC_WAIT
         for parse_result in translator.acc_clause_wait.scanString(self._stnode.single_line_statement()):
             queue_list=[]
@@ -177,7 +177,7 @@ class Acc2HipGpufortRT(AccBackendBase):
         
         ## Init 
         stnode = self._stnode
-        indent = stnode.first_lineIndent()
+        indent = stnode.first_line_indent()
         if stnode.is_init_directive():
             result += HIP_GPUFORT_RT_ACC_INIT.format(indent=indent)
         
@@ -198,13 +198,13 @@ class Acc2HipGpufortRT(AccBackendBase):
             all_temp_vars.update(temp_vars)
         
         # update directive
-        partial_result, transformed, temp_vars = self._handleUpdate()
+        partial_result, transformed, temp_vars = self._handle_update()
         if transformed:
             result += partial_result
             all_temp_vars.update(temp_vars)
         
         ## wait
-        partial_result, transformed, _ = self._handleWait()
+        partial_result, transformed, _ = self._handle_wait()
         if transformed:
             result += partial_result
         
@@ -226,8 +226,8 @@ class Acc2HipGpufortRT(AccBackendBase):
        
         # introduce the new variables 
         if len(all_temp_vars):
-            begin  = stnode._parent.find_last(filter=lambda child : not child._ignoreInS2STranslation and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
-            indent = stnode.first_lineIndent()
+            begin  = stnode._parent.find_last(filter=lambda child : not child._ignore_in_s_2s_translation and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
+            indent = stnode.first_line_indent()
             if begin is not None:
                 for var in all_temp_vars:
                      begin.add_to_epilog("{indent}type(c_ptr) :: {name}\n".format(indent=indent,name=var))
@@ -242,14 +242,14 @@ class AccLoopKernel2HipGpufortRT(Acc2HipGpufortRT):
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
         result = ""
         stnode = self._stnode
-        indent = stnode.first_lineIndent()
+        indent = stnode.first_line_indent()
         if stnode.is_parallel_loop_directive() or stnode.is_kernels_loop_directive():
             partial_result, _ = Acc2HipGpufortRT.transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints,handle_if=False) 
             result = partial_result
         partial_result, _ = STLoopKernel.transform(stnode,joined_lines,joined_statements,statements_fully_cover_lines,index_hints) 
         result += partial_result
         # add wait call if necessary
-        queue = self._handleAsync(None,"")
+        queue = self._handle_async(None,"")
         if not len(queue):
             result += "\n" + HIP_GPUFORT_RT_ACC_WAIT.format(indent=indent,queue=queue,asyncr="")
         #if stnode.is_parallel_loop_directive() or stnode.is_kernels_loop_directive():

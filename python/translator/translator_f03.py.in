@@ -151,14 +151,12 @@ class TTIdentifier(TTNode):
         return str(self._name)
     def c_str(self):
         return self.f_str()
-    def name(self,mangle_name=False): # argument is never used as we have already an identifier
-        return self.f_str()
 
 class TTFunctionCallOrTensorAccess(TTNode):
     def _assign_fields(self,tokens):
         self._name = tokens[0]
         self._args = tokens[1]
-        self._is_tensorAccess = Unknown3
+        self._is_tensor_access = Unknown3
     def matrix_range_args(self):
         """
         Returns all matrix range args in the order of their appeareance.
@@ -180,21 +178,13 @@ class TTFunctionCallOrTensorAccess(TTNode):
           name in ALL_HOST_ROUTINES or\
           name in ALL_DEVICE_ROUTINES
     def is_tensor(self):
-        if self._is_tensorAccess == True3:
+        if self._is_tensor_access == True3:
             return True
-        elif self._is_tensorAccess == False3:
+        elif self._is_tensor_access == False3:
             return False
         else:
             return self.has_matrix_range_args() or\
                    not self.__guess_it_is_function()
-    def name(self,mangle_args=False):
-        if mangle_args:
-            result = self.f_str().replace("(","_")
-            result = result.replace(",","_")
-            result = ''.join(e for e in result if e.isalnum() or e == "_" )
-            return result
-        else:
-            return make_f_str(self._name)
     def c_str(self):
         name = make_c_str(self._name).lower()
         if self.is_tensor():
@@ -236,27 +226,27 @@ class TTRValue(TTNode,IValue):
     def _assign_fields(self,tokens):
         self._sign           = tokens[0]
         self._value          = tokens[1]
-        self._reductionIndex = ""
+        self._reduction_index = ""
         #print("{0}: {1}".format(self.c_str(),self.location))
     def f_str(self):
         return self._sign + make_f_str(self._value)
     def c_str(self):
         result = self._sign + make_c_str(self._value)
-        if len(self._reductionIndex):
-            result += "[{idx}]".format(idx=self._reductionIndex) 
+        if len(self._reduction_index):
+            result += "[{idx}]".format(idx=self._reduction_index) 
         return result.lower()
 
 class TTLValue(TTNode,IValue):
     def _assign_fields(self,tokens):
         self._value          = tokens[0]
-        self._reductionIndex = ""
+        self._reduction_index = ""
         #print("{0}: {1}".format(self.c_str(),self.location))
     def f_str(self):
         return make_f_str(self._value)
     def c_str(self):
         result = make_c_str(self._value)
-        if len(self._reductionIndex):
-            result += "[{idx}]".format(idx=self._reductionIndex) 
+        if len(self._reduction_index):
+            result += "[{idx}]".format(idx=self._reduction_index) 
         return result
 
 class TTSizeInquiry(TTNode):
@@ -425,9 +415,7 @@ class TTDerivedTypeMember(TTNode):
             return current.has_matrix_range_args()
         else:
             return False
-    def name(self,mangle_name=False):
-        return self._type.name(mangle_name) + "_" + self._element.name(mangle_name)
-    def c_str(self,):
+    def c_str(self):
         return make_c_str(self._type) + "." + make_c_str(self._element)
     def f_str(self):
         return make_f_str(self._type) + "%" + make_f_str(self._element)
@@ -436,7 +424,7 @@ class TTSubroutineCall(TTNode):
     def _assign_fields(self,tokens):
         self._subroutine=tokens[0]
     def c_str(self):
-        self._subroutine._is_tensorAccess = False3
+        self._subroutine._is_tensor_access = False3
         return self.indent+self._subroutine.c_str()+";"
 
 class TTOperator(TTNode):
@@ -519,8 +507,8 @@ class TTAssignment(TTNode):
         original_f_str = self.f_str()
         # TODO fix should be moved into parser preprocessing stage
         for i,matrix_range in enumerate(self._lhs.matrix_range_args()):
-            loop_varName = "_"+chr(ord('a')+i) # Fortran names cannot start with "_"
-            matrix_range.set_loop_var(loop_varName)
+            loop_var_name = "_"+chr(ord('a')+i) # Fortran names cannot start with "_"
+            matrix_range.set_loop_var(loop_var_name)
             lbound = matrix_range.lBound()
             if not len(lbound):
                 lbound = "{name}_lb{i}".format(name=name,i=i+1)
@@ -530,14 +518,14 @@ class TTAssignment(TTNode):
             stride = matrix_range.stride()
             if not len(stride):
                 stride="1"
-            loop_nest_start = "do {var}={lb},{ub},{step}\n".format(var=loop_varName,lb=lbound,ub=ubound,step=stride) + loop_nest_start
+            loop_nest_start = "do {var}={lb},{ub},{step}\n".format(var=loop_var_name,lb=lbound,ub=ubound,step=stride) + loop_nest_start
             loop_nest_end   = "end do\n" + loop_nest_end 
         if len(loop_nest_start):
             # TODO put into options
             for rvalue in find_all(self._rhs,searched_type=TTRValue):
                 for i,matrix_range in enumerate(rvalue.matrix_range_args()):
-                 loop_varName = "_"+chr(ord('a')+i) # Fortran names cannot start with "_"
-                 matrix_range.set_loop_var(loop_varName)
+                 loop_var_name = "_"+chr(ord('a')+i) # Fortran names cannot start with "_"
+                 matrix_range.set_loop_var(loop_var_name)
             loop_nest_start += "! TODO(gpufort) please check if this conversion was done correctly\n"
             loop_nest_start += "! original: {}\n".format(original_f_str)
             result = loop_nest_start + self.f_str()+"\n" + loop_nest_end
@@ -1050,7 +1038,7 @@ class TTDeclaration(TTNode,Attributed):
             return ""
         else:
             return result.rstrip(",")
-    def c_str(self,extra_ignore_list=[],is_functionArgument=False,include_bounds=True,include_rhs=True):
+    def c_str(self,extra_ignore_list=[],is_function_argument=False,include_bounds=True,include_rhs=True):
         """
         The ignore list can be used to filter out some
         variables, e._g. if these are parameters of a subroutine
@@ -1068,7 +1056,7 @@ class TTDeclaration(TTNode,Attributed):
            comment = " /* Fortran qualifiers: {0} */".format(",".join([make_f_str(el) for el in self._qualifiers]))
         for ttdeclaredvariable in self._rhs:
             if not ttdeclaredvariable.name(make_c_str) in ignore_list: 
-                if is_functionArgument:
+                if is_function_argument:
                     result += "{{indent}}{0} {1},".format(make_c_str(self._datatype),ttdeclaredvariable.c_str(include_bounds,include_rhs),comment)
                 else:
                     datatype = make_c_str(self._datatype)
@@ -1076,7 +1064,7 @@ class TTDeclaration(TTNode,Attributed):
                         datatype = "__shared__ " + datatype
                     result += "{{indent}}{0} {1}{2};{3}\n".format(datatype,ttdeclaredvariable.c_str(include_bounds,include_rhs),dimension_bounds,comment) 
         result = result.format(indent=self.indent) 
-        if is_functionArgument:
+        if is_function_argument:
             return result
         else:
             return result.rstrip(",")

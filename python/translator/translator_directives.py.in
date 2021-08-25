@@ -6,11 +6,9 @@ def _intrnl_search_values_in_body(ttcontainer,search_filter,scope,min_rank=-1):
     #TODO exclude other annotations as well from this search
     #TODO improve
     def find_all_matching_exclude_directives_(body,filter_expr=lambda x: True,N=-1):
-        """
-        Find all nodes in tree of type 'searched_type'.
-        """
+        """Find all nodes in tree of type 'searched_type'."""
         result = []
-        def descend_(curr):
+        def traverse__(curr):
             if (N > 0 and len(result) > N) or isinstance(curr,ILoopAnnotation):
                 return
             if filter_expr(curr):
@@ -18,26 +16,24 @@ def _intrnl_search_values_in_body(ttcontainer,search_filter,scope,min_rank=-1):
             if isinstance(curr,ParseResults) or\
                isinstance(curr,list):
                 for el in curr:
-                    descend_(el)
+                    traverse__(el)
             elif isinstance(curr,TTNode):
                 for el in curr.children():
-                    descend_(el)
-        descend_(ttcontainer.body)
+                    traverse__(el)
+        traverse__(ttcontainer.body)
         return result
     
-    varnames = [] 
+    tags = [] 
     for ttvalue in find_all_matching_exclude_directives_(ttcontainer.body,search_filter): # includes the identifiers of the function calls
-        name = make_f_str(ttvalue.name())
-        name = name.lower()
-        ivar,found_in_scope = scoper.search_scope_for_variable(\
-          scope,create_index_search_tag_for_variable(name))
+        tag = create_index_search_tag_for_variable(ttvalue.f_str())
+        ivar,found_in_scope = scoper.search_scope_for_variable(scope,tag)
         if (found_in_scope or\
-            (not name in KEYWORDS and\
-            not name in GPUFORT_CPP_ROUTINES)) and\
+            (not tag in KEYWORDS and\
+            not tag in GPUFORT_CPP_ROUTINES)) and\
             ivar["rank"] >= min_rank and\
-            not name in varnames: # using set destroys order
-                 varnames.append(name)
-    return varnames
+            not tag in tags: # using set destroys order
+                 tags.append(tag)
+    return tags
 
 def _intrnl_variables_in_body(ttcontainer,scope=[]):
     """:return: all identifiers of LValue and RValues in the body."""
@@ -63,7 +59,7 @@ def _intrnl_flag_tensors(ttcontainer,scope=[]):
         if type(expr._value) is TTFunctionCallOrTensorAccess:
             _, discovered = scoper.search_scope_for_variable(scope,create_index_search_tag_for_variable(expr.name()))
             if discovered:
-                expr._value._is_tensorAccess = True3
+                expr._value._is_tensor_access = True3
 
 class ILoopAnnotation():
     def num_collapse(self):
@@ -109,26 +105,26 @@ class TTDoLoop(TTContainer):
         self.annotation, self._begin, self._end, self._step, self.body = tokens
         if self.annotation == None:
             self.annotation = ILoopAnnotation()
-        self._threadIndex = None # "z","y","x"
+        self._thread_index = None # "z","y","x"
     def set_hip_thread_index(self,name):
-        self._threadIndex = name
+        self._thread_index = name
     def hip_thread_index_c_str(self):
         ivar = self.loop_var()
         begin    = make_c_str(self._begin._rhs) # array indexing is corrected in index macro
         step     = make_c_str(self._step)
         return "{indent}int {var} = {begin} + ({step})*(threadIdx.{idx} + blockIdx.{idx} * blockDim.{idx});\n".format(\
-                indent=self.indent,var=ivar,begin=begin,idx=self._threadIndex,step=step)
+                indent=self.indent,var=ivar,begin=begin,idx=self._thread_index,step=step)
     def collapsed_loop_index_c_str(self,denominator):
         ivar = self.loop_var()
-        tid      = self._threadIndex
+        tid      = self._thread_index
         assert not tid is None
         begin    = make_c_str(self._begin._rhs)
-        size     = self.problem_sizeCStr()
+        size     = self.problem_size_c_str()
         step     = make_c_str(self._step)
         # int i<n> = begin<n> + step<n>*(i<denominator<n>> % size<n>)
         return "{indent}int {var} = {begin} + ({step})*({tid}{denom} % {size});\n".format(\
                 indent=self.indent,var=ivar,begin=begin,tid=tid,denom=denominator,size=size,step=step)
-    def problem_sizeCStr(self):
+    def problem_size_c_str(self):
         if self._step == "1":
             return "(1 + (({end}) - ({begin})))".format(\
                 begin=make_c_str(self._begin._rhs),end=make_c_str(self._end),step=make_c_str(self._step) )
@@ -149,7 +145,7 @@ class TTDoLoop(TTContainer):
         end         = make_c_str(self._end)
         step        = make_c_str(self._step)
         body_content = TTContainer.c_str(self)
-        if self._threadIndex == None:
+        if self._thread_index == None:
             return "{indent}for (int {0}={1}; {0} <= {2}; {0} += {3}) {{\n{4}\n}}".format(self.indent,ivar, begin, end, step, body_content)
         else:
             return body_content
@@ -195,7 +191,7 @@ class IComputeConstruct():
         return CLAUSE_NOT_FOUND
     def stream(self,converter=make_f_str):
         return "c_null_ptr"
-    def shared_mem(self,converter=make_f_str):
+    def sharedmem(self,converter=make_f_str):
         return "0"
     def use_default_stream(self):
         return True
@@ -243,15 +239,15 @@ class IComputeConstruct():
 
 class TTLoopKernel(TTNode,IComputeConstruct):
     def _assign_fields(self,tokens):
-        self._parentDirective, self.body = tokens
+        self._parent_directive, self.body = tokens
         self.scope = scoper.EMPTY_SCOPE
     def __first_loop_annotation(self):
         return self.body.annotation
     def __parent_directive(self):
-        if self._parentDirective == None:
-            return self._firstLoopAnnotation()
+        if self._parent_directive == None:
+            return self._first_loop_annotation()
         else:
-            return self._parentDirective
+            return self._parent_directive
     def loop_vars(self):
         identifier_names = []
         do_loops  = find_all(self.body,TTDoLoop)
@@ -270,7 +266,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         if len(scope):
             self.scope = scope
         return _intrnl_inout_arrays_in_body(self.body,self.scope)
-    def __local_scalarsAndReductionCandidates(self,scope):
+    def __local_scalars_and_reduction_candidates(self,scope):
         """
         local variable      - scalar variable that is not read before the assignment (and is no derived type member)
         reduction_candidates - scalar variable that is written but not read anymore 
@@ -318,12 +314,12 @@ class TTLoopKernel(TTNode,IComputeConstruct):
     def local_scalars(self,scope=[]):
         if len(scope):
             self.scope = scope
-        local_scalars,_ = self.__local_scalarsAndReductionCandidates(self.scope)
+        local_scalars,_ = self.__local_scalars_and_reduction_candidates(self.scope)
         return local_scalars 
     def reduction_candidates(self,scope=[]):
         if len(scope):
             self.scope = scope
-        _,reduction_candidates = self.__local_scalarsAndReductionCandidates(self.scope)
+        _,reduction_candidates = self.__local_scalars_and_reduction_candidates(self.scope)
         return reduction_candidates
     def problem_size(self):
         num_outer_loops_to_map = int(self.__parent_directive().num_collapse())
@@ -333,7 +329,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             do_loops = find_all(self.body,TTDoLoop)
             for i,loop in enumerate(do_loops):
                 if i < num_outer_loops_to_map:
-                    result[i] = loop.problem_sizeCStr()
+                    result[i] = loop.problem_size_c_str()
             return result
         else: # "collapse"
             result = ""
@@ -341,7 +337,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             for loop in reversed(do_loops[0:num_outer_loops_to_map]):
                 if len(result):
                     result += "*"
-                result += loop.problem_sizeCStr()
+                result += loop.problem_size_c_str()
             if len(result):
                 return [result]
             else:
@@ -399,8 +395,8 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             return self.__first_loop_annotation().reductions(converter)
     def stream(self,converter=make_f_str):
         return self.__parent_directive().stream(converter)
-    def shared_mem(self,converter=make_f_str):
-        return self.__parent_directive().shared_mem(converter)
+    def sharedmem(self,converter=make_f_str):
+        return self.__parent_directive().sharedmem(converter)
     def omp_f_str(self,f_snippet):
         """
         :note: The string used for parsing was preprocessed. Hence
@@ -472,7 +468,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         """
         # 0. Clarify types of function calls / tensor access that are not 
         # members of a struct
-        __flag_tensors(self,self.scope)
+        _intrnl_flag_tensors(self,self.scope)
         # TODO look up correct signature of called device functions from index
         # 1.1 Collapsing
         num_outer_loops_to_map = int(self.__parent_directive().num_collapse())
@@ -491,7 +487,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                 if type(var._value) in [TTDerivedTypeMember,TTIdentifier]:
                     for op,reduced_variables in self.gang_team_reductions().items():
                         if var.name().lower() in [el.lower() for el in reduced_variables]:
-                            var._reductionIndex = tidx
+                            var._reduction_index = tidx
             # TODO identify what operation is performed on the highest level to 
             # identify reduction op
         reduction_preamble = ""
@@ -529,7 +525,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                     indices += loop.collapsed_loop_index_c_str("/("+"*".join(denominator_factors)+")")
                 else:
                     indices += loop.collapsed_loop_index_c_str("")
-                denominator_factors.append(loop.problem_sizeCStr())
+                denominator_factors.append(loop.problem_size_c_str())
                 conditions.append(loop.hip_thread_bound_c_str())
         c_snippet = "{0}{2}if ({1}) {{\n{3}}}".format(\
             indices,"&&".join(conditions),reduction_preamble,make_c_str(self.body))

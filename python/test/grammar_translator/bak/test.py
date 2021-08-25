@@ -56,8 +56,8 @@ LIST_OF_TENSORS.clear()
 
 
 print (assignment.parseString("a = 5")[0].c_str())
-print (derived_typeMember.parseString("threadidx%x3")[0])
-print (derived_typeMember.parseString("threadidx%x3")[0].c_str())
+print (derived_type_member.parseString("threadidx%x3")[0])
+print (derived_type_member.parseString("threadidx%x3")[0].c_str())
 print (datatype.parseString("double precision")[0].c_str())
 print (declaration.parseString("real(kind=8) :: rhx, rhy")[0].c_str())
 

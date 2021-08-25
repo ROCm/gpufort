@@ -2,7 +2,7 @@
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 
 # API
-def create_indexRecordsFromDeclaration(ttdeclaration):
+def create_index_records_from_declaration(ttdeclaration):
     """
     Per declared variable in the declaration, creates
     a context dictionary that can be easily piped
@@ -11,7 +11,7 @@ def create_indexRecordsFromDeclaration(ttdeclaration):
     """
     global LOG_PREFIX
 
-    utils.logging.log_enter_function(LOG_PREFIX,"create_indexRecordsFromDeclaration")
+    utils.logging.log_enter_function(LOG_PREFIX,"create_index_records_from_declaration")
     
     context = []
     has_dimension = ttdeclaration.has_dimension()
@@ -68,7 +68,7 @@ def create_indexRecordsFromDeclaration(ttdeclaration):
                 pass
         context.append(ivar)
     
-    utils.logging.log_leave_function(LOG_PREFIX,"create_indexRecordsFromDeclaration")
+    utils.logging.log_leave_function(LOG_PREFIX,"create_index_records_from_declaration")
     
     return context
 
@@ -105,17 +105,23 @@ def create_index_search_tag_for_variable(variable_expression):
     if not "(" in variable_expression:
         return variable_expression.lower()
     else:
-        expr         = derived_type_elem
-        parse_result = expr.parseString(variable_expression.lower())[0]
-        def traverse(ttderivedtype):
-            result = ttderivedtype._type.name().lower() + "%"
-            if type(ttderivedtype._element) == TTIdentifier or\
-               type(ttderivedtype._element) == TTFunctionCallOrTensorAccess:
-                result += ttderivedtype._element.name().lower() # end of recursion
-            else: # if type(ttderivedtype._element) == TTDerivedTypeElem:
-               result += traverse(ttderivedtype._element)
-            return result
-        return traverse(parse_result)
+        parts = re.split("([()%,])",variable_expression.lower())
+        open_brackets = 0
+        result = []
+        curr   = ""
+        for part in parts:
+            print(part)
+            if part == "(":
+                open_brackets += 1
+            elif part == ")":
+                open_brackets -= 1
+            elif part == "%" and open_brackets == 0:
+                result.append(curr)
+                curr = ""
+            elif open_brackets == 0:
+                curr += part
+        result.append(curr)
+        return "%".join(result)
 
 # TODO parsing and translation is similar but analysis differs between the different kernel
 # types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)

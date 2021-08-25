@@ -36,29 +36,29 @@ class Tagged:
         return result
 
 class STNode:
-    def __init__(self,parent,first_record,first_statementIndex=0):
+    def __init__(self,parent,first_record,first_statement_index=0):
         self.name                    = None
         self.kind                    = None
         self._records                = []
         if first_record != None:
             self._records.append(first_record)
-        self._first_statementIndex    = first_statementIndex
-        self._lastStatementIndex     = first_statementIndex # inclusive
+        self._first_statement_index    = first_statement_index
+        self._last_statement_index     = first_statement_index # inclusive
         self._children               = []
         self._parent                 = parent
-        self._ignoreInS2STranslation = False 
-    def __get_record_content(self,key,first_recordFirstElem=0,last_recordLastElem=-1):
+        self._ignore_in_s_2s_translation = False 
+    def __get_record_content(self,key,first_record_first_elem=0,last_record_last_elem=-1):
         """Collects entries for the given key from all records associated
         with this node."""
         result = []
         for i,record in enumerate(self._records):
             if i == 0: 
-                result += record[key][first_recordFirstElem:]
+                result += record[key][first_record_first_elem:]
             elif i == len(self._records)-1:
-                if last_recordLastElem == -1:
+                if last_record_last_elem == -1:
                     result += record[key]
                 else:
-                    result += record[key][0:last_recordLastElem+1]
+                    result += record[key][0:last_record_last_elem+1]
             else:
                 result += record[key]
         return result
@@ -94,7 +94,7 @@ class STNode:
         :note: None entries might have been introduced by other nodes transforming the same record(s).
         """
         result = self.__get_record_content("statements",\
-          self._first_statementIndex,self._lastStatementIndex)
+          self._first_statement_index,self._last_statement_index)
         if not include_none_entries:
             return [stmt.rstrip("\n\t ;") for stmt in result if stmt != None]
     def min_lineno(self):
@@ -113,7 +113,7 @@ class STNode:
         :return: First line in first record.
         """
         return self._records[0]["lines"][0]
-    def first_lineIndent(self):
+    def first_line_indent(self):
         """Indent chars at beginning of first line."""
         first_line      = self.first_line()
         num_indent_chars = len(first_line) - len(first_line.lstrip(" \t"))
@@ -208,26 +208,26 @@ class STNode:
                if multiple statements per line are present and other nodes modify those, removing elements from the list
                of statements might mess with the indexing.
         """
-        first_recordFirstElem = self._first_statementIndex
-        last_recordLastElem   = self._lastStatementIndex
+        first_record_first_elem = self._first_statement_index
+        last_record_last_elem   = self._last_statement_index
         # write subst into first record first statement
         self._records[0]["modified"]                         = True
-        self._records[0]["statements"][first_recordFirstElem] = substitution
+        self._records[0]["statements"][first_record_first_elem] = substitution
         assert len(self._records), "self._records should not be empty"
-        last_recordUbound = last_recordLastElem
-        if last_recordUbound != -1:
-            last_recordUbound += 1
+        last_record_ubound = last_record_last_elem
+        if last_record_ubound != -1:
+            last_record_ubound += 1
         def assign_none_(statements,lbound=0,ubound=-1):
             if ubound == -1:
                 ubound = len(statements)
             for i in range(lbound,ubound):
                 statements[i] = None
         if len(self._records) == 1:
-            assign_none_(self._records[0]["statements"],first_recordFirstElem+1,last_recordUbound)
+            assign_none_(self._records[0]["statements"],first_record_first_elem+1,last_record_ubound)
         else:
             self._records[-1]["modified"] = True
-            assign_none_(self._records[0]["statements"],first_recordFirstElem+1)
-            assign_none_(self._records[-1]["statements"],0,last_recordUbound)
+            assign_none_(self._records[0]["statements"],first_record_first_elem+1)
+            assign_none_(self._records[-1]["statements"],0,last_record_ubound)
             for record in self._records[1:-1]: # upper bound exclusive
                 record["modified"] = True
                 assign_none_(record["statements"])
@@ -245,10 +245,10 @@ class STNode:
         :note: When appending an epilog, it is assumed that the modified statement is the 
         last in the record/line and that this statement is only modified once.
         """
-        if not self._ignoreInS2STranslation:
-            have_first_in_first_record    = self._first_statementIndex == 0
-            have_last_in_last_record      = self._lastStatementIndex  == -1 or\
-                                        self._lastStatementIndex  == len(self._records[-1]["statements"])-1
+        if not self._ignore_in_s_2s_translation:
+            have_first_in_first_record    = self._first_statement_index == 0
+            have_last_in_last_record      = self._last_statement_index  == -1 or\
+                                        self._last_statement_index  == len(self._records[-1]["statements"])-1
             statements_fully_cover_lines = have_first_in_first_record and have_last_in_last_record
         
             joined_lines                = "".join(self.lines())
@@ -265,23 +265,23 @@ class STRoot(STNode):
         STNode.__init__(self,None,None,-1)
 
 class STModule(STNode,Tagged):
-    def __init__(self,name,parent,first_record,first_recordFirstStatement):
-        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def __init__(self,name,parent,first_record,first_record_first_statement):
+        STNode.__init__(self,parent,first_record,first_record_first_statement)
         self.name = name.lower()
         self.kind = "module"
 
 class STProgram(STNode,Tagged):
-    def __init__(self,name,parent,first_record,first_recordFirstStatement):
-        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def __init__(self,name,parent,first_record,first_record_first_statement):
+        STNode.__init__(self,parent,first_record,first_record_first_statement)
         self.name = name.lower()
         self.kind = "program"
 
 class STUseStatement(STNode):
-    def __init__(self,parent,first_record,first_recordFirstStatement):
-        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def __init__(self,parent,first_record,first_record_first_statement):
+        STNode.__init__(self,parent,first_record,first_record_first_statement)
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
         # TODO clean
-        indent  = self.first_lineIndent() 
+        indent  = self.first_line_indent() 
         snippet = joined_statements
         use_cuda = False
         for lib in HOST_MODULES:
@@ -295,13 +295,13 @@ class STUseStatement(STNode):
         return snippet, use_cuda
 
 class STPlaceHolder(STNode):
-    def __init__(self,parent,first_record,first_recordFirstStatement):
-        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def __init__(self,parent,first_record,first_record_first_statement):
+        STNode.__init__(self,parent,first_record,first_record_first_statement)
         self.name = None
 
 class STProcedure(STNode,Tagged):
-    def __init__(self,name,kind,parent,first_record,first_recordFirstStatement,index):
-        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def __init__(self,name,kind,parent,first_record,first_record_first_statement,index):
+        STNode.__init__(self,parent,first_record,first_record_first_statement)
         self.name = name
         self.kind = kind
         self.code = []
@@ -345,33 +345,33 @@ class STProcedure(STNode,Tagged):
             if must_be_available_on_host:
                 return pAttributes.sub("", original), True
             elif must_be_available_on_device: # and not must_be_available_on_host
-                indent = self.first_lineIndent()
+                indent = self.first_line_indent()
                 return "{0}! extracted to HIP C++ file".format(indent), True
         else: 
             return original, False
 
 class STDirective(STNode):
-    def __init__(self,parent,first_record,first_recordFirstStatement,directive_no,sentinel="!$cuf"):
-        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def __init__(self,parent,first_record,first_record_first_statement,directive_no,sentinel="!$cuf"):
+        STNode.__init__(self,parent,first_record,first_record_first_statement)
         self._sentinel        = sentinel
         self._directive_no     = directive_no
-        self._firstDirective  = self._records[0]["statements"][0]
+        self._first_directive  = self._records[0]["statements"][0]
     def single_line_statement(self):
         """
         Express the statement as lower case single-line statement
         """
-        return self._firstDirective
+        return self._first_directive
 
 class STLoopKernel(STNode):
-    def __init__(self,parent,first_record,first_recordFirstStatement):
-        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def __init__(self,parent,first_record,first_record_first_statement):
+        STNode.__init__(self,parent,first_record,first_record_first_statement)
         self.grid_f_str             = None
         self.block_f_str            = None
-        self.shared_memFStr        = "0" # set from extraction routine
+        self.sharedmem_f_str        = "0" # set from extraction routine
         self.stream_f_str           = "c_null_ptr" # set from extraction routine
-        self.kernel_argNames       = [] # set from extraction routine
+        self.kernel_arg_names       = [] # set from extraction routine
         self.code                 = []
-        self._do_loop_ctrMemorised  = -1
+        self._do_loop_ctr_memorised  = -1
     def __hash(self):
         """Compute hash code for this kernel. Must be done before any transformations are performed."""
         statements    = list(self.code) # copy
@@ -387,7 +387,7 @@ class STLoopKernel(STNode):
     def kernel_launcher_name(self):
         return "launch_{}".format(self.kernel_name())
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
-        indent = self.first_lineIndent()
+        indent = self.first_line_indent()
         try:
             stream_as_int = int(self.stream_f_str)
             stream = "c_null_ptr" if stream_as_int < 1 else self.stream_f_str
@@ -395,12 +395,12 @@ class STLoopKernel(STNode):
             stream = self.stream_f_str
         if self.grid_f_str == None or self.block_f_str == None or LOOP_KERNEL_DEFAULT_LAUNCHER == "cpu": # use auto or cpu launcher 
             result="{indent}! extracted to HIP C++ file\n{indent}call {0}_{launcher}({1},{2},{3})".format(\
-              self.kernel_launcher_name(),self.shared_memFStr,stream,\
-                ",".join(self.kernel_argNames),indent=indent,launcher=LOOP_KERNEL_DEFAULT_LAUNCHER)
+              self.kernel_launcher_name(),self.sharedmem_f_str,stream,\
+                ",".join(self.kernel_arg_names),indent=indent,launcher=LOOP_KERNEL_DEFAULT_LAUNCHER)
         else:
             result="{indent}! extracted to HIP C++ file\n{indent}call {0}({1},{2},{3},{4},{5})".format(\
-              self.kernel_launcher_name(),self.grid_f_str,self.block_f_str,self.shared_memFStr,stream,\
-                ",".join(self.kernel_argNames),indent=indent)
+              self.kernel_launcher_name(),self.grid_f_str,self.block_f_str,self.sharedmem_f_str,stream,\
+                ",".join(self.kernel_arg_names),indent=indent)
         return result, True
 
 class STDeclaration(STNode):
@@ -410,12 +410,12 @@ class STDeclaration(STNode):
     Complex(DP), allocatable, device :: dev_array(:,:)
     ```
     """
-    def __init__(self,parent,first_record,first_recordFirstStatement):
-        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def __init__(self,parent,first_record,first_record_first_statement):
+        STNode.__init__(self,parent,first_record,first_record_first_statement)
         self._ttdeclaration   = translator.fortran_declaration.parseString(self.first_statement())[0]
         self._vars            = [name.lower() for name in self._ttdeclaration.variable_names()]
     def create_codegen_context(self):
-        return translator.create_indexRecordsFromDeclaration(self._ttdeclaration)
+        return translator.create_index_records_from_declaration(self._ttdeclaration)
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
         """
         if device and allocatable, remove device, add pointer
@@ -438,7 +438,7 @@ class STDeclaration(STNode):
         new_device_pointer_variables = []
         new_host_pointer_variables   = []
         
-        indent = self.first_lineIndent()
+        indent = self.first_line_indent()
         # argument names if declared in procedure
         if isinstance(self._parent, STProcedure):
             argnames = list(self._parent.index_record["dummy_args"])
@@ -485,14 +485,14 @@ class STAttributes(STNode):
     CUDA Fortran specific intrinsic that needs to be removed/commented out
     in any case.
     """
-    def __init__(self,parent,first_record,first_recordFirstStatement):
-        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def __init__(self,parent,first_record,first_record_first_statement):
+        STNode.__init__(self,parent,first_record,first_record_first_statement)
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]): # TODO
         return "", True
 
 class STNonZeroCheck(STNode):
-    def __init__(self,parent,first_record,first_recordFirstStatement):
-        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def __init__(self,parent,first_record,first_record_first_statement):
+        STNode.__init__(self,parent,first_record,first_record_first_statement)
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]): # TODO
         result = snippet
         transformed = False
@@ -509,8 +509,8 @@ class STNonZeroCheck(STNode):
         return result, transformed
 
 class STAllocated(STNode):
-    def __init__(self,parent,first_record,first_recordFirstStatement):
-        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def __init__(self,parent,first_record,first_record_first_statement):
+        STNode.__init__(self,parent,first_record,first_record_first_statement)
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]): # TODO
         def repl(parse_result):
             var_name    = parse_result.var_name()
@@ -523,10 +523,10 @@ class STAllocated(STNode):
         return result, transformed
 
 class STAllocate(STNode):
-    def __init__(self,parent,first_record,first_recordFirstStatement):
-        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def __init__(self,parent,first_record,first_record_first_statement):
+        STNode.__init__(self,parent,first_record,first_record_first_statement)
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]): # TODO
-        indent = self.first_lineIndent()
+        indent = self.first_line_indent()
         def repl(parse_result):
             nonlocal indent
             transformed     = False
@@ -550,14 +550,14 @@ class STAllocate(STNode):
         return utils.pyparsingutils.replace_all(joined_statements,translator.allocate,repl)
              
 class STDeallocate(STNode):
-    def __init__(self,parent,first_record,first_recordFirstStatement):
-        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def __init__(self,parent,first_record,first_record_first_statement):
+        STNode.__init__(self,parent,first_record,first_record_first_statement)
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]): # TODO
         """
         :note: `wrap_in_if_def` can be deactivated if a higher level function
         embeds the outcome already in an `ifdef`.
         """
-        indent = self.first_lineIndent()
+        indent = self.first_line_indent()
         def repl(parse_result):
             nonlocal indent
             transformed     = False
@@ -579,12 +579,12 @@ class STDeallocate(STNode):
         return utils.pyparsingutils.replace_all(joined_statements,translator.deallocate,repl)
          
 class STMemcpy(STNode):
-    def __init__(self,parent,first_record,first_recordFirstStatement):
-        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
+    def __init__(self,parent,first_record,first_record_first_statement):
+        STNode.__init__(self,parent,first_record,first_record_first_statement)
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]): # TODO
         def repl_memcpy(parse_result):
-            dest_name = parse_result.dest_nameFStr()
-            src_name  = parse_result.src_nameFStr()
+            dest_name = parse_result.dest_name_f_str()
+            src_name  = parse_result.src_name_f_str()
             dest_indexed_var,_ = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
               translator.create_index_search_tag_for_variable(dest_name))
             src_indexed_var,_  = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
@@ -600,9 +600,9 @@ class STMemcpy(STNode):
         return utils.pyparsingutils.replace_all(joined_statements,translator.memcpy,repl_memcpy)
 
 class STCudaLibCall(STNode):
-    def __init__(self,parent,first_record,first_recordFirstStatement):
-        STNode.__init__(self,parent,first_record,first_recordFirstStatement)
-        self._cudaApi = ""
+    def __init__(self,parent,first_record,first_record_first_statement):
+        STNode.__init__(self,parent,first_record,first_record_first_statement)
+        self._cuda_api = ""
         self._has_cublas = False
     def has_cublas(self):
         """
@@ -615,12 +615,12 @@ class STCudaLibCall(STNode):
         global KEEP_CUDA_LIB_NAMES
         snippet     = joined_statements
         oldf_snippet = snippet
-        indent      = self.first_lineIndent()
+        indent      = self.first_line_indent()
         transformed = False
         if not KEEP_CUDA_LIB_NAMES:
             def repl_memcpy(parse_result):
-                dest_name = parse_result.dest_nameFStr()
-                src_name  = parse_result.src_nameFStr()
+                dest_name = parse_result.dest_name_f_str()
+                src_name  = parse_result.src_name_f_str()
                 dest_indexed_var,_ = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
                   translator.create_index_search_tag_for_variable(dest_name))
                 src_indexed_var ,_ = scoper.search_index_for_variable(index_hints,self._parent.tag(),\
@@ -676,10 +676,10 @@ class STCudaKernelCall(STNode):
                     kernel_args.append("lbound({0},{1})".format(expr_f_str,rank))
             kernel_launch_info = translator.cuf_kernel_call.parseString(self.first_statement())[0]
             subst="call launch_{0}({1},{2},{3},{4},{5})".format(\
-              kernel_launch_info.kernel_nameFStr(),\
+              kernel_launch_info.kernel_name_f_str(),\
               kernel_launch_info.grid_f_str(),
               kernel_launch_info.block_f_str(),\
-              kernel_launch_info.shared_memFStr(),
+              kernel_launch_info.sharedmem_f_str(),
               kernel_launch_info.stream_f_str(),\
               ",".join(kernel_args)
             )

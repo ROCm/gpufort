@@ -22,18 +22,18 @@ EMPTY_VARIABLE = {
   "name"                          : __UNKNOWN,
   "f_type"                        : __UNKNOWN,
   "kind"                          : __UNKNOWN,
-  "bytes_per_element"               : __UNKNOWN,
+  "bytes_per_element"             : __UNKNOWN,
   "c_type"                        : __UNKNOWN,
-  "f_interface_type"                : __UNKNOWN,
-  "f_interface_qualifiers"          : __UNKNOWN,
+  "f_interface_type"              : __UNKNOWN,
+  "f_interface_qualifiers"        : __UNKNOWN,
   "qualifiers"                    : [],
-  "declare_on_target"               : __UNKNOWN,
+  "declare_on_target"             : __UNKNOWN,
   "rank"                          : -1,
-  "unspecified_bounds"             : __UNKNOWN,
+  "unspecified_bounds"            : __UNKNOWN,
   "lbounds"                       : __UNKNOWN,
   "counts"                        : __UNKNOWN,
-  "total_count"                    : __UNKNOWN,
-  "total_bytes"                    : __UNKNOWN,
+  "total_count"                   : __UNKNOWN,
+  "total_bytes"                   : __UNKNOWN,
   "index_macro"                   : __UNKNOWN,
   "index_macro_with_placeholders" : __UNKNOWN
 }
@@ -123,26 +123,26 @@ def _intrnl_search_scope_for_type_or_subprogram(scope,entry_name,entry_type,empt
     :param str entry_type: either 'types' or 'subprograms'
     """
     global LOG_PREFIX
-    utils.logging.log_enter_function(LOG_PREFIX,"__search_scope_for_typeOrSubprogram",\
+    utils.logging.log_enter_function(LOG_PREFIX,"__search_scope_for_type_or_subprogram",\
       {"entry_name":entry_name,"entry_type":entry_type})
 
     # reverse access such that entries from the inner-most scope come first
     scope_entities = reversed(scope[entry_type])
 
-    entry_nameLower = entry_name.lower()
-    result = next((entry for entry in scope_entities if entry["name"] == entry_nameLower),None)  
+    entry_name_lower = entry_name.lower()
+    result = next((entry for entry in scope_entities if entry["name"] == entry_name_lower),None)  
     if result is None:
         msg = "no entry found for {} '{}'.".format(entry_type[:-1],entry_name)
         if ERROR_HANDLING  == "strict":
-            utils.logging.log_error(LOG_PREFIX,"__search_scope_for_typeOrSubprogram",msg) 
+            utils.logging.log_error(LOG_PREFIX,"__search_scope_for_type_or_subprogram",msg) 
             sys.exit(ERR_SCOPER_LOOKUP_FAILED)
         else:
-            utils.logging.log_warning(LOG_PREFIX,"__search_scope_for_typeOrSubprogram",msg) 
+            utils.logging.log_warning(LOG_PREFIX,"__search_scope_for_type_or_subprogram",msg) 
         return empty_record, False
     else:
-        utils.logging.log_debug2(LOG_PREFIX,"__search_scope_for_typeOrSubprogram",\
+        utils.logging.log_debug2(LOG_PREFIX,"__search_scope_for_type_or_subprogram",\
           "entry found for {} '{}'".format(entry_type[:-1],entry_name)) 
-        utils.logging.log_leave_function(LOG_PREFIX,"__search_scope_for_typeOrSubprogram")
+        utils.logging.log_leave_function(LOG_PREFIX,"__search_scope_for_type_or_subprogram")
         return result, True
 
 def _intrnl_search_index_for_type_or_subprogram(index,parent_tag,entry_name,entry_type,empty_record):
@@ -150,7 +150,7 @@ def _intrnl_search_index_for_type_or_subprogram(index,parent_tag,entry_name,entr
     :param str entry_type: either 'types' or 'subprograms'
     """
     global LOG_PREFIX
-    utils.logging.log_enter_function(LOG_PREFIX,"__search_index_for_typeOrSubprogram",\
+    utils.logging.log_enter_function(LOG_PREFIX,"__search_index_for_type_or_subprogram",\
       {"parent_tag":parent_tag,"entry_name":entry_name,"entry_type":entry_type})
 
     scope = create_scope(index,parent_tag)
@@ -204,17 +204,17 @@ def create_scope(index,tag):
  
         # we already have a scope for this record
         if nesting_level >= 0:
-            base_recordTag = ":".join(tag_tokens[0:nesting_level+1])
+            base_record_tag = ":".join(tag_tokens[0:nesting_level+1])
             utils.logging.log_debug(LOG_PREFIX,"create_scope",\
-              "create scope for tag '{}' based on existing scope with tag '{}'".format(tag,base_recordTag))
+              "create scope for tag '{}' based on existing scope with tag '{}'".format(tag,base_record_tag))
             base_record = next((module for module in index if module["name"] == tag_tokens[0]),None)  
             for l in range(1,nesting_level+1):
                 base_record = next((subprogram for subprogram in base_record["subprograms"] if subprogram["name"] == tag_tokens[l]),None)
-            current_recordList = base_record["subprograms"]
+            current_record_list = base_record["subprograms"]
         else:
             utils.logging.log_debug(LOG_PREFIX,"create_scope",\
               "create scope for tag '{}'".format(tag))
-            current_recordList = index
+            current_record_list = index
             # add top-level subprograms to scope of top-level entry
             new_scope["subprograms"] += [index_entry for index_entry in index\
                     if index_entry["kind"] in ["subroutine","function"] and\
@@ -225,7 +225,7 @@ def create_scope(index,tag):
         
         for d in range(begin,len(tag_tokens)):
             searched_name = tag_tokens[d]
-            for current_record in current_recordList:
+            for current_record in current_record_list:
                 if current_record["name"] == searched_name:
                     # 1. first include variables from included
                     _intrnl_resolve_dependencies(new_scope,current_record,index) 
@@ -233,7 +233,7 @@ def create_scope(index,tag):
                     for entry_type in __SCOPE_ENTRY_TYPES:
                         if entry_type in current_record:
                             new_scope[entry_type] += current_record[entry_type]
-                    current_recordList = current_record["subprograms"]
+                    current_record_list = current_record["subprograms"]
                     break
         SCOPES.append(new_scope)
         utils.logging.log_leave_function(LOG_PREFIX,"create_scope")
@@ -265,8 +265,8 @@ def search_scope_for_variable(scope,variable_tag):
             result = next((var for var in scope_variables if var["name"] == var_name),None)  
         else:
             try:
-                matching_typeVar = next((var for var in scope_variables if var["name"] == var_name),None)
-                matching_type    = next((typ for typ in scope_types if typ["name"] == matching_typeVar["kind"]),None)
+                matching_type_var = next((var for var in scope_variables if var["name"] == var_name),None)
+                matching_type    = next((typ for typ in scope_types if typ["name"] == matching_type_var["kind"]),None)
                 result = lookup_from_left_to_right_(reversed(matching_type["variables"]),pos+1)
             except Exception as e:
                 raise e

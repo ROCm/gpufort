@@ -6,25 +6,25 @@
 #CUDA Fortran
 class TTCppIfdef(TTNode):
     def _assign_fields(self,tokens):
-        self._ppVar = tokens
+        self._pp_var = tokens
     def p_p_var(self):
         """
         For checking if this a CUDA preprocessor variable
         """
-        return self._ppVar
+        return self._pp_var
     def f_str(self,hip_var):
-        return "#if defined({0}) || defined({1})".format(self._ppVar,hip_var)
+        return "#if defined({0}) || defined({1})".format(self._pp_var,hip_var)
 
 class TTCppDefined(TTNode):
     def _assign_fields(self,tokens):
-        self._ppVar = tokens
+        self._pp_var = tokens
     def p_p_var(self):
         """
         For checking if this a CUDA preprocessor variable
         """
-        return self._ppVar
+        return self._pp_var
     def f_str(self,hip_var):
-        return "( defined({0}) || defined({1}) )".format(self._ppVar,hip_var)
+        return "( defined({0}) || defined({1}) )".format(self._pp_var,hip_var)
 
 class TTAttributes(TTNode,Attributed):
     def _assign_fields(self,tokens):
@@ -47,10 +47,10 @@ class TTCudaKernelCall(TTNode):
         self._kernel_name  = tokens[0]
         self._grid        = postprocess_dim3(tokens[1][0])
         self._block       = postprocess_dim3(tokens[1][1])
-        self._shared_mem   = tokens[1][2]
+        self._sharedmem   = tokens[1][2]
         self._stream      = tokens[1][3]
         self._args        = tokens[2]
-    def kernel_nameFStr(self):
+    def kernel_name_f_str(self):
         return make_f_str(self._kernel_name)
     def grid_f_str(self):
         return make_f_str(self._grid)
@@ -66,23 +66,23 @@ class TTCudaKernelCall(TTNode):
             return "c_null_ptr"
         else:
             return make_f_str(self._stream)
-    def shared_memFStr(self):
-        return make_f_str(self._shared_mem)
+    def sharedmem_f_str(self):
+        return make_f_str(self._sharedmem)
 
 class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
     def _assign_fields(self,tokens):
-        self._parentDirective    = None
+        self._parent_directive    = None
         self._num_outer_loops_to_map = int(tokens[0])
         self._grid               = tokens[1][0]
         self._block              = tokens[1][1]
-        self._shared_mem          = tokens[1][2]
+        self._sharedmem          = tokens[1][2]
         self._stream             = tokens[1][3]
     def all_arrays_are_on_device(self):
         return True
     def stream(self,converter=make_f_str):
         return converter(self._stream)
-    def shared_mem(self,converter=make_f_str):
-        return converter(self._shared_mem)
+    def sharedmem(self,converter=make_f_str):
+        return converter(self._sharedmem)
     def use_default_stream(self):
         try:
             return int(self._stream) < 1
@@ -136,7 +136,7 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
         result += "// - Nested outer-most do-loops that are directly mapped to threads: {}\n".format(make_c_str(self._num_outer_loops_to_map))
         result += "// - Number of blocks: {}. ('-1' means not specified)\n".format(make_c_str(self._grid))
         result += "// - Threads per block: {}. ('-1' means not specified)\n".format(make_c_str(self._block))
-        result += "// - Shared Memory: {}\n".format(make_f_str(self._shared_mem))
+        result += "// - Shared Memory: {}\n".format(make_f_str(self._sharedmem))
         result += "// - Stream: {}\n".format(make_f_str(self._stream))
         return result
     def omp_f_str(self,arrays_in_body=set(),inoutarrays_in_body=set(),reduction={},depend={},loop_type="do"):
@@ -392,12 +392,12 @@ class CufMemcpyBase():
         :return: the Fortran pointer representation of the source.
         """
         return make_f_str(self._src)  
-    def dest_nameFStr(self):
+    def dest_name_f_str(self):
         """
         :return: name of destination variable; may contain '%' if derived type member.
         """
         return make_f_str(self._dest._var)
-    def src_nameFStr(self):
+    def src_name_f_str(self):
         """
         :return: name of source variable; may contain '%' if derived type member.
         """

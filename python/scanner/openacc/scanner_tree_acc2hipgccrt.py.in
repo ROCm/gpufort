@@ -49,7 +49,7 @@ HIP_GCC_RT_MAP_COPYOUT           = "goacc_map_copyout({var})"
 HIP_GCC_RT_MAP_PRESENT           = "goacc_map_present({var})"
 
 class Acc2HipGccRT(AccBackendBase):
-    def _createMappings(self,parse_result,prefix=",mappings="):
+    def _create_mappings(self,parse_result,prefix=",mappings="):
         mappings=[]
         for clause in translator.find_all(parse_result,translator.TTAccMappingClause):
             if clause.kind() == "present":
@@ -70,7 +70,7 @@ class Acc2HipGccRT(AccBackendBase):
             return prefix+"["+",".join(mappings)+"]"
         else:
             return ""
-    def _handleAsync(self,parse_result,prefix=",asyncr="):
+    def _handle_async(self,parse_result,prefix=",asyncr="):
         clause = translator.find_first(parse_result,translator.TTAccClauseAsync)
         if clause != None:
             value = clause.expression()
@@ -80,7 +80,7 @@ class Acc2HipGccRT(AccBackendBase):
                 return prefix+value
         else:
             return ""
-    def _handleWait(self,parse_result,prefix=",wait=",wrap_in_brackets=True):
+    def _handle_wait(self,parse_result,prefix=",wait=",wrap_in_brackets=True):
         clause = translator.find_first(parse_result,translator.TTAccClauseWait)
         if clause != None:
             result = ",".join(clause.expressions())
@@ -89,7 +89,7 @@ class Acc2HipGccRT(AccBackendBase):
             return prefix+result
         else:
             return ""
-    def _handleDevice(self,parse_result):
+    def _handle_device(self,parse_result):
         clause = translator.find_first(parse_result,translator.TTAccClauseDevice)
         if clause != None:
             result = ",".join(clause.expressions())
@@ -115,26 +115,26 @@ class Acc2HipGccRT(AccBackendBase):
                    translator.TTAccKernels,translator.TTAccKernelsLoop]:
               result = HIP_GCC_RT_GOACC_DATA_START.format(\
                 device   = "acc_device_default",\
-                mappings = self._createMappings(parse_result),\
-                asyncr    = self._handleAsync(parse_result))
+                mappings = self._create_mappings(parse_result),\
+                asyncr    = self._handle_async(parse_result))
            elif type(parse_result) in [translator.TTAccEnterData,translator.TTAccExitData]: 
               result = HIP_GCC_RT_GOACC_ENTER_EXIT_DATA.format(\
                 device   = "acc_device_default",\
-                mappings = self._createMappings(parse_result),\
-                asyncr    = self._handleAsync(parse_result),\
-                wait     = self._handleWait(parse_result))
+                mappings = self._create_mappings(parse_result),\
+                asyncr    = self._handle_async(parse_result),\
+                wait     = self._handle_wait(parse_result))
            elif type(parse_result) is translator.TTAccEndData: 
               result = HIP_GCC_RT_GOACC_DATA_END
            elif type(parse_result) is translator.TTAccWait:
-              arg   = self._handleWait(parse_result,"",False)
-              asyncr = self._handleAsync(parse_result)
+              arg   = self._handle_wait(parse_result,"",False)
+              asyncr = self._handle_async(parse_result)
               result = HIP_GCC_RT_ACC_WAIT_MAP[len(arg)][len(asyncr)].format(\
                 arg=arg,asyncr=asyncr)
               pass
            elif type(parse_result) is translator.TTAccUpdate: 
-              host   = self._handleSelf(parse_result)
-              device = self._handleDevice(parse_result) 
-              asyncr  = self._handleAsync(parse_result,"")
+              host   = self._handle_self(parse_result)
+              device = self._handle_device(parse_result) 
+              asyncr  = self._handle_async(parse_result,"")
               result = HIP_GCC_RT_ACC_UPDATE_MAP[len(host)][len(asyncr)].format(\
                 arg=arg,asyncr=asyncr)
            elif type(parse_result) is translator.TTAccRoutine: 
@@ -152,7 +152,7 @@ class Acc2HipGccRT(AccBackendBase):
 class AccLoopKernel2HipGccRT(Acc2HipGccRT):
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
         stnode = self._stnode
-        indent = stnode.first_lineIndent()
+        indent = stnode.first_line_indent()
         result = ""
         if stnode.is_parallel_loop_directive() or stnode.is_kernels_loop_directive():
             partial_result, _ = Acc2HipGccRT.transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints,handle_if=False) 
@@ -160,7 +160,7 @@ class AccLoopKernel2HipGccRT(Acc2HipGccRT):
         partial_result, _ = STLoopKernel.transform(stnode,joined_lines,joined_statements,statements_fully_cover_lines,index_hints) 
         result += partial_result
         # add wait call if necessary
-        arg = self._handleAsync(None,"")
+        arg = self._handle_async(None,"")
         if not len(arg):
             result += "\n" + indent + "call " + HIP_GCC_RT_ACC_WAIT_ALL.format(arg=arg,asyncr="")+"\n"
         if stnode.is_parallel_loop_directive() or stnode.is_kernels_loop_directive():

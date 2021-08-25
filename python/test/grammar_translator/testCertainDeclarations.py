@@ -52,18 +52,18 @@ print(translator.fortran_declaration.parseString("complex :: f_d ( :,: )")[0].ar
 print(translator.fortran_declaration.parseString("complex :: f_d ( 5,5 )")[0].array_bound_variable_names_f_str("f_d"))
 print(translator.fortran_declaration.parseString("complex :: f_d ( 5,5 )")[0].array_variable_index_macro_str("f_d"))
 
-print(translator.create_indexRecordsFromDeclaration(\
+print(translator.create_index_records_from_declaration(\
         translator.fortran_declaration.parseString("complex :: f_d ( 5,5 )")[0]))
 
-print(translator.create_indexRecordsFromDeclaration(\
+print(translator.create_index_records_from_declaration(\
         translator.fortran_declaration.parseString("complex,pinned,device,managed,allocatable,pointer :: f_d ( 2:5,-1:5 )")[0]))
 
-context = translator.create_indexRecordsFromDeclaration(\
+context = translator.create_index_records_from_declaration(\
         translator.fortran_declaration.parseString("integer, parameter :: a = x , b = c*x, f_d = 5")[0])
 
 print(context)
 translator.change_kind(context[0],"8")
 print(context)
 
-print(translator.create_indexRecordsFromDeclaration(\
+print(translator.create_index_records_from_declaration(\
         translator.fortran_declaration.parseString("complex,pointer :: f_d ( :,-2: )")[0]))

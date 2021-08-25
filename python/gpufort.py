@@ -81,14 +81,14 @@ def parse_raw_command_line_arguments():
     Further transform some arguments.
     """
     config_filepath = None
-    working_dirPath = os.getcwd()
+    working_dir_path = os.getcwd()
     include_dirs    = []
     defines        = []
     options = sys.argv[1:]
     for i,opt in enumerate(list(options)):
         if opt == "--working-dir":
             if i+1 < len(options):
-                working_dirPath = options[i+1]
+                working_dir_path = options[i+1]
         elif opt == "--config-file":
             if i+1 < len(options):
                 config_filepath = options[i+1]
@@ -98,13 +98,13 @@ def parse_raw_command_line_arguments():
         elif opt.startswith("-D"):
             defines.append(opt)
             sys.argv.remove(opt)
-    if not os.path.exists(working_dirPath):
-        msg = "working directory '{}' cannot be found".format(working_dirPath)
+    if not os.path.exists(working_dir_path):
+        msg = "working directory '{}' cannot be found".format(working_dir_path)
         print("ERROR: "+msg,file=sys.stderr)
         sys.exit(2)
     if config_filepath != None: 
         if config_filepath[0] != "/":
-          config_filepath = working_dirPath + "/" + config_filepath 
+          config_filepath = working_dir_path + "/" + config_filepath 
         if not os.path.exists(config_filepath):
             msg = "config file '{}' cannot be found".format(config_filepath)
             print("ERROR: "+msg,file=sys.stderr)
@@ -180,7 +180,7 @@ def parse_command_line_arguments():
     # fort2hip
     group_fort2hip = parser.add_argument_group('Fortran-to-HIP')
     group_fort2hip.add_argument("-m","--only-modify-host-code",dest="only_modify_translation_source",action="store_true",help="Only modify host code; do not generate kernels [default: False].")
-    group_fort2hip.add_argument("-k","--only-emit-kernels-and-launchers",dest="only_emit_kernelsAndLaunchers",action="store_true",help="Only emit kernels and kernel launchers; do not modify host code [default: False].")
+    group_fort2hip.add_argument("-k","--only-emit-kernels-and-launchers",dest="only_emit_kernels_and_launchers",action="store_true",help="Only emit kernels and kernel launchers; do not modify host code [default: False].")
     group_fort2hip.add_argument("-K","--only-emit-kernels",dest="only_emit_kernels",action="store_true",help="Only emit kernels; do not emit kernel launchers and do not modify host code [default: False].")
     group_fort2hip.add_argument("-C","--emit-cpu-impl",dest="emit_cpu_implementation",action="store_true",help="Per detected loop kernel, also extract the CPU implementation  [default: (default) config value].")
     group_fort2hip.add_argument("-G","--emit-debug-code",dest="emit_debug_code",action="store_true",help="Generate debug code into the kernel launchers that allows to print kernel arguments, launch parameters, input/output array norms and elements, or to synchronize a kernel [default: (default) config value].")
@@ -200,7 +200,7 @@ def parse_command_line_arguments():
 
     parser.set_defaults(print_config_defaults=False,dump_index=False,\
       wrap_in_ifdef=False,cublasV2=False,
-      only_emit_kernelsAndLaunchers=False,only_emit_kernels=False,only_modify_translation_source=False,\
+      only_emit_kernels_and_launchers=False,only_emit_kernels=False,only_modify_translation_source=False,\
       emit_cpu_implementation=False,emit_debug_code=False,\
       create_gpufort_headers=False,print_gfortran_config=False,print_cpp_config=False,\
       only_create_gpufort_module_files=False,skip_create_gpufort_module_files=False,verbose=False,\
@@ -262,7 +262,7 @@ def parse_command_line_arguments():
         print("ERROR: "+msg,file=sys.stderr)
         sys.exit(2)
     # mutually exclusive arguments
-    if ( int(args.only_emit_kernelsAndLaunchers) +\
+    if ( int(args.only_emit_kernels_and_launchers) +\
          int(args.only_emit_kernels) +\
          int(args.only_modify_translation_source) )  > 1:
         msg = "switches '--only-emit-kernels', '--only-emit-kernels-and-launchers', and 'only-modify-host-code' are mutually exclusive."
@@ -295,7 +295,7 @@ def parse_command_line_arguments():
         SKIP_CREATE_GPUFORT_MODULE_FILES = True
     # fort2hip
     # only generate kernels / modify source 
-    if args.only_emit_kernelsAndLaunchers:
+    if args.only_emit_kernels_and_launchers:
         ONLY_EMIT_KERNELS_AND_LAUNCHERS = True
     if args.only_emit_kernels:
         ONLY_EMIT_KERNELS = True
@@ -325,13 +325,13 @@ def init_logging(input_filepath):
     global LOG_LEVEL
     global LOG_FORMAT
 
-    input_filepathHash = hashlib.md5(input_filepath.encode()).hexdigest()[0:8]
-    logfile_base_name = "log-{}.log".format(input_filepathHash)
+    input_filepath_hash = hashlib.md5(input_filepath.encode()).hexdigest()[0:8]
+    logfile_base_name = "log-{}.log".format(input_filepath_hash)
    
     log_format   = LOG_FORMAT.replace("%(filename)s",input_filepath)
     log_filepath = utils.logging.init_logging(logfile_base_name,log_format,LOG_LEVEL)
  
-    msg = "input file: {0} (log id: {1})".format(input_filepath,input_filepathHash)
+    msg = "input file: {0} (log id: {1})".format(input_filepath,input_filepath_hash)
     utils.logging.log_info(LOG_PREFIX,"init_logging",msg)
     msg = "log file:   {0} (log level: {1}) ".format(log_filepath,LOG_LEVEL)
     utils.logging.log_info(LOG_PREFIX,"init_logging",msg)

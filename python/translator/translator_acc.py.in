@@ -42,13 +42,13 @@ class TTAccClauseSelf(TTNode):
 class TTAccMappingClause(TTNode):
     def _assign_fields(self,tokens):
         self._kind    = tokens[0]
-        self._varList = tokens[1].asList()
+        self._var_list = tokens[1].asList()
     def kind(self):
         return self._kind
     def var_names(self,converter=make_f_str):
-        return [ var.var_name(converter) for var in self._varList ]
+        return [ var.var_name(converter) for var in self._var_list ]
     def var_expressions(self,converter=make_f_str):
-        return [ converter(var) for var in self._varList ]
+        return [ converter(var) for var in self._var_list ]
 class TTAccClauseDefault(TTNode):
     def _assign_fields(self,tokens):
         self._value = tokens
@@ -73,9 +73,9 @@ class TTAccClauseBind(TTNode):
         pass
 class TTAccClauseTile(TTNode):
     def _assign_fields(self,tokens):
-        self._tilesPerDim = tokens[0]
+        self._tiles_per_dim = tokens[0]
     def values():
-        return self._tilesPerDim
+        return self._tiles_per_dim
 class TTAccClauseCollapse(TTNode):
     def _assign_fields(self,tokens):
         self._value = tokens[0]
@@ -373,7 +373,7 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
     """
     def _assign_fields(self,tokens):
         TTAccDirectiveBase._assign_fields(self,tokens)
-        self._loopHandlesMutualClauses = True    # can be unset by TTAccParallelLoop or TTAccKernelsLoop
+        self._loop_handles_mutual_clauses = True    # can be unset by TTAccParallelLoop or TTAccKernelsLoop
     def num_collapse(self):
         clause = find_first(self._clauses,TTAccClauseCollapse)
         return 1 if clause is None else clause.value()
@@ -417,7 +417,7 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
             return type(clause) is TTAccClauseGang or\
                    type(clause) is TTAccClauseWorker or\
                    type(clause) is TTAccClauseVector
-        if self._loopHandlesMutualClauses:
+        if self._loop_handles_mutual_clauses:
             for clause in find_all_matching(self._clauses,parallelism_clause):
                 if type(clause) is TTAccClauseGang:
                     result += " teams distribute"
@@ -431,7 +431,7 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
                 result += " simd"
                 if clause.value() > 0:
                     result += " simd simdlen("+str(clause.value())+")"
-        if self._loopHandlesMutualClauses:
+        if self._loop_handles_mutual_clauses:
             private_vars = self.private_vars() 
             if len(private_vars):
                 result += " private("+",".join(private_vars)+")" 
@@ -439,7 +439,7 @@ class TTAccLoop(TTAccDirectiveBase,ILoopAnnotation):
         if len(reductions):
             for op,values in reductions.items():
                 result += " reduction("+op+":"+",".join(values)+")" 
-        if self._loopHandlesMutualClauses:
+        if self._loop_handles_mutual_clauses:
             return self._format(result)
         else:
             return result
@@ -484,7 +484,7 @@ class TTAccParallel(TTAccComputeConstructBase):
 class TTAccParallelLoop(TTAccParallel,TTAccLoop):
     def _assign_fields(self,tokens):
         TTAccDirectiveBase._assign_fields(self,tokens)
-        self._loopHandlesMutualClauses = False
+        self._loop_handles_mutual_clauses = False
     def omp_f_str(self,arrays_in_body=[],inoutarrays_in_body=[],depend={},loop_type="do"):
         """
         :note: loop_type may be changed later if there is a target 'workshare' construct

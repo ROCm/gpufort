@@ -110,10 +110,10 @@ conversion <<= convert_to_extract_real | convert_to_double | convert_to_complex 
 SIZE,LBOUND,UBOUND = makeCaselessLiteral("size,lbound,ubound",suppress=True)
 inquiry_dim_arg  = ( integer | arithmetic_expression ) 
 inquiry_kind_arg = ( integer | arithmetic_expression ) 
-inquiry_functionArg = lvalue + Optional(COMMA + Optional(DIM + EQ) + inquiry_dim_arg,default=None) + Optional(COMMA + Optional(KIND + EQ) + inquiry_kind_arg,default=None)
-size_inquiry   = SIZE   + LPAR + inquiry_functionArg + RPAR  
-lbound_inquiry = LBOUND + LPAR + inquiry_functionArg + RPAR 
-ubound_inquiry = UBOUND + LPAR + inquiry_functionArg + RPAR 
+inquiry_function_arg = lvalue + Optional(COMMA + Optional(DIM + EQ) + inquiry_dim_arg,default=None) + Optional(COMMA + Optional(KIND + EQ) + inquiry_kind_arg,default=None)
+size_inquiry   = SIZE   + LPAR + inquiry_function_arg + RPAR  
+lbound_inquiry = LBOUND + LPAR + inquiry_function_arg + RPAR 
+ubound_inquiry = UBOUND + LPAR + inquiry_function_arg + RPAR 
 inquiry_function <<= size_inquiry | lbound_inquiry | ubound_inquiry
 
 ## Condition
@@ -210,7 +210,7 @@ declared_variable   = Group( identifier + Optional(bounds,default=None) + Option
 declaration_lhs = datatype + Optional(COMMA + qualifier_list,default=[]) + COLONS
 fortran_declaration = declaration_lhs + Group(delimitedList(declared_variable))   # ! emits *,[*],[*]
 #precisiondeclared_variable = identifier + EQ + CASELESS_LITERAL("selected_kind").suppress() + LPAR + integer + COMMA + integer + RPAR # ! emits [*,[*],*]
-#precision_declaration      = integer_type + COMMA + qualifier_list + COLONS + Group(delimitedList(precisiondeclared_variableVariable))   # ! emits *,[*],[*]
+#precision_declaration      = integer_type + COMMA + qualifier_list + COLONS + Group(delimitedList(precisiondeclared_variable_variable))   # ! emits *,[*],[*]
 
 # Define forward-declared block
 comment           = Combine(Literal("!") + ~(~White()+Literal("$")) + restOfLine())
@@ -242,18 +242,18 @@ use = USE + Optional(COMMA + INTRINSIC,default=None) + identifier + Optional(COM
 implicit = IMPLICIT + NONE # TODO no complete description
 
 raw_identifier     = pyparsing_common.identifier.copy() # produces a string instead of a identifier translator tree node
-raw_identifierList = Group(delimitedList(raw_identifier))
+raw_identifier_list = Group(delimitedList(raw_identifier))
 
-subroutine_start = Optional(ATTRIBUTES + LPAR + raw_identifierList + RPAR,default=[]) + SUBROUTINE + identifier +\
-        Optional(LPAR + raw_identifierList + RPAR, default=[]) # emits 3 tokens -> *,*,[*]
+subroutine_start = Optional(ATTRIBUTES + LPAR + raw_identifier_list + RPAR,default=[]) + SUBROUTINE + identifier +\
+        Optional(LPAR + raw_identifier_list + RPAR, default=[]) # emits 3 tokens -> *,*,[*]
 subroutine_end = END + ~(NONSTRUCTURE|FUNCTION) + Optional(SUBROUTINE) + Optional(LPAR + identifier.suppress() + RPAR)
 #subroutine = subroutine_start + procedure_body + subroutine_end
 
 PURE,RECURSIVE,RESULT = makeCaselessLiteral("pure,recursive,result",suppress=True)
 #funtion_result = function func(i) result(j)
-function_start = Optional(PURE | RECURSIVE) + Optional(ATTRIBUTES + LPAR + raw_identifierList + RPAR,default=[]) +\
+function_start = Optional(PURE | RECURSIVE) + Optional(ATTRIBUTES + LPAR + raw_identifier_list + RPAR,default=[]) +\
                 Optional(datatype).suppress() +\
-                FUNCTION + identifier + Optional(LPAR + raw_identifierList + RPAR, default=[]) +\
+                FUNCTION + identifier + Optional(LPAR + raw_identifier_list + RPAR, default=[]) +\
                 Optional(RESULT + LPAR + identifier + RPAR,default=None) # ! emits 4  tokens -> *,*,[*],*
 function_end = END + ~(NONSTRUCTURE|SUBROUTINE) + Optional(FUNCTION) + Optional(identifier.suppress()) # ! emits 0 tokens
 #function = function_start + procedure_body + function_end

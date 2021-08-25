@@ -232,7 +232,7 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
         # if-then-else
         elif is_if_then_(tokens):
             try: 
-                descend_(TTIfElseBlock(),"if block")
+                descend_(TTIfElseBlock(),"if block",inc_level=False)
                 parse_result = fortran_if_else_if.parseString(stmt_no_comment,parseAll=True)
                 descend_(TTIfElseIf(stmt_no_comment,0,parse_result.asList()+[[]]),"if branch")
             except Exception as e:

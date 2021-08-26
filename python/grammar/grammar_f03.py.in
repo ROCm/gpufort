@@ -213,7 +213,7 @@ fortran_declaration = declaration_lhs + Group(delimitedList(declared_variable)) 
 #precision_declaration      = integer_type + COMMA + qualifier_list + COLONS + Group(delimitedList(precisiondeclared_variable_variable))   # ! emits *,[*],[*]
 
 # Define forward-declared block
-comment           = Combine(Literal("!") + ~(~White()+Literal("$")) + restOfLine())
+comment            = Combine(Literal("!") + ~(~White()+Literal("$")) + restOfLine())
 print_statement    = Combine(oneOf("print write read format",caseless=CASELESS) + restOfLine)
 return_statement   = CASELESS_LITERAL("return")
 control_statements = return_statement

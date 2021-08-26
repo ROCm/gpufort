@@ -20,7 +20,7 @@ def _intrnl_extract_qualifiers_and_variables(tokens):
             if len(current_qualifier):
                 result.append(current_qualifier)
             current_qualifier = ""
-        elif tk == "::":
+        elif tk in ["::","\n","!"]:
             criterion = False
         else:
             current_qualifier += tk
@@ -86,19 +86,26 @@ def parse_declaration(fortran_statement):
     qualifiers = []
     for qualifier in qualifiers_raw:
         if qualifier.startswith("dimension"):
-            pass
-        elif qualifiers.startswith("intent"):
-            pass
+            try:
+                qualifiers.append( dimension_qualifier.parseString(qualifier,parseAll=True) )
+            except:
+                utils.logging.log_error(LOG_PREFIX,"parse_declaration","could not parse dimension qualifier in variable declaration statement '{}'".format(fortran_statement))
+                sys.exit(2)
+        elif qualifier.startswith("intent"):
+            # ex: intent ( inout )
+            intent_tokens = utils.pyparsingutils.tokenize(qualifier):
+            if len(intent_tokens) != 4 and intent_tokens[2] in ["in","out","inout"]:
+                utils.logging.log_error(LOG_PREFIX,"parse_declaration","could not parse intent qualifier in variable declaration statement '{}'".format(fortran_statement))
+                sys.exit(2) 
         else:
             qualifiers.append(qualifier)
     variables = []
     for var in variables_raw:
-        pass
-   #
-   #def _assign_fields(self,tokens):
-   #     #declaration = datatype + Optional(COMMA + attribute_list,default=[]) + COLONS + Group(delimitedList(declaration_variable))   # ! emits *,[*],[*]
-   #     self._datatype, self._qualifiers, self._rhs = tokens
-   #     self.ignore_list = []
+        try:
+            variables.append(declared_variable.parseString(var,parseAll=True)
+        except:
+            utils.logging.log_error(LOG_PREFIX,"parse_declaration","could not parse variable declaration '{}' in statement '{}'".format(var,fortran_statement))
+            sys.exit(2)
    declaration_tokens = [ datatype, kind, qualifiers, variables ]
    return TTDeclaration( fortran_statement,0, declaration_tokens )
 

@@ -1145,9 +1145,6 @@ size_inquiry.setParseAction(TTSizeInquiry)
 lbound_inquiry.setParseAction(TTLboundInquiry)
 ubound_inquiry.setParseAction(TTUboundInquiry)
 
-datatype_comment.setParseAction(TTDatatype_Comment)
-datatype_convert.setParseAction(TTDatatype_Convert)
-
 matrix_range.setParseAction(TTMatrixRange)
 bounds.setParseAction(TTBounds)
 matrix_ranges.setParseAction(TTBounds)

@@ -191,9 +191,10 @@ def parse_command_line_arguments():
     
     # developer options
     group_developer = parser.add_argument_group('Developer options (logging, profiling, ...)')
-    group_developer.add_argument("-v","--verbose",dest="verbose",required=False,action="store_true",default="",help="Print all log messages to error output stream too.")
+    group_developer.add_argument("-v","--verbose",dest="verbose",required=False,action="store_true",help="Print all log messages to error output stream too.")
     group_developer.add_argument("--log-level",dest="log_level",required=False,type=str,default="",help="Set log level. Overrides config value.")
     group_developer.add_argument("--log-filter",dest="log_filter",required=False,type=str,default=None,help="Filter the log output according to a regular expression.")
+    group_developer.add_argument("--log-traceback",dest="log_traceback",required=False,action="store_true",help="Append gpufort traceback information to the log when encountering warning/error.")
     group_developer.add_argument("--prof",dest="profiling_enable",required=False,action="store_true",help="Profile gpufort.")
     group_developer.add_argument("--prof-num-functions",dest="profiling_num_functions",required=False,type=int,default=50,help="The number of python functions to include into the summary [default=50].")
     group_developer.add_argument("--create-gpufort-headers",dest="create_gpufort_headers",action="store_true",help="Generate the GPUFORT header files.")
@@ -204,7 +205,7 @@ def parse_command_line_arguments():
       emit_cpu_implementation=False,emit_debug_code=False,\
       create_gpufort_headers=False,print_gfortran_config=False,print_cpp_config=False,\
       only_create_gpufort_module_files=False,skip_create_gpufort_module_files=False,verbose=False,\
-      profiling_enable=False)
+      log_traceback=False,profiling_enable=False)
     args, unknown_args = parser.parse_known_args()
 
     ## Simple output commands
@@ -308,7 +309,9 @@ def parse_command_line_arguments():
     if len(args.log_level):
         LOG_LEVEL = args.log_level
     if args.verbose:
-        utils.logging.VERBOSE = args.verbose
+        utils.logging.VERBOSE = True
+    if args.log_traceback:
+        utils.logging.LOG_TRACEBACK = True
     if args.log_filter != None:
         utils.logging.LOG_FILTER = args.log_filter
     # developer: profiling:

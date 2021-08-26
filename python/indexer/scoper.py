@@ -313,11 +313,9 @@ def search_scope_for_variable(scope,variable_expression):
         msg       = "no entry found for variable '{}'.".format(variable_tag)
         if ERROR_HANDLING  == "strict":
             utils.logging.log_error(LOG_PREFIX,"search_scope_for_variable",msg) 
-            traceback.print_stack()
             sys.exit(ERR_SCOPER_LOOKUP_FAILED)
         else:
             utils.logging.log_warning(LOG_PREFIX,"search_scope_for_variable",msg) 
-            traceback.print_stack()
         return EMPTY_VARIABLE, False
     else:
         utils.logging.log_debug2(LOG_PREFIX,"search_scope_for_variable",\

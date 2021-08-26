@@ -6,3 +6,5 @@ LOG_DIR_CREATE = True                         # create log dir if it does not ex
 VERBOSE        = False                        # print to stderr too (w.r.t. to chosen log level)
 
 LOG_FILTER     = None                         # a regular expression or string that a substring of the log output must match; set this value to None if no log filtering should be applied.
+
+LOG_TRACEBACK  = False

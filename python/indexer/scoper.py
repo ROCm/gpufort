@@ -9,6 +9,7 @@ import re
 import orjson
 
 import utils.logging
+import utils.parsingutils
 
 # configurable parameters
 indexer_dir = os.path.dirname(__file__)

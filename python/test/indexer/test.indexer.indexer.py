@@ -9,8 +9,9 @@ import indexer.scoper as scoper
 import utils.logging
 
 log_format = "[%(levelname)s]\tgpufort:%(message)s"
-log_level             = "debug2"
-utils.logging.VERBOSE = False
+log_level                   = "debug2"
+utils.logging.VERBOSE       = True
+utils.logging.LOG_TRACEBACK = True
 utils.logging.init_logging("log.log",log_format,log_level)
 
 gfortran_options="-DCUDA"

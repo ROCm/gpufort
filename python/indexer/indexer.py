@@ -113,12 +113,11 @@ def _intrnl_parse_file(file_statements,filepath):
         log_enter_job_or_task_(parent_node, msg)
         #
         try:
-            variables =\
-              translator.create_index_records_from_declaration(\
-                translator.parse_declaration(input_text)[0])
+            ttdeclaration = translator.parse_declaration(input_text)
+            variables = translator.create_index_records_from_declaration(ttdeclaration)
         except Exception as e:
-            utils.logging.log_error(LOG_PREFIX,"__parse_file.ParseDeclarationTask_","failed: "+str(e))
-            sys.exit()
+            utils.logging.log_exception(LOG_PREFIX,"__parse_file.ParseDeclarationTask_","failed: "+str(e))
+            sys.exit(2)
         access_lock.acquire()
         parent_node._data["variables"] += variables
         access_lock.release()
@@ -413,7 +412,7 @@ def _intrnl_parse_file(file_statements,filepath):
 
     for current_statement in file_statements:
         utils.logging.log_debug3(LOG_PREFIX,"__parse_file","process statement '{}'".format(current_statement))
-        current_tokens             = re.split(r"\s+|\t+",current_statement.lower().strip(" \t"))
+        current_tokens              = re.split(r"\s+|\t+",current_statement.lower().strip(" \t"))
         current_statement_stripped  = "".join(current_tokens)
         for expr in ["program","module","subroutine","function","type"]:
             if is_end_statement_(current_tokens,expr):

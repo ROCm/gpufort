@@ -412,7 +412,7 @@ class STDeclaration(STNode):
     """
     def __init__(self,parent,first_record,first_record_first_statement):
         STNode.__init__(self,parent,first_record,first_record_first_statement)
-        self._ttdeclaration   = translator.fortran_declaration.parseString(self.first_statement())[0]
+        self._ttdeclaration   = translator.parse_declaration(self.first_statement())[0]
         self._vars            = [name.lower() for name in self._ttdeclaration.variable_names()]
     def create_codegen_context(self):
         return translator.create_index_records_from_declaration(self._ttdeclaration)

@@ -11,7 +11,7 @@ def num_bytes(f_type,kind,default=None):
         kind_lower = kind.lower()
     f_type_lower = f_type.lower().replace(" ","")
     if f_type_lower in FORTRAN_TYPE_2_BYTES_MAP and\
-       kind_lower in FORTRAN_TYPE_2_BYTES_MAP[f_type_lower]
+       kind_lower in FORTRAN_TYPE_2_BYTES_MAP[f_type_lower]:
         return "(" + FORTRAN_TYPE_2_BYTES_MAP[f_type_lower][kind_lower] + ")"
     elif f_type_lower == "complex":
         return "2*("+kind_lower+")"
@@ -20,11 +20,11 @@ def num_bytes(f_type,kind,default=None):
 
 def f_keyword(keyword):
     global KEYWORD_CASE
-    if KEYWORD_CASE = "upper":
+    if KEYWORD_CASE == "upper":
         return keyword.upper()
-    elif KEYWORD_CASE = "lower":
+    elif KEYWORD_CASE == "lower":
         return keyword.lower()
-    elif KEYWORD_CASE = "camel"
+    elif KEYWORD_CASE == "camel":
          return keyword[0].upper() + keyword[1:].lower()
     else:
         return keyword

@@ -26,9 +26,9 @@ print("hallo")
 print(translator.declared_variable.parseString("f_d ( -k:k, 5 )")[0]._bounds.index_str("f_d"))
 
 print(translator.declared_variable.parseString("i, k, j, err, idir, ip,  ii, jj, istat")[0])
-#print("THIS: "+str(translator.fortran_declaration.parseString("INTEGER, INTENT(IN) :: isign, ldx, ldy, nx, ny, nzl")[3]))
-#print("THIS: "+str(translator.fortran_declaration.parseString("INTEGER, INTENT(IN) :: isign")[3]))
-#print("THIS: "+str(translator.fortran_declaration.parseString("INTEGER :: isign")[3]))
+#print("THIS: "+str(translator.parse_declaration("INTEGER, INTENT(IN) :: isign, ldx, ldy, nx, ny, nzl")[3]))
+#print("THIS: "+str(translator.parse_declaration("INTEGER, INTENT(IN) :: isign")[3]))
+#print("THIS: "+str(translator.parse_declaration("INTEGER :: isign")[3]))
 
 testdata = []
 testdata.append("complex(DP),device :: f_d ( ldx * ldy * ldz )")
@@ -41,20 +41,20 @@ test.run(
    raiseException = True
 )
    
-#print(translator.fortran_declaration.parseString(testdata[0])[0].rhs[0])
+#print(translator.parse_declaration(testdata[0])[0].rhs[0])
 
 print(translator.create_index_records_from_declaration(\
-        translator.fortran_declaration.parseString("complex :: f_d ( 5,5 )")[0]))
+        translator.parse_declaration("complex :: f_d ( 5,5 )")[0]))
 
 print(translator.create_index_records_from_declaration(\
-        translator.fortran_declaration.parseString("complex,pinned,device,managed,allocatable,pointer :: f_d ( 2:5,-1:5 )")[0]))
+        translator.parse_declaration("complex,pinned,device,managed,allocatable,pointer :: f_d ( 2:5,-1:5 )")[0]))
 
 context = translator.create_index_records_from_declaration(\
-        translator.fortran_declaration.parseString("integer, parameter :: a = x , b = c*x, f_d = 5")[0])
+        translator.parse_declaration("integer, parameter :: a = x , b = c*x, f_d = 5")[0])
 
 print(context)
 translator.change_kind(context[0],"8")
 print(context)
 
 print(translator.create_index_records_from_declaration(\
-        translator.fortran_declaration.parseString("complex,pointer :: f_d ( :,-2: )")[0]))
+        translator.parse_declaration("complex,pointer :: f_d ( :,-2: )")[0]))

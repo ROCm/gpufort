@@ -115,7 +115,7 @@ def _intrnl_parse_file(file_statements,filepath):
         try:
             variables =\
               translator.create_index_records_from_declaration(\
-                translator.fortran_declaration.parseString(input_text)[0])
+                translator.parse_declaration(input_text)[0])
         except Exception as e:
             utils.logging.log_error(LOG_PREFIX,"__parse_file.ParseDeclarationTask_","failed: "+str(e))
             sys.exit()

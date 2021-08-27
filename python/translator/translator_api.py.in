@@ -8,7 +8,7 @@ def parse_declaration(fortran_statement):
     orig_tokens                 = utils.parsingutils.tokenize(fortran_statement,padded_size=10)
     tokens                      = orig_tokens
     datatype_and_qualifiers_raw = utils.parsingutils.extract_qualifiers_and_variables(tokens)
-    idx_last_consumed_token = -1 # inclusive
+    idx_last_consumed_token     = -1 # inclusive
     # handle datatype
     datatype            = tokens[0]
     kind                = None
@@ -19,7 +19,7 @@ def parse_declaration(fortran_statement):
     elif tokens[0:1+1] == ["double","precision"]:
         datatype = " ".join(tokens[0:1+1])
         idx_last_consumed_token = 1
-    elif tokens[1] == "*"
+    elif tokens[1] == "*":
         # ex: integer * 4
         # ex: integer * ( 4*2 )
         kind_tokens = utils.parsingutils.next_tokens_till_open_bracket_is_closed(tokens[2:],open_brackets=0)
@@ -69,7 +69,7 @@ def parse_declaration(fortran_statement):
                 sys.exit(2)
         elif qualifier.startswith("intent"):
             # ex: intent ( inout )
-            intent_tokens = utils.parsingutils.tokenize(qualifier):
+            intent_tokens = utils.parsingutils.tokenize(qualifier)
             try:
                 qualifiers.append( intent_qualifier.parseString(qualifier,parseAll=True)[0] )
             except:
@@ -80,7 +80,7 @@ def parse_declaration(fortran_statement):
     variables = []
     for var in variables_raw:
         try:
-            variables.append(declared_variable.parseString(var,parseAll=True)
+            variables.append( declared_variable.parseString(var,parseAll=True) )
         except:
             utils.logging.log_error(LOG_PREFIX,"parse_declaration","could not parse variable declaration '{}' in statement '{}'".format(var,fortran_statement))
             sys.exit(2)

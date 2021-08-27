@@ -832,12 +832,12 @@ class TTDeclaration(TTNode,Attributed):
             if self.kind != None:
                 return CHARACTER_FORMAT.format(type=f_type,len=self.kind)
             else:
-                return CHARACTER_FORMAT.format(type=f_type,len="").lstrip()[0:len[f_type)]
+                return CHARACTER_FORMAT.format(type=f_type,len="").lstrip()[0:len(f_type)]
         else:
             if self.kind != None:
                 return BASIC_TYPE_FORMAT.format(type=f_type,kind=self.kind)
             else:
-                return BASIC_TYPE_FORMAT.format(type=f_type,kind="").lstrip()[0:len[f_type)]
+                return BASIC_TYPE_FORMAT.format(type=f_type,kind="").lstrip()[0:len(f_type)]
     def f_str(self,extra_ignore_list=[],include_bounds=True,include_rhs=True):
         """
         The ignore list can be used to filter out some
@@ -856,8 +856,8 @@ class TTDeclaration(TTNode,Attributed):
             return ""
         else:
             return result.rstrip(",")
-   def c_str(self,extra_ignore_list=[],is_function_argument=False,include_bounds=True,include_rhs=True):
-       assert False, "TTDeclaration.c_str(...) not implemented as not needed"
+    def c_str(self,extra_ignore_list=[],is_function_argument=False,include_bounds=True,include_rhs=True):
+        assert False, "TTDeclaration.c_str(...) not implemented as not needed"
 
 class TTStatement(TTNode):
     """

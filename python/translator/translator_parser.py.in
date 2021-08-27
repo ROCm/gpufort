@@ -170,7 +170,7 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
     level               = 0
     for stmt1 in statements:
         stmt   = _intrnl_preprocess_fortran_statement(stmt1)
-        tokens = utils.pyparsingutils.tokenize(stmt.lower(),padded_size=6)
+        tokens = utils.parsingutils.tokenize(stmt.lower(),padded_size=6)
         # strip of ! from tokens.index("!")
         if "!" in stmt:
             stmt_no_comment = stmt.split("!")[0]

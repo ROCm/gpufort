@@ -28,7 +28,7 @@ class TTCppDefined(TTNode):
 
 class TTAttributes(TTNode,Attributed):
     def _assign_fields(self,tokens):
-        self._qualifiers, self._rhs = tokens
+        self.qualifiers, self._rhs = tokens
     def c_str(self):
         return ""
 

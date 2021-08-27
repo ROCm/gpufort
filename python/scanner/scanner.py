@@ -532,7 +532,7 @@ def parse_file(records,index,fortran_filepath):
                 utils.logging.log_debug4(LOG_PREFIX,"parse_file","parsing statement '{}' associated with lines [{},{}]".format(current_statement.rstrip(),\
                     current_record["lineno"],current_record["lineno"]+len(current_record["lines"])-1))
                 
-                current_tokens                      = utils.pyparsingutils.tokenize(current_statement.lower())
+                current_tokens                      = utils.parsingutils.tokenize(current_statement.lower())
                 current_statement_stripped           = " ".join(current_tokens)
                 current_statement_strippedNoComments = current_statement_stripped.split("!")[0]
                 if len(current_tokens):

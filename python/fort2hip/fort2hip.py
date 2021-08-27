@@ -46,18 +46,18 @@ def _intrnl_init_arg(argname,f_type,kind,qualifiers=[],c_type="",is_array=False)
     if len(kind):
         f_type_final += "({})".format(kind)
     arg = {
-      "name"             : argname.replace("%","_") , # TODO structures
-      "callarg_name"     : argname,
-      "qualifiers"       : qualifiers,
-      "type"             : f_type_final,
-      "orig_type"        : f_type_final,
-      "c_type"           : c_type,
-      "c_size"           : "",
-      "c_value"          : "",
-      "c_suffix"         : "", # TODO still needed?
-      "is_array"         : is_array,
-      "reduction_op"     : "",
-      "bytes_per_element" : translator.bytes(f_type,kind,default="-1")
+      "name"              : argname.replace("%","_") , # TODO structures
+      "callarg_name"      : argname,
+      "qualifiers"        : qualifiers,
+      "type"              : f_type_final,
+      "orig_type"         : f_type_final,
+      "c_type"            : c_type,
+      "c_size"            : "",
+      "c_value"           : "",
+      "c_suffix"          : "", # TODO still needed?
+      "is_array"          : is_array,
+      "reduction_op"      : "",
+      "bytes_per_element" : translator.num_bytes(f_type,kind,default="-1")
     }
     if not len(c_type):
         arg["c_type"] = translator.convert_to_c_type(f_type,kind,"void")
@@ -75,6 +75,8 @@ def _intrnl_create_argument_context(ivar,argname,deviceptr_names=[],is_loop_kern
     :rtype: dict
     """
     arg = _intrnl_init_arg(argname,ivar["f_type"],ivar["kind"],[ "value" ],"",ivar["rank"]>0)
+    arg["bytes_per_element"] = ivar["bytes_per_element"] # scope value might be more accurate
+    # TODO more kind and bytes per element should be obtained from scope var ivar as it can resolve them up to selected_kind parameters
     if "parameter" in ivar["qualifiers"] and not ivar["value"] is None:
         arg["c_value"] = ivar["value"] 
     lbound_args = []  # additional arguments that we introduce if variable is an array

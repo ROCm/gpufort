@@ -43,15 +43,6 @@ test.run(
    
 #print(translator.fortran_declaration.parseString(testdata[0])[0].rhs[0])
 
-print(translator.fortran_declaration.parseString("complex :: f_d ( : )")[0].array_bound_variable_names_f_str("f_d"))
-print(translator.fortran_declaration.parseString("complex :: f_d ( : )")[0].array_variable_index_macro_str("f_d"))
-
-print(translator.fortran_declaration.parseString("complex :: f_d ( :,: )")[0].array_bound_variable_names_f_str("f_d"))
-print(translator.fortran_declaration.parseString("complex :: f_d ( :,: )")[0].array_variable_index_macro_str("f_d"))
-
-print(translator.fortran_declaration.parseString("complex :: f_d ( 5,5 )")[0].array_bound_variable_names_f_str("f_d"))
-print(translator.fortran_declaration.parseString("complex :: f_d ( 5,5 )")[0].array_variable_index_macro_str("f_d"))
-
 print(translator.create_index_records_from_declaration(\
         translator.fortran_declaration.parseString("complex :: f_d ( 5,5 )")[0]))
 

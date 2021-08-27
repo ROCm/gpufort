@@ -433,7 +433,7 @@ class STDeclaration(STNode):
             index = copy.copy(scoper.EMPTY)
             index["variables"] = self.create_codegen_context()
         original_datatype          = translator.make_f_str(self._ttdeclaration._datatype)
-        original_qualifiers        = [translator.make_f_str(q).lower() for q in self._ttdeclaration._qualifiers]
+        original_qualifiers        = [translator.make_f_str(q).lower() for q in self._ttdeclaration.qualifiers]
         unchanged_variables        = []  
         new_device_pointer_variables = []
         new_host_pointer_variables   = []

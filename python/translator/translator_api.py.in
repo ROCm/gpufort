@@ -2,63 +2,40 @@
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 
 # API
-def _intrnl_extract_qualifiers_and_variables(tokens):
-    # ex:
-    # input: "parameter , intent ( inout ) , dimension ( : , : ) ::"
-    # result : ["parameter", "intent(inout)", "dimension(:,:)" ]
-    result = []
-    idx               = 0
-    current_qualifier = ""
-    open_brackets     = 0
-    criterion         = len(tokens)
-    while (criterion):
-        tk  = tokens[idx]
-        print(tk)
-        idx += 1
-        criterion == idx < len(tokens)
-        if tk == "," and open_brackets == 0:
-            if len(current_qualifier):
-                result.append(current_qualifier)
-            current_qualifier = ""
-        elif tk in ["::","\n","!"]:
-            criterion = False
-        else:
-            current_qualifier += tk
-        if tk == "(":
-            open_brackets += 1
-        elif tk == ")":
-            open_brackets -= 1
-    if len(current_qualifier):
-        result.append(current_qualifier)
-    return result
-
 def parse_declaration(fortran_statement):
     global LOG_PREFIX
 
-    orig_tokens             = utils.pyparsingutils.tokenize(fortran_statement,padded_size=10)
-    tokens                  = orig_tokens
+    orig_tokens                 = utils.parsingutils.tokenize(fortran_statement,padded_size=10)
+    tokens                      = orig_tokens
+    datatype_and_qualifiers_raw = utils.parsingutils.extract_qualifiers_and_variables(tokens)
     idx_last_consumed_token = -1 # inclusive
     # handle datatype
-    datatype            = None
+    datatype            = tokens[0]
     kind                = None
-    if tokens[0] == "type" or tokens[1] == "*":
+    if tokens[0] == "type":
         # ex: type ( dim3 )
+        kind = tokens[2]
+        idx_last_consumed_token = 3
+    elif tokens[0:1+1] == ["double","precision"]:
+        datatype = " ".join(tokens[0:1+1])
+        idx_last_consumed_token = 1
+    elif tokens[1] == "*"
         # ex: integer * 4
-        datatype = tokens[0]
-        kind     = tokens[2]
-        idx_last_consumed_token = 2 if tokens[1] == "*" else 3
-    elif tokens[1] == "(" and tokens[2] == "kind" and\
+        # ex: integer * ( 4*2 )
+        kind_tokens = utils.parsingutils.next_tokens_till_open_bracket_is_closed(tokens[2:],open_brackets=0)
+        kind = "".join(kind_tokens)
+        idx_last_consumed_token = 2+len(kind_tokens)-1
+    elif tokens[1] == "(" and tokens[2] in ["kind","len"] and\
          tokens[3] in ["=","("]:
         # ex: integer ( kind = 4 )
         # ex: integer ( kind ( 4 ) )
-        datatype = tokens[0]
-        kind     = tokens[4]
-        idx_last_consumed_token = 5 if tokens[3] == "=" else 6
+        kind_tokens = utils.parsingutils.next_tokens_till_open_bracket_is_closed(tokens[3:],open_brackets=1)
+        kind = "".join(kind_tokens)
+        idx_last_consumed_token = 3 + len(kind_tokens)-1
     elif tokens[1] in [",","::"] or tokens[1].isidentifier():
         # ex: integer ,
         # ex: integer ::
         # ex: integer a
-        datatype = tokens[0]
         idx_last_consumed_token = 0
     else:
         utils.logging.log_error(LOG_PREFIX,"parse_declaration","could not parse datatype in variable declaration statement '{}'".format(fortran_statement))
@@ -68,7 +45,7 @@ def parse_declaration(fortran_statement):
     tokens                  = tokens[idx_last_consumed_token+1:] # remove type part tokens
     idx_last_consumed_token = -1
     if tokens[0] == "," and "::" in tokens:
-        qualifiers = _intrnl_extract_qualifiers_and_variables(tokens)
+        qualifiers = utils.parsingutils.create_comma_separated_list(tokens)
         # handle intent
         # handle dimension
         idx_last_consumed_token == tokens.index("::")
@@ -79,22 +56,23 @@ def parse_declaration(fortran_statement):
         sys.exit(2)
     # handle variables list
     tokens = tokens[idx_last_consumed_token+1:] # remove qualifier list tokens
-    variables_raw = _intrnl_extract_qualifiers_and_variables(tokens) 
+    variables_raw = utils.parsingutils.create_comma_separated_list(tokens) 
 
     # construct declaration tree node
-    # TODO
     qualifiers = []
     for qualifier in qualifiers_raw:
         if qualifier.startswith("dimension"):
             try:
-                qualifiers.append( dimension_qualifier.parseString(qualifier,parseAll=True) )
+                qualifiers.append( dimension_qualifier.parseString(qualifier,parseAll=True)[0] )
             except:
                 utils.logging.log_error(LOG_PREFIX,"parse_declaration","could not parse dimension qualifier in variable declaration statement '{}'".format(fortran_statement))
                 sys.exit(2)
         elif qualifier.startswith("intent"):
             # ex: intent ( inout )
-            intent_tokens = utils.pyparsingutils.tokenize(qualifier):
-            if len(intent_tokens) != 4 and intent_tokens[2] in ["in","out","inout"]:
+            intent_tokens = utils.parsingutils.tokenize(qualifier):
+            try:
+                qualifiers.append( intent_qualifier.parseString(qualifier,parseAll=True)[0] )
+            except:
                 utils.logging.log_error(LOG_PREFIX,"parse_declaration","could not parse intent qualifier in variable declaration statement '{}'".format(fortran_statement))
                 sys.exit(2) 
         else:
@@ -106,8 +84,8 @@ def parse_declaration(fortran_statement):
         except:
             utils.logging.log_error(LOG_PREFIX,"parse_declaration","could not parse variable declaration '{}' in statement '{}'".format(var,fortran_statement))
             sys.exit(2)
-   declaration_tokens = [ datatype, kind, qualifiers, variables ]
-   return TTDeclaration( fortran_statement,0, declaration_tokens )
+    declaration_tokens = [ datatype, kind, qualifiers, variables ]
+    return TTDeclaration( fortran_statement,0,declaration_tokens )
 
 def create_index_records_from_declaration(ttdeclaration):
     """
@@ -126,9 +104,10 @@ def create_index_records_from_declaration(ttdeclaration):
         var_name    = ttdeclaredvariable.name().lower()
         ivar = {}
         # basic 
-        f_type = make_f_str(ttdeclaration._datatype.type())
-        kind  = make_f_str(ttdeclaration._datatype.kind())
-        bpe   = bytes(f_type,kind,default=None)
+        f_type                             = make_f_str(ttdeclaration.type)
+        kind                               = make_f_str(ttdeclaration.kind)
+        bpe                                = num_bytes(f_type,kind,default=None)
+        # TODO substitute parameters in scoper and try again to compute bpe if entry is None
         ivar["name"]                       = var_name
         ivar["f_type"]                     = f_type
         ivar["kind"]                       = kind
@@ -142,7 +121,7 @@ def create_index_records_from_declaration(ttdeclaration):
         ivar["declare_on_target"]          = False
         # arrays
         ivar["rank"]                       = 0
-        dimension_qualifier = find_all(ttdeclaration._qualifiers,TTDimensionQualifier)
+        dimension_qualifier = find_all(ttdeclaration.qualifiers,TTDimensionQualifier)
         if ttdeclaredvariable.has_bounds() or len(dimension_qualifier):
             ivar["f_interface_type"] = "type(c_ptr)"
             if len(dimension_qualifier):
@@ -181,7 +160,7 @@ def create_index_records_from_declaration(ttdeclaration):
 
 def change_kind(ivar,kind):
     f_type                    = ivar["f_type"]
-    bpe                       = bytes(f_type,kind,default=None)
+    bpe                       = num_bytes(f_type,kind,default=None)
     ivar["kind"]              = kind
     ivar["bytes_per_element"] = bpe 
     ivar["c_type"]            = convert_to_c_type(f_type,kind,"TODO unknown")
@@ -194,7 +173,7 @@ def convert_arithmetic_expression(fortran_snippet):
     return ( matrix_arithmetic_expression | complex_arithmetic_expression | arithmetic_expression ).parseString(fortran_snippet)[0].c_str()
 
 def parse_attributes(ttattributes):
-    attribute    = make_f_str(ttattributes._qualifiers[0]).lower()
+    attribute    = make_f_str(ttattributes.qualifiers[0]).lower()
     modified_vars = [make_f_str(var).lower() for var in ttattributes._rhs]
     return attribute, modified_vars 
 # TODO parsing and translation is similar but analysis differs between the different kernel

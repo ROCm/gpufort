@@ -66,84 +66,6 @@ class TTNumber(TTNode):
     def f_str(self):
         return self._value
 
-class TTDatatype_Comment(TTNode):
-    # generates object Datatype{'type' : '...', 'kind' : '...'}
-    def _assign_fields(self,tokens):
-        self._type   = tokens[0]
-        self._kind   = tokens[1][0]
-        self._length = tokens[1][1]
-    def type(self):
-        """
-        Fortran basetype of the datatype.
-        """
-        return self._type
-    def kind(self):
-        return self._kind
-    def len(self):
-        return self._length
-    def is_derived_type(self):
-        return self._type.lower() == "type"
-    def bytes(self):
-        return "TODO unknown size"  
-    def c_str(self):
-        f_type  = make_f_str(self._type)
-        kind   = make_f_str(self._kind)
-        length = make_f_str(self._length)
-        return "// {}\n// {}(kind={},len={})".format(UNCONVERTED,f_type,kind,length)
-    def f_str(self):
-        # comment only when generating c string
-        result = make_f_str(self._type)
-        kind   = make_f_str(self._kind)
-        length = make_f_str(self._length)
-        args = []
-        if len(kind):
-            args.append("kind={}".format(kind))
-        if len(length):
-            args.append("len={}".format(len))
-        if len(args):
-            result += "({0})".format(",".join(args))
-        return result
-
-class TTDatatype_Convert(TTNode):
-    # generates object Datatype{'type' : '...', 'kind' : '...'}
-    def _assign_fields(self,tokens):
-        self._type   = tokens[0]
-        self._kind   = tokens[1][0]
-        self._length = tokens[1][1]
-    def type(self):
-        return self._type
-    def is_derived_type(self):
-        return self._type.lower() == "type"
-    def kind(self):
-        return self._kind
-    def len(self):
-        return self._length
-    def bytes(self):
-        return bytes(make_f_str(self._type),make_f_str(self._kind))  
-    def c_str(self):
-        f_type = make_f_str(self._type)
-        kind = make_f_str(self._kind)
-        c_type = convert_to_c_type(f_type,kind)
-        if c_type == None:
-            return "// {}\n// {}".format(UNCONVERTED,f_type,kind)
-        return c_type
-    def f_str(self):
-        result = str(self._type)
-        have_kind = not self._kind is None 
-        have_len  = not self._length is None
-        have_param = have_kind or have_len
-        if have_param:
-            result += "("
-        if have_kind:
-            result += "kind={}".format(make_f_str(self._kind))
-            if have_len:
-                result += ", "
-        if have_len:
-            result += "len={}".format(make_f_str(self._len))
-        if have_param:
-            result += ")"
-        return result            
-
 class TTIdentifier(TTNode):
     def _assign_fields(self,tokens):
         self._name = tokens[0]
@@ -174,7 +96,7 @@ class TTFunctionCallOrTensorAccess(TTNode):
         """
         name = make_c_str(self._name).lower()
         return len(self._args) == 0 or\
-          name in GPUFORT_CPP_ROUTINES or\
+          name in GPUFORT_CPP_SYMBOLS or\
           name in ALL_HOST_ROUTINES or\
           name in ALL_DEVICE_ROUTINES
     def is_tensor(self):
@@ -855,17 +777,17 @@ class Attributed():
         """
         :param name: lower case string qualifier, i.e. no more complex qualifier such as 'dimension' or 'intent'.
         """
-        return [q.lower() for q in self._qualifiers if type(q) is str]
+        return [q.lower() for q in self.qualifiers if type(q) is str]
     def has_string_qualifier(self,name):
         """
         :param name: lower case string qualifier, i.e. no more complex qualifier such as 'dimension' or 'intent'.
         """
         result = False
-        for q in self._qualifiers:
+        for q in self.qualifiers:
             result |= type(q) is str and q.lower() == name.lower()
         return result
     def has_dimension(self):
-        return len(find_all(self._qualifiers,TTDimensionQualifier))
+        return len(find_all(self.qualifiers,TTDimensionQualifier))
 
 class TTDeclaration(TTNode,Attributed):
     """ 
@@ -877,133 +799,16 @@ class TTDeclaration(TTNode,Attributed):
     """
     def _assign_fields(self,tokens):
         #declaration = datatype + Optional(COMMA + attribute_list,default=[]) + COLONS + Group(delimitedList(declaration_variable))   # ! emits *,[*],[*]
-        self._datatype, self._qualifiers, self._rhs = tokens
+        self.type, self.kind, self.qualifiers, self._rhs = tokens
         self.ignore_list = []
-    def f_type(self):
-        """
-        Fortran basetype of the datatype.
-        """
-        return make_f_str(self._datatype.type())
     def is_derived_type(self):
-        return self._datatype.is_derived_type()
-    def kind(self):
-        """
-        Kind of the datatype.
-        :note: Stores the derived type name if the datatype is a derived type.
-        """
-        return make_f_str(self._datatype.kind())
+        return self.type.lower() == "type"
     def bytes_per_element(self):
-        """
-        The bytes required to store one element of the datatype of the
-        ttdeclaredvariable variables.
-        """
-        return self._datatype.bytes() 
+        """:return: bytes required to store one element of the datatype of the declared variables."""
+        return num_bytes(self.type,self.kind)  
     def variable_names(self):
-        """
-        The names of any variables defined by this ttdeclaredvariable.
-        Use on the result to check if any array variables are present.
-        """
-        #for ttdeclaredvariable in self._rhs:
-        #     #print(ttdeclaredvariable)
+        """:return: names of any variables defined by this declaration statement."""
         return [ttdeclaredvariable.name() for ttdeclaredvariable in self._rhs]
-    def array_variable_names(self):
-        """
-        The names of any array variables defined by this ttdeclaredvariable.
-        Use `len` on the result to check if any array variables are present.
-        """
-        result = []
-        for ttdeclaredvariable in self._rhs:
-            if self.has_dimension() or ttdeclaredvariable.has_bounds():
-                result.append(ttdeclaredvariable.name())
-        return result
-
-    def num_elements(self,name):
-        """
-        :return: number of elements of the (multi-dimensional) array 'name' (per dimension).
-        :rtype: list of str
-        """
-        dimension_qualifier = find_all(self._qualifiers,TTDimensionQualifier)
-        if len(dimension_qualifier):
-            return dimension_qualifier[0]._bounds.specified_counts()
-        else:
-            for ttdeclaredvariable in self._rhs:
-                 if ttdeclaredvariable.name().lower() == name.lower():
-                     return ttdeclaredvariable._bounds.specified_counts()
-        return []
-    def array_bound_variable_names_f_str(self,name):
-        """
-        If the ttdeclaredvariable has a `dimension(...)` token,
-        derive bound variable names from bounds stated in there.
-        Otherwise, check if the variable ttdeclaredvariables has some array brackets
-        and derive bound variable names from there.
-
-        :see: TTBounds.bound_variable_names, array_variable_names
-        :rtype: list
-        """
-        dimension_qualifier = find_all(self._qualifiers,TTDimensionQualifier)
-        if len(dimension_qualifier):
-            return dimension_qualifier[0]._bounds.bound_variable_names(name,make_f_str)
-        else:
-            for ttdeclaredvariable in self._rhs:
-                 if ttdeclaredvariable.name().lower() == name.lower():
-                     return ttdeclaredvariable._bounds.bound_variable_names(name,make_f_str)
-        return []
-    def array_bound_variable_assignments_f_str(self,name):
-        """
-        If the ttdeclaredvariable has a `dimension(...)` token with fixed bounds,
-        derive bound variable assignments from bounds stated in there.
-        Otherwise, check if the variable ttdeclaredvariables has some array brackets
-        and dervice bound variable assignments from there.
-
-        :see: TTBounds.bound_variable_names, array_variable_names
-        :rtype: list
-        """
-        dimension_qualifier = find_all(self._qualifiers,TTDimensionQualifier)
-        if len(dimension_qualifier):
-            return dimension_qualifier[0]._bounds.bound_variable_assignments(name,make_f_str)
-        else:
-            for ttdeclaredvariable in self._rhs:
-                 if ttdeclaredvariable.name().lower() == name.lower():
-                     return ttdeclaredvariable._bounds.bound_variable_assignments(name,make_f_str)
-        return []
-    def array_variable_index_str(self,name):
-        """
-        If the ttdeclaredvariable has a `dimension(...)` token,
-        derive index from bounds stated in there.
-        Otherwise, check if the variable ttdeclaredvariables has some array brackets
-        and derive macro string from there.
-
-        :see: TTBounds.index_str(), array_variable_names
-        """
-        dimension_qualifier = find_all(self._qualifiers,TTDimensionQualifier)
-        if len(dimension_qualifier):
-            return dimension_qualifier[0]._bounds.index_str(name)
-        else:
-            for ttdeclaredvariable in self._rhs:
-                 if ttdeclaredvariable.name().lower() == name.lower():
-                     return ttdeclaredvariable._bounds.index_str(name)
-        return None
-    def array_variable_index_macro_str(self,name,converter=make_c_str,use_place_holders=False):
-        """
-        If the ttdeclaredvariable has a `dimension(...)` token,
-        derive index from bounds stated in there.
-        Otherwise, use
-
-        :see: TTBounds.index_str(), array_variable_names
-        """
-        dimension_qualifier = find_all(self._qualifiers,TTDimensionQualifier)
-        if len(dimension_qualifier):
-            return dimension_qualifier[0]._bounds.index_macro_str(name,converter,use_place_holders)
-        else:
-            for ttdeclaredvariable in self._rhs:
-                 if ttdeclaredvariable.name().lower() == name.lower():
-                     #print(">"+str(ttdeclaredvariable._bounds))
-                     return ttdeclaredvariable._bounds.index_macro_str(name,converter,use_place_holders)
-        return None
-    def array_variable_index_macro_f_str(self,name,use_place_holders=False):
-        return self.array_variable_index_macro_str(name,make_f_str,use_place_holders)
-    def array_variable_index_macro_c_str(self,name,use_place_holders=False):
-        return self.array_variable_index_macro_str(name,make_c_str,use_place_holders)
     def rhs_c_str(self,name):
         """
         :return: C expression of the right-hand side of the variable with name `name`. Returns empty string in case there is no right-hand side.
@@ -1015,15 +820,33 @@ class TTDeclaration(TTNode,Attributed):
             if ttdeclaredvariable.name().lower() == name.lower():
                 result = make_c_str(ttdeclaredvariable._rhs)
         return result
+    def __datatype_f_str(self):
+        global CHARACTER_FORMAT
+        global DERIVED_TYPE_FORMAT
+        global BASIC_TYPE_FORMAT
+        
+        f_type = f_keyword(self.type)
+        if self.type.lower() == "type":
+            return DERIVED_TYPE_FORMAT.format(type=f_type,kind=self.kind)
+        elif self.type.lower() == "character":
+            if self.kind != None:
+                return CHARACTER_FORMAT.format(type=f_type,len=self.kind)
+            else:
+                return CHARACTER_FORMAT.format(type=f_type,len="").lstrip()[0:len[f_type)]
+        else:
+            if self.kind != None:
+                return BASIC_TYPE_FORMAT.format(type=f_type,kind=self.kind)
+            else:
+                return BASIC_TYPE_FORMAT.format(type=f_type,kind="").lstrip()[0:len[f_type)]
     def f_str(self,extra_ignore_list=[],include_bounds=True,include_rhs=True):
         """
         The ignore list can be used to filter out some
         variables
         """
-        ignore_list = map(str.lower, self.ignore_list + extra_ignore_list)
-        qualifiers_str = ", " if len(self._qualifiers) else ""
-        qualifiers_str += ", ".join([make_f_str(q) for q in self._qualifiers])
-        result = "{0}{1} :: ".format(make_f_str(self._datatype),qualifiers_str)
+        ignore_list    = map(str.lower, self.ignore_list + extra_ignore_list)
+        qualifiers_str = ", " if len(self.qualifiers) else ""
+        qualifiers_str += ", ".join([make_f_str(q) for q in self.qualifiers])
+        result = "{0}{1} :: ".format(self.__datatype_f_str(),qualifiers_str)
         ignored_vars = 0
         for ttdeclaredvariable in self._rhs:
             if not ttdeclaredvariable.name(make_f_str).lower() in ignore_list:
@@ -1033,36 +856,8 @@ class TTDeclaration(TTNode,Attributed):
             return ""
         else:
             return result.rstrip(",")
-    def c_str(self,extra_ignore_list=[],is_function_argument=False,include_bounds=True,include_rhs=True):
-        """
-        The ignore list can be used to filter out some
-        variables, e._g. if these are parameters of a subroutine
-        that we want to convert.
-        """
-        # TODO do we still need this if we have the full index at hand?
-        ignore_list      = [make_c_str(var) for var in (self.ignore_list + extra_ignore_list)]
-        result          = ""
-        comment         = ""
-        dimension_bounds = ""
-        if len(self._qualifiers):
-           dimension_qualifier = find_all(self._qualifiers,TTDimensionQualifier)
-           if len(dimension_qualifier):
-                dimension_bounds = make_c_str(dimension_qualifier[0])
-           comment = " /* Fortran qualifiers: {0} */".format(",".join([make_f_str(el) for el in self._qualifiers]))
-        for ttdeclaredvariable in self._rhs:
-            if not ttdeclaredvariable.name(make_c_str) in ignore_list: 
-                if is_function_argument:
-                    result += "{{indent}}{0} {1},".format(make_c_str(self._datatype),ttdeclaredvariable.c_str(include_bounds,include_rhs),comment)
-                else:
-                    datatype = make_c_str(self._datatype)
-                    if self.has_string_qualifier("shared"): # never a function argument
-                        datatype = "__shared__ " + datatype
-                    result += "{{indent}}{0} {1}{2};{3}\n".format(datatype,ttdeclaredvariable.c_str(include_bounds,include_rhs),dimension_bounds,comment) 
-        result = result.format(indent=self.indent) 
-        if is_function_argument:
-            return result
-        else:
-            return result.rstrip(",")
+   def c_str(self,extra_ignore_list=[],is_function_argument=False,include_bounds=True,include_rhs=True):
+       assert False, "TTDeclaration.c_str(...) not implemented as not needed"
 
 class TTStatement(TTNode):
     """

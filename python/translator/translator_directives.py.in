@@ -29,7 +29,7 @@ def _intrnl_search_values_in_body(ttcontainer,search_filter,scope,min_rank=-1):
         if not tag == "dim3" and\
            not tag in KEYWORDS and\
            not tag in DEVICE_PREDEFINED_VARIABLES and\
-           not tag in GPUFORT_CPP_ROUTINES:
+           not tag in GPUFORT_CPP_SYMBOLS:
             ivar,found_in_scope = scoper.search_scope_for_variable(scope,tag)
             if found_in_scope and\
                ivar["rank"] >= min_rank and\

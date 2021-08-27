@@ -119,6 +119,7 @@ def _intrnl_resolve_dependencies(scope,index_record,index):
     handle_use_statements_(scope,index_record)
     utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_resolve_dependencies")
 
+
 def _intrnl_search_scope_for_type_or_subprogram(scope,entry_name,entry_type,empty_record):
     """
     :param str entry_type: either 'types' or 'subprograms'
@@ -271,7 +272,7 @@ def create_scope(index,tag):
         utils.logging.log_leave_function(LOG_PREFIX,"create_scope")
         return new_scope
 
-def search_scope_for_variable(scope,variable_expression):
+def search_scope_for_variable(scope,variable_expression,resolve=False):
     """
     %param str variable_tag% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c' or 'a%b(i,j)%c(a%i5)'.
     """
@@ -318,6 +319,17 @@ def search_scope_for_variable(scope,variable_expression):
             utils.logging.log_warning(LOG_PREFIX,"search_scope_for_variable",msg) 
         return EMPTY_VARIABLE, False
     else:
+        # resolve
+        # TODO not sure where to put code to re-calculate bytes per element etc
+        # probably kee the kind information abstract until resolution is specified
+        if resolve:
+            for ivar in reversed(scope["variables"]):
+                if "parameter" in ivar["qualifiers"]:
+                    for entry in ["kind","unspecified_bounds","lbounds","counts","total_count","total_bytes","index_macro"]:
+                        result[entry].replace(ivar["name"],"("+ivar["value"]+")")
+                if "parameter" in result["qualifiers"]:
+                    result["value"].replace(ivar["value"],"("+ivar["value"]+")")
+
         utils.logging.log_debug2(LOG_PREFIX,"search_scope_for_variable",\
           "entry found for variable '{}'".format(variable_tag)) 
         utils.logging.log_leave_function(LOG_PREFIX,"search_scope_for_variable")
@@ -341,7 +353,7 @@ def search_scope_for_subprogram(scope,subprogram_name):
     utils.logging.log_leave_function(LOG_PREFIX,"search_scope_for_subprogram")
     return result
 
-def search_index_for_variable(index,parent_tag,variable_expression):
+def search_index_for_variable(index,parent_tag,variable_expression,resolve=False):
     """
     :param str parent_tag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
     %param str variable_expression% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c'. Note that all array indexing expressions must be stripped away.
@@ -351,7 +363,7 @@ def search_index_for_variable(index,parent_tag,variable_expression):
       {"parent_tag":parent_tag,"variable_expression":variable_expression})
 
     scope = create_scope(index,parent_tag)
-    return search_scope_for_variable(scope,variable_expression)
+    return search_scope_for_variable(scope,variable_expression,resolve=False)
 
 def search_index_for_type(index,parent_tag,type_name):
     """

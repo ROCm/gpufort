@@ -126,7 +126,7 @@ def _intrnl_search_scope_for_type_or_subprogram(scope,entry_name,entry_type,empt
     :param str entry_type: either 'types' or 'subprograms'
     """
     global LOG_PREFIX
-    utils.logging.log_enter_function(LOG_PREFIX,"__search_scope_for_type_or_subprogram",\
+    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_search_scope_for_type_or_subprogram",\
       {"entry_name":entry_name,"entry_type":entry_type})
 
     # reverse access such that entries from the inner-most scope come first
@@ -137,15 +137,15 @@ def _intrnl_search_scope_for_type_or_subprogram(scope,entry_name,entry_type,empt
     if result is None:
         msg = "no entry found for {} '{}'.".format(entry_type[:-1],entry_name)
         if ERROR_HANDLING  == "strict":
-            utils.logging.log_error(LOG_PREFIX,"__search_scope_for_type_or_subprogram",msg) 
+            utils.logging.log_error(LOG_PREFIX,"_intrnl_search_scope_for_type_or_subprogram",msg) 
             sys.exit(ERR_SCOPER_LOOKUP_FAILED)
         else:
-            utils.logging.log_warning(LOG_PREFIX,"__search_scope_for_type_or_subprogram",msg) 
+            utils.logging.log_warning(LOG_PREFIX,"_intrnl_search_scope_for_type_or_subprogram",msg) 
         return empty_record, False
     else:
-        utils.logging.log_debug2(LOG_PREFIX,"__search_scope_for_type_or_subprogram",\
+        utils.logging.log_debug2(LOG_PREFIX,"_intrnl_search_scope_for_type_or_subprogram",\
           "entry found for {} '{}'".format(entry_type[:-1],entry_name)) 
-        utils.logging.log_leave_function(LOG_PREFIX,"__search_scope_for_type_or_subprogram")
+        utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_search_scope_for_type_or_subprogram")
         return result, True
 
 def _intrnl_search_index_for_type_or_subprogram(index,parent_tag,entry_name,entry_type,empty_record):
@@ -153,7 +153,7 @@ def _intrnl_search_index_for_type_or_subprogram(index,parent_tag,entry_name,entr
     :param str entry_type: either 'types' or 'subprograms'
     """
     global LOG_PREFIX
-    utils.logging.log_enter_function(LOG_PREFIX,"__search_index_for_type_or_subprogram",\
+    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_search_index_for_type_or_subprogram",\
       {"parent_tag":parent_tag,"entry_name":entry_name,"entry_type":entry_type})
 
     scope = create_scope(index,parent_tag)

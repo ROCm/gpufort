@@ -97,7 +97,6 @@ def _intrnl_postprocess_cuf(stree):
             last.add_to_epilog("{0}hipblasDestroy(hipblasHandle)\n".format(indent))
     utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_postprocess_cuf")
 
-
 # API
 
 # Pyparsing actions that create scanner tree (ST)

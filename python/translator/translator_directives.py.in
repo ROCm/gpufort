@@ -2,14 +2,14 @@
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 # extensions for directive-based programming
 
-def _intrnl_search_values_in_body(ttcontainer,search_filter,scope,min_rank=-1):
+def _intrnl_search_values_in_subtree(ttnode,search_filter,scope,min_rank=-1):
     #TODO exclude other annotations as well from this search
     #TODO improve
-    def find_all_matching_exclude_directives_(body,filter_expr=lambda x: True,N=-1):
+    def find_all_matching_exclude_directives_(body,filter_expr=lambda x: True):
         """Find all nodes in tree of type 'searched_type'."""
         result = []
         def traverse__(curr):
-            if (N > 0 and len(result) > N) or isinstance(curr,ILoopAnnotation):
+            if isinstance(curr,ILoopAnnotation):
                 return
             if filter_expr(curr):
                 result.append(curr)
@@ -20,11 +20,11 @@ def _intrnl_search_values_in_body(ttcontainer,search_filter,scope,min_rank=-1):
             elif isinstance(curr,TTNode):
                 for el in curr.children():
                     traverse__(el)
-        traverse__(ttcontainer.body)
+        traverse__(ttnode)
         return result
     
     tags = [] 
-    for ttvalue in find_all_matching_exclude_directives_(ttcontainer.body,search_filter): # includes the identifiers of the function calls
+    for ttvalue in find_all_matching_exclude_directives_(ttnode.body,search_filter): # includes the identifiers of the function calls
         tag = scoper.create_index_search_tag_for_variable(ttvalue.f_str())
         if not tag == "dim3" and\
            not tag in KEYWORDS and\
@@ -37,23 +37,23 @@ def _intrnl_search_values_in_body(ttcontainer,search_filter,scope,min_rank=-1):
                 tags.append(tag)
     return tags
 
-def _intrnl_variables_in_body(ttcontainer,scope=[]):
+def _intrnl_variables_in_subtree(ttnode,scope=[]):
     """:return: all identifiers of LValue and RValues in the body."""
     def search_filter(node):
         return isinstance(node, IValue) and\
                type(node._value) in [TTDerivedTypeMember,TTIdentifier,TTFunctionCallOrTensorAccess]
-    result = _intrnl_search_values_in_body(ttcontainer,search_filter,scope)
+    result = _intrnl_search_values_in_subtree(ttnode,search_filter,scope)
     return result
-def _intrnl_arrays_in_body(ttcontainer,scope=[]):
+def _intrnl_arrays_in_subtree(ttnode,scope=[]):
     def search_filter(node):
         return isinstance(node,IValue) and\
                 type(node._value) is TTFunctionCallOrTensorAccess 
-    return _intrnl_search_values_in_body(ttcontainer,search_filter,scope,1)
-def _intrnl_inout_arrays_in_body(ttcontainer,scope=[]):
+    return _intrnl_search_values_in_subtree(ttnode,search_filter,scope,1)
+def _intrnl_inout_arrays_in_subtree(ttnode,scope=[]):
     def search_filter(node):
         return type(node) is TTLValue and\
                 type(node._value) is TTFunctionCallOrTensorAccess 
-    return _intrnl_search_values_in_body(ttcontainer,search_filter,scope,1)
+    return _intrnl_search_values_in_subtree(ttnode,search_filter,scope,1)
 
 def _intrnl_flag_tensors(ttcontainer,scope=[]):
     """Clarify types of function calls / tensor access that are not members of a struct."""
@@ -108,6 +108,8 @@ class TTDoLoop(TTContainer):
         if self.annotation == None:
             self.annotation = ILoopAnnotation()
         self._thread_index = None # "z","y","x"
+    def children(self):
+        return [ self.annotation, self.body, self._begin, self._end, self._step ] 
     def set_hip_thread_index(self,name):
         self._thread_index = name
     def hip_thread_index_c_str(self):
@@ -239,12 +241,14 @@ class IComputeConstruct():
     def c_str(self):
         return ""
 
-class TTLoopKernel(TTNode,IComputeConstruct):
+class TTLoopKernel(TTContainer,IComputeConstruct):
     def _assign_fields(self,tokens):
         self._parent_directive, self.body = tokens
         self.scope = scoper.EMPTY_SCOPE
+    def children(self):
+        return [ self._parent_directive, self.body ]
     def __first_loop_annotation(self):
-        return self.body.annotation
+        return self.body[0].annotation
     def __parent_directive(self):
         if self._parent_directive == None:
             return self._first_loop_annotation()
@@ -252,22 +256,22 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             return self._parent_directive
     def loop_vars(self):
         identifier_names = []
-        do_loops  = find_all(self.body,TTDoLoop)
+        do_loops  = find_all(self.body[0],TTDoLoop)
         for loop in do_loops:
             identifier_names.append(loop.loop_var(make_f_str))
         return identifier_names
     def variables_in_body(self,scope=[]):
         if len(scope):
             self.scope = scope
-        return _intrnl_variables_in_body(self.body,self.scope)
+        return _intrnl_variables_in_subtree(self,self.scope)
     def arrays_in_body(self,scope=[]):
         if len(scope):
             self.scope = scope
-        return _intrnl_arrays_in_body(self.body,self.scope)
+        return _intrnl_arrays_in_subtree(self,self.scope)
     def inout_arrays_in_body(self,scope=[]):
         if len(scope):
             self.scope = scope
-        return _intrnl_inout_arrays_in_body(self.body,self.scope)
+        return _intrnl_inout_arrays_in_subtree(self,self.scope)
     def __local_scalars_and_reduction_candidates(self,scope):
         """
         local variable      - scalar variable that is not read before the assignment (and is no derived type member)
@@ -283,7 +287,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         initialized_scalars = [] 
 
         # depth first search
-        assignments = find_all_matching(self.body,
+        assignments = find_all_matching(self.body[0],
                 lambda node: type(node) in [TTAssignment,TTComplexAssignment,TTMatrixAssignment])
         for assignment in assignments:   
             # lhs scalars
@@ -326,14 +330,14 @@ class TTLoopKernel(TTNode,IComputeConstruct):
         if LOOP_COLLAPSE_STRATEGY == "grid" or num_outer_loops_to_map == 1:
             num_outer_loops_to_map = min(3,num_outer_loops_to_map)
             result = ["-1"]*num_outer_loops_to_map
-            do_loops = find_all(self.body,TTDoLoop)
+            do_loops = find_all(self.body[0],TTDoLoop)
             for i,loop in enumerate(do_loops):
                 if i < num_outer_loops_to_map:
                     result[i] = loop.problem_size_c_str()
             return result
         else: # "collapse"
             result = ""
-            do_loops = find_all(self.body,TTDoLoop)
+            do_loops = find_all(self.body[0],TTDoLoop)
             for loop in reversed(do_loops[0:num_outer_loops_to_map]):
                 if len(result):
                     result += "*"
@@ -478,11 +482,11 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             dim=1
         tidx = "__gidx{dim}".format(dim=dim)
         # 1. unpack colon (":") expressions 
-        for expr in find_all(self.body,TTStatement): 
+        for expr in find_all(self.body[0],TTStatement): 
             if type(expr._statement[0]) is TTAssignment:
                 expr._statement[0] = expr._statement[0].convert_to_do_loop_nest_if_necessary()
         # 2. Identify reduced variables
-        for expr in find_all(self.body,TTAssignment):
+        for expr in find_all(self.body[0],TTAssignment):
             for value in find_all_matching(expr,lambda x: isinstance(x,IValue)):
                 if type(value._value) in [TTDerivedTypeMember,TTIdentifier]:
                     for op,reduced_variables in self.gang_team_reductions().items():
@@ -496,7 +500,7 @@ class TTLoopKernel(TTNode,IComputeConstruct):
             for var in reduced_variables: 
                 reduction_preamble += "reduce_op_{kind}::init({var}[{tidx}]);\n".format(kind=kind,var=var,tidx=tidx)
         # 3. collapse and transform do-loops
-        do_loops = find_all(self.body,TTDoLoop)
+        do_loops = find_all(self.body[0],TTDoLoop)
         if num_outer_loops_to_map == 1 or (LOOP_COLLAPSE_STRATEGY == "grid" and num_outer_loops_to_map <= 3):
             if num_outer_loops_to_map > 3:
                 utils.logging.log_warn("loop collapse strategy grid chosen with nested loops > 3")
@@ -527,14 +531,15 @@ class TTLoopKernel(TTNode,IComputeConstruct):
                     indices += loop.collapsed_loop_index_c_str("")
                 denominator_factors.append(loop.problem_size_c_str())
                 conditions.append(loop.hip_thread_bound_c_str())
-        c_snippet = "{0}{2}if ({1}) {{\n{3}}}".format(\
-            indices,"&&".join(conditions),reduction_preamble,make_c_str(self.body))
+        # TODO fix indenting
+        c_snippet = "{0}{2}if ({1}) {{\n{3}\n}}".format(\
+            indices,"&&".join(conditions),reduction_preamble,make_c_str(self.body[0]))
         return postprocess_c_snippet(c_snippet)
 
 class TTProcedureBody(TTContainer):
     def _assign_fields(self,tokens):
-        self.body        = tokens[0]
-        self.scope       = []
+        self.body         = tokens
+        self.scope        = []
         self.result_name  = ""
     def variables_in_body(self,scope=[]):
         """
@@ -542,15 +547,15 @@ class TTProcedureBody(TTContainer):
         """
         if len(scope):
             self.scope = scope
-        return _intrnl_variables_in_body(self,self.scope)
+        return _intrnl_variables_in_subtree(self,self.scope)
     def arrays_in_body(self,scope=[]):
         if len(scope):
             self.scope = scope
-        return _intrnl_arrays_in_body(self,self.scope)
+        return _intrnl_arrays_in_subtree(self,self.scope)
     def inout_arrays_in_body(self,scope=[]):
         if len(scope):
             self.scope = scope
-        return _intrnl_inout_arrays_in_body(self,self.scope)
+        return _intrnl_inout_arrays_in_subtree(self,self.scope)
     def c_str(self):
         """
         :return: body of a procedure as C/C++ code.

@@ -370,6 +370,8 @@ class TTOperator(TTNode):
 class TTArithmeticExpression(TTNode):
     def _assign_fields(self,tokens):
         self._expr = tokens
+    def children(self):
+        return [ self._expr ]
     def c_str(self):
         return flatten_arithmetic_expression(self._expr)
     def f_str(self):
@@ -378,6 +380,8 @@ class TTArithmeticExpression(TTNode):
 class TTComplexArithmeticExpression(TTNode):
     def _assign_fields(self,tokens):
         self._real, self._imag = tokens[0]
+    def children(self):
+        return [ self._real, self._imag ]
     def c_str(self):
         return "make_hip_complex({real},{imag})".format(\
                 real=flatten_arithmetic_expression(self._real,make_c_str),\
@@ -390,6 +394,8 @@ class TTComplexArithmeticExpression(TTNode):
 class TTPower(TTNode):
     def _assign_fields(self,tokens):
         self._base, self._exp = tokens
+    def children(self):
+        return [ self._base, self._exp ]
     def gpufort_f_str(self,scope=[]):
         sign = ""
         base = self._base
@@ -866,32 +872,20 @@ class TTStatement(TTNode):
     """
     def _assign_fields(self,tokens):
         self._statement = tokens
+    def children(self):
+        return [ self._statement ] 
     def c_str(self):
         return make_c_str(self._statement)
     def f_str(self):
         return make_f_str(self._statement)
-
-class TTSingleLineIf(TTNode):
-    def _assign_fields(self,tokens):
-        self._condition, self.body, self._semicolon= tokens
-    def c_str(self):
-        body_content = flatten_body(self.body) 
-        return "if ({0}) {{\n  {1}\n}}".format(make_c_str(self._condition), body_content)
-    def f_str(self):
-        return "if ({0}) {1}{2}".format(make_f_str(self._condition), make_f_str(self.body), self._semicolon)
-    def multiline_if_f_str(self):
-        return "if ({0}) then\n{1}\nendif\n".format(make_f_str(self._condition).strip("\n"), make_f_str(self.body).strip())
-    def __str__(self):
-        """
-        Makes it possible to use it with pyparsing's transformString method
-        """
-        return self.multiline_if_f_str()
 
 class TTIfElseBlock(TTContainer):
     pass
 class TTIfElseIf(TTContainer):
     def _assign_fields(self,tokens):
         self._else, self._condition, self.body = tokens
+    def children(self):
+        return [ self._condition, self.body ]
     def c_str(self):
         body_content = TTContainer.c_str(self) 
         return "{0}{1}if ({2}) {{\n{3}\n{0}}}".format(\
@@ -905,10 +899,12 @@ class TTElse(TTContainer):
 class TTWhile(TTContainer):
     def _assign_fields(self,tokens):
         self._condition, self.body = tokens
+    def children(self):
+        return [ self._condition, self._body ]
     def c_str(self):    
-        body_content = TTContainer.c_str(self) 
+        body_content      = TTContainer.c_str(self) 
         condition_content = make_c_str(self._condition)
-        c_str = "while ({0}) {{\n  {1}\n}}".format(condition_content,body_content) 
+        c_str = "{0}while ({1}) {{\n{0}{2}\n{0}}}".format(indent,condition_content,body_content) 
         return c_str
 
 ## Link actions

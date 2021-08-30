@@ -124,7 +124,7 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
         node.indent = "  "*level
         curr.body.append(node)
         if kind != None:
-            utils.logging.log_debug(LOG_PREFIX,"__parse_fortran_code.append_","found {} in statement '{}'".format(kind,stmt))
+            utils.logging.log_debug(LOG_PREFIX,"_intrnl_parse_fortran_code.append_","found {} in statement '{}'".format(kind,stmt))
     def descend_(node,kind,inc_level=True):
         nonlocal curr
         nonlocal stmt
@@ -133,34 +133,34 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
         curr = node
         if inc_level:
             level += 1
-        utils.logging.log_debug(LOG_PREFIX,"__parse_fortran_code.append_","enter {} in statement '{}'".format(kind,stmt))
+        utils.logging.log_debug(LOG_PREFIX,"_intrnl_parse_fortran_code.append_","enter {} in statement '{}'".format(kind,stmt))
     def ascend_(kind):
         nonlocal curr
         nonlocal stmt
         nonlocal level
         curr  = curr.parent
         level = min(level-1,0)
-        utils.logging.log_debug(LOG_PREFIX,"__parse_fortran_code.append_","leave {} in statement '{}'".format(kind,stmt))
+        utils.logging.log_debug(LOG_PREFIX,"_intrnl_parse_fortran_code.append_","leave {} in statement '{}'".format(kind,stmt))
     
     # error handling
     def error_(expr,exception=None):
         nonlocal stmt1
-        utils.logging.log_error(LOG_PREFIX,"__parse_fortran_code","failed to parse {} expression '{}'".format(expr,stmt))
+        utils.logging.log_error(LOG_PREFIX,"_intrnl_parse_fortran_code","failed to parse {} expression '{}'".format(expr,stmt))
         if exception != None:
             debug_msg = traceback.format_tb(exception.__traceback__)[0].rstrip().\
                     replace("<string>",os.path.join(TRANSLATOR_DIR, "translator_parser.py.in"))
             debug_msg += ": "+str(exception)
-            utils.logging.log_debug(LOG_PREFIX,"__parse_fortran_code",debug_msg)
+            utils.logging.log_debug(LOG_PREFIX,"_intrnl_parse_fortran_code",debug_msg)
         sys.exit(2) # TODO error code
     def warn_(expr,exception=None):
         nonlocal stmt1
-        utils.logging.log_warn(LOG_PREFIX,"__parse_fortran_code","ignored {} expression '{}'".format(expr,stmt))
+        utils.logging.log_warn(LOG_PREFIX,"_intrnl_parse_fortran_code","ignored {} expression '{}'".format(expr,stmt))
         if exception != None:
-            utils.logging.log_debug(LOG_PREFIX,"__parse_fortran_code",str(exception))
+            utils.logging.log_debug(LOG_PREFIX,"_intrnl_parse_fortran_code",str(exception))
         sys.exit(2) # TODO error code
     def ignore_(expr):
         nonlocal stmt1
-        utils.logging.log_debug3(LOG_PREFIX,"__parse_fortran_code","ignored {} '{}'".format(expr,stmt))
+        utils.logging.log_debug3(LOG_PREFIX,"_intrnl_parse_fortran_code","ignored {} '{}'".format(expr,stmt))
 
     # parser loop
     ttree               = TTContainer()
@@ -176,9 +176,9 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
             stmt_no_comment = stmt.split("!")[0]
         else:
             stmt_no_comment = stmt
-        utils.logging.log_debug2(LOG_PREFIX,"__parse_fortran_code","process statement '{}' (preprocessed: '{}')".format(stmt1,stmt))
+        utils.logging.log_debug2(LOG_PREFIX,"_intrnl_parse_fortran_code","process statement '{}' (preprocessed: '{}')".format(stmt1,stmt))
         if len(tokens):
-            utils.logging.log_debug3(LOG_PREFIX,"__parse_fortran_code","tokens=['{}']".format("','".join(tokens)))
+            utils.logging.log_debug3(LOG_PREFIX,"_intrnl_parse_fortran_code","tokens=['{}']".format("','".join(tokens)))
         # tree construction 
         if is_ignored_statement_(tokens):
             ignore_("statement")
@@ -219,7 +219,7 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
                 do_loop_tokens = [ curr_offload_loop ] + parse_result.asList() + [[]]
                 do_loop = TTDoLoop(stmt,0,do_loop_tokens)
                 if curr_offload_region != None:
-                    descend_(TTLoopKernel(stmt_no_comment,"", [curr_offload_region, do_loop]),\
+                    descend_(TTLoopKernel(stmt_no_comment,"", [curr_offload_region, [do_loop]]),\
                             "offloaded do loop")
                     do_loop.parent      = curr
                     curr                = do_loop

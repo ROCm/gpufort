@@ -319,21 +319,21 @@ def _intrnl_preprocess_and_normalize(fortran_file_lines,fortran_filepath,macro_s
         }
         linemaps.append(linemap)
     
-    utils.logging.log_leave_function(LOG_PREFIX,"__preprocess_and_normalize")
+    utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_preprocess_and_normalize")
     return linemaps
 
 def _intrnl_preprocess_and_normalize_fortran_file(fortran_filepath,macro_stack,region_stack1,region_stack2):
     """
     :throws: IOError if the specified file cannot be found/accessed.
     """
-    utils.logging.log_enter_function(LOG_PREFIX,"__preprocess_and_normalize_fortran_file",{
+    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_preprocess_and_normalize_fortran_file",{
       "fortran_filepath":fortran_filepath
     })
 
     try:
         with open(fortran_filepath,"r") as infile:
             linemaps = _intrnl_preprocess_and_normalize(infile.readlines(),fortran_filepath,macro_stack,region_stack1,region_stack2)
-            utils.logging.log_leave_function(LOG_PREFIX,"__preprocess_and_normalize_fortran_file")
+            utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_preprocess_and_normalize_fortran_file")
             return linemaps
     except Exception as e:
             raise e

@@ -12,7 +12,7 @@ def num_bytes(f_type,kind,default=None):
     f_type_lower = f_type.lower().replace(" ","")
     if f_type_lower in FORTRAN_TYPE_2_BYTES_MAP and\
        kind_lower in FORTRAN_TYPE_2_BYTES_MAP[f_type_lower]:
-        return "(" + FORTRAN_TYPE_2_BYTES_MAP[f_type_lower][kind_lower] + ")"
+        return FORTRAN_TYPE_2_BYTES_MAP[f_type_lower][kind_lower]
     elif f_type_lower == "complex":
         return "2*("+kind_lower+")"
     else:

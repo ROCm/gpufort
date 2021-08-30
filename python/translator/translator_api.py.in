@@ -7,10 +7,12 @@ def parse_declaration(fortran_statement):
 
     orig_tokens             = utils.parsingutils.tokenize(fortran_statement,padded_size=10)
     tokens                  = orig_tokens
+    print(tokens)
     idx_last_consumed_token = None
     # handle datatype
     datatype            = tokens[0]
     kind                = None
+    DOUBLE_COLON        = "::"
     if tokens[0] == "type":
         # ex: type ( dim3 )
         kind = tokens[2]
@@ -37,7 +39,7 @@ def parse_declaration(fortran_statement):
         kind_tokens = utils.parsingutils.next_tokens_till_open_bracket_is_closed(tokens[2:],open_brackets=1)
         kind = "".join(kind_tokens[:-1])
         idx_last_consumed_token = 2 + len(kind_tokens)-1
-    elif tokens[1] in [",","::"] or tokens[1].isidentifier():
+    elif tokens[1] in [",",DOUBLE_COLON] or tokens[1].isidentifier():
         # ex: integer ,
         # ex: integer ::
         # ex: integer a
@@ -45,22 +47,20 @@ def parse_declaration(fortran_statement):
     else:
         utils.logging.log_error(LOG_PREFIX,"parse_declaration","could not parse datatype in variable declaration statement '{}'".format(fortran_statement))
         sys.exit(2)
+    
     # handle qualifiers
-    qualifiers_raw          = []
     tokens                  = tokens[idx_last_consumed_token+1:] # remove type part tokens
-    print(tokens)
     idx_last_consumed_token = None
-    if tokens[0] == "," and "::" in tokens:
+    if tokens[0] == "," and DOUBLE_COLON in tokens:
         qualifiers = utils.parsingutils.create_comma_separated_list(tokens)
-        # handle intent
-        # handle dimension
-        idx_last_consumed_token == tokens.index("::")
-    elif tokens[0] == "::":
+        idx_last_consumed_token = tokens.index(DOUBLE_COLON)
+    elif tokens[0] == DOUBLE_COLON:
         idx_last_consumed_token = 0
     elif tokens[0] == ",":
         utils.logging.log_error(LOG_PREFIX,"parse_declaration","could not parse qualifier list in variable declaration statement '{}'".format(fortran_statement))
         sys.exit(2)
-
+    qualifiers_raw = utils.parsingutils.create_comma_separated_list(tokens) 
+    
     # handle variables list
     if idx_last_consumed_token != None:
         tokens = tokens[idx_last_consumed_token+1:] # remove qualifier list tokens
@@ -69,6 +69,7 @@ def parse_declaration(fortran_statement):
     # construct declaration tree node
     qualifiers = []
     for qualifier in qualifiers_raw:
+        print(qualifier)
         if qualifier.startswith("dimension"):
             try:
                 qualifiers.append( dimension_qualifier.parseString(qualifier,parseAll=True)[0] )
@@ -88,6 +89,7 @@ def parse_declaration(fortran_statement):
     variables = []
     for var in variables_raw:
         try:
+            print(var)
             variables.append( declared_variable.parseString(var,parseAll=True)[0] )
         except:
             utils.logging.log_error(LOG_PREFIX,"parse_declaration","could not parse variable declaration '{}' in statement '{}'".format(var,fortran_statement))
@@ -98,7 +100,9 @@ def parse_declaration(fortran_statement):
     #print(kind)
     #print(qualifiers_raw)
     #print(variables_raw)
-    return TTDeclaration( fortran_statement,0,declaration_tokens )
+    print(qualifiers)
+    result = TTDeclaration( fortran_statement,0,declaration_tokens )
+    return result
 
 def create_index_records_from_declaration(ttdeclaration):
     """

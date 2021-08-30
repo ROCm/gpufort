@@ -18,7 +18,7 @@ utils.logging.init_logging("log.log",log_format,log_level)
 gfortran_options="-DCUDA"
 
 USE_EXTERNAL_PREPROCESSOR = False
-PROFILING_ENABLE          = True
+PROFILING_ENABLE          = False
 
 index = []
 

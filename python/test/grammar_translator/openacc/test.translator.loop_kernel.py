@@ -4,6 +4,16 @@
 import addtoplevelpath
 import os,sys
 import translator.translator as translator
+import utils.logging
+
+log_format = "[%(levelname)s]\tgpufort:%(message)s"
+log_level                   = "debug2"
+utils.logging.VERBOSE       = True
+utils.logging.LOG_TRACEBACK = False
+utils.logging.init_logging("log.log",log_format,log_level)
+
+
+print("hallo")
 
 print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.stderr)
 
@@ -70,9 +80,8 @@ end do
 
 for snippet in testdata:
     try:
-        result = translator.loop_kernel.parseString(snippet)[0]
-        print(result.omp_f_str(snippet))
-        #result = translator.loop_kernel.parseString(snippet)[0]
+        result = translator.parse_loop_kernel(snippet.split("\n"))
+        #print(result.omp_f_str(snippet))
     except Exception as e:
         print(" - FAILED",file=sys.stderr)
         print("failed to parse '{}'".format(snippet),file=sys.stderr)

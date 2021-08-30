@@ -7,10 +7,11 @@ import traceback
 
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "logging_options.py.in")).read())
 
-__LOG_LEVEL        = "WARNING" # should only be modified by init_logging
-__LOG_LEVEL_AS_INT = getattr(logging,__LOG_LEVEL)
-__LOG_FORMAT       = "%(levelname)s:%(message)s"
-__LOG_FILE_PATH     = None
+__LOG_LEVEL              = "WARNING" # should only be modified by init_logging
+__LOG_LEVEL_AS_INT       = getattr(logging,__LOG_LEVEL)
+__LOG_FORMAT             = "%(levelname)s:%(message)s"
+__LOG_FILE_PATH          = None
+__LOGGING_IS_INITIALIZED = False
 
 ERR_UTILS_LOGGING_UNSUPPORTED_LOG_LEVEL  = 91001
 ERR_UTILS_LOGGING_LOG_DIR_DOES_NOT_EXIST = 91002
@@ -18,12 +19,12 @@ ERR_UTILS_LOGGING_LOG_DIR_DOES_NOT_EXIST = 91002
 def shutdown():
     logging.shutdown()
 
-def init_logging(logfile_base_name,log_format,log_level):
+def init_logging(logfile_basename="log.log",log_format=__LOG_FORMAT,log_level="warning"):
     """
     Init the logging infrastructure.
 
     :param str log_format: The format that the log writer should use.
-    :param str logfile_base_name:  The base name of the log file that this logging module should use.
+    :param str logfile_basename:  The base name of the log file that this logging module should use.
     :return 
     :note: Directory for storing the log file and further options can be specified
            via global variables before calling this method.
@@ -32,6 +33,7 @@ def init_logging(logfile_base_name,log_format,log_level):
     global __LOG_LEVEL_AS_INT
     global __LOG_FORMAT
     global __LOG_FILE_PATH
+    global __LOGGING_IS_INITIALIZED
     global LOG_DIR
     global LOG_DIR_CREATE
     __LOG_FORMAT = log_format
@@ -54,9 +56,10 @@ def init_logging(logfile_base_name,log_format,log_level):
         print("ERROR: "+msg,file=sys.stderr)
         sys.exit(ERR_UTILS_LOGGING_UNSUPPORTED_LOG_LEVEL)
     try:
-        __LOG_FILE_PATH="{0}/{1}".format(log_dir,logfile_base_name)
-        __LOG_LEVEL_AS_INT = getattr(logging,log_level.upper(),getattr(logging,"WARNING"))
-        __LOG_LEVEL        = log_level
+        __LOG_FILE_PATH="{0}/{1}".format(log_dir,logfile_basename)
+        __LOG_LEVEL_AS_INT       = getattr(logging,log_level.upper(),getattr(logging,"WARNING"))
+        __LOG_LEVEL              = log_level
+        __LOGGING_IS_INITIALIZED = True
         logging.basicConfig(format=log_format,filename=__LOG_FILE_PATH,filemode="w", level=__LOG_LEVEL_AS_INT)
     except Exception as e:
         msg = "directory for storing log files '{}' cannot be accessed".format(log_dir)
@@ -87,10 +90,13 @@ def _intrnl_print_message(levelname,message):
       replace("%(message)s",message),file=sys.stderr)
 
 def log_info(prefix,func_name,raw_msg):
+    global __LOGGING_IS_INITIALIZED
     global __LOG_LEVEL_AS_INT
     global VERBOSE
     global LOG_FILTER
-    
+   
+    if not __logging_is_initialized: init_logging()
+
     msg = _intrnl_make_message(prefix,func_name,raw_msg)
     if LOG_FILTER == None or re.search(LOG_FILTER,msg):
         logging.getLogger("").info(msg)
@@ -98,9 +104,12 @@ def log_info(prefix,func_name,raw_msg):
             _intrnl_print_message("INFO",msg)
 
 def log_error(prefix,func_name,raw_msg):
+    global __LOGGING_IS_INITIALIZED
     global VERBOSE
     global LOG_FILTER
     global LOG_TRACEBACK
+
+    if not __LOGGING_IS_INITIALIZED: init_logging()
     
     msg = _intrnl_make_message(prefix,func_name,raw_msg)
     if LOG_FILTER == None or re.search(LOG_FILTER,msg):
@@ -111,9 +120,12 @@ def log_error(prefix,func_name,raw_msg):
         _intrnl_print_message("ERROR",msg)
 
 def log_exception(prefix,func_name,raw_msg):
+    global __LOGGING_IS_INITIALIZED
     global VERBOSE
     global LOG_FILTER
     global LOG_TRACEBACK
+    
+    if not __LOGGING_IS_INITIALIZED: init_logging()
 
     msg = _intrnl_make_message(prefix,func_name,raw_msg)
     if LOG_FILTER == None or re.search(LOG_FILTER,msg):
@@ -127,11 +139,13 @@ def log_exception(prefix,func_name,raw_msg):
         _intrnl_print_message("ERROR",msg)
 
 def log_warning(prefix,func_name,raw_msg):
-    global __LOG_LEVEL_AS_INT
+    global __LOGGING_IS_INITIALIZED
     global VERBOSE
     global LOG_FILTER
     global LOG_TRACEBACK
 
+    if not __LOGGING_IS_INITIALIZED: init_logging()
+    
     msg = _intrnl_make_message(prefix,func_name,raw_msg)
     if LOG_FILTER == None or re.search(LOG_FILTER,msg):
         if LOG_TRACEBACK:
@@ -142,8 +156,11 @@ def log_warning(prefix,func_name,raw_msg):
 
 def log_debug(prefix,func_name,raw_msg,debug_level=1):
     global __LOG_LEVEL_AS_INT
+    global __LOGGING_IS_INITIALIZED
     global VERBOSE
     global LOG_FILTER
+    
+    if not __LOGGING_IS_INITIALIZED: init_logging()
    
     msg = _intrnl_make_message(prefix,func_name,raw_msg)
     if LOG_FILTER == None or re.search(LOG_FILTER,msg):
@@ -182,6 +199,8 @@ def log_enter_function(prefix,func_name,args={}):
     :param str func_name: name of the function
     :param dict args: arguments (identifier and value) that have a meaningful string representation.
     """
+    if not __LOGGING_IS_INITIALIZED: init_logging()
+    
     if len(args):
         addition = " [arguments: "+ ", ".join(a+"="+str(args[a]) for a in args.keys())+"]"
     else:
@@ -195,6 +214,8 @@ def log_leave_function(prefix,func_name,return_vals={}):
     :param str func_name: name of the function
     :param dict ret_vals: arguments (identifier and value) that have a meaningful string representation.
     """
+    if not __LOGGING_IS_INITIALIZED: init_logging()
+    
     if len(return_vals):
         addition = " [return values: "+ ", ".join(a+"="+str(return_vals[a]) for a in return_vals.keys())+"]"
     else:

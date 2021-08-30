@@ -23,14 +23,14 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
   
     behavior:
 
-    - recursively?
     - treat do, do while, if, elseif, else, select and end statements explicitly
     - parse other statements
     - consider comments
     - every call returns a subtree
-    - if
     """
     global LOG_PREFIX
+    
+    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_parse_fortran_code")
 
     # tree node flagging
     def is_declaration_(tokens):
@@ -46,8 +46,7 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
         return not len(statement.strip())
     def is_comment_(tokens,statement):
         cond1 = tokens[0]=="!"
-        cond2 = statement[0] in ["c","*"] and\
-                statement[1]!="$"
+        cond2 = len(statement) and statement[0] in ["c","*"]
         return cond1 or cond2
     def is_cpp_directive_(statement):
         return statement[0] == "#" 
@@ -120,11 +119,12 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
     def append_(node,kind=None):
         nonlocal curr
         nonlocal level
-        node.parent = curr
-        node.indent = "  "*level
+        if isinstance(node,TTNode):
+            node.parent = curr
+            node.indent = "  "*level
         curr.body.append(node)
         if kind != None:
-            utils.logging.log_debug(LOG_PREFIX,"_intrnl_parse_fortran_code.append_","found {} in statement '{}'".format(kind,stmt))
+            utils.logging.log_debug2(LOG_PREFIX,"_intrnl_parse_fortran_code.append_","found {} in statement '{}'".format(kind,stmt))
     def descend_(node,kind,inc_level=True):
         nonlocal curr
         nonlocal stmt
@@ -133,14 +133,14 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
         curr = node
         if inc_level:
             level += 1
-        utils.logging.log_debug(LOG_PREFIX,"_intrnl_parse_fortran_code.append_","enter {} in statement '{}'".format(kind,stmt))
+        utils.logging.log_debug2(LOG_PREFIX,"_intrnl_parse_fortran_code.append_","enter {} in statement '{}'".format(kind,stmt))
     def ascend_(kind):
         nonlocal curr
         nonlocal stmt
         nonlocal level
         curr  = curr.parent
         level = min(level-1,0)
-        utils.logging.log_debug(LOG_PREFIX,"_intrnl_parse_fortran_code.append_","leave {} in statement '{}'".format(kind,stmt))
+        utils.logging.log_debug2(LOG_PREFIX,"_intrnl_parse_fortran_code.append_","leave {} in statement '{}'".format(kind,stmt))
     
     # error handling
     def error_(expr,exception=None):
@@ -163,7 +163,7 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
         utils.logging.log_debug3(LOG_PREFIX,"_intrnl_parse_fortran_code","ignored {} '{}'".format(expr,stmt))
 
     # parser loop
-    ttree               = TTContainer()
+    ttree               = TTRoot()
     curr                = ttree
     curr_offload_region = None 
     curr_offload_loop   = None
@@ -176,17 +176,19 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
             stmt_no_comment = stmt.split("!")[0]
         else:
             stmt_no_comment = stmt
-        utils.logging.log_debug2(LOG_PREFIX,"_intrnl_parse_fortran_code","process statement '{}' (preprocessed: '{}')".format(stmt1,stmt))
+        utils.logging.log_debug3(LOG_PREFIX,"_intrnl_parse_fortran_code","process statement '{}' (preprocessed: '{}')".format(stmt1,stmt))
         if len(tokens):
-            utils.logging.log_debug3(LOG_PREFIX,"_intrnl_parse_fortran_code","tokens=['{}']".format("','".join(tokens)))
+            utils.logging.log_debug4(LOG_PREFIX,"_intrnl_parse_fortran_code","tokens=['{}']".format("','".join(tokens)))
         # tree construction 
-        if is_ignored_statement_(tokens):
+        if is_blank_line_(stmt):
+            if type(curr) != TTRoot:
+                append_(stmt,"blank line")
+        elif is_ignored_statement_(tokens):
             ignore_("statement")
         elif is_comment_(tokens,stmt):
-            comment = re.split("!|c|\*",stmt1,1,re.IGNORECASE)[1]
-            append_("// "+comment+"\n","comment")
-        elif is_blank_line_(stmt):
-            append_(stmt,"blank line")
+            if type(curr) != TTRoot:
+                comment = re.split("!|^[c*]",stmt1,1,re.IGNORECASE)[1]
+                append_("// "+comment+"\n","comment")
         elif is_fortran_directive_(tokens,stmt):
             try:
                 if is_ignored_fortran_directive_(tokens):
@@ -288,4 +290,6 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
                 error_("subroutine call",e)
         else:
             error_("unknown and not ignored")
+    
+    utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_parse_fortran_code")
     return ttree

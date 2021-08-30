@@ -332,10 +332,10 @@ def init_logging(input_filepath):
     global LOG_FORMAT
 
     input_filepath_hash = hashlib.md5(input_filepath.encode()).hexdigest()[0:8]
-    logfile_base_name = "log-{}.log".format(input_filepath_hash)
+    logfile_basename = "log-{}.log".format(input_filepath_hash)
    
     log_format   = LOG_FORMAT.replace("%(filename)s",input_filepath)
-    log_filepath = utils.logging.init_logging(logfile_base_name,log_format,LOG_LEVEL)
+    log_filepath = utils.logging.init_logging(logfile_basename,log_format,LOG_LEVEL)
  
     msg = "input file: {0} (log id: {1})".format(input_filepath,input_filepath_hash)
     utils.logging.log_info(LOG_PREFIX,"init_logging",msg)

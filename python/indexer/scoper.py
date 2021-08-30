@@ -321,15 +321,29 @@ def search_scope_for_variable(scope,variable_expression,resolve=False):
         return EMPTY_VARIABLE, False
     else:
         # resolve
-        # TODO not sure where to put code to re-calculate bytes per element etc
-        # probably kee the kind information abstract until resolution is specified
         if resolve:
             for ivar in reversed(scope["variables"]):
                 if "parameter" in ivar["qualifiers"]:
                     for entry in ["kind","unspecified_bounds","lbounds","counts","total_count","total_bytes","index_macro"]:
-                        result[entry].replace(ivar["name"],"("+ivar["value"]+")")
+                        if entry in result:
+                            dest_tokens = utils.parsingutils.tokenize(result[entry])
+                            modified_entry = ""
+                            # TODO handle selected kind here
+                            for tk in dest_tokens:
+                                modified_entry += tk.replace(ivar["name"],"("+ivar["value"]+")")
+                            result[entry] = modified_entry
                 if "parameter" in result["qualifiers"]:
-                    result["value"].replace(ivar["value"],"("+ivar["value"]+")")
+                    if not result["f_type"] in ["character","type"]:
+                        result["value"].replace(ivar["value"],"("+ivar["value"]+")")
+            for entry in ["value","kind","unspecified_bounds","lbounds","counts","total_count","total_bytes","index_macro"]:
+                if entry in result:
+                    entry_value = result[entry] 
+                    try:
+                       code = compile(entry_value, "<string>", "eval")
+                       entry_value = str(eval(code, {"__builtins__": {}},{}))
+                    except:
+                        pass
+                    result[entry] = entry_value
 
         utils.logging.log_debug2(LOG_PREFIX,"search_scope_for_variable",\
           "entry found for variable '{}'".format(variable_tag)) 

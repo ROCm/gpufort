@@ -79,6 +79,9 @@ class TTContainer(TTNode):
             result += make_c_str(child).rstrip()+"\n"
         return result.rstrip()
 
+class TTRoot(TTContainer):
+    pass
+
 def find_all_matching(body,filter_expr=lambda x: True,N=-1):
     """
     Find all nodes in tree of type 'searched_type'.

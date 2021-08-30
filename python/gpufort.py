@@ -23,7 +23,7 @@ exec(open(os.path.join(__GPUFORT_PYTHON_DIR, "gpufort_options.py.in")).read())
 # arg for kernel generator
 # array is split into multiple args
 
-def create_index(search_dirs,options,filepath):
+def create_index(search_dirs,options,filepath,linemaps=None):
     global LOG_PREFIX
     global SKIP_CREATE_GPUFORT_MODULE_FILES
    
@@ -35,7 +35,10 @@ def create_index(search_dirs,options,filepath):
     
     index = []
     if not SKIP_CREATE_GPUFORT_MODULE_FILES:
-        indexer.scan_file(filepath,options_as_str,index)
+        if linemaps != None:
+            indexer.update_from_linemaps(linemaps,index)
+        else:
+            indexer.scan_file(filepath,options_as_str,index)
         output_dir = os.path.dirname(filepath)
         indexer.write_gpufort_module_files(index,output_dir)
     index.clear()
@@ -44,7 +47,7 @@ def create_index(search_dirs,options,filepath):
     utils.logging.log_leave_function(LOG_PREFIX,"create_index")
     return index
 
-def _intrnl_translate_source(infilepath,stree,records,index,preamble):
+def _intrnl_translate_source(infilepath,stree,linemaps,index,preamble):
     global LOG_PREFIX
     global MODIFIED_FILE_EXT
     global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
@@ -54,7 +57,7 @@ def _intrnl_translate_source(infilepath,stree,records,index,preamble):
     # post process
     scanner.postprocess(stree,index,fort2hip.FORTRAN_MODULE_SUFFIX)
     
-    # transform statements; to 'records'
+    # transform statements; to 'linemaps'
     def transform_(stnode):
         stnode.transform_statements(index)
         for child in stnode._children:
@@ -63,7 +66,7 @@ def _intrnl_translate_source(infilepath,stree,records,index,preamble):
 
     # write the file
     outfilepath = infilepath + MODIFIED_FILE_EXT
-    linemapper.write_modified_file(outfilepath,infilepath,records,preamble)
+    linemapper.write_modified_file(outfilepath,infilepath,linemaps,preamble)
 
     # prettify the file
     if PRETTIFY_MODIFIED_TRANSLATION_SOURCE:
@@ -377,7 +380,8 @@ if __name__ == "__main__":
         profiler = cProfile.Profile()
         profiler.enable()
     #
-    index = create_index(INCLUDE_DIRS,defines,input_filepath)
+    linemaps = linemapper.read_file(input_filepath,defines)
+    index   = create_index(INCLUDE_DIRS,defines,input_filepath,linemaps)
     if not ONLY_CREATE_GPUFORT_MODULE_FILES:
         # configure fort2hip
         if ONLY_EMIT_KERNELS_AND_LAUNCHERS:
@@ -388,8 +392,7 @@ if __name__ == "__main__":
             fort2hip.EMIT_CPU_IMPLEMENTATION = True
         if args.emit_debug_code:
             fort2hip.EMIT_DEBUG_CODE = True
-        records = linemapper.read_file(input_filepath,defines)
-        stree   = scanner.parse_file(records,index,input_filepath)    
+        stree   = scanner.parse_file(linemaps,index,input_filepath)    
  
         # extract kernels
         if "hip" in scanner.DESTINATION_DIALECT: 
@@ -406,7 +409,7 @@ if __name__ == "__main__":
         else:
             preamble = None
         if not (ONLY_EMIT_KERNELS or ONLY_EMIT_KERNELS_AND_LAUNCHERS):
-            _intrnl_translate_source(input_filepath,stree,records,index,preamble) 
+            _intrnl_translate_source(input_filepath,stree,linemaps,index,preamble) 
     #
     if PROFILING_ENABLE:
         profiler.disable() 

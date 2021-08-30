@@ -820,7 +820,7 @@ class TTDeclaration(TTNode,Attributed):
             if ttdeclaredvariable.name().lower() == name.lower():
                 result = make_c_str(ttdeclaredvariable._rhs)
         return result
-    def __datatype_f_str(self):
+    def datatype_f_str(self):
         global CHARACTER_FORMAT
         global DERIVED_TYPE_FORMAT
         global BASIC_TYPE_FORMAT
@@ -846,7 +846,7 @@ class TTDeclaration(TTNode,Attributed):
         ignore_list    = map(str.lower, self.ignore_list + extra_ignore_list)
         qualifiers_str = ", " if len(self.qualifiers) else ""
         qualifiers_str += ", ".join([make_f_str(q) for q in self.qualifiers])
-        result = "{0}{1} :: ".format(self.__datatype_f_str(),qualifiers_str)
+        result = "{0}{1} :: ".format(self.datatype_f_str(),qualifiers_str)
         ignored_vars = 0
         for ttdeclaredvariable in self._rhs:
             if not ttdeclaredvariable.name(make_f_str).lower() in ignore_list:
@@ -883,7 +883,7 @@ class TTSingleLineIf(TTNode):
         return "if ({0}) then\n{1}\nendif\n".format(make_f_str(self._condition).strip("\n"), make_f_str(self.body).strip())
     def __str__(self):
         """
-        Makes it possible to use it with pyparsing's transform_string method
+        Makes it possible to use it with pyparsing's transformString method
         """
         return self.multiline_if_f_str()
 

@@ -213,7 +213,7 @@ def prepare_fortran_snippet(fortran_snippet):
     """
     result = pIgnore.sub("",fortran_snippet)
     result = p_else_if.sub("else if",result)
-    result = power.transform_string(result)
+    result = power.transformString(result)
     return result
 
 def postprocess_c_snippet(c_snippet):

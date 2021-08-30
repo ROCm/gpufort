@@ -36,40 +36,40 @@ class Tagged:
         return result
 
 class STNode:
-    def __init__(self,parent,first_record,first_statement_index=0):
+    def __init__(self,parent,first_linemap,first_statement_index=0):
         self.name                    = None
         self.kind                    = None
-        self._records                = []
-        if first_record != None:
-            self._records.append(first_record)
-        self._first_statement_index    = first_statement_index
-        self._last_statement_index     = first_statement_index # inclusive
+        self._linemaps               = []
+        if first_linemap != None:
+            self._linemaps.append(first_linemap)
+        self._first_statement_index  = first_statement_index
+        self._last_statement_index   = first_statement_index # inclusive
         self._children               = []
         self._parent                 = parent
-        self._ignore_in_s_2s_translation = False 
-    def __get_record_content(self,key,first_record_first_elem=0,last_record_last_elem=-1):
-        """Collects entries for the given key from all records associated
+        self._ignore_in_s2s_translation = False 
+    def __get_linemap_content(self,key,first_linemap_first_elem=0,last_linemap_last_elem=-1):
+        """Collects entries for the given key from all linemaps associated
         with this node."""
         result = []
-        for i,record in enumerate(self._records):
+        for i,linemap in enumerate(self._linemaps):
             if i == 0: 
-                result += record[key][first_record_first_elem:]
-            elif i == len(self._records)-1:
-                if last_record_last_elem == -1:
-                    result += record[key]
+                result += linemap[key][first_linemap_first_elem:]
+            elif i == len(self._linemaps)-1:
+                if last_linemap_last_elem == -1:
+                    result += linemap[key]
                 else:
-                    result += record[key][0:last_record_last_elem+1]
+                    result += linemap[key][0:last_linemap_last_elem+1]
             else:
-                result += record[key]
+                result += linemap[key]
         return result
-    def add_record(self,record):
-        """Adds a record if it differs from the last record."""
-        if not len(self._records) or self._records[-1]["lineno"] < record["lineno"]:
-            self._records.append(record)
+    def add_linemap(self,linemap):
+        """Adds a linemap if it differs from the last linemap."""
+        if not len(self._linemaps) or self._linemaps[-1]["lineno"] < linemap["lineno"]:
+            self._linemaps.append(linemap)
     def complete_init(self):
         """Complete the initialization
         
-        This routine is called after all associated records have
+        This routine is called after all associated linemaps have
         been added to this node.
         """
         pass
@@ -86,14 +86,14 @@ class STNode:
         for i,line in enumerate(lines):
             lines[i] = line.replace(" ","").replace("\t","").replace("\n","").replace("&","")
     def lines(self):
-        return self.__get_record_content("lines")
+        return self.__get_linemap_content("lines")
     def statements(self,include_none_entries=False):
         """
-        Extract the statements associated with this node from the records associated with this node.
+        Extract the statements associated with this node from the linemaps associated with this node.
         :param bool include_none_entries: Also include entries that are None [default=False].
-        :note: None entries might have been introduced by other nodes transforming the same record(s).
+        :note: None entries might have been introduced by other nodes transforming the same linemap(s).
         """
-        result = self.__get_record_content("statements",\
+        result = self.__get_linemap_content("statements",\
           self._first_statement_index,self._last_statement_index)
         if not include_none_entries:
             return [stmt.rstrip("\n\t ;") for stmt in result if stmt != None]
@@ -101,18 +101,18 @@ class STNode:
         """
         :return: Inclusive first line number belonging to this object.
         """
-        return self._records[0]["lineno"]
+        return self._linemaps[0]["lineno"]
     def max_lineno(self):
         """
         :return: Inclusive last line number belonging to this object.
         """
-        last_record = self._records[-1]
-        return last_record["lineno"]+len(last_record["lines"])-1
+        last_linemap = self._linemaps[-1]
+        return last_linemap["lineno"]+len(last_linemap["lines"])-1
     def first_line(self):
         """
-        :return: First line in first record.
+        :return: First line in first linemap.
         """
-        return self._records[0]["lines"][0]
+        return self._linemaps[0]["lines"][0]
     def first_line_indent(self):
         """Indent chars at beginning of first line."""
         first_line      = self.first_line()
@@ -120,9 +120,9 @@ class STNode:
         return first_line[0:num_indent_chars]
     def first_statement(self):
         """
-        :return: First line in first record.
+        :return: First line in first linemap.
         """
-        return self._records[0]["statements"][0]
+        return self._linemaps[0]["statements"][0]
     def append(self,child):
         self._children.append(child)
     def list_of_parents(self):
@@ -177,15 +177,15 @@ class STNode:
              result.append(text[start:end])
         return result
     def add_to_prolog(self,line):
-        """Add some prolog lines to the first record."""
-        if not line in self._records[0]["prolog"]:
-            self._records[0]["prolog"].append(line)
+        """Add some prolog lines to the first linemap."""
+        if not line in self._linemaps[0]["prolog"]:
+            self._linemaps[0]["prolog"].append(line)
     def add_to_epilog(self,line):
-        """Add some epilog lines to the first record."""
-        if not line in self._records[-1]["epilog"]:
-            self._records[-1]["epilog"].append(line)
+        """Add some epilog lines to the first linemap."""
+        if not line in self._linemaps[-1]["epilog"]:
+            self._linemaps[-1]["epilog"].append(line)
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
-        """Transforms statements associated with underlying records (hook)
+        """Transforms statements associated with underlying linemaps (hook)
         :param line: An excerpt from a Fortran file, possibly multiple lines
         :type line: str
         :return: If the text was changed at all
@@ -195,67 +195,67 @@ class STNode:
             return joined_lines, False
         else:
             return joined_statements, False
-    def __modify_records(self,substitution):
+    def __modify_linemaps(self,substitution):
         """
-        Replaces first statement associated with node in first associated record by 'subst' argument.
-        Replaces all other other statements in first and all other records associated
-        with node by 'None'. Marks all records associated with this node as modified.
+        Replaces first statement associated with node in first associated linemap by 'subst' argument.
+        Replaces all other other statements in first and all other linemaps associated
+        with node by 'None'. Marks all linemaps associated with this node as modified.
         :param str subst: The text that should be written in first associated statement in first
-                          associated record.
+                          associated linemap.
         :note: Post processing working with the modified statements must ignore all 'None' statements.
         :note: We assume that the statements of an expression that spreads over multiples lines are only modified once.
         :note: We write 'None' entries into the statements instead of clipping them away because 
                if multiple statements per line are present and other nodes modify those, removing elements from the list
                of statements might mess with the indexing.
         """
-        first_record_first_elem = self._first_statement_index
-        last_record_last_elem   = self._last_statement_index
-        # write subst into first record first statement
-        self._records[0]["modified"]                         = True
-        self._records[0]["statements"][first_record_first_elem] = substitution
-        assert len(self._records), "self._records should not be empty"
-        last_record_ubound = last_record_last_elem
-        if last_record_ubound != -1:
-            last_record_ubound += 1
+        first_linemap_first_elem = self._first_statement_index
+        last_linemap_last_elem   = self._last_statement_index
+        # write subst into first linemap first statement
+        self._linemaps[0]["modified"]                         = True
+        self._linemaps[0]["statements"][first_linemap_first_elem] = substitution
+        assert len(self._linemaps), "self._linemaps should not be empty"
+        last_linemap_ubound = last_linemap_last_elem
+        if last_linemap_ubound != -1:
+            last_linemap_ubound += 1
         def assign_none_(statements,lbound=0,ubound=-1):
             if ubound == -1:
                 ubound = len(statements)
             for i in range(lbound,ubound):
                 statements[i] = None
-        if len(self._records) == 1:
-            assign_none_(self._records[0]["statements"],first_record_first_elem+1,last_record_ubound)
+        if len(self._linemaps) == 1:
+            assign_none_(self._linemaps[0]["statements"],first_linemap_first_elem+1,last_linemap_ubound)
         else:
-            self._records[-1]["modified"] = True
-            assign_none_(self._records[0]["statements"],first_record_first_elem+1)
-            assign_none_(self._records[-1]["statements"],0,last_record_ubound)
-            for record in self._records[1:-1]: # upper bound exclusive
-                record["modified"] = True
-                assign_none_(record["statements"])
+            self._linemaps[-1]["modified"] = True
+            assign_none_(self._linemaps[0]["statements"],first_linemap_first_elem+1)
+            assign_none_(self._linemaps[-1]["statements"],0,last_linemap_ubound)
+            for linemap in self._linemaps[1:-1]: # upper bound exclusive
+                linemap["modified"] = True
+                assign_none_(linemap["statements"])
     def transform_statements(self,index_hints=[]):
         """
         Replaces original statements by generated code. Modifies the 'statements' 
-        entries of the associated records.
+        entries of the associated linemaps.
         :param list index_hints: TBA
-        :note: When multiple records contain the expression associated with this note,
+        :note: When multiple linemaps contain the expression associated with this note,
                the transformed code is written into the first associated statement in 
-               the first record and the remaining associated statements in the first
-               and all other records are replaced by None.
+               the first linemap and the remaining associated statements in the first
+               and all other linemaps are replaced by None.
         :note: When prepending a preamble, it is assumed that the modified statement is the 
-        first in the record/line and that this statement is only modified once.
+        first in the linemap/line and that this statement is only modified once.
         :note: When appending an epilog, it is assumed that the modified statement is the 
-        last in the record/line and that this statement is only modified once.
+        last in the linemap/line and that this statement is only modified once.
         """
-        if not self._ignore_in_s_2s_translation:
-            have_first_in_first_record    = self._first_statement_index == 0
-            have_last_in_last_record      = self._last_statement_index  == -1 or\
-                                        self._last_statement_index  == len(self._records[-1]["statements"])-1
-            statements_fully_cover_lines = have_first_in_first_record and have_last_in_last_record
+        if not self._ignore_in_s2s_translation:
+            have_first_in_first_linemap    = self._first_statement_index == 0
+            have_last_in_last_linemap      = self._last_statement_index  == -1 or\
+                                        self._last_statement_index  == len(self._linemaps[-1]["statements"])-1
+            statements_fully_cover_lines = have_first_in_first_linemap and have_last_in_last_linemap
         
             joined_lines                = "".join(self.lines())
             joined_statements           = "\n".join(self.statements())
             transformed_code, modified  = self.transform(joined_lines,joined_statements,statements_fully_cover_lines,index_hints)
             if modified:
-                self.__modify_records(transformed_code)
+                self.__modify_linemaps(transformed_code)
 
 class STEndOrReturn(STNode):
     pass
@@ -265,20 +265,20 @@ class STRoot(STNode):
         STNode.__init__(self,None,None,-1)
 
 class STModule(STNode,Tagged):
-    def __init__(self,name,parent,first_record,first_record_first_statement):
-        STNode.__init__(self,parent,first_record,first_record_first_statement)
+    def __init__(self,name,parent,first_linemap,first_linemap_first_statement):
+        STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
         self.name = name.lower()
         self.kind = "module"
 
 class STProgram(STNode,Tagged):
-    def __init__(self,name,parent,first_record,first_record_first_statement):
-        STNode.__init__(self,parent,first_record,first_record_first_statement)
+    def __init__(self,name,parent,first_linemap,first_linemap_first_statement):
+        STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
         self.name = name.lower()
         self.kind = "program"
 
 class STUseStatement(STNode):
-    def __init__(self,parent,first_record,first_record_first_statement):
-        STNode.__init__(self,parent,first_record,first_record_first_statement)
+    def __init__(self,parent,first_linemap,first_linemap_first_statement):
+        STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
         # TODO clean
         indent  = self.first_line_indent() 
@@ -295,13 +295,13 @@ class STUseStatement(STNode):
         return snippet, use_cuda
 
 class STPlaceHolder(STNode):
-    def __init__(self,parent,first_record,first_record_first_statement):
-        STNode.__init__(self,parent,first_record,first_record_first_statement)
+    def __init__(self,parent,first_linemap,first_linemap_first_statement):
+        STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
         self.name = None
 
 class STProcedure(STNode,Tagged):
-    def __init__(self,name,kind,parent,first_record,first_record_first_statement,index):
-        STNode.__init__(self,parent,first_record,first_record_first_statement)
+    def __init__(self,name,kind,parent,first_linemap,first_linemap_first_statement,index):
+        STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
         self.name = name
         self.kind = kind
         self.code = []
@@ -351,11 +351,11 @@ class STProcedure(STNode,Tagged):
             return original, False
 
 class STDirective(STNode):
-    def __init__(self,parent,first_record,first_record_first_statement,directive_no,sentinel="!$cuf"):
-        STNode.__init__(self,parent,first_record,first_record_first_statement)
+    def __init__(self,parent,first_linemap,first_linemap_first_statement,directive_no,sentinel="!$cuf"):
+        STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
         self._sentinel        = sentinel
         self._directive_no     = directive_no
-        self._first_directive  = self._records[0]["statements"][0]
+        self._first_directive  = self._linemaps[0]["statements"][0]
     def single_line_statement(self):
         """
         Express the statement as lower case single-line statement
@@ -363,8 +363,8 @@ class STDirective(STNode):
         return self._first_directive
 
 class STLoopKernel(STNode):
-    def __init__(self,parent,first_record,first_record_first_statement):
-        STNode.__init__(self,parent,first_record,first_record_first_statement)
+    def __init__(self,parent,first_linemap,first_linemap_first_statement):
+        STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
         self.grid_f_str             = None
         self.block_f_str            = None
         self.sharedmem_f_str        = "0" # set from extraction routine
@@ -410,9 +410,9 @@ class STDeclaration(STNode):
     Complex(DP), allocatable, device :: dev_array(:,:)
     ```
     """
-    def __init__(self,parent,first_record,first_record_first_statement):
-        STNode.__init__(self,parent,first_record,first_record_first_statement)
-        self._ttdeclaration   = translator.parse_declaration(self.first_statement())[0]
+    def __init__(self,parent,first_linemap,first_linemap_first_statement):
+        STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
+        self._ttdeclaration   = translator.parse_declaration(self.first_statement())
         self._vars            = [name.lower() for name in self._ttdeclaration.variable_names()]
     def create_codegen_context(self):
         return translator.create_index_records_from_declaration(self._ttdeclaration)
@@ -432,7 +432,7 @@ class STDeclaration(STNode):
         else:
             index = copy.copy(scoper.EMPTY)
             index["variables"] = self.create_codegen_context()
-        original_datatype          = translator.make_f_str(self._ttdeclaration._datatype)
+        original_datatype          = translator.make_f_str(self._ttdeclaration.datatype_f_str())
         original_qualifiers        = [translator.make_f_str(q).lower() for q in self._ttdeclaration.qualifiers]
         unchanged_variables        = []  
         new_device_pointer_variables = []
@@ -450,9 +450,9 @@ class STDeclaration(STNode):
                index,self._parent.tag(),\
                  var_name)
              rank           = ivar["rank"]
-             has_device      = ["device"] in ivar["qualifiers"]
-             has_pinned      = ["pinned"] in ivar["qualifiers"]
-             has_allocatable = ["allocatable"] in ivar["qualifiers"]  
+             has_device      = "device" in ivar["qualifiers"]
+             has_pinned      = "pinned" in ivar["qualifiers"]
+             has_allocatable = "allocatable" in ivar["qualifiers"]  
              # clean qualifiers
              new_qualifiers = []
              for q in original_qualifiers:
@@ -485,14 +485,14 @@ class STAttributes(STNode):
     CUDA Fortran specific intrinsic that needs to be removed/commented out
     in any case.
     """
-    def __init__(self,parent,first_record,first_record_first_statement):
-        STNode.__init__(self,parent,first_record,first_record_first_statement)
+    def __init__(self,parent,first_linemap,first_linemap_first_statement):
+        STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]): # TODO
         return "", True
 
 class STNonZeroCheck(STNode):
-    def __init__(self,parent,first_record,first_record_first_statement):
-        STNode.__init__(self,parent,first_record,first_record_first_statement)
+    def __init__(self,parent,first_linemap,first_linemap_first_statement):
+        STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]): # TODO
         result = snippet
         transformed = False
@@ -509,8 +509,8 @@ class STNonZeroCheck(STNode):
         return result, transformed
 
 class STAllocated(STNode):
-    def __init__(self,parent,first_record,first_record_first_statement):
-        STNode.__init__(self,parent,first_record,first_record_first_statement)
+    def __init__(self,parent,first_linemap,first_linemap_first_statement):
+        STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]): # TODO
         def repl(parse_result):
             var_name    = parse_result.var_name()
@@ -523,8 +523,8 @@ class STAllocated(STNode):
         return result, transformed
 
 class STAllocate(STNode):
-    def __init__(self,parent,first_record,first_record_first_statement):
-        STNode.__init__(self,parent,first_record,first_record_first_statement)
+    def __init__(self,parent,first_linemap,first_linemap_first_statement):
+        STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]): # TODO
         indent = self.first_line_indent()
         def repl(parse_result):
@@ -550,8 +550,8 @@ class STAllocate(STNode):
         return utils.pyparsingutils.replace_all(joined_statements,translator.allocate,repl)
              
 class STDeallocate(STNode):
-    def __init__(self,parent,first_record,first_record_first_statement):
-        STNode.__init__(self,parent,first_record,first_record_first_statement)
+    def __init__(self,parent,first_linemap,first_linemap_first_statement):
+        STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]): # TODO
         """
         :note: `wrap_in_if_def` can be deactivated if a higher level function
@@ -579,8 +579,8 @@ class STDeallocate(STNode):
         return utils.pyparsingutils.replace_all(joined_statements,translator.deallocate,repl)
          
 class STMemcpy(STNode):
-    def __init__(self,parent,first_record,first_record_first_statement):
-        STNode.__init__(self,parent,first_record,first_record_first_statement)
+    def __init__(self,parent,first_linemap,first_linemap_first_statement):
+        STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]): # TODO
         def repl_memcpy(parse_result):
             dest_name = parse_result.dest_name_f_str()
@@ -600,8 +600,8 @@ class STMemcpy(STNode):
         return utils.pyparsingutils.replace_all(joined_statements,translator.memcpy,repl_memcpy)
 
 class STCudaLibCall(STNode):
-    def __init__(self,parent,first_record,first_record_first_statement):
-        STNode.__init__(self,parent,first_record,first_record_first_statement)
+    def __init__(self,parent,first_linemap,first_linemap_first_statement):
+        STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
         self._cuda_api = ""
         self._has_cublas = False
     def has_cublas(self):

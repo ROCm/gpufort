@@ -7,16 +7,18 @@ import addtoplevelpath
 import indexer.indexer as indexer
 import indexer.scoper as scoper
 import utils.logging
+import linemapper.linemapper as linemapper
 
 log_format = "[%(levelname)s]\tgpufort:%(message)s"
 log_level                   = "debug2"
-utils.logging.VERBOSE       = True
-utils.logging.LOG_TRACEBACK = True
+utils.logging.VERBOSE       = False
+utils.logging.LOG_TRACEBACK = False
 utils.logging.init_logging("log.log",log_format,log_level)
 
 gfortran_options="-DCUDA"
 
-PROFILING_ENABLE = False
+USE_EXTERNAL_PREPROCESSOR = False
+PROFILING_ENABLE          = True
 
 index = []
 
@@ -31,11 +33,18 @@ class TestIndexer(unittest.TestCase):
     def test_0_donothing(self):
         pass 
     def test_1_indexer_scan_files(self):
+        global PROFILING_ENABLE
+        global USE_EXTERNAL_PREPROCESSOR
+        
         if PROFILING_ENABLE:
             profiler = cProfile.Profile()
             profiler.enable()
-        indexer.scan_file("test_modules.f90",gfortran_options,self._index)
-        indexer.scan_file("test1.f90",gfortran_options,self._index)
+        if USE_EXTERNAL_PREPROCESSOR:
+            indexer.scan_file("test_modules.f90",gfortran_options,self._index)
+            indexer.scan_file("test1.f90",gfortran_options,self._index)
+        else:
+            indexer.update_from_linemaps(linemapper.read_file("test_modules.f90",gfortran_options),self._index)
+            indexer.update_from_linemaps(linemapper.read_file("test1.f90",gfortran_options),self._index)
         if PROFILING_ENABLE:
             profiler.disable() 
             s = io.StringIO()

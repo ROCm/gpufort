@@ -275,7 +275,7 @@ def _intrnl_update_context_from_loop_kernels(loop_kernels,index,hip_context,fCon
         
         launch_bounds = GET_LAUNCH_BOUNDS(kernel_name)
         if launch_bounds != None and len(launch_bounds):
-            hip_kernel_dict["launch_bounds"]      = "_intrnl_launch_bounds___({})".format(launch_bounds)
+            hip_kernel_dict["launch_bounds"]      = "__launch_bounds___({})".format(launch_bounds)
         else:
             hip_kernel_dict["launch_bounds"]      = ""
         hip_kernel_dict["size"]                   = _intrnl_convert_dim3(parse_result.problem_size(),dimensions,do_filter=False)
@@ -450,7 +450,7 @@ def _intrnl_update_context_from_device_procedures(device_procedures,index,hip_co
         hip_kernel_dict = {}
         launch_bounds = GET_LAUNCH_BOUNDS(kernel_name)
         if launch_bounds != None and len(launch_bounds) and stprocedure.is_kernel_subroutine():
-            hip_kernel_dict["launch_bounds"]     = "_intrnl_launch_bounds___({})".format(launch_bounds)
+            hip_kernel_dict["launch_bounds"]     = "__launch_bounds___({})".format(launch_bounds)
         else:
             hip_kernel_dict["launch_bounds"]     = ""
         hip_kernel_dict["generate_debug_code"]   = EMIT_DEBUG_CODE
@@ -569,7 +569,7 @@ def generate_hip_files(stree,index,kernels_to_convert_to_hip,translation_source_
         if not len(kernels_to_convert_to_hip):
             return False
         else: 
-            condition1 = not kernel._ignore_in_s_2s_translation
+            condition1 = not kernel._ignore_in_s2s_translation
             condition2 = \
                     kernels_to_convert_to_hip[0] == "*" or\
                     kernel.min_lineno() in kernels_to_convert_to_hip or\
@@ -603,9 +603,9 @@ def generate_hip_files(stree,index,kernels_to_convert_to_hip,translation_source_
         # derivedtypes = ....
         
         # TODO handle includes
-        imodule = next((irecord for irecord in index if irecord["name"] == module_name),None)
+        imodule = next((ilinemap for ilinemap in index if ilinemap["name"] == module_name),None)
         if imodule == None:
-            utils.logging.log_error(LOG_PREFIX,"generate_hip_files","could not find record for module '{}'.".format(module_name))
+            utils.logging.log_error(LOG_PREFIX,"generate_hip_files","could not find linemap for module '{}'.".format(module_name))
             sys.exit() # TODO add error code
         includes = _intrnl_create_includes_from_used_modules(imodule,index)
         if len(loop_kernels) or len(device_procedures):

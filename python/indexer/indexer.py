@@ -64,6 +64,36 @@ def _intrnl_read_fortran_file(filepath,preproc_options):
     utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_read_fortran_file")
     return filtered_statements
 
+def _intrnl_collect_statements(linemaps):
+    """Filter out relevant statements from linemaps.
+    @see linemapper
+    """
+    global PREPROCESS_FORTRAN_FILE
+    global pFilter
+    global p_anti_filter
+    global pContinuation
+    global LOG_PREFIX
+
+    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_collect_statements")
+    
+    def consider_statement(stripped_statement):
+        passes_filter = pFilter.match(stripped_statement) != None
+        return passes_filter
+    # filter statements
+    filtered_statements = []
+    for linemap in linemaps:
+        if linemap["is_active"]:
+            for stmt in linemap["statements"]:
+                stripped_statement = stmt.lower().strip(" \t\n")
+                if consider_statement(stripped_statement):
+                    utils.logging.log_debug3(LOG_PREFIX,"_intrnl_collect_statements","select statement '{}'".format(stripped_statement))
+                    filtered_statements.append(stripped_statement)
+                else:
+                    utils.logging.log_debug3(LOG_PREFIX,"_intrnl_collect_statements","ignore statement '{}'".format(stripped_statement))
+    
+    utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_collect_statements")
+    return filtered_statements
+
 class __Node():
     def __init__(self,kind,name,data,parent=None):
         self._kind     = kind
@@ -74,18 +104,18 @@ class __Node():
         return "{}: {}".format(self._name,self._data)
     __repr__ = __str__
 
-def _intrnl_parse_file(file_statements,filepath):
+def _intrnl_parse_statements(file_statements,filepath):
     global PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE
     global PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE 
 
-    utils.logging.log_enter_function(LOG_PREFIX,"__parse_file",{"filepath":filepath})
+    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_parse_statements",{"filepath":filepath})
     # Regex
     datatype_reg = Regex(r"\b(type\s*\(|character|integer|logical|real|complex|double\s+precision)\b")
 
     index = []
 
     access_lock   = threading.Lock()
-    utils.logging.log_debug(LOG_PREFIX,"__parse_file","create thread pool of size {} for process variable declarations".format(\
+    utils.logging.log_debug(LOG_PREFIX,"_intrnl_parse_statements","create thread pool of size {} for process variable declarations".format(\
       PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE))
     task_executor = concurrent.futures.ThreadPoolExecutor(\
       max_workers=PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE)
@@ -93,12 +123,12 @@ def _intrnl_parse_file(file_statements,filepath):
     total_num_tasks = 0
  
     def log_enter_job_or_task_(parent_node,msg):
-        utils.logging.log_debug3(LOG_PREFIX,"__parse_file","[thread-id={3}][parent-node={0}:{1}] {2}".format(\
+        utils.logging.log_debug3(LOG_PREFIX,"_intrnl_parse_statements","[thread-id={3}][parent-node={0}:{1}] {2}".format(\
               parent_node._kind, parent_node._name, msg,\
               threading.get_ident()))
         
     def log_leave_job_or_task_(parent_node,msg):
-        utils.logging.log_debug2(LOG_PREFIX+"__parse_file","[thread-id={3}][parent-node={0}:{1}] {2}".format(\
+        utils.logging.log_debug2(LOG_PREFIX+"_intrnl_parse_statements","[thread-id={3}][parent-node={0}:{1}] {2}".format(\
               parent_node._kind, parent_node._name, msg,\
               threading.get_ident()))
     
@@ -116,7 +146,7 @@ def _intrnl_parse_file(file_statements,filepath):
             ttdeclaration = translator.parse_declaration(input_text)
             variables = translator.create_index_records_from_declaration(ttdeclaration)
         except Exception as e:
-            utils.logging.log_exception(LOG_PREFIX,"__parse_file.ParseDeclarationTask_","failed: "+str(e))
+            utils.logging.log_exception(LOG_PREFIX,"_intrnl_parse_statements.ParseDeclarationTask_","failed: "+str(e))
             sys.exit(2)
         access_lock.acquire()
         parent_node._data["variables"] += variables
@@ -205,20 +235,20 @@ def _intrnl_parse_file(file_statements,filepath):
     def log_enter_node_():
         nonlocal current_node
         nonlocal current_statement
-        utils.logging.log_debug(LOG_PREFIX,"__parse_file","[current-node={0}:{1}] enter {2} '{3}' in statement: '{4}'".format(\
+        utils.logging.log_debug(LOG_PREFIX,"_intrnl_parse_statements","[current-node={0}:{1}] enter {2} '{3}' in statement: '{4}'".format(\
           current_node._parent._kind,current_node._parent._name,
           current_node._kind,current_node._name,\
           current_statement))
     def log_leave_node_():
         nonlocal current_node
         nonlocal current_statement
-        utils.logging.log_debug(LOG_PREFIX,"__parse_file","[current-node={0}:{1}] leave {0} '{1}' in statement: '{2}'".format(\
+        utils.logging.log_debug(LOG_PREFIX,"_intrnl_parse_statements","[current-node={0}:{1}] leave {0} '{1}' in statement: '{2}'".format(\
           current_node._data["kind"],current_node._data["name"],\
           current_statement))
     def log_detection_(kind):
         nonlocal current_node
         nonlocal current_statement
-        utils.logging.log_debug2(LOG_PREFIX,"__parse_file","[current-node={}:{}] found {} in statement: '{}'".format(\
+        utils.logging.log_debug2(LOG_PREFIX,"_intrnl_parse_statements","[current-node={}:{}] found {} in statement: '{}'".format(\
                 current_node._kind,current_node._name,kind,current_statement))
    
     # direct parsing
@@ -266,7 +296,7 @@ def _intrnl_parse_file(file_statements,filepath):
             current_node = __Node("subroutine",name,data=subroutine,parent=current_node)
             log_enter_node_()
         else:
-            utils.logging.log_warning(LOG_PREFIX,"__parse_file","found subroutine in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
+            utils.logging.log_warning(LOG_PREFIX,"_intrnl_parse_statements","found subroutine in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
               format(current_statement,current_node._kind))
     #host|device,name,[args],result
     def FunctionStart(tokens):
@@ -287,7 +317,7 @@ def _intrnl_parse_file(file_statements,filepath):
             current_node = __Node("function",name,data=function,parent=current_node)
             log_enter_node_()
         else:
-            utils.logging.log_warning(LOG_PREFIX,"__parse_file","found function in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
+            utils.logging.log_warning(LOG_PREFIX,"_intrnl_parse_statements","found function in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
               format(current_statement,current_node._kind))
     def TypeStart(tokens):
         global LOG_PREFIX
@@ -306,7 +336,7 @@ def _intrnl_parse_file(file_statements,filepath):
             current_node = __Node("type",name,data=derived_type,parent=current_node)
             log_enter_node_()
         else:
-            utils.logging.log_warning(LOG_PREFIX,"__parse_file","found derived type in '{}' but parent is {}; expected program or module parent.".\
+            utils.logging.log_warning(LOG_PREFIX,"_intrnl_parse_statements","found derived type in '{}' but parent is {}; expected program or module parent.".\
                     format(current_statement,current_node._kind))
     def Use(tokens):
         nonlocal current_node
@@ -400,8 +430,8 @@ def _intrnl_parse_file(file_statements,filepath):
            expression.parseString(current_statement)
            return True
         except ParseBaseException as e: 
-           utils.logging.log_debug3(LOG_PREFIX,"__parse_file","did not find expression '{}' in statement '{}'".format(expression_name,current_statement))
-           utils.logging.log_debug4(LOG_PREFIX,"__parse_file",str(e))
+           utils.logging.log_debug3(LOG_PREFIX,"_intrnl_parse_statements","did not find expression '{}' in statement '{}'".format(expression_name,current_statement))
+           utils.logging.log_debug4(LOG_PREFIX,"_intrnl_parse_statements",str(e))
            return False
 
     def is_end_statement_(tokens,kind):
@@ -411,7 +441,7 @@ def _intrnl_parse_file(file_statements,filepath):
         return result
 
     for current_statement in file_statements:
-        utils.logging.log_debug3(LOG_PREFIX,"__parse_file","process statement '{}'".format(current_statement))
+        utils.logging.log_debug3(LOG_PREFIX,"_intrnl_parse_statements","process statement '{}'".format(current_statement))
         current_tokens              = re.split(r"\s+|\t+",current_statement.lower().strip(" \t"))
         current_statement_stripped  = "".join(current_tokens)
         for expr in ["program","module","subroutine","function","type"]:
@@ -451,17 +481,17 @@ def _intrnl_parse_file(file_statements,filepath):
     # apply attributes and acc variable modifications
     num_post_parsing_jobs = len(post_parsing_jobs)
     if num_post_parsing_jobs > 0:
-        utils.logging.log_debug(LOG_PREFIX,"__parse_file","apply variable modifications (submit {} jobs to worker pool of size {})".format(\
+        utils.logging.log_debug(LOG_PREFIX,"_intrnl_parse_statements","apply variable modifications (submit {} jobs to worker pool of size {})".format(\
           num_post_parsing_jobs,PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE))
         with concurrent.futures.ThreadPoolExecutor(\
             max_workers=PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE)\
                 as job_executor:
             for job in post_parsing_jobs:
                 job_executor.submit(job.run)
-        utils.logging.log_debug(LOG_PREFIX,"__parse_file","apply variable modifications --- done") 
+        utils.logging.log_debug(LOG_PREFIX,"_intrnl_parse_statements","apply variable modifications --- done") 
         post_parsing_jobs.clear()
 
-    utils.logging.log_leave_function(LOG_PREFIX,"__parse_file") 
+    utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_parse_statements") 
     return index
 
 def _intrnl_write_json_file(index,filepath):
@@ -493,12 +523,25 @@ def scan_file(filepath,preproc_options,index):
     global LOG_PREFIX
     utils.logging.log_enter_function(LOG_PREFIX,"scan_file",{"filepath":filepath,"preproc_options":preproc_options}) 
     
-    filtered_lines = _intrnl_read_fortran_file(filepath,preproc_options)
-    utils.logging.log_debug2(LOG_PREFIX,"scan_file","extracted the following lines:\n>>>\n{}\n<<<".format(\
-        "\n".join(filtered_lines)))
-    index += _intrnl_parse_file(filtered_lines,filepath)
+    filtered_statements = _intrnl_read_fortran_file(filepath,preproc_options)
+    utils.logging.log_debug2(LOG_PREFIX,"scan_file","extracted the following statements:\n>>>\n{}\n<<<".format(\
+        "\n".join(filtered_statements)))
+    index += _intrnl_parse_statements(filtered_statements,filepath)
     
     utils.logging.log_leave_function(LOG_PREFIX,"scan_file") 
+
+def update_from_linemaps(linemaps,index):
+    """Updates index from a number of linemaps."""
+    global LOG_PREFIX
+    utils.logging.log_enter_function(LOG_PREFIX,"update_from_linemaps") 
+    
+    filtered_statements = _intrnl_collect_statements(linemaps)
+    utils.logging.log_debug2(LOG_PREFIX,"update_from_linemaps","extracted the following statements:\n>>>\n{}\n<<<".format(\
+        "\n".join(filtered_statements)))
+    if len(linemaps):
+        index += _intrnl_parse_statements(filtered_statements,filepath=linemaps[0]["file"])
+    
+    utils.logging.log_leave_function(LOG_PREFIX,"update_from_linemaps") 
 
 def write_gpufort_module_files(index,output_dir):
     """

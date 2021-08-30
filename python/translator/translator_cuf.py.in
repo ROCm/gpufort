@@ -544,7 +544,7 @@ class TTCufCublasCall(TTNode):
         args += [make_f_str(arg) for arg in self._args]
         result = "{2}{0}({1})".format(api,",".join(args),indent)
         cublas_operation_type = Regex("'[NTCntc]'").setParseAction(lambda tokens: "HIPBLAS_OP_"+tokens[0].strip("'").upper())
-        result = cublas_operation_type.transform_string(result)
+        result = cublas_operation_type.transformString(result)
         return result
 
 ## Link actions

@@ -18,10 +18,10 @@ test.run(
    raiseException = True
 )
 v = testdata[0]
-print(translator.singleLineIf.transform_string(v))
+print(translator.singleLineIf.transformString(v))
 
 v = testdata[1]
-print(translator.singleLineIf.transform_string(v))
+print(translator.singleLineIf.transformString(v))
 
 #assert translator.singleLineIf.parseString(v)[0].f_str(True,True,8).replace(" ","")   == "hipMemcpy(a,b,1_8*(8)*(n),hipMemcpyDeviceToDevice)"
 #assert translator.singleLineIf.parseString(v)[0].f_str(False,True,8).replace(" ","")  == "hipMemcpy(c_loc(a),b,1_8*(8)*(n),hipMemcpyDeviceToHost)"

@@ -40,7 +40,7 @@
 {% for grid_dim in kernel.grid %}  const int {{krnl_prefix}}_grid{{grid_dim.dim}} = {{grid_dim.value}};
   dim3 grid({% for grid_dim in kernel.grid -%}{{krnl_prefix}}_grid{{grid_dim.dim}}{{ "," if not loop.last }}{%- endfor %});
 {% endfor %}{% else %}
-{% for block_dim in kernel.block %}  const int {{krnl_prefix}}_grid{{block_dim.dim}} = divide_and_round_up( {{krnl_prefix}}_N{{block_dim.dim}}, {{krnl_prefix}}_block{{block_dim.dim}} );
+{% for block_dim in kernel.block %}  const int {{krnl_prefix}}_grid{{block_dim.dim}} = divideAndRoundUp( {{krnl_prefix}}_N{{block_dim.dim}}, {{krnl_prefix}}_block{{block_dim.dim}} );
 {% endfor %}
   dim3 grid({% for block_dim in kernel.block -%}{{krnl_prefix}}_grid{{block_dim.dim}}{{ "," if not loop.last }}{%- endfor %});
 {% endif %}

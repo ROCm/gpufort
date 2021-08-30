@@ -58,7 +58,7 @@ def _intrnl_postprocess_acc(stree):
     
     directives = stree.find_all(filter=lambda node: isinstance(node,STAccDirective), recursively=True)
     for directive in directives:
-         stnode = directive._parent.find_first(filter=lambda child : not child._ignore_in_s_2s_translation and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
+         stnode = directive._parent.find_first(filter=lambda child : not child._ignore_in_s2s_translation and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
          # add acc use statements
          if not stnode is None:
              indent = stnode.first_line_indent()
@@ -86,7 +86,7 @@ def _intrnl_postprocess_cuf(stree):
             begin = call._parent.find_last(filter=lambda child : type(child) in [STUseStatement,STDeclaration])
             indent = self.first_line_indent()
             begin.add_to_epilog("{0}type(c_ptr) :: hipblasHandle = c_null_ptr\n".format(indent))
-            #print(begin._records)       
+            #print(begin._linemaps)       
  
             local_cublas_calls = call._parent.find_all(filter=has_cublas_call, recursively=False)
             first = local_cublas_calls[0]
@@ -101,7 +101,7 @@ def _intrnl_postprocess_cuf(stree):
 # API
 
 # Pyparsing actions that create scanner tree (ST)
-def parse_file(records,index,fortran_filepath):
+def parse_file(linemaps,index,fortran_filepath):
     """
     Generate an object tree (OT). 
     """
@@ -114,14 +114,14 @@ def parse_file(records,index,fortran_filepath):
     do_loop_ctr     = 0     
     keep_recording = False
     current_file   = str(fortran_filepath)
-    current_record = None
+    current_linemap = None
     directive_no   = 0
 
     def log_detection_(kind):
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         utils.logging.log_debug2(LOG_PREFIX,"parse_file","[current-node={}:{}] found {} in line {}: '{}'".format(\
-                current_node.kind,current_node.name,kind,current_record["lineno"],current_record["lines"][0].rstrip("\n")))
+                current_node.kind,current_node.name,kind,current_linemap["lineno"],current_linemap["lines"][0].rstrip("\n")))
 
     def append_if_not_recording_(new):
         nonlocal current_node
@@ -130,7 +130,7 @@ def parse_file(records,index,fortran_filepath):
             current_node.append(new)
     def descend_(new):
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         current_node.append(new)
         current_node=new
@@ -143,11 +143,11 @@ def parse_file(records,index,fortran_filepath):
             parent_node_id += ":"+current_node._parent.name
 
         utils.logging.log_debug(LOG_PREFIX,"parse_file","[current-node={0}] enter {1} in line {2}: '{3}'".format(\
-          parent_node_id,current_node_id,current_record["lineno"],current_record["lines"][0].rstrip("\n")))
+          parent_node_id,current_node_id,current_linemap["lineno"],current_linemap["lines"][0].rstrip("\n")))
     def ascend_():
         nonlocal current_node
         nonlocal current_file
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         assert not current_node._parent is None, "In file {}: parent of {} is none".format(current_file,type(current_node))
         
@@ -159,74 +159,74 @@ def parse_file(records,index,fortran_filepath):
             parent_node_id += ":"+current_node._parent.name
         
         utils.logging.log_debug(LOG_PREFIX,"parse_file","[current-node={0}] leave {1} in line {2}: '{3}'".format(\
-          parent_node_id,current_node_id,current_record["lineno"],current_record["lines"][0].rstrip("\n")))
+          parent_node_id,current_node_id,current_linemap["lineno"],current_linemap["lines"][0].rstrip("\n")))
         current_node = current_node._parent
    
     # parse actions
     def Module_visit(tokens):
         nonlocal translation_enabled
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         log_detection_("module")
-        new = STModule(tokens[0],current_node,current_record,current_statement_no)
-        new._ignore_in_s_2s_translation = not translation_enabled
+        new = STModule(tokens[0],current_node,current_linemap,current_statement_no)
+        new._ignore_in_s2s_translation = not translation_enabled
         descend_(new)
     def Program_visit(tokens):
         nonlocal translation_enabled
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         log_detection_("program")
-        new = STProgram(tokens[0],current_node,current_record,current_statement_no)
-        new._ignore_in_s_2s_translation = not translation_enabled
+        new = STProgram(tokens[0],current_node,current_linemap,current_statement_no)
+        new._ignore_in_s2s_translation = not translation_enabled
         descend_(new)
     def Function_visit(tokens):
         nonlocal translation_enabled
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal keep_recording
         nonlocal index
         log_detection_("function")
         new = STProcedure(tokens[1],"function",\
-            current_node,current_record,current_statement_no,index)
-        new._ignore_in_s_2s_translation = not translation_enabled
+            current_node,current_linemap,current_statement_no,index)
+        new._ignore_in_s2s_translation = not translation_enabled
         keep_recording = new.keep_recording()
         descend_(new)
     def Subroutine_visit(tokens):
         nonlocal translation_enabled
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal keep_recording
         nonlocal index
         log_detection_("subroutine")
         new = STProcedure(tokens[1],"subroutine",\
-            current_node,current_record,current_statement_no,index)
-        new._ignore_in_s_2s_translation = not translation_enabled
+            current_node,current_linemap,current_statement_no,index)
+        new._ignore_in_s2s_translation = not translation_enabled
         keep_recording = new.keep_recording()
         descend_(new)
     def End():
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal keep_recording
         log_detection_("end of module/program/function/subroutine")
         assert type(current_node) in [STModule,STProgram,STProcedure], "In file {}: line {}: type is {}".format(current_file, current_statement_no, type(current_node))
         if type(current_node) is STProcedure and current_node.must_be_available_on_device():
-            current_node.add_record(current_record)
+            current_node.add_linemap(current_linemap)
             current_node._last_statement_index = current_statement_no
             current_node.complete_init()
             keep_recording = False
         if not keep_recording and type(current_node) in [STProcedure,STProgram]:
-            new = STEndOrReturn(current_node,current_record,current_statement_no)
+            new = STEndOrReturn(current_node,current_linemap,current_statement_no)
             append_if_not_recording_(new)
         ascend_()
     def Return():
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal keep_recording
         log_detection_("return statement")
         if not keep_recording and type(current_node) in [STProcedure,STProgram]:
-            new = STEndOrReturn(current_node,current_record,current_statement_no)
+            new = STEndOrReturn(current_node,current_linemap,current_statement_no)
             append_if_not_recording_(new)
         ascend_()
     def in_kernels_acc_region_and_not_recording():
@@ -238,20 +238,20 @@ def parse_file(records,index,fortran_filepath):
     def DoLoop_visit():
         nonlocal translation_enabled
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal do_loop_ctr
         nonlocal keep_recording
         log_detection_("do loop")
         if in_kernels_acc_region_and_not_recording():
-            new = STAccLoopKernel(current_node,current_record,current_statement_no)
-            new._ignore_in_s_2s_translation = not translation_enabled
+            new = STAccLoopKernel(current_node,current_linemap,current_statement_no)
+            new._ignore_in_s2s_translation = not translation_enabled
             new._do_loop_ctr_memorised=do_loop_ctr
             descend_(new) 
             keep_recording = True
         do_loop_ctr += 1
     def DoLoop_leave():
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         nonlocal do_loop_ctr
         nonlocal keep_recording
@@ -259,7 +259,7 @@ def parse_file(records,index,fortran_filepath):
         do_loop_ctr -= 1
         if isinstance(current_node, STLoopKernel):
             if keep_recording and current_node._do_loop_ctr_memorised == do_loop_ctr:
-                current_node.add_record(current_record)
+                current_node.add_linemap(current_linemap)
                 current_node._last_statement_index = current_statement_no
                 current_node.complete_init()
                 ascend_()
@@ -267,97 +267,97 @@ def parse_file(records,index,fortran_filepath):
     def Declaration():
         nonlocal translation_enabled
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         log_detection_("declaration")
-        new = STDeclaration(current_node,current_record,current_statement_no)
-        new._ignore_in_s_2s_translation = not translation_enabled
+        new = STDeclaration(current_node,current_linemap,current_statement_no)
+        new._ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
     def Attributes(tokens):
         nonlocal translation_enabled
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         log_detection_("attributes statement")
-        new = STAttributes(current_node,current_record,current_statement_no)
-        new._ignore_in_s_2s_translation = not translation_enabled
+        new = STAttributes(current_node,current_linemap,current_statement_no)
+        new._ignore_in_s2s_translation = not translation_enabled
         current_node.append(new)
     def UseStatement(tokens):
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         log_detection_("use statement")
-        new = STUseStatement(current_node,current_record,current_statement_no)
-        new._ignore_in_s_2s_translation = not translation_enabled
+        new = STUseStatement(current_node,current_linemap,current_statement_no)
+        new._ignore_in_s2s_translation = not translation_enabled
         new.name = translator.make_f_str(tokens[1]) # just get the name, ignore specific includes
         append_if_not_recording_(new)
     def PlaceHolder(tokens):
         nonlocal translation_enabled
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         log_detection_("placeholder")
-        new = STPlaceHolder(current_node,current_record,current_statement_no)
-        new._ignore_in_s_2s_translation = not translation_enabled
+        new = STPlaceHolder(current_node,current_linemap,current_statement_no)
+        new._ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
     def NonZeroCheck(tokens):
         nonlocal translation_enabled
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         log_detection_("non-zero check")
-        new = STNonZeroCheck(current_node,current_record,current_statement_no)
-        new._ignore_in_s_2s_translation = not translation_enabled
+        new = STNonZeroCheck(current_node,current_linemap,current_statement_no)
+        new._ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
     def Allocated(tokens):
         nonlocal current_node
         nonlocal translation_enabled
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         log_detection_("allocated statement")
-        new = STAllocated(current_node,current_record,current_statement_no)
-        new._ignore_in_s_2s_translation = not translation_enabled
+        new = STAllocated(current_node,current_linemap,current_statement_no)
+        new._ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
     def Allocate(tokens):
         nonlocal translation_enabled
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         log_detection_("allocate statement")
-        new = STAllocate(current_node,current_record,current_statement_no)
-        new._ignore_in_s_2s_translation = not translation_enabled
+        new = STAllocate(current_node,current_linemap,current_statement_no)
+        new._ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
     def Deallocate(tokens):
         nonlocal translation_enabled
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         log_detection_("deallocate statement")
         # TODO filter variable, replace with hipFree
-        new = STDeallocate(current_node,current_record,current_statement_no)
-        new._ignore_in_s_2s_translation = not translation_enabled
+        new = STDeallocate(current_node,current_linemap,current_statement_no)
+        new._ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
     def Memcpy(tokens):
         nonlocal translation_enabled
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         log_detection_("memcpy")
-        new = STMemcpy(current_node,current_record,current_statement_no)
-        new._ignore_in_s_2s_translation = not translation_enabled
+        new = STMemcpy(current_node,current_linemap,current_statement_no)
+        new._ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
     def CudaLibCall(tokens):
         #TODO scan for cudaMemcpy calls
         nonlocal translation_enabled
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         nonlocal keep_recording
         log_detection_("CUDA API call")
         cudaApi, args = tokens 
         if not type(current_node) in [STCudaLibCall,STCudaKernelCall]:
-            new = STCudaLibCall(current_node,current_record,current_statement_no)
-            new._ignore_in_s_2s_translation = not translation_enabled
+            new = STCudaLibCall(current_node,current_linemap,current_statement_no)
+            new._ignore_in_s2s_translation = not translation_enabled
             new.cudaApi  = cudaApi
             #print("finishes_on_first_line={}".format(finishes_on_first_line))
             assert type(new._parent) in [STModule,STProcedure,STProgram], type(new._parent)
@@ -365,26 +365,26 @@ def parse_file(records,index,fortran_filepath):
     def CudaKernelCall(tokens):
         nonlocal translation_enabled
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         nonlocal keep_recording
         log_detection_("CUDA kernel call")
         kernel_name, kernel_launch_args, args = tokens 
         assert type(current_node) in [STModule,STProcedure,STProgram], "type is: "+str(type(current_node))
-        new = STCudaKernelCall(current_node,current_record,current_statement_no)
-        new._ignore_in_s_2s_translation = not translation_enabled
+        new = STCudaKernelCall(current_node,current_linemap,current_statement_no)
+        new._ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
     def AccDirective():
         nonlocal translation_enabled
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         nonlocal keep_recording
         nonlocal do_loop_ctr
         nonlocal directive_no
         log_detection_("OpenACC directive")
-        new = STAccDirective(current_node,current_record,current_statement_no,directive_no)
-        new._ignore_in_s_2s_translation = not translation_enabled
+        new = STAccDirective(current_node,current_linemap,current_statement_no,directive_no)
+        new._ignore_in_s2s_translation = not translation_enabled
         directive_no += 1
         # if end directive ascend
         if new.is_end_directive() and\
@@ -394,9 +394,9 @@ def parse_file(records,index,fortran_filepath):
         # descend in constructs or new node
         elif new.is_parallel_loop_directive() or new.is_kernels_loop_directive() or\
              (not new.is_end_directive() and new.is_parallel_directive()):
-            new = STAccLoopKernel(current_node,current_record,current_statement_no,directive_no)
+            new = STAccLoopKernel(current_node,current_linemap,current_statement_no,directive_no)
             new.kind = "acc-compute-construct"
-            new._ignore_in_s_2s_translation = not translation_enabled
+            new._ignore_in_s2s_translation = not translation_enabled
             new._do_loop_ctr_memorised=do_loop_ctr
             descend_(new)  # descend also appends 
             keep_recording = True
@@ -409,15 +409,15 @@ def parse_file(records,index,fortran_filepath):
     def CufLoopKernel():
         nonlocal translation_enabled
         nonlocal current_node
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         nonlocal do_loop_ctr
         nonlocal keep_recording
         nonlocal directive_no
         log_detection_("CUDA Fortran loop kernel directive")
-        new = STCufLoopKernel(current_node,current_record,current_statement_no,directive_no)
+        new = STCufLoopKernel(current_node,current_linemap,current_statement_no,directive_no)
         new.kind = "cuf-kernel-do"
-        new._ignore_in_s_2s_translation = not translation_enabled
+        new._ignore_in_s2s_translation = not translation_enabled
         new._do_loop_ctr_memorised=do_loop_ctr
         directive_no += 1
         descend_(new) 
@@ -425,7 +425,7 @@ def parse_file(records,index,fortran_filepath):
     def Assignment(tokens):
         nonlocal current_node
         nonlocal translation_enabled
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         nonlocal current_statement
         log_detection_("assignment")
@@ -433,8 +433,8 @@ def parse_file(records,index,fortran_filepath):
             parse_result = translator.assignment_begin.parseString(current_statement)
             lvalue = translator.find_first(parse_result,translator.TTLValue)
             if not lvalue is None and lvalue.has_matrix_range_args():
-                new  = STAccLoopKernel(current_node,current_record,current_statement_no)
-                new._ignore_in_s_2s_translation = not translation_enabled
+                new  = STAccLoopKernel(current_node,current_linemap,current_statement_no)
+                new._ignore_in_s2s_translation = not translation_enabled
                 append_if_not_recording_(new)
     def GpufortControl():
         nonlocal current_statement
@@ -484,15 +484,15 @@ def parse_file(records,index,fortran_filepath):
         """
         These expressions might be hidden behind a single-line if.
         """
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         nonlocal current_statement
 
         matched = len(expression.searchString(current_statement,1))
         if matched:
-           utils.logging.log_debug3(LOG_PREFIX,"parse_file.scanString","found expression '{}' in line {}: '{}'".format(expression_name,current_record["lineno"],current_record["lines"][0].rstrip()))
+           utils.logging.log_debug3(LOG_PREFIX,"parse_file.scanString","found expression '{}' in line {}: '{}'".format(expression_name,current_linemap["lineno"],current_linemap["lines"][0].rstrip()))
         else:
-           utils.logging.log_debug4(LOG_PREFIX,"parse_file.scanString","did not find expression '{}' in line {}: '{}'".format(expression_name,current_record["lineno"],current_record["lines"][0].rstrip()))
+           utils.logging.log_debug4(LOG_PREFIX,"parse_file.scanString","did not find expression '{}' in line {}: '{}'".format(expression_name,current_linemap["lineno"],current_linemap["lines"][0].rstrip()))
         return matched
     
     def try_to_parse_string(expression_name,expression,parseAll=False):
@@ -502,16 +502,16 @@ def parse_file(records,index,fortran_filepath):
         No need to check if comments are in the line as the first
         words of the line must match the expression.
         """
-        nonlocal current_record
+        nonlocal current_linemap
         nonlocal current_statement_no
         nonlocal current_statement_strippedNoComments
         
         try:
            expression.parseString(current_statement_strippedNoComments,parseAll)
-           utils.logging.log_debug3(LOG_PREFIX,"parse_file.try_to_parse_string","found expression '{}' in line {}: '{}'".format(expression_name,current_record["lineno"],current_record["lines"][0].rstrip()))
+           utils.logging.log_debug3(LOG_PREFIX,"parse_file.try_to_parse_string","found expression '{}' in line {}: '{}'".format(expression_name,current_linemap["lineno"],current_linemap["lines"][0].rstrip()))
            return True
         except ParseBaseException as e: 
-           utils.logging.log_debug4(LOG_PREFIX,"parse_file.try_to_parse_string","did not find expression '{}' in line '{}'".format(expression_name,current_record["lines"][0]))
+           utils.logging.log_debug4(LOG_PREFIX,"parse_file.try_to_parse_string","did not find expression '{}' in line '{}'".format(expression_name,current_linemap["lines"][0]))
            utils.logging.log_debug5(LOG_PREFIX,"parse_file.try_to_parse_string",str(e))
            return False
 
@@ -524,13 +524,13 @@ def parse_file(records,index,fortran_filepath):
     p_do_loop_begin = re.compile(r"(\w+:)?\s*do")
 
     # parser loop
-    for current_record in records:
-        condition1 = current_record["is_active"]
-        condition2 = len(current_record["included_records"]) or not current_record["is_preprocessor_directive"]
+    for current_linemap in linemaps:
+        condition1 = current_linemap["is_active"]
+        condition2 = len(current_linemap["included_linemaps"]) or not current_linemap["is_preprocessor_directive"]
         if condition1 and condition2:
-            for current_statement_no,current_statement in enumerate(current_record["statements"]):
+            for current_statement_no,current_statement in enumerate(current_linemap["statements"]):
                 utils.logging.log_debug4(LOG_PREFIX,"parse_file","parsing statement '{}' associated with lines [{},{}]".format(current_statement.rstrip(),\
-                    current_record["lineno"],current_record["lineno"]+len(current_record["lines"])-1))
+                    current_linemap["lineno"],current_linemap["lineno"]+len(current_linemap["lines"])-1))
                 
                 current_tokens                      = utils.parsingutils.tokenize(current_statement.lower())
                 current_statement_stripped           = " ".join(current_tokens)
@@ -594,7 +594,7 @@ def parse_file(records,index,fortran_filepath):
                         elif current_tokens[0] == "type" and current_tokens[1] == "(":
                             try_to_parse_string("declaration",datatype_reg)
                     else:
-                        current_node.add_record(current_record)
+                        current_node.add_linemap(current_linemap)
                         current_node._last_statement_index = current_statement_no
 
     assert type(current_node) is STRoot

@@ -57,7 +57,7 @@ def evaluate_condition(input_string,macro_stack):
     :note: Input validation performed according to:
            https://realpython.com/python-eval-function/#minimizing-the-security-issues-of-eval
     """
-    transformed_input_string = pp_ops.transform_string(_intrnl_expand_macros(input_string,macro_stack))
+    transformed_input_string = pp_ops.transformString(_intrnl_expand_macros(input_string,macro_stack))
     code = compile(transformed_input_string, "<string>", "eval") 
     return eval(code, {"__builtins__": {}},{}) > 0
 
@@ -82,7 +82,7 @@ def _intrnl_handle_preprocessor_directive(lines,fortran_filepath,macro_stack,reg
        "region-stack-2":    region_stack_format(region_stack2),\
        "macro-names":       macro_names})
 
-    included_records = []
+    included_linemaps = []
 
     handled = False
     
@@ -118,7 +118,7 @@ def _intrnl_handle_preprocessor_directive(lines,fortran_filepath,macro_stack,reg
                current_dir = os.path.dirname(fortran_filepath)
                if not filename.startswith("/") and len(current_dir):
                    filename = os.path.dirname(fortran_filepath) + "/" + filename
-               included_records = _intrnl_preprocess_and_normalize_fortran_file(filename,macro_stack,region_stack1,region_stack2)
+               included_linemaps = _intrnl_preprocess_and_normalize_fortran_file(filename,macro_stack,region_stack1,region_stack2)
                handled = True
         # if cond. true, push new region to stack
         if stripped_first_line.startswith("if"):
@@ -172,7 +172,7 @@ def _intrnl_handle_preprocessor_directive(lines,fortran_filepath,macro_stack,reg
         utils.logging.log_warning(LOG_PREFIX,"_intrnl_handle_preprocessor_directive",\
           "preprocessor directive '{}' was ignored".format(single_line_statement))
 
-    return included_records
+    return included_linemaps
 
 def _intrnl_convert_lines_to_statements(lines):
     """Fortran lines can contain multiple statements that
@@ -221,7 +221,7 @@ def _intrnl_convert_lines_to_statements(lines):
 
 def _intrnl_detect_line_starts(lines):
     """Fortran statements can be broken into multiple lines 
-    via the '&'. This routine records in which line a statement
+    via the '&'. This routine linemaps in which line a statement
     (or multiple statements per line) begins.
     The difference between the line numbers of consecutive entries
     is the number of lines the first statement occupies.
@@ -267,17 +267,17 @@ def _intrnl_preprocess_and_normalize(fortran_file_lines,fortran_filepath,macro_s
     line_starts = _intrnl_detect_line_starts(fortran_file_lines)
 
     # 2. go through the blocks of buffered lines
-    records = []
+    linemaps = []
     for i,_ in enumerate(line_starts[:-1]):
         line_start     = line_starts[i]
         next_line_start = line_starts[i+1]
         lines         = fortran_file_lines[line_start:next_line_start]
 
-        included_records = []
+        included_linemaps = []
         is_preprocessor_directive = lines[0].startswith("#")
         if is_preprocessor_directive and not ONLY_APPLY_USER_DEFINED_MACROS:
             try:
-                included_records = _intrnl_handle_preprocessor_directive(lines,fortran_filepath,macro_stack,region_stack1,region_stack2)
+                included_linemaps = _intrnl_handle_preprocessor_directive(lines,fortran_filepath,macro_stack,region_stack1,region_stack2)
                 statements1 = []
                 statements3 = []
             except Exception as e:
@@ -299,15 +299,15 @@ def _intrnl_preprocess_and_normalize(fortran_file_lines,fortran_filepath,macro_s
                     # such as `module mymod; integer :: myint; end module` and we therefore might
                     # require epilog/prolog per line, this will be the place where replace 
                     # the string stmt3 by a dictionary.
-                    # (If we would do this, we can actually also record positional information in a next step.)
+                    # (If we would do this, we can actually also linemap positional information in a next step.)
     
-        #if len(included_records) or (not is_preprocessor_directive and region_stack1[-1]):
-        record = {
+        #if len(included_linemaps) or (not is_preprocessor_directive and region_stack1[-1]):
+        linemap = {
           "file":                    fortran_filepath,
           "lineno":                  line_start+1, # key
           "lines":                   lines,
           "raw_statements":          statements1,
-          "included_records":         included_records,
+          "included_linemaps":         included_linemaps,
           "is_preprocessor_directive": is_preprocessor_directive,
           "is_active":                region_stack1[-1],
           # inout
@@ -317,10 +317,10 @@ def _intrnl_preprocess_and_normalize(fortran_file_lines,fortran_filepath,macro_s
           "prolog":                  [],
           "epilog":                  []
         }
-        records.append(record)
+        linemaps.append(linemap)
     
     utils.logging.log_leave_function(LOG_PREFIX,"__preprocess_and_normalize")
-    return records
+    return linemaps
 
 def _intrnl_preprocess_and_normalize_fortran_file(fortran_filepath,macro_stack,region_stack1,region_stack2):
     """
@@ -332,9 +332,9 @@ def _intrnl_preprocess_and_normalize_fortran_file(fortran_filepath,macro_stack,r
 
     try:
         with open(fortran_filepath,"r") as infile:
-            records = _intrnl_preprocess_and_normalize(infile.readlines(),fortran_filepath,macro_stack,region_stack1,region_stack2)
+            linemaps = _intrnl_preprocess_and_normalize(infile.readlines(),fortran_filepath,macro_stack,region_stack1,region_stack2)
             utils.logging.log_leave_function(LOG_PREFIX,"__preprocess_and_normalize_fortran_file")
-            return records
+            return linemaps
     except Exception as e:
             raise e
 
@@ -352,90 +352,90 @@ def _intrnl_init_macros(options):
         macro_stack.append(macro)
     return macro_stack
 
-def _intrnl_group_modified_records(records):
+def _intrnl_group_modified_linemaps(linemaps):
     """Find contiguous blocks of modified lines and blank lines between them."""
     global LINE_GROUPING_WRAP_IN_IFDEF
     global LINE_GROUPING_INCLUDE_BLANK_LINES
     
-    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_group_modified_records")
+    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_group_modified_linemaps")
 
     EMPTY_BLOCK    = { "min_lineno": -1, "max_lineno": -1, "orig": "", "subst": "",\
                        "only_prolog": False, "only_epilog": False}
     blocks         = []
-    current_records = []
+    current_linemaps = []
 
     # auxiliary local functions
-    def max_lineno_(record):
-        return record["lineno"] + len(record["lines"]) - 1
-    def borders_previous_record_(record):
-        nonlocal current_records
-        if len(current_records):
-            return record["lineno"] == max_lineno_(current_records[-1])+1
+    def max_lineno_(linemap):
+        return linemap["lineno"] + len(linemap["lines"]) - 1
+    def borders_previous_linemap_(linemap):
+        nonlocal current_linemaps
+        if len(current_linemaps):
+            return linemap["lineno"] == max_lineno_(current_linemaps[-1])+1
         else:
             return True
-    def contains_blank_line_(record):
-        return len(record["lines"]) == 1 and not len(record["lines"][0].lstrip(" \t\n"))
-    def was_modified_(record):
-        modified = record["modified"]
-        for record in record["included_records"]:
-            modified = modified or was_modified_(record)
+    def contains_blank_line_(linemap):
+        return len(linemap["lines"]) == 1 and not len(linemap["lines"][0].lstrip(" \t\n"))
+    def was_modified_(linemap):
+        modified = linemap["modified"]
+        for linemap in linemap["included_linemaps"]:
+            modified = modified or was_modified_(linemap)
         return modified
-    def has_prolog_(record):
-        result = len(record["prolog"])
-        for record in record["included_records"]:
-            result = result or has_prolog_(record)
+    def has_prolog_(linemap):
+        result = len(linemap["prolog"])
+        for linemap in linemap["included_linemaps"]:
+            result = result or has_prolog_(linemap)
         return result
-    def has_epilog_(record):
-        result = len(record["epilog"])
-        for record in record["included_records"]:
-            result = result or has_epilog_(record)
+    def has_epilog_(linemap):
+        result = len(linemap["epilog"])
+        for linemap in linemap["included_linemaps"]:
+            result = result or has_epilog_(linemap)
         return result
     def to_string_(list_of_strings):
         return "\n".join([el.rstrip("\n") for el in list_of_strings if el is not None]) + "\n"
-    def collect_subst_(record):
+    def collect_subst_(linemap):
         subst = []
-        if len(record["prolog"]):
-            subst += record["prolog"]
-        if len(record["included_records"]):
-            for record in record["included_records"]:
-                subst += collect_subst_(record)
-        elif record["modified"]:
-            subst += record["statements"]
-        else: # for included records
-            subst += record["lines"]
-        if len(record["epilog"]):
-            subst += record["epilog"]
+        if len(linemap["prolog"]):
+            subst += linemap["prolog"]
+        if len(linemap["included_linemaps"]):
+            for linemap in linemap["included_linemaps"]:
+                subst += collect_subst_(linemap)
+        elif linemap["modified"]:
+            subst += linemap["statements"]
+        else: # for included linemaps
+            subst += linemap["lines"]
+        if len(linemap["epilog"]):
+            subst += linemap["epilog"]
         return subst
 
     def append_current_block_if_non_empty_():
         # append current block if it is not empty
         # or does only contain blank lines.
         nonlocal blocks
-        nonlocal current_records
-        if len(current_records): # remove blank lines
-            while contains_blank_line_(current_records[-1]):
-                current_records.pop()
-        if len(current_records): # len might have changed
+        nonlocal current_linemaps
+        if len(current_linemaps): # remove blank lines
+            while contains_blank_line_(current_linemaps[-1]):
+                current_linemaps.pop()
+        if len(current_linemaps): # len might have changed
             block = dict(EMPTY_BLOCK) # shallow copy
-            block["min_lineno"] = current_records[0]["lineno"]
-            block["max_lineno"] = max_lineno_(current_records[-1])
+            block["min_lineno"] = current_linemaps[0]["lineno"]
+            block["max_lineno"] = max_lineno_(current_linemaps[-1])
             
             subst = []
-            for record in current_records:
-                block["orig"]  += to_string_(record["lines"])
-                subst          += collect_subst_(record)
-            # special treatment for single-record blocks which are not modified
+            for linemap in current_linemaps:
+                block["orig"]  += to_string_(linemap["lines"])
+                subst          += collect_subst_(linemap)
+            # special treatment for single-linemap blocks which are not modified
             # and are no #include statements but have prolog or epilog
-            if len(current_records) == 1 and not current_records[0]["modified"] and not\
-               len(current_records[0]["included_records"]):
-                record = current_records[0]
-                #assert has_prolog_(record) or has_prolog_(record)
-                block["only_prolog"] = has_prolog_(record)
-                block["only_epilog"] = has_epilog_(record)
+            if len(current_linemaps) == 1 and not current_linemaps[0]["modified"] and not\
+               len(current_linemaps[0]["included_linemaps"]):
+                linemap = current_linemaps[0]
+                #assert has_prolog_(linemap) or has_prolog_(linemap)
+                block["only_prolog"] = has_prolog_(linemap)
+                block["only_epilog"] = has_epilog_(linemap)
                 if block["only_epilog"]: # xor
                     block["only_epilog"] = not block["only_prolog"]
                     block["only_prolog"] = False
-                block["subst"] = to_string_(record["prolog"] + record["epilog"])
+                block["subst"] = to_string_(linemap["prolog"] + linemap["epilog"])
             else:
                 block["subst"] = to_string_(subst)
             blocks.append(block)
@@ -443,19 +443,19 @@ def _intrnl_group_modified_records(records):
     # 1. find contiguous blocks of modified or blank lines
     # 2. blocks must start with modified lines
     # 3. blank lines must be removed from tail of block
-    for i,record in enumerate(records):
-        lineno = record["lineno"]
-        if was_modified_(record) or has_prolog_(record) or has_epilog_(record):
-            if not LINE_GROUPING_WRAP_IN_IFDEF or not borders_previous_record_(record):
+    for i,linemap in enumerate(linemaps):
+        lineno = linemap["lineno"]
+        if was_modified_(linemap) or has_prolog_(linemap) or has_epilog_(linemap):
+            if not LINE_GROUPING_WRAP_IN_IFDEF or not borders_previous_linemap_(linemap):
                 append_current_block_if_non_empty_()
-                current_records = []
-            current_records.append(record)
-        elif LINE_GROUPING_INCLUDE_BLANK_LINES and len(current_records) and contains_blank_line_(record) and borders_previous_record_(record):
-            current_records.append(record)
+                current_linemaps = []
+            current_linemaps.append(linemap)
+        elif LINE_GROUPING_INCLUDE_BLANK_LINES and len(current_linemaps) and contains_blank_line_(linemap) and borders_previous_linemap_(linemap):
+            current_linemaps.append(linemap)
     # append last block
     append_current_block_if_non_empty_()
     
-    utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_group_modified_records")
+    utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_group_modified_linemaps")
     
     return blocks
 
@@ -484,14 +484,14 @@ def read_file(fortran_filepath,options=""):
 
     macro_stack = _intrnl_init_macros(options)
     try:
-        records = _intrnl_preprocess_and_normalize_fortran_file(fortran_filepath,macro_stack,\
+        linemaps = _intrnl_preprocess_and_normalize_fortran_file(fortran_filepath,macro_stack,\
            region_stack1=[True],region_stack2=[True]) # init value of region_stack[0] can be arbitrary
         utils.logging.log_leave_function(LOG_PREFIX,"read_file")
-        return records
+        return linemaps
     except Exception as e:
         raise e
 
-def write_modified_file(outfile_path,infile_path,records,preamble=""):
+def write_modified_file(outfile_path,infile_path,linemaps,preamble=""):
     """TODO docu"""
     global LINE_GROUPING_WRAP_IN_IFDEF
     global LINE_GROUPING_MACRO
@@ -499,7 +499,7 @@ def write_modified_file(outfile_path,infile_path,records,preamble=""):
     utils.logging.log_enter_function(LOG_PREFIX,"write_modified_file",\
       {"infile_path":infile_path,"outfile_path":outfile_path})
 
-    blocks = _intrnl_group_modified_records(records)
+    blocks = _intrnl_group_modified_linemaps(linemaps)
 
     output      = ""
     block_id     = 0
@@ -550,7 +550,7 @@ def write_modified_file(outfile_path,infile_path,records,preamble=""):
     
     utils.logging.log_leave_function(LOG_PREFIX,"write_modified_file")
 
-def render_file(records,stage="statements",include_inactive=False,include_preprocessor_directives=False):
+def render_file(linemaps,stage="statements",include_inactive=False,include_preprocessor_directives=False):
     """
     :param str stage: either 'lines', 'statements' or 'expanded_statements', i.e. the preprocessor stage.
     :param bool include_inactive: include also code lines in inactive code regions.
@@ -559,22 +559,22 @@ def render_file(records,stage="statements",include_inactive=False,include_prepro
     utils.logging.log_enter_function(LOG_PREFIX,"render_file",\
       {"stage":stage})
 
-    def render_file_(records):
+    def render_file_(linemaps):
         nonlocal stage
         nonlocal include_inactive
         nonlocal include_preprocessor_directives
 
         result = ""
-        for record in records:
-            condition1 = include_inactive or (record["is_active"])
-            condition2 = include_preprocessor_directives or (len(record["included_records"]) or not record["is_preprocessor_directive"])
+        for linemap in linemaps:
+            condition1 = include_inactive or (linemap["is_active"])
+            condition2 = include_preprocessor_directives or (len(linemap["included_linemaps"]) or not linemap["is_preprocessor_directive"])
             if condition1 and condition2:
-                if len(record["included_records"]):
-                    result += render_file_(record["included_records"])
+                if len(linemap["included_linemaps"]):
+                    result += render_file_(linemap["included_linemaps"])
                 else:
-                    result += "".join(record[stage])
+                    result += "".join(linemap[stage])
         return result
 
     utils.logging.log_leave_function(LOG_PREFIX,"render_file")
     
-    return render_file_(records).strip("\n")
+    return render_file_(linemaps).strip("\n")

@@ -5,9 +5,14 @@
 def parse_declaration(fortran_statement):
     global LOG_PREFIX
 
+    utils.logging.log_enter_function(LOG_PREFIX,"parse_declaration",{ "fortran_statement":fortran_statement })
+
     orig_tokens             = utils.parsingutils.tokenize(fortran_statement,padded_size=10)
     tokens                  = orig_tokens
-    print(tokens)
+
+    utils.logging.log_debug2(LOG_PREFIX,"parse_declaration","tokens=['"+"','".join(tokens)+"']")
+    
+    #print(tokens)
     idx_last_consumed_token = None
     # handle datatype
     datatype            = tokens[0]
@@ -65,11 +70,12 @@ def parse_declaration(fortran_statement):
     if idx_last_consumed_token != None:
         tokens = tokens[idx_last_consumed_token+1:] # remove qualifier list tokens
     variables_raw = utils.parsingutils.create_comma_separated_list(tokens) 
+    
+    utils.logging.log_debug2(LOG_PREFIX,"parse_declaration","qualifiers=['"+"','".join(variables_raw)+"'],"+"variables=['"+"','".join(variables_raw)+"']")
 
     # construct declaration tree node
     qualifiers = []
     for qualifier in qualifiers_raw:
-        print(qualifier)
         if qualifier.startswith("dimension"):
             try:
                 qualifiers.append( dimension_qualifier.parseString(qualifier,parseAll=True)[0] )
@@ -89,19 +95,13 @@ def parse_declaration(fortran_statement):
     variables = []
     for var in variables_raw:
         try:
-            print(var)
             variables.append( declared_variable.parseString(var,parseAll=True)[0] )
         except:
             utils.logging.log_error(LOG_PREFIX,"parse_declaration","could not parse variable declaration '{}' in statement '{}'".format(var,fortran_statement))
             sys.exit(2)
     declaration_tokens = [ datatype, kind, qualifiers, variables ]
-    #print(fortran_statement)
-    #print(datatype)
-    #print(kind)
-    #print(qualifiers_raw)
-    #print(variables_raw)
-    print(qualifiers)
     result = TTDeclaration( fortran_statement,0,declaration_tokens )
+    utils.logging.log_leave_function(LOG_PREFIX,"parse_declaration")
     return result
 
 def create_index_records_from_declaration(ttdeclaration):

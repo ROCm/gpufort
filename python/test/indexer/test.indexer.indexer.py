@@ -12,7 +12,7 @@ import linemapper.linemapper as linemapper
 log_format = "[%(levelname)s]\tgpufort:%(message)s"
 log_level                   = "debug2"
 utils.logging.VERBOSE       = False
-utils.logging.LOG_TRACEBACK = False
+utils.logging.TRACEBACK = False
 utils.logging.init_logging("log.log",log_format,log_level)
 
 gfortran_options="-DCUDA"

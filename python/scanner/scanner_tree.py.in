@@ -78,8 +78,9 @@ class STNode:
         # TODO move somewhere else
         for line in list(lines): # shallow copy
             stripped_line = line.lstrip("\t ")
-            if stripped_line[0] in ["*","c","C","!"] and not\
-               stripped_line[1] == "$": 
+            if not len(stripped_line) or\
+               (stripped_line[0] in ["*","c","C","!"] and not\
+               stripped_line[1] == "$"): 
                  lines.remove(line)
     def remove_whitespaces(self,lines):
         """Remove any whitespace and line continuation characters."""
@@ -365,12 +366,12 @@ class STDirective(STNode):
 class STLoopKernel(STNode):
     def __init__(self,parent,first_linemap,first_linemap_first_statement):
         STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
-        self.grid_f_str             = None
-        self.block_f_str            = None
-        self.sharedmem_f_str        = "0" # set from extraction routine
-        self.stream_f_str           = "c_null_ptr" # set from extraction routine
-        self.kernel_arg_names       = [] # set from extraction routine
-        self.code                 = []
+        self.grid_f_str              = None
+        self.block_f_str             = None
+        self.sharedmem_f_str         = "0" # set from extraction routine
+        self.stream_f_str            = "c_null_ptr" # set from extraction routine
+        self.kernel_arg_names        = [] # set from extraction routine
+        self.code                    = []
         self._do_loop_ctr_memorised  = -1
     def __hash(self):
         """Compute hash code for this kernel. Must be done before any transformations are performed."""

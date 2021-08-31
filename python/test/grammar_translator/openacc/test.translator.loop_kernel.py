@@ -15,7 +15,7 @@ import indexer.indexerutils as indexerutils
 log_format = "[%(levelname)s]\tgpufort:%(message)s"
 log_level                   = "warning"
 utils.logging.VERBOSE       = False
-utils.logging.LOG_TRACEBACK = False
+utils.logging.TRACEBACK = False
 utils.logging.init_logging("log.log",log_format,log_level)
 
 class TestParseLoopKernel(unittest.TestCase):

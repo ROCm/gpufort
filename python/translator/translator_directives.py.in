@@ -101,7 +101,7 @@ class ILoopAnnotation():
         """ only True for CUF kernel do directive """
         return False
 
-class TTDoLoop(TTContainer):
+class TTDo(TTContainer):
     def _assign_fields(self,tokens):
         # Assignment, number | variable
         self.annotation, self._begin, self._end, self._step, self.body = tokens
@@ -257,7 +257,7 @@ class TTLoopKernel(TTContainer,IComputeConstruct):
             return self._parent_directive
     def loop_vars(self):
         identifier_names = []
-        do_loops  = find_all(self.body[0],TTDoLoop)
+        do_loops  = find_all(self.body[0],TTDo)
         for loop in do_loops:
             identifier_names.append(loop.loop_var(make_f_str))
         return identifier_names
@@ -331,14 +331,14 @@ class TTLoopKernel(TTContainer,IComputeConstruct):
         if LOOP_COLLAPSE_STRATEGY == "grid" or num_outer_loops_to_map == 1:
             num_outer_loops_to_map = min(3,num_outer_loops_to_map)
             result = ["-1"]*num_outer_loops_to_map
-            do_loops = find_all(self.body[0],TTDoLoop)
+            do_loops = find_all(self.body[0],TTDo)
             for i,loop in enumerate(do_loops):
                 if i < num_outer_loops_to_map:
                     result[i] = loop.problem_size_c_str()
             return result
         else: # "collapse"
             result = ""
-            do_loops = find_all(self.body[0],TTDoLoop)
+            do_loops = find_all(self.body[0],TTDo)
             for loop in reversed(do_loops[0:num_outer_loops_to_map]):
                 if len(result):
                     result += "*"
@@ -501,7 +501,7 @@ class TTLoopKernel(TTContainer,IComputeConstruct):
             for var in reduced_variables: 
                 reduction_preamble += "reduce_op_{kind}::init({var}[{tidx}]);\n".format(kind=kind,var=var,tidx=tidx)
         # 3. collapse and transform do-loops
-        do_loops = find_all(self.body[0],TTDoLoop)
+        do_loops = find_all(self.body[0],TTDo)
         if num_outer_loops_to_map == 1 or (LOOP_COLLAPSE_STRATEGY == "grid" and num_outer_loops_to_map <= 3):
             if num_outer_loops_to_map > 3:
                 utils.logging.log_warn("loop collapse strategy grid chosen with nested loops > 3")

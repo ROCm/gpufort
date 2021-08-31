@@ -107,48 +107,46 @@ def log_error(prefix,func_name,raw_msg):
     global __LOGGING_IS_INITIALIZED
     global VERBOSE
     global LOG_FILTER
-    global LOG_TRACEBACK
+    global TRACEBACK
 
     if not __LOGGING_IS_INITIALIZED: init_logging()
     
     msg = _intrnl_make_message(prefix,func_name,raw_msg)
-    if LOG_FILTER == None or re.search(LOG_FILTER,msg):
-        if LOG_TRACEBACK:
-            stack = "".join(traceback.format_stack()[:-1])
-            msg += "\n\n error site:\n\n"+stack+"\n"
-        logging.getLogger("").error(msg)
-        _intrnl_print_message("ERROR",msg)
+    if TRACEBACK:
+        stack = "".join(traceback.format_stack()[:-1])
+        msg += "\n\n error site:\n\n"+stack+"\n"
+    logging.getLogger("").error(msg)
+    _intrnl_print_message("ERROR",msg)
 
 def log_exception(prefix,func_name,raw_msg):
     global __LOGGING_IS_INITIALIZED
     global VERBOSE
     global LOG_FILTER
-    global LOG_TRACEBACK
+    global TRACEBACK
     
     if not __LOGGING_IS_INITIALIZED: init_logging()
 
     msg = _intrnl_make_message(prefix,func_name,raw_msg)
-    if LOG_FILTER == None or re.search(LOG_FILTER,msg):
-        if LOG_TRACEBACK:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            exc_stack = "".join(traceback.format_tb(exc_traceback))
-            error_stack = "".join(traceback.format_stack()[:-1])
-            msg += "\n\n exception site:\n\n"+exc_stack+"\n"
-            msg += " error site:\n\n"+error_stack+"\n"
-        logging.getLogger("").error(msg)
-        _intrnl_print_message("ERROR",msg)
+    if TRACEBACK:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        exc_stack = "".join(traceback.format_tb(exc_traceback))
+        error_stack = "".join(traceback.format_stack()[:-1])
+        msg += "\n\n exception site:\n\n"+exc_stack+"\n"
+        msg += " error site:\n\n"+error_stack+"\n"
+    logging.getLogger("").error(msg)
+    _intrnl_print_message("ERROR",msg)
 
 def log_warning(prefix,func_name,raw_msg):
     global __LOGGING_IS_INITIALIZED
     global VERBOSE
     global LOG_FILTER
-    global LOG_TRACEBACK
+    global TRACEBACK
 
     if not __LOGGING_IS_INITIALIZED: init_logging()
     
     msg = _intrnl_make_message(prefix,func_name,raw_msg)
     if LOG_FILTER == None or re.search(LOG_FILTER,msg):
-        if LOG_TRACEBACK:
+        if TRACEBACK:
             stack = "".join(traceback.format_stack()[:-1])
             msg += "\n\n warning site:\n\n"+stack+"\n"
         logging.getLogger("").warning(msg)

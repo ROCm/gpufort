@@ -503,10 +503,10 @@ def parse_file(linemaps,index,fortran_filepath):
         """
         nonlocal current_linemap
         nonlocal current_statement_no
-        nonlocal current_statement_strippedNoComments
+        nonlocal current_statement_stripped_no_comments
         
         try:
-           expression.parseString(current_statement_strippedNoComments,parseAll)
+           expression.parseString(current_statement_stripped_no_comments,parseAll)
            utils.logging.log_debug3(LOG_PREFIX,"parse_file.try_to_parse_string","found expression '{}' in line {}: '{}'".format(expression_name,current_linemap["lineno"],current_linemap["lines"][0].rstrip()))
            return True
         except ParseBaseException as e: 
@@ -520,8 +520,6 @@ def parse_file(linemaps,index,fortran_filepath):
             result = tokens[0] == "end" and tokens[1] == kind
         return result
     
-    p_do_loop_begin = re.compile(r"(\w+:)?\s*do")
-
     # parser loop
     for current_linemap in linemaps:
         condition1 = current_linemap["is_active"]
@@ -531,9 +529,9 @@ def parse_file(linemaps,index,fortran_filepath):
                 utils.logging.log_debug4(LOG_PREFIX,"parse_file","parsing statement '{}' associated with lines [{},{}]".format(current_statement.rstrip(),\
                     current_linemap["lineno"],current_linemap["lineno"]+len(current_linemap["lines"])-1))
                 
-                current_tokens                      = utils.parsingutils.tokenize(current_statement.lower())
+                current_tokens                       = utils.parsingutils.tokenize(current_statement.lower(),padded_size=6)
                 current_statement_stripped           = " ".join(current_tokens)
-                current_statement_strippedNoComments = current_statement_stripped.split("!")[0]
+                current_statement_stripped_no_comments = current_statement_stripped.split("!")[0]
                 if len(current_tokens):
                     # constructs
                     if current_tokens[0] == "end":
@@ -542,7 +540,7 @@ def parse_file(linemaps,index,fortran_filepath):
                                  End()
                         if is_end_statement_(current_tokens,"do"):
                             DoLoop_leave()
-                    if p_do_loop_begin.match(current_statement_strippedNoComments):
+                    if utils.parsingutils.is_do(current_tokens):
                         DoLoop_visit()    
                     # single-statements
                     if not keep_recording:
@@ -555,7 +553,7 @@ def parse_file(linemaps,index,fortran_filepath):
                         if "cuf" in SOURCE_DIALECTS:
                             if "attributes" in current_tokens:
                                 try_to_parse_string("attributes",attributes)
-                            if "cu" in current_statement_strippedNoComments:
+                            if "cu" in current_statement_stripped_no_comments:
                                 scan_string("cuda_lib_call",cuda_lib_call)
                             if "<<<" in current_tokens:
                                 try_to_parse_string("cuf_kernel_call",cuf_kernel_call)

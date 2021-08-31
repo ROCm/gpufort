@@ -32,89 +32,6 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
     
     utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_parse_fortran_code")
 
-    # tree node flagging
-    def is_declaration_(tokens):
-        return\
-            tokens[0] in ["type","integer","real","complex","logical","character"] or\
-            tokens[0:1+1] == ["double","precision"]
-    def is_ignored_statement_(tokens):
-        """All statements beginning with the tokens below are ignored.
-        """
-        return tokens[0] in ["write","print","character","use","implicit"] or\
-               is_declaration_(tokens)
-    def is_blank_line_(statement):
-        return not len(statement.strip())
-    def is_comment_(tokens,statement):
-        cond1 = tokens[0]=="!"
-        cond2 = len(statement) and statement[0] in ["c","*"]
-        return cond1 or cond2
-    def is_cpp_directive_(statement):
-        return statement[0] == "#" 
-    def is_fortran_directive_(tokens,statement):
-        return tokens[0] in ["!$","*$","c$"]
-    def is_ignored_fortran_directive_(tokens):
-        return tokens[1:2+1] == ["acc","end"] and\
-               tokens[3] in ["kernels","parallel","loop"]
-    def is_fortran_offload_region_directive_(tokens):
-        return\
-            tokens[1:2+1] == ["acc","parallel"] or\
-            tokens[1:2+1] == ["acc","kernels"]
-    def is_fortran_offload_region_plus_loop_directive_(tokens):
-        return\
-            tokens[1:3+1] == ["cuf","kernel","do"]  or\
-            tokens[1:3+1] == ["acc","parallel","loop"] or\
-            tokens[1:3+1] == ["acc","kernels","loop"] or\
-            tokens[1:3+1] == ["acc","kernels","loop"]
-    def is_fortran_offload_loop_directive_(tokens):
-        return\
-            tokens[1:2+1] == ["acc","loop"]
-    def is_assignment_(tokens):
-        #assert not is_declaration_(tokens)
-        #assert not is_do_(tokens)
-        return "=" in tokens
-    def is_pointer_assignment_(tokens):
-        #assert not is_ignored_statement_(tokens)
-        #assert not is_declaration_(tokens)
-        return "=>" in tokens
-    def is_subroutine_call_(tokens):
-        return tokens[0] == "call" and tokens[1].isidentifier()
-    def is_select_case_(tokens):
-        cond1 = tokens[0:1+1] == ["select","case"]
-        cond2 = tokens[0].isidentifier() and tokens[1] == ":" and\
-                tokens[2:3+1] == ["select","case"]
-        return cond1 or cond2
-    def is_case_(tokens):
-        return tokens[0:1+1] == ["case","("]
-    def is_case_default_(tokens):
-        return tokens[0:1+1] == ["case","default"]
-    def is_if_then_(tokens):
-        """:note: we assume single-line if have been
-        transformed in preprocessing step."""
-        return tokens[0:1+1] == ["if","("]
-    def is_if_then_(tokens):
-        """:note: we assume single-line if have been
-        transformed in preprocessing step."""
-        return tokens[0:1+1] == ["if","("]
-    def is_else_if_then_(tokens):
-        return tokens[0:2+1] == ["else","if","("]
-    def is_else_(tokens):
-        #assert not is_else_if_then_(tokens)
-        return tokens[0] == "else"
-    def is_do_while_(tokens):
-        cond1 = tokens[0:1+1] == ["do","while"]
-        cond2 = tokens[0].isidentifier() and tokens[1] == ":" and\
-                tokens[2:3+1] == ["do","while"]
-        return cond1 or cond2
-    def is_do_(tokens):
-        cond1 = tokens[0] == "do"
-        cond2 = tokens[0].isidentifier() and tokens[1] == ":" and\
-                tokens[2] == "do"
-        return cond1 or cond2
-    def is_end_(tokens,kinds=[]):
-        cond1 = tokens[0] == "end"
-        cond2 = not len(kinds) or tokens[1] in kinds
-        return cond1 and cond2
-
     # tree creation ops
     def append_(node,kind=None):
         nonlocal curr
@@ -147,9 +64,7 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
         nonlocal stmt1
         utils.logging.log_error(LOG_PREFIX,"_intrnl_parse_fortran_code","failed to parse {} expression '{}'".format(expr,stmt))
         if exception != None:
-            debug_msg = traceback.format_tb(exception.__traceback__)[0].rstrip().\
-                    replace("<string>",os.path.join(TRANSLATOR_DIR, "translator_parser.py.in"))
-            debug_msg += ": "+str(exception)
+            debug_msg = ": "+str(exception)
             utils.logging.log_debug(LOG_PREFIX,"_intrnl_parse_fortran_code",debug_msg)
         sys.exit(2) # TODO error code
     def warn_(expr,exception=None):
@@ -173,36 +88,36 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
         tokens = utils.parsingutils.tokenize(stmt.lower(),padded_size=6)
         # strip of ! from tokens.index("!")
         if "!" in stmt:
-            stmt_no_comment = stmt.split("!")[0]
+            stmt_no_comment = stmt.split("!")[0].lower()
         else:
-            stmt_no_comment = stmt
+            stmt_no_comment = stmt.lower()
         utils.logging.log_debug3(LOG_PREFIX,"_intrnl_parse_fortran_code","process statement '{}' (preprocessed: '{}')".format(stmt1,stmt))
         if len(tokens):
             utils.logging.log_debug4(LOG_PREFIX,"_intrnl_parse_fortran_code","tokens=['{}']".format("','".join(tokens)))
         # tree construction 
-        if is_blank_line_(stmt):
+        if utils.parsingutils.is_blank_line(stmt):
             if type(curr) != TTRoot:
                 append_(stmt,"blank line")
-        elif is_ignored_statement_(tokens):
+        elif utils.parsingutils.is_ignored_statement(tokens):
             ignore_("statement")
-        elif is_comment_(tokens,stmt):
+        elif utils.parsingutils.is_comment(tokens,stmt):
             if type(curr) != TTRoot:
                 comment = re.split("!|^[c*]",stmt1,1,re.IGNORECASE)[1]
                 append_("// "+comment+"\n","comment")
-        elif is_fortran_directive_(tokens,stmt):
+        elif utils.parsingutils.is_fortran_directive(tokens,stmt):
             try:
-                if is_ignored_fortran_directive_(tokens):
+                if utils.parsingutils.is_ignored_fortran_directive(tokens):
                     ignore_("directive")
-                elif is_fortran_offload_region_plus_loop_directive_(tokens): # most complex first
+                elif utils.parsingutils.is_fortran_offload_region_plus_loop_directive(tokens): # most complex first
                     parse_result = loop_annotation.parseString(stmt,parseAll=True)
                     curr_offload_region = parse_result[0]
                     curr_offload_loop   = parse_result[0] 
                     utils.logging.log_debug2(LOG_PREFIX,"_intrnl_parse_fortran_code.append_","found {} in statement '{}'".format("loop offloading directive",stmt))
-                elif is_fortran_offload_region_directive_(tokens):
+                elif utils.parsingutils.is_fortran_offload_region_directive(tokens):
                     parse_result = parallel_region_start.parseString(stmt,parseAll=True)
                     curr_offload_region = parse_result[0]
                     utils.logging.log_debug2(LOG_PREFIX,"_intrnl_parse_fortran_code.append_","found {} in statement '{}'".format("begin of offloaded region",stmt))
-                elif is_fortran_offload_loop_directive_(tokens):
+                elif utils.parsingutils.is_fortran_offload_loop_directive(tokens):
                     parse_result = loop_annotation.parseString(stmt,parseAll=True)
                     curr_offload_loop = parse_result[0] 
                     utils.logging.log_debug2(LOG_PREFIX,"_intrnl_parse_fortran_code.append_","found {} in statement '{}'".format("loop directive",stmt))
@@ -212,17 +127,17 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
                 error_("directive",e)
                 pass
         # do/while
-        elif is_do_while_(tokens):
+        elif utils.parsingutils.is_do_while(tokens):
             try: 
-                parse_result = fortan_do_while.parseString(stmt_no_comment,parseAll=True)
-                descend_(TTWhileLoop(stmt,0,parse_result.asList()+[[]]),"do-while loop")
+                parse_result = fortran_do_while.parseString(stmt_no_comment,parseAll=True)
+                descend_(TTDoWhile(stmt,0,parse_result.asList()+[[]]),"do-while loop")
             except Exception as e:
                 error_("do-while loop",e)
-        elif is_do_(tokens):
+        elif utils.parsingutils.is_do(tokens):
             try: 
                 parse_result   = fortran_do.parseString(stmt_no_comment,parseAll=True)
                 do_loop_tokens = [ curr_offload_loop ] + parse_result.asList() + [[]]
-                do_loop = TTDoLoop(stmt,0,do_loop_tokens)
+                do_loop = TTDo(stmt,0,do_loop_tokens)
                 if curr_offload_region != None:
                     descend_(TTLoopKernel(stmt_no_comment,"", [curr_offload_region, [do_loop]]),\
                             "offloaded do loop")
@@ -235,14 +150,14 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
             except Exception as e:
                 error_("do loop",e)
         # if-then-else
-        elif is_if_then_(tokens):
+        elif utils.parsingutils.is_if_then(tokens):
             try: 
                 descend_(TTIfElseBlock(),"if block",inc_level=False)
                 parse_result = fortran_if_else_if.parseString(stmt_no_comment,parseAll=True)
                 descend_(TTIfElseIf(stmt_no_comment,0,parse_result.asList()+[[]]),"if branch")
             except Exception as e:
                 error_("if",e)
-        elif is_else_if_then_(tokens):
+        elif utils.parsingutils.is_else_if_then(tokens):
             assert type(curr) is TTIfElseIf
             ascend_("if")
             try: 
@@ -250,18 +165,18 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
                 descend_(TTIfElseIf(stmt_no_comment,0,parse_result.asList()+[[]]),"else-if branch")
             except Exception as e:
                 error_("else-if",e)
-        elif is_else_(tokens):
-            assert type(curr) is TTIfElseIf
+        elif utils.parsingutils.is_else(tokens):
+            assert type(curr) is TTIfElseIf, type(curr)
             ascend_("if/else-if")
             descend_(TTElse(stmt_no_comment,0,[]),"else branch")
         # select-case
-        elif is_select_case_(tokens):
+        elif utils.parsingutils.is_select_case(tokens):
             try: 
                 parse_result = fortran_select_case.parseString(stmt_no_comment,parseAll=True)
                 descend_(TTSelectCase(stmt_no_comment,0,parse_result.asList()+[[]]),"select-case")
             except Exception as e:
                 error_("select-case",e)
-        elif is_case_(tokens):
+        elif utils.parsingutils.is_case(tokens):
             if type(curr) is TTCase:
                 ascend_("case")
             try: 
@@ -269,23 +184,26 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
                 descend_(TTCase(stmt_no_comment,0,parse_result.asList()+[[]]),"case")
             except Exception as e:
                 error_("else-if",e)
-        elif is_case_default_(tokens):
+        elif utils.parsingutils.is_case_default(tokens):
             if type(curr) is TTCase:
                 ascend_("case")
             descend_(TTCase(stmt_no_comment,0,[[]]),"case default")
         # end
-        elif is_end_(tokens,["do","if","select"]):
+        elif utils.parsingutils.is_end(tokens,["do"]):
+            ascend_(tokens[1])
+        elif utils.parsingutils.is_end(tokens,["if","select"]):
+            ascend_(tokens[1])
             ascend_(tokens[1])
         # single statements
-        elif is_pointer_assignment_(tokens):
+        elif utils.parsingutils.is_pointer_assignment(tokens):
             error_("pointer assignment")
-        elif is_assignment_(tokens):
+        elif utils.parsingutils.is_assignment(tokens):
             try: 
                 parse_result = fortran_assignment.parseString(stmt_no_comment,parseAll=True)
                 append_(parse_result[0],"assignment")
             except Exception as e:
                 error_("assignment",e)
-        elif is_subroutine_call_(tokens):
+        elif utils.parsingutils.is_subroutine_call(tokens):
             try: 
                 parse_result = fortran_subroutine_call.parseString(stmt_no_comment,parseAll=True)
                 append_(parse_result[0],"subroutine call")

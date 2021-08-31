@@ -314,7 +314,7 @@ def parse_command_line_arguments():
     if args.verbose:
         utils.logging.VERBOSE = True
     if args.log_traceback:
-        utils.logging.LOG_TRACEBACK = True
+        utils.logging.TRACEBACK = True
     if args.log_filter != None:
         utils.logging.LOG_FILTER = args.log_filter
     # developer: profiling:

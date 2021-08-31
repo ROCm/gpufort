@@ -57,12 +57,53 @@ class TTNumber(TTNode):
     def _assign_fields(self,tokens):
         self._value = tokens[0]
     def c_str(self):
-        parts = self._value.replace("d","e").split("_")
-        if len(parts) > 1:
-            return "{0} /*_{1}*/".format(parts[0],parts[1])
+        global LOG_PREFIX
+
+        default_real_bytes    = FORTRAN_TYPE_2_BYTES_MAP["real"][""]
+        default_integer_bytes = FORTRAN_TYPE_2_BYTES_MAP["integer"][""]
+        parts              = re.split(r"(d[0-9]+|e[0-9]+|_\w+)",self._value)
+        parts              = [p for p in parts if len(p)]
+        is_real            = "." in self._value
+        if is_real and len(parts) == 2 and parts[1].startswith("d"):
+            return parts[0] + parts[1].replace("d","e")
+        elif is_real and len(parts)==1 or\
+             is_real and len(parts) == 2 and parts[1].startswith("e"):
+            if default_real_bytes=="4":
+                return "".join(parts) + "f"
+            else:
+                return "".join(parts)
+        elif is_real and len(parts) == 3 and parts[1].startswith("e") and\
+              parts[-1].startswith("_"):
+            suffix = parts[-1][1:].lower()
+            if suffix in FORTRAN_TYPE_2_BYTES_MAP["real"]:
+                suffix_bytes = FORTRAN_TYPE_2_BYTES_MAP["real"][suffix]
+                if suffix_real_bytes=="4":
+                    return parts[0] + parts[1] + "f"
+                else:
+                    return parts[0] + parts[1]
+            else:
+                utils.logging.log_error(LOG_PREFIX,"TTNumber.c_str",\
+                        "no number of bytes found for suffix '{}' in 'translator.FORTRAN_TYPE_2_BYTES_MAP[\"real\"]'".format(suffix))
+                sys.exit(2) # TODO erroicode
+        elif not is_real and len(parts) >= 2 and parts[-1].startswith("_"):
+            suffix = parts[-1][1:].lower()
+            if suffix in FORTRAN_TYPE_2_BYTES_MAP["integer"]:
+                if suffix_real_bytes=="8":
+                    return "".join(parts[0:-1]).replace("d","e") + "l"
+                else:    
+                    return "".join(parts[0:-1]).replace("d","e")
+            else:
+                utils.logging.log_error(LOG_PREFIX,"TTNumber.c_str",\
+                        "no number of bytes found for suffix '{}' in 'translator.FORTRAN_TYPE_2_BYTES_MAP[\"integer\"]'".format(suffix))
+                sys.exit(2) # TODO error
+        elif not is_real and len(parts) == 1 or\
+             not is_real and len(parts) == 2 and parts[1][0] in ["d","e"]:
+            if default_integer_bytes=="8":
+                return "".join(parts) + "l"
+            else:
+                return "".join(parts)
         else:
-            return parts[0] 
-        return self._value 
+            return "".join(parts)
     def f_str(self):
         return self._value
 

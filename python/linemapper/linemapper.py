@@ -236,7 +236,7 @@ def _intrnl_detect_line_starts(lines):
         buffering |= p_directive_continuation.match(line) != None
         if not buffering:
             line_starts.append(lineno)
-        stripped_line = line.rstrip(" \t")  
+        stripped_line = line.rstrip(" \t\n")  
         if len(stripped_line) and stripped_line[-1] in ['&','\\']:
             buffering = True
         else:
@@ -500,9 +500,9 @@ def preprocess_and_normalize(fortran_file_lines,fortran_filepath,macro_stack=[],
     # 2. go through the blocks of buffered lines
     linemaps = []
     for i,_ in enumerate(line_starts[:-1]):
-        line_start     = line_starts[i]
+        line_start      = line_starts[i]
         next_line_start = line_starts[i+1]
-        lines         = fortran_file_lines[line_start:next_line_start]
+        lines           = fortran_file_lines[line_start:next_line_start]
 
         included_linemaps = []
         is_preprocessor_directive = lines[0].startswith("#")

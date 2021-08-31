@@ -95,7 +95,7 @@ def log_info(prefix,func_name,raw_msg):
     global VERBOSE
     global LOG_FILTER
    
-    if not __logging_is_initialized: init_logging()
+    if not __LOGGING_IS_INITIALIZED: init_logging()
 
     msg = _intrnl_make_message(prefix,func_name,raw_msg)
     if LOG_FILTER == None or re.search(LOG_FILTER,msg):

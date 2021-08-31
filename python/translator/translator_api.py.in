@@ -7,7 +7,7 @@ def parse_declaration(fortran_statement):
 
     utils.logging.log_enter_function(LOG_PREFIX,"parse_declaration",{ "fortran_statement":fortran_statement })
 
-    orig_tokens             = utils.parsingutils.tokenize(fortran_statement,padded_size=10)
+    orig_tokens             = utils.parsingutils.tokenize(fortran_statement.lower(),padded_size=10)
     tokens                  = orig_tokens
 
     utils.logging.log_debug2(LOG_PREFIX,"parse_declaration","tokens="+str(tokens))
@@ -70,7 +70,7 @@ def parse_declaration(fortran_statement):
         tokens = tokens[idx_last_consumed_token+1:] # remove qualifier list tokens
     variables_raw = utils.parsingutils.create_comma_separated_list(tokens) 
     
-    utils.logging.log_debug2(LOG_PREFIX,"parse_declaration","type="+str(datatype)+",kind="+str(kind)+",qualifiers="+str(variables_raw)+","+"variables="+str(variables_raw))
+    utils.logging.log_debug2(LOG_PREFIX,"parse_declaration","type="+str(datatype)+",kind="+str(kind)+",qualifiers="+str(qualifiers_raw)+","+"variables="+str(variables_raw))
 
     # construct declaration tree node
     qualifiers = []

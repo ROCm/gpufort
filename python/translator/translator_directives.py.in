@@ -150,7 +150,8 @@ class TTDoLoop(TTContainer):
         step        = make_c_str(self._step)
         body_content = TTContainer.c_str(self)
         if self._thread_index == None:
-            return "{indent}for (int {0}={1}; {0} <= {2}; {0} += {3}) {{\n{4}\n}}".format(self.indent,ivar, begin, end, step, body_content)
+            return "{indent}for (int {0}={1}; {0} <= {2}; {0} += {3}) {{\n{4}\n}}".format(\
+                    ivar, begin, end, step, body_content,indent=self.indent)
         else:
             return body_content
 

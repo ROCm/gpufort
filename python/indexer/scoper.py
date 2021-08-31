@@ -191,6 +191,13 @@ def create_index_search_tag_for_variable(variable_expression):
         result.append(curr)
         return "%".join(result)
 
+def create_scope_from_declaration_statements(declaration_statements=[]):
+    """Create scope from declaration statements.
+    :note: must not contain any line breaks.
+    """
+
+
+
 def create_scope(index,tag):
     """
     :param str tag: a colon-separated list of strings. Ex: mymod:mysubroutine or mymod.

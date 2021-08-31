@@ -39,8 +39,8 @@ class TestScoper(unittest.TestCase):
             indexer.scan_file("test_modules.f90",gfortran_options,self._index)
             indexer.scan_file("test1.f90",gfortran_options,self._index)
         else:
-            indexer.update_from_linemaps(linemapper.read_file("test_modules.f90",gfortran_options),self._index)
-            indexer.update_from_linemaps(linemapper.read_file("test1.f90",gfortran_options),self._index)
+            indexer.update_index_from_linemaps(linemapper.read_file("test_modules.f90",gfortran_options),self._index)
+            indexer.update_index_from_linemaps(linemapper.read_file("test1.f90",gfortran_options),self._index)
     def test_2_scoper_search_for_variables(self):
         c   = scoper.search_index_for_variable(index,"test1","c") # included from module 'simple'
         scoper.SCOPES.clear()

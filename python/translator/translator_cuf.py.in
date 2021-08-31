@@ -139,7 +139,7 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
         result += "// - Shared Memory: {}\n".format(make_f_str(self._sharedmem))
         result += "// - Stream: {}\n".format(make_f_str(self._stream))
         return result
-    def omp_f_str(self,arrays_in_body=set(),inoutarrays_in_body=set(),reduction={},depend={},loop_type="do"):
+    def omp_f_str(self,arrays_in_body=set(),inout_arrays_in_body=set(),reduction={},depend={},loop_type="do"):
         result = "!$omp target teams distribute parallel "+loop_type  
 
         grid  = self.num_gangs_teams_blocks()
@@ -171,7 +171,7 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
                 for kind,variables in depend.items():
                     result += " depend("+kind+":"+",".join(variables)+")"
             else: 
-                inarrays_in_body = [el for el in arrays_in_body if el not in inoutarrays_in_body]
+                in_arrays_in_body = [el for el in arrays_in_body if el not in inout_arrays_in_body]
                 if len(in_arrays_in_body):
                     result += " depend("+kind+":"+",".join(in_arrays_in_body)+")"
                 if len(inout_arrays_in_body):

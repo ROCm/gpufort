@@ -402,7 +402,7 @@ class TTPower(TTNode):
         if type(self._base) is TTRValue:
             base = self._base._value
             sign = self._base._sign
-        return "{sign}_intrnl_pow({base},{exp})".format(\
+        return "{sign}__pow({base},{exp})".format(\
             sign=make_f_str(sign),base=make_f_str(base),
             exp=make_f_str(self._exp))
     

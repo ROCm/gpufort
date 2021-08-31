@@ -427,7 +427,7 @@ class TTLoopKernel(TTContainer,IComputeConstruct):
                 nonlocal arrays_in_body
                 nonlocal inout_arrays_in_body
                 nonlocal reduction
-                return parse_result.omp_f_str(arrays_in_body,inoutarrays_in_body,reduction,depend), True
+                return parse_result.omp_f_str(arrays_in_body,inout_arrays_in_body,reduction,depend), True
             
             result,_ = utils.pyparsingutils.replace_first(f_snippet,\
                 cuf_kernel_do,\
@@ -438,7 +438,7 @@ class TTLoopKernel(TTContainer,IComputeConstruct):
                 nonlocal arrays_in_body
                 nonlocal inout_arrays_in_body
                 nonlocal reduction
-                return parse_result.omp_f_str(arrays_in_body,inoutarrays_in_body,depend), True
+                return parse_result.omp_f_str(arrays_in_body,inout_arrays_in_body,depend), True
             parallel_region = "parallel" 
             def acc_loop_repl(parse_result):
                 nonlocal arrays_in_body

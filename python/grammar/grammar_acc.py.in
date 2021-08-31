@@ -27,22 +27,7 @@ acc_clause_vector_length = VECTOR_LENGTH + LPAR + integer + RPAR
 acc_clause_device_type   = DEVICE_TYPE + LPAR + Group(delimitedList(identifier | Literal("*"))) + RPAR
 acc_clause_if            = IF + LPAR + arithmetic_logical_expression + RPAR
 
-# copy           
-# copyin         
-# copyout        
-# create         
-# no_create      
-# present        
-# deviceptr      
-# attach         
-# detach         
-# use_device     
-# delete         
-# private        
-# first_private  
-# host           
-# device_resident
-# link           
+# copy, copyin, copyout, create, no_create, present, deviceptr, attach, detach, use_device, delete, private, first_private, host, device_resident, link
 acc_mapping_clause  = identifier.copy() + acc_var_list
 
 acc_clause_default   = DEFAULT         + LPAR + (CASELESS_LITERAL("none") | CASELESS_LITERAL("present")) + RPAR # do not suppress

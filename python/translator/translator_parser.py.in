@@ -197,12 +197,15 @@ def _intrnl_parse_fortran_code(statements,scope=[]):
                     parse_result = loop_annotation.parseString(stmt,parseAll=True)
                     curr_offload_region = parse_result[0]
                     curr_offload_loop   = parse_result[0] 
+                    utils.logging.log_debug2(LOG_PREFIX,"_intrnl_parse_fortran_code.append_","found {} in statement '{}'".format("loop offloading directive",stmt))
                 elif is_fortran_offload_region_directive_(tokens):
                     parse_result = parallel_region_start.parseString(stmt,parseAll=True)
                     curr_offload_region = parse_result[0]
+                    utils.logging.log_debug2(LOG_PREFIX,"_intrnl_parse_fortran_code.append_","found {} in statement '{}'".format("begin of offloaded region",stmt))
                 elif is_fortran_offload_loop_directive_(tokens):
                     parse_result = loop_annotation.parseString(stmt,parseAll=True)
                     curr_offload_loop = parse_result[0] 
+                    utils.logging.log_debug2(LOG_PREFIX,"_intrnl_parse_fortran_code.append_","found {} in statement '{}'".format("loop directive",stmt))
                 else:
                     warn_("directive",e)
             except Exception as e:

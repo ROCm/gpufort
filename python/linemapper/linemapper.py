@@ -244,7 +244,7 @@ def _intrnl_detect_line_starts(lines):
     line_starts.append(len(lines))
     return line_starts
 
-def _intrnl_preprocess_and_normalize(fortran_file_lines,fortran_filepath,macro_stack,region_stack1,region_stack2):
+def preprocess_and_normalize(fortran_file_lines,fortran_filepath,macro_stack,region_stack1,region_stack2):
     """:param list file_lines: Lines of a file, terminated with line break characters ('\n').
     :returns: a list of dicts with keys 'lineno', 'original_lines', 'statements'.
     """
@@ -319,7 +319,7 @@ def _intrnl_preprocess_and_normalize(fortran_file_lines,fortran_filepath,macro_s
         }
         linemaps.append(linemap)
     
-    utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_preprocess_and_normalize")
+    utils.logging.log_leave_function(LOG_PREFIX,"preprocess_and_normalize")
     return linemaps
 
 def _intrnl_preprocess_and_normalize_fortran_file(fortran_filepath,macro_stack,region_stack1,region_stack2):
@@ -332,13 +332,13 @@ def _intrnl_preprocess_and_normalize_fortran_file(fortran_filepath,macro_stack,r
 
     try:
         with open(fortran_filepath,"r") as infile:
-            linemaps = _intrnl_preprocess_and_normalize(infile.readlines(),fortran_filepath,macro_stack,region_stack1,region_stack2)
+            linemaps = preprocess_and_normalize(infile.readlines(),fortran_filepath,macro_stack,region_stack1,region_stack2)
             utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_preprocess_and_normalize_fortran_file")
             return linemaps
     except Exception as e:
             raise e
 
-def _intrnl_init_macros(options):
+def init_macros(options):
     """init macro stack from compiler options and user-prescribed config values."""
     global USER_DEFINED_MACROS
 
@@ -461,6 +461,98 @@ def _intrnl_group_modified_linemaps(linemaps):
 
 # API
 
+def init_macros(options):
+    """init macro stack from compiler options and user-prescribed config values."""
+    global USER_DEFINED_MACROS
+
+    macro_stack = []
+    macro_stack += USER_DEFINED_MACROS
+    for result,_,__ in pp_compiler_option.scanString(options):
+        value = result.value
+        if value == None:
+            value == "1"
+        macro = { "name": result.name, "args": [], "subst": result.value }
+        macro_stack.append(macro)
+    return macro_stack
+
+def preprocess_and_normalize(fortran_file_lines,fortran_filepath,macro_stack=[],region_stack1=[True],region_stack2=[True]):
+    """:param list file_lines: Lines of a file, terminated with line break characters ('\n').
+    :returns: a list of dicts with keys 'lineno', 'original_lines', 'statements'.
+    """
+    global LOG_PREFIX
+    global ERROR_HANDLING
+           
+    global INDENT_WIDTH_WHITESPACE
+    global INDENT_WIDTH_TABS
+           
+    global DEFAULT_INDENT_CHAR
+    global ONLY_APPLY_USER_DEFINED_MACROS
+
+    utils.logging.log_enter_function(LOG_PREFIX,"preprocess_and_normalize",{
+      "fortran_filepath":fortran_filepath
+    })
+    
+    assert DEFAULT_INDENT_CHAR in [' ','\t'], "Indent char must be whitespace ' ' or tab '\\t'"
+
+    # 1. detect line starts
+    line_starts = _intrnl_detect_line_starts(fortran_file_lines)
+
+    # 2. go through the blocks of buffered lines
+    linemaps = []
+    for i,_ in enumerate(line_starts[:-1]):
+        line_start     = line_starts[i]
+        next_line_start = line_starts[i+1]
+        lines         = fortran_file_lines[line_start:next_line_start]
+
+        included_linemaps = []
+        is_preprocessor_directive = lines[0].startswith("#")
+        if is_preprocessor_directive and not ONLY_APPLY_USER_DEFINED_MACROS:
+            try:
+                included_linemaps = _intrnl_handle_preprocessor_directive(lines,fortran_filepath,macro_stack,region_stack1,region_stack2)
+                statements1 = []
+                statements3 = []
+            except Exception as e:
+                raise e
+        elif region_stack1[-1]: # in_active_region
+            # Convert line to statememts
+            statements1 = _intrnl_convert_lines_to_statements(lines)
+            # 2. Apply macros to statements
+            statements2  = []
+            for stmt1 in statements1:
+                statements2.append(_intrnl_expand_macros(stmt1,macro_stack))
+            # 3. Above processing might introduce multiple statements per line againa.
+            # Hence, convert each element of statements2 to single statements again
+            statements3 = []
+            for stmt2 in statements2:
+                for stmt3 in _intrnl_convert_lines_to_statements([stmt2]):
+                    statements3.append(stmt3)
+                    # TODO(Dominic): In case, we really need to assume that people write Fortran code
+                    # such as `module mymod; integer :: myint; end module` and we therefore might
+                    # require epilog/prolog per line, this will be the place where replace 
+                    # the string stmt3 by a dictionary.
+                    # (If we would do this, we can actually also linemap positional information in a next step.)
+    
+        #if len(included_linemaps) or (not is_preprocessor_directive and region_stack1[-1]):
+        linemap = {
+          "file":                    fortran_filepath,
+          "lineno":                  line_start+1, # key
+          "lines":                   lines,
+          "raw_statements":          statements1,
+          "included_linemaps":         included_linemaps,
+          "is_preprocessor_directive": is_preprocessor_directive,
+          "is_active":                region_stack1[-1],
+          # inout
+          "statements":              statements3,
+          "modified":                False,
+          # out
+          "prolog":                  [],
+          "epilog":                  []
+        }
+        linemaps.append(linemap)
+    
+    utils.logging.log_leave_function(LOG_PREFIX,"preprocess_and_normalize")
+    return linemaps
+
 def read_file(fortran_filepath,options=""):
     """
     A C and Fortran preprocessor (cpp and fpp).
@@ -482,7 +574,7 @@ def read_file(fortran_filepath,options=""):
       "options":options
     })
 
-    macro_stack = _intrnl_init_macros(options)
+    macro_stack = init_macros(options)
     try:
         linemaps = _intrnl_preprocess_and_normalize_fortran_file(fortran_filepath,macro_stack,\
            region_stack1=[True],region_stack2=[True]) # init value of region_stack[0] can be arbitrary

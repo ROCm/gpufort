@@ -180,7 +180,7 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
             return clause.value() == "present"
         else:
             return True
-    def omp_f_str(self,arrays_in_body=[],inoutarrays_in_body=[],depend={},prefix=""):
+    def omp_f_str(self,arrays_in_body=[],inout_arrays_in_body=[],depend={},prefix=""):
         # TODO split in frontend and backend?
         """
         :param: arrays_in_body      all array lvalues and rvalues
@@ -207,7 +207,7 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
         deviceptr_list  = self.deviceptrs()
         present_list    = self.present_vars() 
 
-        inarrays_in_body    = [el for el in arrays_in_body if el not in inoutarrays_in_body]
+        in_arrays_in_body    = [el for el in arrays_in_body if el not in inout_arrays_in_body]
         already_considered = [el.lower() for el in (to_list+from_list+tofrom_list+alloc_list+deviceptr_list+present_list)]
         if not self.present_by_default():
             to_list     += [el for el in in_arrays_in_body    if el not in already_considered]  # note: {val} - {val,other_val} = empty set
@@ -248,16 +248,16 @@ class TTAccData(TTAccDataManagementDirectiveBase):
       clauses of TTAccDataManagementDirectiveBase
       if( condition )
     """
-    def omp_f_str(self,arrays_in_body=[],inoutarrays_in_body=[],depend={}):
-        return self._format(TTAccDataManagementDirectiveBase.omp_f_str(self,arrays_in_body,inoutarrays_in_body,depend,"!$omp target data"))
+    def omp_f_str(self,arrays_in_body=[],inout_arrays_in_body=[],depend={}):
+        return self._format(TTAccDataManagementDirectiveBase.omp_f_str(self,arrays_in_body,inout_arrays_in_body,depend,"!$omp target data"))
 
 class TTAccEnterData(TTAccDataManagementDirectiveBase):
     """
     possible clauses:
       clauses of TTAccData
     """
-    def omp_f_str(self,arrays_in_body=[],inoutarrays_in_body=[],depend={}):
-        return self._format(TTAccDataManagementDirectiveBase.omp_f_str(self,arrays_in_body,inoutarrays_in_body,depend,"!$omp target enter data"))
+    def omp_f_str(self,arrays_in_body=[],inout_arrays_in_body=[],depend={}):
+        return self._format(TTAccDataManagementDirectiveBase.omp_f_str(self,arrays_in_body,inout_arrays_in_body,depend,"!$omp target enter data"))
 
 class TTAccExitData(TTAccDataManagementDirectiveBase):
     """
@@ -266,8 +266,8 @@ class TTAccExitData(TTAccDataManagementDirectiveBase):
       async [( int-expr )]
       wait [( wait-argument )]
     """
-    def omp_f_str(self,arrays_in_body=[],inoutarrays_in_body=[],depend={}):
-        return self._format(TTAccDataManagementDirectiveBase.omp_f_str(self,arrays_in_body,inoutarrays_in_body,depend,"!$omp target exit data"))
+    def omp_f_str(self,arrays_in_body=[],inout_arrays_in_body=[],depend={}):
+        return self._format(TTAccDataManagementDirectiveBase.omp_f_str(self,arrays_in_body,inout_arrays_in_body,depend,"!$omp target exit data"))
     
 class TTAccDeclare(TTAccDirectiveBase):
     """ NOTE: In contrast to OMP, '!$acc declare' is only applied to global variables.
@@ -472,27 +472,27 @@ class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase,IComputeConstru
         return self.handle_mapping_clause(["private"],converter)
     def firstprivate_vars(self,converter=make_f_str):
         return self.handle_mapping_clause(["firstprivate"],converter)
-    def omp_f_str(self,arrays_in_body=[],inoutarrays_in_body=[],depend={},prefix="!$omp target"):
+    def omp_f_str(self,arrays_in_body=[],inout_arrays_in_body=[],depend={},prefix="!$omp target"):
         result   = prefix
-        data_part = " "+TTAccDataManagementDirectiveBase.omp_f_str(self,arrays_in_body,inoutarrays_in_body,depend,"")
+        data_part = " "+TTAccDataManagementDirectiveBase.omp_f_str(self,arrays_in_body,inout_arrays_in_body,depend,"")
         return result + data_part
 
 class TTAccParallel(TTAccComputeConstructBase):
-    def omp_f_str(self,arrays_in_body=[],inoutarrays_in_body=[],depend={},prefix="!$omp target"):
-        return self._format(TTAccComputeConstructBase.omp_f_str(self,arrays_in_body,inoutarrays_in_body,depend,prefix))
+    def omp_f_str(self,arrays_in_body=[],inout_arrays_in_body=[],depend={},prefix="!$omp target"):
+        return self._format(TTAccComputeConstructBase.omp_f_str(self,arrays_in_body,inout_arrays_in_body,depend,prefix))
 
 class TTAccParallelLoop(TTAccParallel,TTAccLoop):
     def _assign_fields(self,tokens):
         TTAccDirectiveBase._assign_fields(self,tokens)
         self._loop_handles_mutual_clauses = False
-    def omp_f_str(self,arrays_in_body=[],inoutarrays_in_body=[],depend={},loop_type="do"):
+    def omp_f_str(self,arrays_in_body=[],inout_arrays_in_body=[],depend={},loop_type="do"):
         """
         :note: loop_type may be changed later if there is a target 'workshare' construct
                in the OpenMP standard. Then, matrix assignments can be mapped
                with such a construct.
         """
         result       = "!$omp target teams distribute"
-        parallel_part = TTAccParallel.omp_f_str(self,arrays_in_body,inoutarrays_in_body,depend,"")
+        parallel_part = TTAccParallel.omp_f_str(self,arrays_in_body,inout_arrays_in_body,depend,"")
         loop_part     = TTAccLoop.omp_f_str(self,loop_type,"parallel","")
         return self._format(result + " " + loop_part.lstrip() + " " + parallel_part.strip())
 

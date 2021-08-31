@@ -36,7 +36,7 @@ def create_index(search_dirs,options,filepath,linemaps=None):
     index = []
     if not SKIP_CREATE_GPUFORT_MODULE_FILES:
         if linemaps != None:
-            indexer.update_from_linemaps(linemaps,index)
+            indexer.update_index_from_linemaps(linemaps,index)
         else:
             indexer.scan_file(filepath,options_as_str,index)
         output_dir = os.path.dirname(filepath)

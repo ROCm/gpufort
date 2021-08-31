@@ -22,8 +22,8 @@ exec(open("{0}/grammar.py".format(GRAMMAR_DIR)).read())
 indexer_dir = os.path.dirname(__file__)
 exec(open("{0}/indexer_options.py.in".format(indexer_dir)).read())
     
-pFilter       = re.compile(FILTER) 
-pContinuation = re.compile(CONTINUATION_FILTER)
+p_filter       = re.compile(FILTER) 
+p_continuation = re.compile(CONTINUATION_FILTER)
 
 def _intrnl_read_fortran_file(filepath,preproc_options):
     """
@@ -32,21 +32,21 @@ def _intrnl_read_fortran_file(filepath,preproc_options):
     of "&".
     """
     global PREPROCESS_FORTRAN_FILE
-    global pFilter
+    global p_filter
     global p_anti_filter
-    global pContinuation
+    global p_continuation
     global LOG_PREFIX
 
     utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_read_fortran_file",{"filepath":filepath,"preproc_options":preproc_options})
     
     def consider_statement(stripped_statement):
-        passes_filter = pFilter.match(stripped_statement) != None
+        passes_filter = p_filter.match(stripped_statement) != None
         return passes_filter
     try:
        command = PREPROCESS_FORTRAN_FILE.format(file=filepath,options=preproc_options)
        output  = subprocess.check_output(command,shell=True).decode("UTF-8")
        # remove Fortran line continuation and directive continuation
-       output = pContinuation.sub(" ",output.lower()) 
+       output = p_continuation.sub(" ",output.lower()) 
        output = output.replace(";","\n") # convert multi-statement lines to multiple lines with a single statement; preprocessing removed comments
        
        # filter statements
@@ -69,15 +69,14 @@ def _intrnl_collect_statements(linemaps):
     @see linemapper
     """
     global PREPROCESS_FORTRAN_FILE
-    global pFilter
+    global p_filter
     global p_anti_filter
-    global pContinuation
     global LOG_PREFIX
 
     utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_collect_statements")
     
     def consider_statement(stripped_statement):
-        passes_filter = pFilter.match(stripped_statement) != None
+        passes_filter = p_filter.match(stripped_statement) != None
         return passes_filter
     # filter statements
     filtered_statements = []
@@ -530,18 +529,18 @@ def scan_file(filepath,preproc_options,index):
     
     utils.logging.log_leave_function(LOG_PREFIX,"scan_file") 
 
-def update_from_linemaps(linemaps,index):
+def update_index_from_linemaps(linemaps,index):
     """Updates index from a number of linemaps."""
     global LOG_PREFIX
-    utils.logging.log_enter_function(LOG_PREFIX,"update_from_linemaps") 
+    utils.logging.log_enter_function(LOG_PREFIX,"update_index_from_linemaps") 
     
     filtered_statements = _intrnl_collect_statements(linemaps)
-    utils.logging.log_debug2(LOG_PREFIX,"update_from_linemaps","extracted the following statements:\n>>>\n{}\n<<<".format(\
+    utils.logging.log_debug2(LOG_PREFIX,"update_index_from_linemaps","extracted the following statements:\n>>>\n{}\n<<<".format(\
         "\n".join(filtered_statements)))
     if len(linemaps):
         index += _intrnl_parse_statements(filtered_statements,filepath=linemaps[0]["file"])
     
-    utils.logging.log_leave_function(LOG_PREFIX,"update_from_linemaps") 
+    utils.logging.log_leave_function(LOG_PREFIX,"update_index_from_linemaps") 
 
 def write_gpufort_module_files(index,output_dir):
     """

@@ -2,200 +2,220 @@
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 
 # API
-def createIndexRecordsFromDeclaration(ttdeclaration):
+def parse_declaration(fortran_statement):
+    global LOG_PREFIX
+
+    utils.logging.log_enter_function(LOG_PREFIX,"parse_declaration",{ "fortran_statement":fortran_statement })
+
+    orig_tokens             = utils.parsingutils.tokenize(fortran_statement.lower(),padded_size=10)
+    tokens                  = orig_tokens
+
+    utils.logging.log_debug2(LOG_PREFIX,"parse_declaration","tokens="+str(tokens))
+    
+    idx_last_consumed_token = None
+    # handle datatype
+    datatype            = tokens[0]
+    kind                = None
+    DOUBLE_COLON        = "::"
+    if tokens[0] == "type":
+        # ex: type ( dim3 )
+        kind = tokens[2]
+        idx_last_consumed_token = 3
+    elif tokens[0:1+1] == ["double","precision"]:
+        datatype = " ".join(tokens[0:1+1])
+        idx_last_consumed_token = 1
+    elif tokens[1] == "*":
+        # ex: integer * 4
+        # ex: integer * ( 4*2 )
+        kind_tokens = utils.parsingutils.next_tokens_till_open_bracket_is_closed(tokens[2:],open_brackets=0)
+        kind = "".join(kind_tokens)
+        idx_last_consumed_token = 2+len(kind_tokens)-1
+    elif tokens[1] == "(" and tokens[2] in ["kind","len"] and\
+         tokens[3] in ["=","("]:
+        # ex: integer ( kind = 4 )
+        # ex: integer ( kind ( 4 ) )
+        kind_tokens = utils.parsingutils.next_tokens_till_open_bracket_is_closed(tokens[3:],open_brackets=1)
+        kind = "".join(kind_tokens[:-1])
+        idx_last_consumed_token = 3 + len(kind_tokens)-1
+    elif tokens[1] == "(" :
+        # ex: integer ( 4 )
+        # ex: integer ( 4*2 )
+        kind_tokens = utils.parsingutils.next_tokens_till_open_bracket_is_closed(tokens[2:],open_brackets=1)
+        kind = "".join(kind_tokens[:-1])
+        idx_last_consumed_token = 2 + len(kind_tokens)-1
+    elif tokens[1] in [",",DOUBLE_COLON] or tokens[1].isidentifier():
+        # ex: integer ,
+        # ex: integer ::
+        # ex: integer a
+        idx_last_consumed_token = 0
+    else:
+        utils.logging.log_error(LOG_PREFIX,"parse_declaration","could not parse datatype in variable declaration statement '{}'".format(fortran_statement))
+        sys.exit(2)
+    
+    # handle qualifiers
+    tokens                  = tokens[idx_last_consumed_token+1:] # remove type part tokens
+    idx_last_consumed_token = None
+    if tokens[0] == "," and DOUBLE_COLON in tokens:
+        qualifiers = utils.parsingutils.create_comma_separated_list(tokens)
+        idx_last_consumed_token = tokens.index(DOUBLE_COLON)
+    elif tokens[0] == DOUBLE_COLON:
+        idx_last_consumed_token = 0
+    elif tokens[0] == ",":
+        utils.logging.log_error(LOG_PREFIX,"parse_declaration","could not parse qualifier list in variable declaration statement '{}'".format(fortran_statement))
+        sys.exit(2)
+    qualifiers_raw = utils.parsingutils.create_comma_separated_list(tokens) 
+    
+    # handle variables list
+    if idx_last_consumed_token != None:
+        tokens = tokens[idx_last_consumed_token+1:] # remove qualifier list tokens
+    variables_raw = utils.parsingutils.create_comma_separated_list(tokens) 
+    
+    utils.logging.log_debug2(LOG_PREFIX,"parse_declaration","type="+str(datatype)+",kind="+str(kind)+",qualifiers="+str(qualifiers_raw)+","+"variables="+str(variables_raw))
+
+    # construct declaration tree node
+    qualifiers = []
+    for qualifier in qualifiers_raw:
+        if qualifier.startswith("dimension"):
+            try:
+                qualifiers.append( dimension_qualifier.parseString(qualifier,parseAll=True)[0] )
+            except:
+                utils.logging.log_error(LOG_PREFIX,"parse_declaration","could not parse dimension qualifier in variable declaration statement '{}'".format(fortran_statement))
+                sys.exit(2)
+        elif qualifier.startswith("intent"):
+            # ex: intent ( inout )
+            intent_tokens = utils.parsingutils.tokenize(qualifier)
+            try:
+                qualifiers.append( intent_qualifier.parseString(qualifier,parseAll=True)[0] )
+            except:
+                utils.logging.log_error(LOG_PREFIX,"parse_declaration","could not parse intent qualifier in variable declaration statement '{}'".format(fortran_statement))
+                sys.exit(2) 
+        else:
+            qualifiers.append(qualifier)
+    variables = []
+    for var in variables_raw:
+        try:
+            variables.append( declared_variable.parseString(var,parseAll=True)[0] )
+        except:
+            utils.logging.log_error(LOG_PREFIX,"parse_declaration","could not parse variable declaration '{}' in statement '{}'".format(var,fortran_statement))
+            sys.exit(2)
+    declaration_tokens = [ datatype, kind, qualifiers, variables ]
+    result = TTDeclaration( fortran_statement,0,declaration_tokens )
+    utils.logging.log_leave_function(LOG_PREFIX,"parse_declaration")
+    return result
+
+def create_index_records_from_declaration(ttdeclaration):
     """
     Per declared variable in the declaration, creates
     a context dictionary that can be easily piped
     to the (HIP) kernel code generation
     and the Fortran-C interface code generation.
     """
+    global LOG_PREFIX
+
+    utils.logging.log_enter_function(LOG_PREFIX,"create_index_records_from_declaration")
+    
     context = []
-    hasDimension = ttdeclaration.hasDimension()
+    has_dimension = ttdeclaration.has_dimension()
     for ttdeclaredvariable in ttdeclaration._rhs:
-        varName    = ttdeclaredvariable.name().lower()
-        varContext = {}
+        var_name                           = ttdeclaredvariable.name().lower()
+        ivar                               = {}
         # basic 
-        fType = makeFStr(ttdeclaration._datatype.type())
-        kind  = makeFStr(ttdeclaration._datatype.kind())
-        bpe   = bytes(fType,kind,default=None)
-        varContext["name"]                       = varName
-        varContext["fType"]                      = fType
-        varContext["kind"]                       = kind
-        varContext["bytesPerElement"]            = bpe 
-        varContext["cType"]                      = convertToCType(fType,kind,"TODO unknown")
-        varContext["fInterfaceType"]             = varContext["fType"]
-        varContext["fInterfaceQualifiers"]       = [ "value" ] # assume pass by value by default
+        f_type                             = make_f_str(ttdeclaration.type)
+        kind                               = make_f_str(ttdeclaration.kind)
+        bpe                                = num_bytes(f_type,kind,default=None)
+        # TODO substitute parameters in scoper and try again to compute bpe if entry is None
+        ivar["name"]                       = var_name
+        ivar["f_type"]                     = f_type
+        ivar["kind"]                       = kind
+        ivar["bytes_per_element"]          = bpe 
+        ivar["c_type"]                     = convert_to_c_type(f_type,kind,"TODO unknown")
+        ivar["f_interface_type"]           = ivar["f_type"]
+        ivar["f_interface_qualifiers"]     = [ "value" ] # assume pass by value by default
         # TODO pack into single variable
-        varContext["parameter"]                  = ttdeclaration.hasParameter()
-        varContext["pointer"]                    = ttdeclaration.hasStringQualifier("pointer")
-        # CUF
-        varContext["device"]                     = ttdeclaration.hasStringQualifier("device")
-        varContext["pinned"]                     = ttdeclaration.hasStringQualifier("pinned")
-        varContext["managed"]                    = ttdeclaration.hasStringQualifier("managed")
-        varContext["allocatable"]                = ttdeclaration.hasStringQualifier("allocatable")
+        ivar["qualifiers"]                 = ttdeclaration.get_string_qualifiers()
         # ACC/OMP
-        varContext["declareOnTarget"]           = False
+        ivar["declare_on_target"]          = False
         # arrays
-        varContext["rank"]                       = 0
-        dimensionQualifier = findAll(ttdeclaration._qualifiers,TTDimensionQualifier)
-        if ttdeclaredvariable.hasBounds() or len(dimensionQualifier):
-            varContext["fInterfaceType"] = "type(c_ptr)"
-            if len(dimensionQualifier):
-                ttbounds = dimensionQualifier[0]._bounds
+        ivar["rank"]                       = 0
+        dimension_qualifier = find_all(ttdeclaration.qualifiers,TTDimensionQualifier)
+        if ttdeclaredvariable.has_bounds() or len(dimension_qualifier):
+            ivar["f_interface_type"] = "type(c_ptr)"
+            if len(dimension_qualifier):
+                ttbounds = dimension_qualifier[0]._bounds
             else:
-                ttbounds = ttdeclaredvariable.getBounds()
+                ttbounds = ttdeclaredvariable.get_bounds()
             rank = ttbounds.rank()
-            varContext["rank"] = rank
-            varContext["unspecifiedBounds"] = ttbounds.hasUnspecifiedBounds()
-            if varContext["unspecifiedBounds"]: # TODO: return a mix of unspecified bounds and specified bounds in the future
-                varContext["lbounds"]                    = [ "{0}_lb{1}".format(varName,i) for i in range(1,rank+1) ]
-                varContext["counts"]                     = [ "{0}_n{1}".format(varName,i) for i in range(1,rank+1 ) ]
-                varContext["indexMacroWithPlaceHolders"] = ttbounds.indexMacroCStr(varName,usePlaceHolders=True)
-                varContext["indexMacro"]                 = varContext["indexMacroWithPlaceHolders"]
+            ivar["rank"] = rank
+            ivar["unspecified_bounds"] = ttbounds.has_unspecified_bounds()
+            if ivar["unspecified_bounds"]: # TODO: return a mix of unspecified bounds and specified bounds in the future
+                ivar["lbounds"]                       = [ "{0}_lb{1}".format(var_name,i) for i in range(1,rank+1) ]
+                ivar["counts"]                        = [ "{0}_n{1}".format(var_name,i) for i in range(1,rank+1 ) ]
+                ivar["index_macro_with_placeholders"] = ttbounds.index_macro_c_str(var_name,use_place_holders=True)
+                ivar["index_macro"]                   = ivar["index_macro_with_placeholders"]
             else:
-                varContext["lbounds"]                    = ttbounds.specifiedLowerBounds()
-                varContext["counts"]                     = ttbounds.specifiedCounts()
-                varContext["indexMacroWithPlaceHolders"] = ttbounds.indexMacroCStr(varName,usePlaceHolders=True) 
-                varContext["indexMacro"]                 = ttbounds.indexMacroCStr(varName,usePlaceHolders=False)
-            varContext["totalCount"]   = "*".join(varContext["counts"])
-            varContext["totalBytes"]   = None if bpe is None else bpe+"*("+varContext["totalCount"]+")"
+                ivar["lbounds"]                       = ttbounds.specified_lower_bounds()
+                ivar["counts"]                        = ttbounds.specified_counts()
+                ivar["index_macro_with_placeholders"] = ttbounds.index_macro_c_str(var_name,use_place_holders=True) 
+                ivar["index_macro"]                   = ttbounds.index_macro_c_str(var_name,use_place_holders=False)
+            ivar["total_count"]   = "*".join(ivar["counts"])
+            ivar["total_bytes"]   = None if bpe is None else bpe+"*("+ivar["total_count"]+")"
         # handle parameters
-        varContext["value"] = None
-        if ttdeclaration.hasParameter():
-            if ttdeclaredvariable.rhsIsNumber():
-                varContext["value"] = ttdeclaredvariable.rhsCStr()
+        ivar["value"] = None
+        if "parameter" in ivar["qualifiers"]:
+            if ttdeclaredvariable.rhs_is_number():
+                ivar["value"] = ttdeclaredvariable.rhs_c_str()
             else:
-                #varContext["value"] = ttdeclaredvariable.rhsCStr()
+                #ivar["value"] = ttdeclaredvariable.rhs_c_str()
                 # TODO 
                 pass
-        context.append(varContext)
+        context.append(ivar)
+    
+    utils.logging.log_leave_function(LOG_PREFIX,"create_index_records_from_declaration")
+    
     return context
 
-def changeKind(varContext,kind):
-    fType = varContext["fType"]
-    bpe   = bytes(fType,kind,default=None)
-    varContext["kind"]                 = kind
-    varContext["bytesPerElement"]      = bpe 
-    varContext["cType"]                = convertToCType(fType,kind,"TODO unknown")
-    if varContext["rank"] == 0:
-      varContext["fInterfaceType"] = varContext["cType"]
+def change_kind(ivar,kind):
+    f_type                    = ivar["f_type"]
+    bpe                       = num_bytes(f_type,kind,default=None)
+    ivar["kind"]              = kind
+    ivar["bytes_per_element"] = bpe 
+    ivar["c_type"]            = convert_to_c_type(f_type,kind,"TODO unknown")
+    if ivar["rank"] == 0:
+      ivar["f_interface_type"] = ivar["c_type"]
     #
-    varContext["totalBytes"] = None if bpe is None else bpe+"*("+varContext["totalCount"]+")"
+    ivar["total_bytes"] = None if bpe is None else bpe+"*("+ivar["total_count"]+")"
 
-def convertArithmeticExpression(fortranSnippet):
-    return ( matrixArithmeticExpression | complexArithmeticExpression | arithmeticExpression ).parseString(fortranSnippet)[0].cStr()
+def convert_arithmetic_expression(fortran_snippet):
+    return ( matrix_arithmetic_expression | complex_arithmetic_expression | arithmetic_expression ).parseString(fortran_snippet)[0].c_str()
 
-def parseAttributes(ttattributes):
-    attribute    = makeFStr(ttattributes._qualifiers[0]).lower()
-    modifiedVars = [makeFStr(var).lower() for var in ttattributes._rhs]
-    return attribute, modifiedVars 
-
-def createIndexSearchTagForVariable(variableExpression):
-    """
-    Creates tag from variable expressions such as 'A%b(i)%c' that
-    can be used to search the index via the scoper module.
-    The example 'A%b(i)%c' is translated to a tag 'a%b%c' (lower case).
-    All array indexing expressions are stripped away.
-    A single identifer 'a' would be translated to the tag 'a'.
-
-    :param str variableExpression: a simple identifier such as 'a' or 'A_d' or a more complicated derived-type member variable expression such as 'a%b%c' or 'A%b(i)%c'.
-    :see: indexer.scoper.searchIndexForVariable
-    """
-    if not "(" in variableExpression:
-        return variableExpression.lower()
-    else:
-        expr        = derivedTypeElem
-        parseResult = expr.parseString(variableExpression.lower())[0]
-        def traverse(ttderivedtype):
-            result = ttderivedtype._type.name().lower() + "%"
-            if type(ttderivedtype._element) == TTIdentifier or\
-               type(ttderivedtype._element) == TTFunctionCallOrTensorAccess:
-                result += ttderivedtype._element.name().lower() # end of recursion
-            else: # if type(ttderivedtype._element) == TTDerivedTypeElem:
-               result += traverse(ttderivedtype._element)
-            return result
-        return traverse(parseResult)
-
+def parse_attributes(ttattributes):
+    attribute    = make_f_str(ttattributes.qualifiers[0]).lower()
+    modified_vars = [make_f_str(var).lower() for var in ttattributes._rhs]
+    return attribute, modified_vars 
 # TODO parsing and translation is similar but analysis differs between the different kernel
 # types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)
 # while they are specified with ACC,OMP.
-def parseLoopKernel(fortranSnippet,scope=[],maxRecursions=30):
+def parse_loop_kernel(fortran_statements,scope=[]):
     """
     Return a csnippet equivalent to the original Fortran code.
     """
-    global KEYWORDS 
     global LOG_PREFIX
 
-    recursionsLeft=0
-    def simplifyLoopKernelUntilItCanGetParsed(fortranSnippet,recursionsToGo):
-        nonlocal recursionsLeft
-        recursionsLeft = recursionsToGo
-        try:
-            return loopKernel.parseString(fortranSnippet)[0]
-        except ParseBaseException as pbe:
-            if recursionsToGo <= 0:
-                raise pbe
-            else:
-                lineno = pbe.__getattr__("lineno")
-                lines = fortranSnippet.split("\n")
-                lines[lineno-1] = "! TODO could not parse: {}".format(lines[lineno-1])
-                modifiedFortranSnippet = "\n".join(lines)
-                #print(modifiedFortranSnippet)
-                return simplifyLoopKernelUntilItCanGetParsed(modifiedFortranSnippet,recursionsToGo-1)
-        except Exception as e:
-            raise e        
-   
-    fortranSnippet = prepareFortranSnippet(fortranSnippet)
-    try:
-        computeConstruct = simplifyLoopKernelUntilItCanGetParsed(fortranSnippet,maxRecursions)
-        computeConstruct._scope = scope
-        if recursionsLeft < maxRecursions:
-            body = "\n".join(fortranSnippet.split("\n")[1:])
-        return computeConstruct
-    except Exception as e:
-        #raise e
-        utils.logging.logError(LOG_PREFIX,"parseLoopKernel","failed to convert kernel:\n{}".format(fortranSnippet))
-        utils.logging.logError(LOG_PREFIX,"parseLoopKernel",str(e))
-        return EmptyComputeConstruct(fortranSnippet)
+    ttloopkernel = _intrnl_parse_fortran_code(fortran_statements).body[0]
+    
+    ttloopkernel.scope = scope
+    return ttloopkernel
 
-class EmptyProcedureBody():
-    def cStr(self):
-        return "" 
-
-def parseProcedureBody(fortranSnippet,scope,indexRecord,resultName="",maxRecursions=10):
+def parse_procedure_body(fortran_statements,scope=[],result_name=""):
     """
     Parse a function/subroutine body.
     """
     global KEYWORDS 
     global LOG_PREFIX
 
-    recursionsLeft=0
-    def simplifyProcedureBodyUntilItCanGetParsed(fortranSnippet,recursionsToGo):
-        nonlocal recursionsLeft
-        recursionsLeft = recursionsToGo
-        try:
-            return procedureBody.parseString(fortranSnippet)[0]
-        except ParseBaseException as pbe:
-            if recursionsToGo <= 0:
-                raise pbe
-            else:
-                lineno = pbe.__getattr__("lineno")
-                lines = fortranSnippet.split("\n")
-                lines[lineno-1] = "! TODO(gpufort) could not parse: {}".format(lines[lineno-1])
-                modifiedFortranSnippet = "\n".join(lines)
-                return simplifyProcedureBodyUntilItCanGetParsed(modifiedFortranSnippet,recursionsToGo-1)
-        except Exception as e:
-            raise e 
- 
-    fortranSnippet = prepareFortranSnippet(fortranSnippet)
-    try:
-        parseResult = simplifyProcedureBodyUntilItCanGetParsed(fortranSnippet,maxRecursions)
-        parseResult._scope        = scope 
-        parseResult._resultName   = resultName
-        parseResult._ignoredVars += indexRecord["dummyArgs"]
-    except Exception as e:
-        #raise e
-        utils.logging.logError(LOG_PREFIX,"parseProcedureBody","failed to convert kernel:\n{}".format(fortranSnippet))
-        utils.logging.logError(LOG_PREFIX,"parseProcedureBody",str(e))
-        return EmptyProcedureBody()
-    return parseResult
+    parse_result    = _intrnl_parse_fortran_code(fortran_statements)
+    ttprocedurebody = TTProcedureBody("",0,[parse_result.body])
+    
+    ttprocedurebody.scope       = scope 
+    ttprocedurebody.result_name = result_name
+    return ttprocedurebody

@@ -1,4 +1,4 @@
-program testSaxpy
+program main
   use cudafor
   implicit none
   integer, parameter :: N = 40000
@@ -48,15 +48,9 @@ contains
        y(i) = y(i) + a*x(i)
      endif
    end subroutine
-   
-   attributes(device) subroutine deviceFun(a,x,y,N)
-     implicit none
-     integer :: N
-     real :: x, y, a
-     y = y + a*x
-   end subroutine
 
    attributes(global) subroutine gpuKernel(a,x,y,N)
+     use devicelib
      implicit none
      integer :: i,N
      real :: x(N), y(N), a
@@ -65,4 +59,4 @@ contains
        call deviceFun(a,x(i),y(i),N)
      endif
    end subroutine
-end program testSaxpy
+end program main

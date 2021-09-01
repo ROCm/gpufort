@@ -13,7 +13,6 @@ INDENT_WIDTH_TABS=1       # number of indent chars if indentation uses tabs
 
 DEFAULT_INDENT_CHAR=' '   # The default index char to use if no other char was detected (' ' or '\t').
 
-LINE_GROUPING_ENABLE              = True
 LINE_GROUPING_INCLUDE_BLANK_LINES = True
-LINE_GROUPING_WRAP_IN_IFDEF       = True        # Introduce ifdef-else-endif preprocessor block around modified lines and keep the original in the else branch. 
+LINE_GROUPING_WRAP_IN_IFDEF       = False       # Introduce ifdef-else-endif preprocessor block around modified lines and keep the original in the else branch. 
 LINE_GROUPING_IFDEF_MACRO         = "__GPUFORT" # Macro to use in the ifdef directive.

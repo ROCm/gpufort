@@ -5,161 +5,161 @@
 
 #CUDA Fortran
 class TTCppIfdef(TTNode):
-    def _assignFields(self,tokens):
-        self._ppVar = tokens
-    def pPVar(self):
+    def _assign_fields(self,tokens):
+        self._pp_var = tokens
+    def p_p_var(self):
         """
         For checking if this a CUDA preprocessor variable
         """
-        return self._ppVar
-    def fStr(self,hipVar):
-        return "#if defined({0}) || defined({1})".format(self._ppVar,hipVar)
+        return self._pp_var
+    def f_str(self,hip_var):
+        return "#if defined({0}) || defined({1})".format(self._pp_var,hip_var)
 
 class TTCppDefined(TTNode):
-    def _assignFields(self,tokens):
-        self._ppVar = tokens
-    def pPVar(self):
+    def _assign_fields(self,tokens):
+        self._pp_var = tokens
+    def p_p_var(self):
         """
         For checking if this a CUDA preprocessor variable
         """
-        return self._ppVar
-    def fStr(self,hipVar):
-        return "( defined({0}) || defined({1}) )".format(self._ppVar,hipVar)
+        return self._pp_var
+    def f_str(self,hip_var):
+        return "( defined({0}) || defined({1}) )".format(self._pp_var,hip_var)
 
 class TTAttributes(TTNode,Attributed):
-    def _assignFields(self,tokens):
-        self._qualifiers, self._rhs = tokens
-    def cStr(self):
+    def _assign_fields(self,tokens):
+        self.qualifiers, self._rhs = tokens
+    def c_str(self):
         return ""
 
 class TTCudaKernelCall(TTNode):
-    def _assignFields(self,tokens):
-        def postprocessDim3(dim3):
+    def _assign_fields(self,tokens):
+        def postprocess_dim3(dim3):
             try:
-                intVal = int(dim3)
-                isOne = intVal == 1
+                int_val = int(dim3)
+                is_one = int_val == 1
             except:
-                isOne = False
-            if isOne:
+                is_one = False
+            if is_one:
                 return "dim3Ones" # specifically for Eigensolver_gpu
             else:
                 return dim3 
-        self._kernelName  = tokens[0]
-        self._grid        = postprocessDim3(tokens[1][0])
-        self._block       = postprocessDim3(tokens[1][1])
-        self._sharedMem   = tokens[1][2]
+        self._kernel_name  = tokens[0]
+        self._grid        = postprocess_dim3(tokens[1][0])
+        self._block       = postprocess_dim3(tokens[1][1])
+        self._sharedmem   = tokens[1][2]
         self._stream      = tokens[1][3]
         self._args        = tokens[2]
-    def kernelNameFStr(self):
-        return makeFStr(self._kernelName)
-    def gridFStr(self):
-        return makeFStr(self._grid)
-    def blockFStr(self):
-        return makeFStr(self._block)
-    def useDefaultStream(self):
+    def kernel_name_f_str(self):
+        return make_f_str(self._kernel_name)
+    def grid_f_str(self):
+        return make_f_str(self._grid)
+    def block_f_str(self):
+        return make_f_str(self._block)
+    def use_default_stream(self):
         try:
             return int(self._stream) < 1
         except:
             return False
-    def streamFStr(self):
-        if self.useDefaultStream():
+    def stream_f_str(self):
+        if self.use_default_stream():
             return "c_null_ptr"
         else:
-            return makeFStr(self._stream)
-    def sharedMemFStr(self):
-        return makeFStr(self._sharedMem)
+            return make_f_str(self._stream)
+    def sharedmem_f_str(self):
+        return make_f_str(self._sharedmem)
 
 class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
-    def _assignFields(self,tokens):
-        self._parentDirective    = None
-        self._numOuterLoopsToMap = int(tokens[0])
+    def _assign_fields(self,tokens):
+        self._parent_directive    = None
+        self._num_outer_loops_to_map = int(tokens[0])
         self._grid               = tokens[1][0]
         self._block              = tokens[1][1]
-        self._sharedMem          = tokens[1][2]
+        self._sharedmem          = tokens[1][2]
         self._stream             = tokens[1][3]
-    def allArraysAreOnDevice(self):
+    def all_arrays_are_on_device(self):
         return True
-    def stream(self,converter=makeFStr):
+    def stream(self,converter=make_f_str):
         return converter(self._stream)
-    def sharedMem(self,converter=makeFStr):
-        return converter(self._sharedMem)
-    def useDefaultStream(self):
+    def sharedmem(self,converter=make_f_str):
+        return converter(self._sharedmem)
+    def use_default_stream(self):
         try:
             return int(self._stream) < 1
         except:
             return False
-    def numDimensions(self):
+    def num_dimensions(self):
         """
         Get the number of grid and block dimensions.
         This might differ from the number of nested loops.
         """
         if LOOP_COLLAPSE_STRATEGY=="grid":
-            return int(self._numOuterLoopsToMap)
+            return int(self._num_outer_loops_to_map)
         else:
             return 1
-    def presentByDefault(self):
+    def present_by_default(self):
         return True
-    def dataIndependentIterations(self):
+    def data_independent_iterations(self):
         return True
-    def numCollapse(self):
-        return self._numOuterLoopsToMap
-    def gridExpressionFStr(self):
+    def num_collapse(self):
+        return self._num_outer_loops_to_map
+    def grid_expression_f_str(self):
         """ only CUF """
-        return makeFStr(self._grid)
-    def blockExpressionFStr(self):
+        return make_f_str(self._grid)
+    def block_expression_f_str(self):
         """ only CUF """
-        return makeFStr(self._block)
-    def numGangsTeamsBlocks(self,converter=makeFStr):
+        return make_f_str(self._block)
+    def num_gangs_teams_blocks(self,converter=make_f_str):
         if self._grid == "*":
-            return [CLAUSE_NOT_FOUND]*self._numOuterLoopsToMap
+            return [CLAUSE_NOT_FOUND]*self._num_outer_loops_to_map
         elif isinstance(self._block,IValue):
             # TODO Check if IValue is actually a dim3 or not
             result = []
-            for i in range(0,self._numOuterLoopsToMap):
+            for i in range(0,self._num_outer_loops_to_map):
                 result.append( converter(self._grid) + "%" + chr(ord('x') + i))
             return result
         else:
             return [converter(gridDim) for gridDim in self._grid]
-    def numThreadsInBlock(self,converter=makeFStr):
+    def num_threads_in_block(self,converter=make_f_str):
         if self._block == "*":
-            return [CLAUSE_NOT_FOUND]*self._numOuterLoopsToMap
+            return [CLAUSE_NOT_FOUND]*self._num_outer_loops_to_map
         elif isinstance(self._block,IValue):
             # TODO Check if IValue is actually a dim3 or not
             result = []
-            for i in range(0,self._numOuterLoopsToMap):
+            for i in range(0,self._num_outer_loops_to_map):
                 result.append( converter(self._block) + "%" + chr(ord('x') + i))
             return result
         else:
             return [converter(blockDim) for blockDim in self._block]
-    def cStr(self):
+    def c_str(self):
         result  = "// NOTE: The following information was given in the orignal CUDA Fortran kernel pragma:\n"
-        result += "// - Nested outer-most do-loops that are directly mapped to threads: {}\n".format(makeCStr(self._numOuterLoopsToMap))
-        result += "// - Number of blocks: {}. ('-1' means not specified)\n".format(makeCStr(self._grid))
-        result += "// - Threads per block: {}. ('-1' means not specified)\n".format(makeCStr(self._block))
-        result += "// - Shared Memory: {}\n".format(makeFStr(self._sharedMem))
-        result += "// - Stream: {}\n".format(makeFStr(self._stream))
+        result += "// - Nested outer-most do-loops that are directly mapped to threads: {}\n".format(make_c_str(self._num_outer_loops_to_map))
+        result += "// - Number of blocks: {}. ('-1' means not specified)\n".format(make_c_str(self._grid))
+        result += "// - Threads per block: {}. ('-1' means not specified)\n".format(make_c_str(self._block))
+        result += "// - Shared Memory: {}\n".format(make_f_str(self._sharedmem))
+        result += "// - Stream: {}\n".format(make_f_str(self._stream))
         return result
-    def ompFStr(self,arraysInBody=set(),inoutArraysInBody=set(),reduction={},depend={},loopType="do"):
-        result = "!$omp target teams distribute parallel "+loopType  
+    def omp_f_str(self,arrays_in_body=set(),inout_arrays_in_body=set(),reduction={},depend={},loop_type="do"):
+        result = "!$omp target teams distribute parallel "+loop_type  
 
-        grid  = self.numGangsTeamsBlocks()
-        block = self.numThreadsInBlock()
-        numTeams   = "" 
-        threadLimit = ""
+        grid  = self.num_gangs_teams_blocks()
+        block = self.num_threads_in_block()
+        num_teams   = "" 
+        thread_limit = ""
         first = True
         for val in grid:
             if val != CLAUSE_NOT_FOUND:
-                numTeams = "*"+val if not first else val
+                num_teams = "*"+val if not first else val
                 first = False
         first = True
         for val in block:
             if val != CLAUSE_NOT_FOUND:
-                threadLimit = "*"+val if not first else val
+                thread_limit = "*"+val if not first else val
                 first = False
-        if len(numTeams):
-            result += " num_teams("+numTeams+")"
-        if len(threadLimit):
-            result += " thread_limit("+threadLimit+")"
+        if len(num_teams):
+            result += " num_teams("+num_teams+")"
+        if len(thread_limit):
+            result += " thread_limit("+thread_limit+")"
         # reduction vars
         for kind,variables in reduction.items():
             if len(variables):
@@ -171,20 +171,20 @@ class TTCufKernelDo(TTNode,IComputeConstruct,ILoopAnnotation):
                 for kind,variables in depend.items():
                     result += " depend("+kind+":"+",".join(variables)+")"
             else: 
-                inArraysInBody = [el for el in arraysInBody if el not in inoutArraysInBody]
-                if len(inArraysInBody):
-                    result += " depend("+kind+":"+",".join(inArraysInBody)+")"
-                if len(inoutArraysInBody):
-                    result += " depend("+kind+":"+",".join(inoutArraysInBody)+")"
+                in_arrays_in_body = [el for el in arrays_in_body if el not in inout_arrays_in_body]
+                if len(in_arrays_in_body):
+                    result += " depend("+kind+":"+",".join(in_arrays_in_body)+")"
+                if len(inout_arrays_in_body):
+                    result += " depend("+kind+":"+",".join(inout_arrays_in_body)+")"
         return result
 
 class TTAllocateRValue(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._var    = tokens[0]
         self._bounds = None
         if len(tokens) == 2:
             self._bounds = tokens[1]
-    def varName(self,converter=makeFStr):
+    def var_name(self,converter=make_f_str):
         """
         A name that can be used to generate macros
         and to look up the corresponding definitions.
@@ -193,31 +193,31 @@ class TTAllocateRValue(TTNode):
         `mytype%myothertype%myvar`.
         """
         return converter(self._var)
-    def boundVariableAssignments(self,arrayName):
+    def bound_variable_assignments(self,array_name):
         if self._bounds != None:
-            return self._bounds.boundVariableAssignments(arrayName)
+            return self._bounds.bound_variable_assignments(array_name)
         else:
             # TODO(gpufort): Add Warning
             return "TODO(gpufort): UNKNOWN"
-    def size(self,bytesPerElement=1,converter=makeCStr):
+    def size(self,bytes_per_element=1,converter=make_c_str):
         if self._bounds != None:
-            return self._bounds.size(bytesPerElement,converter)
+            return self._bounds.size(bytes_per_element,converter)
         else:
             # TODO(gpufort): Add Warning
             return "TODO(gpufort): UNKNOWN"
-    def countsFStr(self):
+    def counts_f_str(self):
         if self._bounds != None:
-            return self._bounds.specifiedCounts(makeFStr)
+            return self._bounds.specified_counts(make_f_str)
         else:
             # TODO(gpufort): Add Warning
             return "TODO(gpufort): UNKNOWN"
-    def cStr(self):
-        assert False, "TTAllocateRValue: 'cStr(self)' not implemented"
-    def fStr(self):
+    def c_str(self):
+        assert False, "TTAllocateRValue: 'c_str(self)' not implemented"
+    def f_str(self):
         if self._bounds != None:
-            return makeFStr(self._var) + makeFStr(self._bounds)
+            return make_f_str(self._var) + make_f_str(self._bounds)
         else:
-            return makeFStr(self._var)
+            return make_f_str(self._var)
 
 class TTCufAllocated(TTNode):
     """
@@ -228,30 +228,30 @@ class TTCufAllocated(TTNode):
     For Fortran pointer variables, we need the `associated(<var>)`
     intrinsic to check if they are associated with any memory.
     """
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._var = tokens[0]
-    def varName(self):
-        return self._var.varName()
-    def fStr(self,varIsCPtr=False):
-        if varIsCPtr:
-            return "c_associated({0})".format(makeFStr(self._var))
+    def var_name(self):
+        return self._var.var_name()
+    def f_str(self,var_is_c_ptr=False):
+        if var_is_c_ptr:
+            return "c_associated({0})".format(make_f_str(self._var))
         else:
-            return "associated({0})".format(makeFStr(self._var))
+            return "associated({0})".format(make_f_str(self._var))
 
 class TTCufNonZeroCheck(TTNode):
     """
     For `type(c_ptr)` variables that replace CUDA Fortran stream and , the standard non-zero check
     does not work. We need to replace this by `c_associated(var)`.
     """
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._lhs = tokens
-    def lhsFStr(self):
-        return makeFStr(self._lhs)
-    def fStr(self,lhsIsCPtr=False):
-        if lhsIsCPtr:
-            return "c_associated({0})".format(makeFStr(self._lhs))
+    def lhs_f_str(self):
+        return make_f_str(self._lhs)
+    def f_str(self,lhs_is_c_ptr=False):
+        if lhs_is_c_ptr:
+            return "c_associated({0})".format(make_f_str(self._lhs))
         else:
-            return "associated({0})".format(makeFStr(self._lhs))
+            return "associated({0})".format(make_f_str(self._lhs))
 
 class TTCufPointerAssignment(TTNode):
     """
@@ -261,20 +261,20 @@ class TTCufPointerAssignment(TTNode):
     Calling function needs to check if at least one (should be both in any case)
     pointer is pointing to data on the device. 
     """
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._lhs, self._rhs = tokens
-    def lhsFStr(self):
-        return makeFStr(self._lhs)
-    def rhsFStr(self):
-        return makeFStr(self._rhs)
-    def fStr(self,varsAreCPtrs=False,lhsBoundVariableNames=[]):
-        if varsAreCPtrs:
-            lhsName = self.lhsFStr()
-            rhsName = self.rhsFStr()
-            boundVariableAssignments = "\n".join(["{0} = {1}".format(el,el.replace(lhsName,rhsName)) for el in lhsBoundVariableNames])
-            return "{0} = {1}\n{2}".format(lhsName,rhsName,boundVariableAssignments)
+    def lhs_f_str(self):
+        return make_f_str(self._lhs)
+    def rhs_f_str(self):
+        return make_f_str(self._rhs)
+    def f_str(self,vars_are_c_ptrs=False,lhs_bound_variable_names=[]):
+        if vars_are_c_ptrs:
+            lhs_name = self.lhs_f_str()
+            rhs_name = self.rhs_f_str()
+            bound_variable_assignments = "\n".join(["{0} = {1}".format(el,el.replace(lhs_name,rhs_name)) for el in lhs_bound_variable_names])
+            return "{0} = {1}\n{2}".format(lhs_name,rhs_name,bound_variable_assignments)
         else:
-            return "{0} => {1}\n{2}".format(lhsName,rhsName)
+            return "{0} => {1}\n{2}".format(lhs_name,rhs_name)
              
 
 class TTCufAllocate(TTNode): # TODO not specific to CUF
@@ -284,47 +284,47 @@ class TTCufAllocate(TTNode): # TODO not specific to CUF
     Most information needs to be provided from calling function in order
     to convert this call to a hip malloc.
     """
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._vars = tokens
-    def variableNames(self):
+    def variable_names(self):
         """
         :return: names of the variables appearing on the right-hand-side.
         :return type: list of str
         """
-        return [array.varName() for array in self._vars] 
-    def ompFStr(self,bytesPerElement,arrayQualifiers,indent="",varsAreCPtrs=False):
+        return [array.var_name() for array in self._vars] 
+    def omp_f_str(self,bytes_per_element,array_qualifiers,indent="",vars_are_c_ptrs=False):
         assert False, "Not implemented!" # TODO omp target alloc
-    def hipFStr(self,bytesPerElement,arrayQualifiers,indent="",varsAreCPtrs=False):
+    def hip_f_str(self,bytes_per_element,array_qualifiers,indent="",vars_are_c_ptrs=False):
         """
         Generate HIP ISO C Fortran expression for all
         device and pinned host allocations.
         Use standard allocate for all other allocations.
 
-        :param arrayQualifiers: List storing per variable, one of 'managed', 'constant', 'shared', 'pinned', 'texture', 'device' or None.
+        :param array_qualifiers: List storing per variable, one of 'managed', 'constant', 'shared', 'pinned', 'texture', 'device' or None.
 
-        :see: variableNames(self) 
+        :see: variable_names(self) 
         """
-        assert len(bytesPerElement) is len(self._vars)
-        assert len(arrayQualifiers) is len(self._vars)
+        assert len(bytes_per_element) is len(self._vars)
+        assert len(array_qualifiers) is len(self._vars)
         result       = []
-        otherArrays  = []
+        other_arrays  = []
         for i,array in enumerate(self._vars):
-            if varsAreCPtrs: 
-                size = array.size(bytesPerElement[i],makeFStr) # total size in bytes
+            if vars_are_c_ptrs: 
+                size = array.size(bytes_per_element[i],make_f_str) # total size in bytes
             else:
-                size = ",".join(array.countsFStr())            # element counts per dimension
-            if arrayQualifiers[i] == "device":
-                line = "{2}CALL hipCheck(hipMalloc({0}, {1}))".format(array.varName(),size,indent)
+                size = ",".join(array.counts_f_str())            # element counts per dimension
+            if array_qualifiers[i] == "device":
+                line = "{2}call hipCheck(hipMalloc({0}, {1}))".format(array.var_name(),size,indent)
                 result.append(line)
-            elif arrayQualifiers[i] == "pinned":
-                line = "{2}CALL hipCheck(hipHostMalloc({0}, {1}, 0))".format(array.varName(),size,indent)
+            elif array_qualifiers[i] == "pinned":
+                line = "{2}call hipCheck(hipHostMalloc({0}, {1}, 0))".format(array.var_name(),size,indent)
                 result.append(line)
             else:
-                otherArrays.append(makeFStr(array)) 
-            if varsAreCPtrs and not arrayQualifiers[i] in ["pinned","device"]:
-                result += array.boundVariableAssignments(array.varName())
-        if len(otherArrays):
-            line = "{1}ALLOCATE({0})".format(",".join(otherArrays),indent)
+                other_arrays.append(make_f_str(array)) 
+            if vars_are_c_ptrs and not array_qualifiers[i] in ["pinned","device"]:
+                result += array.bound_variable_assignments(array.var_name())
+        if len(other_arrays):
+            line = "{1}ALLOCATE({0})".format(",".join(other_arrays),indent)
             result.append(line)
         return "\n".join(result)
 
@@ -335,43 +335,43 @@ class TTCufDeallocate(TTNode): # TODO not specific to CUF
     Most information needs to be provided from calling function in order
     to convert this call to a hip malloc.
     """
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._vars             = tokens
-    def configure(self,bytesPerElement, arrayQualifiers):
-        self._arrayQualifiers = arrayQualifiers
-    def variableNames(self):
+    def configure(self,bytes_per_element, array_qualifiers):
+        self._array_qualifiers = array_qualifiers
+    def variable_names(self):
         """
         :return: names of the variables appearing on the right-hand-side.
         :return type: list of str
         """
-        return [array.varName() for array in self._vars] 
-    def ompFStr(self,arrayQualifiers,indent="",varsAreCPtrs=False):
+        return [array.var_name() for array in self._vars] 
+    def omp_f_str(self,array_qualifiers,indent="",vars_are_c_ptrs=False):
         assert False, "Not implemented!" # TODO omp target free
-    def hipFStr(self,arrayQualifiers,indent=""):
+    def hip_f_str(self,array_qualifiers,indent=""):
         """
         Generate HIP ISO C Fortran expression for all
         device and pinned host allocations.
         Use standard allocate for all other allocations.
 
-        :param arrayQualifiers: List storing per variable, one of 'managed', 'constant', 'shared', 'pinned', 'texture', 'device', None
+        :param array_qualifiers: List storing per variable, one of 'managed', 'constant', 'shared', 'pinned', 'texture', 'device', None
         or no entry at all.
 
-        :see: variableNames(self) 
+        :see: variable_names(self) 
         """
         result       = []
-        otherArrays  = []
+        other_arrays  = []
         
         for i,array in enumerate(self._vars):
-            if arrayQualifiers[i] == "device":
-                line =  "{1}CALL hipCheck(hipFree({0}))".format(array.varName(),indent)
+            if array_qualifiers[i] == "device":
+                line =  "{1}call hipCheck(hipFree({0}))".format(array.var_name(),indent)
                 result.append(line)
-            elif arrayQualifiers[i] == "pinned":
-                line = "{1}CALL hipCheck(hipHostFree({0}))".format(array.varName(),indent)
+            elif array_qualifiers[i] == "pinned":
+                line = "{1}call hipCheck(hipHostFree({0}))".format(array.var_name(),indent)
                 result.append(line)
             else:
-                otherArrays.append(makeFStr(array)) 
-        if len(otherArrays):
-            line = "{1}deallocate({0})".format(",".join(otherArrays),indent)
+                other_arrays.append(make_f_str(array)) 
+        if len(other_arrays):
+            line = "{1}deallocate({0})".format(",".join(other_arrays),indent)
             result.append(line)
         return "\n".join(result)
 
@@ -380,104 +380,104 @@ class CufMemcpyBase():
     Abstract base class.
     Subclasses initialize members (api,dest,src)
     """
-    def hipAPI(self):
+    def hip_ap_i(self):
         return "hip" + self._api[4:].title().replace("async","Async")
-    def destFStr(self,onDevice,bytesPerElement):
+    def dest_f_str(self,on_device,bytes_per_element):
         """
         :return: simply returns the Fortran pointer representation of the destination. 
         """
-        return makeFStr(self._dest)  
-    def srcFStr(self,onDevice,bytesPerElement):
+        return make_f_str(self._dest)  
+    def src_f_str(self,on_device,bytes_per_element):
         """
         :return: the Fortran pointer representation of the source.
         """
-        return makeFStr(self._src)  
-    def destNameFStr(self):
+        return make_f_str(self._src)  
+    def dest_name_f_str(self):
         """
         :return: name of destination variable; may contain '%' if derived type member.
         """
-        return makeFStr(self._dest._var)
-    def srcNameFStr(self):
+        return make_f_str(self._dest._var)
+    def src_name_f_str(self):
         """
         :return: name of source variable; may contain '%' if derived type member.
         """
-        return makeFStr(self._src._var)
-    def destHasArgs(self):
+        return make_f_str(self._src._var)
+    def dest_has_args(self):
         """
         :return: name of destination variable; may contain '%' if derived type member.
         """
         return self._dest._bounds !=None
-    def srcHasArgs(self):
+    def src_has_args(self):
         """
         :return: name of source variable; may contain '%' if derived type member.
         """
         return self._src._bounds !=None
-    def sizeFStr(self,name,bytesPerElement=1):
+    def size_f_str(self,name,bytes_per_element=1):
         """
         The size of transferred memory (in bytes if bytes per element are given).
         multiplication by 1_8 ensures this is a type
         compatible with `integer(c_size_t)`.
         """
         assert name in self.__dict__
-        size = makeFStr(self.__dict__[name])
-        if bytesPerElement != 1:
-            return "1_8 * ({0}) * ({1})".format(size,bytesPerElement)
+        size = make_f_str(self.__dict__[name])
+        if bytes_per_element != 1:
+            return "1_8 * ({0}) * ({1})".format(size,bytes_per_element)
         else:
             return size
             
-    def memcpyKind(self,destOnDevice,srcOnDevice):
-        if self._memcpyKind != None:
-            return self._memcpyKind
+    def memcpy_kind(self,dest_on_device,src_on_device):
+        if self._memcpy_kind != None:
+            return self._memcpy_kind
         else:
             result = "hipMemcpy"
-            result += "Device" if srcOnDevice else "Host"
-            result += "ToDevice" if destOnDevice else "ToHost"
+            result += "Device" if src_on_device else "Host"
+            result += "ToDevice" if dest_on_device else "ToHost"
             return result
-    def hipStreamFStr(self):
+    def hip_stream_f_str(self):
         if str(self._stream) == "0":
             return "c_null_ptr"
         else:
-            return makeFStr(self._stream)
+            return make_f_str(self._stream)
 
 class TTCufMemcpyIntrinsic(TTNode,CufMemcpyBase):
     # dest,src,count,[,stream] # kind is inferred from dest and src
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._dest       = tokens[0]
         self._src        = tokens[1]
         self._bounds     = tokens[0]._bounds
-        self._memcpyKind = None
-    def hipFStr(self,destOnDevice,srcOnDevice,bytesPerElement=1,indent=""): # TODO backend specific
+        self._memcpy_kind = None
+    def hip_f_str(self,dest_on_device,src_on_device,bytes_per_element=1,indent=""): # TODO backend specific
         api = "hipMemcpy"
         args = []
-        args.append(self.destFStr(destOnDevice,bytesPerElement))
-        args.append(self.srcFStr(srcOnDevice,bytesPerElement))
-        args.append(self.memcpyKind(destOnDevice,srcOnDevice))
-        return "{indent}CALL hipCheck({api}({args}))".format(api=api,args=", ".join(args),indent=indent) 
+        args.append(self.dest_f_str(dest_on_device,bytes_per_element))
+        args.append(self.src_f_str(src_on_device,bytes_per_element))
+        args.append(self.memcpy_kind(dest_on_device,src_on_device))
+        return "{indent}call hipCheck({api}({args}))".format(api=api,args=", ".join(args),indent=indent) 
 
 class TTCufCudaMemcpy(TTNode,CufMemcpyBase):
     # dest,src,count,[,stream] # kind is inferred from dest and src
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         #print(tokens)
         self._api        = tokens[0] 
         self._dest       = tokens[1]
         self._src        = tokens[2]
         self._count      = tokens[3]
-        self._memcpyKind = tokens[4]
+        self._memcpy_kind = tokens[4]
         self._stream     = tokens[5]
-    def hipFStr(self,destOnDevice,srcOnDevice,bytesPerElement=1):
-        api = self.hipAPI()
+    def hip_f_str(self,dest_on_device,src_on_device,bytes_per_element=1):
+        api = self.hip_ap_i()
         args = []
-        args.append(self.destFStr(destOnDevice,bytesPerElement))
-        args.append(self.srcFStr(srcOnDevice,bytesPerElement))
-        args.append(self.sizeFStr("_count", bytesPerElement)) 
-        args.append(self.memcpyKind(destOnDevice,srcOnDevice))
+        args.append(self.dest_f_str(dest_on_device,bytes_per_element))
+        args.append(self.src_f_str(src_on_device,bytes_per_element))
+        args.append(self.size_f_str("_count", bytes_per_element)) 
+        args.append(self.memcpy_kind(dest_on_device,src_on_device))
         if "Async" in api:
-             args.append(makeFStr(self._stream))
+             args.append(make_f_str(self._stream))
         return "{api}({args})".format(api=api,args=",".join(args))
 
 class TTCufCudaMemcpy2D(TTNode,CufMemcpyBase):
     # dest,dpitch(count),src,spitch(count),width(count),height(count)[,stream] # kind is inferred from dest and src
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._api        = tokens[0]
         self._dest       = tokens[1]
         self._dpitch     = tokens[2]
@@ -485,25 +485,25 @@ class TTCufCudaMemcpy2D(TTNode,CufMemcpyBase):
         self._spitch     = tokens[4]
         self._width      = tokens[5]
         self._height     = tokens[6]
-        self._memcpyKind = tokens[7]
+        self._memcpy_kind = tokens[7]
         self._stream     = tokens[8]
-    def hipFStr(self,destOnDevice,srcOnDevice,bytesPerElement=1):
-        api = self.hipAPI()
+    def hip_f_str(self,dest_on_device,src_on_device,bytes_per_element=1):
+        api = self.hip_ap_i()
         args = []
-        args.append(self.destFStr(destOnDevice,bytesPerElement))
-        args.append(self.sizeFStr("_dpitch", bytesPerElement))
-        args.append(self.srcFStr(srcOnDevice,bytesPerElement))
-        args.append(self.sizeFStr("_spitch", bytesPerElement))
-        args.append(self.sizeFStr("_width", bytesPerElement)) 
-        args.append(self.sizeFStr("_height", 1))
-        args.append(self.memcpyKind(destOnDevice,srcOnDevice))
+        args.append(self.dest_f_str(dest_on_device,bytes_per_element))
+        args.append(self.size_f_str("_dpitch", bytes_per_element))
+        args.append(self.src_f_str(src_on_device,bytes_per_element))
+        args.append(self.size_f_str("_spitch", bytes_per_element))
+        args.append(self.size_f_str("_width", bytes_per_element)) 
+        args.append(self.size_f_str("_height", 1))
+        args.append(self.memcpy_kind(dest_on_device,src_on_device))
         if "Async" in api:
-            args.append(self.hipStreamFStr())
+            args.append(self.hip_stream_f_str())
         return "{api}({args})".format(api=api,args=",".join(args))
 
 class TTCufCudaMemcpy3D(TTNode,CufMemcpyBase):
     # dest,dpitch(count),src,spitch(count),width(count),height(count),depth(count),[,stream] # kind is inferred from dest and src
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._api        = tokens[0]
         self._dest       = tokens[1]
         self._dpitch     = tokens[2]
@@ -512,61 +512,61 @@ class TTCufCudaMemcpy3D(TTNode,CufMemcpyBase):
         self._width      = tokens[5]
         self._height     = tokens[6]
         self._depth      = tokens[7]
-        self._memcpyKind = tokens[8]
+        self._memcpy_kind = tokens[8]
         self._stream     = tokens[9]
-    def fStr(self,destOnDevice,srcOnDevice,bytesPerElement=1,indent=""):
-        api = self.hipAPI()
+    def f_str(self,dest_on_device,src_on_device,bytes_per_element=1,indent=""):
+        api = self.hip_ap_i()
         args = []
-        args.append(self.destFStr(destOnDevice,bytesPerElement))
-        args.append(self.sizeFStr("_dpitch", bytesPerElement))
-        args.append(self.srcFStr(srcOnDevice,bytesPerElement))
-        args.append(self.sizeFStr("_spitch", bytesPerElement))
-        args.append(self.sizeFStr("_width", bytesPerElement)) 
-        args.append(self.sizeFStr("_height", 1))
-        args.append(self.sizeFStr("_depth", 1)) 
-        args.append(self.memcpyKind(destOnDevice,srcOnDevice))
+        args.append(self.dest_f_str(dest_on_device,bytes_per_element))
+        args.append(self.size_f_str("_dpitch", bytes_per_element))
+        args.append(self.src_f_str(src_on_device,bytes_per_element))
+        args.append(self.size_f_str("_spitch", bytes_per_element))
+        args.append(self.size_f_str("_width", bytes_per_element)) 
+        args.append(self.size_f_str("_height", 1))
+        args.append(self.size_f_str("_depth", 1)) 
+        args.append(self.memcpy_kind(dest_on_device,src_on_device))
         if "Async" in api:
-            args.append(self.hipStreamFStr())
+            args.append(self.hip_stream_f_str())
         return "{api}({args})".format(api=api,args=",".join(args))
 
 class TTCufCublasCall(TTNode):
-    def _assignFields(self,tokens):
+    def _assign_fields(self,tokens):
         self._api    = tokens[0] # does not include cublas
         self._args   = tokens[1]
-    def hipFStr(self,indent=""):
+    def hip_f_str(self,indent=""):
         global CUBLAS_VERSION 
-        api = "hipblas" + makeFStr(self._api)
+        api = "hipblas" + make_f_str(self._api)
         args = []
         if CUBLAS_VERSION == 1:
             args.append("hipblasHandle")
         else:
             api = api.split("_")[0] # remove _v2 if present
-        args += [makeFStr(arg) for arg in self._args]
+        args += [make_f_str(arg) for arg in self._args]
         result = "{2}{0}({1})".format(api,",".join(args),indent)
-        cublasOperationType = Regex("'[NTCntc]'").setParseAction(lambda tokens: "HIPBLAS_OP_"+tokens[0].strip("'").upper())
-        result = cublasOperationType.transformString(result)
+        cublas_operation_type = Regex("'[NTCntc]'").setParseAction(lambda tokens: "HIPBLAS_OP_"+tokens[0].strip("'").upper())
+        result = cublas_operation_type.transformString(result)
         return result
 
 ## Link actions
 # CUDA Fortran
 cuf_kernel_do.setParseAction(TTCufKernelDo)
-#cufLoopKernel.setParseAction(TTCufKernelDo)
+#cuf_loop_kernel.setParseAction(TTCufKernelDo)
 
 attributes.setParseAction(TTAttributes)
 
-allocateRValue.setParseAction(TTAllocateRValue)
-memCpyValue.setParseAction(TTAllocateRValue)
+allocate_rvalue.setParseAction(TTAllocateRValue)
+memcpy_value.setParseAction(TTAllocateRValue)
 allocate.setParseAction(TTCufAllocate)
 allocated.setParseAction(TTCufAllocated)
 deallocate.setParseAction(TTCufDeallocate)
 
 memcpy.setParseAction(TTCufMemcpyIntrinsic)
-nonZeroCheck.setParseAction(TTCufNonZeroCheck)
-#pointerAssignment.setParseAction(TTCufPointerAssignment)
+non_zero_check.setParseAction(TTCufNonZeroCheck)
+#pointer_assignment.setParseAction(TTCufPointerAssignment)
 
-cufCudaMemcpy.setParseAction(TTCufCudaMemcpy)
-cufCudaMemcpy2D.setParseAction(TTCufCudaMemcpy2D)
-cufCudaMemcpy3D.setParseAction(TTCufCudaMemcpy3D)
+cuf_cudamemcpy.setParseAction(TTCufCudaMemcpy)
+cuf_cudamemcpy2D.setParseAction(TTCufCudaMemcpy2D)
+cuf_cudamemcpy3D.setParseAction(TTCufCudaMemcpy3D)
 
-cublasCall.setParseAction(TTCufCublasCall)
-cudaKernelCall.setParseAction(TTCudaKernelCall)
+cuf_cublas_call.setParseAction(TTCufCublasCall)
+cuf_kernel_call.setParseAction(TTCudaKernelCall)

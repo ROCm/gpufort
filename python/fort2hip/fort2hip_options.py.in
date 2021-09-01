@@ -1,22 +1,43 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
-LOG_PREFIX = "fort2hip.fort2hip" # log prefix
+LOG_PREFIX = "fort2hip.fort2hip"
+        # Prefix for log output that this component writes.
 
-FORTRAN_MODULE_PREAMBLE=""
+FORTRAN_MODULE_PREAMBLE = "" 
+        # Preamble to write at the top of the generated Fortran module file.
 
-DEFAULT_BLOCK_SIZES = { 1 : [128], 2 : [128,1,1], 3: [128,1,1] }
-DEFAULT_LAUNCH_BOUNDS = "128,1" # Default launch bounds. Empty string or None to unset."
+FORTRAN_MODULE_SUFFIX = "_fort2hip"
+        # Suffix for generated hip modules.
+
+FORTRAN_MODULE_FILE_EXT = "-fort2hip.f08"
+        # Suffix appended to the generated Fortran module.
+
+HIP_FILE_EXT = "-fort2hip.hip.cpp"
+        # Suffix appended to the generated HIP C++ files.
+
+GET_BLOCK_DIMS    = GET_DEFAULT_BLOCK_DIMS
+        # Callback to provide default block dimensions for a given kernel.
+        # callback arguments: kernel_name,filepath,lineno,dim
+        # return: list of int with dim entries
+
+GET_LAUNCH_BOUNDS = GET_DEFAULT_LAUNCH_BOUNDS 
+        # Callback to provide 'MAX_THREADS_PER_BLOCK, MIN_BLOCKS_PER_MP' for a given kernel.
+        # callback arguments: kernel_name,filepath,lineno
+        # return: a string consisting of two comma-separated integer numbers, e.g. '128,1' or '256, 4'
  
-GENERATE_KERNEL_LAUNCHER = True     # Generate kernel launch routines that are callable from Fortran.
-                                    # Set to 'False' in order to categorically disable generation of kernel launch routines.
-GENERATE_CPU_KERNEL_LAUNCHER = True # Generate CPU kernel launch routines that are callable from Fortran.
-                                    # Overruled by GENERATE_KERNEL_LAUNCHER
-GENERATE_DEBUG_CODE             = True  # Generate debug routine calls into the code that can be used 
-                                        # to print out kernel argument values or device array elements and norms.
+EMIT_KERNEL_LAUNCHER     = True  
+        # Generate kernel launch routines that are callable from Fortran.
+        # Set to 'False' in order to categorically disable generation of kernel launch routines.
+EMIT_CPU_IMPLEMENTATION  = False 
+        # Generate CPU kernel launch routines from Fortran loopnests. (EMIT_KERNEL_LAUNCHER must be set to True too.)
+EMIT_DEBUG_CODE          = False 
+        # Generate debug routine calls into the code that can be used 
+        # to print out kernel argument values or device array elements and norms.
 
-PRETTIFY_GENERATED_FORTRAN_CODE = False # Prettify the generated Fortran code with fprettify
+PRETTIFY_EMITTED_FORTRAN_CODE = False 
+        # Prettify the emitted Fortran code with fprettify
 
-PRETTIFY_GENERATED_C_CODE       = True  # Prettify the generated HIP C++ code with clang-format.
+PRETTIFY_EMITTED_C_CODE       = False  
+        # Prettify the emitted HIP C++ code with clang-format.
 CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140, BinPackArguments: false, BinPackParameters: false, AllowAllArgumentsOnNextLine: false, AllowAllParametersOfDeclarationOnNextLine: false}\"" 
-   # Format style that is passed to clang-format
-
+        # Format style that is passed to clang-format

@@ -55,21 +55,21 @@ LIST_OF_TENSORS.clear()
 #     print(e)
 
 
-print (assignment.parseString("a = 5")[0].cStr())
-print (derivedTypeMember.parseString("threadidx%x3")[0])
-print (derivedTypeMember.parseString("threadidx%x3")[0].cStr())
-print (datatype.parseString("double precision")[0].cStr())
-print (declaration.parseString("real(kind=8) :: rhx, rhy")[0].cStr())
+print (assignment.parseString("a = 5")[0].c_str())
+print (derived_type_member.parseString("threadidx%x3")[0])
+print (derived_type_member.parseString("threadidx%x3")[0].c_str())
+print (datatype.parseString("double precision")[0].c_str())
+print (declaration.parseString("real(kind=8) :: rhx, rhy")[0].c_str())
 
 testPattern = datatype + Optional(Suppress(",") + Group(delimitedList(attribute)),default=[]) + Literal("::").suppress()
 testPattern.setParseAction(WhitespaceList)
 
-print (testPattern.parseString("real(kind=8), device :: ")[0].cStr())
-print (declaration.parseString("real(kind=8), device :: rhx, rhy").cStr())
-print (declaration.parseString("real, device, parameter :: rhx, rhy").cStr())
-print (datatype.parseString("integer(kind=2)").cStr())
-print (assignment.parseString("y(i,j) = sin(g(threadidx%x))-180 + g(x,y)")[0].cStr())
-print (assignment.parseString("y(i,j) = sin(g(threadidx%x))-180 + g(x,y)")[0].cStr())
+print (testPattern.parseString("real(kind=8), device :: ")[0].c_str())
+print (declaration.parseString("real(kind=8), device :: rhx, rhy").c_str())
+print (declaration.parseString("real, device, parameter :: rhx, rhy").c_str())
+print (datatype.parseString("integer(kind=2)").c_str())
+print (assignment.parseString("y(i,j) = sin(g(threadidx%x))-180 + g(x,y)")[0].c_str())
+print (assignment.parseString("y(i,j) = sin(g(threadidx%x))-180 + g(x,y)")[0].c_str())
 
 testDoWhile="""
 do while (k < 3)
@@ -108,14 +108,14 @@ do j=1,n
 enddo
 enddo"""
 
-#parseResult = cufLoopKernel.parseString(testCufLoopKernel) 
+#parse_result = cuf_loop_kernel.parseString(testCufLoopKernel) 
 #print(testCufLoopKernel)
 
 #import inspect
 
-#print(parseResult[0])
-#print(parseResult[0].cStr())
-#print(cufLoopKernel.parseString(testCufLoopKernel))
+#print(parse_result[0])
+#print(parse_result[0].c_str())
+#print(cuf_loop_kernel.parseString(testCufLoopKernel))
 
 #def gen_dict_extract(key, var):
 #    if hasattr(var,'iteritems'):

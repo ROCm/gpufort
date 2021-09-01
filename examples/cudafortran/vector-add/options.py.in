@@ -1,6 +1,19 @@
 fort2hip.CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140, BinPackArguments: false, BinPackParameters: false}\""
 
-fort2hip.GENERATE_DEBUG_CODE = False
+fort2hip.EMIT_DEBUG_CODE = False
+
+fort2hip.PRETTIFY_EMITTED_FORTRAN_CODE = False
+
+def myBlockDims(kernelName,dims):
+    return [512]
+
+def myLaunchBounds(kernelName):
+    print(kernelName)
+    return "512,2"
+
+#fort2hip.GET_BLOCK_DIMS = myBlockDims
+
+#fort2hip.GET_LAUNCH_BOUNDS = myLaunchBounds
 
 PRETTIFY_MODIFIED_TRANSLATION_SOURCE = True
 

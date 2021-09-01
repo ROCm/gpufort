@@ -9,67 +9,37 @@ print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.std
 
 testdata = []
 testdata.append("""
-!$acc loop 
+!$cuf kernel do(1) 
 do i = 1, n
   a(i) = 3;
 end do
 """)
 testdata.append("""
-!$acc kernels loop create(b) copy(a(:)) reduction(+:c) async(1)
+!$cuf kernel do(1) <<<*,*>>>
 do i = 1, n
-  a(i) = b(i) + c;
-  c = c + a(i)
+  a(i) = 3;
 end do
 """)
-
 testdata.append("""
-!$acc parallel loop 
+!$cuf kernel do(1) <<<a,b>>>
 do i = 1, n
   a(i) = 3;
 end do
 """)
 
 testdata.append("""
-!$acc loop 
-do i = 1, n
-  do j = 1, n
-    a(i,j) = 3;
-  end do
-end do
-""")
-
-testdata.append("""
-!$acc loop gang worker
-do i = 1, n
-  !$acc loop vector
-  do j = 1, n
-    a(i,j) = 3;
-  end do
-end do
-""")
-
-testdata.append("""
-!$acc loop gang
-do i = 1, n
-!$acc loop worker
-  do i = 1, n
-    !$acc loop vector
-    do j = 1, n
-      a(i,j,k) = 3;
-    end do
-  end do
+!$cuf kernel do(1) <<<grid, tBlock>>>
+do i=1,N
+  y(i) = y(i) + a*x(i)
 end do
 """)
 
 for snippet in testdata:
     try:
-        result = translator.annotatedDoLoop.parseString(snippet)[0]
-        print(translator.formatDirective(result._annotation.ompFStr(),80))
-        result = translator.loopKernel.parseString(snippet)[0]
+        translator.parse_loop_kernel(snippet.split("\n"))
     except Exception as e:
         print(" - FAILED",file=sys.stderr)
         print("failed to parse '{}'".format(snippet),file=sys.stderr)
         raise e
         sys.exit(2)
-
 print(" - PASSED",file=sys.stderr)

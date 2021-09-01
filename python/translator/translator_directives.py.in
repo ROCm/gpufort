@@ -119,7 +119,7 @@ class TTDo(TTContainer):
         return "{indent}int {var} = {begin} + ({step})*(threadIdx.{idx} + blockIdx.{idx} * blockDim.{idx});\n".format(\
                 indent=self.indent,var=ivar,begin=begin,idx=self._thread_index,step=step)
     def collapsed_loop_index_c_str(self,denominator):
-        ivar = self.loop_var()
+        ivar     = self.loop_var()
         tid      = self._thread_index
         assert not tid is None
         begin    = make_c_str(self._begin._rhs)
@@ -150,7 +150,7 @@ class TTDo(TTContainer):
         step        = make_c_str(self._step)
         body_content = TTContainer.c_str(self)
         if self._thread_index == None:
-            return "{indent}for (int {0}={1}; {0} <= {2}; {0} += {3}) {{\n{4}\n}}".format(\
+            return "{indent}for ({0}={1}; {0} <= {2}; {0} += {3}) {{\n{4}\n}}".format(\
                     ivar, begin, end, step, body_content,indent=self.indent)
         else:
             return body_content
@@ -256,11 +256,15 @@ class TTLoopKernel(TTContainer,IComputeConstruct):
         else:
             return self._parent_directive
     def loop_vars(self):
-        identifier_names = []
+        num_outer_loops_to_map = int(self.__parent_directive().num_collapse())
+        identifier_names       = []
         do_loops  = find_all(self.body[0],TTDo)
         for loop in do_loops:
             identifier_names.append(loop.loop_var(make_f_str))
-        return identifier_names
+        if num_outer_loops_to_map > 0:
+            return identifier_names[0:num_outer_loops_to_map]    
+        else:
+            return identifier_names
     def variables_in_body(self,scope=[]):
         if len(scope):
             self.scope = scope

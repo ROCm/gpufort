@@ -84,7 +84,7 @@ class TTNumber(TTNode):
             else:
                 utils.logging.log_error(LOG_PREFIX,"TTNumber.c_str",\
                         "no number of bytes found for suffix '{}' in 'translator.FORTRAN_TYPE_2_BYTES_MAP[\"real\"]'".format(suffix))
-                sys.exit(2) # TODO erroicode
+                sys.exit(2) # TODO error code
         elif not is_real and len(parts) >= 2 and parts[-1].startswith("_"):
             suffix = parts[-1][1:].lower()
             if suffix in FORTRAN_TYPE_2_BYTES_MAP["integer"]:
@@ -148,8 +148,18 @@ class TTFunctionCallOrTensorAccess(TTNode):
         else:
             return self.has_matrix_range_args() or\
                    not self.__guess_it_is_function()
+    def __name_c_str(self):
+        raw_name = make_c_str(self._name).lower()
+        num_args = len(self._args)
+        if raw_name == "sign":
+            return "copysign"
+        elif raw_name in ["max","amax1"]:
+            return "max" + str(num_args)
+        elif raw_name in ["min","amin1"]:
+            return "min" + str(num_args)
+        return raw_name
     def c_str(self):
-        name = make_c_str(self._name).lower()
+        name = self.__name_c_str()
         if self.is_tensor():
             return "{0}[_idx_{0}({1})]".format(name,",".join([make_c_str(s) for s in self._args])) # Fortran identifiers cannot start with "_"
         else:

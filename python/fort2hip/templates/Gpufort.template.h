@@ -61,6 +61,15 @@ i{{rank}}
         exit(error); \
     } \
   }
+
+// global thread indices for various dimensions
+#define __gidx(idx) (threadIdx.idx + blockIdx.idx * blockDim.idx) 
+#define __gidx1 __gidx(x)
+#define __gidx2 (__gidx(x) + gridDim.x*blockDim.x*__gidx(y))
+#define __gidx3 (__gidx(x) + gridDim.x*blockDim.x*__gidx(y) + gridDim.x*blockDim.x*gridDim.y*blockDim.y*__gidx(z))
+#define __total_threads(grid,block) ( (grid).x*(grid).y*(grid).z * (block).x*(block).y*(block).z )
+#define divideAndRoundUp(x, y) ((x) / (y) + ((x) % (y) != 0))
+
 #define GPUFORT_PRINT_ARGS(...) gpufort_show_args(std::cout, #__VA_ARGS__, __VA_ARGS__)
 namespace {
   template<typename H1> std::ostream& gpufort_show_args(std::ostream& out, const char* label, H1&& value) {
@@ -70,8 +79,8 @@ namespace {
   template<typename H1, typename ...T> std::ostream& gpufort_show_args(std::ostream& out, const char* label, H1&& value, T&&... rest) {
     const char* pcomma = strchr(label, ',');
     return gpufort_show_args(out.write(label, pcomma - label) << "=" << std::forward<H1>(value) << ',',
-  	      pcomma + 1,
-  	      std::forward<T>(rest)...);
+          pcomma + 1,
+          std::forward<T>(rest)...);
   }
 }
 {% set max_rank = 7 -%}
@@ -96,11 +105,11 @@ namespace {
 {% endfor %}
       T value = A_h[{{ linearized_index(rank) }}];
       if ( print_norms ) {
-	min  = std::min(value,min);
-	max  = std::max(value,max);
-	sum += value;
-	l1  += std::abs(value);
-	l2  += value*value;
+        min  = std::min(value,min);
+        max  = std::max(value,max);
+        sum += value;
+        l1  += std::abs(value);
+        l2  += value*value;
       }
       if ( print_values ) {
         out << prefix << label << "(" << {% for col in range(1,rank+1) -%}(lb{{col}}+i{{col}}) << {{ "\",\" <<" |safe if not loop.last }} {% endfor -%} ") = " << std::setprecision(6) << value << "\n";
@@ -114,41 +123,50 @@ namespace {
       out << prefix << label << ":" << "l2="  << std::sqrt(l2) << "\n";
     }
   }{{"\n" if not loop.last}}{% endfor %}
-}
-// global thread indices for various dimensions
-#define __gidx(idx) (threadIdx.idx + blockIdx.idx * blockDim.idx) 
-#define __gidx1 __gidx(x)
-#define __gidx2 (__gidx(x) + gridDim.x*blockDim.x*__gidx(y))
-#define __gidx3 (__gidx(x) + gridDim.x*blockDim.x*__gidx(y) + gridDim.x*blockDim.x*gridDim.y*blockDim.y*__gidx(z))
-#define __total_threads(grid,block) ( (grid).x*(grid).y*(grid).z * (block).x*(block).y*(block).z )
-#define divideAndRoundUp(x, y) ((x) / (y) + ((x) % (y) != 0))
-namespace {
+  
+  // loop condition
   template <typename I, typename E, typename S> __device__ __forceinline__ bool loop_cond(I idx,E end,S stride) {
     return (stride>0) ? ( idx <= end ) : ( -idx <= -end );     
   }
+
+  // type conversions
 {% for float_type in ["float", "double"] %}  // make {{float_type}}
-{% for type in ["short int",  "unsigned short int",  "unsigned int",  "int",  "long int",  "unsigned long int",  "long long int",  "unsigned long long int",  "signed char",  "unsigned char",  "float",  "double",  "long double"] %} __device__ __forceinline__ {{float_type}} make_{{float_type}}(const {{type}}& a) {
+{%- for type in ["short int",  "unsigned short int",  "unsigned int",  "int",  "long int",  "unsigned long int",  "long long int",  "unsigned long long int",  "signed char",  "unsigned char",  "float",  "double",  "long double"] +%}
+  __device__ __forceinline__ {{float_type}} make_{{float_type}}(const {{type}}& a) {
     return static_cast<{{float_type}}>(a);
   }
-{% endfor %}{% for type in ["hipFloatComplex", "hipDoubleComplex" ] %} __device__ __forceinline__ {{float_type}} make_{{float_type}}(const {{type}}& a) {
+{%- endfor %}
+{%- for type in ["hipFloatComplex", "hipDoubleComplex" ] +%}
+  __device__ __forceinline__ {{float_type}} make_{{float_type}}(const {{type}}& a) {
     return static_cast<{{float_type}}>(a.x);
   }
-{% endfor %}
-{% endfor %} // conjugate complex type
+{%- endfor %}
+{% endfor %} 
+  // math functions 
   __device__ __forceinline__ hipFloatComplex conj(const hipFloatComplex& c) {
     return hipConjf(c);
   }
   __device__ __forceinline__ hipDoubleComplex conj(const hipDoubleComplex& z) {
     return hipConj(z);
   }
-  __device__ __forceinline__ float copysign(const float& a, const float& b) {
+  __device__ __forceinline__ float copysign(const float a, const float b) {
     return copysignf(a, b);
   }
+{%- for float_type in ["float", "double"] +%}
+  __device__ __forceinline__ int nint(const {{float_type}} a) {
+    return (a>0) ? static_cast<int>(a+0.5) : static_cast<int>(a-0.5);
+  }
+  __device__ __forceinline__ {{float_type}} dim(const {{float_type}} a, const {{float_type}} b) {
+    {{float_type}} diff = a-b;
+    return (diff>0) ? diff : {{ "0." if float_type == "double" else "0.f" }};
+  }
+{%- endfor +%}
+} 
+
 #define sign(a,b) copysign(a,b)
 {% for op in ["min","max"] %}
 {% for n in range(2,15+1) %}
   {{ binop(op,n) }}
 {% endfor %}
 {% endfor %}
-} 
 #endif // _GPUFORT_H_

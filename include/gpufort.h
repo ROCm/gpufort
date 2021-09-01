@@ -1,6 +1,5 @@
 #ifndef _GPUFORT_H_
 #define _GPUFORT_H_
-
 #include "hip/hip_complex.h"
 #include "hip/math_functions.h"
 #include <cstdio>
@@ -10,7 +9,6 @@
 #include <utility>
 #include <algorithm>
 #include <vector>
-
 #define HIP_CHECK(condition)         \
   {                                  \
     hipError_t error = condition;    \
@@ -20,8 +18,15 @@
     } \
   }
 
-#define GPUFORT_PRINT_ARGS(...) gpufort_show_args(std::cout, #__VA_ARGS__, __VA_ARGS__)
+// global thread indices for various dimensions
+#define __gidx(idx) (threadIdx.idx + blockIdx.idx * blockDim.idx) 
+#define __gidx1 __gidx(x)
+#define __gidx2 (__gidx(x) + gridDim.x*blockDim.x*__gidx(y))
+#define __gidx3 (__gidx(x) + gridDim.x*blockDim.x*__gidx(y) + gridDim.x*blockDim.x*gridDim.y*blockDim.y*__gidx(z))
+#define __total_threads(grid,block) ( (grid).x*(grid).y*(grid).z * (block).x*(block).y*(block).z )
+#define divideAndRoundUp(x, y) ((x) / (y) + ((x) % (y) != 0))
 
+#define GPUFORT_PRINT_ARGS(...) gpufort_show_args(std::cout, #__VA_ARGS__, __VA_ARGS__)
 namespace {
   template<typename H1> std::ostream& gpufort_show_args(std::ostream& out, const char* label, H1&& value) {
     return out << label << "=" << std::forward<H1>(value) << '\n';
@@ -30,11 +35,10 @@ namespace {
   template<typename H1, typename ...T> std::ostream& gpufort_show_args(std::ostream& out, const char* label, H1&& value, T&&... rest) {
     const char* pcomma = strchr(label, ',');
     return gpufort_show_args(out.write(label, pcomma - label) << "=" << std::forward<H1>(value) << ',',
-  	      pcomma + 1,
-  	      std::forward<T>(rest)...);
+          pcomma + 1,
+          std::forward<T>(rest)...);
   }
 }
-
 #define GPUFORT_PRINT_ARRAY1(prefix,print_values,print_norms,A,n1,lb1) gpufort_print_array1(std::cout, prefix, print_values, print_norms, #A, A, n1,lb1)
 #define GPUFORT_PRINT_ARRAY2(prefix,print_values,print_norms,A,n1,n2,lb1,lb2) gpufort_print_array2(std::cout, prefix, print_values, print_norms, #A, A, n1,n2,lb1,lb2)
 #define GPUFORT_PRINT_ARRAY3(prefix,print_values,print_norms,A,n1,n2,n3,lb1,lb2,lb3) gpufort_print_array3(std::cout, prefix, print_values, print_norms, #A, A, n1,n2,n3,lb1,lb2,lb3)
@@ -57,11 +61,11 @@ namespace {
     for ( int i1 = 0; i1 < n1; i1++ ) {
       T value = A_h[i1];
       if ( print_norms ) {
-	min  = std::min(value,min);
-	max  = std::max(value,max);
-	sum += value;
-	l1  += std::abs(value);
-	l2  += value*value;
+        min  = std::min(value,min);
+        max  = std::max(value,max);
+        sum += value;
+        l1  += std::abs(value);
+        l2  += value*value;
       }
       if ( print_values ) {
         out << prefix << label << "(" << (lb1+i1) <<  ") = " << std::setprecision(6) << value << "\n";
@@ -90,11 +94,11 @@ namespace {
     for ( int i1 = 0; i1 < n1; i1++ ) {
       T value = A_h[n1*i2+i1];
       if ( print_norms ) {
-	min  = std::min(value,min);
-	max  = std::max(value,max);
-	sum += value;
-	l1  += std::abs(value);
-	l2  += value*value;
+        min  = std::min(value,min);
+        max  = std::max(value,max);
+        sum += value;
+        l1  += std::abs(value);
+        l2  += value*value;
       }
       if ( print_values ) {
         out << prefix << label << "(" << (lb1+i1) << "," << (lb2+i2) <<  ") = " << std::setprecision(6) << value << "\n";
@@ -124,11 +128,11 @@ namespace {
     for ( int i1 = 0; i1 < n1; i1++ ) {
       T value = A_h[n1*n2*i3+n1*i2+i1];
       if ( print_norms ) {
-	min  = std::min(value,min);
-	max  = std::max(value,max);
-	sum += value;
-	l1  += std::abs(value);
-	l2  += value*value;
+        min  = std::min(value,min);
+        max  = std::max(value,max);
+        sum += value;
+        l1  += std::abs(value);
+        l2  += value*value;
       }
       if ( print_values ) {
         out << prefix << label << "(" << (lb1+i1) << "," << (lb2+i2) << "," << (lb3+i3) <<  ") = " << std::setprecision(6) << value << "\n";
@@ -159,11 +163,11 @@ namespace {
     for ( int i1 = 0; i1 < n1; i1++ ) {
       T value = A_h[n1*n2*n3*i4+n1*n2*i3+n1*i2+i1];
       if ( print_norms ) {
-	min  = std::min(value,min);
-	max  = std::max(value,max);
-	sum += value;
-	l1  += std::abs(value);
-	l2  += value*value;
+        min  = std::min(value,min);
+        max  = std::max(value,max);
+        sum += value;
+        l1  += std::abs(value);
+        l2  += value*value;
       }
       if ( print_values ) {
         out << prefix << label << "(" << (lb1+i1) << "," << (lb2+i2) << "," << (lb3+i3) << "," << (lb4+i4) <<  ") = " << std::setprecision(6) << value << "\n";
@@ -195,11 +199,11 @@ namespace {
     for ( int i1 = 0; i1 < n1; i1++ ) {
       T value = A_h[n1*n2*n3*n4*i5+n1*n2*n3*i4+n1*n2*i3+n1*i2+i1];
       if ( print_norms ) {
-	min  = std::min(value,min);
-	max  = std::max(value,max);
-	sum += value;
-	l1  += std::abs(value);
-	l2  += value*value;
+        min  = std::min(value,min);
+        max  = std::max(value,max);
+        sum += value;
+        l1  += std::abs(value);
+        l2  += value*value;
       }
       if ( print_values ) {
         out << prefix << label << "(" << (lb1+i1) << "," << (lb2+i2) << "," << (lb3+i3) << "," << (lb4+i4) << "," << (lb5+i5) <<  ") = " << std::setprecision(6) << value << "\n";
@@ -232,11 +236,11 @@ namespace {
     for ( int i1 = 0; i1 < n1; i1++ ) {
       T value = A_h[n1*n2*n3*n4*n5*i6+n1*n2*n3*n4*i5+n1*n2*n3*i4+n1*n2*i3+n1*i2+i1];
       if ( print_norms ) {
-	min  = std::min(value,min);
-	max  = std::max(value,max);
-	sum += value;
-	l1  += std::abs(value);
-	l2  += value*value;
+        min  = std::min(value,min);
+        max  = std::max(value,max);
+        sum += value;
+        l1  += std::abs(value);
+        l2  += value*value;
       }
       if ( print_values ) {
         out << prefix << label << "(" << (lb1+i1) << "," << (lb2+i2) << "," << (lb3+i3) << "," << (lb4+i4) << "," << (lb5+i5) << "," << (lb6+i6) <<  ") = " << std::setprecision(6) << value << "\n";
@@ -270,11 +274,11 @@ namespace {
     for ( int i1 = 0; i1 < n1; i1++ ) {
       T value = A_h[n1*n2*n3*n4*n5*n6*i7+n1*n2*n3*n4*n5*i6+n1*n2*n3*n4*i5+n1*n2*n3*i4+n1*n2*i3+n1*i2+i1];
       if ( print_norms ) {
-	min  = std::min(value,min);
-	max  = std::max(value,max);
-	sum += value;
-	l1  += std::abs(value);
-	l2  += value*value;
+        min  = std::min(value,min);
+        max  = std::max(value,max);
+        sum += value;
+        l1  += std::abs(value);
+        l2  += value*value;
       }
       if ( print_values ) {
         out << prefix << label << "(" << (lb1+i1) << "," << (lb2+i2) << "," << (lb3+i3) << "," << (lb4+i4) << "," << (lb5+i5) << "," << (lb6+i6) << "," << (lb7+i7) <<  ") = " << std::setprecision(6) << value << "\n";
@@ -287,128 +291,131 @@ namespace {
       out << prefix << label << ":" << "l1="  << l1  << "\n";
       out << prefix << label << ":" << "l2="  << std::sqrt(l2) << "\n";
     }
-  }}
-
-// global thread indices for various dimensions
-#define __gidx(idx) (threadIdx.idx + blockIdx.idx * blockDim.idx) 
-#define __gidx1 __gidx(x)
-#define __gidx2 (__gidx(x) + gridDim.x*blockDim.x*__gidx(y))
-#define __gidx3 (__gidx(x) + gridDim.x*blockDim.x*__gidx(y) + gridDim.x*blockDim.x*gridDim.y*blockDim.y*__gidx(z))
-#define __total_threads(grid,block) ( (grid).x*(grid).y*(grid).z * (block).x*(block).y*(block).z )
-
-#define divideAndRoundUp(x, y) ((x) / (y) + ((x) % (y) != 0))
-
-namespace {
+  }  
+  // loop condition
   template <typename I, typename E, typename S> __device__ __forceinline__ bool loop_cond(I idx,E end,S stride) {
     return (stride>0) ? ( idx <= end ) : ( -idx <= -end );     
   }
 
+  // type conversions
   // make float
- __device__ __forceinline__ float make_float(const short int& a) {
+  __device__ __forceinline__ float make_float(const short int& a) {
     return static_cast<float>(a);
   }
- __device__ __forceinline__ float make_float(const unsigned short int& a) {
+  __device__ __forceinline__ float make_float(const unsigned short int& a) {
     return static_cast<float>(a);
   }
- __device__ __forceinline__ float make_float(const unsigned int& a) {
+  __device__ __forceinline__ float make_float(const unsigned int& a) {
     return static_cast<float>(a);
   }
- __device__ __forceinline__ float make_float(const int& a) {
+  __device__ __forceinline__ float make_float(const int& a) {
     return static_cast<float>(a);
   }
- __device__ __forceinline__ float make_float(const long int& a) {
+  __device__ __forceinline__ float make_float(const long int& a) {
     return static_cast<float>(a);
   }
- __device__ __forceinline__ float make_float(const unsigned long int& a) {
+  __device__ __forceinline__ float make_float(const unsigned long int& a) {
     return static_cast<float>(a);
   }
- __device__ __forceinline__ float make_float(const long long int& a) {
+  __device__ __forceinline__ float make_float(const long long int& a) {
     return static_cast<float>(a);
   }
- __device__ __forceinline__ float make_float(const unsigned long long int& a) {
+  __device__ __forceinline__ float make_float(const unsigned long long int& a) {
     return static_cast<float>(a);
   }
- __device__ __forceinline__ float make_float(const signed char& a) {
+  __device__ __forceinline__ float make_float(const signed char& a) {
     return static_cast<float>(a);
   }
- __device__ __forceinline__ float make_float(const unsigned char& a) {
+  __device__ __forceinline__ float make_float(const unsigned char& a) {
     return static_cast<float>(a);
   }
- __device__ __forceinline__ float make_float(const float& a) {
+  __device__ __forceinline__ float make_float(const float& a) {
     return static_cast<float>(a);
   }
- __device__ __forceinline__ float make_float(const double& a) {
+  __device__ __forceinline__ float make_float(const double& a) {
     return static_cast<float>(a);
   }
- __device__ __forceinline__ float make_float(const long double& a) {
+  __device__ __forceinline__ float make_float(const long double& a) {
     return static_cast<float>(a);
   }
- __device__ __forceinline__ float make_float(const hipFloatComplex& a) {
+  __device__ __forceinline__ float make_float(const hipFloatComplex& a) {
     return static_cast<float>(a.x);
   }
- __device__ __forceinline__ float make_float(const hipDoubleComplex& a) {
+  __device__ __forceinline__ float make_float(const hipDoubleComplex& a) {
     return static_cast<float>(a.x);
-  }
-  // make double
- __device__ __forceinline__ double make_double(const short int& a) {
+  }  // make double
+  __device__ __forceinline__ double make_double(const short int& a) {
     return static_cast<double>(a);
   }
- __device__ __forceinline__ double make_double(const unsigned short int& a) {
+  __device__ __forceinline__ double make_double(const unsigned short int& a) {
     return static_cast<double>(a);
   }
- __device__ __forceinline__ double make_double(const unsigned int& a) {
+  __device__ __forceinline__ double make_double(const unsigned int& a) {
     return static_cast<double>(a);
   }
- __device__ __forceinline__ double make_double(const int& a) {
+  __device__ __forceinline__ double make_double(const int& a) {
     return static_cast<double>(a);
   }
- __device__ __forceinline__ double make_double(const long int& a) {
+  __device__ __forceinline__ double make_double(const long int& a) {
     return static_cast<double>(a);
   }
- __device__ __forceinline__ double make_double(const unsigned long int& a) {
+  __device__ __forceinline__ double make_double(const unsigned long int& a) {
     return static_cast<double>(a);
   }
- __device__ __forceinline__ double make_double(const long long int& a) {
+  __device__ __forceinline__ double make_double(const long long int& a) {
     return static_cast<double>(a);
   }
- __device__ __forceinline__ double make_double(const unsigned long long int& a) {
+  __device__ __forceinline__ double make_double(const unsigned long long int& a) {
     return static_cast<double>(a);
   }
- __device__ __forceinline__ double make_double(const signed char& a) {
+  __device__ __forceinline__ double make_double(const signed char& a) {
     return static_cast<double>(a);
   }
- __device__ __forceinline__ double make_double(const unsigned char& a) {
+  __device__ __forceinline__ double make_double(const unsigned char& a) {
     return static_cast<double>(a);
   }
- __device__ __forceinline__ double make_double(const float& a) {
+  __device__ __forceinline__ double make_double(const float& a) {
     return static_cast<double>(a);
   }
- __device__ __forceinline__ double make_double(const double& a) {
+  __device__ __forceinline__ double make_double(const double& a) {
     return static_cast<double>(a);
   }
- __device__ __forceinline__ double make_double(const long double& a) {
+  __device__ __forceinline__ double make_double(const long double& a) {
     return static_cast<double>(a);
   }
- __device__ __forceinline__ double make_double(const hipFloatComplex& a) {
+  __device__ __forceinline__ double make_double(const hipFloatComplex& a) {
     return static_cast<double>(a.x);
   }
- __device__ __forceinline__ double make_double(const hipDoubleComplex& a) {
+  __device__ __forceinline__ double make_double(const hipDoubleComplex& a) {
     return static_cast<double>(a.x);
-  }
- // conjugate complex type
+  } 
+  // math functions 
   __device__ __forceinline__ hipFloatComplex conj(const hipFloatComplex& c) {
     return hipConjf(c);
   }
   __device__ __forceinline__ hipDoubleComplex conj(const hipDoubleComplex& z) {
     return hipConj(z);
   }
-
-  __device__ __forceinline__ float copysign(const float& a, const float& b) {
+  __device__ __forceinline__ float copysign(const float a, const float b) {
     return copysignf(a, b);
   }
+  __device__ __forceinline__ int nint(const float a) {
+    return (a>0) ? static_cast<int>(a+0.5) : static_cast<int>(a-0.5);
+  }
+  __device__ __forceinline__ float dim(const float a, const float b) {
+    float diff = a-b;
+    return (diff>0) ? diff : 0.f;
+  }
+  __device__ __forceinline__ int nint(const double a) {
+    return (a>0) ? static_cast<int>(a+0.5) : static_cast<int>(a-0.5);
+  }
+  __device__ __forceinline__ double dim(const double a, const double b) {
+    double diff = a-b;
+    return (diff>0) ? diff : 0.;
+  }
+} 
 
 #define sign(a,b) copysign(a,b)
-
   #define min2(a,b) min(a,b)
   #define min3(aa,ab,ba) min(min(aa,ab),ba)
   #define min4(aa,ab,ba,bb) min(min(aa,ab),min(ba,bb))
@@ -437,5 +444,4 @@ namespace {
   #define max13(aaaa,aaab,aaba,aabb,abaa,abab,abba,baaa,baab,baba,bbaa,bbab,bbba) max(max(max(max(aaaa,aaab),max(aaba,aabb)),max(max(abaa,abab),abba)),max(max(max(baaa,baab),baba),max(max(bbaa,bbab),bbba)))
   #define max14(aaaa,aaab,aaba,aabb,abaa,abab,abba,baaa,baab,baba,babb,bbaa,bbab,bbba) max(max(max(max(aaaa,aaab),max(aaba,aabb)),max(max(abaa,abab),abba)),max(max(max(baaa,baab),max(baba,babb)),max(max(bbaa,bbab),bbba)))
   #define max15(aaaa,aaab,aaba,aabb,abaa,abab,abba,abbb,baaa,baab,baba,babb,bbaa,bbab,bbba) max(max(max(max(aaaa,aaab),max(aaba,aabb)),max(max(abaa,abab),max(abba,abbb))),max(max(max(baaa,baab),max(baba,babb)),max(max(bbaa,bbab),bbba)))
-} 
 #endif // _GPUFORT_H_

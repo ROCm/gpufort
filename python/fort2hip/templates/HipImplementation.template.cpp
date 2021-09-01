@@ -180,8 +180,8 @@ extern "C" void {{iface_prefix}}_cpu1(
     const int sharedmem, 
     hipStream_t stream{{"," if (kernel.interface_args|length > 0) else ") {"}}
 {% for arg in kernel.interface_args %}
-{{ arg | indent(4,True) }}{{"," if not loop.last else ") {"}}
-{% endfor -%}
+{{ arg | indent(4,True) }}{{"," if not loop.last else ");"}}
+{% endfor +%}
 extern "C" void {{iface_prefix}}_cpu(
     const int sharedmem, 
     hipStream_t stream{{"," if (kernel.interface_args|length > 0) else ") {"}}

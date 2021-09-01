@@ -56,56 +56,76 @@ class TTLogical(TTNode):
 class TTNumber(TTNode):
     def _assign_fields(self,tokens):
         self._value = tokens[0]
-    def is_real(self):
-        return  "." in self._value
+    def is_real(self,kind=None):
+        """:return: If the number is a real (of a certain kind)."""
+        is_real = "." in self._value
+        if is_real and kind != None:
+            if kind in FORTRAN_TYPE_2_BYTES_MAP["real"]:
+                parts              = self._value.split("_")
+                has_exponent_e     = "e" in self._value
+                has_exponent_d     = "d" in self._value
+                has_exponent       = has_exponent_e or has_exponent_d
+                default_real_bytes = FORTRAN_TYPE_2_BYTES_MAP["real"][""].strip()
+                kind_bytes         = FORTRAN_TYPE_2_BYTES_MAP["real"][kind].strip()
+                if len(parts)==1:   # no suffix
+                    cond = False
+                    cond = cond or (has_exponent_d and kind_bytes=="8")
+                    cond = cond or (has_exponent_e and kind_bytes==default_real_bytes)
+                    cond = cond or (not has_exponent and kind_bytes==default_real_bytes)
+                    return cond
+                elif len(parts)==2: # suffix
+                    suffix = parts[1]
+                    if suffix in FORTRAN_TYPE_2_BYTES_MAP["real"]:
+                        suffix_bytes = FORTRAN_TYPE_2_BYTES_MAP["real"][suffix].strip()
+                        return kind_bytes == suffix_bytes
+                    else:
+                        utils.logging.log_error(LOG_PREFIX,"TTNumber.is_real",\
+                          "no number of bytes found for suffix '{}' in 'translator.FORTRAN_TYPE_2_BYTES_MAP[\"real\"]'".format(suffix))
+                        sys.exit(2) # TODO error code
+            else:
+                utils.logging.log_error(LOG_PREFIX,"TTNumber.is_real",\
+                  "no number of bytes found for kind '{}' in 'translator.FORTRAN_TYPE_2_BYTES_MAP[\"real\"]'".format(kind))
+                sys.exit(2) # TODO error code
+        else:
+            return is_real
+    def is_integer(self,kind=None):
+        """:return: If the number is an integer (of a certain kind)."""
+        is_integer = not "." in self._value
+        if is_integer and kind != None:
+            if kind in FORTRAN_TYPE_2_BYTES_MAP["integer"]:
+                parts              = self._value.split("_")
+                has_exponent_e     = "e" in self._value
+                has_exponent_d     = "d" in self._value
+                has_exponent       = has_exponent_e or has_exponent_d
+                default_integer_bytes = FORTRAN_TYPE_2_BYTES_MAP["integer"][""].strip()
+                kind_bytes            = FORTRAN_TYPE_2_BYTES_MAP["integer"][kind].strip()
+                if len(parts)==1:   # no suffix
+                    return kind_bytes == default_integer_bytes
+                elif len(parts)==2: # suffix
+                    suffix = parts[1]
+                    if suffix in FORTRAN_TYPE_2_BYTES_MAP["integer"]:
+                        suffix_bytes = FORTRAN_TYPE_2_BYTES_MAP["integer"][suffix].strip()
+                        return kind_bytes == suffix_bytes
+                    else:
+                        utils.logging.log_error(LOG_PREFIX,"TTNumber.is_integer",\
+                          "no number of bytes found for suffix '{}' in 'translator.FORTRAN_TYPE_2_BYTES_MAP[\"integer\"]'".format(suffix))
+                        sys.exit(2) # TODO error code
+            else:
+                utils.logging.log_error(LOG_PREFIX,"TTNumber.is_integer",\
+                  "no number of bytes found for kind '{}' in 'translator.FORTRAN_TYPE_2_BYTES_MAP[\"integer\"]'".format(kind))
+                sys.exit(2) # TODO error code
+        else:
+            return is_integer
     def c_str(self):
         global LOG_PREFIX
-
-        default_real_bytes    = FORTRAN_TYPE_2_BYTES_MAP["real"][""]
-        default_integer_bytes = FORTRAN_TYPE_2_BYTES_MAP["integer"][""]
-        parts              = re.split(r"(d[0-9]+|e[0-9]+|_\w+)",self._value)
-        parts              = [p for p in parts if len(p)]
-        is_real            = "." in self._value
-        if is_real and len(parts) == 2 and parts[1].startswith("d"):
-            return parts[0] + parts[1].replace("d","e")
-        elif is_real and len(parts)==1 or\
-             is_real and len(parts) == 2 and parts[1].startswith("e"):
-            if default_real_bytes=="4":
-                return "".join(parts) + "f"
-            else:
-                return "".join(parts)
-        elif is_real and len(parts) == 3 and parts[1].startswith("e") and\
-              parts[-1].startswith("_"):
-            suffix = parts[-1][1:].lower()
-            if suffix in FORTRAN_TYPE_2_BYTES_MAP["real"]:
-                suffix_bytes = FORTRAN_TYPE_2_BYTES_MAP["real"][suffix]
-                if suffix_real_bytes=="4":
-                    return parts[0] + parts[1] + "f"
-                else:
-                    return parts[0] + parts[1]
-            else:
-                utils.logging.log_error(LOG_PREFIX,"TTNumber.c_str",\
-                        "no number of bytes found for suffix '{}' in 'translator.FORTRAN_TYPE_2_BYTES_MAP[\"real\"]'".format(suffix))
-                sys.exit(2) # TODO error code
-        elif not is_real and len(parts) >= 2 and parts[-1].startswith("_"):
-            suffix = parts[-1][1:].lower()
-            if suffix in FORTRAN_TYPE_2_BYTES_MAP["integer"]:
-                if suffix_real_bytes=="8":
-                    return "".join(parts[0:-1]).replace("d","e") + "l"
-                else:    
-                    return "".join(parts[0:-1]).replace("d","e")
-            else:
-                utils.logging.log_error(LOG_PREFIX,"TTNumber.c_str",\
-                        "no number of bytes found for suffix '{}' in 'translator.FORTRAN_TYPE_2_BYTES_MAP[\"integer\"]'".format(suffix))
-                sys.exit(2) # TODO error
-        elif not is_real and len(parts) == 1 or\
-             not is_real and len(parts) == 2 and parts[1][0] in ["d","e"]:
-            if default_integer_bytes=="8":
-                return "".join(parts) + "l"
-            else:
-                return "".join(parts)
+        parts = self._value.split("_")
+        value = parts[0].replace("d","e")
+        if self.is_real("4"):
+            return value + "f"
+        elif self.is_integer("8"):
+            return value + "l"
         else:
-            return "".join(parts)
+            return value
     def f_str(self):
         return self._value
 

@@ -26,15 +26,11 @@ def _intrnl_search_values_in_subtree(ttnode,search_filter,scope,min_rank=-1):
     tags = [] 
     for ttvalue in find_all_matching_exclude_directives_(ttnode.body,search_filter): # includes the identifiers of the function calls
         tag = scoper.create_index_search_tag_for_variable(ttvalue.f_str())
-        if not tag == "dim3" and\
-           not tag in KEYWORDS and\
-           not tag in DEVICE_PREDEFINED_VARIABLES and\
-           not tag in GPUFORT_CPP_SYMBOLS:
-            ivar,found_in_scope = scoper.search_scope_for_variable(scope,tag)
-            if found_in_scope and\
-               ivar["rank"] >= min_rank and\
-               not tag in tags: # ordering important
-                tags.append(tag)
+        ivar,found_in_scope = scoper.search_scope_for_variable(scope,tag)
+        if found_in_scope and\
+           ivar["rank"] >= min_rank and\
+           not tag in tags: # ordering important
+            tags.append(tag)
     return tags
 
 def _intrnl_variables_in_subtree(ttnode,scope=[]):

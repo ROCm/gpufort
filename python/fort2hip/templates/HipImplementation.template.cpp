@@ -4,13 +4,13 @@
 {# Jinja2 template for generating interface modules      #}
 {# This template works with data structures of the form :#}
 {# *-[includes:str]                                      #}
-{#  -[kernels:dict]-cName:str                            #}
-{#                 -[kernelArgs:dict]                    #}
-{#                 -[kernelCallArgNames:str]             #}
-{#                 -[interfaceArgs:dict]                 #}
+{#  -[kernels:dict]-c_name:str                           #}
+{#                 -[kernel_args:dict]                   #}
+{#                 -[kernel_call_arg_names:str]          #}
+{#                 -[interface_args:dict]                #}
 {#                 -[reductions:dict]                    #}
-{#                 -[cBody:str]                          #}
-{#                 -[fBody:str]                          #}
+{#                 -[c_body:str]                         #}
+{#                 -[f_body:str]                         #}
 #ifndef {{ guard }}
 #define {{ guard }}
 {% for file in includes %}
@@ -20,55 +20,47 @@
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
-
 #include "gpufort.h"
-{% if haveReductions -%}
+{% if have_reductions -%}
 #include "gpufort_reductions.h"
 {%- endif -%}
-
 {%- macro make_block(kernel) -%}
-{% set krnlPrefix = kernel.kernelName %}
-{% set ifacePrefix = kernel.interfaceName %}
-{% for blockDim in kernel.block %}  const int {{krnlPrefix}}_block{{blockDim.dim}} = {{blockDim.value}};
+{% set krnl_prefix = kernel.kernel_name %}
+{% set iface_prefix = kernel.interface_name %}
+{% for block_dim in kernel.block %}  const int {{krnl_prefix}}_block{{block_dim.dim}} = {{block_dim.value}};
 {% endfor %}
-  dim3 block({{ kernel.blockDims | join(",") }});
+  dim3 block({{ kernel.block_dims | join(",") }});
 {%- endmacro -%}
-
 {%- macro make_grid(kernel) -%}
-{% set krnlPrefix = kernel.kernelName %}
-{% set ifacePrefix = kernel.interfaceName %}
-{% for sizeDim in kernel.size %}  const int {{krnlPrefix}}_N{{sizeDim.dim}} = {{sizeDim.value}};
+{% set krnl_prefix = kernel.kernel_name %}
+{% set iface_prefix = kernel.interface_name %}
+{% for size_dim in kernel.size %}  const int {{krnl_prefix}}_N{{size_dim.dim}} = {{size_dim.value}};
 {% endfor %}
-
 {% if kernel.grid|length > 0 %}
-{% for gridDim in kernel.grid %}  const int {{krnlPrefix}}_grid{{gridDim.dim}} = {{gridDim.value}};
-  dim3 grid({% for gridDim in kernel.grid -%}{{krnlPrefix}}_grid{{gridDim.dim}}{{ "," if not loop.last }}{%- endfor %});
+{% for grid_dim in kernel.grid %}  const int {{krnl_prefix}}_grid{{grid_dim.dim}} = {{grid_dim.value}};
+  dim3 grid({% for grid_dim in kernel.grid -%}{{krnl_prefix}}_grid{{grid_dim.dim}}{{ "," if not loop.last }}{%- endfor %});
 {% endfor %}{% else %}
-{% for blockDim in kernel.block %}  const int {{krnlPrefix}}_grid{{blockDim.dim}} = divideAndRoundUp( {{krnlPrefix}}_N{{blockDim.dim}}, {{krnlPrefix}}_block{{blockDim.dim}} );
+{% for block_dim in kernel.block %}  const int {{krnl_prefix}}_grid{{block_dim.dim}} = divideAndRoundUp( {{krnl_prefix}}_N{{block_dim.dim}}, {{krnl_prefix}}_block{{block_dim.dim}} );
 {% endfor %}
-  dim3 grid({% for blockDim in kernel.block -%}{{krnlPrefix}}_grid{{blockDim.dim}}{{ "," if not loop.last }}{%- endfor %});
+  dim3 grid({% for block_dim in kernel.block -%}{{krnl_prefix}}_grid{{block_dim.dim}}{{ "," if not loop.last }}{%- endfor %});
 {% endif %}
 {%- endmacro -%}
-
-{%- macro synchronize(krnlPrefix) -%}
-  #if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_{{krnlPrefix}})
+{%- macro synchronize(krnl_prefix) -%}
+  #if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_{{krnl_prefix}})
   HIP_CHECK(hipStreamSynchronize(stream));
-  #elif defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_{{krnlPrefix}})
+  #elif defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_{{krnl_prefix}})
   HIP_CHECK(hipDeviceSynchronize());
   #endif
 {%- endmacro -%}
-
-{%- macro print_array(krnlPrefix,inout,print_values,print_norms,array,rank) -%}
-  GPUFORT_PRINT_ARRAY{{rank}}("{{krnlPrefix}}:{{inout}}:",{{print_values}},{{print_norms}},{{array}},
+{%- macro print_array(krnl_prefix,inout,print_values,print_norms,array,rank) -%}
+  GPUFORT_PRINT_ARRAY{{rank}}("{{krnl_prefix}}:{{inout}}:",{{print_values}},{{print_norms}},{{array}},
     {%- for i in range(1,rank+1) -%}{{array}}_n{{i}},{%- endfor -%}
     {%- for i in range(1,rank+1) -%}{{array}}_lb{{i}}{{"," if not loop.last}}{%- endfor -%});
 {%- endmacro -%}
-
 {# REDUCTION MACROS #}
-
 {%- macro reductions_prepare(kernel,star) -%}
-{%- set krnlPrefix = kernel.kernelName -%}
-{%- set ifacePrefix = kernel.interfaceName -%}
+{%- set krnl_prefix = kernel.kernel_name -%}
+{%- set iface_prefix = kernel.interface_name -%}
 {%- if kernel.reductions|length > 0 -%}
 {%- for var in kernel.reductions %} 
   {{ var.type }}* {{ var.buffer }};
@@ -76,7 +68,6 @@
 {% endfor -%}
 {%- endif -%}
 {%- endmacro -%}
-
 {%- macro reductions_finalize(kernel,star) -%}
 {% if kernel.reductions|length > 0 -%}
 {%- for var in kernel.reductions -%} 
@@ -85,127 +76,147 @@
 {% endfor -%}
 {%- endif -%}
 {%- endmacro %}
-
 {% for kernel in kernels %}
-{% set krnlPrefix = kernel.kernelName %}
-{% set ifacePrefix = kernel.interfaceName %}
+{% set krnl_prefix = kernel.kernel_name %}
+{% set iface_prefix = kernel.interface_name %}
+// BEGIN {{krnl_prefix}}
+/*
+   HIP C++ implementation of the function/loop body of:
 
-// BEGIN {{krnlPrefix}}
-  /* Fortran original: 
-{{kernel.fBody | indent(2, True)}}
-  */
-{{kernel.interfaceComment | indent(2, True)}}
-
-{{kernel.modifier}} {{kernel.returnType}} {{kernel.launchBounds}} {{krnlPrefix}}({{kernel.kernelArgs | join(",")}}) {
-{% for def in kernel.macros %}{{def.expr}}
+{{kernel.f_body | indent(3, True)}}
+*/
+{{kernel.interface_comment if (kernel.interface_comment|length>0)}}
+{{kernel.modifier}} {{kernel.return_type}} {{kernel.launch_bounds}} {{krnl_prefix}}(
+{% for arg in kernel.kernel_args %}
+{{ arg | indent(4,True) }}{{"," if not loop.last else ") {"}}
+{% endfor -%}
+{% for def in kernel.macros %}{{def.expr | indent(2,True) }}
 {% endfor %}
-{% for var in kernel.kernelLocalVars %}{{var | indent(2, True)}};
+{% for var in kernel.kernel_local_vars %}{{var | indent(2, True)}};
 {% endfor %}
-
-{{kernel.cBody | indent(2, True)}}
+{{kernel.c_body | indent(2, True)}}
 }
-
-{% if kernel.generateLauncher -%}
-extern "C" void {{ifacePrefix}}(dim3* grid, dim3* block, const int sharedMem, hipStream_t stream,{{kernel.interfaceArgs | join(",")}}) {
-{{ reductions_prepare(kernel,"*") }}{% if kernel.generateDebugCode %}
-  #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{krnlPrefix}})
-  std::cout << "{{krnlPrefix}}:gpu:args:";
-  GPUFORT_PRINT_ARGS((*grid).x,(*grid).y,(*grid).z,(*block).x,(*block).y,(*block).z,sharedMem,stream,{{kernel.kernelCallArgNames | join(",")}});
+{% if kernel.generate_launcher -%}
+extern "C" void {{iface_prefix}}(
+    dim3* grid,
+    dim3* block,  
+    const int sharedmem, 
+    hipStream_t stream{{"," if (kernel.interface_args|length > 0) else ") {"}}
+{% for arg in kernel.interface_args %}
+{{ arg | indent(4,True) }}{{"," if not loop.last else ") {"}}
+{% endfor -%}
+{{ reductions_prepare(kernel,"*") }}{% if kernel.generate_debug_code %}
+  #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{krnl_prefix}})
+  std::cout << "{{krnl_prefix}}:gpu:args:";
+  GPUFORT_PRINT_ARGS((*grid).x,(*grid).y,(*grid).z,(*block).x,(*block).y,(*block).z,sharedmem,stream,{{kernel.kernel_call_arg_names | join(",")}});
   #endif
-  #if defined(GPUFORT_PRINT_INPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAYS_{{krnlPrefix}})
-  {% for array in kernel.inputArrays %}
-  {{ print_array(krnlPrefix+":gpu","in","true","true",array.name,array.rank) }}
+  #if defined(GPUFORT_PRINT_INPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAYS_{{krnl_prefix}})
+  {% for array in kernel.input_arrays %}
+  {{ print_array(krnl_prefix+":gpu","in","true","true",array.name,array.rank) }}
   {% endfor %}
-  #elif defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_{{krnlPrefix}})
-  {% for array in kernel.inputArrays %}
-  {{ print_array(krnlPrefix+":gpu","in","false","true",array.name,array.rank) }}
+  #elif defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_{{krnl_prefix}})
+  {% for array in kernel.input_arrays %}
+  {{ print_array(krnl_prefix+":gpu","in","false","true",array.name,array.rank) }}
   {% endfor %}
   #endif{% endif +%}
   // launch kernel
-  hipLaunchKernelGGL(({{krnlPrefix}}), *grid, *block, sharedMem, stream, {{kernel.kernelCallArgNames | join(",")}});
+  hipLaunchKernelGGL(({{krnl_prefix}}), *grid, *block, sharedmem, stream, {{kernel.kernel_call_arg_names | join(",")}});
 {{ reductions_finalize(kernel,"*") }}
-{% if kernel.generateDebugCode %}
-  {{ synchronize(krnlPrefix) }}
-  #if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_{{krnlPrefix}})
-  {% for array in kernel.outputArrays %}
-  {{ print_array(krnlPrefix+":gpu","out","true","true",array.name,array.rank) }}
+{% if kernel.generate_debug_code %}
+  {{ synchronize(krnl_prefix) }}
+  #if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_{{krnl_prefix}})
+  {% for array in kernel.output_arrays %}
+  {{ print_array(krnl_prefix+":gpu","out","true","true",array.name,array.rank) }}
   {% endfor %}
-  #elif defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_{{krnlPrefix}})
-  {% for array in kernel.outputArrays %}
-  {{ print_array(krnlPrefix+":gpu","out","false","true",array.name,array.rank) }}
+  #elif defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_{{krnl_prefix}})
+  {% for array in kernel.output_arrays %}
+  {{ print_array(krnl_prefix+":gpu","out","false","true",array.name,array.rank) }}
   {% endfor %}
   #endif
 {% endif %}
 }
-{% if kernel.isLoopKernel %}
-extern "C" void {{ifacePrefix}}_auto(const int sharedMem, hipStream_t stream,{{kernel.interfaceArgs | join(",")}}) {
+{% if kernel.is_loop_kernel %}
+extern "C" void {{iface_prefix}}_auto(
+    const int sharedmem, 
+    hipStream_t stream{{"," if (kernel.interface_args|length > 0) else ") {"}}
+{% for arg in kernel.interface_args %}
+{{ arg | indent(4,True) }}{{"," if not loop.last else ") {"}}
+{% endfor -%}
 {{ make_block(kernel) }}
 {{ make_grid(kernel) }}   
-{{ reductions_prepare(kernel,"") }}{% if kernel.generateDebugCode %}
-  #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{krnlPrefix}})
-  std::cout << "{{krnlPrefix}}:gpu:args:";
-  GPUFORT_PRINT_ARGS(grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedMem,stream,{{kernel.kernelCallArgNames | join(",")}});
+{{ reductions_prepare(kernel,"") }}{% if kernel.generate_debug_code %}
+  #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{krnl_prefix}})
+  std::cout << "{{krnl_prefix}}:gpu:args:";
+  GPUFORT_PRINT_ARGS(grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream,{{kernel.kernel_call_arg_names | join(",")}});
   #endif
-  #if defined(GPUFORT_PRINT_INPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAYS_{{krnlPrefix}})
-  {% for array in kernel.inputArrays %}
-  {{ print_array(krnlPrefix+":gpu","in","true","true",array.name,array.rank) }}
+  #if defined(GPUFORT_PRINT_INPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAYS_{{krnl_prefix}})
+  {% for array in kernel.input_arrays %}
+  {{ print_array(krnl_prefix+":gpu","in","true","true",array.name,array.rank) }}
   {% endfor %}
-  #elif defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_{{krnlPrefix}})
-  {% for array in kernel.inputArrays %}
-  {{ print_array(krnlPrefix+":gpu","in","false","true",array.name,array.rank) }}
+  #elif defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_{{krnl_prefix}})
+  {% for array in kernel.input_arrays %}
+  {{ print_array(krnl_prefix+":gpu","in","false","true",array.name,array.rank) }}
   {% endfor %}
   #endif{% endif +%}
   // launch kernel
-  hipLaunchKernelGGL(({{krnlPrefix}}), grid, block, sharedMem, stream, {{kernel.kernelCallArgNames | join(",")}});
+  hipLaunchKernelGGL(({{krnl_prefix}}), grid, block, sharedmem, stream, {{kernel.kernel_call_arg_names | join(",")}});
 {{ reductions_finalize(kernel,"") }}
-{% if kernel.generateDebugCode %}
-  {{ synchronize(krnlPrefix) }}
-  #if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_{{krnlPrefix}})
-  {% for array in kernel.outputArrays %}
-  {{ print_array(krnlPrefix+":gpu","out","true","true",array.name,array.rank) }}
+{% if kernel.generate_debug_code %}
+  {{ synchronize(krnl_prefix) }}
+  #if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_{{krnl_prefix}})
+  {% for array in kernel.output_arrays %}
+  {{ print_array(krnl_prefix+":gpu","out","true","true",array.name,array.rank) }}
   {% endfor %}
-  #elif defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_{{krnlPrefix}})
-  {% for array in kernel.outputArrays %}
-  {{ print_array(krnlPrefix+":gpu","out","false","true",array.name,array.rank) }}
+  #elif defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_{{krnl_prefix}})
+  {% for array in kernel.output_arrays %}
+  {{ print_array(krnl_prefix+":gpu","out","false","true",array.name,array.rank) }}
   {% endfor %}
   #endif
 {% endif %}
 }
 {% endif %}
-{% if kernel.generateCPULauncher -%}
-extern "C" void {{ifacePrefix}}_cpu1(const int sharedMem, hipStream_t stream,{{kernel.interfaceArgs | join(",")}});
-
-extern "C" void {{ifacePrefix}}_cpu(const int sharedMem, hipStream_t stream,{{kernel.interfaceArgs | join(",")}}) {
-{% if kernel.generateDebugCode %}
-  #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{krnlPrefix}})
-  std::cout << "{{krnlPrefix}}:cpu:args:";
-  GPUFORT_PRINT_ARGS(sharedMem,stream,{{kernel.cpuKernelCallArgNames | join(",")}});
+{% if kernel.generate_cpu_launcher -%}
+extern "C" void {{iface_prefix}}_cpu1(
+    const int sharedmem, 
+    hipStream_t stream{{"," if (kernel.interface_args|length > 0) else ") {"}}
+{% for arg in kernel.interface_args %}
+{{ arg | indent(4,True) }}{{"," if not loop.last else ") {"}}
+{% endfor -%}
+extern "C" void {{iface_prefix}}_cpu(
+    const int sharedmem, 
+    hipStream_t stream{{"," if (kernel.interface_args|length > 0) else ") {"}}
+{% for arg in kernel.interface_args %}
+{{ arg | indent(4,True) }}{{"," if not loop.last else ") {"}}
+{% endfor -%}
+{% if kernel.generate_debug_code %}
+  #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{krnl_prefix}})
+  std::cout << "{{krnl_prefix}}:cpu:args:";
+  GPUFORT_PRINT_ARGS(sharedmem,stream,{{kernel.cpu_kernel_call_arg_names | join(",")}});
   #endif
-  #if defined(GPUFORT_PRINT_INPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAYS_{{krnlPrefix}})
-  {% for array in kernel.inputArrays %}
-  {{ print_array(krnlPrefix+":cpu","in","true","true",array.name,array.rank) }}
+  #if defined(GPUFORT_PRINT_INPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAYS_{{krnl_prefix}})
+  {% for array in kernel.input_arrays %}
+  {{ print_array(krnl_prefix+":cpu","in","true","true",array.name,array.rank) }}
   {% endfor %}
-  #elif defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_{{krnlPrefix}})
-  {% for array in kernel.inputArrays %}
-  {{ print_array(krnlPrefix+":cpu","in","false","true",array.name,array.rank) }}
+  #elif defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_{{krnl_prefix}})
+  {% for array in kernel.input_arrays %}
+  {{ print_array(krnl_prefix+":cpu","in","false","true",array.name,array.rank) }}
   {% endfor %}
   #endif{% endif +%}
   // launch kernel
-  {{ifacePrefix}}_cpu1(sharedMem, stream, {{kernel.cpuKernelCallArgNames | join(",")}});
-{% if kernel.generateDebugCode %}
-  #if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_{{krnlPrefix}})
-  {% for array in kernel.outputArrays %}
-  {{ print_array(krnlPrefix+":cpu","out","true","true",array.name,array.rank) }}
+  {{iface_prefix}}_cpu1(sharedmem, stream, {{kernel.cpu_kernel_call_arg_names | join(",")}});
+{% if kernel.generate_debug_code %}
+  #if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_{{krnl_prefix}})
+  {% for array in kernel.output_arrays %}
+  {{ print_array(krnl_prefix+":cpu","out","true","true",array.name,array.rank) }}
   {% endfor %}
-  #elif defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_{{krnlPrefix}})
-  {% for array in kernel.outputArrays %}
-  {{ print_array(krnlPrefix+":cpu","out","false","true",array.name,array.rank) }}
+  #elif defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_{{krnl_prefix}})
+  {% for array in kernel.output_arrays %}
+  {{ print_array(krnl_prefix+":cpu","out","false","true",array.name,array.rank) }}
   {% endfor %}
   #endif
 {% endif %}
 }{% endif %}
 {% endif +%}
-// END {{krnlPrefix}}
-
+// END {{krnl_prefix}}
 {% endfor %}{# kernels #}
 #endif // {{ guard }} 

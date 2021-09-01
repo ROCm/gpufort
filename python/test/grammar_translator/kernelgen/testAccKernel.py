@@ -76,4 +76,4 @@ for i in range(len(testdata)):
     results = translator.accConstruct.parseString(testdata[i])
     print(results)
     results[0].printTokens()
-    print(results[0].cStr())
+    print(results[0].c_str())

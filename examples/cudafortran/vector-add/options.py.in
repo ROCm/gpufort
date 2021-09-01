@@ -11,9 +11,9 @@ def myLaunchBounds(kernelName):
     print(kernelName)
     return "512,2"
 
-fort2hip.GET_BLOCK_DIMS = myBlockDims
+#fort2hip.GET_BLOCK_DIMS = myBlockDims
 
-fort2hip.GET_LAUNCH_BOUNDS = myLaunchBounds
+#fort2hip.GET_LAUNCH_BOUNDS = myLaunchBounds
 
 PRETTIFY_MODIFIED_TRANSLATION_SOURCE = True
 

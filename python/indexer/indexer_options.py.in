@@ -20,5 +20,5 @@ CONTINUATION_FILTER=r"(\&\s*\n)|(\n\s*[\!c\*]\$\w+\&)"
 
 PRETTY_PRINT_INDEX_FILE = False # Pretty print index before writing it to disk.
 
-PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE            = 4 # Number of worker threads for parsing variable declarations.
-PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE = 4 # Number of worker threads for parsing statements that modify variable index records, e.g. CUDA Fortran attributes statements  or OpenACC acc declare directives.
+PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE            = 1 # Number of worker threads for parsing variable declarations.
+PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE = 1 # Number of worker threads for parsing statements that modify variable index linemaps, e.g. CUDA Fortran attributes statements  or OpenACC acc declare directives.

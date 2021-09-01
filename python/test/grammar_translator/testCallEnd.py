@@ -24,8 +24,8 @@ lda, ps_d, 1, 1, spsi_d, 1 )
 """.strip("\n").strip(" ").strip("\n").splitlines()
 
 test.run(
-   expression     = translator.callEnd,
+   expression     = translator.call_end,
    testdata       = testdata,
-   tag            = "callEnd",
+   tag            = "call_end",
    raiseException = True
 )

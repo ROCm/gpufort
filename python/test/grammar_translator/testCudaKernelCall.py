@@ -6,15 +6,15 @@ import test
 import translator.translator
 import grammar as translator
 
-print(translator.kernelLaunchArgs.parseString("<<< grid , tBloc k >>>")[0])
+print(translator.kernel_launch_args.parseString("<<< grid , tBloc k >>>")[0])
 
 testdata = """
 CALL test_gpu<<<grid,tBlock>>>(A_d,5)
 """.strip("\n").strip(" ").strip("\n").splitlines()
 
 test.run(
-   expression     = translator.cudaKernelCall,
+   expression     = translator.cuf_kernel_call,
    testdata       = testdata,
-   tag            = "cudaKernelCall",
+   tag            = "cuf_kernel_call",
    raiseException = True
 )

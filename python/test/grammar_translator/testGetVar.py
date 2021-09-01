@@ -26,5 +26,4 @@ for i in range(len(testdata)):
     print("create: ",results.getMallocVars())
     #print(str(i)+".",results)
     #results.printTokens()
-    #print(results.cStr())
-
+    #print(results.c_str())

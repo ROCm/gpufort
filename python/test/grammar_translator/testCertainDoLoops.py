@@ -66,7 +66,7 @@ end do
 for i,v in enumerate(testdata):
     vMod = translator.prepareFortranSnippet(v)
     result = translator.doLoop.parseString(vMod)
-    print("{}:\n{}".format(i,result[0].cStr()))
+    print("{}:\n{}".format(i,result[0].c_str()))
 
 #test.run(
 #   expression     = translator.ifElseBlock,

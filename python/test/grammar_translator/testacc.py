@@ -67,10 +67,10 @@ for i in range(len(testdata)):
     print(results)
     print(str(i),results)
     results[0][0].printTokens()
-    print(results[0][0].cStr())
+    print(results[0][0].c_str())
     """
     results = accConstruct.parseString(testdata[i])
     print(str(i+1)+".",results)
     results[0].printTokens()
-    print(flattenBody(results))
-    #print(results[0].cStr())
+    print(flatten_body(results))
+    #print(results[0].c_str())

@@ -11,7 +11,7 @@ import utils.logging
 class BaseModel():
     def __init__(self,template):
         self._template = template
-    def generateCode(self,context={}):
+    def generate_code(self,context={}):
         LOADER = jinja2.FileSystemLoader(os.path.realpath(os.path.dirname(__file__)))
         ENV    = jinja2.Environment(loader=LOADER, trim_blocks=True, lstrip_blocks=True, undefined=jinja2.StrictUndefined)
 
@@ -19,11 +19,11 @@ class BaseModel():
         try:
             return template.render(context)
         except Exception as e:
-            utils.logging.logError("fort2hip.model","BaseModel.generateCode","could not render template '%s'" % self._template)
+            utils.logging.log_error("fort2hip.model","BaseModel.generate_code","could not render template '%s'" % self._template)
             raise e
-    def generateFile(self,outputFilePath,context={}):
-        with open(outputFilePath, "w") as output:
-            output.write(self.generateCode(context))
+    def generate_file(self,output_file_path,context={}):
+        with open(output_file_path, "w") as output:
+            output.write(self.generate_code(context))
 
 class HipImplementationModel(BaseModel):
     def __init__(self):
@@ -46,6 +46,6 @@ class GpufortReductionsHeaderModel(BaseModel):
         BaseModel.__init__(self,"templates/GpufortReductions.template.h")
 
 #model = GpufortHeaderModel()
-#model.generateFile("gpufort.h")
+#model.generate_file("gpufort.h")
 #model = GpufortReductionsHeaderModel()
-#model.generateFile("gpufort_reductions.h")
+#model.generate_file("gpufort_reductions.h")

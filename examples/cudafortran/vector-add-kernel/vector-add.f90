@@ -1,4 +1,4 @@
-program testSaxpy
+program main
   use cudafor
   implicit none
   integer, parameter :: N = 40000
@@ -59,4 +59,4 @@ contains
        call deviceFun(a,x(i),y(i),N)
      endif
    end subroutine
-end program testSaxpy
+end program main

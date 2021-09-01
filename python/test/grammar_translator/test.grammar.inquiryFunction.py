@@ -22,8 +22,8 @@ testdata.append("size(a%y,dim=1)")
 testdata.append("size(a(i,j)%z,dim=1,kind=4)")
 
 test.run(
-   expression     = grammar.inquiryFunction,
+   expression     = grammar.inquiry_function,
    testdata       = testdata,
-   tag            = "inquiryFunction",
+   tag            = "inquiry_function",
    raiseException = True
 )

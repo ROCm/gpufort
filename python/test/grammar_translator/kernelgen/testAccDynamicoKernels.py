@@ -29,20 +29,20 @@ translator.LOOP_COLLAPSE_STRATEGY="collapse"
 #print(k1)
 #print(grammar.accLoopKernel.parseString(k1))
 #result = translator.accLoopKernel.parseString(k1)[0]
-#print(result.cStr())
-#print(result.problemSize())
+#print(result.c_str())
+#print(result.problem_size())
 
 print("k1:")
-cSnippet, problemSize, kernelLaunchInfo, identifierNames, localLValues, loopVars, reduction =\
-        translator.parseLoopKernel(k1)
-print(cSnippet)
-print(problemSize[0])
+c_snippet, problem_size, kernel_launch_info, identifier_names, localLValues, loop_vars, reduction =\
+        translator.parse_loop_kernel(k1)
+print(c_snippet)
+print(problem_size[0])
 
 print("k2:")
-cSnippet, problemSize, kernelLaunchInfo, identifierNames, localLValues, loopVars, reduction =\
-        translator.parseLoopKernel(k2)
-print(cSnippet)
-print(problemSize[0])
+c_snippet, problem_size, kernel_launch_info, identifier_names, localLValues, loop_vars, reduction =\
+        translator.parse_loop_kernel(k2)
+print(c_snippet)
+print(problem_size[0])
 
 #for i in range(len(k1data)):
 #    #print(str(i)+".",accKernels.parseString(k1data[i]))
@@ -53,4 +53,4 @@ print(problemSize[0])
 #    results = translator.accConstruct.parseString(k1data[i])
 #    print(results)
 #    results[0].printTokens()
-#    print(results[0].cStr())
+#    print(results[0].c_str())

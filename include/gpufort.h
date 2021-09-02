@@ -299,94 +299,94 @@ namespace {
 
   // type conversions
   // make float
-  __device__ __forceinline__ float make_float(const short int& a) {
+  __device__ __forceinline__ float make_float(const short int a) {
     return static_cast<float>(a);
   }
-  __device__ __forceinline__ float make_float(const unsigned short int& a) {
+  __device__ __forceinline__ float make_float(const unsigned short int a) {
     return static_cast<float>(a);
   }
-  __device__ __forceinline__ float make_float(const unsigned int& a) {
+  __device__ __forceinline__ float make_float(const unsigned int a) {
     return static_cast<float>(a);
   }
-  __device__ __forceinline__ float make_float(const int& a) {
+  __device__ __forceinline__ float make_float(const int a) {
     return static_cast<float>(a);
   }
-  __device__ __forceinline__ float make_float(const long int& a) {
+  __device__ __forceinline__ float make_float(const long int a) {
     return static_cast<float>(a);
   }
-  __device__ __forceinline__ float make_float(const unsigned long int& a) {
+  __device__ __forceinline__ float make_float(const unsigned long int a) {
     return static_cast<float>(a);
   }
-  __device__ __forceinline__ float make_float(const long long int& a) {
+  __device__ __forceinline__ float make_float(const long long int a) {
     return static_cast<float>(a);
   }
-  __device__ __forceinline__ float make_float(const unsigned long long int& a) {
+  __device__ __forceinline__ float make_float(const unsigned long long int a) {
     return static_cast<float>(a);
   }
-  __device__ __forceinline__ float make_float(const signed char& a) {
+  __device__ __forceinline__ float make_float(const signed char a) {
     return static_cast<float>(a);
   }
-  __device__ __forceinline__ float make_float(const unsigned char& a) {
+  __device__ __forceinline__ float make_float(const unsigned char a) {
     return static_cast<float>(a);
   }
-  __device__ __forceinline__ float make_float(const float& a) {
+  __device__ __forceinline__ float make_float(const float a) {
     return static_cast<float>(a);
   }
-  __device__ __forceinline__ float make_float(const double& a) {
+  __device__ __forceinline__ float make_float(const double a) {
     return static_cast<float>(a);
   }
-  __device__ __forceinline__ float make_float(const long double& a) {
+  __device__ __forceinline__ float make_float(const long double a) {
     return static_cast<float>(a);
   }
-  __device__ __forceinline__ float make_float(const hipFloatComplex& a) {
+  __device__ __forceinline__ float make_float(const hipFloatComplex a) {
     return static_cast<float>(a.x);
   }
-  __device__ __forceinline__ float make_float(const hipDoubleComplex& a) {
+  __device__ __forceinline__ float make_float(const hipDoubleComplex a) {
     return static_cast<float>(a.x);
   }  // make double
-  __device__ __forceinline__ double make_double(const short int& a) {
+  __device__ __forceinline__ double make_double(const short int a) {
     return static_cast<double>(a);
   }
-  __device__ __forceinline__ double make_double(const unsigned short int& a) {
+  __device__ __forceinline__ double make_double(const unsigned short int a) {
     return static_cast<double>(a);
   }
-  __device__ __forceinline__ double make_double(const unsigned int& a) {
+  __device__ __forceinline__ double make_double(const unsigned int a) {
     return static_cast<double>(a);
   }
-  __device__ __forceinline__ double make_double(const int& a) {
+  __device__ __forceinline__ double make_double(const int a) {
     return static_cast<double>(a);
   }
-  __device__ __forceinline__ double make_double(const long int& a) {
+  __device__ __forceinline__ double make_double(const long int a) {
     return static_cast<double>(a);
   }
-  __device__ __forceinline__ double make_double(const unsigned long int& a) {
+  __device__ __forceinline__ double make_double(const unsigned long int a) {
     return static_cast<double>(a);
   }
-  __device__ __forceinline__ double make_double(const long long int& a) {
+  __device__ __forceinline__ double make_double(const long long int a) {
     return static_cast<double>(a);
   }
-  __device__ __forceinline__ double make_double(const unsigned long long int& a) {
+  __device__ __forceinline__ double make_double(const unsigned long long int a) {
     return static_cast<double>(a);
   }
-  __device__ __forceinline__ double make_double(const signed char& a) {
+  __device__ __forceinline__ double make_double(const signed char a) {
     return static_cast<double>(a);
   }
-  __device__ __forceinline__ double make_double(const unsigned char& a) {
+  __device__ __forceinline__ double make_double(const unsigned char a) {
     return static_cast<double>(a);
   }
-  __device__ __forceinline__ double make_double(const float& a) {
+  __device__ __forceinline__ double make_double(const float a) {
     return static_cast<double>(a);
   }
-  __device__ __forceinline__ double make_double(const double& a) {
+  __device__ __forceinline__ double make_double(const double a) {
     return static_cast<double>(a);
   }
-  __device__ __forceinline__ double make_double(const long double& a) {
+  __device__ __forceinline__ double make_double(const long double a) {
     return static_cast<double>(a);
   }
-  __device__ __forceinline__ double make_double(const hipFloatComplex& a) {
+  __device__ __forceinline__ double make_double(const hipFloatComplex a) {
     return static_cast<double>(a.x);
   }
-  __device__ __forceinline__ double make_double(const hipDoubleComplex& a) {
+  __device__ __forceinline__ double make_double(const hipDoubleComplex a) {
     return static_cast<double>(a.x);
   } 
   // math functions 
@@ -402,12 +402,12 @@ namespace {
   __device__ __forceinline__ int nint(const float a) {
     return (a>0) ? static_cast<int>(a+0.5) : static_cast<int>(a-0.5);
   }
+  __device__ __forceinline__ int nint(const double a) {
+    return (a>0) ? static_cast<int>(a+0.5) : static_cast<int>(a-0.5);
+  }
   __device__ __forceinline__ float dim(const float a, const float b) {
     float diff = a-b;
     return (diff>0) ? diff : 0.f;
-  }
-  __device__ __forceinline__ int nint(const double a) {
-    return (a>0) ? static_cast<int>(a+0.5) : static_cast<int>(a-0.5);
   }
   __device__ __forceinline__ double dim(const double a, const double b) {
     double diff = a-b;
@@ -416,32 +416,33 @@ namespace {
 } 
 
 #define sign(a,b) copysign(a,b)
-  #define min2(a,b) min(a,b)
-  #define min3(aa,ab,ba) min(min(aa,ab),ba)
-  #define min4(aa,ab,ba,bb) min(min(aa,ab),min(ba,bb))
-  #define min5(aaa,aab,aba,ba,bb) min(min(min(aaa,aab),aba),min(ba,bb))
-  #define min6(aaa,aab,aba,baa,bab,bba) min(min(min(aaa,aab),aba),min(min(baa,bab),bba))
-  #define min7(aaa,aab,aba,abb,baa,bab,bba) min(min(min(aaa,aab),min(aba,abb)),min(min(baa,bab),bba))
-  #define min8(aaa,aab,aba,abb,baa,bab,bba,bbb) min(min(min(aaa,aab),min(aba,abb)),min(min(baa,bab),min(bba,bbb)))
-  #define min9(aaaa,aaab,aaba,aba,abb,baa,bab,bba,bbb) min(min(min(min(aaaa,aaab),aaba),min(aba,abb)),min(min(baa,bab),min(bba,bbb)))
-  #define min10(aaaa,aaab,aaba,aba,abb,baaa,baab,baba,bba,bbb) min(min(min(min(aaaa,aaab),aaba),min(aba,abb)),min(min(min(baaa,baab),baba),min(bba,bbb)))
-  #define min11(aaaa,aaab,aaba,abaa,abab,abba,baaa,baab,baba,bba,bbb) min(min(min(min(aaaa,aaab),aaba),min(min(abaa,abab),abba)),min(min(min(baaa,baab),baba),min(bba,bbb)))
-  #define min12(aaaa,aaab,aaba,abaa,abab,abba,baaa,baab,baba,bbaa,bbab,bbba) min(min(min(min(aaaa,aaab),aaba),min(min(abaa,abab),abba)),min(min(min(baaa,baab),baba),min(min(bbaa,bbab),bbba)))
-  #define min13(aaaa,aaab,aaba,aabb,abaa,abab,abba,baaa,baab,baba,bbaa,bbab,bbba) min(min(min(min(aaaa,aaab),min(aaba,aabb)),min(min(abaa,abab),abba)),min(min(min(baaa,baab),baba),min(min(bbaa,bbab),bbba)))
-  #define min14(aaaa,aaab,aaba,aabb,abaa,abab,abba,baaa,baab,baba,babb,bbaa,bbab,bbba) min(min(min(min(aaaa,aaab),min(aaba,aabb)),min(min(abaa,abab),abba)),min(min(min(baaa,baab),min(baba,babb)),min(min(bbaa,bbab),bbba)))
-  #define min15(aaaa,aaab,aaba,aabb,abaa,abab,abba,abbb,baaa,baab,baba,babb,bbaa,bbab,bbba) min(min(min(min(aaaa,aaab),min(aaba,aabb)),min(min(abaa,abab),min(abba,abbb))),min(min(min(baaa,baab),min(baba,babb)),min(min(bbaa,bbab),bbba)))
-  #define max2(a,b) max(a,b)
-  #define max3(aa,ab,ba) max(max(aa,ab),ba)
-  #define max4(aa,ab,ba,bb) max(max(aa,ab),max(ba,bb))
-  #define max5(aaa,aab,aba,ba,bb) max(max(max(aaa,aab),aba),max(ba,bb))
-  #define max6(aaa,aab,aba,baa,bab,bba) max(max(max(aaa,aab),aba),max(max(baa,bab),bba))
-  #define max7(aaa,aab,aba,abb,baa,bab,bba) max(max(max(aaa,aab),max(aba,abb)),max(max(baa,bab),bba))
-  #define max8(aaa,aab,aba,abb,baa,bab,bba,bbb) max(max(max(aaa,aab),max(aba,abb)),max(max(baa,bab),max(bba,bbb)))
-  #define max9(aaaa,aaab,aaba,aba,abb,baa,bab,bba,bbb) max(max(max(max(aaaa,aaab),aaba),max(aba,abb)),max(max(baa,bab),max(bba,bbb)))
-  #define max10(aaaa,aaab,aaba,aba,abb,baaa,baab,baba,bba,bbb) max(max(max(max(aaaa,aaab),aaba),max(aba,abb)),max(max(max(baaa,baab),baba),max(bba,bbb)))
-  #define max11(aaaa,aaab,aaba,abaa,abab,abba,baaa,baab,baba,bba,bbb) max(max(max(max(aaaa,aaab),aaba),max(max(abaa,abab),abba)),max(max(max(baaa,baab),baba),max(bba,bbb)))
-  #define max12(aaaa,aaab,aaba,abaa,abab,abba,baaa,baab,baba,bbaa,bbab,bbba) max(max(max(max(aaaa,aaab),aaba),max(max(abaa,abab),abba)),max(max(max(baaa,baab),baba),max(max(bbaa,bbab),bbba)))
-  #define max13(aaaa,aaab,aaba,aabb,abaa,abab,abba,baaa,baab,baba,bbaa,bbab,bbba) max(max(max(max(aaaa,aaab),max(aaba,aabb)),max(max(abaa,abab),abba)),max(max(max(baaa,baab),baba),max(max(bbaa,bbab),bbba)))
-  #define max14(aaaa,aaab,aaba,aabb,abaa,abab,abba,baaa,baab,baba,babb,bbaa,bbab,bbba) max(max(max(max(aaaa,aaab),max(aaba,aabb)),max(max(abaa,abab),abba)),max(max(max(baaa,baab),max(baba,babb)),max(max(bbaa,bbab),bbba)))
-  #define max15(aaaa,aaab,aaba,aabb,abaa,abab,abba,abbb,baaa,baab,baba,babb,bbaa,bbab,bbba) max(max(max(max(aaaa,aaab),max(aaba,aabb)),max(max(abaa,abab),max(abba,abbb))),max(max(max(baaa,baab),max(baba,babb)),max(max(bbaa,bbab),bbba)))
+
+#define min2(a,b) min(a,b)
+#define min3(aa,ab,ba) min(min(aa,ab),ba)
+#define min4(aa,ab,ba,bb) min(min(aa,ab),min(ba,bb))
+#define min5(aaa,aab,aba,ba,bb) min(min(min(aaa,aab),aba),min(ba,bb))
+#define min6(aaa,aab,aba,baa,bab,bba) min(min(min(aaa,aab),aba),min(min(baa,bab),bba))
+#define min7(aaa,aab,aba,abb,baa,bab,bba) min(min(min(aaa,aab),min(aba,abb)),min(min(baa,bab),bba))
+#define min8(aaa,aab,aba,abb,baa,bab,bba,bbb) min(min(min(aaa,aab),min(aba,abb)),min(min(baa,bab),min(bba,bbb)))
+#define min9(aaaa,aaab,aaba,aba,abb,baa,bab,bba,bbb) min(min(min(min(aaaa,aaab),aaba),min(aba,abb)),min(min(baa,bab),min(bba,bbb)))
+#define min10(aaaa,aaab,aaba,aba,abb,baaa,baab,baba,bba,bbb) min(min(min(min(aaaa,aaab),aaba),min(aba,abb)),min(min(min(baaa,baab),baba),min(bba,bbb)))
+#define min11(aaaa,aaab,aaba,abaa,abab,abba,baaa,baab,baba,bba,bbb) min(min(min(min(aaaa,aaab),aaba),min(min(abaa,abab),abba)),min(min(min(baaa,baab),baba),min(bba,bbb)))
+#define min12(aaaa,aaab,aaba,abaa,abab,abba,baaa,baab,baba,bbaa,bbab,bbba) min(min(min(min(aaaa,aaab),aaba),min(min(abaa,abab),abba)),min(min(min(baaa,baab),baba),min(min(bbaa,bbab),bbba)))
+#define min13(aaaa,aaab,aaba,aabb,abaa,abab,abba,baaa,baab,baba,bbaa,bbab,bbba) min(min(min(min(aaaa,aaab),min(aaba,aabb)),min(min(abaa,abab),abba)),min(min(min(baaa,baab),baba),min(min(bbaa,bbab),bbba)))
+#define min14(aaaa,aaab,aaba,aabb,abaa,abab,abba,baaa,baab,baba,babb,bbaa,bbab,bbba) min(min(min(min(aaaa,aaab),min(aaba,aabb)),min(min(abaa,abab),abba)),min(min(min(baaa,baab),min(baba,babb)),min(min(bbaa,bbab),bbba)))
+#define min15(aaaa,aaab,aaba,aabb,abaa,abab,abba,abbb,baaa,baab,baba,babb,bbaa,bbab,bbba) min(min(min(min(aaaa,aaab),min(aaba,aabb)),min(min(abaa,abab),min(abba,abbb))),min(min(min(baaa,baab),min(baba,babb)),min(min(bbaa,bbab),bbba)))
+#define max2(a,b) max(a,b)
+#define max3(aa,ab,ba) max(max(aa,ab),ba)
+#define max4(aa,ab,ba,bb) max(max(aa,ab),max(ba,bb))
+#define max5(aaa,aab,aba,ba,bb) max(max(max(aaa,aab),aba),max(ba,bb))
+#define max6(aaa,aab,aba,baa,bab,bba) max(max(max(aaa,aab),aba),max(max(baa,bab),bba))
+#define max7(aaa,aab,aba,abb,baa,bab,bba) max(max(max(aaa,aab),max(aba,abb)),max(max(baa,bab),bba))
+#define max8(aaa,aab,aba,abb,baa,bab,bba,bbb) max(max(max(aaa,aab),max(aba,abb)),max(max(baa,bab),max(bba,bbb)))
+#define max9(aaaa,aaab,aaba,aba,abb,baa,bab,bba,bbb) max(max(max(max(aaaa,aaab),aaba),max(aba,abb)),max(max(baa,bab),max(bba,bbb)))
+#define max10(aaaa,aaab,aaba,aba,abb,baaa,baab,baba,bba,bbb) max(max(max(max(aaaa,aaab),aaba),max(aba,abb)),max(max(max(baaa,baab),baba),max(bba,bbb)))
+#define max11(aaaa,aaab,aaba,abaa,abab,abba,baaa,baab,baba,bba,bbb) max(max(max(max(aaaa,aaab),aaba),max(max(abaa,abab),abba)),max(max(max(baaa,baab),baba),max(bba,bbb)))
+#define max12(aaaa,aaab,aaba,abaa,abab,abba,baaa,baab,baba,bbaa,bbab,bbba) max(max(max(max(aaaa,aaab),aaba),max(max(abaa,abab),abba)),max(max(max(baaa,baab),baba),max(max(bbaa,bbab),bbba)))
+#define max13(aaaa,aaab,aaba,aabb,abaa,abab,abba,baaa,baab,baba,bbaa,bbab,bbba) max(max(max(max(aaaa,aaab),max(aaba,aabb)),max(max(abaa,abab),abba)),max(max(max(baaa,baab),baba),max(max(bbaa,bbab),bbba)))
+#define max14(aaaa,aaab,aaba,aabb,abaa,abab,abba,baaa,baab,baba,babb,bbaa,bbab,bbba) max(max(max(max(aaaa,aaab),max(aaba,aabb)),max(max(abaa,abab),abba)),max(max(max(baaa,baab),max(baba,babb)),max(max(bbaa,bbab),bbba)))
+#define max15(aaaa,aaab,aaba,aabb,abaa,abab,abba,abbb,baaa,baab,baba,babb,bbaa,bbab,bbba) max(max(max(max(aaaa,aaab),max(aaba,aabb)),max(max(abaa,abab),max(abba,abbb))),max(max(max(baaa,baab),max(baba,babb)),max(max(bbaa,bbab),bbba)))
 #endif // _GPUFORT_H_

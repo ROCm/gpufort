@@ -132,12 +132,12 @@ namespace {
   // type conversions
 {% for float_type in ["float", "double"] %}  // make {{float_type}}
 {%- for type in ["short int",  "unsigned short int",  "unsigned int",  "int",  "long int",  "unsigned long int",  "long long int",  "unsigned long long int",  "signed char",  "unsigned char",  "float",  "double",  "long double"] +%}
-  __device__ __forceinline__ {{float_type}} make_{{float_type}}(const {{type}}& a) {
+  __device__ __forceinline__ {{float_type}} make_{{float_type}}(const {{type}} a) {
     return static_cast<{{float_type}}>(a);
   }
 {%- endfor %}
 {%- for type in ["hipFloatComplex", "hipDoubleComplex" ] +%}
-  __device__ __forceinline__ {{float_type}} make_{{float_type}}(const {{type}}& a) {
+  __device__ __forceinline__ {{float_type}} make_{{float_type}}(const {{type}} a) {
     return static_cast<{{float_type}}>(a.x);
   }
 {%- endfor %}
@@ -156,6 +156,8 @@ namespace {
   __device__ __forceinline__ int nint(const {{float_type}} a) {
     return (a>0) ? static_cast<int>(a+0.5) : static_cast<int>(a-0.5);
   }
+{%- endfor %}
+{%- for float_type in ["float", "double"] +%}
   __device__ __forceinline__ {{float_type}} dim(const {{float_type}} a, const {{float_type}} b) {
     {{float_type}} diff = a-b;
     return (diff>0) ? diff : {{ "0." if float_type == "double" else "0.f" }};
@@ -164,9 +166,10 @@ namespace {
 } 
 
 #define sign(a,b) copysign(a,b)
+
 {% for op in ["min","max"] %}
 {% for n in range(2,15+1) %}
-  {{ binop(op,n) }}
+{{ binop(op,n) }}
 {% endfor %}
 {% endfor %}
 #endif // _GPUFORT_H_

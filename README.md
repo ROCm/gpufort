@@ -58,25 +58,29 @@ Until then, you have to modify your code manually to circumvent the above limita
    * ACC2OMP & ACC2HIP
    * Translation of data directives: `!$acc enter data`, `!$acc exit data`, `!$acc data`
    * Synchronization directives: `!$acc wait, !$acc update self/host/device`
-   * Kernel and loop constructs `!$acc kernels`, `!$acc kernels loop`, `!$acc parallel`, `!$acc parallel loop`, `!$acc loop`
+   * Kernel and loop constructs `!$acc kernels` plus `!$acc loop` in subsequent line, `!$acc kernels loop`, `!$acc parallel` plus `!$acc loop` 
+     in subsequent line, `!$acc parallel loop`, `!$acc loop`
+   * Support for `!$acc routine seq` functions with scalar arguments
 * CUF:
    * CUF2HIP
      * Majority of CUDA libary functionality via HIPFORT
      * Kernel and loop constructs: `!$cuf kernel do`
      * Overloaded intrinsics: `allocate`, `allocated`, `deallocate`, `deallocated`, `=`
+     * Support for CUDA Fortran `attributes(global)` (array and scalar arguments), 
+       and `attributes(host,device)`, `attributes(device)` procedures (only scalar arguments supported for the latter)
 
 (List is not complete ...)
 
 ## Planned features
 
-* Expected 06/01/2021:
+* Current work focuses on:
   * ACC:
-    * Initial support for `!$acc routine`
-    * Initial support for `!$acc declare` 
-    * Improved support for `!$acc kernels (loop)` 
-    * Improved support for`!$acc parallel (loop)` 
-  * CUF:
-    * Initial support for CUDA Fortran `attributes(global)`, `attributes(host,device)`, `attributes(device)` procedures
+    * Initial support for `!$acc declare` (detected but not considered in codegen yet.)
+    * Improve support for `!$acc kernels (loop)` 
+    * Improve support for`!$acc parallel (loop)`
+    * Rewrite of GPUFORT Fortran runtime in (HIP) C++
+  * ACC/CUF:
+    * Support of derived types with allocatable, pointer members
 
 ## Installation and usage
 

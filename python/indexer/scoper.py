@@ -171,10 +171,11 @@ def create_index_search_tag_for_variable(variable_expression):
     :param str variable_expression: a simple identifier such as 'a' or 'A_d' or a more complicated derived-type member variable expression such as 'a%b%c' or 'A%b(i)%c'.
     :see: indexer.scoper.search_index_for_variable
     """
-    if not "(" in variable_expression:
-        return variable_expression.lower()
+    result = variable_expression.lstrip("-+") # remove trailing minus sign
+    if not "(" in result:
+        return result.lower()
     else:
-        parts = re.split("([()%,])",variable_expression.lower())
+        parts = re.split("([()%,])",result.lower())
         open_brackets = 0
         result = []
         curr   = ""

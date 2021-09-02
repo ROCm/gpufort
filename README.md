@@ -268,9 +268,15 @@ gpufort -h
 
 Output:
 ```
-usage: gpufort.py [-h] [-o,--output O,__OUTPUT] [-d,--search-dirs [SEARCHDIRS [SEARCHDIRS ...]]] [-i,--index INDEX] [-w,--wrap-in-ifdef] [-k,--only-generate-kernels]
-                  [-m,--only-modify-host-code] [-E,--destination-dialect DESTINATIONDIALECT] [--log-level LOGLEVEL] [--cublas-v2] [--working-dir WORKINGDIR] [--print-config-defaults]
-                  [--config-file CONFIGFILE]
+usage: gpufort.py [-h] [-c] [-s] [-o OUTPUT] [--working-dir WORKING_DIR]
+                  [-d [SEARCH_DIRS [SEARCH_DIRS ...]]] [-w]
+                  [-E DESTINATION_DIALECT] [--gfortran_config] [--cpp_config]
+                  [--print-config-defaults] [--config-file CONFIG_FILE] [-m]
+                  [-k] [-K] [-C] [-G] [--cublas-v2] [-v]
+                  [--log-level LOG_LEVEL] [--log-filter LOG_FILTER]
+                  [--log-traceback] [--prof]
+                  [--prof-num-functions PROFILING_NUM_FUNCTIONS]
+                  [--create-gpufort-headers]
                   [input]
 
 S2S translation tool for CUDA Fortran and Fortran+X
@@ -280,27 +286,73 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -o,--output O,__OUTPUT
-                        The output file. Interface module and HIP C++ implementation are named accordingly
-  -d,--search-dirs [SEARCHDIRS [SEARCHDIRS ...]]
-                        Module search dir
-  -i,--index INDEX      Pre-generated JSON index file. If this option is used, the '-d,--search-dirs' switch is ignored.
-  -w,--wrap-in-ifdef    Wrap converted lines into ifdef in host code.
-  -k,--only-generate-kernels
-                        Only generate kernels; do not modify host code.
-  -m,--only-modify-host-code
-                        Only modify host code; do not generate kernels.
-  -E,--destination-dialect DESTINATIONDIALECT
-                        One of: omp, hip-gpufort-rt, hip-gcc-rt
-  --log-level LOGLEVEL  Set log level. Overrides config value.
-  --cublas-v2           Assume cublas v2 function signatures that use a handle. Overrides config value.
-  --working-dir WORKINGDIR
+  -c, --only-create-mod-files
+                        Only create GPUFORT modules files. No other output is
+                        created.
+  -s, --skip-create-mod-files
+                        Skip creating GPUFORT modules, e.g. if they already
+                        exist. Mutually exclusive with '-c' option.
+  -o OUTPUT, --output OUTPUT
+                        The output file. Interface module and HIP C++
+                        implementation are named accordingly. GPUFORT module
+                        files are created too.
+  --working-dir WORKING_DIR
                         Set working directory.
+  -d [SEARCH_DIRS [SEARCH_DIRS ...]], --search-dirs [SEARCH_DIRS [SEARCH_DIRS ...]]
+                        Module search dir. Alternative -I<path> can be used
+                        (multiple times).
+  -w, --wrap-in-ifdef   Wrap converted lines into ifdef in host code.
+  -E DESTINATION_DIALECT, --dest-dialect DESTINATION_DIALECT
+                        One of: omp, hip-gpufort-rt, hip-gcc-rt, hip
+  --gfortran_config     Print include and compile flags.
+  --cpp_config          Print include and compile flags.
+
+Config file:
   --print-config-defaults
-                        Print config defaults. Config values can be overridden by providing a config file. A number of config values can be overwritten via this CLI.
-  --config-file CONFIGFILE
+                        Print config defaults. Config values can be overriden
+                        by providing a config file. A number of config values
+                        can be overwritten via this CLI.
+  --config-file CONFIG_FILE
                         Provide a config file.
 
+Fortran-to-HIP:
+  -m, --only-modify-host-code
+                        Only modify host code; do not generate kernels
+                        [default: False].
+  -k, --only-emit-kernels-and-launchers
+                        Only emit kernels and kernel launchers; do not modify
+                        host code [default: False].
+  -K, --only-emit-kernels
+                        Only emit kernels; do not emit kernel launchers and do
+                        not modify host code [default: False].
+  -C, --emit-cpu-impl   Per detected loop kernel, also extract the CPU
+                        implementation [default: (default) config value].
+  -G, --emit-debug-code
+                        Generate debug code into the kernel launchers that
+                        allows to print kernel arguments, launch parameters,
+                        input/output array norms and elements, or to
+                        synchronize a kernel [default: (default) config
+                        value].
+
+CUDA Fortran input:
+  --cublas-v2           Assume cublas v2 function signatures that use a
+                        handle. Overrides config value.
+
+Developer options (logging, profiling, ...):
+  -v, --verbose         Print all log messages to error output stream too.
+  --log-level LOG_LEVEL
+                        Set log level. Overrides config value.
+  --log-filter LOG_FILTER
+                        Filter the log output according to a regular
+                        expression.
+  --log-traceback       Append gpufort traceback information to the log when
+                        encountering warning/error.
+  --prof                Profile gpufort.
+  --prof-num-functions PROFILING_NUM_FUNCTIONS
+                        The number of python functions to include into the
+                        summary [default=50].
+  --create-gpufort-headers
+                        Generate the GPUFORT header files.
 ```
 
 > **NOTE**: The `--config-file` switch is parsed before

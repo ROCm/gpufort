@@ -76,6 +76,15 @@
 {% endfor -%}
 {%- endif -%}
 {%- endmacro %}
+
+{% for derived_type in types %}
+typedef struct {
+{% for member in derived_type.members %}
+  {{member.c_type}} {{member.name}};
+{% endfor %}
+} {{derived_type.c_name}};
+{% endfor %}
+
 {% for kernel in kernels %}
 {% set krnl_prefix = kernel.kernel_name %}
 {% set iface_prefix = kernel.interface_name %}

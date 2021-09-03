@@ -122,11 +122,15 @@ def _intrnl_update_context_from_derived_types(itypes,hip_context,f_context):
             member = dict(EMPTY_ARG)
             member_name      = ivar["name"]
             member["name"]   = member_name
-            member["c_type"] = member_name
-            if ivar["rank"] > 0 or ivar["f_type"]=="type":
-                member["type"] = "type(c_ptr)"
-            else:
-                member["type"] = f_type_final
+            member["c_type"] = ivar["c_type"]
+            member["type"]   = f_type_final
+            if ivar["rank"] > 0 and not ivar["f_type"]=="type":
+                member["type"]   = "type(c_ptr)"
+                member["c_type"] += "*"
+            elif ivar["f_type"]=="type":
+                member["type"]   = "type(c_ptr)"
+                member["c_type"] = kind + "*"
+                
             interop_type["members"].append(member)
             bound_members, count_members = [], []
             for d in range(1,ivar["rank"]+1):

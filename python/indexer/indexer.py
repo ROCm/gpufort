@@ -330,12 +330,12 @@ def _intrnl_parse_statements(file_statements,filepath):
             derived_type["name"]      = name
             derived_type["kind"]      = "type"
             derived_type["variables"] = []
-            derived_type["types"] = []
+            derived_type["types"]     = []
             current_node._data["types"].append(derived_type)
             current_node = __Node("type",name,data=derived_type,parent=current_node)
             log_enter_node_()
         else:
-            utils.logging.log_warning(LOG_PREFIX,"_intrnl_parse_statements","found derived type in '{}' but parent is {}; expected program or module parent.".\
+            utils.logging.log_warning(LOG_PREFIX,"_intrnl_parse_statements","found derived type in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
                     format(current_statement,current_node._kind))
     def Use(tokens):
         nonlocal current_node

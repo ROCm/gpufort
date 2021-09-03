@@ -290,7 +290,7 @@ def parse_file(linemaps,index,fortran_filepath):
         new._ignore_in_s2s_translation = not translation_enabled
         new.name = translator.make_f_str(tokens[1]) # just get the name, ignore specific includes
         append_if_not_recording_(new)
-    def PlaceHolder(tokens):
+    def PlaceHolder():
         nonlocal translation_enabled
         nonlocal current_node
         nonlocal current_linemap
@@ -451,8 +451,6 @@ def parse_file(linemaps,index,fortran_filepath):
     subroutine_start.setParseAction(Subroutine_visit)
     
     use.setParseAction(UseStatement)
-    CONTAINS.setParseAction(PlaceHolder)
-    IMPLICIT.setParseAction(PlaceHolder)
     
     datatype_reg = Regex(r"\s*\b(type\s*\(\s*\w+\s*\)|character|integer|logical|real|complex|double\s+precision)\b") 
     datatype_reg.setParseAction(Declaration)
@@ -577,10 +575,12 @@ def parse_file(linemaps,index,fortran_filepath):
                         # 
                         if current_tokens[0] == "use":
                             try_to_parse_string("use",use)
-                        elif current_tokens[0] == "implicit":
-                            try_to_parse_string("implicit",IMPLICIT)
+                        elif current_tokens[0] in ["implicit","contains"]:
+                            PlaceHolder()
                         elif current_tokens[0] == "module":
                             try_to_parse_string("module",module_start)
+                        elif current_tokens[0:2] == ["end","type"]:
+                            PlaceHolder()
                         elif current_tokens[0] == "program":
                             try_to_parse_string("program",program_start)
                         elif current_tokens[0] == "return":

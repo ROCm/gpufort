@@ -383,7 +383,7 @@ def _intrnl_update_context_from_loop_kernels(loop_kernels,index,hip_context,fCon
                        # host to device
                        epilog += "CALL hipCheck(hipMemcpy(d_{var},c_loc({var}),{bpe}_8*SIZE({var}),hipMemcpyHostToDevice))\n".format(var=local_array,bpe=arg["bytes_per_element"])
                        epilog += "deallocate({var})\n".format(var=local_array)
-                f_cpu_routine_dict["body"] = prolog + original_snippet + epilog
+                f_cpu_routine_dict["body"] = prolog + "\n".join(stkernel.code).rstrip() + epilog
 
                 # Add all definitions to context
                 fContext["interfaces"].append(f_cpu_interface_dict)

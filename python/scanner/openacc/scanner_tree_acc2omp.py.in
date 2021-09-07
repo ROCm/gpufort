@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
 class Acc2Omp(AccBackendBase):
-    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines):
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
+        global LOG_PREFIX
+        
         snippet = joined_statements
         try:
            def repl(parse_result):
@@ -11,22 +13,23 @@ class Acc2Omp(AccBackendBase):
                     repl)
            return result, True 
         except Exception as e:
-           print("failed: "+snippet) # TODO error handling
-           raise e
-           return "", False 
+           utils.logging.log_exception(LOG_PREFIX,"Acc2Omp.transform","failed parse directive "+str(snippet))
 
 class AccLoopKernel2Omp(AccBackendBase):
-    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines):
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
+        global LOG_PREFIX
+        
         if statements_fully_cover_lines:
             snippet = joined_lines
         else:
             snippet = joined_statements
         try:
-           parse_result = translator.loop_kernel.parseString(snippet)[0]
+           parent_tag   = self._stnode._parent.tag()
+           scope        = scoper.create_scope(index_hints,parent_tag)
+           parse_result = translator.parse_loop_kernel(snippet.split("\n"),scope)
            return parse_result.omp_f_str(snippet), True 
         except Exception as e:
-           print("failed: "+snippet) # TODO error handling
-           raise e
-           return "", False 
+           utils.logging.log_exception(LOG_PREFIX,"AccLoopKernel2Omp.transform","failed to convert kernel "+str(snippet))
+           sys.exit(2)
 
 register_acc_backend("omp",Acc2Omp,AccLoopKernel2Omp,None)

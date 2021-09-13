@@ -12,7 +12,7 @@ CALL,ATTRIBUTES,LEN,KIND,DIM = makeCaselessLiteral("call,attributes,len,kind,dim
 
 identifier = pyparsing_common.identifier.copy()
 integer    = pyparsing_common.integer.copy()
-number     = Regex(r"[+-]?(?:\.|\d+\.?)\d*([dDeE][+-]?\d+)?(_\w+)?") # Adapted from https://stackoverflow.com/a/49890855; original wouldn't match <number>_DP
+number     = Regex(r"[+-]?(\.\d+|\d+(\.\d*)?)([eEdD]([+-]?\d+(\.\d*)?))?(_\w+)?")
 logical    = Regex(r"\.[tT][rR][uU][eE]\.|\.[fF][aA][lL][sS][eE]\.")
 character  = QuotedString('"', escQuote='\\') | QuotedString("'", escQuote="\\")
 OPTSIGN    = Optional(Regex("[-+]") | CASELESS_LITERAL(".not."),default="")

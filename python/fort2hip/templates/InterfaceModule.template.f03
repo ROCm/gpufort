@@ -1,5 +1,5 @@
 {#- SPDX-License-Identifier: MIT                                                -#}
-{#- Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.-#}
+{#- Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.-#}
 {#- Jinja2 template for generating interface modules                            -#}
 {#- This template works with data structures of the form :                      -#}
 {#- *-name:str                                                                  -#}

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT                                                
-# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 # init shutdown
 HIP_GPUFORT_RT_ACC_INIT     = "{indent}call gpufort_acc_init()\n"
 HIP_GPUFORT_RT_ACC_SHUTDOWN = "{indent}call gpufort_acc_shutdown()\n"

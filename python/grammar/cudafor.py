@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT                                                
-# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 #!/usr/bin/env python3
 # NOTE: Everything relevant for the host is prefixed with HOST_
 from grammar.cuda_enums import *

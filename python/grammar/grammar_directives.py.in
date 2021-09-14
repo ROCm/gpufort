@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT                                                
-# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 PRAGMA               = Regex(r"[!c\*]\$").suppress()
 generic_pragma        = Regex(r"[!c\*]\$\w+")
 generic_pragma_newline = Regex(r"[!c\*]\$\w+\&")

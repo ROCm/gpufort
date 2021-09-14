@@ -1,5 +1,5 @@
 {# SPDX-License-Identifier: MIT                                                 #}
-{# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved. #}
+{# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved. #}
 #ifndef _GPUFORT_REDUCTIONS_H_
 #define _GPUFORT_REDUCTIONS_H_
 // requires that gpufort.h is included beforehand

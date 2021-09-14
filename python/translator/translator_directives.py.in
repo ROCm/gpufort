@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT                                                
-# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 # extensions for directive-based programming
 
 def _intrnl_search_values_in_subtree(ttnode,search_filter,scope,min_rank=-1):

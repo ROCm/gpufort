@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT                                                
-# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 
 def num_bytes(f_type,kind,default=None):
     """:return: number of bytes to store datatype 'f_type' of kind 'kind'. Expression might contain parameters."""

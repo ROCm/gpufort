@@ -396,22 +396,19 @@ namespace {
   __device__ __forceinline__ hipDoubleComplex conj(const hipDoubleComplex& z) {
     return hipConj(z);
   }
-  __device__ __forceinline__ float copysign(const float a, const float b) {
-    return copysignf(a, b);
-  }
   __device__ __forceinline__ int nint(const float a) {
-    return (a>0) ? static_cast<int>(a+0.5) : static_cast<int>(a-0.5);
+    return (a>0.f) ? static_cast<int>(a+0.5f) : static_cast<int>(a-0.5f);
   }
   __device__ __forceinline__ int nint(const double a) {
-    return (a>0) ? static_cast<int>(a+0.5) : static_cast<int>(a-0.5);
+    return (a>0.) ? static_cast<int>(a+0.5) : static_cast<int>(a-0.5);
   }
   __device__ __forceinline__ float dim(const float a, const float b) {
-    float diff = a-b;
-    return (diff>0) ? diff : 0.f;
+    const float diff = a-b;
+    return (diff>0.f) ? diff : 0.f;
   }
   __device__ __forceinline__ double dim(const double a, const double b) {
-    double diff = a-b;
-    return (diff>0) ? diff : 0.;
+    const double diff = a-b;
+    return (diff>0.) ? diff : 0.;
   }
 } 
 

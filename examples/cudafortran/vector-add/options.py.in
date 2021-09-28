@@ -1,8 +1,8 @@
 fort2hip.CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140, BinPackArguments: false, BinPackParameters: false}\""
 
-fort2hip.EMIT_DEBUG_CODE = False
+#fort2hip.EMIT_DEBUG_CODE = False
 
-fort2hip.PRETTIFY_EMITTED_FORTRAN_CODE = False
+#fort2hip.PRETTIFY_EMITTED_FORTRAN_CODE = False
 
 def myBlockDims(kernelName,dims):
     return [512]
@@ -18,3 +18,5 @@ def myLaunchBounds(kernelName):
 PRETTIFY_MODIFIED_TRANSLATION_SOURCE = True
 
 LOG_DIR="log"
+
+scanner.LOOP_KERNEL_DEFAULT_LAUNCHER="cpu"

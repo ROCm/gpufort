@@ -16,10 +16,6 @@
 {% for file in includes %}
 #include "{{file}}"
 {% endfor %}
-#include "hip/math_functions.h"
-#include <cstdio>
-#include <iostream>
-#include <algorithm>
 #include "gpufort.h"
 {% if have_reductions -%}
 #include "gpufort_reductions.h"

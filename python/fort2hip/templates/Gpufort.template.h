@@ -149,20 +149,20 @@ namespace {
   __device__ __forceinline__ hipDoubleComplex conj(const hipDoubleComplex& z) {
     return hipConj(z);
   }
-  __device__ __forceinline__ float copysign(const float a, const float b) {
-    return copysignf(a, b);
+  __device__ __forceinline__ int nint(const float a) {
+    return (a>0.f) ? static_cast<int>(a+0.5f) : static_cast<int>(a-0.5f);
   }
-{%- for float_type in ["float", "double"] +%}
-  __device__ __forceinline__ int nint(const {{float_type}} a) {
-    return (a>0) ? static_cast<int>(a+0.5) : static_cast<int>(a-0.5);
+  __device__ __forceinline__ int nint(const double a) {
+    return (a>0.) ? static_cast<int>(a+0.5) : static_cast<int>(a-0.5);
   }
-{%- endfor %}
-{%- for float_type in ["float", "double"] +%}
-  __device__ __forceinline__ {{float_type}} dim(const {{float_type}} a, const {{float_type}} b) {
-    {{float_type}} diff = a-b;
-    return (diff>0) ? diff : {{ "0." if float_type == "double" else "0.f" }};
+  __device__ __forceinline__ float dim(const float a, const float b) {
+    const float diff = a-b;
+    return (diff>0.f) ? diff : 0.f;
   }
-{%- endfor +%}
+  __device__ __forceinline__ double dim(const double a, const double b) {
+    const double diff = a-b;
+    return (diff>0.) ? diff : 0.;
+  }
 } 
 
 #define sign(a,b) copysign(a,b)

@@ -261,9 +261,11 @@ class STNode:
 class STEndOrReturn(STNode):
     pass
 
-class STRoot(STNode):
+class STRoot(STNode,Tagged):
     def __init__(self):
         STNode.__init__(self,None,None,-1)
+    def tag(self):
+        return None
 
 class STModule(STNode,Tagged):
     def __init__(self,name,parent,first_linemap,first_linemap_first_statement):

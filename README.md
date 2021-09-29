@@ -21,6 +21,10 @@ we believe that it might be helpful for some.
 We want to stress that the code translation and code generation outputs produced
 by GPUFORT will in most cases require manual reviewing and fixing.
 
+## Installation and usage
+
+Please take a look at the (slightly outdated) [user guide](https://bookish-adventure-5c5886a5.pages.github.io/).
+
 ## Implementation details
 
 [This presentation](https://github.com/ROCmSoftwarePlatform/gpufort/blob/main/gpufort_slides.pdf)
@@ -40,6 +44,12 @@ is put into the project.
 Given that all code and especially the grammar is
 written in python3, GPUFORT can be developed at a quick 
 pace.
+
+* GPUFORT assumes syntactically and functionally correct input
+
+GPUFORT does only perform a small number of syntax checks as we assume
+that developers apply GPUFORT to code that can be correctly on CUDA devices.
+(We plan to add the option to prescribe a user-specified syntax checker tool.)
 
 * GPUFORT does a bad job in analyzing what code parts can be offloaded and which ones not
 * GPUFORT does a bad job in reorganizing loops and assignments in order to maximize
@@ -92,7 +102,7 @@ Until then, you have to modify your code manually to circumvent the above limita
 
 * Current work focuses on:
   * ACC:
-    * Initial support for `!$acc declare` (detected but not considered in codegen yet.)
+    * Initial support for `!$acc declare` (detected but not considered in codegen yet)
     * Improve support for`!$acc parallel (loop)`
     * Add support for `!$acc parallel` without `!$acc loop` in next line)
       * Results in `gang` parallelism
@@ -102,14 +112,6 @@ Until then, you have to modify your code manually to circumvent the above limita
   * ACC/CUF:
     * Support of derived types with allocatable, pointer members
 
-## Installation and usage
-
-Please take a look at the [user guide](https://bookish-adventure-5c5886a5.pages.github.io/).
-
-## Outlook
-
-One future goal of the project is that both translation 
-processes can be mixed, which will allow users to specify what 
-compute directives should be translated to HIP C++ and what compute
-directives should be translated to OpenMP.
+Planned:
+  * Add option for prescribing syntax checker (e.g. use other compiler for syntax checks.)
 

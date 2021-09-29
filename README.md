@@ -52,7 +52,7 @@ of these applications.
 
 ### Fortran-C Interoperablity Limitations
 
-GPUFORT relies on the `iso_c_binding` interoperability mechanisms that were added to the Fortran language with 
+To interface generated HIP C++ kernels with the original Fortran code, GPUFORT relies on the `iso_c_binding` interoperability mechanisms that were added to the Fortran language with 
 the Fortran 2003 standard. Please be aware that the interoperability of C structs and Fortran derived types is quite limited
 till this date:
 

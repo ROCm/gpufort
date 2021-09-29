@@ -21,6 +21,11 @@ we believe that it might be helpful for some.
 We want to stress that the code translation and code generation outputs produced
 by GPUFORT will in most cases require manual reviewing and fixing.
 
+## Implementation details
+
+[This presentation](https://github.com/ROCmSoftwarePlatform/gpufort/blob/main/gpufort_slides.pdf)
+gives an overview of GPUFORT's building blocks.
+
 ## Limitations
 
 * GPUFORT is not a compiler (yet)
@@ -83,7 +88,7 @@ Until then, you have to modify your code manually to circumvent the above limita
 
 (List is not complete ...)
 
-## Planned features (aka "more limitations")
+## Planned features (or: "more limitations")
 
 * Current work focuses on:
   * ACC:
@@ -108,50 +113,3 @@ processes can be mixed, which will allow users to specify what
 compute directives should be translated to HIP C++ and what compute
 directives should be translated to OpenMP.
 
-## Background
-
-### Key ingredient: pyparsing grammars and parse actions
-
-The fundamental ingredient of GPUFORT is its pyparsing grammar that (currently) covers a subset of the Fortran
-language that plays a role in computations. This grammar is extended by additional grammar that describes
-the structure of CUDA Fortran and OpenACC directives.
-
-While easing development of a parser with shortcuts such as forward declarations and infix notation objects,
-pyparsing quickly allows to generate an abstract syntax tree (AST) from a grammar with the aid 
-of so-called parse actions.
-
-A simple pyparsing grammar is shown below:
-
-```python
-import pyparsing as pp
-
-# grammar
-rvalue = pp.pyparsing_common.identifier
-op   = pp.Literal("+")
-
-expr = rvalue + op + rvalue
-
-# test
-print(expr.parseString("a + b")) # output : ['a','+','b']
-```
-
-We can directly generate an AST from the parsed string:
-
-```python
-# ...
-# continue from previous snippet
-class RValue():
-  def __init__(self,tokens):
-    self._value = tokens
-class Op():
-  def __init__(self,tokens):
-    self._op = tokens
-rvalue.setParseAction(RValue)
-op.setParseAction(Op)
-
-# run test again
-print(expr.parseString("a + b")) # output : [<__main__.RValue object ...>, <__main__.Op object ...>, <__main__.RValue object ...>]
-```
-
-Now instead of the parsed strings, we have three objects in the parse result set
-that describe the type of the individual tokens, i.e. we have an abstract syntax tree.

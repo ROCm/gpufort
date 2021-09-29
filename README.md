@@ -12,9 +12,14 @@ with hipfort or a combination of hipcc and gfortran.
 Note that a OpenACC runtime is only necessary for translating
 OpenACC code.
 
-An overview of the different translation processes is shown below:
+An overview of the different translation paths that we work on is shown below:
 
 ![Image](https://github.com/ROCmSoftwarePlatform/gpufort/blob/develop/gpufort.png?raw=true)
+
+**NOTE:** GPUFORT is a research project. We made it publicly available because 
+we believe that it might be helpful for some.
+We want to stress that the code translation and code generation outputs produced
+by GPUFORT will in most cases require manual reviewing and fixing.
 
 ## Limitations
 
@@ -30,6 +35,13 @@ is put into the project.
 Given that all code and especially the grammar is
 written in python3, GPUFORT can be developed at a quick 
 pace.
+
+* GPUFORT does a bad job in analyzing what code parts can be offloaded and which ones not
+* GPUFORT does a bad job in reorganizing loops and assignments in order to maximize
+  the available parallelism
+
+While both would be possible as the translator works with a tree structure, 
+we simply have not started to implement much in this direction yet.
 
 * GPUFORT does not implement the full OpenACC standard (yet)
 
@@ -71,13 +83,16 @@ Until then, you have to modify your code manually to circumvent the above limita
 
 (List is not complete ...)
 
-## Planned features
+## Planned features (aka "more limitations")
 
 * Current work focuses on:
   * ACC:
     * Initial support for `!$acc declare` (detected but not considered in codegen yet.)
-    * Improve support for `!$acc kernels (loop)` 
     * Improve support for`!$acc parallel (loop)`
+    * Add support for `!$acc parallel` without `!$acc loop` in next line)
+      * Results in `gang` parallelism
+    * Add support for `!$acc kernels` without `!$acc loop` in next line)
+      * Auto detection of offloadable code parts 
     * Rewrite of GPUFORT Fortran runtime in (HIP) C++
   * ACC/CUF:
     * Support of derived types with allocatable, pointer members

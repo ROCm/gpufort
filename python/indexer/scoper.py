@@ -156,7 +156,12 @@ def _intrnl_search_index_for_type_or_subprogram(index,parent_tag,entry_name,entr
     utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_search_index_for_type_or_subprogram",\
       {"parent_tag":parent_tag,"entry_name":entry_name,"entry_type":entry_type})
 
-    scope = create_scope(index,parent_tag)
+    if parent_tag is None:
+        scope = dict(EMPTY_SCOPE) # top-level subroutine/function
+        scope["subprograms"] = [index_entry for index_entry in index\
+          if index_entry["name"]==entry_name and index_entry["kind"] in ["subroutine","function"]]
+    else:
+        scope = create_scope(index,parent_tag)
     return _intrnl_search_scope_for_type_or_subprogram(scope,entry_name,entry_type,empty_record)
 
 # API
@@ -196,8 +201,7 @@ def create_scope_from_declaration_statements(declaration_statements=[]):
     """Create scope from declaration statements.
     :note: must not contain any line breaks.
     """
-
-
+    pass
 
 def create_scope(index,tag):
     """
@@ -238,6 +242,8 @@ def create_scope(index,tag):
     if len(tag_tokens)-1 == nesting_level:
         utils.logging.log_debug(LOG_PREFIX,"create_scope",\
           "found existing scope for tag '{}'".format(tag))
+        utils.logging.log_debug4(LOG_PREFIX,"create_scope",\
+          "variables in scope: {}".format(", ".join([var["name"] for var in existing_scope["variables"]])))
         utils.logging.log_leave_function(LOG_PREFIX,"create_scope")
         return existing_scope
     else:

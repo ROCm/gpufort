@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 import addtoplevelpath
 import grammar as grammar
 import translator.translator as translator
@@ -181,11 +181,11 @@ translator.LOOP_COLLAPSE_STRATEGY="collapse"
 #print(test)
 #print(grammar.accLoopKernel.parseString(test))
 #result = translator.accLoopKernel.parseString(test)[0]
-#print(result.cStr())
-#print(result.problemSize())
-cSnippet, problemSize, kernelLaunchInfo, identifierNames, localLValues, loopVars, reduction =\
-        translator.parseLoopKernel(test)
-print(cSnippet)
+#print(result.c_str())
+#print(result.problem_size())
+c_snippet, problem_size, kernel_launch_info, identifier_names, localLValues, loop_vars, reduction =\
+        translator.parse_loop_kernel(test)
+print(c_snippet)
 
 #for i in range(len(testdata)):
 #    #print(str(i)+".",accKernels.parseString(testdata[i]))
@@ -196,4 +196,4 @@ print(cSnippet)
 #    results = translator.accConstruct.parseString(testdata[i])
 #    print(results)
 #    results[0].printTokens()
-#    print(results[0].cStr())
+#    print(results[0].c_str())

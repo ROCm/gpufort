@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 import addtoplevelpath
 import translator.translator as translator
             
@@ -599,9 +599,9 @@ successfullyParsed = []
 success = True
 for v in testdata: 
     try:
-       name,argNames,cBody = translator.convertDeviceSubroutine(v,20)
+       name,argnames,cBody = translator.convertDeviceSubroutine(v,20)
        print("{} -> {}".format(v,cBody))
-       print(argNames)
+       print(argnames)
        successfullyParsed.append(v)
     except Exception as e:
        print("failed to parse {}".format(v))

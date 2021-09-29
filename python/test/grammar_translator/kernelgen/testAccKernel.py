@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 import addtoplevelpath
 import translator.translator as translator
 
@@ -76,4 +76,4 @@ for i in range(len(testdata)):
     results = translator.accConstruct.parseString(testdata[i])
     print(results)
     results[0].printTokens()
-    print(results[0].cStr())
+    print(results[0].c_str())

@@ -1,4 +1,4 @@
-program testSaxpy
+program main
   use cudafor
   implicit none
   integer, parameter :: N = 40000
@@ -35,4 +35,4 @@ program testSaxpy
 #define max_err(a) maxval(abs(a-4.0))
 
   write(*,*) 'Max error: ', max_err(y) 
-end program testSaxpy
+end program main

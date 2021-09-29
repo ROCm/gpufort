@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 import sys
 import test
 import translator.translator
@@ -66,7 +66,7 @@ end do
 for i,v in enumerate(testdata):
     vMod = translator.prepareFortranSnippet(v)
     result = translator.doLoop.parseString(vMod)
-    print("{}:\n{}".format(i,result[0].cStr()))
+    print("{}:\n{}".format(i,result[0].c_str()))
 
 #test.run(
 #   expression     = translator.ifElseBlock,

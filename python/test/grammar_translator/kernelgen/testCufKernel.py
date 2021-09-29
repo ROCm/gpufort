@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 import sys
 sys.path.append("..")
 sys.path.append("../../")
@@ -433,8 +433,8 @@ successfullyParsed = []
 success = True
 for v in testdata: 
     try:
-       cSnippet, problemSize, LoopKernelLaunchInfo, identifierNames, localLValues, loopVars = translator.convertCufLoopKernel2Hip(v)
-       print("{} -> {}".format(v,cSnippet))
+       c_snippet, problem_size, LoopKernelLaunchInfo, identifier_names, localLValues, loop_vars = translator.convertCufLoopKernel2Hip(v)
+       print("{} -> {}".format(v,c_snippet))
        successfullyParsed.append(v)
        print(localLValues)
     except Exception as e:

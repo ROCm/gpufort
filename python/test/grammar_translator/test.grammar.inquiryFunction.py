@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 import addtoplevelpath
 import sys
 import test
@@ -22,8 +22,8 @@ testdata.append("size(a%y,dim=1)")
 testdata.append("size(a(i,j)%z,dim=1,kind=4)")
 
 test.run(
-   expression     = grammar.inquiryFunction,
+   expression     = grammar.inquiry_function,
    testdata       = testdata,
-   tag            = "inquiryFunction",
+   tag            = "inquiry_function",
    raiseException = True
 )

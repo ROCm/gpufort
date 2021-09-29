@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 import addtoplevelpath
 import os,sys
-import grammar.grammar as grammar
+import translator.translator as translator
 
 print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.stderr)
 
@@ -36,7 +36,7 @@ end do
 
 for snippet in testdata:
     try:
-        grammar.loopKernel.parseString(snippet)
+        translator.parse_loop_kernel(snippet.split("\n"))
     except Exception as e:
         print(" - FAILED",file=sys.stderr)
         print("failed to parse '{}'".format(snippet),file=sys.stderr)

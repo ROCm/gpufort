@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 import addtoplevelpath
 import sys
 import test
@@ -24,8 +24,8 @@ lda, ps_d, 1, 1, spsi_d, 1 )
 """.strip("\n").strip(" ").strip("\n").splitlines()
 
 test.run(
-   expression     = translator.callEnd,
+   expression     = translator.call_end,
    testdata       = testdata,
-   tag            = "callEnd",
+   tag            = "call_end",
    raiseException = True
 )

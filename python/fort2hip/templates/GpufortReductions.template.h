@@ -1,15 +1,12 @@
 {# SPDX-License-Identifier: MIT                                                 #}
-{# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved. #}
+{# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved. #}
 #ifndef _GPUFORT_REDUCTIONS_H_
 #define _GPUFORT_REDUCTIONS_H_
-
 // requires that gpufort.h is included beforehand
-
 #include "hip/hip_runtime_api.h"
 #include "hip/hip_runtime.h"
 #include "hipcub/hipcub.hpp"
 #include <limits>
-
 // reductions
 namespace {
   struct reduce_op_mult {
@@ -81,5 +78,4 @@ namespace {
     HIP_CHECK(hipFree(temp_storage));
   }
 }
-
 #endif // _GPUFORT_REDUCTIONS_H_

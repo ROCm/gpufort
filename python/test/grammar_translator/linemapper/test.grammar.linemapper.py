@@ -150,7 +150,7 @@ class TestPreprocessorGrammar(unittest.TestCase):
         self._extra = ", performed {} checks".format(numTests)
         self.assertEqual(numSuccess,numTests)
     def test_6_macro_substitution(self):
-        macroStack = [
+        macro_stack = [
           { "name": "b", "args": [], "subst": "5" },
           { "name": "a", "args": ["x"], "subst": "(5*x)" },
         ]
@@ -168,10 +168,10 @@ class TestPreprocessorGrammar(unittest.TestCase):
           "!(defined(a) && !defined(x) && a(b) > 4)"
         ]
         for text in testdata_true:
-            condition = linemapper.evaluateCondition(text,macroStack)
+            condition = linemapper.evaluate_condition(text,macro_stack)
             self.assertTrue(condition)
         for text in testdata_false:
-            condition = linemapper.evaluateCondition(text,macroStack)
+            condition = linemapper.evaluate_condition(text,macro_stack)
             self.assertFalse(condition)
         numTests = len(testdata_true) + len(testdata_false)
         self._extra = ", performed {} checks".format(numTests)

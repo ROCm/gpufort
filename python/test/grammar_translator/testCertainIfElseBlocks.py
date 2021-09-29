@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 import sys
 import test
 import translator.translator
 
-#print(_elseIfStatement.parseString("""  
+#print(_else_if_statement.parseString("""  
 #elseif ( lp < 16 ) then
 #    phi  = atan( g(2,ig)/g(1,ig) ) + pi
 #"""))
@@ -212,7 +212,7 @@ for i,v in enumerate(testdata):
     vMod = translator.prepareFortranSnippet(v)
     result = translator.ifElseBlock.parseString(vMod)
     #result = translator.block.parseString(vMod)
-    print("{}:\n{}".format(i,translator.makeCStr(result)))
+    print("{}:\n{}".format(i,translator.make_c_str(result)))
 
 #test.run(
 #   expression     = translator.ifElseBlock,

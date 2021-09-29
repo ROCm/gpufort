@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT                                                
-# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 __GPUFORT_INC_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),"../include")
 INCLUDE_DIRS = [ __GPUFORT_INC_DIR ]
         # Include dir for gpufort_mod file and header files.
@@ -7,12 +7,12 @@ INCLUDE_DIRS = [ __GPUFORT_INC_DIR ]
 POST_CLI_ACTIONS = [] 
        # List of actions to run after parsing the command line arguments
        # Note that config is read before parsing other command line arguments.
-       # Register functions with parameters (args,unknownArgs) (see: argparse.parse_known_args
+       # Register functions with parameters (args,unknown_args) (see: argparse.parse_known_args
 
 # logging
 LOG_LEVEL  = "warning"
         # Log level; only print warnings by default.
-LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s [file:%(filename)s]"
+LOG_FORMAT = "[%(levelname)s][infile:%(filename)s] gpufort:%(message)s"
         # Log format
 LOG_PREFIX = "gpufort"
         # Prefix for all log output

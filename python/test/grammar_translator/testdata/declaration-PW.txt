@@ -1140,7 +1140,7 @@ INTEGER,INTENT(in)::iter
 INTEGER,INTENT(IN)::iter
 INTEGER,INTENT(IN)::ityp(nat)
 INTEGER,INTENT(IN)::iunit
-INTEGER,INTENT(IN)::iunit,record,iflag
+INTEGER,INTENT(IN)::iunit,linemap,iflag
 INTEGER,INTENT(IN)::iunmix
 INTEGER,INTENT(IN)::iverbosity
 INTEGER,INTENT(IN)::ix

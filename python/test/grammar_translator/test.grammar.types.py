@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 import addtoplevelpath
 import os,sys
 import time
@@ -23,7 +23,7 @@ class TestIndexer(unittest.TestCase):
         testdata.append("type, bind(c) :: mytype")
         for snippet in testdata:
             try:
-                grammar.typeStart.parseString(snippet)
+                grammar.type_start.parseString(snippet)
             except Exception as e:
                 self.assertTrue(False, "failed to parse '{}'".format(snippet)) 
     def test_1_type_start_fail(self):
@@ -32,7 +32,7 @@ class TestIndexer(unittest.TestCase):
         testdata.append("type(mytype) :: myvar")
         for snippet in testdata:
             try:
-                grammar.typeStart.parseString(snippet)
+                grammar.type_start.parseString(snippet)
                 self.assertTrue(False, "incorrectly parsed '{}'".format(snippet)) 
             except Exception as e:
                 pass
@@ -44,7 +44,7 @@ class TestIndexer(unittest.TestCase):
         testdata.append("endtype mytype")
         for snippet in testdata:
             try:
-                grammar.typeEnd.parseString(snippet)
+                grammar.type_end.parseString(snippet)
             except Exception as e:
                 self.assertTrue(False, "failed to parse '{}'".format(snippet)) 
 

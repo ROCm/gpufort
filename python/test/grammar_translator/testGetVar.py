@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 import sys
 sys.path.append("..")
 sys.path.append("../../")
@@ -26,5 +26,4 @@ for i in range(len(testdata)):
     print("create: ",results.getMallocVars())
     #print(str(i)+".",results)
     #results.printTokens()
-    #print(results.cStr())
-
+    #print(results.c_str())

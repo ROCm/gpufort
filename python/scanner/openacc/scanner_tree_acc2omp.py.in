@@ -1,32 +1,35 @@
 # SPDX-License-Identifier: MIT                                                
-# Copyright (c) 2021 GPUFORT Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 class Acc2Omp(AccBackendBase):
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines):
-        snippet = joinedStatements
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
+        global LOG_PREFIX
+        
+        snippet = joined_statements
         try:
-           def repl(parseResult):
-                return parseResult.ompFStr(), True
-           result,_ = utils.pyparsingutils.replaceFirst(snippet,\
-                    translator.accSimpleDirective,\
+           def repl(parse_result):
+                return parse_result.omp_f_str(), True
+           result,_ = utils.pyparsingutils.replace_first(snippet,\
+                    translator.acc_simple_directive,\
                     repl)
            return result, True 
         except Exception as e:
-           print("failed: "+snippet) # TODO error handling
-           raise e
-           return "", False 
+           utils.logging.log_exception(LOG_PREFIX,"Acc2Omp.transform","failed parse directive "+str(snippet))
 
 class AccLoopKernel2Omp(AccBackendBase):
-    def transform(self,joinedLines,joinedStatements,statementsFullyCoverLines):
-        if statementsFullyCoverLines:
-            snippet = joinedLines
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
+        global LOG_PREFIX
+        
+        if statements_fully_cover_lines:
+            snippet = joined_lines
         else:
-            snippet = joinedStatements
+            snippet = joined_statements
         try:
-           parseResult = translator.loopKernel.parseString(snippet)[0]
-           return parseResult.ompFStr(snippet), True 
+           parent_tag   = self._stnode._parent.tag()
+           scope        = scoper.create_scope(index_hints,parent_tag)
+           parse_result = translator.parse_loop_kernel(snippet.split("\n"),scope)
+           return parse_result.omp_f_str(snippet), True 
         except Exception as e:
-           print("failed: "+snippet) # TODO error handling
-           raise e
-           return "", False 
+           utils.logging.log_exception(LOG_PREFIX,"AccLoopKernel2Omp.transform","failed to convert kernel "+str(snippet))
+           sys.exit(2)
 
-registerAccBackend("omp",Acc2Omp,AccLoopKernel2Omp,None)
+register_acc_backend("omp",Acc2Omp,AccLoopKernel2Omp,None)

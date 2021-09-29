@@ -23,7 +23,7 @@ by GPUFORT will in most cases require manual reviewing and fixing.
 
 ## Installation and usage
 
-Please take a look at the (slightly outdated) [user guide](https://bookish-adventure-5c5886a5.pages.github.io/).
+Please take a look at the (slightly outdated) [user guide](https://rocmsoftwareplatform.github.io/gpufort/).
 
 ## Implementation details
 
@@ -48,7 +48,7 @@ pace.
 * GPUFORT assumes syntactically and functionally correct input
 
 GPUFORT does only perform a small number of syntax checks as we assume
-that developers apply GPUFORT to code that can be correctly on CUDA devices.
+that developers apply GPUFORT to code that can be run correctly on CUDA devices.
 (We plan to add the option to prescribe a user-specified syntax checker tool.)
 
 * GPUFORT does a bad job in analyzing what code parts can be offloaded and which ones not
@@ -111,7 +111,6 @@ Until then, you have to modify your code manually to circumvent the above limita
     * Rewrite of GPUFORT Fortran runtime in (HIP) C++
   * ACC/CUF:
     * Support of derived types with allocatable, pointer members
-
-Planned:
+* Planned:
   * Add option for prescribing syntax checker (e.g. use other compiler for syntax checks.)
 

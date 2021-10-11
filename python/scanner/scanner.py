@@ -208,12 +208,13 @@ def parse_file(linemaps,index,fortran_filepath):
         nonlocal current_node
         nonlocal current_linemap
         nonlocal keep_recording
+        nonlocal index
         log_detection_("end of module/program/function/subroutine")
         assert type(current_node) in [STModule,STProgram,STProcedure], "In file {}: line {}: type is {}".format(current_file, current_statement_no, type(current_node))
         if type(current_node) is STProcedure and current_node.must_be_available_on_device():
             current_node.add_linemap(current_linemap)
             current_node._last_statement_index = current_statement_no
-            current_node.complete_init()
+            current_node.complete_init(index)
             keep_recording = False
         if not keep_recording and type(current_node) in [STProcedure,STProgram]:
             new = STEndOrReturn(current_node,current_linemap,current_statement_no)
@@ -254,13 +255,14 @@ def parse_file(linemaps,index,fortran_filepath):
         nonlocal current_statement_no
         nonlocal do_loop_ctr
         nonlocal keep_recording
+        nonlocal index
         log_detection_("end of do loop")
         do_loop_ctr -= 1
         if isinstance(current_node, STLoopKernel):
             if keep_recording and current_node._do_loop_ctr_memorised == do_loop_ctr:
                 current_node.add_linemap(current_linemap)
                 current_node._last_statement_index = current_statement_no
-                current_node.complete_init()
+                current_node.complete_init(index)
                 ascend_()
                 keep_recording = False
     def Declaration():

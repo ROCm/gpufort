@@ -104,7 +104,7 @@ class Acc2HipGccRT(AccBackendBase):
             return clause.condition()
         else:
             return ""
-    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[],handle_if=False):
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[],handle_if=False):
         f_snippet = joined_statements
         result = ""
         try:
@@ -150,14 +150,14 @@ class Acc2HipGccRT(AccBackendBase):
            return f_snippet, False 
 
 class AccLoopKernel2HipGccRT(Acc2HipGccRT):
-    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[]):
         stnode = self._stnode
         indent = stnode.first_line_indent()
         result = ""
         if stnode.is_parallel_loop_directive() or stnode.is_kernels_loop_directive():
-            partial_result, _ = Acc2HipGccRT.transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints,handle_if=False) 
+            partial_result, _ = Acc2HipGccRT.transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index,handle_if=False) 
             result = partial_result
-        partial_result, _ = STLoopKernel.transform(stnode,joined_lines,joined_statements,statements_fully_cover_lines,index_hints) 
+        partial_result, _ = STLoopKernel.transform(stnode,joined_lines,joined_statements,statements_fully_cover_lines,index) 
         result += partial_result
         # add wait call if necessary
         arg = self._handle_async(None,"")

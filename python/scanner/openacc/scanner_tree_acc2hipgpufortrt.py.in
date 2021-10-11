@@ -23,7 +23,7 @@ HIP_GPUFORT_RT_ACC_UPDATE_HOST = "{indent}call gpufort_acc_update_host({var}{asy
 # update device
 HIP_GPUFORT_RT_ACC_UPDATE_DEVICE = "{indent}call gpufort_acc_update_device({var}{asyncr})\n"
 # present
-HIP_GPUFORT_RT_ACC_PRESENT = "{indent}{dev_var} = gpufort_acc_present({var})\n"
+HIP_GPUFORT_RT_ACC_PRESENT = "{indent}{dev_var} = gpufort_acc_present({var}{copy}{asyncr})\n"
 # wait
 HIP_GPUFORT_RT_ACC_WAIT = "{indent}call gpufort_acc_wait({queue}{asyncr})\n"
 
@@ -165,7 +165,7 @@ class Acc2HipGpufortRT(AccBackendBase):
         for parse_result in translator.acc_clause_if.searchString(self._stnode.single_line_statement(),1):
             condition = parse_result[0].condition()
         return condition
-    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[],handle_if=True):
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[],handle_if=True):
         """
         :param line: An excerpt from a Fortran file, possibly multiple lines
         :type line: str
@@ -184,9 +184,10 @@ class Acc2HipGpufortRT(AccBackendBase):
         ## Enter region commands must come first
         emit_enter_region = stnode.is_enter_directive()
         emit_enter_region = emit_enter_region or stnode.is_data_directive()
-        #emit_enter_region = emit_enter_region or stnode.is_parallel_directive()
-        #emit_enter_region = emit_enter_region or stnode.is_parallel_loop_directive() 
+        emit_enter_region = emit_enter_region or stnode.is_parallel_directive()
+        emit_enter_region = emit_enter_region or stnode.is_parallel_loop_directive() 
         emit_enter_region = emit_enter_region or stnode.is_kernels_directive()
+        emit_enter_region = emit_enter_region or stnode.is_kernels_loop_directive()
         if emit_enter_region:
             result += HIP_GPUFORT_RT_ACC_ENTER_REGION.format(indent=indent)
 
@@ -211,7 +212,7 @@ class Acc2HipGpufortRT(AccBackendBase):
         ## Exit region commands must come last
         emit_exit_region = stnode.is_exit_directive()
         emit_exit_region = emit_exit_region or (stnode.is_end_directive() and stnode.find_substring("kernels") and not stnode.find_substring("loop"))
-        #emit_exit_region = emit_exit_region or (stnode.is_end_directive() and stnode.find_substring("parallel") and not stnode.find_substring("loop"))
+        emit_exit_region = emit_exit_region or (stnode.is_end_directive() and stnode.find_substring("parallel") and not stnode.find_substring("loop"))
         emit_exit_region = emit_exit_region or (stnode.is_end_directive() and stnode.find_substring("data"))
         if emit_exit_region:
             result += HIP_GPUFORT_RT_ACC_EXIT_REGION.format(indent=indent)
@@ -239,14 +240,14 @@ class Acc2HipGpufortRT(AccBackendBase):
         return result, len(result)
 
 class AccLoopKernel2HipGpufortRT(Acc2HipGpufortRT):
-    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[]):
         result = ""
         stnode = self._stnode
         indent = stnode.first_line_indent()
         if stnode.is_parallel_loop_directive() or stnode.is_kernels_loop_directive():
-            partial_result, _ = Acc2HipGpufortRT.transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints,handle_if=False) 
+            partial_result, _ = Acc2HipGpufortRT.transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index,handle_if=False) 
             result = partial_result
-        partial_result, _ = STLoopKernel.transform(stnode,joined_lines,joined_statements,statements_fully_cover_lines,index_hints) 
+        partial_result, _ = STLoopKernel.transform(stnode,joined_lines,joined_statements,statements_fully_cover_lines,index) 
         result += partial_result
         # add wait call if necessary
         queue = self._handle_async(None,"")

@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 
 class CufLoopKernel2Hip(CufBackendBase):
-    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
-        return STLoopKernel.transform(self._stnode,joined_lines,joined_statements,statements_fully_cover_lines,index_hints) 
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[]):
+        return STLoopKernel.transform(self._stnode,joined_lines,joined_statements,statements_fully_cover_lines,index) 
 
 register_cuf_backend("hip",CufLoopKernel2Hip,None)

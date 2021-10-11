@@ -100,15 +100,15 @@ class STAccDirective(STDirective):
          is_parallel_loop_directive=self.is_parallel_loop_directive()
          ).strip().replace("\n","")
     __repr__ = __str__ 
-    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[]):
         checked_dialect = check_destination_dialect(DESTINATION_DIALECT)
         return ACC_BACKENDS[checked_dialect](self).transform(\
-                joined_lines,joined_statements,statements_fully_cover_lines,index_hints)
+                joined_lines,joined_statements,statements_fully_cover_lines,index)
 class STAccLoopKernel(STAccDirective,STLoopKernel):
     def __init__(self,parent,first_linemap,first_linemap_first_statement,directive_no):
         STAccDirective.__init__(self,parent,first_linemap,first_linemap_first_statement,directive_no)
         STLoopKernel.__init__(self,parent,first_linemap,first_linemap_first_statement)
-    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[],destination_dialect=""):
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[],destination_dialect=""):
         """
         :param destination_dialect: allows to override default if this kernel
                                    should be translated via another backend.
@@ -116,4 +116,4 @@ class STAccLoopKernel(STAccDirective,STLoopKernel):
         checked_dialect = check_destination_dialect(\
             DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
         return ACC_LOOP_KERNEL_BACKENDS[checked_dialect](self).transform(\
-                joined_lines,joined_statements,statements_fully_cover_lines,index_hints)
+                joined_lines,joined_statements,statements_fully_cover_lines,index)

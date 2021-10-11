@@ -29,14 +29,14 @@ class STCufDirective(STDirective):
     def __init__(self,parent,lineno,lines,directive_no):
         STDirective.__init__(self,parent,lineno,lines,directive_no,sentinel="!$cuf")
         self._default_present_vars = []
-    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[]):
         assert False, "Currently, there are only CUF parallel directives"
 
 class STCufLoopKernel(STCufDirective,STLoopKernel):
     def __init__(self,parent,lineno,lines,directive_no):
         STCufDirective.__init__(self,parent,lineno,lines,directive_no)
         STLoopKernel.__init__(self,parent,lineno,lines)
-    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[],destination_dialect=""):
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[],destination_dialect=""):
         """
         :param destination_dialect: allows to override default if this kernel
                                    should be translated via another backend.
@@ -44,4 +44,4 @@ class STCufLoopKernel(STCufDirective,STLoopKernel):
         checked_dialect = check_destination_dialect(\
             DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
         return CUF_LOOP_KERNEL_BACKENDS[checked_dialect](self).transform(\
-          joined_lines,joined_statements,statements_fully_cover_lines,index_hints)
+          joined_lines,joined_statements,statements_fully_cover_lines,index)

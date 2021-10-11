@@ -23,7 +23,7 @@ HIP_GPUFORT_RT_ACC_UPDATE_HOST = "{indent}call gpufort_acc_update_host({var}{asy
 # update device
 HIP_GPUFORT_RT_ACC_UPDATE_DEVICE = "{indent}call gpufort_acc_update_device({var}{asyncr})\n"
 # present
-HIP_GPUFORT_RT_ACC_PRESENT = "{indent}{dev_var} = gpufort_acc_present({var}{copy}{asyncr})\n"
+HIP_GPUFORT_RT_ACC_PRESENT = "{indent}{dev_var} = gpufort_acc_present({var}{asyncr}{alloc})\n"
 # wait
 HIP_GPUFORT_RT_ACC_WAIT = "{indent}call gpufort_acc_wait({queue}{asyncr})\n"
 
@@ -48,6 +48,19 @@ def dev_var_name(var):
     result = result.replace("$$","")
     result = result.replace("$","_")
     return ACC_DEV_PREFIX + result + ACC_DEV_SUFFIX
+
+def _intrnl_add_device_vars_to_decl_list(stnode,temp_vars):
+    # introduce the new variables 
+    if len(temp_vars):
+        begin  = stnode._parent.find_last(filter=lambda child : not child._ignore_in_s2s_translation and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
+        indent = stnode.first_line_indent()
+        if begin is not None:
+            for var in temp_vars:
+                 begin.add_to_epilog("{indent}type(c_ptr) :: {name}\n".format(indent=indent,name=var))
+        else:
+            stnode.add_to_prolog("! TODO(gpufort): move declarations and use statement to appropriate place\n")
+            for var in temp_vars:
+                stnode.add_to_prolog("{indent}type(c_ptr) :: {name}\n".format(indent=indent,name=var))
 
 class Acc2HipGpufortRT(AccBackendBase):
     # clauses 
@@ -86,25 +99,8 @@ class Acc2HipGpufortRT(AccBackendBase):
                 for i,var_expr in enumerate(var_expressions):
                     deviceptr = dev_var_name(var_names[i])
                     template = MAPPING_CLAUSE_2_TEMPLATE_MAP[clause.kind()]
-                    result += template.format(indent=indent,var=var_expr,dev_var=deviceptr,asyncr=self._handle_async())
+                    result += template.format(indent=indent,var=var_expr,dev_var=deviceptr,asyncr=self._handle_async(),alloc="")
                     temp_vars.add(deviceptr)
-        return result, len(result), temp_vars
-    def _handle_default(self):
-        """
-        Emits a acc_clause_present command for every variable in the list
-        """
-        result   = ""
-        temp_vars = set()
-        template = HIP_GPUFORT_RT_ACC_PRESENT
-        indent   = self._stnode.first_line_indent()
-        for parse_result in translator.acc_clause_default.scanString(self._stnode.single_line_statement(),1):
-            value = str(parse_result[0][0]).lower()
-            #print(value)
-            if value == "present":
-                for var_expr in self._default_present_vars:
-                    deviceptr = dev_var_name(var_expr)
-                    temp_vars.add(deviceptr)
-                    result += template.format(indent=indent,var=var_expr,dev_var=deviceptr)
         return result, len(result), temp_vars
     def _handle_update(self):
         """
@@ -226,42 +222,72 @@ class Acc2HipGpufortRT(AccBackendBase):
                     condition=condition, result=result.rstrip("\n"))
        
         # introduce the new variables 
-        if len(all_temp_vars):
-            begin  = stnode._parent.find_last(filter=lambda child : not child._ignore_in_s2s_translation and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
-            indent = stnode.first_line_indent()
-            if begin is not None:
-                for var in all_temp_vars:
-                     begin.add_to_epilog("{indent}type(c_ptr) :: {name}\n".format(indent=indent,name=var))
-            else:
-                stnode.add_to_prolog("! TODO(gpufort): move declarations and use statement to appropriate place\n")
-                for var in all_temp_vars:
-                    stnode.add_to_prolog("{indent}type(c_ptr) :: {name}\n".format(indent=indent,name=var))
+        _intrnl_add_device_vars_to_decl_list(stnode,all_temp_vars)
 
         return result, len(result)
 
 class AccLoopKernel2HipGpufortRT(Acc2HipGpufortRT):
+    def _handle_default(self):
+        """
+        Emits a acc_clause_present command for every variable in the list
+        """
+        stloopkernel    = self._stnode
+        ttloopkernel    = stloopkernel.parse_result
+        unmapped_arrays = ttloopkernel.all_unmapped_arrays()
+        
+        result          = ""
+        temp_vars       = []
+        "{indent}{dev_var} = gpufort_acc_present({var}{asyncr}{alloc})\n"
+        template        = HIP_GPUFORT_RT_ACC_PRESENT
+        indent          = stloopkernel.first_line_indent()
+        default_clauses = translator.acc_clause_default.searchString(stloopkernel.single_line_statement(),1)
+        if len(default_clauses):
+            value = str(default_clauses[0][0][0]).lower()
+            #print(value)
+            if value == "present":
+                for var_expr in unmapped_arrays:
+                    deviceptr = dev_var_name(var_expr)
+                    temp_vars.append(deviceptr)
+                    result += template.format(indent=indent,var=var_expr,asyncr="",alloc="",dev_var=deviceptr)
+            elif value == "none" and len(unmapped_arrays):
+                    utils.logging.log_warning(LOG_PREFIX,"AccLoopKernel2HipGpufortRT._handle_default","'default(none)' specified but no map for the following variables found: ".format(", ".join(unmapped_arrays)))
+        else: # default strategy: present_or_copy
+            for var_expr in unmapped_arrays:
+                deviceptr = dev_var_name(var_expr)
+                if not deviceptr in temp_vars: 
+                    temp_vars.append(deviceptr)
+                    result += template.format(indent=indent,var=var_expr,asyncr="",alloc=",copy=.TRUE.",dev_var=deviceptr)
+               
+        return result, len(result), temp_vars
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[]):
         result = ""
-        stnode = self._stnode
-        indent = stnode.first_line_indent()
-        if stnode.is_parallel_loop_directive() or stnode.is_kernels_loop_directive():
-            partial_result, _ = Acc2HipGpufortRT.transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index,handle_if=False) 
-            result = partial_result
-        partial_result, _ = STLoopKernel.transform(stnode,joined_lines,joined_statements,statements_fully_cover_lines,index) 
-        result += partial_result
+        stloopkernel   = self._stnode
+        ttloopkernel   = stloopkernel.parse_result
+        arrays_in_body = ttloopkernel.arrays_in_body()
+        indent         = stloopkernel.first_line_indent()
+        if stloopkernel.is_parallel_loop_directive() or stloopkernel.is_kernels_loop_directive():
+            result, _ = Acc2HipGpufortRT.transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index,handle_if=False) 
+        partial_result, transformed, temp_vars = self._handle_default()
+        if transformed:
+            _intrnl_add_device_vars_to_decl_list(stloopkernel,temp_vars)
+            result = result.rstrip("\n") + "\n" + partial_result
+        partial_result, _ = STLoopKernel.transform(stloopkernel,joined_lines,joined_statements,statements_fully_cover_lines,index) 
+        result = result.rstrip("\n") + "\n" + partial_result
+  
+        # handle default
+        self._handle_default()
         # add wait call if necessary
         queue = self._handle_async(None,"")
         if not len(queue):
-            result += "\n" + HIP_GPUFORT_RT_ACC_WAIT.format(indent=indent,queue=queue,asyncr="")
-        #if stnode.is_parallel_loop_directive() or stnode.is_kernels_loop_directive():
-        if stnode.is_kernels_loop_directive():
-           result += "\n"+HIP_GPUFORT_RT_ACC_EXIT_REGION.format(indent=indent)
-
+            result = result.rstrip("\n") + "\n" + HIP_GPUFORT_RT_ACC_WAIT.format(indent=indent,queue=queue,asyncr="")
+        #if stloopkernel.is_parallel_loop_directive() or stloopkernel.is_kernels_loop_directive():
+        if stloopkernel.is_kernels_loop_directive() or stloopkernel.is_parallel_loop_directive():
+            result = result.rstrip("\n") + "\n" + HIP_GPUFORT_RT_ACC_EXIT_REGION.format(indent=indent)
         # wrap in ifdef if necessary
         condition = self._handle_if()
         if len(condition):
             result = "if ( {condition} ) then\n{result}\nelse\n {original}\n endif".format(\
-                    condition=condition, result=result.rstrip("\n"), original="".join(stnode._lines).rstrip("\n"))
+                    condition=condition, result=result.rstrip("\n"), original="".join(stloopkernel._lines).rstrip("\n"))
         return result, len(result)
 
 register_acc_backend("hip-gpufort-rt",Acc2HipGpufortRT,AccLoopKernel2HipGpufortRT,"gpufort_acc_runtime")

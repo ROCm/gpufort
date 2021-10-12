@@ -4,8 +4,8 @@
 HIP_GPUFORT_RT_ACC_INIT     = "{indent}call gpufort_acc_init()\n"
 HIP_GPUFORT_RT_ACC_SHUTDOWN = "{indent}call gpufort_acc_shutdown()\n"
 # regions
-HIP_GPUFORT_RT_ACC_ENTER_REGION = "{indent}call gpufort_acc_enter_region()\n"
-HIP_GPUFORT_RT_ACC_EXIT_REGION = "{indent}call gpufort_acc_exit_region()\n"
+HIP_GPUFORT_RT_ACC_ENTER_REGION = "{indent}call gpufort_acc_enter_region({unstructured})\n"
+HIP_GPUFORT_RT_ACC_EXIT_REGION = "{indent}call gpufort_acc_exit_region({unstructured})\n"
 # create
 HIP_GPUFORT_RT_ACC_CREATE = "{indent}{dev_var} = gpufort_acc_create({var})\n"
 # no_create
@@ -52,15 +52,12 @@ def dev_var_name(var):
 def _intrnl_add_device_vars_to_decl_list(stnode,temp_vars):
     # introduce the new variables 
     if len(temp_vars):
-        begin  = stnode._parent.find_last(filter=lambda child : not child._ignore_in_s2s_translation and type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
-        indent = stnode.first_line_indent()
-        if begin is not None:
-            for var in temp_vars:
-                 begin.add_to_epilog("{indent}type(c_ptr) :: {name}\n".format(indent=indent,name=var))
-        else:
-            stnode.add_to_prolog("! TODO(gpufort): move declarations and use statement to appropriate place\n")
-            for var in temp_vars:
-                stnode.add_to_prolog("{indent}type(c_ptr) :: {name}\n".format(indent=indent,name=var))
+        last_decl_list_node = stnode.g_in_decl_list()
+        indent              = last_decl_list_node.first_line_indent()
+        if last_decl_list_node is None:
+            last_decl_list_node = stnode
+        for var in temp_vars:
+            last_decl_list_node.add_to_epilog("{indent}type(c_ptr) :: {name}\n".format(indent=indent,name=var))
 
 class Acc2HipGpufortRT(AccBackendBase):
     # clauses 
@@ -179,13 +176,17 @@ class Acc2HipGpufortRT(AccBackendBase):
         
         ## Enter region commands must come first
         emit_enter_region = stnode.is_enter_directive()
+        if emit_enter_region:
+            unstructured="unstructured=.TRUE."
+        else:
+            unstructured=""
         emit_enter_region = emit_enter_region or stnode.is_data_directive()
         emit_enter_region = emit_enter_region or stnode.is_parallel_directive()
         emit_enter_region = emit_enter_region or stnode.is_parallel_loop_directive() 
         emit_enter_region = emit_enter_region or stnode.is_kernels_directive()
         emit_enter_region = emit_enter_region or stnode.is_kernels_loop_directive()
         if emit_enter_region:
-            result += HIP_GPUFORT_RT_ACC_ENTER_REGION.format(indent=indent)
+            result += HIP_GPUFORT_RT_ACC_ENTER_REGION.format(indent=indent,unstructured=unstructured)
 
         ## Other directives/clauses
         # create
@@ -207,11 +208,15 @@ class Acc2HipGpufortRT(AccBackendBase):
         
         ## Exit region commands must come last
         emit_exit_region = stnode.is_exit_directive()
+        if emit_exit_region:
+            unstructured="unstructured=.TRUE."
+        else:
+            unstructured=""
         emit_exit_region = emit_exit_region or (stnode.is_end_directive() and stnode.find_substring("kernels") and not stnode.find_substring("loop"))
         emit_exit_region = emit_exit_region or (stnode.is_end_directive() and stnode.find_substring("parallel") and not stnode.find_substring("loop"))
         emit_exit_region = emit_exit_region or (stnode.is_end_directive() and stnode.find_substring("data"))
         if emit_exit_region:
-            result += HIP_GPUFORT_RT_ACC_EXIT_REGION.format(indent=indent)
+            result += HIP_GPUFORT_RT_ACC_EXIT_REGION.format(indent=indent,unstructured=unstructured)
         if stnode.is_shutdown_directive():
             result += HIP_GPUFORT_RT_ACC_SHUTDOWN.format(indent=indent)
        
@@ -222,7 +227,7 @@ class Acc2HipGpufortRT(AccBackendBase):
                     condition=condition, result=result.rstrip("\n"))
        
         # introduce the new variables 
-        _intrnl_add_device_vars_to_decl_list(stnode,all_temp_vars)
+        _intrnl_add_device_vars_to_decl_list(stnode._parent,all_temp_vars)
 
         return result, len(result)
 
@@ -269,7 +274,7 @@ class AccLoopKernel2HipGpufortRT(Acc2HipGpufortRT):
             result, _ = Acc2HipGpufortRT.transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index,handle_if=False) 
         partial_result, transformed, temp_vars = self._handle_default()
         if transformed:
-            _intrnl_add_device_vars_to_decl_list(stloopkernel,temp_vars)
+            _intrnl_add_device_vars_to_decl_list(stloopkernel._parent,temp_vars)
             result = result.rstrip("\n") + "\n" + partial_result
         partial_result, _ = STLoopKernel.transform(stloopkernel,joined_lines,joined_statements,statements_fully_cover_lines,index) 
         result = result.rstrip("\n") + "\n" + partial_result
@@ -290,4 +295,49 @@ class AccLoopKernel2HipGpufortRT(Acc2HipGpufortRT):
                     condition=condition, result=result.rstrip("\n"), original="".join(stloopkernel._lines).rstrip("\n"))
         return result, len(result)
 
-register_acc_backend("hip-gpufort-rt",Acc2HipGpufortRT,AccLoopKernel2HipGpufortRT,"gpufort_acc_runtime")
+class Acc2HipGpufortRTPostprocess(AccPostprocessBackendBase):
+    def run(self,stree,index):
+        """:param stree: the full scanner tree"""
+        """:param staccdirectives: All acc directive tree nodes."""
+        def directive_filter(node):
+            return isinstance(node,STAccDirective) and\
+                   node.is_declare_directive()
+        fortran_constructs = stree.find_all(filter=lambda x: isinstance(node,(STProgram,STProcedure)), recursively=True)
+        for stnode in fortran_constructs:
+            ivars=[] 
+            last_decl_list_node = stnode.last_entry_in_decl_list()
+            indent              = last_decl_list_node.first_line_indent()
+            # todo find return statement or end of function
+            if type(stnode) == STProgram:
+                irecord = next((ientry for ientry in index if ientry["name"]==stnode.name),None)
+                assert irecord != None
+                ivars=irecord["variables"]
+            elif type(stnode) == STProcedure:
+                parent_tag = stnode._parent.tag()
+                irecord = scoper.search_index_for_subprogram(index,parent_tag,stnode.name)
+                ivars=irecord["variables"]
+            acc_present_calls    = ""
+            temp_vars = []
+            for ivar in ivars:
+                if ivar["declare_on_target"]=="alloc":
+                    acc_present_calls += HIP_GPUFORT_RT_ACC_PRESENT.format(\
+                        indent=indent,var=var_expr,asyncr="",alloc="create",dev_var=deviceptr)
+                    temp_vars.append(dev_var_name(ivar["name"]))
+                if ivar["declare_on_target"]=="to":
+                    acc_present_calls += HIP_GPUFORT_RT_ACC_PRESENT.format(\
+                        indent=indent,var=var_expr,asyncr="",alloc="copyin",dev_var=deviceptr)
+                    temp_vars.append(dev_var_name(ivar["name"]))
+            # first add the device variable declarations
+            _intrnl_add_device_vars_to_decl_list(stnode,temp_vars)
+            if len(epilog):
+                last_decl_list_node.add_to_epilog(HIP_GPUFORT_RT_ACC_ENTER_REGION.format(\
+                    indent=indent,unstructured="unstructured=.TRUE.")
+                last_decl_list_node.add_to_epilog(epilog)
+                for stendorreturn in stnode.return_or_end_statements():
+                    stendorreturn.add_to_prolog(HIP_GPUFORT_RT_ACC_EXIT_REGION.format(\
+                        indent=indent,unstructured="unstructured=.TRUE.")
+register_acc_backend("hip-gpufort-rt",\
+  Acc2HipGpufortRT,\
+  AccLoopKernel2HipGpufortRT,\
+  Acc2HipGpufortRTPostprocess,\
+  "gpufort_acc_runtime")

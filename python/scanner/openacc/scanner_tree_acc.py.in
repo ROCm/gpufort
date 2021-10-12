@@ -3,11 +3,24 @@
 class AccBackendBase:
     def __init__(self,stnode):
         self._stnode = stnode
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[]):
+        assert False, "not implemented"
+
+class AccPostprocessBackendBase:
+    def run(self,stree,index):
+        """:param stree: the full scanner tree"""
+        """:param staccdirectives: All acc directive tree nodes."""
+        assert False, "not implemented"
 
 ACC_BACKENDS             = {} 
 ACC_LOOP_KERNEL_BACKENDS = {} 
+ACC_POSTPROCESS_BACKENDS = {}
 
-def register_acc_backend(name,directive_generator_class,loop_kernel_generator_class,runtime_module_name):
+def register_acc_backend(name,\
+    directive_generator_class,\
+    loop_kernel_generator_class,\
+    posprocess_class,\
+    runtime_module_name):
     global SUPPORTED_DESTINATION_DIALECTS
     global RUNTIME_MODULE_NAMES
     global ACC_BACKENDS
@@ -18,6 +31,7 @@ def register_acc_backend(name,directive_generator_class,loop_kernel_generator_cl
     RUNTIME_MODULE_NAMES[name]     = runtime_module_name
     ACC_BACKENDS[name]             = directive_generator_class 
     ACC_LOOP_KERNEL_BACKENDS[name] = loop_kernel_generator_class
+    ACC_POSTPROCESS_BACKENDS[name] = postprocess_class
 
 exec(open("{0}/openacc/scanner_tree_acc2omp.py.in".format(scanner_dir)).read())
 exec(open("{0}/openacc/scanner_tree_acc2hipgpufortrt.py.in".format(scanner_dir)).read())
@@ -73,6 +87,11 @@ class STAccDirective(STDirective):
         return self.find_substring("acc parallel loop")
     def is_kernels_loop_directive(self):
         return self.find_substring("acc kernels loop")
+    def is_declare_directive(self):
+        return self.find_substring("acc declare")
+    def is_purely_declarative(self):
+        return self.is_declare_directive() or\
+               self.find_substring("acc routine")
     def __str__(self):
         return """
 {{ single_line_statement={single_line_statement},
@@ -117,3 +136,34 @@ class STAccLoopKernel(STAccDirective,STLoopKernel):
             DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
         return ACC_LOOP_KERNEL_BACKENDS[checked_dialect](self).transform(\
                 joined_lines,joined_statements,statements_fully_cover_lines,index)
+
+def postprocess_tree_acc(stree,index,destination_dialect=""):
+    """
+    Add use statements as well as handles plus their creation and destruction for certain
+    math libraries.
+    """
+    global LOG_PREFIX
+    global DESTINATION_DIALECT
+    global RUNTIME_MODULE_NAMES
+    
+    utils.logging.log_enter_function(LOG_PREFIX,"postprocess_tree_acc")
+    
+    checked_dialect = check_destination_dialect(\
+        DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
+    def directive_filter(node):
+        return isinstance(node,STAccDirective) and\
+               not node.ignore_in_s2s_translation
+    directives = stree.find_all(filter=directive_filter, recursively=True)
+    for directive in directives:
+         stnode = directive._parent.first_entry_in_decl_list()
+         # add acc use statements
+         if not stnode is None:
+             indent = stnode.first_line_indent()
+             acc_runtime_module_name = RUNTIME_MODULE_NAMES[destination_dialect]
+             if acc_runtime_module_name != None and len(acc_runtime_module_name):
+                 stnode.add_to_prolog("{0}use {1}\n{0}use iso_c_binding\n".format(indent,acc_runtime_module_name))
+        #if type(directive._parent
+    # call backend
+    ACC_POSTPROCESS_BACKENDS[checked_dialect]().run(stree,index)
+    
+    utils.logging.log_leave_function(LOG_PREFIX,"postprocess_tree_acc")

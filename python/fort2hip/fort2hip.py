@@ -633,7 +633,7 @@ def generate_hip_files(stree,index,kernels_to_convert_to_hip,translation_source_
         if not len(kernels_to_convert_to_hip):
             return False
         else: 
-            condition1 = not kernel._ignore_in_s2s_translation
+            condition1 = not kernel.ignore_in_s2s_translation
             condition2 = \
                     kernels_to_convert_to_hip[0] == "*" or\
                     kernel.min_lineno() in kernels_to_convert_to_hip or\

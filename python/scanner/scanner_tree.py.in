@@ -17,15 +17,25 @@ def flatten_list(items):
         else:
             yield x
 
-# Object representation
+def decl_list_entry_filter(stnode):
+    """:return: If the scanner tree node is member of the declaration list."""
+    return type(stnode) in [STUseStatement,STDeclaration,STPlaceHolder]
 
-# We create an object tree because we want to preserve scope.
-
-class Tagged:
+class Tagged: # TODO rename
+    def first_entry_in_decl_list(self):
+        result = self._parent.find_first(filter=decl_list_entry_filter)
+        if result == None:
+            return self
+        return result
+    def last_entry_in_decl_list(self):
+        result = self._parent.find_last(filter=decl_list_entry_filter)
+        if result == None:
+            return self
+        return result
+    def return_or_end_statements(self):
+        return self._parent.find_all(filter=lambda stnode: type(stnode) == STEndOrReturn)
     def tag(self):
-        """
-        Construct a tag that can be used to search the index.
-        """
+        """Construct a tag that can be used to search the index."""
         result = self.name.lower()
         def recursive_parent_lookup(curr):
             nonlocal result
@@ -35,6 +45,7 @@ class Tagged:
         recursive_parent_lookup(self._parent)        
         return result
 
+# scanner tree
 class STNode:
     def __init__(self,parent,first_linemap,first_statement_index=0):
         self.name                    = None
@@ -46,7 +57,7 @@ class STNode:
         self._last_statement_index   = first_statement_index # inclusive
         self._children               = []
         self._parent                 = parent
-        self._ignore_in_s2s_translation = False 
+        self.ignore_in_s2s_translation = False 
     def __get_linemap_content(self,key,first_linemap_first_elem=0,last_linemap_last_elem=-1):
         """Collects entries for the given key from all linemaps associated
         with this node."""
@@ -246,7 +257,7 @@ class STNode:
         :note: When appending an epilog, it is assumed that the modified statement is the 
         last in the linemap/line and that this statement is only modified once.
         """
-        if not self._ignore_in_s2s_translation:
+        if not self.ignore_in_s2s_translation:
             have_first_in_first_linemap    = self._first_statement_index == 0
             have_last_in_last_linemap      = self._last_statement_index  == -1 or\
                                         self._last_statement_index  == len(self._linemaps[-1]["statements"])-1

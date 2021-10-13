@@ -304,32 +304,53 @@ class Acc2HipGpufortRTPostprocess(AccPostprocessBackendBase):
                    node.is_declare_directive()
         fortran_constructs = stree.find_all(filter=lambda x: isinstance(node,(STProgram,STProcedure)), recursively=True)
         for stnode in fortran_constructs:
-            ivars=[] 
             last_decl_list_node = stnode.last_entry_in_decl_list()
+            allocates   = [] # look up STAllocate 
+            deallocates = [] # look up STDeallocate
             indent              = last_decl_list_node.first_line_indent()
             # todo find return statement or end of function
+            scope      = scoper.create_scope(index,stnode.tag())
+            scope_vars = scope["variables"]
             if type(stnode) == STProgram:
                 irecord = next((ientry for ientry in index if ientry["name"]==stnode.name),None)
-                assert irecord != None
-                ivars=irecord["variables"]
-            elif type(stnode) == STProcedure:
+                dummy_arg_names = []
+            else:
                 parent_tag = stnode._parent.tag()
                 irecord = scoper.search_index_for_subprogram(index,parent_tag,stnode.name)
-                ivars=irecord["variables"]
-            acc_present_calls    = ""
+                dummy_arg_names += irecord["dummy_args"] 
+            local_var_names = [ivar["name"] for ivar in irecord["variables"] if ivar["name"] not in dummy_arg_names]
+            #
+            acc_present_calls = ""
             temp_vars = []
-            for ivar in ivars:
-                if ivar["declare_on_target"]=="alloc":
-                    acc_present_calls += HIP_GPUFORT_RT_ACC_PRESENT.format(\
-                        indent=indent,var=var_expr,asyncr="",alloc="create",dev_var=deviceptr)
-                    temp_vars.append(dev_var_name(ivar["name"]))
-                if ivar["declare_on_target"]=="to":
-                    acc_present_calls += HIP_GPUFORT_RT_ACC_PRESENT.format(\
-                        indent=indent,var=var_expr,asyncr="",alloc="copyin",dev_var=deviceptr)
-                    temp_vars.append(dev_var_name(ivar["name"]))
+            for ivar in scope_vars:
+                is_local_var       = ivar["name"] in local_var_names
+                is_arg             = ivar["name"] in dummy_arg_names
+                is_used_module_var = not is_local_var and not is_arg
+                allocatable_or_pointer = "allocatable" in ivar["qualifiers"] or\
+                                         "pointer" in ivar["qualifiers"]
+                if is_arg or (is_local_var and not allocatable_or_pointer):
+                    # find return and end, emit 1 new (un)structured region for all
+                    if ivar["declare_on_target"]=="alloc":
+                        acc_present_calls += HIP_GPUFORT_RT_ACC_PRESENT.format(\
+                            indent=indent,var=var_expr,asyncr="",alloc="create",dev_var=deviceptr)
+                        temp_vars.append(dev_var_name(ivar["name"]))
+                    if ivar["declare_on_target"]=="to":
+                        acc_present_calls += HIP_GPUFORT_RT_ACC_PRESENT.format(\
+                            indent=indent,var=var_expr,asyncr="",alloc="copyin",dev_var=deviceptr)
+                        temp_vars.append(dev_var_name(ivar["name"]))
+                elif is_local_var and is_local_var allocatable_or_pointer:
+                    # find return and end, emit 1 new (un)structured region for all
+                    # find allocate, deallocate with var as arg and write to epilog / prolog
+                    pass
+                elif is_module_var and not is_local_var allocatable_or_pointer:
+                    # ensure it is present in implicit region 0 / static data
+                    pass
+                elif is_module_var and is_local_var allocatable_or_pointer:
+                    # find allocate, deallocate and write to epilog / prolog -> append to implicit region 0 / static data
+                    pass
             # first add the device variable declarations
             _intrnl_add_device_vars_to_decl_list(stnode,temp_vars)
-            if len(epilog):
+            if len(acc_present_calls):
                 last_decl_list_node.add_to_epilog(HIP_GPUFORT_RT_ACC_ENTER_REGION.format(\
                     indent=indent,unstructured="unstructured=.TRUE.")
                 last_decl_list_node.add_to_epilog(epilog)

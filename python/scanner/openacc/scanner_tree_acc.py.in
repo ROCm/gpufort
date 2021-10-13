@@ -19,7 +19,7 @@ ACC_POSTPROCESS_BACKENDS = {}
 def register_acc_backend(name,\
     directive_generator_class,\
     loop_kernel_generator_class,\
-    posprocess_class,\
+    postprocess_class,\
     runtime_module_name):
     global SUPPORTED_DESTINATION_DIALECTS
     global RUNTIME_MODULE_NAMES
@@ -120,9 +120,12 @@ class STAccDirective(STDirective):
          ).strip().replace("\n","")
     __repr__ = __str__ 
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[]):
-        checked_dialect = check_destination_dialect(DESTINATION_DIALECT)
-        return ACC_BACKENDS[checked_dialect](self).transform(\
-                joined_lines,joined_statements,statements_fully_cover_lines,index)
+        if self.is_purely_declarative():
+            return STNode.transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index) 
+        else:
+            checked_dialect = check_destination_dialect(DESTINATION_DIALECT)
+            return ACC_BACKENDS[checked_dialect](self).transform(\
+                    joined_lines,joined_statements,statements_fully_cover_lines,index)
 class STAccLoopKernel(STAccDirective,STLoopKernel):
     def __init__(self,parent,first_linemap,first_linemap_first_statement,directive_no):
         STAccDirective.__init__(self,parent,first_linemap,first_linemap_first_statement,directive_no)
@@ -159,7 +162,7 @@ def postprocess_tree_acc(stree,index,destination_dialect=""):
          # add acc use statements
          if not stnode is None:
              indent = stnode.first_line_indent()
-             acc_runtime_module_name = RUNTIME_MODULE_NAMES[destination_dialect]
+             acc_runtime_module_name = RUNTIME_MODULE_NAMES[checked_dialect]
              if acc_runtime_module_name != None and len(acc_runtime_module_name):
                  stnode.add_to_prolog("{0}use {1}\n{0}use iso_c_binding\n".format(indent,acc_runtime_module_name))
         #if type(directive._parent

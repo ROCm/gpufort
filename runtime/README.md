@@ -44,7 +44,14 @@ make
 
 Take a look into the `Makefile` in each folder and adapt it to your needs.
 Certain Makefile variables can be overwritten via the environment variables  
-`FC`, `HIPFORT_PATH`, `FC_FLG
+`FC`, `HIPFORT_PATH`, `FCFLAGS`, `CXX`, `CXXFLAGS`.
+
+Example:
+
+```
+cd <runtime_subfolder>
+FC=/usr/bin/gfortran HIPFORT_PATH=/opt/rocm/hipfort/install/ make clean all
+```
 
 > **NOTE:** `python3` with `jinja2` package installed is required to use the codegen target.`
 

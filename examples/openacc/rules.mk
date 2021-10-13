@@ -15,9 +15,9 @@ HIPFC ?= hipfc
 OMPFC        ?= /opt/rocm/llvm/bin/flang
 OMPFC_CFLAGS ?= $(CFLAGS) -fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx908
 
-GPUFORT_ACC_DIR ?= /home/amd/docharri/openacc-fortran-interfaces/gpufort_acc_runtime
+GPUFORT_ACC_DIR ?= $(shell gpufort --path)/runtime/gpufort_acc_runtime
 ACC_INC = -I/$(GPUFORT_ACC_DIR)/include
 ACC_LIB = -L/$(GPUFORT_ACC_DIR)/lib -lgpufort_acc        
 
-CFLAGS += $(ACC_INC) $(ACC_LIB)
+CFLAGS += $(ACC_INC) $(ACC_LIB) -lgfortran
 

@@ -174,6 +174,7 @@ def parse_command_line_arguments():
     parser.add_argument("-E","--dest-dialect",dest="destination_dialect",default=None,type=str,help="One of: {}".format(", ".join(scanner.SUPPORTED_DESTINATION_DIALECTS)))
     parser.add_argument("--gfortran_config",dest="print_gfortran_config",action="store_true",help="Print include and compile flags.")
     parser.add_argument("--cpp_config",dest="print_cpp_config",action="store_true",help="Print include and compile flags.")
+    parser.add_argument("--path",dest="print_path",action="store_true",help="Print path to the GPUFORT root directory.")
     # config options: shadow arguments that are actually taken care of by raw argument parsing
     group_config = parser.add_argument_group('Config file')
     group_config.add_argument("--print-config-defaults",dest="print_config_defaults",action="store_true",help="Print config defaults. "+\
@@ -212,6 +213,9 @@ def parse_command_line_arguments():
     args, unknown_args = parser.parse_known_args()
 
     ## Simple output commands
+    if args.print_path:
+        print(__GPUFORT_ROOT_DIR,file=sys.stdout)
+        sys.exit()
     if args.print_cpp_config:
         cpp_config  = "-D"+linemapper.LINE_GROUPING_IFDEF_MACRO
         cpp_config += " -I"+__GPUFORT_ROOT_DIR+"/include"

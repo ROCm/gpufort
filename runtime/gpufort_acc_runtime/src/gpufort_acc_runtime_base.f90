@@ -686,22 +686,24 @@ module gpufort_acc_runtime_base
     
     !> \note We can use this also for a "normal" data section 
     !> \note We can use this also for any other region that uses device data
-    subroutine gpufort_acc_enter_region(unstructured)
+    subroutine gpufort_acc_enter_region(unstructured,implicit_region)
       implicit none
       logical,optional,intent(in) :: unstructured
+      logical,optional,intent(in) :: implicit_region
       if ( .not. initialized_ ) call gpufort_acc_init()
       current_region_ = current_region_ + 1
     end subroutine
  
     !> \note We can use this also for a "normal" end data section 
     !> \note We can use this also for any other region exit that uses device data
-    subroutine gpufort_acc_exit_region(unstructured)
+    subroutine gpufort_acc_exit_region(unstructured,implicit_region)
 #ifdef EXIT_REGION_SYNCHRONIZE_DEVICE
       use hipfort
       use hipfort_check
 #endif
       implicit none
       logical,optional,intent(in) :: unstructured
+      logical,optional,intent(in) :: implicit_region
       !
       integer :: i, new_last_record_index
       !
@@ -747,7 +749,7 @@ module gpufort_acc_runtime_base
     !> decremented.
     !>
     !> \note We just return the device pointer here and do not modify the counters.
-    function gpufort_acc_present_b(hostptr,num_bytes,async,copy,copyin) result(deviceptr)
+    function gpufort_acc_present_b(hostptr,num_bytes,async,copy,copyin,create) result(deviceptr)
       use iso_fortran_env
       use iso_c_binding
       use gpufort_acc_runtime_c_bindings
@@ -758,14 +760,16 @@ module gpufort_acc_runtime_base
       integer,optional,intent(in)  :: async
       logical,optional,intent(in)  :: copy
       logical,optional,intent(in)  :: copyin
+      logical,optional,intent(in)  :: create
       !
       type(c_ptr) :: deviceptr
       !
       logical :: success,fits
       integer :: loc
       integer(c_size_t) :: offset_bytes
-      logical :: opt_copyin
       logical :: opt_copy
+      logical :: opt_copyin
+      logical :: opt_create
       !
       if ( .not. initialized_ ) ERROR STOP "gpufort_acc_present_b: runtime not initialized"
       if ( .not. c_associated(hostptr) ) then
@@ -774,14 +778,18 @@ module gpufort_acc_runtime_base
       else
         loc = find_record_(hostptr,success)
         if ( .not. success ) then 
-           opt_copyin = .FALSE.
            opt_copy   = .FALSE.
+           opt_copyin = .FALSE.
+           opt_create = .FALSE.
            if ( present(copy) )   opt_copy   = copy
            if ( present(copyin) ) opt_copyin = copyin
+           if ( present(create) ) opt_create = create
            if ( opt_copy ) then
              deviceptr = gpufort_acc_copy_b(hostptr,num_bytes,async)
            else if ( opt_copyin ) then
              deviceptr = gpufort_acc_copyin_b(hostptr,num_bytes,async)
+           else if ( opt_create ) then
+             deviceptr = gpufort_acc_create_b(hostptr,num_bytes,async)
            else
              print *, "ERROR: did not find record for hostptr:"
              CALL print_cptr(hostptr)
@@ -826,11 +834,12 @@ module gpufort_acc_runtime_base
     !> counts are zero, the device memory is deallocated.
     !>
     !> \note Only use this when entering not when exiting
-    function gpufort_acc_create_b(hostptr,num_bytes) result(deviceptr)
+    function gpufort_acc_create_b(hostptr,num_bytes,async) result(deviceptr)
       use iso_c_binding
       implicit none
       type(c_ptr),intent(in)       :: hostptr
       integer(c_size_t),intent(in) :: num_bytes
+      integer,optional,intent(in)  :: async ! ignored for now
       type(c_ptr) :: deviceptr
       !
       integer :: loc

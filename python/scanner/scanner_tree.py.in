@@ -63,7 +63,12 @@ class STNode:
         with this node."""
         result = []
         for i,linemap in enumerate(self._linemaps):
-            if i == 0: 
+            if len(self._linemaps)==1:
+                if last_linemap_last_elem == -1:
+                    result += linemap[key][first_linemap_first_elem:]
+                else:
+                    result += linemap[key][first_linemap_first_elem:last_linemap_last_elem+1]
+            elif i == 0: 
                 result += linemap[key][first_linemap_first_elem:]
             elif i == len(self._linemaps)-1:
                 if last_linemap_last_elem == -1:
@@ -152,13 +157,14 @@ class STNode:
         return result
     def find_all(self,filter=lambda child : True,recursively=False):
         result = []
-        def descend(curr):
+        def descend_(curr):
+            nonlocal result
             for child in curr._children:
                 if filter(child):
                     result.append(child) 
-                elif recursively:
-                    descend(child)
-        descend(self)       
+                if recursively:
+                    descend_(child)
+        descend_(self)       
         return result
     def find_first(self,filter=lambda child: True):
         for child in self._children:
@@ -207,7 +213,7 @@ class STNode:
             return joined_lines, False
         else:
             return joined_statements, False
-    def __modify_linemaps(self,substitution):
+    def _modify_linemaps(self,substitution):
         """
         Replaces first statement associated with node in first associated linemap by 'subst' argument.
         Replaces all other other statements in first and all other linemaps associated
@@ -260,17 +266,26 @@ class STNode:
         if not self.ignore_in_s2s_translation:
             have_first_in_first_linemap    = self._first_statement_index == 0
             have_last_in_last_linemap      = self._last_statement_index  == -1 or\
-                                        self._last_statement_index  == len(self._linemaps[-1]["statements"])-1
+                                             self._last_statement_index  == len(self._linemaps[-1]["statements"])-1
             statements_fully_cover_lines = have_first_in_first_linemap and have_last_in_last_linemap
         
             joined_lines                = "".join(self.lines())
             joined_statements           = "\n".join(self.statements())
             transformed_code, modified  = self.transform(joined_lines,joined_statements,statements_fully_cover_lines,index)
             if modified:
-                self.__modify_linemaps(transformed_code)
+                self._modify_linemaps(transformed_code)
 
 class STEndOrReturn(STNode):
-    pass
+    def transform_statements(self,index=[]):
+        prolog = self._linemaps[0]["prolog"]
+        if len(prolog):
+            joined_statements = "\n".join(self.statements())
+            indent            = joined_statements[0:len(joined_statements)-len(joined_statements.lstrip())]
+            joined_prolog     = "\n".join([indent+l.lstrip() for l in prolog]).rstrip()
+            transformed_code  = joined_prolog + "\n" + joined_statements
+            self._modify_linemaps(transformed_code)
+        self._linemaps[0]["prolog"].clear()
+             
 
 class STRoot(STNode,Tagged):
     def __init__(self):

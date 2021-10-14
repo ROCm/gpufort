@@ -243,7 +243,7 @@ module gpufort_acc_runtime
 {% set rank = '' %}
 {% endif %}
 {% set suffix = tuple[0] + "_" + dims|string %}                                                              
-    function gpufort_acc_present_{{suffix}}(hostptr,async,copy,copyin) result(deviceptr)
+    function gpufort_acc_present_{{suffix}}(hostptr,async,copy,copyin,create) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
@@ -251,10 +251,11 @@ module gpufort_acc_runtime
       integer,intent(in),optional :: async
       logical,intent(in),optional :: copy
       logical,intent(in),optional :: copyin
+      logical,intent(in),optional :: create
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8,async,copy,copyin)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8,async,copy,copyin,create)
     end function
 
     function gpufort_acc_create_{{suffix}}(hostptr) result(deviceptr)

@@ -7,17 +7,17 @@
   Moreover, a bridge to `acc_deviceptr` is provided, which
   is often not found in `openacc.f90`.
  
-  Features:
-  * Thread-safe
-  * Standard-compliant runtime API
- 
-  Limitations:
-  * This runtime does not support the `acc_get_cuda_stream` vendor-specific extension.
-    Therefore, no `hipStream` instance can be obtained from the runtime and passed to 
-    `hipfort` API calls or `GPUFORT` kernel launch routines.
-  * Examples are likely outdated 
+  * Currently only interfaces to GCC's LIBGOMP are provided.
 
-> **NOTE:** Currently only interfaces to GCC's LIBGOMP are provided.
+    Features:
+    * Thread-safe
+    * Standard-compliant runtime API
+
+    Limitations:
+    * This runtime does not support the `acc_get_cuda_stream` vendor-specific extension.
+      Therefore, no `hipStream` instance can be obtained from the runtime and passed to 
+      `hipfort` API calls or `GPUFORT` kernel launch routines.
+    * Examples are likely outdated 
 
 * This directory further contains `gpufort_acc_runtime`, a minimal non-standard-compliant runtime written completely
   in Fortran, which can be used for teaching/training or prototyping.
@@ -33,7 +33,6 @@
 * `openacc_gomp`: contains extended interfaces to GCC's LIBGOMP.
 * `gpufort_acc_runtime`: contains a minimal non-standard-compliant runtime written 
   completely in Fortran, which can be used teaching purposes
-* `openacc_hpe` ???
 
 ## Building
 

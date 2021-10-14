@@ -38,12 +38,7 @@ exec(open("{0}/openacc/scanner_tree_acc2hipgpufortrt.py.in".format(scanner_dir))
 exec(open("{0}/openacc/scanner_tree_acc2hipgccrt.py.in".format(scanner_dir)).read())
 
 class STAccDirective(STDirective):
-    """
-    This class has the functionality of a kernel if the stored lines 
-    contain a parallel or kernels directive.
-    
-    https://www.openacc.org/sites/default/files/inline-files/OpenACC.2.7.pdf)
-    """
+    """Class for handling ACC directives."""
     def __init__(self,parent,first_linemap,first_linemap_first_statement,directive_no):
         STDirective.__init__(self,parent,first_linemap,first_linemap_first_statement,directive_no,sentinel="!$acc")
         self._default_present_vars = []
@@ -63,14 +58,16 @@ class STAccDirective(STDirective):
         return self.find_substring("acc end")
     def is_data_directive(self):
         return self.find_substring("acc data")
-    def is_enter_directive(self):
+    def is_enter_data_directive(self):
         return self.find_substring("acc enter")
-    def is_exit_directive(self):
+    def is_exit_data_directive(self):
         return self.find_substring("acc exit")
     def is_init_directive(self):
         return self.find_substring("acc init")
     def is_shutdown_directive(self):
         return self.find_substring("acc shutdown")
+    def is_update_directive(self):
+        return self.find_substring("acc update")
     def is_wait_directive(self):
         return self.find_substring("acc wait")
     def is_loop_directive(self):
@@ -98,8 +95,8 @@ class STAccDirective(STDirective):
          is_init_directive={is_init_directive},
          is_shutdown_directive={is_shutdown_directive},
          is_end_directive={is_end_directive},
-         is_enter_directive={is_enter_directive},
-         is_exit_directive={is_exit_directive},
+         is_enter_data_directive={is_enter_data_directive},
+         is_exit_data_directive={is_exit_data_directive},
          is_wait_directive={is_wait_directive},
          is_loop_directive={is_loop_directive},
          is_parallel_directive={is_parallel_directive},
@@ -110,8 +107,8 @@ class STAccDirective(STDirective):
          is_init_directive=self.is_init_directive(),
          is_shutdown_directive=self.is_shutdown_directive(),
          is_end_directive=self.is_end_directive(),
-         is_enter_directive=self.is_enter_directive(),
-         is_exit_directive=self.is_exit_directive(),
+         is_enter_data_directive=self.is_enter_data_directive(),
+         is_exit_data_directive=self.is_exit_data_directive(),
          is_wait_directive=self.is_wait_directive(),
          is_loop_directive=self.is_loop_directive(),
          is_parallel_directive=self.is_parallel_directive(),

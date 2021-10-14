@@ -1,22 +1,16 @@
 include ../rules.mk
 
-TEST_SRC = vector-add.f90
-TEST_NAME = $(TEST_SRC:.f90=)
+TEST_SRC      = vector-add.f90 vector-add-procedures.f90
+TEST_NAME     = $(TEST_SRC:.f90=)
+TEST_CONV_SRC = $(TEST_SRC:.f90=.f90-gpufort.f08)
 
-.PHONY: build.hip build.omp codegen.hip codegen.omp clean
+.PHONY: clean
 
-codegen.hip:
-	gpufort -w $(TEST_SRC) -E hip-gpufort-rt --config-file options.py.in
-codegen.hip-gcc:
-	gpufort -w $(TEST_SRC) -E hip-gcc-rt --config-file options.py.in
-codegen.omp:
-	gpufort -w $(TEST_SRC) -E omp --config-file options.py.in
-build.hip: codegen.hip
-	$(HIPCC) -c $(TEST_NAME).kernels.hip.cpp
-	$(HIPFC) -c $(TEST_NAME).kernels.f08 $(CFLAGS)
-	$(HIPFC) $(TEST_NAME).hipified.f90 -o $(TEST_NAME) $(TEST_NAME).kernels.o $(TEST_NAME).kernels.hip.o $(CFLAGS) $(ACC_INC) $(ACC_LIB)
-build.omp: codegen.omp
-	$(OMPFC) -ffree-form $(OMPFC_CFLAGS) -fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx906 $(TEST_NAME).hipified.f90 -o $(TEST_NAME)
+$(TEST_NAME): %: %.f90-gpufort.f08
+	$(HIPCC) $(HIPCC_CFLAGS) -c $@-fort2hip.hip.cpp
+	$(HIPFC) $^ -o $@ $@.f90-fort2hip.hip.o $(CFLAGS)
 
+$(TEST_CONV_SRC): %-gpufort.f08: %
+	gpufort -w $^ -E hip-gpufort-rt
 clean:
-	rm -rf *.hipified.f90 *kernels.f08 *kernels.hip.cpp *.o *.mod gpufort*.h $(TEST_NAME) log/
+	rm -rf *-gpufort.* *-fort2hip.* *.o *.mod gpufort*.h $(TEST_NAME) *.gpufort_mod log/

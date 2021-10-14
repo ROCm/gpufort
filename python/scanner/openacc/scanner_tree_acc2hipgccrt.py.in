@@ -52,19 +52,19 @@ class Acc2HipGccRT(AccBackendBase):
     def _create_mappings(self,parse_result,prefix=",mappings="):
         mappings=[]
         for clause in translator.find_all(parse_result,translator.TTAccMappingClause):
-            if clause.kind() == "present":
+            if clause.kind == "present":
                 mappings += [HIP_GCC_RT_MAP_PRESENT.format(var=expr) for expr in clause.var_expressions()]
-            elif clause.kind() == "create":
+            elif clause.kind == "create":
                 mappings += [HIP_GCC_RT_MAP_CREATE.format(var=expr) for expr in clause.var_expressions()]
-            elif clause.kind() == "no_create":
+            elif clause.kind == "no_create":
                 mappings += [HIP_GCC_RT_MAP_NO_CREATE.format(var=expr) for expr in clause.var_expressions()]
-            elif clause.kind() == "delete":
+            elif clause.kind == "delete":
                 mappings += [HIP_GCC_RT_MAP_DELETE.format(var=expr) for expr in clause.var_expressions()]
-            elif clause.kind() == "copy":
+            elif clause.kind == "copy":
                 mappings += [HIP_GCC_RT_MAP_COPY.format(var=expr) for expr in clause.var_expressions()]
-            elif clause.kind() == "copyin":
+            elif clause.kind == "copyin":
                 mappings += [HIP_GCC_RT_MAP_COPYIN.format(var=expr) for expr in clause.var_expressions()]
-            elif clause.kind() == "copyout":
+            elif clause.kind == "copyout":
                 mappings += [HIP_GCC_RT_MAP_COPYOUT.format(var=expr) for expr in clause.var_expressions()]
         if len(mappings):
             return prefix+"["+",".join(mappings)+"]"

@@ -4,8 +4,8 @@
 HIP_GPUFORT_RT_ACC_INIT     = "{indent}call gpufort_acc_init()\n"
 HIP_GPUFORT_RT_ACC_SHUTDOWN = "{indent}call gpufort_acc_shutdown()\n"
 # regions
-HIP_GPUFORT_RT_ACC_ENTER_REGION = "{indent}call gpufort_acc_enter_region({unstructured})\n"
-HIP_GPUFORT_RT_ACC_EXIT_REGION = "{indent}call gpufort_acc_exit_region({unstructured})\n"
+HIP_GPUFORT_RT_ACC_ENTER_REGION = "{indent}call gpufort_acc_enter_region({region_kind})\n"
+HIP_GPUFORT_RT_ACC_EXIT_REGION = "{indent}call gpufort_acc_exit_region({region_kind})\n"
 # create
 HIP_GPUFORT_RT_ACC_CREATE = "{indent}{dev_var} = gpufort_acc_create({var})\n"
 # no_create
@@ -18,10 +18,8 @@ HIP_GPUFORT_RT_ACC_COPYIN = "{indent}{dev_var} = gpufort_acc_copyin({var}{asyncr
 HIP_GPUFORT_RT_ACC_COPY = "{indent}{dev_var} = gpufort_acc_copy({var}{asyncr})\n"
 # copyout
 HIP_GPUFORT_RT_ACC_COPYOUT = "{indent}{dev_var} = gpufort_acc_copyout({var}{asyncr})\n"
-# update host
-HIP_GPUFORT_RT_ACC_UPDATE_HOST = "{indent}call gpufort_acc_update_host({var}{asyncr})\n"
-# update device
-HIP_GPUFORT_RT_ACC_UPDATE_DEVICE = "{indent}call gpufort_acc_update_device({var}{asyncr})\n"
+# update
+HIP_GPUFORT_RT_ACC_UPDATE = "{indent}call gpufort_acc_update_{kind}({var}{asyncr})\n"
 # present
 HIP_GPUFORT_RT_ACC_PRESENT = "{indent}{dev_var} = gpufort_acc_present({var}{asyncr}{alloc})\n"
 # wait
@@ -90,41 +88,30 @@ class Acc2HipGpufortRT(AccBackendBase):
         #
         for parse_result in translator.acc_mapping_clause.scanString(self._stnode.single_line_statement()):
             clause         = parse_result[0][0]
-            if clause.kind() in MAPPING_CLAUSE_2_TEMPLATE_MAP:
+            if clause.kind in MAPPING_CLAUSE_2_TEMPLATE_MAP:
                 var_names       = clause.var_names()
                 var_expressions = clause.var_expressions()
                 for i,var_expr in enumerate(var_expressions):
                     deviceptr = dev_var_name(var_names[i])
-                    template = MAPPING_CLAUSE_2_TEMPLATE_MAP[clause.kind()]
+                    template = MAPPING_CLAUSE_2_TEMPLATE_MAP[clause.kind]
                     result += template.format(indent=indent,var=var_expr,dev_var=deviceptr,asyncr=self._handle_async(),alloc="")
                     temp_vars.add(deviceptr)
         return result, len(result), temp_vars
     def _handle_update(self):
         """
-        Emits a acc_clause_copy command for every variable in the list
+        Emits a acc_clause_update command for every variable in the list
         """
         result = ""
-        temp_vars = set()
         indent = self._stnode.first_line_indent()
         # update host
-        #for parse_result in translator.acc_clause_update.scanString(self.single_line_statement()):
-        #    #print(parse_result[0][0])
-        #    #print(parse_result[0][1])
-        #    asyncr=self._handle_async(parse_result[0][1])
-        #    #print(asyncr)
-        #    for dest in parse_result[0][0]:
-        #        #print(dest)
-        #        template = HIP_GPUFORT_RT_ACC_UPDATE_HOST
-        #        if dest[0]: # -> device
-        #           template = HIP_GPUFORT_RT_ACC_UPDATE_DEVICE
-        #        #print(dest[0])
-        #        #print(dest[1])
-        #        for rvalue in dest[1]:
-        #            #print(rvalue)
-        #            var_expr = rvalue.f_str()
-        #            deviceptr = dev_var_name(var_expr)
-        #            result += template.format(indent=indent,var=var_expr,dev_var=deviceptr,asyncr=asyncr)
-        return result, len(result), temp_vars
+        for parse_result in translator.acc_mapping_clause.scanString(self._stnode.single_line_statement()):
+            clause = parse_result[0][0]
+            if clause.kind in ["self","host","device"]:
+                clause_kind = "host" if clause.kind=="self" else clause.kind
+                var_expressions = clause.var_expressions()
+                for i,var_expr in enumerate(var_expressions):
+                    result += HIP_GPUFORT_RT_ACC_UPDATE.format(indent=indent,var=var_expr,asyncr=self._handle_async(),kind=clause_kind)
+        return result, len(result)
     def _handle_wait(self):
         """
         Emits a acc_clause_wait command for every variable in the list
@@ -173,52 +160,49 @@ class Acc2HipGpufortRT(AccBackendBase):
         indent = stnode.first_line_indent()
         if stnode.is_init_directive():
             result += HIP_GPUFORT_RT_ACC_INIT.format(indent=indent)
-        
-        ## Enter region commands must come first
-        emit_enter_region = stnode.is_enter_directive()
-        if emit_enter_region:
-            unstructured="unstructured=.TRUE."
-        else:
-            unstructured=""
-        emit_enter_region = emit_enter_region or stnode.is_data_directive()
-        emit_enter_region = emit_enter_region or stnode.is_parallel_directive()
-        emit_enter_region = emit_enter_region or stnode.is_parallel_loop_directive() 
-        emit_enter_region = emit_enter_region or stnode.is_kernels_directive()
-        emit_enter_region = emit_enter_region or stnode.is_kernels_loop_directive()
-        if emit_enter_region:
-            result += HIP_GPUFORT_RT_ACC_ENTER_REGION.format(indent=indent,unstructured=unstructured)
-
-        ## Other directives/clauses
-        # create
-        partial_result, transformed, temp_vars = self._handle_mapping_clauses()
-        if transformed:
-            result += partial_result
-            all_temp_vars.update(temp_vars)
-        
-        # update directive
-        partial_result, transformed, temp_vars = self._handle_update()
-        if transformed:
-            result += partial_result
-            all_temp_vars.update(temp_vars)
-        
-        ## wait
-        partial_result, transformed, _ = self._handle_wait()
-        if transformed:
-            result += partial_result
-        
-        ## Exit region commands must come last
-        emit_exit_region = stnode.is_exit_directive()
-        if emit_exit_region:
-            unstructured="unstructured=.TRUE."
-        else:
-            unstructured=""
-        emit_exit_region = emit_exit_region or (stnode.is_end_directive() and stnode.find_substring("kernels") and not stnode.find_substring("loop"))
-        emit_exit_region = emit_exit_region or (stnode.is_end_directive() and stnode.find_substring("parallel") and not stnode.find_substring("loop"))
-        emit_exit_region = emit_exit_region or (stnode.is_end_directive() and stnode.find_substring("data"))
-        if emit_exit_region:
-            result += HIP_GPUFORT_RT_ACC_EXIT_REGION.format(indent=indent,unstructured=unstructured)
-        if stnode.is_shutdown_directive():
+        elif stnode.is_update_directive():
+            partial_result, transformed = self._handle_update()
+            if transformed:
+                result += partial_result
+        elif stnode.is_shutdown_directive():
             result += HIP_GPUFORT_RT_ACC_SHUTDOWN.format(indent=indent)
+        else: 
+            ## Enter region commands must come first
+            emit_enter_region = stnode.is_enter_data_directive()
+            if emit_enter_region:
+                region_kind="region_kind=.TRUE."
+            else:
+                region_kind=""
+            emit_enter_region = emit_enter_region or stnode.is_data_directive()
+            emit_enter_region = emit_enter_region or stnode.is_parallel_directive()
+            emit_enter_region = emit_enter_region or stnode.is_parallel_loop_directive() 
+            emit_enter_region = emit_enter_region or stnode.is_kernels_directive()
+            emit_enter_region = emit_enter_region or stnode.is_kernels_loop_directive()
+            if emit_enter_region:
+                result += HIP_GPUFORT_RT_ACC_ENTER_REGION.format(indent=indent,region_kind=region_kind)
+
+            ## Other directives/clauses
+            partial_result, transformed, temp_vars = self._handle_mapping_clauses()
+            if transformed:
+                result += partial_result
+                all_temp_vars.update(temp_vars)
+            
+            ## wait
+            partial_result, transformed, _ = self._handle_wait()
+            if transformed:
+                result += partial_result
+            
+            ## Exit region commands must come last
+            emit_exit_region = stnode.is_exit_data_directive()
+            if emit_exit_region:
+                region_kind="region_kind=.TRUE."
+            else:
+                region_kind=""
+            emit_exit_region = emit_exit_region or (stnode.is_end_directive() and stnode.find_substring("kernels") and not stnode.find_substring("loop"))
+            emit_exit_region = emit_exit_region or (stnode.is_end_directive() and stnode.find_substring("parallel") and not stnode.find_substring("loop"))
+            emit_exit_region = emit_exit_region or (stnode.is_end_directive() and stnode.find_substring("data"))
+            if emit_exit_region:
+                result += HIP_GPUFORT_RT_ACC_EXIT_REGION.format(indent=indent,region_kind=region_kind)
        
         # _handle if 
         condition = self._handle_if()
@@ -287,7 +271,7 @@ class AccLoopKernel2HipGpufortRT(Acc2HipGpufortRT):
             result = result.rstrip("\n") + "\n" + HIP_GPUFORT_RT_ACC_WAIT.format(indent=indent,queue=queue,asyncr="")
         #if stloopkernel.is_parallel_loop_directive() or stloopkernel.is_kernels_loop_directive():
         if stloopkernel.is_kernels_loop_directive() or stloopkernel.is_parallel_loop_directive():
-            result = result.rstrip("\n") + "\n" + HIP_GPUFORT_RT_ACC_EXIT_REGION.format(indent=indent,unstructured="")
+            result = result.rstrip("\n") + "\n" + HIP_GPUFORT_RT_ACC_EXIT_REGION.format(indent=indent,region_kind="")
         # wrap in ifdef if necessary
         condition = self._handle_if()
         if len(condition):
@@ -351,11 +335,11 @@ class Acc2HipGpufortRTPostprocess(AccPostprocessBackendBase):
             _intrnl_add_device_vars_to_decl_list(stnode,temp_vars)
             if len(acc_present_calls):
                 last_decl_list_node.add_to_epilog(HIP_GPUFORT_RT_ACC_ENTER_REGION.format(\
-                    indent=indent,unstructured="unstructured=.TRUE."))
+                    indent=indent,region_kind="region_kind=.TRUE."))
                 last_decl_list_node.add_to_epilog(acc_present_calls)
                 for stendorreturn in stnode.return_or_end_statements():
                     stendorreturn.add_to_prolog(HIP_GPUFORT_RT_ACC_EXIT_REGION.format(\
-                        indent=indent,unstructured="unstructured=.TRUE."))
+                        indent=indent,region_kind="region_kind=.TRUE."))
 register_acc_backend("hip-gpufort-rt",\
   Acc2HipGpufortRT,\
   AccLoopKernel2HipGpufortRT,\

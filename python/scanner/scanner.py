@@ -205,7 +205,6 @@ def parse_file(linemaps,index,fortran_filepath):
         if not keep_recording and type(current_node) in [STProcedure,STProgram]:
             new = STEndOrReturn(current_node,current_linemap,current_statement_no)
             append_if_not_recording_(new)
-        ascend_()
     def in_kernels_acc_region_and_not_recording():
         nonlocal current_node
         nonlocal keep_recording

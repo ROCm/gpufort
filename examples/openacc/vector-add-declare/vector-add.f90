@@ -22,7 +22,7 @@ program main
     y(i) = x(i) + y(i)
   end do
  
-  !$acc update host(x,y)
+  !$acc update host(y)
  
   do i = 1, N
     if ( y_exact(i) .ne.&

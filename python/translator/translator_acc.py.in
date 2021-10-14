@@ -41,10 +41,8 @@ class TTAccClauseSelf(TTNode):
         return make_f_str(self._condition)
 class TTAccMappingClause(TTNode):
     def _assign_fields(self,tokens):
-        self._kind    = tokens[0]
+        self.kind      = tokens[0]
         self._var_list = tokens[1].asList()
-    def kind(self):
-        return self._kind
     def var_names(self,converter=make_f_str):
         return [ var.var_name(converter) for var in self._var_list ]
     def var_expressions(self,converter=make_f_str):
@@ -102,7 +100,7 @@ class TTAccDirectiveBase(TTNode):
         result = []
         for clause in self._clauses:
             if type(clause) == TTAccMappingClause and\
-                    clause.kind() in clause_kinds:
+                    clause.kind in clause_kinds:
                 result += clause.var_expressions()
         return result
     def _format(self,f_snippet):

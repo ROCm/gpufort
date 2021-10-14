@@ -33,7 +33,7 @@ class Tagged: # TODO rename
             return self
         return result
     def return_or_end_statements(self):
-        return self._parent.find_all(filter=lambda stnode: type(stnode) == STEndOrReturn)
+        return self.find_all(filter=lambda stnode: type(stnode) == STEndOrReturn)
     def tag(self):
         """Construct a tag that can be used to search the index."""
         result = self.name.lower()

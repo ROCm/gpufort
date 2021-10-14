@@ -11,7 +11,7 @@ build:
 	make -C src/ clean
 
 codegen:
-	cd codegen && python3 ./accRuntimeModel.py
+	cd codegen && python3 ./model.py
 	cp codegen/gpufort_acc_runtime.f90 src/gpufort_acc_runtime.f90
 
 all: | codegen build

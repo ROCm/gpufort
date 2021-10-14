@@ -1,18 +1,29 @@
 #!/usr/bin/env python3
-##
-# @section DESCRIPTION
-#
-# Generates an interface model for the gpufort acc runtime,
-# which is based on hipfort's Fortran interfaces for HIP.
-#
+import os
+import pprint
 
-from abstractModelBaseClass import AbstractModelBaseClass
+import jinja2
 
+class BaseModel():
+    def __init__(self,template):
+        self._template = template
+    def generate_code(self,context={}):
+        LOADER = jinja2.FileSystemLoader(os.path.realpath(os.path.dirname(__file__)))
+        ENV    = jinja2.Environment(loader=LOADER, trim_blocks=True, lstrip_blocks=True, undefined=jinja2.StrictUndefined)
 
-class Model(AbstractModelBaseClass):
+        template = ENV.get_template(self._template)
+        try:
+            return template.render(context)
+        except Exception as e:
+            print("ERROR: could not render template '%s'" % self._template, file=sys.stderr)
+            raise e
+    def generate_file(self,output_file_path,context={}):
+        with open(output_file_path, "w") as output:
+            output.write(self.generate_code(context))
 
-    def generateCode(self,outputFilePath):
-        return self.render("templates/openacc_gomp.f-template", outputFilePath) #return path to generated file
+class Model(BaseModel):
+    def __init__(self):
+        BaseModel.__init__(self,"templates/openacc_gomp.template.f")
 
 if __name__ == "__main__":
     maxDims = 7
@@ -40,5 +51,5 @@ if __name__ == "__main__":
             "datatypes"  : datatypes,
             "dimensions" : dimensions }
     
-    model = Model(context)
-    model.generateCode("openacc_gomp.f90")
+    model = Model()
+    model.generate_file("openacc_gomp.f90",context)

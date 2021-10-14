@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-##
-# @section DESCRIPTION
-#
-# Generates an interface model for the gpufort acc runtime,
-# which is based on hipfort's Fortran interfaces for HIP.
-#
-
 import os
 import pprint
 

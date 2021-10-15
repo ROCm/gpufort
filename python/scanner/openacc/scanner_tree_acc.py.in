@@ -137,6 +137,24 @@ class STAccLoopKernel(STAccDirective,STLoopKernel):
         return ACC_LOOP_KERNEL_BACKENDS[checked_dialect](self).transform(\
                 joined_lines,joined_statements,statements_fully_cover_lines,index)
 
+def handle_allocate_acc(stallocate,joined_statements):
+    epilog = ""
+    indent = stallocate.first_line_indent() 
+        checked_dialect = check_destination_dialect(\
+            DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
+    if len(epilog):
+        return joined_statements.rstrip("\n")+"\n"+epilog, True
+    else:
+        return joined_statements, False
+
+def handle_deallocate_acc(stdeallocate,joined_statements):
+    prolog = ""
+    indent = stdeallocate.first_line_indent() 
+    if len(prolog):
+        return prolog.rstrip("\n") + "\n" + joined_statements.rstrip("\n"), True
+    else:
+        return joined_statements, False
+
 def postprocess_tree_acc(stree,index,destination_dialect=""):
     """
     Add use statements as well as handles plus their creation and destruction for certain

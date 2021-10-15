@@ -415,7 +415,3 @@ def search_index_for_subprogram(index,parent_tag,subprogram_name):
     result =  _intrnl_search_index_for_type_or_subprogram(index,parent_tag,subprogram_name,"subprograms",EMPTY_SUBPROGRAM)
     utils.logging.log_leave_function(LOG_PREFIX,"search_index_for_subprogram")
     return result
-            
-def index_variable_is_on_device(ivar):
-    return "device" in ivar["qualifiers"] or\
-           ivar["declare_on_target"] in ["alloc","to","from","tofrom"]

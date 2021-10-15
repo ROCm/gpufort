@@ -45,35 +45,6 @@ def check_destination_dialect(destination_dialect):
         utils.logging.log_error(LOG_PREFIX,"check_destination_dialect",msg)
         sys.exit(SCANNER_ERROR_CODE)
 
-def _intrnl_postprocess_cuf(stree):
-    """
-    Add use statements as well as handles plus their creation and destruction for certain
-    math libraries.
-    """
-    global LOG_PREFIX
-    global CUBLAS_VERSION 
-    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_postprocess_cuf")
-    # cublas_v1 detection
-    if CUBLAS_VERSION == 1:
-        def has_cublas_call_(child):
-            return type(child) is STCudaLibCall and child.has_cublas()
-        cuf_cublas_calls = stree.find_all(filter=has_cublas_call_, recursively=True)
-        #print(cuf_cublas_calls)
-        for call in cuf_cublas_calls:
-            begin = call._parent.find_last(filter=lambda child : type(child) in [STUseStatement,STDeclaration])
-            indent = self.first_line_indent()
-            begin.add_to_epilog("{0}type(c_ptr) :: hipblasHandle = c_null_ptr\n".format(indent))
-            #print(begin._linemaps)       
- 
-            local_cublas_calls = call._parent.find_all(filter=has_cublas_call, recursively=False)
-            first = local_cublas_calls[0]
-            indent = self.first_line_indent()
-            first.add_to_prolog("{0}hipblasCreate(hipblasHandle)\n".format(indent))
-            last = local_cublas_calls[-1]
-            indent = self.first_line_indent()
-            last.add_to_epilog("{0}hipblasDestroy(hipblasHandle)\n".format(indent))
-    utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_postprocess_cuf")
-
 # API
 
 # Pyparsing actions that create scanner tree (ST)
@@ -583,12 +554,6 @@ def postprocess(stree,index,hip_module_suffix):
     """
     utils.logging.log_enter_function(LOG_PREFIX,"postprocess")
     if "hip" in DESTINATION_DIALECT or len(KERNELS_TO_CONVERT_TO_HIP):
-        # todo:
-        # for mod/prog in stree:
-        #   mod_name <- mod/prog.name
-        #   for kernels in body:
-        #
-        
         # insert use statements at appropriate point
         def is_accelerated(child):
             return isinstance(child,STLoopKernel) or\
@@ -607,7 +572,7 @@ def postprocess(stree,index,hip_module_suffix):
                     stnode.add_to_prolog("{}use {}{}\n".format(indent,module_name,hip_module_suffix))
    
     if "cuf" in SOURCE_DIALECTS:
-         _intrnl_postprocess_cuf(stree)
+         postprocess_cuf(stree)
     if "acc" in SOURCE_DIALECTS:
          postprocess_tree_acc(stree,index)
     utils.logging.log_leave_function(LOG_PREFIX,"postprocess")

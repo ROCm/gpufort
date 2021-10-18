@@ -55,7 +55,8 @@ def _intrnl_add_device_vars_to_decl_list(stnode,temp_vars):
         if last_decl_list_node is None:
             last_decl_list_node = stnode
         for var in temp_vars:
-            last_decl_list_node.add_to_epilog("{indent}type(c_ptr) :: {name}\n".format(indent=indent,name=var))
+            last_decl_list_node.add_to_epilog(\
+                "{indent}type(c_ptr) :: {name}\n".format(indent=indent,name=var),prepend=True)
 
 class Acc2HipGpufortRT(AccBackendBase):
     # clauses 
@@ -285,8 +286,10 @@ class Acc2HipGpufortRTPostprocess(AccPostprocessBackendBase):
            :param staccdirectives: All acc directive tree nodes."""
         utils.logging.log_enter_function(LOG_PREFIX,"Acc2HipGpufortRTPostprocess.run")
         
-        # TODO check if there is any acc used in the 
-        # construct at all
+        # ~~TODO check if there is any acc used in the 
+        # construct at all~~
+        # TODO handle directly via directives; only variables occuring
+        # in directives need to be available on device
         fortran_constructs = stree.find_all(\
                 lambda node: type(node) in [STProgram,STProcedure],
                 recursively=True)
@@ -298,14 +301,7 @@ class Acc2HipGpufortRTPostprocess(AccPostprocessBackendBase):
             # todo find return statement or end of function
             scope      = scoper.create_scope(index,stnode.tag())
             scope_vars = scope["variables"]
-            if type(stnode) == STProgram:
-                irecord = next((ientry for ientry in index if ientry["name"]==stnode.name),None)
-                dummy_arg_names = []
-            else:
-                parent_tag = stnode._parent.tag()
-                irecord, _ = scoper.search_index_for_subprogram(index,parent_tag,stnode.name)
-                dummy_arg_names = irecord["dummy_args"] 
-            local_var_names = [ivar["name"] for ivar in irecord["variables"] if ivar["name"] not in dummy_arg_names]
+            local_var_names, dummy_arg_names = stnode.local_and_dummy_variable_names(index)
             # TODO also process type members
             acc_present_calls = ""
             temp_vars = []
@@ -323,9 +319,13 @@ class Acc2HipGpufortRTPostprocess(AccPostprocessBackendBase):
                         acc_present_calls += HIP_GPUFORT_RT_ACC_PRESENT.format(\
                             indent=indent,var=host_var,asyncr="",alloc=",create=.TRUE.",dev_var=dev_var)
                         temp_vars.append(dev_var)
-                    if ivar["declare_on_target"]=="to":
+                    elif ivar["declare_on_target"]=="to":
                         acc_present_calls += HIP_GPUFORT_RT_ACC_PRESENT.format(\
                             indent=indent,var=host_var,asyncr="",alloc=",copyin=.TRUE.",dev_var=dev_var)
+                        temp_vars.append(dev_var)
+                    elif ivar["declare_on_target"]=="tofrom":
+                        acc_present_calls += HIP_GPUFORT_RT_ACC_PRESENT.format(\
+                            indent=indent,var=host_var,asyncr="",alloc=",copy=.TRUE.",dev_var=dev_var)
                         temp_vars.append(dev_var)
                 elif (is_arg or is_local_var) and is_allocatable_or_pointer:
                     # find return and end, emit 1 new (un)structured region for all
@@ -337,7 +337,6 @@ class Acc2HipGpufortRTPostprocess(AccPostprocessBackendBase):
                 elif is_used_module_var and is_allocatable_or_pointer:
                     # find allocate, deallocate and write to epilog / prolog -> append to implicit region 0 / static data
                     pass
-            # first add the device variable declarations
             _intrnl_add_device_vars_to_decl_list(stnode,temp_vars)
             if len(acc_present_calls):
                 last_decl_list_node.add_to_epilog(HIP_GPUFORT_RT_ACC_ENTER_REGION.format(\
@@ -348,6 +347,62 @@ class Acc2HipGpufortRTPostprocess(AccPostprocessBackendBase):
                         indent=indent,region_kind="implicit_region=.TRUE."))
         
         utils.logging.log_leave_function(LOG_PREFIX,"Acc2HipGpufortRTPostprocess.run")
+
+def AllocateHipGpufortRT(stallocate,index):
+   varnames    = stallocate.variable_names
+   stcontainer = stallocate._parent
+   parent_tag  = stcontainer.tag()
+   scope       = scoper.create_scope(index,parent_tag)
+   scope_vars  = scope["variables"]
+   last_decl_list_node = stcontainer.last_entry_in_decl_list()
+   indent              = last_decl_list_node.first_line_indent()
+   local_var_names, dummy_arg_names = stcontainer.local_and_dummy_variable_names(index)
+   # if is declared var and allocatable/pointer
+   # add temp vars
+   acc_present_calls = "" 
+   for var in stallocate.variable_names:
+       ivar,discovered = scoper.search_index_for_variable(index,parent_tag,var)
+       if discovered:
+           host_var           = ivar["name"]
+           dev_var            = dev_var_name(host_var)
+           is_local_var       = host_var in local_var_names
+           is_arg             = host_var in dummy_arg_names
+           is_used_module_var = not is_local_var and not is_arg
+           is_allocatable_or_pointer = "allocatable" in ivar["qualifiers"] or\
+                                "pointer" in ivar["qualifiers"]
+           assert is_allocatable_or_pointer
+           # find return and end, emit 1 new implicit region for all
+           global_var = ",global=.TRUE." if is_used_module_var else ""
+           if ivar["declare_on_target"]=="alloc":
+               acc_present_calls += HIP_GPUFORT_RT_ACC_PRESENT.format(\
+                   indent=indent,var=host_var,asyncr="",alloc=global_var+",create=.TRUE.",dev_var=dev_var)
+               temp_vars.append(dev_var)
+           elif ivar["declare_on_target"]=="to":
+               acc_present_calls += HIP_GPUFORT_RT_ACC_PRESENT.format(\
+                   indent=indent,var=host_var,asyncr="",alloc=global_var+",copyin=.TRUE.",dev_var=dev_var)
+               temp_vars.append(dev_var)
+           elif ivar["declare_on_target"]=="tofrom":
+               acc_present_calls += HIP_GPUFORT_RT_ACC_PRESENT.format(\
+                   indent=indent,var=host_var,asyncr="",alloc=global_var+",copy=.TRUE.",dev_var=dev_var)
+                        temp_vars.append(dev_var)
+           host_var           = ivar["name"]
+           dev_var            = dev_var_name(host_var)
+           is_local_var       = host_var in local_var_names
+           is_arg             = host_var in dummy_arg_names
+           is_used_module_var = not is_local_var and not is_arg
+           is_allocatable_or_pointer = "allocatable" in ivar["qualifiers"] or\
+                                "pointer" in ivar["qualifiers"]
+           acc_present_calls += HIP_GPUFORT_RT_ACC_PRESENT.format(\
+             indent=indent,var=host_var,asyncr="",alloc=",create=.TRUE.",dev_var=dev_var)
+
+def DeallocateHipGpufortRT(stdeallocate,index):
+   varnames = stdeallocate.variable_names
+   # if is declared var and allocatable/pointer
+   # add temp vars
+   stendorreturn.add_to_prolog(HIP_GPUFORT_RT_ACC_EXIT_REGION.format(\
+       indent=indent,region_kind="implicit_region=.TRUE."))
+
+       
 
 register_acc_backend("hip-gpufort-rt",\
   Acc2HipGpufortRT,\

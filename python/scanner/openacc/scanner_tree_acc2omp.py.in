@@ -32,4 +32,4 @@ class AccLoopKernel2Omp(AccBackendBase):
            utils.logging.log_exception(LOG_PREFIX,"AccLoopKernel2Omp.transform","failed to convert kernel "+str(snippet))
            sys.exit(2)
 
-register_acc_backend("omp",Acc2Omp,AccLoopKernel2Omp,None,None)
+register_acc_backend("omp",Acc2Omp,AccLoopKernel2Omp,AccPostprocessBackendBase,None)

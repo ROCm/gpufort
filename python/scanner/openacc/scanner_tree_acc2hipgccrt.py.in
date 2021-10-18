@@ -175,4 +175,4 @@ class AccLoopKernel2HipGccRT(Acc2HipGccRT):
               condition=condition,result=result.rstrip("\n"),original="".join(stnode._lines).rstrip("\n"))
         return result, len(result)
 
-register_acc_backend("hip-gcc-rt",Acc2HipGccRT,AccLoopKernel2HipGccRT,None,"openacc_gomp")
+register_acc_backend("hip-gcc-rt",Acc2HipGccRT,AccLoopKernel2HipGccRT,AccPostprocessBackendBase,"openacc_gomp")

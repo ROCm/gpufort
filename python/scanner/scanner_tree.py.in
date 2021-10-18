@@ -17,34 +17,6 @@ def flatten_list(items):
         else:
             yield x
 
-def decl_list_entry_filter(stnode):
-    """:return: If the scanner tree node is member of the declaration list."""
-    return type(stnode) in [STUseStatement,STDeclaration,STPlaceHolder]
-
-class Tagged: # TODO rename
-    def first_entry_in_decl_list(self):
-        result = self.find_first(filter=decl_list_entry_filter)
-        if result == None:
-            return self
-        return result
-    def last_entry_in_decl_list(self):
-        result = self.find_last(filter=decl_list_entry_filter)
-        if result == None:
-            return self
-        return result
-    def return_or_end_statements(self):
-        return self.find_all(filter=lambda stnode: type(stnode) == STEndOrReturn)
-    def tag(self):
-        """Construct a tag that can be used to search the index."""
-        result = self.name.lower()
-        def recursive_parent_lookup(curr):
-            nonlocal result
-            if type(curr) != STRoot:
-                result = curr.name.lower() + ":" + result
-                recursive_parent_lookup(curr._parent)
-        recursive_parent_lookup(self._parent)        
-        return result
-
 # scanner tree
 class STNode:
     def __init__(self,parent,first_linemap,first_statement_index=0):
@@ -194,14 +166,20 @@ class STNode:
         for tokens,start,end in expression.scanString(text):
              result.append(text[start:end])
         return result
-    def add_to_prolog(self,line):
+    def add_to_prolog(self,line,prepend=False):
         """Add some prolog lines to the first linemap."""
         if not line in self._linemaps[0]["prolog"]:
-            self._linemaps[0]["prolog"].append(line)
-    def add_to_epilog(self,line):
+            if prepend:
+                self._linemaps[0]["prolog"].insert(0,line)
+            else:
+                self._linemaps[0]["prolog"].append(line)
+    def add_to_epilog(self,line,prepend=False):
         """Add some epilog lines to the first linemap."""
         if not line in self._linemaps[-1]["epilog"]:
-            self._linemaps[-1]["epilog"].append(line)
+            if prepend:
+                self._linemaps[-1]["epilog"].insert(0,line)
+            else: 
+                self._linemaps[-1]["epilog"].append(line)
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[]):
         """Transforms statements associated with underlying linemaps (hook)
         :param line: An excerpt from a Fortran file, possibly multiple lines
@@ -275,6 +253,48 @@ class STNode:
             if modified:
                 self._modify_linemaps(transformed_code)
 
+def decl_list_entry_filter(stnode):
+    """:return: If the scanner tree node is member of the declaration list."""
+    return type(stnode) in [STUseStatement,STDeclaration,STPlaceHolder]
+
+class STContainerBase(STNode): 
+    def first_entry_in_decl_list(self):
+        result = self.find_first(filter=decl_list_entry_filter)
+        if result == None:
+            return self
+        return result
+    def last_entry_in_decl_list(self):
+        result = self.find_last(filter=decl_list_entry_filter)
+        if result == None:
+            return self
+        return result
+    def tag(self):
+        """Construct a tag that can be used to search the index."""
+        result = self.name.lower()
+        def recursive_parent_lookup(curr):
+            nonlocal result
+            if type(curr) != STRoot:
+                result = curr.name.lower() + ":" + result
+                recursive_parent_lookup(curr._parent)
+        recursive_parent_lookup(self._parent)        
+        return result
+    def return_or_end_statements(self):
+        return self.find_all(filter=lambda stnode: type(stnode) == STEndOrReturn)
+    def local_and_dummy_variable_names(self,index):
+        """:return: names of local variables (1st retval) and dummy variables (2nd retval).""" 
+        # TODO can also be realised by subclass
+        scope      = scoper.create_scope(index,self.tag())
+        scope_vars = scope["variables"]
+        if type(self) == STProgram:
+            irecord = next((ientry for ientry in index if ientry["name"]==self.name),None)
+            dummy_arg_names = []
+        else:
+            parent_tag = self._parent.tag()
+            irecord, _ = scoper.search_index_for_subprogram(index,parent_tag,self.name)
+            dummy_arg_names = irecord["dummy_args"] 
+        local_var_names = [ivar["name"] for ivar in irecord["variables"] if ivar["name"] not in dummy_arg_names]
+        return local_var_names, dummy_arg_names
+
 class STEndOrReturn(STNode):
     def transform_statements(self,index=[]):
         prolog = self._linemaps[0]["prolog"]
@@ -287,19 +307,19 @@ class STEndOrReturn(STNode):
         self._linemaps[0]["prolog"].clear()
              
 
-class STRoot(STNode,Tagged):
+class STRoot(STContainerBase):
     def __init__(self):
         STNode.__init__(self,None,None,-1)
     def tag(self):
         return None
 
-class STModule(STNode,Tagged):
+class STModule(STContainerBase):
     def __init__(self,name,parent,first_linemap,first_linemap_first_statement):
         STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
         self.name = name.lower()
         self.kind = "module"
 
-class STProgram(STNode,Tagged):
+class STProgram(STContainerBase):
     def __init__(self,name,parent,first_linemap,first_linemap_first_statement):
         STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
         self.name = name.lower()
@@ -328,7 +348,7 @@ class STPlaceHolder(STNode):
         STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
         self.name = None
 
-class STProcedure(STNode,Tagged):
+class STProcedure(STContainerBase):
     def __init__(self,name,kind,parent,first_linemap,first_linemap_first_statement,index):
         STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
         self.name = name

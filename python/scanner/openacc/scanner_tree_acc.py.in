@@ -10,7 +10,8 @@ class AccPostprocessBackendBase:
     def run(self,stree,index):
         """:param stree: the full scanner tree"""
         """:param staccdirectives: All acc directive tree nodes."""
-        assert False, "not implemented"
+        #assert False, "not implemented"
+        pass
 
 ACC_BACKENDS             = {} 
 ACC_LOOP_KERNEL_BACKENDS = {} 
@@ -137,19 +138,21 @@ class STAccLoopKernel(STAccDirective,STLoopKernel):
         return ACC_LOOP_KERNEL_BACKENDS[checked_dialect](self).transform(\
                 joined_lines,joined_statements,statements_fully_cover_lines,index)
 
-def handle_allocate_acc(stallocate,joined_statements):
-    epilog = ""
+def handle_allocate_acc(stallocate,joined_statements,destination_dialect=""):
     indent = stallocate.first_line_indent() 
-        checked_dialect = check_destination_dialect(\
-            DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
+    checked_dialect = check_destination_dialect(\
+        DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
+    epilog = ACC_ALLOCATE_BACKENDS[checked_dialect](stallocate)
     if len(epilog):
         return joined_statements.rstrip("\n")+"\n"+epilog, True
     else:
         return joined_statements, False
 
-def handle_deallocate_acc(stdeallocate,joined_statements):
-    prolog = ""
+def handle_deallocate_acc(stdeallocate,joined_statements,destination_dialect=""):
     indent = stdeallocate.first_line_indent() 
+    checked_dialect = check_destination_dialect(\
+        DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
+    prolog = ACC_DEALLOCATE_BACKENDS[checked_dialect](stdeallocate)
     if len(prolog):
         return prolog.rstrip("\n") + "\n" + joined_statements.rstrip("\n"), True
     else:

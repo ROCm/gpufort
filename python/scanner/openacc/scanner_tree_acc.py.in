@@ -16,16 +16,23 @@ class AccPostprocessBackendBase:
 ACC_BACKENDS             = {} 
 ACC_LOOP_KERNEL_BACKENDS = {} 
 ACC_POSTPROCESS_BACKENDS = {}
+ACC_ALLOCATE_BACKENDS    = {}
+ACC_DEALLOCATE_BACKENDS  = {}
 
 def register_acc_backend(name,\
     directive_generator_class,\
     loop_kernel_generator_class,\
     postprocess_class,\
+    allocate_func,\
+    deallocate_func,\
     runtime_module_name):
     global SUPPORTED_DESTINATION_DIALECTS
     global RUNTIME_MODULE_NAMES
-    global ACC_BACKENDS
+    global ACC_BACKENDS            
     global ACC_LOOP_KERNEL_BACKENDS
+    global ACC_POSTPROCESS_BACKENDS
+    global ACC_ALLOCATE_BACKENDS   
+    global ACC_DEALLOCATE_BACKENDS 
     
     if not name in SUPPORTED_DESTINATION_DIALECTS:
         SUPPORTED_DESTINATION_DIALECTS.append(name)
@@ -33,6 +40,8 @@ def register_acc_backend(name,\
     ACC_BACKENDS[name]             = directive_generator_class 
     ACC_LOOP_KERNEL_BACKENDS[name] = loop_kernel_generator_class
     ACC_POSTPROCESS_BACKENDS[name] = postprocess_class
+    ACC_ALLOCATE_BACKENDS[name]    = allocate_func
+    ACC_DEALLOCATE_BACKENDS[name]  = deallocate_func
 
 exec(open("{0}/openacc/scanner_tree_acc2omp.py.in".format(scanner_dir)).read())
 exec(open("{0}/openacc/scanner_tree_acc2hipgpufortrt.py.in".format(scanner_dir)).read())
@@ -138,21 +147,21 @@ class STAccLoopKernel(STAccDirective,STLoopKernel):
         return ACC_LOOP_KERNEL_BACKENDS[checked_dialect](self).transform(\
                 joined_lines,joined_statements,statements_fully_cover_lines,index)
 
-def handle_allocate_acc(stallocate,joined_statements,destination_dialect=""):
+def handle_allocate_acc(stallocate,joined_statements,index,destination_dialect=""):
     indent = stallocate.first_line_indent() 
     checked_dialect = check_destination_dialect(\
         DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
-    epilog = ACC_ALLOCATE_BACKENDS[checked_dialect](stallocate)
+    epilog = ACC_ALLOCATE_BACKENDS[checked_dialect](stallocate,index)
     if len(epilog):
         return joined_statements.rstrip("\n")+"\n"+epilog, True
     else:
         return joined_statements, False
 
-def handle_deallocate_acc(stdeallocate,joined_statements,destination_dialect=""):
+def handle_deallocate_acc(stdeallocate,joined_statements,index,destination_dialect=""):
     indent = stdeallocate.first_line_indent() 
     checked_dialect = check_destination_dialect(\
         DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
-    prolog = ACC_DEALLOCATE_BACKENDS[checked_dialect](stdeallocate)
+    prolog = ACC_DEALLOCATE_BACKENDS[checked_dialect](stdeallocate,index)
     if len(prolog):
         return prolog.rstrip("\n") + "\n" + joined_statements.rstrip("\n"), True
     else:

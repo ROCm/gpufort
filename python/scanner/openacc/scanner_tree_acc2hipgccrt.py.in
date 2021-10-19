@@ -175,4 +175,16 @@ class AccLoopKernel2HipGccRT(Acc2HipGccRT):
               condition=condition,result=result.rstrip("\n"),original="".join(stnode._lines).rstrip("\n"))
         return result, len(result)
 
-register_acc_backend("hip-gcc-rt",Acc2HipGccRT,AccLoopKernel2HipGccRT,AccPostprocessBackendBase,"openacc_gomp")
+def AllocateHipGccRT(stallocate,index):
+    pass
+
+def DeallocateHipGccRT(stdeallocate,index):
+    pass
+
+register_acc_backend("hip-gcc-rt",\
+  Acc2HipGccRT,\
+  AccLoopKernel2HipGccRT,\
+  AccPostprocessBackendBase,\
+  AllocateHipGccRT,\
+  DeallocateHipGccRT,\
+  "openacc_gomp")

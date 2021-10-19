@@ -634,11 +634,11 @@ class STAllocate(STNode):
     def __init__(self,parent,first_linemap,first_linemap_first_statement):
         STNode.__init__(self,parent,first_linemap,first_linemap_first_statement)
         self.parse_result   = translator.allocate.parseString(self.statements()[0])[0]
-        self.variable_names  = self.parse_result.variable_names() 
+        self.variable_names = self.parse_result.variable_names() 
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[]): # TODO
         indent = self.first_line_indent()
-        result1, transformed1 = handle_allocate_cuf(self,joined_statements) 
-        result2, transformed2 = handle_allocate_acc(self,result1)
+        result1, transformed1 = handle_allocate_cuf(self,joined_statements,index) 
+        result2, transformed2 = handle_allocate_acc(self,result1,index)
         return result2, (transformed1 or transformed2)
              
 class STDeallocate(STNode):
@@ -651,8 +651,8 @@ class STDeallocate(STNode):
         :note: `wrap_in_if_def` can be deactivated if a higher level function
         embeds the outcome already in an `ifdef`.
         """
-        result1, transformed1 = handle_deallocate_cuf(self,joined_statements) 
-        result2, transformed2 = handle_deallocate_acc(self,result1)
+        result1, transformed1 = handle_deallocate_cuf(self,joined_statements,index) 
+        result2, transformed2 = handle_deallocate_acc(self,result1,index)
         return result2, (transformed1 or transformed2)
         
          

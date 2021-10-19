@@ -572,7 +572,7 @@ def postprocess(stree,index,hip_module_suffix):
                     stnode.add_to_prolog("{}use {}{}\n".format(indent,module_name,hip_module_suffix))
    
     if "cuf" in SOURCE_DIALECTS:
-         postprocess_cuf(stree)
+         postprocess_tree_cuf(stree,index)
     if "acc" in SOURCE_DIALECTS:
          postprocess_tree_acc(stree,index)
     utils.logging.log_leave_function(LOG_PREFIX,"postprocess")

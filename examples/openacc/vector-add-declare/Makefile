@@ -1,6 +1,6 @@
 include ../rules.mk
 
-TEST_SRC      = vector-add.f90 vector-add-procedures.f90
+TEST_SRC      = vector-add.f90 vector-add-procedures.f90 vector-add-globals.f90
 TEST_NAME     = $(TEST_SRC:.f90=)
 TEST_CONV_SRC = $(TEST_SRC:.f90=.f90-gpufort.f08)
 

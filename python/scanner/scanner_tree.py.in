@@ -268,6 +268,30 @@ class STContainerBase(STNode):
         if result == None:
             return self
         return result
+    def return_or_end_statements(self):
+        return self.find_all(filter=lambda stnode: type(stnode) == STEndOrReturn)
+    def append_to_decl_list(self,lines,prepend=False):
+        """
+        Append lines to the last statement in the declaration list.
+        :param list lines: The lines to append.
+        :param bool prepend: Prepend new lines to previously append lines.
+        """
+        last_decl_list_node = self.last_entry_in_decl_list()
+        indent              = last_decl_list_node.first_line_indent()
+        if last_decl_list_node is None:
+            last_decl_list_node = self
+        for line in lines:
+            last_decl_list_node.add_to_epilog(indent+line,prepend)
+    def prepend_to_return_or_end_statements(self,lines):
+        """
+        Prepend lines to the last statement in the declaration list.
+        :param list lines: The lines to append.
+        :param bool prepend: Prepend new lines to previously append lines.
+        """
+        indent = last_decl_list_node.first_line_indent()
+        for return_or_end_node in self.return_or_end_statements():
+            for line in lines:
+                return_or_end_node.add_to_prolog(indent+line)
     def tag(self):
         """Construct a tag that can be used to search the index."""
         result = self.name.lower()
@@ -278,8 +302,6 @@ class STContainerBase(STNode):
                 recursive_parent_lookup(curr._parent)
         recursive_parent_lookup(self._parent)        
         return result
-    def return_or_end_statements(self):
-        return self.find_all(filter=lambda stnode: type(stnode) == STEndOrReturn)
     def local_and_dummy_variable_names(self,index):
         """:return: names of local variables (1st retval) and dummy variables (2nd retval).""" 
         # TODO can also be realised by subclass
@@ -292,7 +314,7 @@ class STContainerBase(STNode):
             parent_tag = self._parent.tag()
             irecord, _ = scoper.search_index_for_subprogram(index,parent_tag,self.name)
             dummy_arg_names = irecord["dummy_args"] 
-        local_var_names = [ivar["name"] for ivar in irecord["variables"] if ivar["name"] not in dummy_arg_names]
+        local_var_names = [ivar["name"] for ivar in irecord["variables"] if ivar["name"] not in dummy_arg_namesm
         return local_var_names, dummy_arg_names
 
 class STEndOrReturn(STNode):

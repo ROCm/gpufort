@@ -18,28 +18,28 @@ program test_acc
   !$acc init
   call gpufort_acc_init()
 
-  do i = 1, 100
+  do i = 1, 4
     print *, "entering region"
     call gpufort_acc_enter_region()
-      a_d = gpufort_acc_copyin(a(:,:))
-      d_d = gpufort_acc_copy(d(:))
-      e_d = gpufort_acc_copyout(e(:))
-      call gpufort_acc_runtime_print_summary() 
+    a_d = gpufort_acc_copyin(a(:,:))
+    d_d = gpufort_acc_copy(d(:))
+    e_d = gpufort_acc_copyout(e(:))
+    !call gpufort_acc_runtime_print_summary() 
 
-      if ( mod(i,2) .eq. 0 ) then
-        print *, "entering subregion"
-        call gpufort_acc_enter_region()
-          a_d = gpufort_acc_present(a(:,5))
-          b_d = gpufort_acc_copyin(b(:,:))
-          c_d = gpufort_acc_create(c(:))
-          call gpufort_acc_runtime_print_summary() 
-          call gpufort_acc_update_host(b)
-          call gpufort_acc_update_device(b)
-        call gpufort_acc_exit_region()
-        print *, "exiting subregion" 
-      endif
-      call gpufort_acc_update_host(a)
-      call gpufort_acc_update_device(a)
+    if ( mod(i,2) .eq. 0 ) then
+      print *, "entering subregion"
+      call gpufort_acc_enter_region()
+      a_d = gpufort_acc_present(a(:,5))
+      b_d = gpufort_acc_copyin(b(:,:))
+      c_d = gpufort_acc_create(c(:))
+      !call gpufort_acc_runtime_print_summary() 
+      call gpufort_acc_update_host(b)
+      call gpufort_acc_update_device(b)
+      call gpufort_acc_exit_region()
+      print *, "exiting subregion" 
+    endif
+    call gpufort_acc_update_host(a)
+    call gpufort_acc_update_device(a)
     call gpufort_acc_exit_region()
     print *, "exiting region" 
   end do

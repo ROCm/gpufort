@@ -153,7 +153,7 @@ def handle_allocate_acc(stallocate,joined_statements,index,destination_dialect="
         DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
     epilog = ACC_ALLOCATE_BACKENDS[checked_dialect](stallocate,index)
     if len(epilog):
-        return joined_statements.rstrip("\n")+"\n"+epilog, True
+        return indent + joined_statements.rstrip("\n")+"\n"+epilog, True
     else:
         return joined_statements, False
 
@@ -163,7 +163,7 @@ def handle_deallocate_acc(stdeallocate,joined_statements,index,destination_diale
         DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
     prolog = ACC_DEALLOCATE_BACKENDS[checked_dialect](stdeallocate,index)
     if len(prolog):
-        return prolog.rstrip("\n") + "\n" + joined_statements.rstrip("\n"), True
+        return prolog.rstrip("\n") + "\n" + indent + joined_statements.rstrip("\n"), True
     else:
         return joined_statements, False
 

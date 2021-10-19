@@ -321,8 +321,11 @@ class Acc2HipGpufortRTPostprocess(AccPostprocessBackendBase):
                 if not is_allocatable:
                     if not is_used_module_var: implicit_region = True  
                     global_var = ",global=.TRUE." if is_used_module_var else ""
-                    cond       = "{indent}if (associated({var})) " if is_pointer else ""
-                    acc_present_template = (cond+HIP_GPUFORT_RT_ACC_PRESENT)
+                    if is_pointer:
+                        cond = "{indent}if (associated({var})) "
+                        acc_present_template = (cond+HIP_GPUFORT_RT_ACC_PRESENT.replace("{indent}",""))
+                    else:
+                        acc_present_template = HIP_GPUFORT_RT_ACC_PRESENT
                     # find return and end, emit 1 new implicit region for all
                     if ivar["declare_on_target"] in HIP_GPUFORT_RT_CLAUSES_OMP2ACC.keys():
                         map_kind=HIP_GPUFORT_RT_CLAUSES_OMP2ACC[ivar["declare_on_target"]]

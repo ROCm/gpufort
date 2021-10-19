@@ -29,13 +29,13 @@ module my_module
      print *, "entering subregion"
      !$acc kernels present(a) copyin(b(:,:))
      call gpufort_acc_enter_region()
-       a_d = gpufort_acc_present(a)
-       b_d = gpufort_acc_copyin(b(:,:))
-       call gpufort_acc_runtime_print_summary() 
-       !$acc update host(b)
-       call gpufort_acc_update_host(b)
-       !$acc update device(b)
-       call gpufort_acc_update_device(b)
+     a_d = gpufort_acc_present(a)
+     b_d = gpufort_acc_copyin(b(:,:))
+     call gpufort_acc_runtime_print_summary() 
+     !$acc update host(b)
+     call gpufort_acc_update_host(b)
+     !$acc update device(b)
+     call gpufort_acc_update_device(b)
      !$acc end kernels
      call gpufort_acc_exit_region()
      print *, "exiting subregion" 
@@ -61,16 +61,16 @@ program test_acc
     
     !$acc enter data copyin(a(:,:))
     call gpufort_acc_enter_region()
-      a_d = gpufort_acc_copyin(a(:,:))
-      call gpufort_acc_runtime_print_summary() 
+    a_d = gpufort_acc_copyin(a(:,:))
+    call gpufort_acc_runtime_print_summary() 
 
-      if ( i .eq. 2 ) then
-         call my_subroutine(a,b)
-      endif
-      !$acc update host(a(:,:))
-      call gpufort_acc_update_host(a(:,:))
-      !$acc update device(a)
-      call gpufort_acc_update_device(a)
+    if ( i .eq. 2 ) then
+       call my_subroutine(a,b)
+    endif
+    !$acc update host(a(:,:))
+    call gpufort_acc_update_host(a(:,:))
+    !$acc update device(a)
+    call gpufort_acc_update_device(a)
     !$acc exit data
     call gpufort_acc_exit_region()
    

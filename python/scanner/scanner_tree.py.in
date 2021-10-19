@@ -314,7 +314,7 @@ class STContainerBase(STNode):
             parent_tag = self._parent.tag()
             irecord, _ = scoper.search_index_for_subprogram(index,parent_tag,self.name)
             dummy_arg_names = irecord["dummy_args"] 
-        local_var_names = [ivar["name"] for ivar in irecord["variables"] if ivar["name"] not in dummy_arg_namesm
+        local_var_names = [ivar["name"] for ivar in irecord["variables"] if ivar["name"] not in dummy_arg_names]
         return local_var_names, dummy_arg_names
 
 class STEndOrReturn(STNode):
@@ -593,7 +593,7 @@ def pinned_or_on_device(ivar):
     """:return: Qualifier and if special treatment is necessary."""
     if "device" in ivar["qualifiers"]: 
         return "device", True
-    elif "pinned" in ivar["qualifiers"] 
+    elif "pinned" in ivar["qualifiers"] :
         return "pinned", True
     else:
         return None, False

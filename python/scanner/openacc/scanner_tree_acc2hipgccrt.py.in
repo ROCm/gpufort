@@ -176,10 +176,10 @@ class AccLoopKernel2HipGccRT(Acc2HipGccRT):
         return result, len(result)
 
 def AllocateHipGccRT(stallocate,index):
-    pass
+    return ""
 
 def DeallocateHipGccRT(stdeallocate,index):
-    pass
+    return ""
 
 register_acc_backend("hip-gcc-rt",\
   Acc2HipGccRT,\

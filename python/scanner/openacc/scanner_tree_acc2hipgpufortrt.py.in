@@ -11,7 +11,7 @@ HIP_GPUFORT_RT_ACC_CREATE = "{indent}{dev_var} = gpufort_acc_create({var})\n"
 # no_create
 HIP_GPUFORT_RT_ACC_NO_CREATE = "{indent}{dev_var} = gpufort_acc_no_create({var})\n"
 # delete
-HIP_GPUFORT_RT_ACC_DELETE = "{indent}call gpufort_acc_delete({var}{finalize})\n"
+HIP_GPUFORT_RT_ACC_DELETE = "{indent}call gpufort_acc_delete({var}{alloc}{finalize})\n"
 # copyin
 HIP_GPUFORT_RT_ACC_COPYIN = "{indent}{dev_var} = gpufort_acc_copyin({var}{asyncr})\n"
 # copy
@@ -51,13 +51,15 @@ def dev_var_name(var):
 
 def add_device_vars_to_decl_list(stcontainer,temp_vars):
     # introduce the new variables 
-    stcontainer.append_to_decl_list(["type(c_ptr) :: {var}\n".format(var=var) for var in temp_vars])
+    stcontainer.append_to_decl_list(\
+        ["type(c_ptr) :: {var}\n".format(var=var) for var in temp_vars],\
+        prepend=True)
 
 def add_implicit_region(stcontainer):
     last_decl_list_node = stcontainer.last_entry_in_decl_list()
+    indent              = last_decl_list_node.first_line_indent()
     last_decl_list_node.add_to_epilog(HIP_GPUFORT_RT_ACC_ENTER_REGION.format(\
         indent=indent,region_kind="implicit_region=.TRUE."))
-    last_decl_list_node.add_to_epilog(acc_present_calls)
     for stendorreturn in stcontainer.return_or_end_statements():
         stendorreturn.add_to_prolog(HIP_GPUFORT_RT_ACC_EXIT_REGION.format(\
             indent=indent,region_kind="implicit_region=.TRUE."))
@@ -99,7 +101,8 @@ class Acc2HipGpufortRT(AccBackendBase):
                 for i,var_expr in enumerate(var_expressions):
                     deviceptr = dev_var_name(var_names[i])
                     template = MAPPING_CLAUSE_2_TEMPLATE_MAP[clause.kind]
-                    result += template.format(indent=indent,var=var_expr,dev_var=deviceptr,asyncr=self._handle_async(),alloc="")
+                    result += template.format(indent=indent,var=var_expr,dev_var=deviceptr,\
+                        asyncr=self._handle_async(),alloc="",finalize="")
                     temp_vars.add(deviceptr)
         return result, len(result), temp_vars
     def _handle_update(self):
@@ -299,10 +302,7 @@ class Acc2HipGpufortRTPostprocess(AccPostprocessBackendBase):
           recursively=True)
         for stcontainer in containers:
             last_decl_list_node = stcontainer.last_entry_in_decl_list()
-            allocates   = [] # look up STAllocate 
-            deallocates = [] # look up STDeallocate
             indent = last_decl_list_node.first_line_indent()
-            # todo find return statement or end of function
             scope      = scoper.create_scope(index,stcontainer.tag())
             scope_vars = scope["variables"]
             local_var_names, dummy_arg_names = stcontainer.local_and_dummy_variable_names(index)
@@ -321,7 +321,7 @@ class Acc2HipGpufortRTPostprocess(AccPostprocessBackendBase):
                 if not is_allocatable:
                     if not is_used_module_var: implicit_region = True  
                     global_var = ",global=.TRUE." if is_used_module_var else ""
-                    cond       = "if (associated({var})) " if is_pointer else ""
+                    cond       = "{indent}if (associated({var})) " if is_pointer else ""
                     acc_present_template = (cond+HIP_GPUFORT_RT_ACC_PRESENT)
                     # find return and end, emit 1 new implicit region for all
                     if ivar["declare_on_target"] in HIP_GPUFORT_RT_CLAUSES_OMP2ACC.keys():
@@ -361,15 +361,15 @@ def AllocateHipGpufortRT(stallocate,index):
        if not is_used_module_var: implicit_region = True  
        if ivar["declare_on_target"] in HIP_GPUFORT_RT_CLAUSES_OMP2ACC.keys():
            map_kind=HIP_GPUFORT_RT_CLAUSES_OMP2ACC[ivar["declare_on_target"]]
-           acc_present_calls += acc_present_template.format(\
+           acc_present_calls += HIP_GPUFORT_RT_ACC_PRESENT.format(\
                indent=indent,var=host_var,asyncr="",\
                alloc=global_var+","+map_kind+"=.TRUE.",dev_var=dev_var)
            temp_vars.append(dev_var)
 
-    if len(acc_present_calls):
-        add_device_vars_to_decl_list(stcontainer,temp_vars)
-        if implicit_region: add_implicit_region(stcontainer)
-        stallocate.add_to_epilog(acc_present_calls)
+   if len(acc_present_calls):
+       add_device_vars_to_decl_list(stcontainer,temp_vars)
+       if implicit_region: add_implicit_region(stcontainer)
+   return acc_present_calls
 
 def DeallocateHipGpufortRT(stdeallocate,index):
    stcontainer = stdeallocate._parent
@@ -379,8 +379,6 @@ def DeallocateHipGpufortRT(stdeallocate,index):
    indent      = stdeallocate.first_line_indent()
    local_var_names, dummy_arg_names = stcontainer.local_and_dummy_variable_names(index)
    acc_delete_calls = "" 
-   temp_vars         = []
-   implicit_region   = False
    for var in stdeallocate.variable_names:
        ivar,_ = scoper.search_index_for_variable(index,parent_tag,var)
        host_var           = ivar["name"]
@@ -394,13 +392,9 @@ def DeallocateHipGpufortRT(stdeallocate,index):
        global_var = ",global=.TRUE." if is_used_module_var else ""
        if ivar["declare_on_target"] in ["alloc","to","tofrom"]:
            acc_delete_calls += HIP_GPUFORT_RT_ACC_DELETE.format(\
-               indent=indent,var=host_var,asyncr="",alloc=global_var+",create=.TRUE.",dev_var=dev_var)
-           temp_vars.append(dev_var)
-    if len(acc_delete_calls):
-        add_device_vars_to_decl_list(stcontainer,temp_vars)
-        stdeallocate.add_to_epilog(acc_delete_calls)
-        if implicit_region:
-           add_implicit_region(stcontainer)
+             indent=indent,var=host_var,asyncr="",finalize="",\
+             alloc=global_var,dev_var=dev_var)
+   return acc_delete_calls
 
 register_acc_backend("hip-gpufort-rt",\
   Acc2HipGpufortRT,\

@@ -19,14 +19,15 @@
       `hipfort` API calls or `GPUFORT` kernel launch routines.
     * Examples are likely outdated 
 
-* This directory further contains `gpufort_acc_runtime`, a minimal non-standard-compliant runtime written completely
-  in Fortran, which can be used for teaching/training or prototyping.
-  
+* This directory further contains `gpufort_acc_runtime`, a minimal non-standard-compliant runtime written 
+  mostly in Fortran, which we use for prototyping and characterizing application runtime behavior. 
+  Long term, we plan to rewrite this runtime in C++ or abandon it for a better alternative.
+ 
   Features:
   * `hipStream` instances can be obtained from the runtime.
   Limitations:
-  * Not thread-safe
-  * No standard-compliant runtime API (might change in the future) 
+  * No thread-safe access (unless all required arrays are present)
+  * No standard-compliant runtime API (might change long term) 
 
 ## Runtime subfolders
 

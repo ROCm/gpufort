@@ -32,7 +32,7 @@ module gpufort_acc_runtime_base
   
   integer, save :: LOG_LEVEL                    = 0
   integer, save :: MAX_QUEUES                   = 64
-  integer, save :: INITIAL_RECORD_LIST_CAPACITY = 4096
+  integer, save :: INITIAL_RECORDS_CAPACITY = 4096
   ! reuse/fragmentation controls
   integer, save :: BLOCK_SIZE             = 32
   real, save    :: REUSE_THRESHOLD        = 0.9 ! only reuse record if mem_new>=factor*mem_old 
@@ -533,7 +533,7 @@ module gpufort_acc_runtime_base
       type(t_record), allocatable :: new_records(:)
       integer                     :: old_size
       !
-      allocate(record_list%records(INITIAL_RECORD_LIST_CAPACITY))
+      allocate(record_list%records(INITIAL_RECORDS_CAPACITY))
     end subroutine
     
     subroutine t_record_list_grow_(record_list)
@@ -624,7 +624,6 @@ module gpufort_acc_runtime_base
       reuse_existing = .false.
       loc = record_list%last_record_index+1
       do i = 1, record_list%last_record_index
-        print *, "i=",i
         if ( .not. record_list%records(i)%is_initialized() ) then ! 1. buffer is empty
           loc = i  
           reuse_existing = .false.
@@ -742,17 +741,25 @@ module gpufort_acc_runtime_base
       else
         call get_environment_variable("GPUFORT_LOG_LEVEL", tmp)
         if (len_trim(tmp) > 0) read(tmp,*) LOG_LEVEL
-        call get_environment_variable("GPUFORT_REUSE_THRESHOLD", tmp)
-        if (len_trim(tmp) > 0) read(tmp,*) REUSE_THRESHOLD
+        !
         call get_environment_variable("GPUFORT_MAX_QUEUES", tmp)
         if (len_trim(tmp) > 0) read(tmp,*) MAX_QUEUES
-        call get_environment_variable("GPUFORT_INITIAL_RECORD_LIST_CAPACITY", tmp)
-        if (len_trim(tmp) > 0) read(tmp,*) INITIAL_RECORD_LIST_CAPACITY
+        call get_environment_variable("GPUFORT_INITIAL_RECORDS_CAPACITY", tmp)
+        if (len_trim(tmp) > 0) read(tmp,*) INITIAL_RECORDS_CAPACITY
+        !
+        call get_environment_variable("GPUFORT_BLOCK_SIZE", tmp)
+        if (len_trim(tmp) > 0) read(tmp,*) BLOCK_SIZE
+        call get_environment_variable("GPUFORT_REUSE_THRESHOLD", tmp)
+        if (len_trim(tmp) > 0) read(tmp,*) REUSE_THRESHOLD
+        call get_environment_variable("GPUFORT_NUM_REFS_TO_DEALLOCATE", tmp)
+        if (len_trim(tmp) > 0) read(tmp,*) NUM_REFS_TO_DEALLOCATE
         if ( LOG_LEVEL > 0 ) then 
           write(*,*) "GPUFORT_LOG_LEVEL=",LOG_LEVEL 
-          write(*,*) "GPUFORT_REUSE_THRESHOLD=",REUSE_THRESHOLD 
           write(*,*) "GPUFORT_MAX_QUEUES=",MAX_QUEUES
-          write(*,*) "GPUFORT_INITIAL_RECORD_LIST_CAPACITY=",INITIAL_RECORD_LIST_CAPACITY
+          write(*,*) "GPUFORT_INITIAL_RECORDS_CAPACITY=",INITIAL_RECORDS_CAPACITY
+          write(*,*) "GPUFORT_BLOCK_SIZE=",BLOCK_SIZE 
+          write(*,*) "GPUFORT_REUSE_THRESHOLD=",REUSE_THRESHOLD 
+          write(*,*) "GPUFORT_NUM_REFS_TO_DEALLOCATE=",NUM_REFS_TO_DEALLOCATE 
         endif 
         !
         call record_list_%initialize()

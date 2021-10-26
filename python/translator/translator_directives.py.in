@@ -45,8 +45,8 @@ def _intrnl_arrays_in_subtree(ttnode,scope):
         return isinstance(node,IValue) and\
                 type(node._value) is TTFunctionCallOrTensorAccess 
     return _intrnl_search_values_in_subtree(ttnode,search_filter,scope,1)
-def _intrnl_inout_arrays_in_subtree(ttnode):
-    def search_filter(node,scope):
+def _intrnl_inout_arrays_in_subtree(ttnode,scope):
+    def search_filter(node):
         return type(node) is TTLValue and\
                 type(node._value) is TTFunctionCallOrTensorAccess 
     return _intrnl_search_values_in_subtree(ttnode,search_filter,scope,1)

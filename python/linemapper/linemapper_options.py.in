@@ -1,6 +1,6 @@
 LOG_PREFIX="linemapper.linemapper" # prefix for logging
 
-PATTERN_LINE_CONTINUATION=r"([\&]\s*\n)|(\n[!c\*]\$\w+\&)" # line continuation pattern. The linemapper's preprocessor removes them.
+PATTERN_LINE_CONTINUATION=r"(\&\s*\n\s*([!c\*]\$\w+)?)|(^\s*[!c\*]\$\w+\&\s*)" # line continuation pattern. The linemapper's preprocessor removes them.
 
 ERROR_HANDLING="strict"   # 'strict': program terminates with error. Otherwise, a warning is printed.
 

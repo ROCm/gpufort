@@ -183,7 +183,7 @@ def _intrnl_convert_lines_to_statements(lines):
     """
     global PATTERN_LINE_CONTINUATION
 
-    pContinuation = re.compile(PATTERN_LINE_CONTINUATION)
+    p_continuation = re.compile(PATTERN_LINE_CONTINUATION)
     # we look for a sequence ") <word>" were word != "then".
     p_single_line_if = re.compile(r"^(?P<indent>[\s\t]*)(?P<head>if\s*\(.+\))\s*\b(?!then)(?P<body>\w.+)",re.IGNORECASE)
     
@@ -200,7 +200,10 @@ def _intrnl_convert_lines_to_statements(lines):
     indent_offset = num_indent_chars * indent_char
 
     # replace line continuation by whitespace, split at ";"
-    single_line_statements = pContinuation.sub(" "," ".join(lines)).split(";")
+    lines_content = " ".join(lines)
+    if "&" in lines_content:
+        lines_content = p_continuation.sub(" ",lines_content)
+    single_line_statements=lines_content.split(";")
     # unroll single-line if
     unrolled_statements = []
     for stmt in single_line_statements:

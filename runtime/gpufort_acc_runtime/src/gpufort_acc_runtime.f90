@@ -178,5833 +178,6169 @@ module gpufort_acc_runtime
     !
 
                                                               
-    function gpufort_acc_present_l_0(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_l_0(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       logical,target,intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),1_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),1_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_l_0(hostptr) result(deviceptr)
+    function gpufort_acc_create_l_0(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       logical,target,intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),1_8)
     end function
 
-    function gpufort_acc_no_create_l_0(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_l_0(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       logical,target,intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_l_0(hostptr,finalize)
+    subroutine gpufort_acc_delete_l_0(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       logical,target,intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_l_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_l_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       logical,target,intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),1_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),1_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_l_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_l_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       logical,target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),1_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),1_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_l_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_l_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       logical,target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),1_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_l_0(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_l_0(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       logical,target,intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_l_0(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_l_0(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       logical,target,intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_l_1(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_l_1(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       logical,target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*1_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*1_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_l_1(hostptr) result(deviceptr)
+    function gpufort_acc_create_l_1(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       logical,target,dimension(:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*1_8)
     end function
 
-    function gpufort_acc_no_create_l_1(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_l_1(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       logical,target,dimension(:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_l_1(hostptr,finalize)
+    subroutine gpufort_acc_delete_l_1(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       logical,target,dimension(:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_l_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_l_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       logical,target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*1_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*1_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_l_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_l_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       logical,target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*1_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*1_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_l_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_l_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       logical,target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*1_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_l_1(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_l_1(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       logical,target,dimension(:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_l_1(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_l_1(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       logical,target,dimension(:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_l_2(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_l_2(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       logical,target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*1_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*1_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_l_2(hostptr) result(deviceptr)
+    function gpufort_acc_create_l_2(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       logical,target,dimension(:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*1_8)
     end function
 
-    function gpufort_acc_no_create_l_2(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_l_2(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       logical,target,dimension(:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_l_2(hostptr,finalize)
+    subroutine gpufort_acc_delete_l_2(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       logical,target,dimension(:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_l_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_l_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       logical,target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*1_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*1_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_l_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_l_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       logical,target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*1_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*1_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_l_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_l_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       logical,target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*1_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_l_2(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_l_2(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       logical,target,dimension(:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_l_2(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_l_2(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       logical,target,dimension(:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_l_3(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_l_3(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       logical,target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*1_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*1_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_l_3(hostptr) result(deviceptr)
+    function gpufort_acc_create_l_3(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       logical,target,dimension(:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*1_8)
     end function
 
-    function gpufort_acc_no_create_l_3(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_l_3(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       logical,target,dimension(:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_l_3(hostptr,finalize)
+    subroutine gpufort_acc_delete_l_3(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       logical,target,dimension(:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_l_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_l_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       logical,target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*1_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*1_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_l_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_l_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       logical,target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*1_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*1_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_l_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_l_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       logical,target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*1_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_l_3(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_l_3(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       logical,target,dimension(:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_l_3(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_l_3(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       logical,target,dimension(:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_l_4(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_l_4(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       logical,target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*1_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*1_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_l_4(hostptr) result(deviceptr)
+    function gpufort_acc_create_l_4(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       logical,target,dimension(:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*1_8)
     end function
 
-    function gpufort_acc_no_create_l_4(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_l_4(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       logical,target,dimension(:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_l_4(hostptr,finalize)
+    subroutine gpufort_acc_delete_l_4(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       logical,target,dimension(:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_l_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_l_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       logical,target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*1_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*1_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_l_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_l_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       logical,target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*1_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*1_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_l_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_l_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       logical,target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*1_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_l_4(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_l_4(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       logical,target,dimension(:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_l_4(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_l_4(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       logical,target,dimension(:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_l_5(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_l_5(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*1_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*1_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_l_5(hostptr) result(deviceptr)
+    function gpufort_acc_create_l_5(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*1_8)
     end function
 
-    function gpufort_acc_no_create_l_5(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_l_5(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_l_5(hostptr,finalize)
+    subroutine gpufort_acc_delete_l_5(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_l_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_l_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*1_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*1_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_l_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_l_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*1_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*1_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_l_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_l_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*1_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_l_5(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_l_5(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_l_5(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_l_5(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_l_6(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_l_6(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*1_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*1_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_l_6(hostptr) result(deviceptr)
+    function gpufort_acc_create_l_6(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*1_8)
     end function
 
-    function gpufort_acc_no_create_l_6(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_l_6(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_l_6(hostptr,finalize)
+    subroutine gpufort_acc_delete_l_6(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_l_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_l_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*1_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*1_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_l_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_l_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*1_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*1_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_l_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_l_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*1_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_l_6(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_l_6(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_l_6(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_l_6(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_l_7(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_l_7(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*1_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*1_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_l_7(hostptr) result(deviceptr)
+    function gpufort_acc_create_l_7(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*1_8)
     end function
 
-    function gpufort_acc_no_create_l_7(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_l_7(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_l_7(hostptr,finalize)
+    subroutine gpufort_acc_delete_l_7(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_l_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_l_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*1_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*1_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_l_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_l_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*1_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*1_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_l_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_l_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*1_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_l_7(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_l_7(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_l_7(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_l_7(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
  
                                                               
-    function gpufort_acc_present_i4_0(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_i4_0(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       integer(4),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_i4_0(hostptr) result(deviceptr)
+    function gpufort_acc_create_i4_0(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       integer(4),target,intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),4_8)
     end function
 
-    function gpufort_acc_no_create_i4_0(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_i4_0(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       integer(4),target,intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_i4_0(hostptr,finalize)
+    subroutine gpufort_acc_delete_i4_0(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       integer(4),target,intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_i4_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_i4_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       integer(4),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_i4_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_i4_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       integer(4),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_i4_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_i4_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       integer(4),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_i4_0(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_i4_0(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       integer(4),target,intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_i4_0(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_i4_0(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       integer(4),target,intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_i4_1(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_i4_1(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       integer(4),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_i4_1(hostptr) result(deviceptr)
+    function gpufort_acc_create_i4_1(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       integer(4),target,dimension(:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*4_8)
     end function
 
-    function gpufort_acc_no_create_i4_1(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_i4_1(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       integer(4),target,dimension(:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_i4_1(hostptr,finalize)
+    subroutine gpufort_acc_delete_i4_1(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       integer(4),target,dimension(:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_i4_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_i4_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       integer(4),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_i4_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_i4_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       integer(4),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_i4_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_i4_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       integer(4),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_i4_1(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_i4_1(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       integer(4),target,dimension(:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_i4_1(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_i4_1(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       integer(4),target,dimension(:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_i4_2(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_i4_2(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       integer(4),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_i4_2(hostptr) result(deviceptr)
+    function gpufort_acc_create_i4_2(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       integer(4),target,dimension(:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*4_8)
     end function
 
-    function gpufort_acc_no_create_i4_2(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_i4_2(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       integer(4),target,dimension(:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_i4_2(hostptr,finalize)
+    subroutine gpufort_acc_delete_i4_2(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       integer(4),target,dimension(:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_i4_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_i4_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       integer(4),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_i4_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_i4_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       integer(4),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_i4_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_i4_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       integer(4),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_i4_2(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_i4_2(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       integer(4),target,dimension(:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_i4_2(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_i4_2(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       integer(4),target,dimension(:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_i4_3(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_i4_3(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       integer(4),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_i4_3(hostptr) result(deviceptr)
+    function gpufort_acc_create_i4_3(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       integer(4),target,dimension(:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*4_8)
     end function
 
-    function gpufort_acc_no_create_i4_3(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_i4_3(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       integer(4),target,dimension(:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_i4_3(hostptr,finalize)
+    subroutine gpufort_acc_delete_i4_3(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       integer(4),target,dimension(:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_i4_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_i4_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       integer(4),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_i4_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_i4_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       integer(4),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_i4_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_i4_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       integer(4),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_i4_3(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_i4_3(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       integer(4),target,dimension(:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_i4_3(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_i4_3(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       integer(4),target,dimension(:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_i4_4(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_i4_4(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       integer(4),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_i4_4(hostptr) result(deviceptr)
+    function gpufort_acc_create_i4_4(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       integer(4),target,dimension(:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*4_8)
     end function
 
-    function gpufort_acc_no_create_i4_4(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_i4_4(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       integer(4),target,dimension(:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_i4_4(hostptr,finalize)
+    subroutine gpufort_acc_delete_i4_4(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       integer(4),target,dimension(:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_i4_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_i4_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       integer(4),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_i4_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_i4_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       integer(4),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_i4_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_i4_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       integer(4),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_i4_4(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_i4_4(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       integer(4),target,dimension(:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_i4_4(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_i4_4(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       integer(4),target,dimension(:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_i4_5(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_i4_5(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_i4_5(hostptr) result(deviceptr)
+    function gpufort_acc_create_i4_5(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*4_8)
     end function
 
-    function gpufort_acc_no_create_i4_5(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_i4_5(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_i4_5(hostptr,finalize)
+    subroutine gpufort_acc_delete_i4_5(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_i4_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_i4_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_i4_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_i4_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_i4_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_i4_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_i4_5(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_i4_5(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_i4_5(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_i4_5(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_i4_6(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_i4_6(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_i4_6(hostptr) result(deviceptr)
+    function gpufort_acc_create_i4_6(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*4_8)
     end function
 
-    function gpufort_acc_no_create_i4_6(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_i4_6(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_i4_6(hostptr,finalize)
+    subroutine gpufort_acc_delete_i4_6(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_i4_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_i4_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_i4_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_i4_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_i4_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_i4_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_i4_6(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_i4_6(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_i4_6(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_i4_6(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_i4_7(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_i4_7(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_i4_7(hostptr) result(deviceptr)
+    function gpufort_acc_create_i4_7(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*4_8)
     end function
 
-    function gpufort_acc_no_create_i4_7(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_i4_7(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_i4_7(hostptr,finalize)
+    subroutine gpufort_acc_delete_i4_7(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_i4_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_i4_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_i4_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_i4_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_i4_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_i4_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_i4_7(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_i4_7(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_i4_7(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_i4_7(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       integer(4),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
  
                                                               
-    function gpufort_acc_present_i8_0(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_i8_0(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       integer(8),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_i8_0(hostptr) result(deviceptr)
+    function gpufort_acc_create_i8_0(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       integer(8),target,intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),8_8)
     end function
 
-    function gpufort_acc_no_create_i8_0(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_i8_0(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       integer(8),target,intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_i8_0(hostptr,finalize)
+    subroutine gpufort_acc_delete_i8_0(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       integer(8),target,intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_i8_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_i8_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       integer(8),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_i8_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_i8_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       integer(8),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_i8_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_i8_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       integer(8),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_i8_0(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_i8_0(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       integer(8),target,intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_i8_0(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_i8_0(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       integer(8),target,intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_i8_1(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_i8_1(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       integer(8),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_i8_1(hostptr) result(deviceptr)
+    function gpufort_acc_create_i8_1(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       integer(8),target,dimension(:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*8_8)
     end function
 
-    function gpufort_acc_no_create_i8_1(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_i8_1(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       integer(8),target,dimension(:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_i8_1(hostptr,finalize)
+    subroutine gpufort_acc_delete_i8_1(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       integer(8),target,dimension(:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_i8_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_i8_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       integer(8),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_i8_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_i8_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       integer(8),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_i8_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_i8_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       integer(8),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_i8_1(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_i8_1(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       integer(8),target,dimension(:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_i8_1(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_i8_1(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       integer(8),target,dimension(:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_i8_2(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_i8_2(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       integer(8),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_i8_2(hostptr) result(deviceptr)
+    function gpufort_acc_create_i8_2(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       integer(8),target,dimension(:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*8_8)
     end function
 
-    function gpufort_acc_no_create_i8_2(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_i8_2(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       integer(8),target,dimension(:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_i8_2(hostptr,finalize)
+    subroutine gpufort_acc_delete_i8_2(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       integer(8),target,dimension(:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_i8_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_i8_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       integer(8),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_i8_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_i8_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       integer(8),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_i8_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_i8_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       integer(8),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_i8_2(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_i8_2(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       integer(8),target,dimension(:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_i8_2(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_i8_2(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       integer(8),target,dimension(:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_i8_3(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_i8_3(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       integer(8),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_i8_3(hostptr) result(deviceptr)
+    function gpufort_acc_create_i8_3(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       integer(8),target,dimension(:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*8_8)
     end function
 
-    function gpufort_acc_no_create_i8_3(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_i8_3(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       integer(8),target,dimension(:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_i8_3(hostptr,finalize)
+    subroutine gpufort_acc_delete_i8_3(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       integer(8),target,dimension(:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_i8_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_i8_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       integer(8),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_i8_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_i8_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       integer(8),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_i8_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_i8_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       integer(8),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_i8_3(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_i8_3(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       integer(8),target,dimension(:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_i8_3(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_i8_3(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       integer(8),target,dimension(:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_i8_4(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_i8_4(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       integer(8),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_i8_4(hostptr) result(deviceptr)
+    function gpufort_acc_create_i8_4(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       integer(8),target,dimension(:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*8_8)
     end function
 
-    function gpufort_acc_no_create_i8_4(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_i8_4(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       integer(8),target,dimension(:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_i8_4(hostptr,finalize)
+    subroutine gpufort_acc_delete_i8_4(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       integer(8),target,dimension(:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_i8_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_i8_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       integer(8),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_i8_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_i8_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       integer(8),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_i8_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_i8_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       integer(8),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_i8_4(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_i8_4(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       integer(8),target,dimension(:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_i8_4(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_i8_4(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       integer(8),target,dimension(:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_i8_5(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_i8_5(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_i8_5(hostptr) result(deviceptr)
+    function gpufort_acc_create_i8_5(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*8_8)
     end function
 
-    function gpufort_acc_no_create_i8_5(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_i8_5(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_i8_5(hostptr,finalize)
+    subroutine gpufort_acc_delete_i8_5(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_i8_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_i8_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_i8_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_i8_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_i8_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_i8_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_i8_5(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_i8_5(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_i8_5(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_i8_5(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_i8_6(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_i8_6(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_i8_6(hostptr) result(deviceptr)
+    function gpufort_acc_create_i8_6(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*8_8)
     end function
 
-    function gpufort_acc_no_create_i8_6(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_i8_6(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_i8_6(hostptr,finalize)
+    subroutine gpufort_acc_delete_i8_6(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_i8_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_i8_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_i8_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_i8_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_i8_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_i8_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_i8_6(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_i8_6(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_i8_6(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_i8_6(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_i8_7(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_i8_7(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_i8_7(hostptr) result(deviceptr)
+    function gpufort_acc_create_i8_7(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*8_8)
     end function
 
-    function gpufort_acc_no_create_i8_7(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_i8_7(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_i8_7(hostptr,finalize)
+    subroutine gpufort_acc_delete_i8_7(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_i8_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_i8_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_i8_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_i8_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_i8_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_i8_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_i8_7(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_i8_7(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_i8_7(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_i8_7(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       integer(8),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
  
                                                               
-    function gpufort_acc_present_r4_0(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_r4_0(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       real(4),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_r4_0(hostptr) result(deviceptr)
+    function gpufort_acc_create_r4_0(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       real(4),target,intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),4_8)
     end function
 
-    function gpufort_acc_no_create_r4_0(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_r4_0(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       real(4),target,intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_r4_0(hostptr,finalize)
+    subroutine gpufort_acc_delete_r4_0(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       real(4),target,intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_r4_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_r4_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       real(4),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_r4_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_r4_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       real(4),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_r4_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_r4_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       real(4),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_r4_0(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_r4_0(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       real(4),target,intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_r4_0(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_r4_0(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       real(4),target,intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_r4_1(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_r4_1(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       real(4),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_r4_1(hostptr) result(deviceptr)
+    function gpufort_acc_create_r4_1(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       real(4),target,dimension(:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*4_8)
     end function
 
-    function gpufort_acc_no_create_r4_1(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_r4_1(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       real(4),target,dimension(:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_r4_1(hostptr,finalize)
+    subroutine gpufort_acc_delete_r4_1(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       real(4),target,dimension(:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_r4_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_r4_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       real(4),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_r4_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_r4_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       real(4),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_r4_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_r4_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       real(4),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_r4_1(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_r4_1(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       real(4),target,dimension(:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_r4_1(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_r4_1(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       real(4),target,dimension(:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_r4_2(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_r4_2(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       real(4),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_r4_2(hostptr) result(deviceptr)
+    function gpufort_acc_create_r4_2(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       real(4),target,dimension(:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*4_8)
     end function
 
-    function gpufort_acc_no_create_r4_2(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_r4_2(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       real(4),target,dimension(:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_r4_2(hostptr,finalize)
+    subroutine gpufort_acc_delete_r4_2(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       real(4),target,dimension(:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_r4_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_r4_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       real(4),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_r4_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_r4_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       real(4),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_r4_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_r4_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       real(4),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_r4_2(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_r4_2(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       real(4),target,dimension(:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_r4_2(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_r4_2(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       real(4),target,dimension(:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_r4_3(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_r4_3(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       real(4),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_r4_3(hostptr) result(deviceptr)
+    function gpufort_acc_create_r4_3(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       real(4),target,dimension(:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*4_8)
     end function
 
-    function gpufort_acc_no_create_r4_3(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_r4_3(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       real(4),target,dimension(:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_r4_3(hostptr,finalize)
+    subroutine gpufort_acc_delete_r4_3(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       real(4),target,dimension(:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_r4_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_r4_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       real(4),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_r4_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_r4_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       real(4),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_r4_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_r4_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       real(4),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_r4_3(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_r4_3(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       real(4),target,dimension(:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_r4_3(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_r4_3(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       real(4),target,dimension(:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_r4_4(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_r4_4(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       real(4),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_r4_4(hostptr) result(deviceptr)
+    function gpufort_acc_create_r4_4(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       real(4),target,dimension(:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*4_8)
     end function
 
-    function gpufort_acc_no_create_r4_4(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_r4_4(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       real(4),target,dimension(:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_r4_4(hostptr,finalize)
+    subroutine gpufort_acc_delete_r4_4(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       real(4),target,dimension(:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_r4_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_r4_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       real(4),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_r4_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_r4_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       real(4),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_r4_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_r4_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       real(4),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_r4_4(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_r4_4(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       real(4),target,dimension(:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_r4_4(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_r4_4(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       real(4),target,dimension(:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_r4_5(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_r4_5(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       real(4),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_r4_5(hostptr) result(deviceptr)
+    function gpufort_acc_create_r4_5(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       real(4),target,dimension(:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*4_8)
     end function
 
-    function gpufort_acc_no_create_r4_5(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_r4_5(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       real(4),target,dimension(:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_r4_5(hostptr,finalize)
+    subroutine gpufort_acc_delete_r4_5(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       real(4),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_r4_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_r4_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       real(4),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_r4_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_r4_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       real(4),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_r4_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_r4_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       real(4),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_r4_5(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_r4_5(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       real(4),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_r4_5(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_r4_5(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       real(4),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_r4_6(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_r4_6(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       real(4),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_r4_6(hostptr) result(deviceptr)
+    function gpufort_acc_create_r4_6(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       real(4),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*4_8)
     end function
 
-    function gpufort_acc_no_create_r4_6(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_r4_6(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       real(4),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_r4_6(hostptr,finalize)
+    subroutine gpufort_acc_delete_r4_6(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       real(4),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_r4_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_r4_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       real(4),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_r4_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_r4_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       real(4),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_r4_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_r4_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       real(4),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_r4_6(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_r4_6(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       real(4),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_r4_6(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_r4_6(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       real(4),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_r4_7(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_r4_7(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       real(4),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_r4_7(hostptr) result(deviceptr)
+    function gpufort_acc_create_r4_7(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       real(4),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*4_8)
     end function
 
-    function gpufort_acc_no_create_r4_7(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_r4_7(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       real(4),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_r4_7(hostptr,finalize)
+    subroutine gpufort_acc_delete_r4_7(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       real(4),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_r4_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_r4_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       real(4),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_r4_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_r4_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       real(4),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_r4_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_r4_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       real(4),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_r4_7(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_r4_7(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       real(4),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_r4_7(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_r4_7(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       real(4),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
  
                                                               
-    function gpufort_acc_present_r8_0(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_r8_0(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       real(8),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_r8_0(hostptr) result(deviceptr)
+    function gpufort_acc_create_r8_0(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       real(8),target,intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),8_8)
     end function
 
-    function gpufort_acc_no_create_r8_0(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_r8_0(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       real(8),target,intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_r8_0(hostptr,finalize)
+    subroutine gpufort_acc_delete_r8_0(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       real(8),target,intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_r8_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_r8_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       real(8),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_r8_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_r8_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       real(8),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_r8_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_r8_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       real(8),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_r8_0(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_r8_0(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       real(8),target,intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_r8_0(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_r8_0(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       real(8),target,intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_r8_1(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_r8_1(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       real(8),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_r8_1(hostptr) result(deviceptr)
+    function gpufort_acc_create_r8_1(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       real(8),target,dimension(:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*8_8)
     end function
 
-    function gpufort_acc_no_create_r8_1(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_r8_1(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       real(8),target,dimension(:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_r8_1(hostptr,finalize)
+    subroutine gpufort_acc_delete_r8_1(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       real(8),target,dimension(:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_r8_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_r8_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       real(8),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_r8_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_r8_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       real(8),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_r8_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_r8_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       real(8),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_r8_1(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_r8_1(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       real(8),target,dimension(:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_r8_1(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_r8_1(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       real(8),target,dimension(:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_r8_2(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_r8_2(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       real(8),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_r8_2(hostptr) result(deviceptr)
+    function gpufort_acc_create_r8_2(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       real(8),target,dimension(:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*8_8)
     end function
 
-    function gpufort_acc_no_create_r8_2(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_r8_2(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       real(8),target,dimension(:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_r8_2(hostptr,finalize)
+    subroutine gpufort_acc_delete_r8_2(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       real(8),target,dimension(:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_r8_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_r8_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       real(8),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_r8_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_r8_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       real(8),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_r8_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_r8_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       real(8),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_r8_2(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_r8_2(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       real(8),target,dimension(:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_r8_2(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_r8_2(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       real(8),target,dimension(:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_r8_3(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_r8_3(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       real(8),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_r8_3(hostptr) result(deviceptr)
+    function gpufort_acc_create_r8_3(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       real(8),target,dimension(:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*8_8)
     end function
 
-    function gpufort_acc_no_create_r8_3(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_r8_3(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       real(8),target,dimension(:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_r8_3(hostptr,finalize)
+    subroutine gpufort_acc_delete_r8_3(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       real(8),target,dimension(:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_r8_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_r8_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       real(8),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_r8_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_r8_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       real(8),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_r8_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_r8_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       real(8),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_r8_3(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_r8_3(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       real(8),target,dimension(:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_r8_3(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_r8_3(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       real(8),target,dimension(:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_r8_4(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_r8_4(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       real(8),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_r8_4(hostptr) result(deviceptr)
+    function gpufort_acc_create_r8_4(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       real(8),target,dimension(:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*8_8)
     end function
 
-    function gpufort_acc_no_create_r8_4(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_r8_4(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       real(8),target,dimension(:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_r8_4(hostptr,finalize)
+    subroutine gpufort_acc_delete_r8_4(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       real(8),target,dimension(:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_r8_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_r8_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       real(8),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_r8_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_r8_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       real(8),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_r8_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_r8_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       real(8),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_r8_4(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_r8_4(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       real(8),target,dimension(:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_r8_4(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_r8_4(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       real(8),target,dimension(:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_r8_5(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_r8_5(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       real(8),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_r8_5(hostptr) result(deviceptr)
+    function gpufort_acc_create_r8_5(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       real(8),target,dimension(:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*8_8)
     end function
 
-    function gpufort_acc_no_create_r8_5(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_r8_5(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       real(8),target,dimension(:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_r8_5(hostptr,finalize)
+    subroutine gpufort_acc_delete_r8_5(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       real(8),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_r8_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_r8_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       real(8),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_r8_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_r8_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       real(8),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_r8_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_r8_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       real(8),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_r8_5(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_r8_5(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       real(8),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_r8_5(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_r8_5(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       real(8),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_r8_6(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_r8_6(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       real(8),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_r8_6(hostptr) result(deviceptr)
+    function gpufort_acc_create_r8_6(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       real(8),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*8_8)
     end function
 
-    function gpufort_acc_no_create_r8_6(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_r8_6(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       real(8),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_r8_6(hostptr,finalize)
+    subroutine gpufort_acc_delete_r8_6(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       real(8),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_r8_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_r8_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       real(8),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_r8_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_r8_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       real(8),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_r8_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_r8_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       real(8),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_r8_6(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_r8_6(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       real(8),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_r8_6(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_r8_6(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       real(8),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_r8_7(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_r8_7(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       real(8),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_r8_7(hostptr) result(deviceptr)
+    function gpufort_acc_create_r8_7(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       real(8),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*8_8)
     end function
 
-    function gpufort_acc_no_create_r8_7(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_r8_7(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       real(8),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_r8_7(hostptr,finalize)
+    subroutine gpufort_acc_delete_r8_7(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       real(8),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_r8_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_r8_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       real(8),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_r8_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_r8_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       real(8),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_r8_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_r8_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       real(8),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_r8_7(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_r8_7(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       real(8),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_r8_7(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_r8_7(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       real(8),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
  
                                                               
-    function gpufort_acc_present_c4_0(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_c4_0(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       complex(4),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),2*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),2*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_c4_0(hostptr) result(deviceptr)
+    function gpufort_acc_create_c4_0(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       complex(4),target,intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),2*4_8)
     end function
 
-    function gpufort_acc_no_create_c4_0(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_c4_0(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       complex(4),target,intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_c4_0(hostptr,finalize)
+    subroutine gpufort_acc_delete_c4_0(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       complex(4),target,intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_c4_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_c4_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       complex(4),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),2*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),2*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_c4_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_c4_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       complex(4),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),2*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),2*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_c4_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_c4_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       complex(4),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),2*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_c4_0(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_c4_0(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       complex(4),target,intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_c4_0(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_c4_0(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       complex(4),target,intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_c4_1(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_c4_1(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       complex(4),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_c4_1(hostptr) result(deviceptr)
+    function gpufort_acc_create_c4_1(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       complex(4),target,dimension(:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*2*4_8)
     end function
 
-    function gpufort_acc_no_create_c4_1(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_c4_1(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       complex(4),target,dimension(:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_c4_1(hostptr,finalize)
+    subroutine gpufort_acc_delete_c4_1(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       complex(4),target,dimension(:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_c4_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_c4_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       complex(4),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_c4_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_c4_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       complex(4),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_c4_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_c4_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       complex(4),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_c4_1(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_c4_1(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       complex(4),target,dimension(:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_c4_1(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_c4_1(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       complex(4),target,dimension(:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_c4_2(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_c4_2(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       complex(4),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_c4_2(hostptr) result(deviceptr)
+    function gpufort_acc_create_c4_2(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       complex(4),target,dimension(:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*2*4_8)
     end function
 
-    function gpufort_acc_no_create_c4_2(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_c4_2(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       complex(4),target,dimension(:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_c4_2(hostptr,finalize)
+    subroutine gpufort_acc_delete_c4_2(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       complex(4),target,dimension(:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_c4_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_c4_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       complex(4),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_c4_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_c4_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       complex(4),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_c4_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_c4_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       complex(4),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_c4_2(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_c4_2(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       complex(4),target,dimension(:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_c4_2(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_c4_2(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       complex(4),target,dimension(:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_c4_3(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_c4_3(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       complex(4),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_c4_3(hostptr) result(deviceptr)
+    function gpufort_acc_create_c4_3(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       complex(4),target,dimension(:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*2*4_8)
     end function
 
-    function gpufort_acc_no_create_c4_3(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_c4_3(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       complex(4),target,dimension(:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_c4_3(hostptr,finalize)
+    subroutine gpufort_acc_delete_c4_3(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       complex(4),target,dimension(:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_c4_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_c4_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       complex(4),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_c4_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_c4_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       complex(4),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_c4_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_c4_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       complex(4),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_c4_3(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_c4_3(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       complex(4),target,dimension(:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_c4_3(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_c4_3(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       complex(4),target,dimension(:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_c4_4(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_c4_4(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       complex(4),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_c4_4(hostptr) result(deviceptr)
+    function gpufort_acc_create_c4_4(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       complex(4),target,dimension(:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*2*4_8)
     end function
 
-    function gpufort_acc_no_create_c4_4(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_c4_4(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       complex(4),target,dimension(:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_c4_4(hostptr,finalize)
+    subroutine gpufort_acc_delete_c4_4(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       complex(4),target,dimension(:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_c4_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_c4_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       complex(4),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_c4_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_c4_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       complex(4),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_c4_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_c4_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       complex(4),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_c4_4(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_c4_4(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       complex(4),target,dimension(:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_c4_4(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_c4_4(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       complex(4),target,dimension(:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_c4_5(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_c4_5(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_c4_5(hostptr) result(deviceptr)
+    function gpufort_acc_create_c4_5(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*2*4_8)
     end function
 
-    function gpufort_acc_no_create_c4_5(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_c4_5(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_c4_5(hostptr,finalize)
+    subroutine gpufort_acc_delete_c4_5(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_c4_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_c4_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_c4_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_c4_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_c4_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_c4_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_c4_5(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_c4_5(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_c4_5(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_c4_5(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_c4_6(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_c4_6(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_c4_6(hostptr) result(deviceptr)
+    function gpufort_acc_create_c4_6(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*2*4_8)
     end function
 
-    function gpufort_acc_no_create_c4_6(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_c4_6(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_c4_6(hostptr,finalize)
+    subroutine gpufort_acc_delete_c4_6(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_c4_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_c4_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_c4_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_c4_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_c4_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_c4_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_c4_6(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_c4_6(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_c4_6(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_c4_6(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_c4_7(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_c4_7(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*4_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*4_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_c4_7(hostptr) result(deviceptr)
+    function gpufort_acc_create_c4_7(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*2*4_8)
     end function
 
-    function gpufort_acc_no_create_c4_7(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_c4_7(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_c4_7(hostptr,finalize)
+    subroutine gpufort_acc_delete_c4_7(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_c4_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_c4_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_c4_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_c4_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*4_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_c4_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_c4_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*2*4_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_c4_7(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_c4_7(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_c4_7(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_c4_7(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       complex(4),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
  
                                                               
-    function gpufort_acc_present_c8_0(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_c8_0(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       complex(8),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),2*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),2*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_c8_0(hostptr) result(deviceptr)
+    function gpufort_acc_create_c8_0(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       complex(8),target,intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),2*8_8)
     end function
 
-    function gpufort_acc_no_create_c8_0(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_c8_0(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       complex(8),target,intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_c8_0(hostptr,finalize)
+    subroutine gpufort_acc_delete_c8_0(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       complex(8),target,intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_c8_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_c8_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       complex(8),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),2*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),2*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_c8_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_c8_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       complex(8),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),2*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),2*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_c8_0(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_c8_0(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       complex(8),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),2*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_c8_0(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_c8_0(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       complex(8),target,intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_c8_0(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_c8_0(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       complex(8),target,intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_c8_1(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_c8_1(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       complex(8),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_c8_1(hostptr) result(deviceptr)
+    function gpufort_acc_create_c8_1(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       complex(8),target,dimension(:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*2*8_8)
     end function
 
-    function gpufort_acc_no_create_c8_1(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_c8_1(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       complex(8),target,dimension(:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_c8_1(hostptr,finalize)
+    subroutine gpufort_acc_delete_c8_1(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       complex(8),target,dimension(:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_c8_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_c8_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       complex(8),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_c8_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_c8_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       complex(8),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_c8_1(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_c8_1(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       complex(8),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_c8_1(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_c8_1(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       complex(8),target,dimension(:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_c8_1(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_c8_1(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       complex(8),target,dimension(:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_c8_2(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_c8_2(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       complex(8),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_c8_2(hostptr) result(deviceptr)
+    function gpufort_acc_create_c8_2(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       complex(8),target,dimension(:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*2*8_8)
     end function
 
-    function gpufort_acc_no_create_c8_2(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_c8_2(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       complex(8),target,dimension(:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_c8_2(hostptr,finalize)
+    subroutine gpufort_acc_delete_c8_2(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       complex(8),target,dimension(:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_c8_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_c8_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       complex(8),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_c8_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_c8_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       complex(8),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_c8_2(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_c8_2(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       complex(8),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_c8_2(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_c8_2(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       complex(8),target,dimension(:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_c8_2(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_c8_2(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       complex(8),target,dimension(:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_c8_3(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_c8_3(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       complex(8),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_c8_3(hostptr) result(deviceptr)
+    function gpufort_acc_create_c8_3(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       complex(8),target,dimension(:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*2*8_8)
     end function
 
-    function gpufort_acc_no_create_c8_3(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_c8_3(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       complex(8),target,dimension(:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_c8_3(hostptr,finalize)
+    subroutine gpufort_acc_delete_c8_3(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       complex(8),target,dimension(:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_c8_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_c8_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       complex(8),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_c8_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_c8_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       complex(8),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_c8_3(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_c8_3(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       complex(8),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_c8_3(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_c8_3(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       complex(8),target,dimension(:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_c8_3(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_c8_3(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       complex(8),target,dimension(:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_c8_4(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_c8_4(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       complex(8),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_c8_4(hostptr) result(deviceptr)
+    function gpufort_acc_create_c8_4(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       complex(8),target,dimension(:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*2*8_8)
     end function
 
-    function gpufort_acc_no_create_c8_4(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_c8_4(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       complex(8),target,dimension(:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_c8_4(hostptr,finalize)
+    subroutine gpufort_acc_delete_c8_4(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       complex(8),target,dimension(:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_c8_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_c8_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       complex(8),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_c8_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_c8_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       complex(8),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_c8_4(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_c8_4(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       complex(8),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_c8_4(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_c8_4(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       complex(8),target,dimension(:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_c8_4(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_c8_4(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       complex(8),target,dimension(:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_c8_5(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_c8_5(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_c8_5(hostptr) result(deviceptr)
+    function gpufort_acc_create_c8_5(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*2*8_8)
     end function
 
-    function gpufort_acc_no_create_c8_5(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_c8_5(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_c8_5(hostptr,finalize)
+    subroutine gpufort_acc_delete_c8_5(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_c8_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_c8_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_c8_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_c8_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_c8_5(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_c8_5(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_c8_5(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_c8_5(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_c8_5(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_c8_5(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_c8_6(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_c8_6(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_c8_6(hostptr) result(deviceptr)
+    function gpufort_acc_create_c8_6(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*2*8_8)
     end function
 
-    function gpufort_acc_no_create_c8_6(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_c8_6(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_c8_6(hostptr,finalize)
+    subroutine gpufort_acc_delete_c8_6(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_c8_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_c8_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_c8_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_c8_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_c8_6(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_c8_6(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_c8_6(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_c8_6(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_c8_6(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_c8_6(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
                                                               
-    function gpufort_acc_present_c8_7(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_c8_7(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*8_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),size(hostptr)*2*8_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_c8_7(hostptr) result(deviceptr)
+    function gpufort_acc_create_c8_7(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),size(hostptr)*2*8_8)
     end function
 
-    function gpufort_acc_no_create_c8_7(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_c8_7(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_c8_7(hostptr,finalize)
+    subroutine gpufort_acc_delete_c8_7(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_c8_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_c8_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),size(hostptr)*2*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_c8_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_c8_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),size(hostptr)*2*8_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_c8_7(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_c8_7(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),size(hostptr)*2*8_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_c8_7(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_c8_7(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_c8_7(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_c8_7(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       complex(8),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
  

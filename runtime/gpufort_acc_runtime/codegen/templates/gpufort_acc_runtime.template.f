@@ -243,107 +243,113 @@ module gpufort_acc_runtime
 {% set rank = '' %}
 {% endif %}
 {% set suffix = tuple[0] + "_" + dims|string %}                                                              
-    function gpufort_acc_present_{{suffix}}(hostptr,async,copy,copyin,create) result(deviceptr)
+    function gpufort_acc_present_{{suffix}}(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
       integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy
-      logical,intent(in),optional :: copyin
-      logical,intent(in),optional :: create
+      logical,intent(in),optional :: copy, copyin, create
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8,async,copy,copyin,create)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8,async,copy,copyin,create,module_var)
     end function
 
-    function gpufort_acc_create_{{suffix}}(hostptr) result(deviceptr)
+    function gpufort_acc_create_{{suffix}}(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_create_b
       implicit none
       {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_create_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8)
     end function
 
-    function gpufort_acc_no_create_{{suffix}}(hostptr) result(deviceptr)
+    function gpufort_acc_no_create_{{suffix}}(hostptr,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_no_create_b
       implicit none
       {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
+      logical,intent(in),optional              :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_no_create_b(c_loc(hostptr))
     end function
 
-    subroutine gpufort_acc_delete_{{suffix}}(hostptr,finalize)
+    subroutine gpufort_acc_delete_{{suffix}}(hostptr,finalize,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_delete_b
       implicit none
       {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional              :: finalize, module_var
       !
-      call gpufort_acc_delete_b(c_loc(hostptr),finalize)
+      call gpufort_acc_delete_b(c_loc(hostptr),finalize,module_var)
     end subroutine
 
-    function gpufort_acc_copyin_{{suffix}}(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyin_{{suffix}}(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyin_b
       implicit none
       {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8,async)
+      deviceptr = gpufort_acc_copyin_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8,async,module_var)
     end function
 
-    function gpufort_acc_copyout_{{suffix}}(hostptr,async) result(deviceptr)
+    function gpufort_acc_copyout_{{suffix}}(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copyout_b
       implicit none
       {{tuple[2]}},target{{ rank }},intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8,async)
+      deviceptr = gpufort_acc_copyout_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8,async,module_var)
     end function
 
-    function gpufort_acc_copy_{{suffix}}(hostptr,async) result(deviceptr)
+    function gpufort_acc_copy_{{suffix}}(hostptr,async,module_var) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_copy_b
       implicit none
       {{tuple[2]}},target{{ rank }},intent(inout) :: hostptr
       integer,intent(in),optional :: async
+      logical,intent(in),optional :: module_var
       !
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_copy_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8,async)
     end function
 
-    subroutine gpufort_acc_update_host_{{suffix}}(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_{{suffix}}(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_host_b
       implicit none
       {{tuple[2]}},target{{ rank }},intent(inout) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_host_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-    subroutine gpufort_acc_update_device_{{suffix}}(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_device_{{suffix}}(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_update_device_b
       implicit none
       {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
-      logical,intent(in),optional :: condition, if_present
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
-      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async)
+      call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
 {% endfor %} 

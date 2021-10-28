@@ -1,7 +1,5 @@
 ! SPDX-License-Identifier: MIT                                                
 ! Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
-! TODO not thread-safe, make use of OMP_LIB module if this becomes a problem
-
 ! TODO will be slow for large pointer storages 
 ! If this becomes an issue, use faster data structures or bind the public interfaces to
 ! a faster C runtime
@@ -30,8 +28,8 @@ module gpufort_acc_runtime_base
   ! members
   !
   
-  integer, save :: LOG_LEVEL                    = 0
-  integer, save :: MAX_QUEUES                   = 64
+  integer, save :: LOG_LEVEL                = 0
+  integer, save :: MAX_QUEUES               = 64
   integer, save :: INITIAL_RECORDS_CAPACITY = 4096
   ! reuse/fragmentation controls
   integer, save :: BLOCK_SIZE             = 32
@@ -1067,11 +1065,11 @@ module gpufort_acc_runtime_base
     !> the acc_delete_finalize or acc_delete API routine, respectively, as described in Section 3.2.23. 
     !>
     !> \note use 
-    subroutine gpufort_acc_delete_b(hostptr,finalize)
+    subroutine gpufort_acc_delete_b(hostptr,finalize,module_var)
       use iso_c_binding
       implicit none
       type(c_ptr), intent(in)     :: hostptr
-      logical,intent(in),optional :: finalize
+      logical,intent(in),optional :: finalize, module_var
       !
       logical :: success, opt_finalize 
       integer :: loc
@@ -1233,11 +1231,11 @@ module gpufort_acc_runtime_base
     !> device( list )
     !>   Copies the data in list from the encountering thread to the
     !>   device.
-    subroutine gpufort_acc_update_host_b(hostptr,condition,if_present,async)
+    subroutine gpufort_acc_update_host_b(hostptr,condition,if_present,async,module_var)
       use iso_c_binding
       implicit none
       type(c_ptr),intent(in)      :: hostptr
-      logical,intent(in),optional :: condition, if_present 
+      logical,intent(in),optional :: condition, if_present, module_var
       integer,intent(in),optional :: async
       !
       integer :: loc

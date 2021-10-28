@@ -83,7 +83,7 @@ def _intrnl_collect_statements(linemaps):
     for linemap in linemaps:
         if linemap["is_active"]:
             for stmt in linemap["statements"]:
-                stripped_statement = stmt.lower().strip(" \t\n")
+                stripped_statement = stmt["body"].lower().strip(" \t\n")
                 if consider_statement(stripped_statement):
                     utils.logging.log_debug3(LOG_PREFIX,"_intrnl_collect_statements","select statement '{}'".format(stripped_statement))
                     filtered_statements.append(stripped_statement)

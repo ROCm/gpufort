@@ -60,7 +60,7 @@ def _intrnl_translate_source(infilepath,stree,linemaps,index,preamble):
     # transform statements; to 'linemaps'
     def transform_(stnode):
         stnode.transform_statements(index)
-        for child in stnode._children:
+        for child in stnode.children:
             transform_(child)
     transform_(stree)
 
@@ -83,11 +83,11 @@ def parse_raw_command_line_arguments():
     the argparse switches and help information.
     Further transform some arguments.
     """
-    config_filepath = None
+    config_filepath  = None
     working_dir_path = os.getcwd()
-    include_dirs    = []
-    defines        = []
-    options = sys.argv[1:]
+    include_dirs     = []
+    defines          = []
+    options          = sys.argv[1:]
     for i,opt in enumerate(list(options)):
         if opt == "--working-dir":
             if i+1 < len(options):
@@ -159,6 +159,8 @@ def parse_command_line_arguments():
     global POST_CLI_ACTIONS
     global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
     global INCLUDE_DIRS
+    global DUMP_LINEMAPS
+    global DUMP_LINEMAPS
 
     # parse command line arguments
     parser = argparse.ArgumentParser(description="S2S translation tool for CUDA Fortran and Fortran+X")
@@ -199,12 +201,13 @@ def parse_command_line_arguments():
     group_developer.add_argument("--log-level",dest="log_level",required=False,type=str,default="",help="Set log level. Overrides config value.")
     group_developer.add_argument("--log-filter",dest="log_filter",required=False,type=str,default=None,help="Filter the log output according to a regular expression.")
     group_developer.add_argument("--log-traceback",dest="log_traceback",required=False,action="store_true",help="Append gpufort traceback information to the log when encountering warning/error.")
+    group_developer.add_argument("--dump-linemaps",dest="dump_linemaps",required=False,action="store_true",help="Write the lines-to-statements mappings to disk pre & post applying code transformations.")
     group_developer.add_argument("--prof",dest="profiling_enable",required=False,action="store_true",help="Profile gpufort.")
     group_developer.add_argument("--prof-num-functions",dest="profiling_num_functions",required=False,type=int,default=50,help="The number of python functions to include into the summary [default=50].")
     group_developer.add_argument("--create-gpufort-headers",dest="create_gpufort_headers",action="store_true",help="Generate the GPUFORT header files.")
 
-    parser.set_defaults(print_config_defaults=False,dump_index=False,\
-      wrap_in_ifdef=False,cublasV2=False,
+    parser.set_defaults(print_config_defaults=False,
+      dump_linemaps=False,wrap_in_ifdef=False,cublasV2=False,
       only_emit_kernels_and_launchers=False,only_emit_kernels=False,only_modify_translation_source=False,\
       emit_cpu_implementation=False,emit_debug_code=False,\
       create_gpufort_headers=False,print_gfortran_config=False,print_cpp_config=False,\
@@ -325,6 +328,9 @@ def parse_command_line_arguments():
     if args.profiling_enable:
         PROFILING_ENABLE = True
         PROFILING_OUTPUT_NUM_FUNCTIONS = args.profiling_num_functions
+    # developer: other
+    if args.dump_linemaps:
+        DUMP_LINEMAPS = True
     # CUDA Fortran
     if args.cublasV2:
         scanner.CUBLAS_VERSION = 2
@@ -385,6 +391,11 @@ if __name__ == "__main__":
         profiler.enable()
     #
     linemaps = linemapper.read_file(input_filepath,defines)
+    
+    if DUMP_LINEMAPS:
+        utils.logging.log_info(LOG_PREFIX,"__main__","dump linemaps (before translation)")
+        linemapper.dump_linemaps(linemaps,input_filepath+"-linemaps-pre.json")
+    
     index   = create_index(INCLUDE_DIRS,defines,input_filepath,linemaps)
     if not ONLY_CREATE_GPUFORT_MODULE_FILES:
         # configure fort2hip
@@ -422,6 +433,10 @@ if __name__ == "__main__":
         stats = pstats.Stats(profiler, stream=s).sort_stats(sortby)
         stats.print_stats(PROFILING_OUTPUT_NUM_FUNCTIONS)
         print(s.getvalue())
+
+    if DUMP_LINEMAPS:
+        utils.logging.log_info(LOG_PREFIX,"__main__","dump linemaps (after translation)")
+        linemapper.dump_linemaps(linemaps,input_filepath+"-linemaps-post.json")
 
     # shutdown logging
     msg = "log file:   {0} (log level: {1}) ".format(log_filepath,LOG_LEVEL)

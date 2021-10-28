@@ -289,7 +289,7 @@ def _intrnl_update_context_from_loop_kernels(loop_kernels,index,hip_context,f_co
     hip_context["have_reductions"] = False
     for stkernel in loop_kernels:
         parse_result = stkernel.parse_result
-        parent_tag   = stkernel._parent.tag()
+        parent_tag   = stkernel.parent.tag()
         scope        = scoper.create_scope(index,parent_tag)
 
         kernel_args, c_kernel_local_vars, macros, input_arrays, local_cpu_routine_args =\

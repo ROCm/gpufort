@@ -9,7 +9,7 @@ class CufLoopKernel2Omp(CufBackendBase):
         """
         global LOG_PREFIX
         try:
-           parent_tag   = self._stnode._parent.tag()
+           parent_tag   = self._stnode.parent.tag()
            scope        = scoper.create_scope(index,parent_tag)
            parse_result = translator.parse_loop_kernel(joined_statements.split("\n"),scope)
            f_snippet    = joined_lines if statements_fully_cover_lines else joined_statements

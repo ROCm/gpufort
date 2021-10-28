@@ -38,7 +38,7 @@ class TestIndexer(unittest.TestCase):
         pass 
     def test_1_full_test(self):
         options = "-DCUDA -DCUDA2"
-        linemaps                   = linemapper.read_file("test1.f90",options)
+        linemaps                  = linemapper.read_file("test1.f90",options)
         result_lines              = linemapper.render_file(linemaps,stage="lines")
         result_raw_statements     = linemapper.render_file(linemaps,stage="raw_statements")
         result_statements         = linemapper.render_file(linemaps,stage="statements")

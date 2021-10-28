@@ -1,9 +1,10 @@
 import os,sys
 import re
 
-import addtoplevelpath
+import orjson
 import pyparsing as pyp
 
+import addtoplevelpath
 import utils.logging
 
 ERR_LINEMAPPER_MACRO_DEFINITION_NOT_FOUND = 11001
@@ -48,6 +49,14 @@ def _intrnl_expand_macros(input_string,macro_stack):
                 result  = result.replace(substring,subst)
                 iterate = True
                 break
+    return result
+    
+def _intrnl_linearize_statements(linemap):
+    result = []
+    for stmt in linemap["statements"]:
+        result += stmt["prolog"]
+        result.append(stmt["body"])
+        result += stmt["epilog"]
     return result
 
 def evaluate_condition(input_string,macro_stack):
@@ -247,84 +256,6 @@ def _intrnl_detect_line_starts(lines):
     line_starts.append(len(lines))
     return line_starts
 
-def preprocess_and_normalize(fortran_file_lines,fortran_filepath,macro_stack,region_stack1,region_stack2):
-    """:param list file_lines: Lines of a file, terminated with line break characters ('\n').
-    :returns: a list of dicts with keys 'lineno', 'original_lines', 'statements'.
-    """
-    global LOG_PREFIX
-    global ERROR_HANDLING
-           
-    global INDENT_WIDTH_WHITESPACE
-    global INDENT_WIDTH_TABS
-           
-    global DEFAULT_INDENT_CHAR
-    global ONLY_APPLY_USER_DEFINED_MACROS
-
-    utils.logging.log_enter_function(LOG_PREFIX,"preprocess_and_normalize",{
-      "fortran_filepath":fortran_filepath
-    })
-    
-    assert DEFAULT_INDENT_CHAR in [' ','\t'], "Indent char must be whitespace ' ' or tab '\\t'"
-
-    # 1. detect line starts
-    line_starts = _intrnl_detect_line_starts(fortran_file_lines)
-
-    # 2. go through the blocks of buffered lines
-    linemaps = []
-    for i,_ in enumerate(line_starts[:-1]):
-        line_start     = line_starts[i]
-        next_line_start = line_starts[i+1]
-        lines         = fortran_file_lines[line_start:next_line_start]
-
-        included_linemaps = []
-        is_preprocessor_directive = lines[0].startswith("#")
-        if is_preprocessor_directive and not ONLY_APPLY_USER_DEFINED_MACROS:
-            try:
-                included_linemaps = _intrnl_handle_preprocessor_directive(lines,fortran_filepath,macro_stack,region_stack1,region_stack2)
-                statements1 = []
-                statements3 = []
-            except Exception as e:
-                raise e
-        elif region_stack1[-1]: # in_active_region
-            # Convert line to statememts
-            statements1 = _intrnl_convert_lines_to_statements(lines)
-            # 2. Apply macros to statements
-            statements2  = []
-            for stmt1 in statements1:
-                statements2.append(_intrnl_expand_macros(stmt1,macro_stack))
-            # 3. Above processing might introduce multiple statements per line againa.
-            # Hence, convert each element of statements2 to single statements again
-            statements3 = []
-            for stmt2 in statements2:
-                for stmt3 in _intrnl_convert_lines_to_statements([stmt2]):
-                    statements3.append(stmt3)
-                    # TODO(Dominic): In case, we really need to assume that people write Fortran code
-                    # such as `module mymod; integer :: myint; end module` and we therefore might
-                    # require epilog/prolog per line, this will be the place where replace 
-                    # the string stmt3 by a dictionary.
-                    # (If we would do this, we can actually also linemap positional information in a next step.)
-    
-        #if len(included_linemaps) or (not is_preprocessor_directive and region_stack1[-1]):
-        linemap = {
-          "file":                    fortran_filepath,
-          "lineno":                  line_start+1, # key
-          "lines":                   lines,
-          "raw_statements":          statements1,
-          "included_linemaps":         included_linemaps,
-          "is_preprocessor_directive": is_preprocessor_directive,
-          "is_active":                region_stack1[-1],
-          # inout
-          "statements":              statements3,
-          "modified":                False,
-          # out
-          "prolog":                  [],
-          "epilog":                  []
-        }
-        linemaps.append(linemap)
-    
-    utils.logging.log_leave_function(LOG_PREFIX,"preprocess_and_normalize")
-    return linemaps
-
 def _intrnl_preprocess_and_normalize_fortran_file(fortran_filepath,macro_stack,region_stack1,region_stack2):
     """
     :throws: IOError if the specified file cannot be found/accessed.
@@ -403,7 +334,7 @@ def _intrnl_group_modified_linemaps(linemaps):
             for linemap in linemap["included_linemaps"]:
                 subst += collect_subst_(linemap)
         elif linemap["modified"]:
-            subst += linemap["statements"]
+            subst += _intrnl_linearize_statements(linemap)
         else: # for included linemaps
             subst += linemap["lines"]
         if len(linemap["epilog"]):
@@ -528,28 +459,28 @@ def preprocess_and_normalize(fortran_file_lines,fortran_filepath,macro_stack=[],
             statements3 = []
             for stmt2 in statements2:
                 for stmt3 in _intrnl_convert_lines_to_statements([stmt2]):
-                    statements3.append(stmt3)
-                    # TODO(Dominic): In case, we really need to assume that people write Fortran code
-                    # such as `module mymod; integer :: myint; end module` and we therefore might
-                    # require epilog/prolog per line, this will be the place where replace 
-                    # the string stmt3 by a dictionary.
-                    # (If we would do this, we can actually also linemap positional information in a next step.)
+                    statement = { 
+                      "epilog": [],
+                      "prolog": [],
+                      "body": stmt3
+                    }
+                    statements3.append(statement)
     
         #if len(included_linemaps) or (not is_preprocessor_directive and region_stack1[-1]):
         linemap = {
-          "file":                    fortran_filepath,
-          "lineno":                  line_start+1, # key
-          "lines":                   lines,
-          "raw_statements":          statements1,
+          "file":                      fortran_filepath,
+          "lineno":                    line_start+1, # key
+          "lines":                     lines,
+          "raw_statements":            statements1,
           "included_linemaps":         included_linemaps,
           "is_preprocessor_directive": is_preprocessor_directive,
-          "is_active":                region_stack1[-1],
+          "is_active":                 region_stack1[-1],
           # inout
-          "statements":              statements3,
-          "modified":                False,
+          "statements":                statements3,
+          "modified":                  False,
           # out
-          "prolog":                  [],
-          "epilog":                  []
+          "prolog":                    [],
+          "epilog":                    []
         }
         linemaps.append(linemap)
     
@@ -666,6 +597,8 @@ def render_file(linemaps,stage="statements",include_inactive=False,include_prepr
             if condition1 and condition2:
                 if len(linemap["included_linemaps"]):
                     result += render_file_(linemap["included_linemaps"])
+                elif stage=="statements":
+                    result += "".join(_intrnl_linearize_statements(linemap))
                 else:
                     result += "".join(linemap[stage])
         return result
@@ -673,3 +606,16 @@ def render_file(linemaps,stage="statements",include_inactive=False,include_prepr
     utils.logging.log_leave_function(LOG_PREFIX,"render_file")
     
     return render_file_(linemaps).strip("\n")
+
+def dump_linemaps(linemaps,filepath):
+    global PRETTY_PRINT_LINEMAPS_DUMP
+    global LOG_PREFIX    
+    utils.logging.log_enter_function(LOG_PREFIX,"dump_linemaps",{"filepath":filepath}) 
+    
+    with open(filepath,"wb") as outfile:
+         if PRETTY_PRINT_LINEMAPS_DUMP:
+             outfile.write(orjson.dumps(linemaps,option=orjson.OPT_INDENT_2))
+         else:
+             outfile.write(orjson.dumps(linemaps))
+    
+    utils.logging.log_leave_function(LOG_PREFIX,"dump_linemaps") 

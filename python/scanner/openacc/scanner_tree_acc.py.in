@@ -49,11 +49,11 @@ exec(open("{0}/openacc/scanner_tree_acc2hipgccrt.py.in".format(scanner_dir)).rea
 
 class STAccDirective(STDirective):
     """Class for handling ACC directives."""
-    def __init__(self,parent,first_linemap,first_linemap_first_statement,directive_no):
-        STDirective.__init__(self,parent,first_linemap,first_linemap_first_statement,directive_no,sentinel="!$acc")
+    def __init__(self,first_linemap,first_linemap_first_statement,directive_no):
+        STDirective.__init__(self,first_linemap,first_linemap_first_statement,directive_no,sentinel="!$acc")
         self._default_present_vars = []
     def find_substring(self,token):
-        return token in self.single_line_statement()
+        return token in self.first_statement()
     def find_any_substring(self,tokens):
         result = False
         for token in tokens:
@@ -113,7 +113,7 @@ class STAccDirective(STDirective):
          is_kernels_directive={is_kernels_directive},
          is_parallel_loop_directive={is_parallel_loop_directive} }}
 """.format(
-         single_line_statement=self.single_line_statement(),
+         single_line_statement=self.first_statement(),
          is_init_directive=self.is_init_directive(),
          is_shutdown_directive=self.is_shutdown_directive(),
          is_end_directive=self.is_end_directive(),
@@ -134,9 +134,9 @@ class STAccDirective(STDirective):
             return ACC_BACKENDS[checked_dialect](self).transform(\
                     joined_lines,joined_statements,statements_fully_cover_lines,index)
 class STAccLoopKernel(STAccDirective,STLoopKernel):
-    def __init__(self,parent,first_linemap,first_linemap_first_statement,directive_no):
-        STAccDirective.__init__(self,parent,first_linemap,first_linemap_first_statement,directive_no)
-        STLoopKernel.__init__(self,parent,first_linemap,first_linemap_first_statement)
+    def __init__(self,first_linemap,first_linemap_first_statement,directive_no):
+        STAccDirective.__init__(self,first_linemap,first_linemap_first_statement,directive_no)
+        STLoopKernel.__init__(self,first_linemap,first_linemap_first_statement)
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[],destination_dialect=""):
         """
         :param destination_dialect: allows to override default if this kernel
@@ -151,21 +151,21 @@ def handle_allocate_acc(stallocate,joined_statements,index,destination_dialect="
     indent = stallocate.first_line_indent() 
     checked_dialect = check_destination_dialect(\
         DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
-    epilog = ACC_ALLOCATE_BACKENDS[checked_dialect](stallocate,index)
-    if len(epilog):
-        return indent + joined_statements.rstrip("\n")+"\n"+epilog, True
-    else:
-        return joined_statements, False
+    if checked_dialect in ACC_ALLOCATE_BACKENDS:
+        epilog = ACC_ALLOCATE_BACKENDS[checked_dialect](stallocate,index)
+        for line in epilog:
+            stallocate.add_to_epilog(line)
+    return joined_statements, False
 
 def handle_deallocate_acc(stdeallocate,joined_statements,index,destination_dialect=""):
     indent = stdeallocate.first_line_indent() 
     checked_dialect = check_destination_dialect(\
         DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
-    prolog = ACC_DEALLOCATE_BACKENDS[checked_dialect](stdeallocate,index)
-    if len(prolog):
-        return prolog.rstrip("\n") + "\n" + indent + joined_statements.rstrip("\n"), True
-    else:
-        return joined_statements, False
+    if checked_dialect in ACC_DEALLOCATE_BACKENDS:
+        prolog = ACC_DEALLOCATE_BACKENDS[checked_dialect](stdeallocate,index)
+        for line in prolog:
+            stdeallocate.add_to_prolog(line)
+    return joined_statements, False
 
 def postprocess_tree_acc(stree,index,destination_dialect=""):
     """
@@ -180,20 +180,21 @@ def postprocess_tree_acc(stree,index,destination_dialect=""):
     
     checked_dialect = check_destination_dialect(\
         DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
-    def directive_filter(node):
-        return isinstance(node,STAccDirective) and\
-               not node.ignore_in_s2s_translation
-    directives = stree.find_all(filter=directive_filter, recursively=True)
-    for directive in directives:
-         stnode = directive._parent.first_entry_in_decl_list()
-         # add acc use statements
-         if not stnode is None:
-             indent = stnode.first_line_indent()
-             acc_runtime_module_name = RUNTIME_MODULE_NAMES[checked_dialect]
-             if acc_runtime_module_name != None and len(acc_runtime_module_name):
-                 stnode.add_to_prolog("{0}use {1}\n{0}use iso_c_binding\n".format(indent,acc_runtime_module_name))
-        #if type(directive._parent
-    # call backend
-    ACC_POSTPROCESS_BACKENDS[checked_dialect]().run(stree,index)
+    if checked_dialect in ACC_POSTPROCESS_BACKENDS: 
+        def directive_filter(node):
+            return isinstance(node,STAccDirective) and\
+                   not node.ignore_in_s2s_translation
+        directives = stree.find_all(filter=directive_filter, recursively=True)
+        for directive in directives:
+             stnode = directive.parent.first_entry_in_decl_list()
+             # add acc use statements
+             if not stnode is None:
+                 indent = stnode.first_line_indent()
+                 acc_runtime_module_name = RUNTIME_MODULE_NAMES[checked_dialect]
+                 if acc_runtime_module_name != None and len(acc_runtime_module_name):
+                     stnode.add_to_prolog("{0}use {1}\n{0}use iso_c_binding\n".format(indent,acc_runtime_module_name))
+            #if type(directive.parent
+        # call backend
+        ACC_POSTPROCESS_BACKENDS[checked_dialect]().run(stree,index)
     
     utils.logging.log_leave_function(LOG_PREFIX,"postprocess_tree_acc")

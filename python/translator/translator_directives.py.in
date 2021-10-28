@@ -369,7 +369,7 @@ class TTLoopKernel(TTContainer,IComputeConstruct):
         return self.__parent_directive().self_condition
     def deviceptrs(self):
         if self.__parent_directive().all_arrays_are_on_device():
-            return self.arrays_in_body(scope)
+            return self.arrays_in_body()
         else:
             return self.__parent_directive().deviceptrs()
     def create_alloc_vars(self):

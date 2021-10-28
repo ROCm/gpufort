@@ -60,7 +60,7 @@ EMPTY_SCOPE = { "tag": "", "types" : [], "variables" : [], "subprograms" : [] }
 
 __SCOPE_ENTRY_TYPES = ["subprograms","variables","types"]
 
-def _intrnl_resolve_dependencies(scope,index_record,index):
+def _intrnl_resolve_dependencies(scope,index_record,index,error_handling=None):
     """
     Include variable, type, and subprogram records from modules used
     by the current record (module,program or subprogram).
@@ -109,37 +109,39 @@ def _intrnl_resolve_dependencies(scope,index_record,index):
                                         copied_entry = copy.deepcopy(entry)
                                         copied_entry["name"] = mapping["renamed"]
                                         scope[entry_type].append(copied_entry)
-            if not used_module_found:
+            if not used_module_found:  
                 msg = "no index record for module '{}' could be found".format(used_module["name"])
                 if ERROR_HANDLING == "strict":
                     utils.logging.log_error(LOG_PREFIX,"_intrnl_resolve_dependencies",msg) 
                     sys.exit(ERR_INDEXER_RESOLVE_DEPENDENCIES_FAILED)
-                else:
+                elif ERROR_HANDLING == "warn":
                     utils.logging.log_warning(LOG_PREFIX,"_intrnl_resolve_dependencies",msg)
 
     handle_use_statements_(scope,index_record)
     utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_resolve_dependencies")
 
 
-def _intrnl_search_scope_for_type_or_subprogram(scope,entry_name,entry_type,empty_record):
+def _intrnl_search_scope_for_type_or_subprogram(scope,entry_name,entry_type,empty_record,error_handling=None):
     """
     :param str entry_type: either 'types' or 'subprograms'
     """
     global LOG_PREFIX
     utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_search_scope_for_type_or_subprogram",\
       {"entry_name":entry_name,"entry_type":entry_type})
-
+    
     # reverse access such that entries from the inner-most scope come first
     scope_entities = reversed(scope[entry_type])
 
     entry_name_lower = entry_name.lower()
     result = next((entry for entry in scope_entities if entry["name"] == entry_name_lower),None)  
     if result is None:
+        if error_handling == None:
+            error_handling = ERROR_HANDLING
         msg = "no entry found for {} '{}'.".format(entry_type[:-1],entry_name)
         if ERROR_HANDLING  == "strict":
             utils.logging.log_error(LOG_PREFIX,"_intrnl_search_scope_for_type_or_subprogram",msg) 
             sys.exit(ERR_SCOPER_LOOKUP_FAILED)
-        else:
+        elif ERROR_HANDLING == "warn":
             utils.logging.log_warning(LOG_PREFIX,"_intrnl_search_scope_for_type_or_subprogram",msg) 
         return empty_record, False
     else:
@@ -215,7 +217,7 @@ def create_scope(index,tag):
     global REMOVE_OUTDATED_SCOPES
     global MODULE_IGNORE_LIST
     global LOG_PREFIX    
-    utils.logging.log_enter_function(LOG_PREFIX,"create_scope",{"tag":tag,"ERROR_HANDLING":ERROR_HANDLING})
+    utils.logging.log_enter_function(LOG_PREFIX,"create_scope",{"tag":tag})
     
     # check if already a scope exists for the tag or if
     # it can be derived from a higher-level scope
@@ -287,11 +289,12 @@ def create_scope(index,tag):
         utils.logging.log_leave_function(LOG_PREFIX,"create_scope")
         return new_scope
 
-def search_scope_for_variable(scope,variable_expression,resolve=False):
+def search_scope_for_variable(scope,variable_expression,error_handling=None,resolve=False):
     """
     %param str variable_tag% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c' or 'a%b(i,j)%c(a%i5)'.
     """
     global LOG_PREFIX
+    global ERROR_HANDLING
     utils.logging.log_enter_function(LOG_PREFIX,"search_scope_for_variable",\
       {"variable_expression":variable_expression})
 
@@ -302,9 +305,7 @@ def search_scope_for_variable(scope,variable_expression,resolve=False):
     variable_tag      = create_index_search_tag_for_variable(variable_expression)
     list_of_var_names = variable_tag.split("%") 
     def lookup_from_left_to_right_(scope_variables,pos=0):
-        """
-        :note: recursive
-        """
+        """:note: recursive"""
         nonlocal scope_types
         nonlocal list_of_var_names
      
@@ -326,11 +327,13 @@ def search_scope_for_variable(scope,variable_expression,resolve=False):
     result = lookup_from_left_to_right_(reversed(scope["variables"]))
     
     if result is None:
-        msg       = "no entry found for variable '{}'.".format(variable_tag)
-        if ERROR_HANDLING  == "strict":
+        if error_handling == None:
+            error_handling = ERROR_HANDLING
+        msg = "no entry found for variable '{}'.".format(variable_tag)
+        if error_handling  == "strict":
             utils.logging.log_error(LOG_PREFIX,"search_scope_for_variable",msg) 
             sys.exit(ERR_SCOPER_LOOKUP_FAILED)
-        else:
+        elif error_handling  == "warn":
             utils.logging.log_warning(LOG_PREFIX,"search_scope_for_variable",msg) 
         return EMPTY_VARIABLE, False
     else:
@@ -382,7 +385,7 @@ def search_scope_for_subprogram(scope,subprogram_name):
     utils.logging.log_leave_function(LOG_PREFIX,"search_scope_for_subprogram")
     return result
 
-def search_index_for_variable(index,parent_tag,variable_expression,resolve=False):
+def search_index_for_variable(index,parent_tag,variable_expression,error_handling=None,resolve=False):
     """
     :param str parent_tag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
     %param str variable_expression% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c'. Note that all array indexing expressions must be stripped away.
@@ -392,7 +395,7 @@ def search_index_for_variable(index,parent_tag,variable_expression,resolve=False
       {"parent_tag":parent_tag,"variable_expression":variable_expression})
 
     scope = create_scope(index,parent_tag)
-    return search_scope_for_variable(scope,variable_expression,resolve=False)
+    return search_scope_for_variable(scope,variable_expression,error_handling,resolve)
 
 def search_index_for_type(index,parent_tag,type_name):
     """

@@ -690,9 +690,9 @@ class STMemcpy(STNode):
             dest_name = parse_result.dest_name_f_str()
             src_name  = parse_result.src_name_f_str()
             dest_indexed_var,_ = scoper.search_index_for_variable(index,self.parent.tag(),\
-              dest_name)
+              dest_name,error_handling="off")
             src_indexed_var,_  = scoper.search_index_for_variable(index,self.parent.tag(),\
-              src_name)
+              src_name,error_handling="off")
             dest_on_device = index_variable_is_on_device(dest_indexed_var)
             src_on_device  = index_variable_is_on_device(src_indexed_var)
             bytes_per_element = dest_indexed_var["bytes_per_element"]

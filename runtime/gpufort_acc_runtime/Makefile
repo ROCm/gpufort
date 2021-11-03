@@ -2,6 +2,9 @@ include rules.mk
 
 .PHONY: build codegen all clean
 
+codegen:
+	python3 codegen.py src/gpufort_acc_runtime.template.f90 -d 7
+
 build:
 	mkdir -p lib/
 	mkdir -p include/
@@ -9,10 +12,6 @@ build:
 	mv src/*.mod include/
 	mv src/libgpufort_acc.a lib/
 	make -C src/ clean
-
-codegen:
-	cd codegen && python3 ./model.py
-	cp codegen/gpufort_acc_runtime.f90 src/gpufort_acc_runtime.f90
 
 all: | codegen build
 

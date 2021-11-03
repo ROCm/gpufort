@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import os
 import pprint
+import argparse
 
 import jinja2
 
-class BaseModel():
+class Model():
     def __init__(self,template):
         self._template = template
     def generate_code(self,context={}):
@@ -21,12 +22,18 @@ class BaseModel():
         with open(output_file_path, "w") as output:
             output.write(self.generate_code(context))
 
-class GpufortAccRuntimeModuleModel(BaseModel):
-    def __init__(self):
-        BaseModel.__init__(self,"templates/gpufort_acc_runtime.template.f")
+def parse_cl_args():
+    parser = argparse.ArgumentParser(description="Codegenerator")
+    parser.add_argument("input",type=str,help="Path to template file. (in format: <name>.template.<ext>")
+    parser.add_argument("-d","--max-dims",type=int,dest="max_dims",help="Maximum number of array dimensions to support.")
+    return parser.parse_args()
 
 if __name__ == "__main__":
-    maxDims = 7
+    args = parse_cl_args()
+
+    max_dims      = args.max_dims
+    template_path = args.input
+    outfile_path  = template_path.replace(".template","")
 
     datatypes  =  [\
             ["l","1","logical"], \
@@ -34,8 +41,8 @@ if __name__ == "__main__":
             ["r4","4","real(4)"], ["r8","8","real(8)"], \
             ["c4","2*4","complex(4)"],["c8","2*8","complex(8)"] \
     ]
-    dimensions = range(0,maxDims+1)
+    dimensions = range(0,max_dims+1)
     context = { "datatypes" : datatypes, "dimensions" : dimensions }
-    
-    GpufortAccRuntimeModuleModel().\
-       generate_file("gpufort_acc_runtime.f90",context)
+ 
+    Model(template_path).\
+       generate_file(outfile_path,context)

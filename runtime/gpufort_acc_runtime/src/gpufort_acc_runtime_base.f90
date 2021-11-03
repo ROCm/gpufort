@@ -1,8 +1,6 @@
 ! SPDX-License-Identifier: MIT                                                
 ! Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
-! TODO will be slow for large pointer storages 
-! If this becomes an issue, use faster data structures or bind the public interfaces to
-! a faster C runtime
+#include "gpufort_acc_runtime.def"
 
 #define blocked_size(num_bytes) ((((num_bytes)+BLOCK_SIZE-1)/BLOCK_SIZE) * BLOCK_SIZE)
 
@@ -921,7 +919,7 @@ module gpufort_acc_runtime_base
     !> decremented.
     !>
     !> \note We just return the device pointer here and do not modify the counters.
-    function gpufort_acc_present_b(hostptr,num_bytes,async,module_var,copy,copyin,copyout,create) result(deviceptr)
+    function gpufort_acc_present_b(hostptr,num_bytes,__PRESENT_OPTIONALS_DUMMY_ARGS) result(deviceptr)
       use iso_fortran_env
       use iso_c_binding
       use gpufort_acc_runtime_c_bindings
@@ -944,12 +942,12 @@ module gpufort_acc_runtime_base
       if ( .not. c_associated(hostptr) ) then
         ERROR STOP "gpufort_acc_present_b: hostptr not c_associated"
       else
-        loc = record_list_%find_record(hostptr,success)
+        loc = record_list_%find_record(hostptr,success) ! TODO already detect a suitable candidate here on-the-fly
         if ( success ) then 
           fits      = is_subarray(record_list_%records(loc)%hostptr,record_list_%records(loc)%num_bytes,hostptr,num_bytes,offset_bytes)
           deviceptr = inc_cptr(record_list_%records(loc)%deviceptr,offset_bytes)
         else
-          if ( eval_opt_logical_(copy,.false.) ) then
+          if      ( eval_opt_logical_(copy,.false.) ) then
             deviceptr = gpufort_acc_copy_b(hostptr,num_bytes,async,module_var)
           else if ( eval_opt_logical_(create,.false.) ) then
             deviceptr = gpufort_acc_create_b(hostptr,num_bytes,async,module_var)

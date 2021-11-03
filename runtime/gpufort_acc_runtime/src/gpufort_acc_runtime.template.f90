@@ -9,6 +9,8 @@
 ! If this becomes an issue, use faster data structures or bind the public interfaces to
 ! a faster C runtime
 
+#include "gpufort_acc_runtime.def"
+
 module gpufort_acc_runtime
   use gpufort_acc_runtime_base
 
@@ -243,18 +245,18 @@ module gpufort_acc_runtime
 {% set rank = '' %}
 {% endif %}
 {% set suffix = tuple[0] + "_" + dims|string %}                                                              
-    function gpufort_acc_present_{{suffix}}(hostptr,async,copy,copyin,create,module_var) result(deviceptr)
+    function gpufort_acc_present_{{suffix}}(hostptr,__PRESENT_OPTIONALS_DUMMY_ARGS) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b
       implicit none
       {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
-      integer,intent(in),optional :: async
-      logical,intent(in),optional :: copy, copyin, create
-      logical,intent(in),optional :: module_var
+      integer,intent(in),optional  :: async
+      logical,intent(in),optional  :: module_var
+      logical,intent(in),optional  :: copy, copyin, copyout, create
       !
       type(c_ptr) :: deviceptr
       !
-      deviceptr = gpufort_acc_present_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8,async,copy,copyin,create,module_var)
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8,__PRESENT_OPTIONALS_DUMMY_ARGS)
     end function
 
     function gpufort_acc_create_{{suffix}}(hostptr,module_var) result(deviceptr)

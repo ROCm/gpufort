@@ -142,7 +142,7 @@ def parse_config(config_filepath):
         utils.logging.log_error(LOG_PREFIX,"parse_config",msg)
         sys.exit(1)
 
-def parse_command_line_arguments():
+def parse_cl_args():
     """
     Parse command line arguments after all changes and argument transformations by the config file have been applied.
     """
@@ -358,7 +358,7 @@ if __name__ == "__main__":
     config_filepath, include_dirs, defines = parse_raw_command_line_arguments()
     if config_filepath != None:
         parse_config(config_filepath)
-    args, unknown_args = parse_command_line_arguments()
+    args, unknown_args = parse_cl_args()
     if len(POST_CLI_ACTIONS):
         msg = "run registered actions"
         utils.logging.log_info(msg,verbose=False)

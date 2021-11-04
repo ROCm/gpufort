@@ -53,10 +53,10 @@ def add_implicit_region(stcontainer):
     last_decl_list_node = stcontainer.last_entry_in_decl_list()
     indent              = last_decl_list_node.first_line_indent()
     last_decl_list_node.add_to_epilog(HIP_GPUFORT_RT_ACC_ENTER_REGION.format(\
-        indent=indent,region_kind="implicit_region=.TRUE."))
+        indent=indent,region_kind="implicit_region=.true."))
     for stendorreturn in stcontainer.return_or_end_statements():
         stendorreturn.add_to_prolog(HIP_GPUFORT_RT_ACC_EXIT_REGION.format(\
-            indent=indent,region_kind="implicit_region=.TRUE."))
+            indent=indent,region_kind="implicit_region=.true."))
 
 class Acc2HipGpufortRT(AccBackendBase):
     # clauses 
@@ -172,7 +172,7 @@ class Acc2HipGpufortRT(AccBackendBase):
             ## Enter region commands must come first
             emit_enter_region = stnode.is_enter_data_directive()
             if emit_enter_region:
-                region_kind="region_kind=.TRUE."
+                region_kind="unstructured=.true."
             else:
                 region_kind=""
             emit_enter_region = emit_enter_region or stnode.is_data_directive()
@@ -197,7 +197,7 @@ class Acc2HipGpufortRT(AccBackendBase):
             ## Exit region commands must come last
             emit_exit_region = stnode.is_exit_data_directive()
             if emit_exit_region:
-                region_kind="region_kind=.TRUE."
+                region_kind="unstructured=.true."
             else:
                 region_kind=""
             emit_exit_region = emit_exit_region or (stnode.is_end_directive() and stnode.find_substring("kernels") and not stnode.find_substring("loop"))
@@ -247,7 +247,7 @@ class AccLoopKernel2HipGpufortRT(Acc2HipGpufortRT):
                 deviceptr = dev_var_name(var_expr)
                 if not deviceptr in temp_vars: 
                     temp_vars.append(deviceptr)
-                    result += template.format(indent=indent,var=var_expr,asyncr="",alloc=",copy=.TRUE.",dev_var=deviceptr)
+                    result += template.format(indent=indent,var=var_expr,asyncr="",alloc=",or=gpufort_acc_event_copy",dev_var=deviceptr)
                
         return result, len(result), temp_vars
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[]):
@@ -314,7 +314,7 @@ class Acc2HipGpufortRTPostprocess(AccPostprocessBackendBase):
                 is_pointer         = "pointer" in ivar["qualifiers"]
                 if not is_allocatable:
                     if not is_used_module_var: implicit_region = True  
-                    module_var = ",module_var=.TRUE." if is_used_module_var else ""
+                    module_var = ",module_var=.true." if is_used_module_var else ""
                     if is_pointer:
                         cond = "{indent}if (associated({var})) "
                         acc_present_template = (cond+HIP_GPUFORT_RT_ACC_PRESENT.replace("{indent}",""))
@@ -325,7 +325,7 @@ class Acc2HipGpufortRTPostprocess(AccPostprocessBackendBase):
                         map_kind=HIP_GPUFORT_RT_CLAUSES_OMP2ACC[ivar["declare_on_target"]]
                         acc_present_calls += acc_present_template.format(\
                             indent=indent,var=host_var,asyncr="",\
-                            alloc=module_var+","+map_kind+"=.TRUE.",dev_var=dev_var)
+                            alloc=module_var+",or=gpufort_acc_event_"+map_kind,dev_var=dev_var)
                         temp_vars.append(dev_var)
             if len(acc_present_calls):
                 stcontainer.append_vars_to_decl_list(temp_vars)
@@ -354,13 +354,13 @@ def AllocateHipGpufortRT(stallocate,index):
        is_allocatable_or_pointer = "allocatable" in ivar["qualifiers"] or\
                             "pointer" in ivar["qualifiers"]
        assert is_allocatable_or_pointer
-       module_var = ",module_var=.TRUE." if is_used_module_var else ""
+       module_var = ",module_var=.true." if is_used_module_var else ""
        if not is_used_module_var: implicit_region = True  
        if ivar["declare_on_target"] in HIP_GPUFORT_RT_CLAUSES_OMP2ACC.keys():
            map_kind=HIP_GPUFORT_RT_CLAUSES_OMP2ACC[ivar["declare_on_target"]]
            acc_present_calls.append(HIP_GPUFORT_RT_ACC_PRESENT.format(\
                indent=indent,var=host_var,asyncr="",\
-               alloc=module_var+","+map_kind+"=.TRUE.",dev_var=dev_var))
+               alloc=module_var+",or=gpufort_acc_event_"+map_kind,dev_var=dev_var))
            temp_vars.append(dev_var)
 
    if len(acc_present_calls):
@@ -386,7 +386,7 @@ def DeallocateHipGpufortRT(stdeallocate,index):
        is_allocatable_or_pointer = "allocatable" in ivar["qualifiers"] or\
                             "pointer" in ivar["qualifiers"]
        assert is_allocatable_or_pointer
-       module_var = ",module_var=.TRUE." if is_used_module_var else ""
+       module_var = ",module_var=.true." if is_used_module_var else ""
        if ivar["declare_on_target"] in ["alloc","to","tofrom"]:
            acc_delete_calls.append(HIP_GPUFORT_RT_ACC_DELETE.format(\
              indent=indent,var=host_var,asyncr="",finalize="",\

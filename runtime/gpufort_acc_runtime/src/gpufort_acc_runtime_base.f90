@@ -19,8 +19,14 @@ module gpufort_acc_runtime_base
   public :: gpufort_acc_runtime_print_summary
   
   public :: gpufort_acc_runtime_record_exists, gpufort_acc_runtime_get_record_id
+    
+  public :: gpufort_acc_event_undefined,&
+            gpufort_acc_event_create,&
+            gpufort_acc_event_copyin,&
+            gpufort_acc_event_copyout,&
+            gpufort_acc_event_copy     
 
-  PRIVATE ! Everything else is private
+  PRIVATE ! Everything below and not listed above as public is private
 
   !
   ! members
@@ -37,15 +43,15 @@ module gpufort_acc_runtime_base
   integer, save :: record_creation_counter_  = 0
   logical, save :: initialized_              = .false.
   integer, save :: last_queue_index_         = 0
-  
+ 
   !> Creational events for a record
-  enum, bind(c)
+  enum, bind(c) 
     enumerator :: gpufort_acc_event_undefined = 0 
     enumerator :: gpufort_acc_event_create    = 1 
     enumerator :: gpufort_acc_event_copyin    = 2 
     enumerator :: gpufort_acc_event_copyout   = 3 
     enumerator :: gpufort_acc_event_copy      = 4 
-  end enum
+  end enum 
 
   !> Data structure that maps a host to a device pointer.
   type :: t_record
@@ -107,9 +113,14 @@ module gpufort_acc_runtime_base
   type(t_record_list),save       :: record_list_
   type(t_queue),allocatable,save :: queues_(:)
 
+  !> evaluate optional values
+  interface eval_optval_
+     module procedure :: eval_optval_1_, eval_optval_2_
+  end interface 
+
   contains
 
-    function eval_opt_logical_(optval,fallback) result(retval)
+    function eval_optval_1_(optval,fallback) result(retval)
       implicit none
       logical,optional,intent(in) :: optval
       logical,intent(in)          :: fallback
@@ -121,7 +132,7 @@ module gpufort_acc_runtime_base
       endif
     end function
     
-    function eval_opt_integer_(optval,fallback) result(retval)
+    function eval_optval_2_(optval,fallback) result(retval)
       implicit none
       integer,optional,intent(in) :: optval
       integer,intent(in)          :: fallback
@@ -132,6 +143,18 @@ module gpufort_acc_runtime_base
          retval = fallback
       endif
     end function
+    
+    !function eval_optval_3_(optval,fallback) result(retval)
+    !  implicit none
+    !  integer(kind(gpufort_acc_event_undefined)),optional,intent(in) :: optval
+    !  integer(kind(gpufort_acc_event_undefined)),intent(in)          :: fallback
+    !  integer(kind(gpufort_acc_event_undefined))                     :: retval
+    !  if ( present(optval) ) then
+    !     retval = optval       
+    !  else
+    !     retval = fallback
+    !  endif
+    !end function
     
     !
     ! debugging/analysis
@@ -507,7 +530,7 @@ module gpufort_acc_runtime_base
       !
 
       record%num_refs = record%num_refs - 1
-      ret = record%num_refs <= eval_opt_integer_(threshold,0)
+      ret = record%num_refs <= eval_optval_(threshold,0)
     end function
     
     !
@@ -672,7 +695,7 @@ module gpufort_acc_runtime_base
          !
          call record_list%records(loc)%setup(hostptr,&
            num_bytes,creational_event,record_list%current_region,reuse_existing)
-         if ( eval_opt_logical_(module_var,.false.) ) record_list%records(loc)%region = 0
+         if ( eval_optval_(module_var,.false.) ) record_list%records(loc)%region = 0
          if ( creational_event .eq. gpufort_acc_event_copyin .or. &
               creational_event .eq. gpufort_acc_event_copy ) &
                 call record_list%records(loc)%copy_to_device(async)
@@ -919,7 +942,7 @@ module gpufort_acc_runtime_base
     !> decremented.
     !>
     !> \note We just return the device pointer here and do not modify the counters.
-    function gpufort_acc_present_b(hostptr,num_bytes,__PRESENT_OPTIONALS_DUMMY_ARGS) result(deviceptr)
+    function gpufort_acc_present_b(hostptr,num_bytes,module_var,or,async) result(deviceptr)
       use iso_fortran_env
       use iso_c_binding
       use gpufort_acc_runtime_c_bindings
@@ -927,17 +950,20 @@ module gpufort_acc_runtime_base
       type(c_ptr),intent(in)       :: hostptr
       integer(c_size_t),intent(in) :: num_bytes
       !logical,intent(in),optional :: exiting
-      integer,intent(in),optional  :: async
       logical,intent(in),optional  :: module_var
-      logical,intent(in),optional  :: copy, copyin, copyout, create
+      integer(kind(gpufort_acc_event_undefined)),&
+               intent(in),optional :: or
+      integer,intent(in),optional  :: async
       !
       type(c_ptr) :: deviceptr
       !
       integer(c_size_t) :: offset_bytes
       logical           :: success, fits
+      integer(kind(gpufort_acc_event_undefined)) &
+                        :: opt_or
       integer           :: loc, num_lists_to_check
       !
-      if ( .not. initialized_ .and. eval_opt_logical_(module_var,.false.) ) call gpufort_acc_init()
+      if ( .not. initialized_ .and. eval_optval_(module_var,.false.) ) call gpufort_acc_init()
       if ( .not. initialized_ ) ERROR STOP "gpufort_acc_present_b: runtime not initialized"
       if ( .not. c_associated(hostptr) ) then
         ERROR STOP "gpufort_acc_present_b: hostptr not c_associated"
@@ -947,19 +973,21 @@ module gpufort_acc_runtime_base
           fits      = is_subarray(record_list_%records(loc)%hostptr,record_list_%records(loc)%num_bytes,hostptr,num_bytes,offset_bytes)
           deviceptr = inc_cptr(record_list_%records(loc)%deviceptr,offset_bytes)
         else
-          if      ( eval_opt_logical_(copy,.false.) ) then
-            deviceptr = gpufort_acc_copy_b(hostptr,num_bytes,async,module_var)
-          else if ( eval_opt_logical_(create,.false.) ) then
-            deviceptr = gpufort_acc_create_b(hostptr,num_bytes,async,module_var)
-          else if ( eval_opt_logical_(copyin,.false.) ) then
-            deviceptr = gpufort_acc_copyin_b(hostptr,num_bytes,async,module_var)
-          else if ( eval_opt_logical_(copyout,.false.) ) then
-            deviceptr = gpufort_acc_copyout_b(hostptr,num_bytes,async,module_var)
-          else
-            print *, "ERROR: did not find record for hostptr:"
-            CALL print_cptr(hostptr)
-            ERROR STOP "gpufort_acc_present_b: no record found for hostptr"
-          endif
+          opt_or = eval_optval_(or,gpufort_acc_event_undefined)
+          select case (opt_or)
+            case (gpufort_acc_event_copy)
+              deviceptr = gpufort_acc_copy_b(hostptr,num_bytes,async,module_var)
+            case (gpufort_acc_event_create)
+              deviceptr = gpufort_acc_create_b(hostptr,num_bytes,async,module_var)
+            case (gpufort_acc_event_copyin)
+              deviceptr = gpufort_acc_copyin_b(hostptr,num_bytes,async,module_var)
+            case (gpufort_acc_event_copyout)
+              deviceptr = gpufort_acc_copyout_b(hostptr,num_bytes,async,module_var)
+            case default
+              print *, "ERROR: did not find record for hostptr:"
+              CALL print_cptr(hostptr)
+              ERROR STOP "gpufort_acc_present_b: no record found for hostptr"
+          end select
         endif
         if ( LOG_LEVEL > 0 ) then
           write(output_unit,fmt="(a)",advance="no") "[gpufort-rt][1] gpufort_acc_present_b: retrieved deviceptr="
@@ -1005,10 +1033,9 @@ module gpufort_acc_runtime_base
       logical,intent(in),optional  :: module_var
       type(c_ptr) :: deviceptr
       !
-      logical :: opt_module_var
       integer :: loc
       !
-      if ( .not. initialized_ .and. eval_opt_logical_(module_var,.false.) ) call gpufort_acc_init()
+      if ( .not. initialized_ .and. eval_optval_(module_var,.false.) ) call gpufort_acc_init()
       if ( .not. initialized_ ) ERROR STOP "gpufort_acc_create_b: runtime not initalized"
       if ( .not. c_associated(hostptr) ) then
         ERROR STOP "gpufort_acc_create_b: hostptr not c_associated"
@@ -1118,7 +1145,7 @@ module gpufort_acc_runtime_base
       !
       integer :: loc
       !
-      if ( .not. initialized_ .and. eval_opt_logical_(module_var,.false.) ) call gpufort_acc_init()
+      if ( .not. initialized_ .and. eval_optval_(module_var,.false.) ) call gpufort_acc_init()
       if ( .not. initialized_ ) ERROR STOP "gpufort_acc_copyin_b: runtime not initialized"
       if ( .not. c_associated(hostptr) ) then
 #ifndef NULLPTR_MEANS_NOOP
@@ -1160,7 +1187,7 @@ module gpufort_acc_runtime_base
       !
       integer :: loc
       !
-      if ( .not. initialized_ .and. eval_opt_logical_(module_var,.false.) ) call gpufort_acc_init()
+      if ( .not. initialized_ .and. eval_optval_(module_var,.false.) ) call gpufort_acc_init()
       if ( .not. initialized_ ) ERROR STOP "gpufort_acc_copyout_b: runtime not initialized"
       if ( .not. c_associated(hostptr) ) then
 #ifndef NULLPTR_MEANS_NOOP
@@ -1197,7 +1224,7 @@ module gpufort_acc_runtime_base
       !
       integer :: loc
       !
-      if ( .not. initialized_ .and. eval_opt_logical_(module_var,.false.) ) call gpufort_acc_init()
+      if ( .not. initialized_ .and. eval_optval_(module_var,.false.) ) call gpufort_acc_init()
       if ( .not. initialized_ ) ERROR STOP "gpufort_acc_copy_b: runtime not initialized"
       if ( .not. c_associated(hostptr) ) then
 #ifndef NULLPTR_MEANS_NOOP

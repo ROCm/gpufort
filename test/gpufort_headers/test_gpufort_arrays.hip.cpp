@@ -8,7 +8,7 @@ __global__ void fill_int_array_1(
 ) {
   int i = -1+threadIdx.x + blockDim.x*blockIdx.x;
   if ( (i+1) < 10 ) {
-    arr(i) = i+1;
+    arr(i) = arr.linearized_index(i);
     //printf("%d\n",arr(i));
   }
 }
@@ -19,7 +19,7 @@ __global__ void fill_int_array_2(
   int i = -1+threadIdx.x + blockDim.x*blockIdx.x;
   int j = -2+threadIdx.y + blockDim.y*blockIdx.y;
   if ( (i+1) < 10 && (j+2) < 10 ) {
-    arr(i,j) = (i+1) + (j+2)*arr.stride2;
+    arr(i,j) = arr.linearized_index(i,j);
   }
 }
 
@@ -30,7 +30,7 @@ __global__ void fill_int_array_3(
   int j = -2+threadIdx.y + blockDim.y*blockIdx.y;
   int k = -3+threadIdx.z + blockDim.z*blockIdx.z;
   if ( (i+1) < 10 && (j+2) < 10 && (k+3) < 10 ) {
-    arr(i,j,k) = (i+1) + (j+2)*arr.stride2 + (k+3)*arr.stride3;
+    arr(i,j,k) = arr.linearized_index(i,j,k);
   }
 }
 

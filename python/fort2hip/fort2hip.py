@@ -595,24 +595,35 @@ def generate_gpufort_headers(output_dir):
     global LOG_PREFIX
     global GPUFORT_HEADERS_MAX_DIM
 
-    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_render_templates",\
+    utils.logging.log_enter_function(LOG_PREFIX,"generate_gpufort_headers",\
       {"output_dir": output_dir})
     
     gpufort_header_file_path = os.path.join(output_dir,"gpufort.h")
     model.GpufortHeaderModel().generate_file(gpufort_header_file_path)
     msg = "created gpufort main header: ".ljust(40) + gpufort_header_file_path
-    utils.logging.log_info(LOG_PREFIX,"_intrnl_render_templates",msg)
+    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_headers",msg)
     
     gpufort_reductions_header_file_path = os.path.join(output_dir, "gpufort_reductions.h")
     model.GpufortReductionsHeaderModel().generate_file(gpufort_reductions_header_file_path)
     msg = "created gpufort reductions header file: ".ljust(40) + gpufort_reductions_header_file_path
-    utils.logging.log_info(LOG_PREFIX,"_intrnl_render_templates",msg)
+    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_headers",msg)
     
+    # gpufort arrays
+    gpufort_arrays_context={
+      "max_rank":GPUFORT_HEADERS_MAX_DIM,
+      "datatypes":GPUFORT_HEADERS_DATATYPES
+    }
     gpufort_arrays_header_file_path = os.path.join(output_dir,"gpufort_arrays.h")
     model.GpufortArraysHeaderModel().generate_file(gpufort_arrays_header_file_path,\
-        context={"max_rank":GPUFORT_HEADERS_MAX_DIM})
+      context=gpufort_arrays_context)
     msg = "created gpufort arrays header file: ".ljust(40) + gpufort_arrays_header_file_path
-    utils.logging.log_info(LOG_PREFIX,"_intrnl_render_templates",msg)
+    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_headers",msg)
+    
+    gpufort_arrays_fortran_interfaces_module_path = os.path.join(output_dir,"gpufort_arrays.f03")
+    model.GpufortArraysFortranInterfacesModel().generate_file(gpufort_arrays_fortran_interfaces_module_path,\
+      context=gpufort_arrays_context)
+    msg = "created gpufort arrays Fortran interface module: ".ljust(40) + gpufort_arrays_fortran_interfaces_module_path
+    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_headers",msg)
 
     utils.logging.log_leave_function(LOG_PREFIX,"generate_gpufort_headers")
 

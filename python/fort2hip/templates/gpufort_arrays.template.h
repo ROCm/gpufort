@@ -1,21 +1,7 @@
 {# SPDX-License-Identifier: MIT                                                 #}
 {# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved. #}
-{%- macro separated_list_single_line(prefix,sep,rank) -%}
-{% for d in range(1,rank+1) -%}
-{{prefix}}{{d}}{{ sep if not loop.last }}{%- endfor %}
-{%- endmacro -%}
-{%- macro separated_list(prefix,sep,rank) -%}
-{% for d in range(1,rank+1) -%}
-{{prefix}}{{d}}{{ sep+"\n" if not loop.last }}
-{%- endfor %}
-{%- endmacro -%}
-{%- macro arglist(prefix,rank) -%}
-{{ separated_list(prefix,",",rank) }}
-{%- endmacro -%}
-{%- macro bound_args(prefix,rank) -%}
-{{ arglist(prefix+"n",rank) }},
-{{ arglist(prefix+"lb",rank) }}
-{%- endmacro -%}
+{% import "templates/gpufort.macros.h" as gm %}
+{% import "templates/gpufort_arrays.macros.h" as gam %}
 // This file was generated from a template via gpufort --gpufort-create-headers
 #ifndef _GPUFORT_ARRAYS_H_
 #define _GPUFORT_ARRAYS_H_
@@ -60,12 +46,12 @@ namespace gpufort {
     __host__ __device__ void wrap(
         T* data_host,
         T* data_dev,
-{{ bound_args("int ",rank) | indent(8,True) }}
+{{ gm.bound_args("const int ",rank) | indent(8,True) }}
       ) {
        this->data_host = data_host;
        this->data_dev  = data_dev;
        // column-major access
-       this->num_elements = {{ separated_list_single_line("n","*",rank) }};
+       this->num_elements = {{ gm.separated_list_single_line("n","*",rank) }};
 {% for d in range(1,rank_ub) %}
        this->stride{{d}}  = 1{%- for e in range(1,d) -%}*n{{e}}{%- endfor %};
 {% endfor %}
@@ -81,7 +67,7 @@ namespace gpufort {
      * \param[in] i1,i2,... multi-dimensional array index.
      */
     __host__ __device__ __forceinline__ int linearized_index (
-{{ arglist("const int i",rank) | indent(6,"True") }}
+{{ gm.arglist("const int i",rank) | indent(6,"True") }}
     ) {
       return this->index_offset
 {% for d in range(1,rank_ub) %}
@@ -95,10 +81,10 @@ namespace gpufort {
      * \param[in] i1,i2,... multi-dimensional array index.
      */
     __host__ __device__ __forceinline__ T& operator() (
-{{ arglist("const int i",rank) | indent(6,"True") }}
+{{ gm.arglist("const int i",rank) | indent(6,"True") }}
     ) {
       const int index = linearized_index(
-{{ separated_list_single_line("i",",",rank) | indent(8,"True") }}
+{{ gm.separated_list_single_line("i",",",rank) | indent(8,"True") }}
       );
       #if __HIP_DEVICE_COMPILE__
       return this->data_dev[index];
@@ -116,7 +102,7 @@ namespace gpufort {
     bool copyout_at_destruction = false; //> If the device data should be copied back to the host when this struct is destroyed.
     bool owns_host_data         = false; //> If this is only a wrapper, i.e. no memory management is performed.
     bool owns_device_data       = false; //> If this is only a wrapper, i.e. no memory management is performed.
-    int ref_ctr                 = 0;     //> Number of references.
+    int num_refs                 = 0;     //> Number of references.
    
     /**
      * Initialize.
@@ -132,7 +118,7 @@ namespace gpufort {
     __host__ hipError_t init(
         T* data_host,
         T* data_dev,
-{{ bound_args("int ",rank) | indent(8,True) }},
+{{ gm.bound_args("const int ",rank) | indent(8,True) }},
         bool pinned,
         hipStream_t stream          = nullptr,
         bool copyout_at_destruction = false) {
@@ -140,13 +126,14 @@ namespace gpufort {
       this->data.wrap(
           data_host,
           data_dev,
-{{ bound_args("",rank) | indent(10,True) }}
+{{ gm.bound_args("",rank) | indent(10,True) }}
       );
       this->stream                 = stream;
       this->pinned                 = pinned;
       this->copyout_at_destruction = copyout_at_destruction; 
       this->owns_host_data         = data_host == nullptr;
       this->owns_device_data       = data_dev == nullptr;
+      this->num_refs                 = 1;
       if ( this->owns_host_data && pinned ) {
         ierr = hipHostMalloc((void**) &this->data.data_host,this->num_data_bytes(),0);
       } else if ( this->owns_host_data ) {
@@ -243,14 +230,17 @@ namespace gpufort {
      * \param[in] i1,i2,... multi-dimensional array index.
      */
     __host__ T& operator() (
-{{ arglist("const int i",rank) | indent(6,"True") }}
+{{ gm.arglist("const int i",rank) | indent(6,"True") }}
     ) {
       return this->data(
-{{ separated_list_single_line("i",",",rank) | indent(8,"True") }}
+{{ gm.separated_list_single_line("i",",",rank) | indent(8,"True") }}
       );
     }
   };
 {{ "" if not loop.last }}
 {% endfor -%}
 }
+
+// C bindings
+{{ gam.gpufort_arrays_c_bindings(datatypes,max_rank) }}
 #endif // _GPUFORT_ARRAYS_H_  

@@ -41,3 +41,7 @@ PRETTIFY_EMITTED_C_CODE       = False
         # Prettify the emitted HIP C++ code with clang-format.
 CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140, BinPackArguments: false, BinPackParameters: false, AllowAllArgumentsOnNextLine: false, AllowAllParametersOfDeclarationOnNextLine: false}\"" 
         # Format style that is passed to clang-format
+
+GPUFORT_HEADERS_MAX_DIM = 7
+        # Generate rank-dependent classes and expresions up to
+        # this dimension.

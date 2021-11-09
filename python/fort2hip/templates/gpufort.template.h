@@ -42,6 +42,7 @@ i{{rank}}
 {%- endfor %}
 {%- endmacro -%}
 {# template body #}
+// This file was generated from a template via gpufort --gpufort-create-headers
 #ifndef _GPUFORT_H_
 #define _GPUFORT_H_
 #include "hip/hip_complex.h"

@@ -27,25 +27,37 @@ class BaseModel():
 
 class HipImplementationModel(BaseModel):
     def __init__(self):
-        BaseModel.__init__(self,"templates/HipImplementation.template.cpp")
+        BaseModel.__init__(self,"templates/hip_implementation.template.cpp")
 
 class InterfaceModuleModel(BaseModel):
     def __init__(self):
-        BaseModel.__init__(self,"templates/InterfaceModule.template.f03")
+        BaseModel.__init__(self,"templates/interface_module.template.f03")
 
 class InterfaceModuleTestModel(BaseModel):
     def __init__(self):
-        BaseModel.__init__(self,"templates/InterfaceModuleTest.template.f03")
+        BaseModel.__init__(self,"templates/interface_module_test.template.f03")
 
 class GpufortHeaderModel(BaseModel):
     def __init__(self):
-        BaseModel.__init__(self,"templates/Gpufort.template.h")
+        BaseModel.__init__(self,"templates/gpufort.template.h")
 
 class GpufortReductionsHeaderModel(BaseModel):
     def __init__(self):
-        BaseModel.__init__(self,"templates/GpufortReductions.template.h")
+        BaseModel.__init__(self,"templates/gpufort_reductions.template.h")
+
+class GpufortArraysHeaderModel(BaseModel):
+    def __init__(self):
+        BaseModel.__init__(self,"templates/gpufort_arrays.template.h")
+
+class GpufortArraysFortranInterfaceModel(BaseModel):
+    def __init__(self):
+        BaseModel.__init__(self,"templates/gpufort_arrays.template.f90")
 
 #model = GpufortHeaderModel()
 #model.generate_file("gpufort.h")
 #model = GpufortReductionsHeaderModel()
 #model.generate_file("gpufort_reductions.h")
+
+#model_c = GpufortArraysModel().generate_file("gpufort_arrays.h",
+#  context={"max_rank":7})
+#model_f = GpufortArraysFortranInterfaceModel().generate_file("gpufort_arrays.f90")

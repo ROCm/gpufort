@@ -18,6 +18,7 @@ generate_gpufort_sources:
 lib/$(LIBGPUFORT): generate_gpufort_headers generate_gpufort_sources
 	mkdir -p $(GPUFORT_DIR)/lib
 	mv $(GPUFORT_DIR)/src/$(LIBGPUFORT) $(GPUFORT_DIR)/lib
+	mv $(GPUFORT_DIR)/src/*.mod $(GPUFORT_DIR)/include/$(SUFFIX)
 	make -C $(GPUFORT_DIR)/src clean
 
 lib/$(LIBGPUFORT_ACC):

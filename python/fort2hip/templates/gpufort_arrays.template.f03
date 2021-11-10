@@ -1,5 +1,6 @@
 {# SPDX-License-Identifier: MIT                                         #}
 {# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved. #}
+{% import "templates/gpufort_arrays.macros.f03" as gam %}
 module gpufort_arrays
   use iso_c_binding
   ! NOTE: the below types must have exactly the
@@ -26,6 +27,14 @@ module gpufort_arrays
     logical(c_bool)           :: owns_host_data         = .false.; !> If this is only a wrapper, i.e. no memory management is performed.
     logical(c_bool)           :: owns_device_data       = .false.; !> If this is only a wrapper, i.e. no memory management is performed.
     integer(c_int)            :: num_refs               = 0;     !> Number of references.
+    integer(c_size_t)         :: bytes_per_element      = 0;     !> Number of references.
   end type{{"\n" if not loop.last}}
 {% endfor %}
+
+  ! interfaces
+{{ gam.gpufort_arrays_fortran_interfaces(datatypes,max_rank) | indent(2,True) }}
+
+{{ gam.gpufort_arrays_fortran_interfaces_generic(datatypes,max_rank) | indent(2,True) }}
+
+  ! subroutines
 end module gpufort_arrays 

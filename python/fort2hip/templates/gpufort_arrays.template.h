@@ -98,11 +98,12 @@ namespace gpufort {
   struct MappedArray{{rank}}{
     GpuArray{{rank}}<T> data;
     hipStream_t stream          = nullptr;
-    bool pinned                 = false; //> If the host data is pinned. 
-    bool copyout_at_destruction = false; //> If the device data should be copied back to the host when this struct is destroyed.
-    bool owns_host_data         = false; //> If this is only a wrapper, i.e. no memory management is performed.
-    bool owns_device_data       = false; //> If this is only a wrapper, i.e. no memory management is performed.
-    int num_refs                 = 0;     //> Number of references.
+    bool pinned                 = false;     //> If the host data is pinned. 
+    bool copyout_at_destruction = false;     //> If the device data should be copied back to the host when this struct is destroyed.
+    bool owns_host_data         = false;     //> If this is only a wrapper, i.e. no memory management is performed.
+    bool owns_device_data       = false;     //> If this is only a wrapper, i.e. no memory management is performed.
+    int num_refs                = 0;         //> Number of references.
+    size_t bytes_per_element    = sizeof(T); //> Bytes per element; stored to make num_data_bytes routine independent of T 
    
     /**
      * Initialize.
@@ -180,7 +181,7 @@ namespace gpufort {
     }
     
     __host__ size_t num_data_bytes() {
-      return this->data.num_elements * sizeof(T);
+      return this->data.num_elements * this->bytes_per_element;
     }
  
     /**
@@ -214,7 +215,7 @@ namespace gpufort {
      * \param[inout] device_copy pointer to device copy pointer 
      */
     __host__ hipError_t create_device_copy(void** device_copy) {
-      const size_t size = sizeof(MappedArray{{rank}}<T>);
+      const size_t size = sizeof(MappedArray{{rank}}<char>); // sizeof(T*) = sizeof(char*)
       hipError_t ierr = hipMalloc(device_copy,size);
       if ( ierr == hipSuccess ) {
         ierr =  hipMemcpyAsync(

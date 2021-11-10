@@ -6,12 +6,13 @@
 {# C side #}
 extern "C" {
 {% for tuple in datatypes %}
-{% set datatype = tuple.c_type %}
+{% set c_type = tuple.c_type %}
 {% for rank in range(1,max_rank+1) %}
-  __host__ hipError_t gpufort_mapped_array{{rank}}_{{datatype}}_init (
-      gpufort::MappedArray{{rank}}<{{datatype}}>* mapped_array,
-      {{datatype}}* data_host,
-      {{datatype}}* data_dev,
+{% set c_prefix = "gpufort_mapped_array_"+rank|string+"_"+c_type %}
+  __host__ hipError_t {{c_prefix}}_init (
+      gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array,
+      {{c_type}}* data_host,
+      {{c_type}}* data_dev,
 {{ gm.bound_args("const int ",rank) | indent(6,True) }},
       bool pinned,
       hipStream_t stream,
@@ -24,32 +25,32 @@ extern "C" {
     );
   } 
   
-  __host__ hipError_t gpufort_mapped_array{{rank}}_{{datatype}}_destroy(
-      gpufort::MappedArray{{rank}}<{{datatype}}>* mapped_array
+  __host__ hipError_t {{c_prefix}}_destroy(
+      gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array
   ) {
     return mapped_array->destroy();
   } 
   
-  __host__ hipError_t gpufort_mapped_array{{rank}}_{{datatype}}_copy_data_to_host (
-      gpufort::MappedArray{{rank}}<{{datatype}}>* mapped_array
+  __host__ hipError_t {{c_prefix}}_copy_data_to_host (
+      gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array
   ) {
     return mapped_array->copy_data_to_host();
   } 
   
-  __host__ hipError_t gpufort_mapped_array{{rank}}_{{datatype}}_copy_data_to_device (
-      gpufort::MappedArray{{rank}}<{{datatype}}>* mapped_array
+  __host__ hipError_t {{c_prefix}}_copy_data_to_device (
+      gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array
   ) {
     return mapped_array->copy_data_to_device();
   } 
   
-  __host__ void gpufort_mapped_array{{rank}}_{{datatype}}_inc_num_refs(
-      gpufort::MappedArray{{rank}}<{{datatype}}>* mapped_array
+  __host__ void {{c_prefix}}_inc_num_refs(
+      gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array
   ) {
     mapped_array->num_refs += 1;
   } 
   
-  __host__ hipError_t gpufort_mapped_array{{rank}}_{{datatype}}_dec_num_refs(
-      gpufort::MappedArray{{rank}}<{{datatype}}>* mapped_array,
+  __host__ hipError_t {{c_prefix}}_dec_num_refs(
+      gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array,
       bool destroy_if_zero_refs
   ) {
     mapped_array->num_refs -= 1;

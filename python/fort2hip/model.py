@@ -49,6 +49,10 @@ class GpufortArraysHeaderModel(BaseModel):
     def __init__(self):
         BaseModel.__init__(self,"templates/gpufort_arrays.template.h")
 
+class GpufortArraysSourceModel(BaseModel):
+    def __init__(self):
+        BaseModel.__init__(self,"templates/gpufort_arrays.template.hip.cpp")
+
 class GpufortArraysFortranInterfacesModel(BaseModel):
     def __init__(self):
         BaseModel.__init__(self,"templates/gpufort_arrays.template.f03")

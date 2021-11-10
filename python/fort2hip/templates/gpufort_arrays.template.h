@@ -4,12 +4,12 @@
 {% import "templates/gpufort_arrays.macros.h" as gam %}
 // This file was generated from a template via gpufort --gpufort-create-headers
 #ifndef _GPUFORT_ARRAYS_H_
-#define _GPUFORT_ARRAYS_H_
-#include <hip/hip_runtime_api.h>
-#ifndef _GPUFORT_H_
-#include <iostream>
-#include <stdlib.h>
-#define HIP_CHECK(condition)         \
+#  define _GPUFORT_ARRAYS_H_
+#  include <hip/hip_runtime_api.h>
+#  ifndef _GPUFORT_H_
+#    include <iostream>
+#    include <stdlib.h>
+#    define HIP_CHECK(condition)     \
   {                                  \
     hipError_t error = condition;    \
     if(error != hipSuccess){         \
@@ -192,7 +192,7 @@ namespace gpufort {
         (void*) this->data.data_host, 
         (void*) this->data.data_dev,
         this->num_data_bytes(), 
-	hipMemcpyDeviceToHost,this->stream);
+        hipMemcpyDeviceToHost, this->stream);
     }
     
     /**
@@ -203,8 +203,8 @@ namespace gpufort {
       return hipMemcpyAsync(
         (void*) this->data.data_dev, 
         (void*) this->data.data_host,
-        this->num_data_bytes(), 
-        hipMemcpyHostToDevice,this->stream);
+        this->num_data_bytes(),
+        hipMemcpyHostToDevice, this->stream);
     }
 
     /** 
@@ -217,10 +217,11 @@ namespace gpufort {
       const size_t size = sizeof(MappedArray{{rank}}<T>);
       hipError_t ierr = hipMalloc(device_copy,size);
       if ( ierr == hipSuccess ) {
-        ierr =  hipMemcpyH2DAsync(
+        ierr =  hipMemcpyAsync(
           (void*) *device_copy, 
           (void*) this,
-          size, this->stream);
+          size,
+          hipMemcpyHostToDevice, this->stream);
       }
       return ierr;
     }
@@ -240,7 +241,4 @@ namespace gpufort {
 {{ "" if not loop.last }}
 {% endfor -%}
 }
-
-// C bindings
-{{ gam.gpufort_arrays_c_bindings(datatypes,max_rank) }}
 #endif // _GPUFORT_ARRAYS_H_  

@@ -174,8 +174,10 @@ def parse_cl_args():
     parser.add_argument("-d","--search-dirs", dest="search_dirs", help="Module search dir. Alternative -I<path> can be used (multiple times).", nargs="*",  required=False, default=[], type=str)
     parser.add_argument("-w","--wrap-in-ifdef",dest="wrap_in_ifdef",action="store_true",help="Wrap converted lines into ifdef in host code.")
     parser.add_argument("-E","--dest-dialect",dest="destination_dialect",default=None,type=str,help="One of: {}".format(", ".join(scanner.SUPPORTED_DESTINATION_DIALECTS)))
-    parser.add_argument("--gfortran_config",dest="print_gfortran_config",action="store_true",help="Print include and compile flags.")
-    parser.add_argument("--cpp_config",dest="print_cpp_config",action="store_true",help="Print include and compile flags.")
+    parser.add_argument("--gfortran_config",dest="print_gfortran_config",action="store_true",help="Print include and compile flags; output is influenced by HIP_PLATFORM environment variable.")
+    parser.add_argument("--cpp_config",dest="print_cpp_config",action="store_true",help="Print include and compile flags; output is influenced by HIP_PLATFORM environment variable.")
+    parser.add_argument("--ldflags",dest="print_ldflags",action="store_true",help="Print linker flags; output is influenced by HIP_PLATFORM environment variable.")
+    parser.add_argument("--ldflags-gpufort-rt",dest="print_ldflags_gpufort_rt",action="store_true",help="Print GPUFORT OpenACC runtime linker flags; output is influenced by HIP_PLATFORM environment variable.")
     parser.add_argument("--path",dest="print_path",action="store_true",help="Print path to the GPUFORT root directory.")
     # config options: shadow arguments that are actually taken care of by raw argument parsing
     group_config = parser.add_argument_group('Config file')
@@ -205,12 +207,15 @@ def parse_cl_args():
     group_developer.add_argument("--prof",dest="profiling_enable",required=False,action="store_true",help="Profile gpufort.")
     group_developer.add_argument("--prof-num-functions",dest="profiling_num_functions",required=False,type=int,default=50,help="The number of python functions to include into the summary [default=50].")
     group_developer.add_argument("--create-gpufort-headers",dest="create_gpufort_headers",action="store_true",help="Generate the GPUFORT header files.")
+    group_developer.add_argument("--create-gpufort-sources",dest="create_gpufort_sources",action="store_true",help="Generate the GPUFORT source files.")
 
     parser.set_defaults(print_config_defaults=False,
       dump_linemaps=False,wrap_in_ifdef=False,cublasV2=False,
       only_emit_kernels_and_launchers=False,only_emit_kernels=False,only_modify_translation_source=False,\
       emit_cpu_implementation=False,emit_debug_code=False,\
-      create_gpufort_headers=False,print_gfortran_config=False,print_cpp_config=False,\
+      create_gpufort_headers=False,create_gpufort_sources=False,\
+      print_gfortran_config=False,print_cpp_config=False,\
+      print_ldflags=False,print_ldflags_gpufort_rt=False,
       only_create_gpufort_module_files=False,skip_create_gpufort_module_files=False,verbose=False,\
       log_traceback=False,profiling_enable=False)
     args, unknown_args = parser.parse_known_args()
@@ -219,19 +224,37 @@ def parse_cl_args():
     if args.print_path:
         print(__GPUFORT_ROOT_DIR,file=sys.stdout)
         sys.exit()
+    hip_platform=os.environ.get("HIP_PLATFORM","amd")
     if args.print_cpp_config:
         cpp_config  = "-D"+linemapper.LINE_GROUPING_IFDEF_MACRO
-        cpp_config += " -I"+__GPUFORT_ROOT_DIR+"/include"
+        cpp_config += " -I"+os.path.join(__GPUFORT_ROOT_DIR,"include")
+        cpp_config += " -I"+os.path.join(__GPUFORT_ROOT_DIR,"include",hip_platform)
         print(cpp_config,file=sys.stdout)
         sys.exit()
     if args.print_gfortran_config:
         fortran_config  = " -cpp -std=f2008 -ffree-line-length-none"
         fortran_config += " -D"+linemapper.LINE_GROUPING_IFDEF_MACRO
-        fortran_config += " -I"+__GPUFORT_ROOT_DIR+"/include"
+        fortran_config += " -I"+os.path.join(__GPUFORT_ROOT_DIR,"include")
+        fortran_config += " -I"+os.path.join(__GPUFORT_ROOT_DIR,"include",hip_platform)
         print(fortran_config,file=sys.stdout)
         sys.exit()
+    if args.print_ldflags:
+        ldflags = " -L"+os.path.join(__GPUFORT_ROOT_DIR,"lib") + " -lgpufort_"+hip_platform
+        print(ldflags,file=sys.stdout)
+        sys.exit()
+    if args.print_ldflags_gpufort_rt:
+        ldflags  = " -L"+os.path.join(__GPUFORT_ROOT_DIR,"lib") + " -lgpufort_acc_"+hip_platform
+        ldflags += " -lgpufort_"+hip_platform
+        print(ldflags,file=sys.stdout)
+        sys.exit()
+    call_exit = False
     if args.create_gpufort_headers:
         fort2hip.generate_gpufort_headers(os.getcwd())
+        call_exit = True
+    if args.create_gpufort_sources:
+        fort2hip.generate_gpufort_sources(os.getcwd())
+        call_exit = True
+    if call_exit:
         sys.exit()
     if args.print_config_defaults:
         gpufort_python_dir=os.path.dirname(os.path.realpath(__file__))

@@ -619,14 +619,35 @@ def generate_gpufort_headers(output_dir):
     msg = "created gpufort arrays header file: ".ljust(40) + gpufort_arrays_header_file_path
     utils.logging.log_info(LOG_PREFIX,"generate_gpufort_headers",msg)
     
+    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_headers",msg)
+
+def generate_gpufort_sources(output_dir):
+    """Create the source files that all GPUFORT HIP kernels rely on."""
+    global LOG_PREFIX
+    global GPUFORT_HEADERS_MAX_DIM
+
+    utils.logging.log_enter_function(LOG_PREFIX,"generate_gpufort_sources",\
+      {"output_dir": output_dir})
+    
+    # gpufort arrays
+    gpufort_arrays_context={
+      "max_rank":GPUFORT_HEADERS_MAX_DIM,
+      "datatypes":GPUFORT_HEADERS_DATATYPES
+    }
+    gpufort_arrays_source_file_path = os.path.join(output_dir,"gpufort_arrays.hip.cpp")
+    model.GpufortArraysSourceModel().generate_file(gpufort_arrays_source_file_path,\
+      context=gpufort_arrays_context)
+    msg = "created gpufort arrays C++ source file: ".ljust(40) + gpufort_arrays_source_file_path
+    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_sources",msg)
+    
     gpufort_arrays_fortran_interfaces_module_path = os.path.join(output_dir,"gpufort_arrays.f03")
     model.GpufortArraysFortranInterfacesModel().generate_file(gpufort_arrays_fortran_interfaces_module_path,\
       context=gpufort_arrays_context)
     msg = "created gpufort arrays Fortran interface module: ".ljust(40) + gpufort_arrays_fortran_interfaces_module_path
-    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_headers",msg)
+    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_sources",msg)
 
-    utils.logging.log_leave_function(LOG_PREFIX,"generate_gpufort_headers")
-
+    utils.logging.log_leave_function(LOG_PREFIX,"generate_gpufort_sources")
+    utils.logging.log_leave_function(LOG_PREFIX,"generate_gpufort_sources")
 
 def generate_hip_files(stree,index,kernels_to_convert_to_hip,translation_source_path,generate_code):
     """

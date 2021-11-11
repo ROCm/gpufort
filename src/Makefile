@@ -1,10 +1,10 @@
 # compiler options
-FC    ?= gfortran
+FC    ?= hipfc
 HIPCC ?= hipcc
 
 GPUFORT_INC = -I$(shell gpufort --path)/include
 
-FC_CFLAGS    ?= -std=f2008 -ffree-line-length-none -cpp
+FC_CFLAGS    ?= -std=f2008 -ffree-line-length-none -cpp -fmax-errors=5
 HIPCC_CFLAGS ?= -fPIC
 SUFFIX       ?= $(if $(HIP_PLATFORM),$(HIP_PLATFORM),amd)
 LIBGPUFORT    = libgpufort_$(SUFFIX).a
@@ -17,11 +17,11 @@ HIP_OBJ  = $(HIP_SRC:%.hip.cpp=%.hip.o)
 FORT_OBJ = $(FORT_SRC:%.f03=%.o)
 
 # targets
-.PHONY: all clean clean_all generate_gpufort_sources $(LIBGPUFORT)
+.PHONY: all clean clean_all gpufort_sources $(LIBGPUFORT)
 
-all: generate_gpufort_sources $(LIBGPUFORT) 
+all: gpufort_sources $(LIBGPUFORT) 
 
-generate_gpufort_sources:
+gpufort_sources:
 	gpufort --create-gpufort-sources
 
 $(HIP_OBJ): %.hip.o: %.hip.cpp

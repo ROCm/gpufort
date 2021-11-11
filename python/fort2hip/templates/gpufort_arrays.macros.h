@@ -5,42 +5,46 @@
 {%- macro gpufort_arrays_c_bindings(datatypes,max_rank) -%}
 {# C side #}
 extern "C" {
-{% for tuple in datatypes %}
-{% set c_type = tuple.c_type %}
 {% for rank in range(1,max_rank+1) %}
-{% set c_prefix = "gpufort_mapped_array_"+rank|string+"_"+c_type %}
+{% set c_type = "char" %}
+{% set c_prefix = "gpufort_mapped_array_"+rank|string %}
   __host__ hipError_t {{c_prefix}}_init (
       gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array,
+      int bytes_per_element,
       {{c_type}}* data_host,
       {{c_type}}* data_dev,
-{{ gm.bound_args("const int ",rank) | indent(6,True) }},
+      int* sizes,
+      int* lower_bounds,
       bool pinned,
-      hipStream_t stream,
       bool copyout_at_destruction
   ) {
     return mapped_array->init(
+      bytes_per_element,
       data_host, data_dev,
-{{ gm.bound_args_single_line("",rank) | indent(6,True) }},
-      pinned, stream, copyout_at_destruction
+      sizes, lower_bounds,
+      pinned, copyout_at_destruction
     );
   } 
   
   __host__ hipError_t {{c_prefix}}_destroy(
-      gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array
+      gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array,
+      hipStream_t stream = nullptr
   ) {
-    return mapped_array->destroy();
+    return mapped_array->destroy(stream);
   } 
   
   __host__ hipError_t {{c_prefix}}_copy_data_to_host (
-      gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array
+      gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array,
+      hipStream_t stream = nullptr
   ) {
-    return mapped_array->copy_data_to_host();
+    return mapped_array->copy_data_to_host(stream);
   } 
   
   __host__ hipError_t {{c_prefix}}_copy_data_to_device (
-      gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array
+      gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array,
+      hipStream_t stream = nullptr
   ) {
-    return mapped_array->copy_data_to_device();
+    return mapped_array->copy_data_to_device(stream);
   } 
   
   __host__ void {{c_prefix}}_inc_num_refs(
@@ -51,16 +55,16 @@ extern "C" {
   
   __host__ hipError_t {{c_prefix}}_dec_num_refs(
       gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array,
-      bool destroy_if_zero_refs
+      bool destroy_if_zero_refs,
+      hipStream_t stream = nullptr
   ) {
     mapped_array->num_refs -= 1;
     if ( destroy_if_zero_refs && mapped_array->num_refs == 0 ) {
-      return mapped_array->destroy();
+      return mapped_array->destroy(stream);
     } {
       return hipSuccess;
     }
   } 
 {% endfor %}
-{% endfor %}
-}
+} // extern "C"
 {%- endmacro -%}

@@ -23,15 +23,17 @@ namespace gpufort {
 {% set rank_ub = rank+1 %}
   /**
    * Intended to be passed as kernel launch parameter.
+   * \note Operator `T& operator()` requires parametrization with type T.
+   * \note Size of this struct independent of template type T.
    */
   template<typename T>
   struct GpuArray{{rank}} {
-    T* data_host        = nullptr;
-    T* data_dev         = nullptr;
+    T*     data_host    = nullptr;
+    T*     data_dev     = nullptr;
     size_t num_elements = 0;     //> Number of represented by this array.
     int    index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
 {% for d in range(1,rank_ub) %}
-    size_t stride{{d}}  = -1; //> Strides for linearizing {{rank}}-dimensional index.
+    int    stride{{d}}      = -1;    //> Strides for linearizing {{rank}}-dimensional index.
 {% endfor %}
  
     /**
@@ -86,7 +88,7 @@ namespace gpufort {
       const int index = linearized_index(
 {{ gm.separated_list_single_line("i",",",rank) | indent(8,"True") }}
       );
-      #if __HIP_DEVICE_COMPILE__
+      #ifdef __HIP_DEVICE_COMPILE__
       return this->data_dev[index];
       #else
       return this->data_host[index];
@@ -97,14 +99,21 @@ namespace gpufort {
   template<typename T>
   struct MappedArray{{rank}}{
     GpuArray{{rank}}<T> data;
-    hipStream_t stream          = nullptr;
     bool pinned                 = false;     //> If the host data is pinned. 
     bool copyout_at_destruction = false;     //> If the device data should be copied back to the host when this struct is destroyed.
     bool owns_host_data         = false;     //> If this is only a wrapper, i.e. no memory management is performed.
     bool owns_device_data       = false;     //> If this is only a wrapper, i.e. no memory management is performed.
     int num_refs                = 0;         //> Number of references.
-    size_t bytes_per_element    = sizeof(T); //> Bytes per element; stored to make num_data_bytes routine independent of T 
-   
+    int bytes_per_element       = -1;        //> Bytes per element; stored to make num_data_bytes routine independent of T 
+
+    MappedArray{{rank}}() {
+      // do nothing
+    }
+    
+    ~MappedArray{{rank}}() {
+      // do nothing
+    }
+
     /**
      * Initialize.
      * \param[in] data_host host data pointer (may be nullptr; see the note).
@@ -117,24 +126,24 @@ namespace gpufort {
      * Otherwise, it is allocated via classic malloc.
      */
     __host__ hipError_t init(
+        int bytes_per_element,
         T* data_host,
         T* data_dev,
-{{ gm.bound_args("const int ",rank) | indent(8,True) }},
+{{ gm.bound_args_single_line("int ",rank) | indent(8,True) }},
         bool pinned,
-        hipStream_t stream          = nullptr,
         bool copyout_at_destruction = false) {
       hipError_t ierr = hipSuccess;
       this->data.wrap(
           data_host,
           data_dev,
-{{ gm.bound_args("",rank) | indent(10,True) }}
+{{ gm.bound_args_single_line("",rank) | indent(10,True) }}
       );
-      this->stream                 = stream;
+      this->bytes_per_element      = bytes_per_element;
       this->pinned                 = pinned;
       this->copyout_at_destruction = copyout_at_destruction; 
       this->owns_host_data         = data_host == nullptr;
       this->owns_device_data       = data_dev == nullptr;
-      this->num_refs                 = 1;
+      this->num_refs               = 1;
       if ( this->owns_host_data && pinned ) {
         ierr = hipHostMalloc((void**) &this->data.data_host,this->num_data_bytes(),0);
       } else if ( this->owns_host_data ) {
@@ -145,13 +154,23 @@ namespace gpufort {
       } 
       return ierr;
     }
-
-    MappedArray{{rank}}() {
-      // do nothing
-    }
     
-    ~MappedArray{{rank}}() {
-      HIP_CHECK(this->destroy());
+    __host__ hipError_t init(
+        int bytes_per_element,
+        T* data_host,
+        T* data_dev,
+        int* sizes,
+        int* lower_bounds,
+        bool pinned,
+        bool copyout_at_destruction = false) {
+        return this->init(
+          bytes_per_element,
+          data_host,
+          data_dev,
+          sizes[0],{% for d in range(1,rank) %}sizes[{{d}}],{% endfor %}{{""}}
+          lower_bounds[0],{% for d in range(1,rank) %}lower_bounds[{{d}}],{% endfor %}{{""}}
+          pinned,
+          copyout_at_destruction);
     }
 
     /**
@@ -161,22 +180,25 @@ namespace gpufort {
      * is used instead of free to deallocate
      * the host data.
      */
-    __host__ hipError_t destroy() {
+    __host__ hipError_t destroy(hipStream_t stream) {
       hipError_t ierr = hipSuccess;
-      #ifndef __HIP_DEVICE_COMPILE__
-      if ( this->owns_host_data && this->data.data_host != nullptr ) {
-        if ( this->pinned ) {
-          ierr = hipHostFree(this->data.data_host);
-        } else {
-          free(this->data.data_host); 
+      if ( this->bytes_per_element > 0 ) {
+        if ( this->owns_host_data && this->data.data_host != nullptr ) {
+          if ( this->pinned ) {
+            ierr = hipHostFree(this->data.data_host);
+          } else {
+            free(this->data.data_host); 
+          }
+        }
+        if ( ierr == hipSuccess ) {
+          if ( this->owns_device_data && this->data.data_dev != nullptr ) {
+            if ( this->copyout_at_destruction ) {
+              this->copy_data_to_host(stream);
+            }
+            ierr = hipFree(this->data.data_dev);
+          }
         }
       }
-      if ( ierr == hipSuccess ) {
-        if ( this->owns_device_data && this->data.data_dev != nullptr ) {
-          ierr = hipFree(this->data.data_dev);
-        }
-      }
-      #endif
       return ierr;
     }
     
@@ -188,24 +210,42 @@ namespace gpufort {
      * Copy host data to the device.
      * \return Array code returned by the underlying hipMemcpy operation.
      */
-    __host__ hipError_t copy_data_to_host() {
+    __host__ hipError_t copy_data_to_host(hipStream_t stream = nullptr) {
       return hipMemcpyAsync(
         (void*) this->data.data_host, 
         (void*) this->data.data_dev,
         this->num_data_bytes(), 
-        hipMemcpyDeviceToHost, this->stream);
+        hipMemcpyDeviceToHost, stream);
     }
     
     /**
      * Copy device data to the host.
      * \return Array code returned by the underlying hipMemcpy operation.
      */
-    __host__ hipError_t copy_data_to_device() {
+    __host__ hipError_t copy_data_to_device(hipStream_t stream = nullptr) {
       return hipMemcpyAsync(
         (void*) this->data.data_dev, 
         (void*) this->data.data_host,
         this->num_data_bytes(),
-        hipMemcpyHostToDevice, this->stream);
+        hipMemcpyHostToDevice, stream);
+    }
+    
+    /** 
+     * Copies the struct to the device into an pre-allocated
+     * device memory block but does not touch the data associated with 
+     * data_dev & data_host (shallow copy).
+     * \param[in] device_struct device memory address to copy to
+     */
+    __host__ hipError_t copy_self_to_device(
+        gpufort::MappedArray{{rank}}<T>* device_struct,
+        hipStream_t stream = nullptr
+    ) {
+      const size_t size = sizeof(MappedArray{{rank}}<char>); // sizeof(T*) = sizeof(char*)
+      return hipMemcpyAsync(
+          (void*) device_struct, 
+          (void*) this,
+          size,
+          hipMemcpyHostToDevice, stream);
     }
 
     /** 
@@ -214,24 +254,37 @@ namespace gpufort {
      * data_dev & data_host (shallow copy).
      * \param[inout] device_copy pointer to device copy pointer 
      */
-    __host__ hipError_t create_device_copy(void** device_copy) {
+    __host__ hipError_t create_device_copy(
+        gpufort::MappedArray{{rank}}<T>** device_copy,
+        hipStream_t stream = nullptr
+    ) {
       const size_t size = sizeof(MappedArray{{rank}}<char>); // sizeof(T*) = sizeof(char*)
-      hipError_t ierr = hipMalloc(device_copy,size);
+      hipError_t ierr   = hipMalloc((void**)device_copy,size);      
       if ( ierr == hipSuccess ) {
-        ierr =  hipMemcpyAsync(
-          (void*) *device_copy, 
-          (void*) this,
-          size,
-          hipMemcpyHostToDevice, this->stream);
+        return this->copy_self_to_device(*device_copy,stream);
+      } else {
+        return ierr;
       }
-      return ierr;
+    }
+
+    /**
+     * Linearize multi-dimensional index.
+     *
+     * \param[in] i1,i2,... multi-dimensional array index.
+     */
+    __host__ __device__ __forceinline__ int linearized_index (
+{{ gm.arglist("const int i",rank) | indent(6,"True") }}
+    ) {
+      return this->data.linearized_index(
+{{ gm.separated_list_single_line("i",",",rank) | indent(8,"True") }}
+      );
     }
     
     /**
      * \return Element at given index.
      * \param[in] i1,i2,... multi-dimensional array index.
      */
-    __host__ T& operator() (
+    __host__ __device__ __forceinline__ T& operator() (
 {{ gm.arglist("const int i",rank) | indent(6,"True") }}
     ) {
       return this->data(

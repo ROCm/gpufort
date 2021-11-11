@@ -1,4 +1,4 @@
-FC ?= gfortran
+FC ?= hipfc
 HIPFORT_PATH ?= /opt/rocm/hipfort
 
 FCFLAGS ?= -std=f2008 -ffree-line-length-none -cpp

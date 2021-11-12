@@ -6,6 +6,7 @@ all: headers modules
 
 headers:
 	gpufort --create-gpufort-headers
+	touch cudafor-fort2hip.hip.cpp
 
 modules:
 	gpufort -c cudafor.f90

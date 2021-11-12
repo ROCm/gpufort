@@ -17,6 +17,9 @@
         exit(error); \
     } \
   }
+#  endif
+#ifndef __HIP_DEVICE_COMPILE__
+#  include <assert.h>
 #endif
 namespace gpufort {
 {% for rank in range(1,max_rank+1) %}
@@ -33,7 +36,7 @@ namespace gpufort {
     size_t num_elements = 0;     //> Number of represented by this array.
     int    index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
 {% for d in range(1,rank_ub) %}
-    int    stride{{d}}      = -1;    //> Strides for linearizing {{rank}}-dimensional index.
+    int    stride{{d}}      = -1;    //> Stride {{d}} for linearizing {{rank}}-dimensional index.
 {% endfor %}
  
     /**
@@ -53,10 +56,11 @@ namespace gpufort {
        this->data_host = data_host;
        this->data_dev  = data_dev;
        // column-major access
-       this->num_elements = {{ gm.separated_list_single_line("n","*",rank) }};
-{% for d in range(1,rank_ub) %}
-       this->stride{{d}}  = 1{%- for e in range(1,d) -%}*n{{e}}{%- endfor %};
+       this->stride1 = 1;
+{% for d in range(2,rank_ub) %}
+       this->stride{{d}} = this->stride{{d-1}}*n{{d-1}};
 {% endfor %}
+       this->num_elements = this->stride{{rank}}*n{{rank}};
        this->index_offset =
 {% for d in range(1,rank_ub) %}
          -lb{{d}}*this->stride{{d}}{{";" if loop.last}}
@@ -73,9 +77,8 @@ namespace gpufort {
     ) {
       return this->index_offset
 {% for d in range(1,rank_ub) %}
-          + i{{d}}*this->stride{{d}}
+          + i{{d}}*this->stride{{d}}{{";" if loop.last}}
 {% endfor %}
-      ;
     }
     
     /**
@@ -91,8 +94,71 @@ namespace gpufort {
       #ifdef __HIP_DEVICE_COMPILE__
       return this->data_dev[index];
       #else
+{% for r in range(1,rank_ub) %}
+      assert(i{{r}} >= lbound({{r}}));
+      assert(i{{r}} <= ubound({{r}}));
+{% endfor %}
       return this->data_host[index];
       #endif
+    }
+    
+    /**
+     * \return Size of the array in dimension 'dim'.
+     * \param[in] dim selected dimension: 1,...,{{rank}}
+     */
+    __host__ __device__ __forceinline__ int size(int dim) {
+      #ifndef __HIP_DEVICE_COMPILE__
+      assert(dim >= 1);
+      assert(dim <= {{rank}});
+      #endif
+      switch(dim) {
+       case {{rank}}:
+	  return this->num_elements / this->stride{{rank}};
+{% for r in range(rank-1,0,-1) %}
+       case {{r}}:
+	  return this->stride{{r+1}} / this->stride{{r}};
+{% endfor %}
+       default:
+          #ifndef __HIP_DEVICE_COMPILE__
+          std::cerr << "‘dim’ argument of ‘gpufort::array{{rank}}::size’ is not a valid dimension index ('dim': "<<dim<<", max dimension: {{rank}}" << std::endl;
+          std::terminate();
+          #else
+          return -1;
+          #endif
+      }
+    }
+    
+    /**
+     * \return Lower bound (inclusive) of the array in dimension 'dim'.
+     * \param[in] dim selected dimension: 1,...,{{rank}}
+     */
+    __host__ __device__ __forceinline__ int lbound(int dim) {
+      #ifndef __HIP_DEVICE_COMPILE__
+      assert(dim >= 1);
+      assert(dim <= {{rank}});
+      #endif
+      int offset_remainder = this->index_offset;
+{% for r in range(rank,0,-1) %}
+      {{"int " if r == rank}}lb = -offset_remainder / this->stride{{r}};
+{% if r == 1 %}
+      #ifndef __HIP_DEVICE_COMPILE__
+      offset_remainder = offset_remainder + lb*this->stride{{r}};
+      assert(offset_remainder == 0);
+      #endif
+      return lb;
+{% else %}
+      if ( dim == {{r}} ) return lb;
+      offset_remainder = offset_remainder + lb*this->stride{{r}};
+{% endif %}
+{% endfor %}
+    }
+    
+    /**
+     * \return Upper bound (inclusive) of the array in dimension 'dim'.
+     * \param[in] dim selected dimension: 1,...,{{rank}}
+     */
+    __host__ __device__ __forceinline__ int ubound(int dim) {
+      return this->lbound(dim) + this->size(dim) - 1;
     }
   };
 
@@ -290,6 +356,30 @@ namespace gpufort {
       return this->data(
 {{ gm.separated_list_single_line("i",",",rank) | indent(8,"True") }}
       );
+    }
+    
+    /**
+     * \return Size of the array in dimension 'dim'.
+     * \param[in] dim selected dimension: 1,...,{{rank}}
+     */
+    __host__ __device__ __forceinline__ int size(int dim) {
+      return this->data.size(dim);
+    }
+    
+    /**
+     * \return Lower bound (inclusive) of the array in dimension 'dim'.
+     * \param[in] dim selected dimension: 1,...,{{rank}}
+     */
+    __host__ __device__ __forceinline__ int lbound(int dim) {
+      return this->data.lbound(dim);
+    }
+    
+    /**
+     * \return Upper bound (inclusive) of the array in dimension 'dim'.
+     * \param[in] dim selected dimension: 1,...,{{rank}}
+     */
+    __host__ __device__ __forceinline__ int ubound(int dim) {
+      return this->data.ubound(dim);
     }
   };
 {{ "" if not loop.last }}

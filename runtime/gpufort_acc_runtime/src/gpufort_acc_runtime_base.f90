@@ -501,12 +501,12 @@ module gpufort_acc_runtime_base
       implicit none
       class(t_record),intent(inout) :: record
       !
-  if ( LOG_LEVEL > 1 ) then
-      write(output_unit,fmt="(a)",advance="no") "[gpufort-rt][2] destroy record: "
-      flush(output_unit)
-      call record%print()
-      flush(output_unit)
-  endif
+      if ( LOG_LEVEL > 1 ) then
+        write(output_unit,fmt="(a)",advance="no") "[gpufort-rt][2] destroy record: "
+        flush(output_unit)
+        call record%print()
+        flush(output_unit)
+      endif
       call hipCheck(hipFree(record%deviceptr))
       record%deviceptr = c_null_ptr
       record%hostptr   = c_null_ptr
@@ -973,6 +973,8 @@ module gpufort_acc_runtime_base
           fits      = is_subarray(record_list_%records(loc)%hostptr,record_list_%records(loc)%num_bytes,hostptr,num_bytes,offset_bytes)
           deviceptr = inc_cptr(record_list_%records(loc)%deviceptr,offset_bytes)
         else
+          offset_bytes = -1
+          success      = .true.
           opt_or = eval_optval_(or,gpufort_acc_event_undefined)
           select case (opt_or)
             case (gpufort_acc_event_copy)
@@ -984,12 +986,13 @@ module gpufort_acc_runtime_base
             case (gpufort_acc_event_copyout)
               deviceptr = gpufort_acc_copyout_b(hostptr,num_bytes,async,module_var)
             case default
+              success = .false.
               print *, "ERROR: did not find record for hostptr:"
               CALL print_cptr(hostptr)
               ERROR STOP "gpufort_acc_present_b: no record found for hostptr"
           end select
         endif
-        if ( LOG_LEVEL > 0 ) then
+        if ( LOG_LEVEL > 0 .and. success ) then
           write(output_unit,fmt="(a)",advance="no") "[gpufort-rt][1] gpufort_acc_present_b: retrieved deviceptr="
           flush(output_unit)
           CALL print_cptr(deviceptr)

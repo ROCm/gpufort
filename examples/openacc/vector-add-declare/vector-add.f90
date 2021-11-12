@@ -7,9 +7,7 @@ program main
   integer(4) :: x(N), y(N), y_exact(N)
   !$acc declare create(x,y)
 
-  do i = 1, N
-    y_exact(i) = 3
-  end do
+  y_exact = 3
 
   !$acc parallel loop
   do i = 1, N

@@ -16,6 +16,7 @@ std::ostream& operator<<(std::ostream& os, record_creational_event ce)
        case record_creational_event::gpufort_acc_event_create    : os << "create";    break;
        case record_creational_event::gpufort_acc_event_copyin    : os << "copyin";    break;
        case record_creational_event::gpufort_acc_event_copyout   : os << "copyout";   break;
+       case record_creational_event::gpufort_acc_event_copy      : os << "copy";      break;
        default: os.setstate(std::ios_base::failbit);
     }
     return os;

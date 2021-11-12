@@ -16,9 +16,7 @@ program main
 
   allocate(x1(N),x2(N))
 
-  do i = 1, N
-    y_exact(i) = 4
-  end do
+  y_exact = 4
 
   !$acc parallel loop
   do i = 1, N

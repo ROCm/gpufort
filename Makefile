@@ -7,7 +7,7 @@ LIBGPUFORT_ACC = libgpufort_acc_$(SUFFIX).a
 GPUFORT_DIR     = $(shell gpufort --path)
 GPUFORT_ACC_DIR = $(GPUFORT_DIR)/runtime/gpufort_acc_runtime
 
-all: | gpufort_headers gpufort_sources lib/$(LIBGPUFORT) lib/$(LIBGPUFORT_ACC)
+all: | gpufort_headers lib/$(LIBGPUFORT) lib/$(LIBGPUFORT_ACC) make_directories
 
 gpufort_headers:
 	make -C $(GPUFORT_DIR)/include all
@@ -15,23 +15,25 @@ gpufort_headers:
 gpufort_sources:
 	make -C $(GPUFORT_DIR)/src gpufort_sources
 
-lib/$(LIBGPUFORT): gpufort_headers
-	make -C $(GPUFORT_DIR)/src all
-	mkdir -p $(GPUFORT_DIR)/lib
+lib/$(LIBGPUFORT): | gpufort_headers gpufort_sources make_directories
+	make -C $(GPUFORT_DIR)/src $(LIBGPUFORT)
 	mv $(GPUFORT_DIR)/src/$(LIBGPUFORT) $(GPUFORT_DIR)/lib
-	mv $(GPUFORT_DIR)/src/*.mod $(GPUFORT_DIR)/include/$(SUFFIX)
+	mv $(GPUFORT_DIR)/src/*.mod $(GPUFORT_DIR)/include/$(SUFFIX)/
 	make -C $(GPUFORT_DIR)/src clean
 
-lib/$(LIBGPUFORT_ACC):
+lib/$(LIBGPUFORT_ACC): make_directories
 	make -C $(GPUFORT_ACC_DIR)/ lib/$(LIBGPUFORT_ACC)
 	mv $(GPUFORT_ACC_DIR)/lib/$(LIBGPUFORT_ACC)\
-		$(GPUFORT_DIR)/lib/
-	mkdir -p $(GPUFORT_DIR)/include/$(SUFFIX)
+	    $(GPUFORT_DIR)/lib/
 	mv $(GPUFORT_ACC_DIR)/include/*.mod\
-		$(GPUFORT_DIR)/include/$(SUFFIX)
+	    $(GPUFORT_DIR)/include/$(SUFFIX)/
 	#-mv $(GPUFORT_ACC_DIR)/include/*.h\
-	#	$(GPUFORT_DIR)/include/$(SUFFIX)
+	#   $(GPUFORT_DIR)/include/$(SUFFIX)
 	make -C $(GPUFORT_ACC_DIR)/ clean
+
+make_directories:
+	mkdir -p $(GPUFORT_DIR)/lib
+	mkdir -p $(GPUFORT_DIR)/include/$(SUFFIX)
 
 clean_all:
 	make -C $(GPUFORT_DIR)/include clean_all

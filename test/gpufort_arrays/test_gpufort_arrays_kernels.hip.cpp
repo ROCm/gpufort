@@ -4,7 +4,7 @@
 #include "gpufort_arrays.h"
 
 __global__ void fill_int_array_1(
-  gpufort::MappedArray1<int> arr
+  gpufort::array1<int> arr
 ) {
   int i = -1+threadIdx.x + blockDim.x*blockIdx.x;
   if ( (i+1) < 10 ) {
@@ -14,7 +14,7 @@ __global__ void fill_int_array_1(
 }
 
 __global__ void fill_int_array_2(
-  gpufort::MappedArray2<int> arr
+  gpufort::array2<int> arr
 ) {
   int i = -1+threadIdx.x + blockDim.x*blockIdx.x;
   int j = -2+threadIdx.y + blockDim.y*blockIdx.y;
@@ -24,7 +24,7 @@ __global__ void fill_int_array_2(
 }
 
 __global__ void fill_int_array_3(
-  gpufort::MappedArray3<int> arr
+  gpufort::array3<int> arr
 ) {
   int i = -1+threadIdx.x + blockDim.x*blockIdx.x;
   int j = -2+threadIdx.y + blockDim.y*blockIdx.y;
@@ -35,14 +35,13 @@ __global__ void fill_int_array_3(
 }
 
 extern "C" {
-  void launch_fill_int_array_1(gpufort::MappedArray1<int> arr) {
+  void launch_fill_int_array_1(gpufort::array1<int> arr) {
     hipLaunchKernelGGL(fill_int_array_1,dim3(1),dim3(10,1,1),0,nullptr,arr);
   }
-  void launch_fill_int_array_2(gpufort::MappedArray2<int> arr) {
+  void launch_fill_int_array_2(gpufort::array2<int> arr) {
     hipLaunchKernelGGL(fill_int_array_2,dim3(1),dim3(10,10,1),0,nullptr,arr);
   }
-  void launch_fill_int_array_3(gpufort::MappedArray3<int> arr) {
+  void launch_fill_int_array_3(gpufort::array3<int> arr) {
     hipLaunchKernelGGL(fill_int_array_3,dim3(1),dim3(10,10,10),0,nullptr,arr);
   }
 }
-

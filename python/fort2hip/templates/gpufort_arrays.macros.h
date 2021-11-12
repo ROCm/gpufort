@@ -7,9 +7,9 @@
 extern "C" {
 {% for rank in range(1,max_rank+1) %}
 {% set c_type = "char" %}
-{% set c_prefix = "gpufort_mapped_array_"+rank|string %}
+{% set c_prefix = "gpufort_array"+rank|string %}
   __host__ hipError_t {{c_prefix}}_init (
-      gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array,
+      gpufort::array{{rank}}<{{c_type}}>* array,
       int bytes_per_element,
       {{c_type}}* data_host,
       {{c_type}}* data_dev,
@@ -18,7 +18,7 @@ extern "C" {
       bool pinned,
       bool copyout_at_destruction
   ) {
-    return mapped_array->init(
+    return array->init(
       bytes_per_element,
       data_host, data_dev,
       sizes, lower_bounds,
@@ -27,40 +27,40 @@ extern "C" {
   } 
   
   __host__ hipError_t {{c_prefix}}_destroy(
-      gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array,
+      gpufort::array{{rank}}<{{c_type}}>* array,
       hipStream_t stream = nullptr
   ) {
-    return mapped_array->destroy(stream);
+    return array->destroy(stream);
   } 
   
-  __host__ hipError_t {{c_prefix}}_copy_data_to_host (
-      gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array,
+  __host__ hipError_t {{c_prefix}}_copy_to_host (
+      gpufort::array{{rank}}<{{c_type}}>* array,
       hipStream_t stream = nullptr
   ) {
-    return mapped_array->copy_data_to_host(stream);
+    return array->copy_to_host(stream);
   } 
   
-  __host__ hipError_t {{c_prefix}}_copy_data_to_device (
-      gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array,
+  __host__ hipError_t {{c_prefix}}_copy_to_device (
+      gpufort::array{{rank}}<{{c_type}}>* array,
       hipStream_t stream = nullptr
   ) {
-    return mapped_array->copy_data_to_device(stream);
+    return array->copy_to_device(stream);
   } 
   
   __host__ void {{c_prefix}}_inc_num_refs(
-      gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array
+      gpufort::array{{rank}}<{{c_type}}>* array
   ) {
-    mapped_array->num_refs += 1;
+    array->num_refs += 1;
   } 
   
   __host__ hipError_t {{c_prefix}}_dec_num_refs(
-      gpufort::MappedArray{{rank}}<{{c_type}}>* mapped_array,
+      gpufort::array{{rank}}<{{c_type}}>* array,
       bool destroy_if_zero_refs,
       hipStream_t stream = nullptr
   ) {
-    mapped_array->num_refs -= 1;
-    if ( destroy_if_zero_refs && mapped_array->num_refs == 0 ) {
-      return mapped_array->destroy(stream);
+    array->num_refs -= 1;
+    if ( destroy_if_zero_refs && array->num_refs == 0 ) {
+      return array->destroy(stream);
     } {
       return hipSuccess;
     }

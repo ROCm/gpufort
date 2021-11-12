@@ -27,7 +27,7 @@ namespace gpufort {
    * \note Size of this struct independent of template type T.
    */
   template<typename T>
-  struct GpuArray{{rank}} {
+  struct array_descr{{rank}} {
     T*     data_host    = nullptr;
     T*     data_dev     = nullptr;
     size_t num_elements = 0;     //> Number of represented by this array.
@@ -97,8 +97,8 @@ namespace gpufort {
   };
 
   template<typename T>
-  struct MappedArray{{rank}}{
-    GpuArray{{rank}}<T> data;
+  struct array{{rank}}{
+    array_descr{{rank}}<T>      data;
     bool pinned                 = false;     //> If the host data is pinned. 
     bool copyout_at_destruction = false;     //> If the device data should be copied back to the host when this struct is destroyed.
     bool owns_host_data         = false;     //> If this is only a wrapper, i.e. no memory management is performed.
@@ -106,11 +106,11 @@ namespace gpufort {
     int num_refs                = 0;         //> Number of references.
     int bytes_per_element       = -1;        //> Bytes per element; stored to make num_data_bytes routine independent of T 
 
-    MappedArray{{rank}}() {
+    array{{rank}}() {
       // do nothing
     }
     
-    ~MappedArray{{rank}}() {
+    ~array{{rank}}() {
       // do nothing
     }
 
@@ -193,7 +193,7 @@ namespace gpufort {
         if ( ierr == hipSuccess ) {
           if ( this->owns_device_data && this->data.data_dev != nullptr ) {
             if ( this->copyout_at_destruction ) {
-              this->copy_data_to_host(stream);
+              this->copy_to_host(stream);
             }
             ierr = hipFree(this->data.data_dev);
           }
@@ -210,7 +210,7 @@ namespace gpufort {
      * Copy host data to the device.
      * \return Array code returned by the underlying hipMemcpy operation.
      */
-    __host__ hipError_t copy_data_to_host(hipStream_t stream = nullptr) {
+    __host__ hipError_t copy_to_host(hipStream_t stream = nullptr) {
       return hipMemcpyAsync(
         (void*) this->data.data_host, 
         (void*) this->data.data_dev,
@@ -222,7 +222,7 @@ namespace gpufort {
      * Copy device data to the host.
      * \return Array code returned by the underlying hipMemcpy operation.
      */
-    __host__ hipError_t copy_data_to_device(hipStream_t stream = nullptr) {
+    __host__ hipError_t copy_to_device(hipStream_t stream = nullptr) {
       return hipMemcpyAsync(
         (void*) this->data.data_dev, 
         (void*) this->data.data_host,
@@ -237,10 +237,10 @@ namespace gpufort {
      * \param[in] device_struct device memory address to copy to
      */
     __host__ hipError_t copy_self_to_device(
-        gpufort::MappedArray{{rank}}<T>* device_struct,
+        gpufort::array{{rank}}<T>* device_struct,
         hipStream_t stream = nullptr
     ) {
-      const size_t size = sizeof(MappedArray{{rank}}<char>); // sizeof(T*) = sizeof(char*)
+      const size_t size = sizeof(array{{rank}}<char>); // sizeof(T*) = sizeof(char*)
       return hipMemcpyAsync(
           (void*) device_struct, 
           (void*) this,
@@ -255,10 +255,10 @@ namespace gpufort {
      * \param[inout] device_copy pointer to device copy pointer 
      */
     __host__ hipError_t create_device_copy(
-        gpufort::MappedArray{{rank}}<T>** device_copy,
+        gpufort::array{{rank}}<T>** device_copy,
         hipStream_t stream = nullptr
     ) {
-      const size_t size = sizeof(MappedArray{{rank}}<char>); // sizeof(T*) = sizeof(char*)
+      const size_t size = sizeof(array{{rank}}<char>); // sizeof(T*) = sizeof(char*)
       hipError_t ierr   = hipMalloc((void**)device_copy,size);      
       if ( ierr == hipSuccess ) {
         return this->copy_self_to_device(*device_copy,stream);

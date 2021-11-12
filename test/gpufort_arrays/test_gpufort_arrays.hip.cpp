@@ -6,9 +6,9 @@
 #include "test_gpufort_arrays_kernels.hip.cpp"
 
 void test1() {
-  gpufort::MappedArray1<int> int_array1;
-  gpufort::MappedArray2<int> int_array2;
-  gpufort::MappedArray3<int> int_array3;
+  gpufort::array1<int> int_array1;
+  gpufort::array2<int> int_array2;
+  gpufort::array3<int> int_array3;
 
   HIP_CHECK(int_array1.init(sizeof(int),nullptr,nullptr, 10, -1, true)); // hostptr,devptr, count, lower bound, pinned
   HIP_CHECK(int_array2.init(sizeof(int),nullptr,nullptr, 10,10, -1,-2, true));
@@ -34,9 +34,9 @@ void test1() {
   launch_fill_int_array_2(int_array2);
   launch_fill_int_array_3(int_array3);
 
-  HIP_CHECK(int_array1.copy_data_to_host()); 
-  HIP_CHECK(int_array2.copy_data_to_host()); 
-  HIP_CHECK(int_array3.copy_data_to_host()); 
+  HIP_CHECK(int_array1.copy_to_host()); 
+  HIP_CHECK(int_array2.copy_to_host()); 
+  HIP_CHECK(int_array3.copy_to_host()); 
   
   HIP_CHECK(hipDeviceSynchronize());
 
@@ -53,13 +53,13 @@ void test1() {
 }
 
 void test2() {
-  gpufort::MappedArray3<bool>   bool_array;
-  gpufort::MappedArray3<short>  short_array;
-  gpufort::MappedArray3<char>   char_array;
-  gpufort::MappedArray3<int>    int_array;
-  gpufort::MappedArray3<long>   long_array;
-  gpufort::MappedArray3<float>  float_array;
-  gpufort::MappedArray3<double> double_array;
+  gpufort::array3<bool>   bool_array;
+  gpufort::array3<short>  short_array;
+  gpufort::array3<char>   char_array;
+  gpufort::array3<int>    int_array;
+  gpufort::array3<long>   long_array;
+  gpufort::array3<float>  float_array;
+  gpufort::array3<double> double_array;
   assert(sizeof(bool_array)==sizeof(short_array));
   assert(sizeof(char_array)==sizeof(short_array));
   assert(sizeof(char_array)==sizeof(int_array));
@@ -71,6 +71,6 @@ void test2() {
 int main(int argc,char** argv) {
   test1();
   test2();
-
+  std::cout << "PASSED" << std::endl;
   return 0;
 }

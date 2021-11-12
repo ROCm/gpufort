@@ -9,20 +9,6 @@ program main
   type(dim3)  :: grid, tBlock
   type(c_ptr) :: stream = c_null_ptr
   !
-  interface
-    subroutine launch_vecadd_kernel_auto(&
-      sharedmem,stream,y_d,a,x_d) & 
-        bind(c,name="launch_vecadd_kernel_auto")
-      use iso_c_binding
-      use gpufort_arrays
-      implicit none
-      integer,value        :: sharedmem 
-      type(c_ptr),value    :: stream
-      type(gpufort_array1) :: x_d, y_d
-      real,value           :: a
-    end subroutine
-  end interface
-  !
   tBlock = dim3(256,1,1)
   grid   = dim3(ceiling(real(N)/tBlock%x),1,1)
 

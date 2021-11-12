@@ -29,21 +29,21 @@ __global__ void  vecadd_kernel(
   }
 }
 
-extern "C" void launch_vecadd_kernel_auto(
-    const int sharedmem, 
-    hipStream_t stream,
-    gpufort::array1<float>* y_d,
-    float a,
-    gpufort::array1<float>* x_d
+extern "C" void launch_vecadd_kernel_auto_(
+    const int& sharedmem, 
+    hipStream_t& stream,
+    gpufort::array1<float>& y_d,
+    float& a,
+    gpufort::array1<float>& x_d
 ) {
   const int vecadd_kernel_blockX = 128;
   dim3 block(vecadd_kernel_blockX);
-  const int vecadd_kernel_NX = (1 + (((*y_d).size(1)) - (1)));
+  const int vecadd_kernel_NX = (1 + ((y_d.size(1)) - (1)));
   const int vecadd_kernel_gridX = divideAndRoundUp( vecadd_kernel_NX, vecadd_kernel_blockX );
   dim3 grid(vecadd_kernel_gridX);
    
   // launch kernel
-  hipLaunchKernelGGL((vecadd_kernel), grid, block, sharedmem, stream, (*y_d), a, (*x_d));
+  hipLaunchKernelGGL((vecadd_kernel), grid, block, sharedmem, stream, y_d, a, x_d);
 }
 // END vecadd_kernel
 #endif // __KERNELS_HIP_CPP__ 

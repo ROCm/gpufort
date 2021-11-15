@@ -170,17 +170,24 @@ module gpufort_acc_runtime_base
       !
       logical :: success
       !
-      integer :: i
-      logical :: opt_print_record
+      integer     :: i
+      logical     :: opt_print_record
+      type(c_ptr) :: opt_hostptr
+      integer     :: opt_id
       !
       opt_print_record = .false.
+      opt_hostptr      = c_null_ptr 
+      opt_id           = -1
       !
       if ( present(print_record) ) opt_print_record = print_record
+      if ( present(hostptr) )      opt_hostptr = hostptr
+      if ( present(id) )           opt_id      = id
       !
       success = .false.
       do i = 1, record_list_%last_record_index
-        if ( ( present(hostptr) .and. record_list_%records(i)%is_subarray(hostptr,0_8) ) .or. &
-             ( present(id) .and. record_list_%records(i)%id .eq. id ) ) then
+        
+         if ( ( record_list_%records(i)%is_subarray(opt_hostptr,0_8) ) .or. &
+              ( record_list_%records(i)%id .eq. opt_id ) ) then
           success = .true.
           if ( opt_print_record ) then 
             CALL record_list_%records(i)%print() 
@@ -219,6 +226,11 @@ module gpufort_acc_runtime_base
       !
       integer :: i, j
       integer(c_size_t) :: free_memory, total_memory 
+      logical           :: opt_print_records
+      !
+      opt_print_records = .false.
+      !
+      if (  present(print_records) ) opt_print_records = print_records
       !
       CALL hipCheck(hipMemGetInfo(free_memory,total_memory))
       !
@@ -232,7 +244,7 @@ module gpufort_acc_runtime_base
       print *, "- last record index           = ", record_list_%last_record_index
       print *, "- device memory allocated (B) = ", record_list_%total_memory_bytes
       print *, ""
-      if ( present(print_records) .and. print_records ) then
+      if ( opt_print_records ) then
         do i = 1, record_list_%last_record_index
            print *, "- record ", i, ":"
            CALL record_list_%records(i)%print()
@@ -433,7 +445,7 @@ module gpufort_acc_runtime_base
 #endif
     end subroutine
     
-    function t_record_is_subarray_(record,hostptr,num_bytes) result(rval)
+    function t_record_is_subarray_(record,hostptr,num_bytes,offset_bytes) result(rval)
       use iso_c_binding
       use gpufort_acc_runtime_c_bindings
       implicit none
@@ -442,9 +454,12 @@ module gpufort_acc_runtime_base
       integer(c_size_t), intent(in) :: num_bytes
       !
       logical :: rval
-      integer(c_size_t) :: offset_bytes
+      integer(c_size_t),intent(inout),optional :: offset_bytes
       !
-      rval = is_subarray(record%hostptr,record%num_bytes, hostptr, num_bytes, offset_bytes)
+      integer(c_size_t) :: opt_offset_bytes
+      !
+      rval = is_subarray(record%hostptr,record%num_bytes_used, hostptr, num_bytes, opt_offset_bytes)
+      if ( present(offset_bytes) ) offset_bytes = opt_offset_bytes
     end function
 
     !> Release the record for reuse/deallocation.
@@ -528,7 +543,6 @@ module gpufort_acc_runtime_base
       !
       logical :: ret
       !
-
       record%num_refs = record%num_refs - 1
       ret = record%num_refs <= eval_optval_(threshold,0)
     end function
@@ -970,7 +984,7 @@ module gpufort_acc_runtime_base
       else
         loc = record_list_%find_record(hostptr,success) ! TODO already detect a suitable candidate here on-the-fly
         if ( success ) then 
-          fits      = is_subarray(record_list_%records(loc)%hostptr,record_list_%records(loc)%num_bytes,hostptr,num_bytes,offset_bytes)
+          fits      = record_list_%records(loc)%is_subarray(hostptr,num_bytes,offset_bytes)
           deviceptr = inc_cptr(record_list_%records(loc)%deviceptr,offset_bytes)
         else
           offset_bytes = -1

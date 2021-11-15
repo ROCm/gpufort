@@ -23,7 +23,7 @@
 #endif
 namespace gpufort {
   enum class SyncMode {
-    None            = 0, //> Simply create (or wrap) the device data.
+    None            = 0, //> No copies between host and device data after initialization and before destruction.
     Copy            = 1, //> Copy to device after initialization and back to host before destruction.
     Copyin          = 2, //> Copy to device after initialization.
     Copyout         = 3, //> Copy from device to host before destruction.

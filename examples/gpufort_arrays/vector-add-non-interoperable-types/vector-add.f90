@@ -26,13 +26,8 @@ program main
   !
   call create_original_type(mesh_orig,stream) 
   call copy_to_intermediate_type(mesh_orig,mesh,stream)
-
-  !call hipCheck(gpufort_array_copy_to_device(mesh%x,stream))
-  !call hipCheck(gpufort_array_copy_to_device(mesh%y,stream))
   
   call launch_vecadd_kernel_auto(0,stream,mesh)
-  
-  !call hipCheck(gpufort_array_copy_to_host(mesh%y,stream))
 
   call destroy(mesh,stream)
 

@@ -6,7 +6,7 @@ module gpufort_arrays
   implicit none
   
   enum, bind(c)
-    enumerator :: gpufort_array_sync_none             = 0 !> Simply create (or wrap) the device data.
+    enumerator :: gpufort_array_sync_none             = 0 !> No copies between host and device data after initialization and before destruction.
     enumerator :: gpufort_array_sync_copy             = 1 !> Copy to device after initialization and back to host before destruction.
     enumerator :: gpufort_array_sync_copyin           = 2 !> Copy to device after initialization.
     enumerator :: gpufort_array_sync_copyout          = 3 !> Copy back to host before destruction.

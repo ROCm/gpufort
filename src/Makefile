@@ -4,8 +4,9 @@ HIPCC ?= hipcc
 
 GPUFORT_INC = -I$(shell gpufort --path)/include
 
-FC_CFLAGS    ?= -std=f2008 -ffree-line-length-none -cpp -fmax-errors=5
-HIPCC_CFLAGS ?= -fPIC
+FC_CFLAGS    ?= -std=f2008 -ffree-line-length-none -cpp -fmax-errors=5 
+HIPCC_CFLAGS ?= -fPIC -DGPUFORT_ARRAYS_ALWAYS_PIN_HOST_DATA
+#HIPCC_CFLAGS  += -g -ggdb
 SUFFIX       ?= $(if $(HIP_PLATFORM),$(HIP_PLATFORM),amd)
 LIBGPUFORT    = libgpufort_$(SUFFIX).a
 

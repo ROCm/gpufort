@@ -22,6 +22,25 @@
 #  include <assert.h>
 #endif
 namespace gpufort {
+  enum class SyncMode {
+    None            = 0, //> Simply create (or wrap) the device data.
+    Copy            = 1, //> Copy to device after initialization and back to host before destruction.
+    Copyin          = 2, //> Copy to device after initialization.
+    Copyout         = 3, //> Copy from device to host before destruction.
+    InvertedCopy    = 4, //> 'Copy'   in opposite direction: Copy from device to host after initialization and back to device before destruction.
+    InvertedCopyin  = 5, //> 'Copyin' in opposite direction: Copy from device to host after initialization.
+    InvertedCopyout = 6  //> 'Copyout'in opposite direction: Copy from host to device before destruction.
+  };
+
+  enum class AllocMode {
+    WrapHostWrapDevice         = 0, //> Wrap host and device pointers.
+    WrapHostAllocDevice        = 1, //> Wrap host pointer and allocate a new device array.
+    AllocHostWrapDevice        = 2, //> Allocate new host array and wrap device pointer.
+    AllocHostAllocDevice       = 3, //> Allocate new host and device arrays.
+    AllocPinnedHostWrapDevice  = 4, //> Allocate new pinned host array and wrap device pointer.
+    AllocPinnedHostAllocDevice = 5  //> Allocate new pinned host array and wrap device pointer.
+  };
+
 {% for rank in range(1,max_rank+1) %}
 {% set rank_ub = rank+1 %}
   /**
@@ -164,13 +183,13 @@ namespace gpufort {
 
   template<typename T>
   struct array{{rank}}{
-    array_descr{{rank}}<T>      data;
-    bool pinned                 = false;     //> If the host data is pinned. 
-    bool copyout_at_destruction = false;     //> If the device data should be copied back to the host when this struct is destroyed.
-    bool owns_host_data         = false;     //> If this is only a wrapper, i.e. no memory management is performed.
-    bool owns_device_data       = false;     //> If this is only a wrapper, i.e. no memory management is performed.
-    int num_refs                = 0;         //> Number of references.
-    int bytes_per_element       = -1;        //> Bytes per element; stored to make num_data_bytes routine independent of T 
+    array_descr{{rank}}<T> data;
+    AllocMode              alloc_mode = AllocMode::WrapHostAllocDevice; //> Data allocation strategy. Default: 
+                                                                        //> wrap the host and allocate device data
+    SyncMode               sync_mode  = SyncMode::None;                 //> How data should be synchronized
+                                                                        //> during the initialization and destruction of this GPUFORT array.
+    int num_refs           = 0;         //> Number of references.
+    int bytes_per_element  = -1;        //> Bytes per element; stored to make num_data_bytes routine independent of T 
 
     array{{rank}}() {
       // do nothing
@@ -196,28 +215,86 @@ namespace gpufort {
         T* data_host,
         T* data_dev,
 {{ gm.bound_args_single_line("int ",rank) | indent(8,True) }},
-        bool pinned,
-        bool copyout_at_destruction = false) {
-      hipError_t ierr = hipSuccess;
+        AllocMode alloc_mode = AllocMode::WrapHostAllocDevice,
+        SyncMode sync_mode   = SyncMode::None,
+        hipStream_t stream   = nullptr) {
       this->data.wrap(
           data_host,
           data_dev,
 {{ gm.bound_args_single_line("",rank) | indent(10,True) }}
       );
-      this->bytes_per_element      = bytes_per_element;
-      this->pinned                 = pinned;
-      this->copyout_at_destruction = copyout_at_destruction; 
-      this->owns_host_data         = data_host == nullptr;
-      this->owns_device_data       = data_dev == nullptr;
-      this->num_refs               = 1;
-      if ( this->owns_host_data && pinned ) {
-        ierr = hipHostMalloc((void**) &this->data.data_host,this->num_data_bytes(),0);
-      } else if ( this->owns_host_data ) {
-        this->data.data_host = (T*) malloc(this->num_data_bytes());
+      this->bytes_per_element = bytes_per_element;
+      this->num_refs          = 1;
+      this->alloc_mode        = alloc_mode;
+      this->sync_mode         = sync_mode;
+  
+      // host array allocation
+      hipError_t ierr = hipSuccess;
+      switch (this->alloc_mode) {
+#ifdef GPUFORT_ARRAYS_ALWAYS_PIN_HOST_DATA
+        case AllocMode::AllocHostWrapDevice:
+        case AllocMode::AllocHostAllocDevice:
+#endif
+        case AllocMode::AllocPinnedHostWrapDevice:
+        case AllocMode::AllocPinnedHostAllocDevice:
+          ierr = hipHostMalloc((void**) &this->data.data_host,this->num_data_bytes(),0);
+	  break;
+#ifndef GPUFORT_ARRAYS_ALWAYS_PIN_HOST_DATA
+        case AllocMode::AllocHostWrapDevice:
+        case AllocMode::AllocHostAllocDevice:
+          this->data.data_host = (T*) malloc(this->num_data_bytes());
+	  break;
+#endif
+	case AllocMode::WrapHostWrapDevice:
+        case AllocMode::WrapHostAllocDevice:
+          // do nothing as already set by data.wrap call
+	  break;
+	default:
+          std::cerr << "ERROR: gpufort::Array{{rank}}::init(...): Unexpected value for 'this->alloc_mode': " 
+                    << static_cast<int>(this->alloc_mode) << std::endl; 
+          std::terminate();
+          break;
       }
-      if ( ierr == hipSuccess && this->owns_device_data ) {
-        ierr = hipMalloc((void**) &this->data.data_dev, this->num_data_bytes());
-      } 
+      // device array allocation
+      if ( ierr == hipSuccess ) {
+        switch (this->alloc_mode) {
+          case AllocMode::AllocHostWrapDevice:
+          case AllocMode::AllocPinnedHostWrapDevice:
+          case AllocMode::WrapHostWrapDevice:
+            // do nothing as already set by data.wrap call
+            break;
+          case AllocMode::WrapHostAllocDevice:
+          case AllocMode::AllocHostAllocDevice:
+          case AllocMode::AllocPinnedHostAllocDevice:
+            ierr = hipMalloc((void**) &this->data.data_dev, this->num_data_bytes());
+            break;
+          default:
+            break;
+        }
+      }
+      if ( ierr == hipSuccess ) {
+        // synchronize host/device
+        switch (this->sync_mode) {
+          case SyncMode::None:
+          case SyncMode::Copyout:
+          case SyncMode::InvertedCopyout:
+            // do nothing
+            break;
+          case SyncMode::Copy:
+          case SyncMode::Copyin:
+            ierr = this->copy_to_device(stream);
+            break;
+          case SyncMode::InvertedCopy:
+          case SyncMode::InvertedCopyin:
+            ierr = this->copy_to_host(stream);
+            break;
+          default:
+            std::cerr << "ERROR: gpufort::Array{{rank}}::destroy(...): Unexpected value for 'sync_mode': " 
+                      << static_cast<int>(sync_mode) << std::endl; 
+            std::terminate();
+            break;
+        }
+      }
       return ierr;
     }
     
@@ -227,16 +304,16 @@ namespace gpufort {
         T* data_dev,
         int* sizes,
         int* lower_bounds,
-        bool pinned,
-        bool copyout_at_destruction = false) {
-        return this->init(
-          bytes_per_element,
-          data_host,
-          data_dev,
-          sizes[0],{% for d in range(1,rank) %}sizes[{{d}}],{% endfor %}{{""}}
-          lower_bounds[0],{% for d in range(1,rank) %}lower_bounds[{{d}}],{% endfor %}{{""}}
-          pinned,
-          copyout_at_destruction);
+        AllocMode alloc_mode = AllocMode::WrapHostAllocDevice,
+        SyncMode sync_mode   = SyncMode::None,
+        hipStream_t stream   = nullptr) {
+      return this->init(
+        bytes_per_element,
+        data_host,
+        data_dev,
+        sizes[0],{% for d in range(1,rank) %}sizes[{{d}}],{% endfor %}{{""}}
+        lower_bounds[0],{% for d in range(1,rank) %}lower_bounds[{{d}}],{% endfor %}{{""}}
+        alloc_mode,sync_mode,stream);
     }
 
     /**
@@ -248,22 +325,77 @@ namespace gpufort {
      */
     __host__ hipError_t destroy(hipStream_t stream) {
       hipError_t ierr = hipSuccess;
-      if ( this->bytes_per_element > 0 ) {
-        if ( this->owns_host_data && this->data.data_host != nullptr ) {
-          if ( this->pinned ) {
-            ierr = hipHostFree(this->data.data_host);
-          } else {
-            free(this->data.data_host); 
+      if ( bytes_per_element > 0 ) {
+        // synchronize host/device
+        switch (this->sync_mode) {
+          case SyncMode::Copy:
+          case SyncMode::Copyout:
+            ierr = this->copy_to_host(stream);
+            break;
+          case SyncMode::InvertedCopy:
+          case SyncMode::InvertedCopyout:
+            ierr = this->copy_to_device(stream);
+            break;
+          case SyncMode::None:
+          case SyncMode::Copyin:
+          case SyncMode::InvertedCopyin:
+            // do nothing
+            break;
+          default:
+            std::cerr << "ERROR: gpufort::Array{{rank}}::destroy(...): Unexpected value for 'sync_mode': " 
+                      << static_cast<int>(sync_mode) << std::endl; 
+            std::terminate();
+            break;
+        }
+        // host array allocation
+        if ( ierr == hipSuccess ) {
+          switch (this->alloc_mode) {
+#ifdef GPUFORT_ARRAYS_ALWAYS_PIN_HOST_DATA
+            case AllocMode::AllocHostWrapDevice:
+            case AllocMode::AllocHostAllocDevice:
+#endif
+            case AllocMode::AllocPinnedHostWrapDevice:
+            case AllocMode::AllocPinnedHostAllocDevice:
+              ierr = hipHostFree(this->data.data_host);
+              break;
+#ifndef GPUFORT_ARRAYS_ALWAYS_PIN_HOST_DATA
+            case AllocMode::AllocHostWrapDevice:
+            case AllocMode::AllocHostAllocDevice:
+              free(this->data.data_host); 
+              break;
+#endif
+            case AllocMode::WrapHostWrapDevice:
+            case AllocMode::WrapHostAllocDevice:
+              break;
+            default:
+              std::cerr << "ERROR: gpufort::Array{{rank}}::destroy(...): Unexpected value for 'alloc_mode': " 
+                        << static_cast<int>(alloc_mode) << std::endl; 
+              std::terminate();
+              break;
+          }
+        }
+        // device array allocation
+        if ( ierr == hipSuccess ) {
+          switch (this->alloc_mode) {
+            case AllocMode::AllocHostWrapDevice:
+            case AllocMode::AllocPinnedHostWrapDevice:
+            case AllocMode::WrapHostWrapDevice:
+              // do nothing as already set by data.wrap call
+              break;
+            case AllocMode::WrapHostAllocDevice:
+            case AllocMode::AllocHostAllocDevice:
+            case AllocMode::AllocPinnedHostAllocDevice:
+              ierr = hipFree(this->data.data_dev);
+              break;
+            default:
+              break;
           }
         }
         if ( ierr == hipSuccess ) {
-          if ( this->owns_device_data && this->data.data_dev != nullptr ) {
-            if ( this->copyout_at_destruction ) {
-              this->copy_to_host(stream);
-            }
-            ierr = hipFree(this->data.data_dev);
-          }
-        }
+          this->data.data_host    = nullptr;
+          this->data.data_dev     = nullptr;
+          this->bytes_per_element = -1; 
+        } 
       }
       return ierr;
     }
@@ -277,6 +409,10 @@ namespace gpufort {
      * \return Array code returned by the underlying hipMemcpy operation.
      */
     __host__ hipError_t copy_to_host(hipStream_t stream = nullptr) {
+      #ifndef __HIP_DEVICE_COMPILE__
+      assert(this->data.data_host!=nullptr);
+      assert(this->data.data_dev!=nullptr);
+      #endif
       return hipMemcpyAsync(
         (void*) this->data.data_host, 
         (void*) this->data.data_dev,
@@ -289,6 +425,10 @@ namespace gpufort {
      * \return Array code returned by the underlying hipMemcpy operation.
      */
     __host__ hipError_t copy_to_device(hipStream_t stream = nullptr) {
+      #ifndef __HIP_DEVICE_COMPILE__
+      assert(this->data.data_host!=nullptr);
+      assert(this->data.data_dev!=nullptr);
+      #endif
       return hipMemcpyAsync(
         (void*) this->data.data_dev, 
         (void*) this->data.data_host,

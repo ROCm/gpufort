@@ -93,63 +93,81 @@ function {{binding}}_host(&
     mapped_array,&
     bytes_per_element,&
     sizes,lbounds,&
-    pinned, copyout_at_destruction) result(ierr)
+    alloc_mode,sync_mode,stream) result(ierr)
   use iso_c_binding
   use hipfort_enums
   implicit none
   type({{f_array}}),intent(inout)        :: mapped_array
-  integer(c_int),intent(in),value            :: bytes_per_element
   integer(c_int){{size_dims}},intent(in)          :: sizes
   integer(c_int){{size_dims}},intent(in),optional :: lbounds
-  logical(c_bool),intent(in),optional                :: pinned, copyout_at_destruction
-  integer(kind(hipSuccess))                          :: ierr
+  integer(c_int),intent(in)                                              :: bytes_per_element
+  integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
+  integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+  type(c_ptr),intent(in),optional                                        :: stream
   !
-  integer(c_int),dimension({{rank}}) :: opt_lbounds
-  logical(c_bool)                :: opt_pinned, opt_copyout_at_destruction
+  integer(kind(hipSuccess)) :: ierr
   !
-  opt_lbounds                = 1
-  opt_copyout_at_destruction = .false.
-  if ( present(lbounds) )                opt_lbounds                = lbounds             
-  if ( present(copyout_at_destruction) ) opt_copyout_at_destruction = copyout_at_destruction 
+  integer(c_int),dimension({{rank}})                 :: opt_lbounds
+  integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
+  integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+  type(c_ptr)                                        :: opt_stream
+  !
+  opt_lbounds    = 1
+  opt_alloc_mode = gpufort_array_alloc_host_alloc_device ! allocate both by default
+  opt_sync_mode  = gpufort_array_sync_none
+  opt_stream     = c_null_ptr
+  if ( present(lbounds) )    opt_lbounds    = lbounds             
+  if ( present(alloc_mode) ) opt_alloc_mode = alloc_mode 
+  if ( present(sync_mode) )  opt_sync_mode  = sync_mode 
+  if ( present(stream) )     opt_stream     = stream 
   ierr = {{binding}}(&
     mapped_array,&
     bytes_per_element,&
     c_null_ptr,c_null_ptr, &
     sizes, opt_lbounds,&
-    opt_pinned, opt_copyout_at_destruction)
+    opt_alloc_mode, opt_sync_mode, opt_stream)
 end function
 {% for tuple in datatypes %}
 function {{binding}}_{{tuple.f_kind}}(&
     mapped_array,&
     data_host,lbounds,&
     data_dev,&
-    pinned,copyout_at_destruction) result(ierr)
+    alloc_mode,sync_mode,stream) result(ierr)
   use iso_c_binding
   use hipfort_enums
   implicit none
   type({{f_array}}),intent(inout)        :: mapped_array
   {{tuple.f_type}},intent(in),target,dimension(:{% for i in range(1,rank) %},:{% endfor %}) :: data_host 
   integer(c_int){{size_dims}},intent(in),optional :: lbounds
-  type(c_ptr),intent(in),optional                    :: data_dev
-  logical(c_bool),intent(in),optional                :: pinned, copyout_at_destruction
-  integer(kind(hipSuccess))                          :: ierr
+  type(c_ptr),intent(in),optional                                        :: data_dev
+  integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
+  integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+  type(c_ptr),intent(in),optional                                        :: stream
   !
-  integer(c_int),dimension({{rank}}) :: opt_lbounds
-  type(c_ptr)                    :: opt_data_dev
-  logical(c_bool)                :: opt_pinned, opt_copyout_at_destruction
+  integer(kind(hipSuccess))                                              :: ierr
   !
-  opt_lbounds                = 1
-  opt_data_dev               = c_null_ptr
-  opt_copyout_at_destruction = .false.
-  if ( present(lbounds) )                opt_lbounds                = lbounds             
-  if ( present(data_dev) )               opt_data_dev               = data_dev              
-  if ( present(copyout_at_destruction) ) opt_copyout_at_destruction = copyout_at_destruction 
+  integer(c_int),dimension({{rank}})                     :: opt_lbounds
+  type(c_ptr)                                        :: opt_data_dev
+  integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
+  integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+  type(c_ptr)                                        :: opt_stream
+  !
+  opt_lbounds    = 1
+  opt_data_dev   = c_null_ptr
+  opt_alloc_mode = gpufort_array_wrap_host_alloc_device
+  opt_sync_mode  = gpufort_array_sync_none
+  opt_stream     = c_null_ptr
+  if ( present(lbounds) )    opt_lbounds    = lbounds             
+  if ( present(data_dev) )   opt_data_dev   = data_dev              
+  if ( present(alloc_mode) ) opt_alloc_mode = alloc_mode 
+  if ( present(sync_mode) )  opt_sync_mode  = sync_mode 
+  if ( present(stream) )     opt_stream     = stream 
   ierr = {{binding}}(&
     mapped_array,&
     int({{tuple.bytes}}, c_int),&
     c_loc(data_host),opt_data_dev,&
     shape(data_host), opt_lbounds,&
-    opt_pinned, opt_copyout_at_destruction)
+    opt_alloc_mode, opt_sync_mode, opt_stream)
 end function
 {% endfor %}
 {% endfor %}
@@ -172,19 +190,24 @@ interface {{iface}}
       bytes_per_element,&
       data_host,data_dev,&
       sizes, lbounds,&
-      pinned, copyout_at_destruction) &
+      alloc_mode,sync_mode,stream) &
         bind(c,name="{{binding}}") &
           result(ierr)
     use iso_c_binding
     use hipfort_enums
     import {{f_array}}
+    import gpufort_array_wrap_host_wrap_device
+    import gpufort_array_sync_none
     implicit none
-    type({{f_array}}),intent(inout) :: mapped_array
-    integer(c_int),intent(in),value            :: bytes_per_element
-    type(c_ptr),intent(in),value               :: data_host, data_dev
-    integer(c_int){{size_dims}},intent(in)     :: sizes, lbounds
-    logical(c_bool),intent(in),value           :: pinned, copyout_at_destruction
-    integer(kind(hipSuccess))                  :: ierr
+    type({{f_array}}),intent(inout)                                     :: mapped_array
+    integer(c_int),intent(in),value                                     :: bytes_per_element
+    type(c_ptr),intent(in),value                                        :: data_host, data_dev
+    integer(c_int){{size_dims}},intent(in)                              :: sizes, lbounds
+    integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),value :: alloc_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),value             :: sync_mode 
+    type(c_ptr),intent(in),value                                        :: stream
+    !
+    integer(kind(hipSuccess)) :: ierr
   end function
 {% endfor %}
     module procedure :: &

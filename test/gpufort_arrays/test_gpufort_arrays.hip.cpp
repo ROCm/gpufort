@@ -10,9 +10,12 @@ void test1() {
   gpufort::array2<int> int_array2;
   gpufort::array3<int> int_array3;
 
-  HIP_CHECK(int_array1.init(sizeof(int),nullptr,nullptr, 10, -1, true)); // hostptr,devptr, count, lower bound, pinned
-  HIP_CHECK(int_array2.init(sizeof(int),nullptr,nullptr, 10,10, -1,-2, true));
-  HIP_CHECK(int_array3.init(sizeof(int),nullptr,nullptr, 10,10,10, -1,-2,-3, true));
+  HIP_CHECK(int_array1.init(sizeof(int),nullptr,nullptr, 10, -1, 
+     gpufort::AllocMode::AllocPinnedHostAllocDevice)); // hostptr,devptr, count, lower bound, alloc_mode
+  HIP_CHECK(int_array2.init(sizeof(int),nullptr,nullptr, 10,10, -1,-2, 
+      gpufort::AllocMode::AllocHostAllocDevice));
+  HIP_CHECK(int_array3.init(sizeof(int),nullptr,nullptr, 10,10,10, -1,-2,-3,
+      gpufort::AllocMode::AllocPinnedHostAllocDevice));
 
   assert(  10==int_array1.data.num_elements);
   assert( 100==int_array2.data.num_elements);

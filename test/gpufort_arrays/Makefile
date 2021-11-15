@@ -5,8 +5,8 @@ FORT_TEST_SRC  = test_gpufort_arrays_interop.f03
 FORT_TEST_APP  = $(FORT_TEST_SRC:.f03=.x)
 FORT_TEST_DEPS = test_gpufort_arrays_kernels.hip.o
 
-HIPCC_CFLAGS ?= $(shell gpufort --cpp_config)
-FC_CFLAGS    ?= $(shell gpufort --gfortran_config)
+HIPCC_CFLAGS ?= $(shell gpufort --cpp_config) -g -ggdb
+FC_CFLAGS    ?= $(shell gpufort --gfortran_config) -g -ggdb
 
 LDFLAGS ?= $(shell gpufort --ldflags)
 

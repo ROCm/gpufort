@@ -15,14 +15,15 @@ extern "C" {
       {{c_type}}* data_dev,
       int* sizes,
       int* lower_bounds,
-      bool pinned,
-      bool copyout_at_destruction
+      gpufort::AllocMode alloc_mode,
+      gpufort::SyncMode sync_mode,
+      hipStream_t stream
   ) {
     return array->init(
       bytes_per_element,
       data_host, data_dev,
       sizes, lower_bounds,
-      pinned, copyout_at_destruction
+      alloc_mode, sync_mode, stream
     );
   } 
   

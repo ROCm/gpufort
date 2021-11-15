@@ -35,11 +35,12 @@ contains
     ! bytes_per_element,&
     ! data_host,data_dev,&
     ! sizes, lbounds,&
-    ! pinned, copyout_at_destruction) &
+    ! alloc_mode,sync_mode,stream) &
     call hipCheck(gpufort_array_init(marr3,&
       c_float,c_loc(host_array_3),c_null_ptr,&
       shape(host_array_3),lbound(host_array_3),&
-      .false._c_bool,.false._c_bool))
+      gpufort_array_wrap_host_alloc_device,&
+      gpufort_array_sync_none,c_null_ptr))
   
     call assert(marr3%data%stride1==1)
     call assert(marr3%data%stride2==10)
@@ -60,7 +61,8 @@ contains
     
     ! allocate device AND (pinned) host array
     call hipCheck(gpufort_array_init(marr5,&
-      c_int,[4,4,4,4,4],lbounds=[-1,-1,-1,-1,-1],pinned=.true._c_bool))
+      c_int,[4,4,4,4,4],lbounds=[-1,-1,-1,-1,-1],&
+      alloc_mode=gpufort_array_alloc_pinned_host_alloc_device))
     call assert(marr5%data%stride1==1)
     call assert(marr5%data%stride2==4)
     call assert(marr5%data%stride3==16)

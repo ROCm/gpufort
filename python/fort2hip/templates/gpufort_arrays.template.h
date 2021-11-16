@@ -93,7 +93,7 @@ namespace gpufort {
      */
     __host__ __device__ __forceinline__ int linearized_index (
 {{ gm.arglist("const int i",rank) | indent(6,"True") }}
-    ) {
+    ) const {
       return this->index_offset
 {% for d in range(1,rank_ub) %}
           + i{{d}}*this->stride{{d}}{{";" if loop.last}}
@@ -122,10 +122,31 @@ namespace gpufort {
     }
     
     /**
+     * \return Element at given index.
+     * \param[in] i1,i2,... multi-dimensional array index.
+     */
+    __host__ __device__ __forceinline__ const T& operator() (
+{{ gm.arglist("const int i",rank) | indent(6,"True") }}
+    ) const {
+      const int index = linearized_index(
+{{ gm.separated_list_single_line("i",",",rank) | indent(8,"True") }}
+      );
+      #ifdef __HIP_DEVICE_COMPILE__
+      return this->data_dev[index];
+      #else
+{% for r in range(1,rank_ub) %}
+      assert(i{{r}} >= lbound({{r}}));
+      assert(i{{r}} <= ubound({{r}}));
+{% endfor %}
+      return this->data_host[index];
+      #endif
+    }
+    
+    /**
      * \return Size of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,{{rank}}
      */
-    __host__ __device__ __forceinline__ int size(int dim) {
+    __host__ __device__ __forceinline__ int size(int dim) const {
       #ifndef __HIP_DEVICE_COMPILE__
       assert(dim >= 1);
       assert(dim <= {{rank}});
@@ -151,7 +172,7 @@ namespace gpufort {
      * \return Lower bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,{{rank}}
      */
-    __host__ __device__ __forceinline__ int lbound(int dim) {
+    __host__ __device__ __forceinline__ int lbound(int dim) const {
       #ifndef __HIP_DEVICE_COMPILE__
       assert(dim >= 1);
       assert(dim <= {{rank}});
@@ -176,7 +197,7 @@ namespace gpufort {
      * \return Upper bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,{{rank}}
      */
-    __host__ __device__ __forceinline__ int ubound(int dim) {
+    __host__ __device__ __forceinline__ int ubound(int dim) const {
       return this->lbound(dim) + this->size(dim) - 1;
     }
   };
@@ -480,7 +501,7 @@ namespace gpufort {
      */
     __host__ __device__ __forceinline__ int linearized_index (
 {{ gm.arglist("const int i",rank) | indent(6,"True") }}
-    ) {
+    ) const {
       return this->data.linearized_index(
 {{ gm.separated_list_single_line("i",",",rank) | indent(8,"True") }}
       );
@@ -499,10 +520,22 @@ namespace gpufort {
     }
     
     /**
+     * \return Element at given index.
+     * \param[in] i1,i2,... multi-dimensional array index.
+     */
+    __host__ __device__ __forceinline__ const T& operator() (
+{{ gm.arglist("const int i",rank) | indent(6,"True") }}
+    ) const {
+      return this->data(
+{{ gm.separated_list_single_line("i",",",rank) | indent(8,"True") }}
+      );
+    }
+    
+    /**
      * \return Size of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,{{rank}}
      */
-    __host__ __device__ __forceinline__ int size(int dim) {
+    __host__ __device__ __forceinline__ int size(int dim) const {
       return this->data.size(dim);
     }
     
@@ -510,7 +543,7 @@ namespace gpufort {
      * \return Lower bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,{{rank}}
      */
-    __host__ __device__ __forceinline__ int lbound(int dim) {
+    __host__ __device__ __forceinline__ int lbound(int dim) const {
       return this->data.lbound(dim);
     }
     
@@ -518,7 +551,7 @@ namespace gpufort {
      * \return Upper bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,{{rank}}
      */
-    __host__ __device__ __forceinline__ int ubound(int dim) {
+    __host__ __device__ __forceinline__ int ubound(int dim) const {
       return this->data.ubound(dim);
     }
   };

@@ -19,7 +19,7 @@ program main
   call hipCheck(gpufort_array_copy_to_device(x_d,stream))
   call hipCheck(gpufort_array_copy_to_device(y_d,stream))
 
-  call launch_vecadd_kernel_auto(0,stream,y_d,a,x_d)
+  call launch_vecadd_kernel(grid,tBlock,0,stream,y_d,a,x_d)
 
   call hipCheck(gpufort_array_copy_to_host(y_d,stream))
   

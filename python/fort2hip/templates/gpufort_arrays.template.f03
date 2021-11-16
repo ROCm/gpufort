@@ -57,5 +57,6 @@ module gpufort_arrays
   ! subroutines
 contains
 {{ gam.gpufort_arrays_fortran_init_routines(datatypes,max_rank) | indent(2,True) }}
+{{ gam.gpufort_arrays_fortran_wrap_routines(datatypes,max_rank) | indent(2,True) }}
 {{ gam.gpufort_arrays_fortran_data_access_routines(datatypes,max_rank) | indent(2,True) }}
 end module gpufort_arrays 

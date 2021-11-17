@@ -8,7 +8,9 @@
 #  include <hip/hip_runtime_api.h>
 #  ifndef _GPUFORT_H_
 #    include <iostream>
+#    include <iomanip>
 #    include <stdlib.h>
+#    include <vector>
 #    define HIP_CHECK(condition)     \
   {                                  \
     hipError_t error = condition;    \
@@ -21,6 +23,10 @@
 #ifndef __HIP_DEVICE_COMPILE__
 #  include <assert.h>
 #endif
+#ifndef GPUFORT_ARRAY_PRINT_PREC
+#  define GPUFORT_ARRAY_PRINT_PREC 6
+#endif
+
 namespace gpufort {
   enum class SyncMode {
     None            = 0, //> No copies between host and device data after initialization and before destruction.
@@ -39,6 +45,14 @@ namespace gpufort {
     AllocHostAllocDevice       = 3, //> Allocate new host and device arrays.
     AllocPinnedHostWrapDevice  = 4, //> Allocate new pinned host array and wrap device pointer.
     AllocPinnedHostAllocDevice = 5  //> Allocate new pinned host array and wrap device pointer.
+  };
+  
+  enum class PrintMode {
+    PrintNorms                 = 0, //> Print norms and metrics.
+    PrintValues                = 1, //> Print array values; write index in Fortran (i,j,k,...) style.
+    PrintValuesAndNorms        = 2, //> Print array values and norms and metrics; write index in Fortran (i,j,k,...) style.
+    PrintCValues               = 3, //> Print array values; write index in C/C++ [i] style.
+    PrintCValuesAndNorms       = 4  //> Print array values and norms and metrics; write index in C/C++ [i] style.
   };
 
 {% for rank in range(1,max_rank+1) %}
@@ -554,6 +568,85 @@ namespace gpufort {
     __host__ __device__ __forceinline__ int ubound(int dim) const {
       return this->data.ubound(dim);
     }
+
+{% for source in ["host","device"] %}
+    /**
+     * Write {{source}} data values and their corresponding index
+     * to an output stream.
+     * \param[inout] out        output stream
+     * \param[in]    prefix     prefix to put before each output line
+     * \param[in]    print_prec precision to use when printing floating point numbers 
+     *               [default=GPUFORT_ARRAY_PRINT_PREC[default=6]]
+     * \note This method only makes sense for numeric data types and
+     *       may result in compilation, runtime errors or undefined output if the
+     *       underlying data is not numeric.
+     */
+    __host__ void print_{{source}}_data(
+        std::ostream& out, const char* prefix, PrintMode print_mode,
+        const int print_prec=GPUFORT_ARRAY_PRINT_PREC) const {
+      const bool print_norms = 
+	print_mode==PrintMode::PrintNorms ||
+        print_mode==PrintMode::PrintValuesAndNorms ||
+        print_mode==PrintMode::PrintCValuesAndNorms;
+      const bool print_values = 
+        print_mode==PrintMode::PrintValues ||
+        print_mode==PrintMode::PrintValuesAndNorms;
+      const bool print_values_c_style = 
+        print_mode==PrintMode::PrintCValues ||
+        print_mode==PrintMode::PrintCValuesAndNorms;
+      if ( !print_norms && !print_values && !print_values_c_style ) {
+          std::cerr << "ERROR: gpufort::Array{{rank}}::print_{{source}}_data(...): Unexpected value for 'print_mode': " 
+                    << static_cast<int>(this->alloc_mode) << std::endl; 
+          std::terminate();
+      }
+{% for col in range(1,rank_ub) %}
+      const int n{{col}}  = this->size({{col}});
+      const int lb{{col}} = this->lbound({{col}}); 
+{% endfor %}
+      const int n = this->data.num_elements; 
+{% if source == "device" %}
+      std::vector<T> host_array(n);
+      T* A_h = host_array.data();
+      T* A   = this->data.data_dev;
+      HIP_CHECK(hipMemcpy(A_h, A, n*sizeof(T), hipMemcpyDeviceToHost));
+{% else %}
+      T* A_h   = this->data.data_host;
+{% endif %}
+      T min = +std::numeric_limits<T>::max();
+      T max = -std::numeric_limits<T>::max();
+      T sum = 0;
+      T l1  = 0;
+      T l2  = 0;
+      out << prefix << ":\n";
+{% for col in range(1,rank_ub) %}
+    for ( int i{{rank_ub-col}} = 0; i{{rank_ub-col}} < n{{rank_ub-col}}; i{{rank_ub-col}}++ ) {
+{% endfor %}
+      const int idx = this->linearized_index({% for col in range(1,rank_ub) -%}i{{col}}{{ "," if not loop.last }}{% endfor -%});
+      T value = A_h[idx];
+      if ( print_norms ) {
+        min  = std::min(value,min);
+        max  = std::max(value,max);
+        sum += value;
+        l1  += std::abs(value);
+        l2  += value*value;
+      }
+      if ( print_values ) {
+          out << prefix << "(" << {% for col in range(1,rank_ub) -%}(lb{{col}}+i{{col}}) << {{ "\",\" <<" |safe if not loop.last }} {% endfor -%} ") = " << std::setprecision(print_prec) << value << "\n";
+      } else if ( print_values_c_style ) {
+          out << prefix << "[" << idx << "] = " << std::setprecision(print_prec) << value << "\n";
+      }
+    {%+ for col in range(1,rank_ub) -%}}{%- endfor %} // for loops
+    if ( print_norms ) {
+      out << prefix << ":min=" << std::setprecision(print_prec) << min << "\n";
+      out << prefix << ":max=" << std::setprecision(print_prec) << max << "\n";
+      out << prefix << ":sum=" << std::setprecision(print_prec) << sum << "\n";
+      out << prefix << ":l1="  << std::setprecision(print_prec) << l1  << "\n";
+      out << prefix << ":l2="  << std::setprecision(print_prec) << std::sqrt(l2) << "\n";
+      out << prefix << "num_elements=" << std::setprecision(print_prec) << n << "\n";
+    }
+  }
+{% endfor %}
+
   };
 {{ "" if not loop.last }}
 {% endfor -%}

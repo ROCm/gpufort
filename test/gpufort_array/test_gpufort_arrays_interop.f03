@@ -1,4 +1,4 @@
-program test_gpufort_arrays_interop
+program test_gpufort_array_interop
   call test_array_initialization()
   call test_hip_interfacing()
   print *, "PASSED"
@@ -11,7 +11,7 @@ contains
   end subroutine
   
   subroutine test_array_initialization()
-    use gpufort_arrays
+    use gpufort_array
     use hipfort_check
     use hipfort
     implicit none
@@ -94,7 +94,7 @@ contains
   end subroutine
 
   subroutine test_hip_interfacing()
-    use gpufort_arrays
+    use gpufort_array
     use hipfort_check
     use hipfort
     implicit none
@@ -102,17 +102,17 @@ contains
     interface
       subroutine launch_fill_int_array_1(arr) &
           bind(c,name="launch_fill_int_array_1")
-        use gpufort_arrays
+        use gpufort_array
         type(gpufort_array1),intent(inout) :: arr
       end subroutine
       subroutine launch_fill_int_array_2(arr) &
           bind(c,name="launch_fill_int_array_2")
-        use gpufort_arrays
+        use gpufort_array
         type(gpufort_array2),intent(inout) :: arr
       end subroutine
       subroutine launch_fill_int_array_3(arr) &
           bind(c,name="launch_fill_int_array_3")
-        use gpufort_arrays
+        use gpufort_array
         type(gpufort_array3),intent(inout) :: arr
       end subroutine
     end interface

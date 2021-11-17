@@ -5,7 +5,7 @@
 {# #}
 {# #}
 {# #}
-{%- macro gpufort_arrays_fortran_data_access_interfaces(datatypes,max_rank) -%}
+{%- macro gpufort_array_fortran_data_access_interfaces(datatypes,max_rank) -%}
 {% set prefix = "gpufort_array" %}
 {% set max_rank_ub = max_rank+1 %}
 {% for loc in ["host","dev"] %}
@@ -30,7 +30,7 @@ end interface
 {# #}
 {# #}
 {# #}
-{%- macro gpufort_arrays_fortran_data_access_routines(datatypes,max_rank) -%}
+{%- macro gpufort_array_fortran_data_access_routines(datatypes,max_rank) -%}
 {% set prefix = "gpufort_array" %}
 {% set max_rank_ub = max_rank+1 %}
 {% for loc in ["host","dev"] %}
@@ -81,7 +81,7 @@ end subroutine
 {# #}
 {# #}
 {# #}
-{%- macro gpufort_arrays_fortran_init_routines(datatypes,max_rank) -%}
+{%- macro gpufort_array_fortran_init_routines(datatypes,max_rank) -%}
 {% set prefix = "gpufort_array" %}
 {% set max_rank_ub = max_rank+1 %}
 {% for rank in range(1,max_rank_ub) %}
@@ -175,7 +175,7 @@ end function
 {# #}
 {# #}
 {# #}
-{%- macro gpufort_arrays_fortran_wrap_routines(datatypes,max_rank) -%}
+{%- macro gpufort_array_fortran_wrap_routines(datatypes,max_rank) -%}
 {% set prefix = "gpufort_array" %}
 {% set max_rank_ub = max_rank+1 %}
 {% for rank in range(1,max_rank_ub) %}
@@ -298,7 +298,7 @@ end function
 {# #}
 {# #}
 {%- endmacro -%}
-{%- macro gpufort_arrays_fortran_interfaces(datatypes,max_rank) -%}
+{%- macro gpufort_array_fortran_interfaces(datatypes,max_rank) -%}
 {% set max_rank_ub = max_rank+1 %}
 {% set prefix = "gpufort_array" %}
 {% set routine = "init" %}

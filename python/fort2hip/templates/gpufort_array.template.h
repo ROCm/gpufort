@@ -1,7 +1,7 @@
 {# SPDX-License-Identifier: MIT                                                 #}
 {# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved. #}
 {% import "templates/gpufort.macros.h" as gm %}
-{% import "templates/gpufort_arrays.macros.h" as gam %}
+{% import "templates/gpufort_array.macros.h" as gam %}
 // This file was generated from a template via gpufort --gpufort-create-headers
 #ifndef _GPUFORT_ARRAYS_H_
 #  define _GPUFORT_ARRAYS_H_

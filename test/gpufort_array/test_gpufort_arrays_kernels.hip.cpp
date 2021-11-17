@@ -1,7 +1,7 @@
 #include "hip/hip_runtime.h"
 #include "hip/hip_runtime_api.h"
 
-#include "gpufort_arrays.h"
+#include "gpufort_array.h"
 
 __global__ void fill_int_array_1(
   gpufort::array1<int> arr

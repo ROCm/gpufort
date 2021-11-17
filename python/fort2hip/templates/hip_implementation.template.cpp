@@ -18,7 +18,7 @@
 {% endfor %}
 #include "gpufort.h"
 {% if have_reductions -%}
-#include "gpufort_reductions.h"
+#include "gpufort_reduction.h"
 {%- endif -%}
 {%- macro make_block(kernel) -%}
 {% set krnl_prefix = kernel.kernel_name %}

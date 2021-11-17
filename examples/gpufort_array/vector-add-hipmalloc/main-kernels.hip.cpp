@@ -4,7 +4,7 @@
 #include "hip/hip_runtime.h"
 #include "hip/hip_complex.h"
 #include "gpufort.h"
-#include "gpufort_arrays.h"
+#include "gpufort_array.h"
 
 
 // BEGIN main_26_e28c45

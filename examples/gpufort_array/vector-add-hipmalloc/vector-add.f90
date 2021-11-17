@@ -1,7 +1,7 @@
 program main
   use hipfort
   use hipfort_check
-  use gpufort_arrays
+  use gpufort_array
   implicit none
   integer, parameter :: N = 40000
   real :: x(N), y(N), a

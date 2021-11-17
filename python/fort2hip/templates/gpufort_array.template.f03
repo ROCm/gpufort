@@ -1,7 +1,7 @@
 {# SPDX-License-Identifier: MIT                                         #}
 {# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved. #}
-{% import "templates/gpufort_arrays.macros.f03" as gam %}
-module gpufort_arrays
+{% import "templates/gpufort_array.macros.f03" as gam %}
+module gpufort_array
   use iso_c_binding
   implicit none
   
@@ -51,12 +51,12 @@ module gpufort_arrays
 {% endfor %}
 
   ! interfaces
-{{ gam.gpufort_arrays_fortran_interfaces(datatypes,max_rank) | indent(2,True) }}
-{{ gam.gpufort_arrays_fortran_data_access_interfaces(datatypes,max_rank) | indent(2,True) }}
+{{ gam.gpufort_array_fortran_interfaces(datatypes,max_rank) | indent(2,True) }}
+{{ gam.gpufort_array_fortran_data_access_interfaces(datatypes,max_rank) | indent(2,True) }}
 
   ! subroutines
 contains
-{{ gam.gpufort_arrays_fortran_init_routines(datatypes,max_rank) | indent(2,True) }}
-{{ gam.gpufort_arrays_fortran_wrap_routines(datatypes,max_rank) | indent(2,True) }}
-{{ gam.gpufort_arrays_fortran_data_access_routines(datatypes,max_rank) | indent(2,True) }}
-end module gpufort_arrays 
+{{ gam.gpufort_array_fortran_init_routines(datatypes,max_rank) | indent(2,True) }}
+{{ gam.gpufort_array_fortran_wrap_routines(datatypes,max_rank) | indent(2,True) }}
+{{ gam.gpufort_array_fortran_data_access_routines(datatypes,max_rank) | indent(2,True) }}
+end module gpufort_array 

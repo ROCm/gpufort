@@ -1,9 +1,9 @@
 #include "gpufort.h"
-#include "gpufort_arrays.h"
+#include "gpufort_array.h"
 
 #include <assert.h>
 
-#include "test_gpufort_arrays_kernels.hip.cpp"
+#include "test_gpufort_array_kernels.hip.cpp"
 
 void test1() {
   gpufort::array1<int> int_array1;

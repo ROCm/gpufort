@@ -1,9 +1,9 @@
-HIP_TEST_SRC = test_compile_headers.hip.cpp test_gpufort_arrays.hip.cpp
+HIP_TEST_SRC = test_compile_headers.hip.cpp test_gpufort_array.hip.cpp
 HIP_TEST_APP = $(HIP_TEST_SRC:.hip.cpp=.x)
 
-FORT_TEST_SRC  = test_gpufort_arrays_interop.f03
+FORT_TEST_SRC  = test_gpufort_array_interop.f03
 FORT_TEST_APP  = $(FORT_TEST_SRC:.f03=.x)
-FORT_TEST_DEPS = test_gpufort_arrays_kernels.hip.o
+FORT_TEST_DEPS = test_gpufort_array_kernels.hip.o
 
 HIPCC_CFLAGS ?= $(shell gpufort --cpp_config) -g -ggdb
 FC_CFLAGS    ?= $(shell gpufort --gfortran_config) -g -ggdb

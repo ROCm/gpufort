@@ -1,6 +1,6 @@
 module types
   use iso_c_binding
-  use gpufort_arrays
+  use gpufort_array
   ! original non-interoperable type
   type :: mesh_t
     real :: a

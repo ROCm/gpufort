@@ -6,9 +6,14 @@
 #include "gpufort.h"
 #include "gpufort_array.h"
 
+// C++ structs with same layout as Fortran interop types
+struct node_t {
+  float val;
+};
+
 struct mesh_t {
   float a;
-  gpufort::array1<float> x; 
+  gpufort::array1<node_t> x; 
   gpufort::array1<float> y;
 };
 
@@ -26,7 +31,7 @@ struct mesh_t {
 __global__ void  vecadd_kernel(mesh_t mesh) {
   int i = 1 + (1)*(threadIdx.x + blockIdx.x * blockDim.x);
   if (loop_cond(i,mesh.y.size(1),1)) {
-    mesh.y(i)= mesh.y(i) + mesh.a*mesh.x(i);
+    mesh.y(i)= mesh.y(i) + mesh.a*mesh.x(i).val;
   }
 }
 

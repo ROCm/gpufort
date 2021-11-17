@@ -63,7 +63,10 @@ contains
     type(node_t_interop)         :: node_t_interop_dummy
     type(node_t_interop),pointer :: mesh_t_interop_x(:)
     ! Allocate interoperable struct array
-    ! Generate type specific init routine
+    ! Generate type specific init routine?
+    ! REQ: Need to know shape and bounds, not mesh_orig
+    ! NOTE: size can be supplied from the CPP side, too.
+    ! NOTE: alloc_mode will remain as is.
     call hipCheck(gpufort_array_init(mesh_interop%x,&
       int(c_sizeof(node_t_interop_dummy),c_int),&
       shape(mesh_orig%x),&
@@ -71,6 +74,7 @@ contains
       alloc_mode=gpufort_array_alloc_pinned_host_alloc_device)) 
 
     ! Copy to device; from non-interop type to interop type
+    ! REQ: Need to know mesh_orig for value assignment
     call c_f_pointer(mesh_interop%x%data%data_host,mesh_t_interop_x,shape=shape(mesh_orig%x))
     mesh_t_interop_x(:)%val = mesh_orig%x(:)%val ! depends on members & rank
     call hipCheck(gpufort_array_copy_to_device(mesh_interop%x,stream))

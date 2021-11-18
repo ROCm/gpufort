@@ -20,6 +20,7 @@ program main
   call launch_vecadd_kernel(grid,tBlock,0,stream,&
     gpufort_array_wrap_device_ptr(y_d,lbound(y)),a,&
     gpufort_array_wrap_device_ptr(x_d))
+  call hipCheck(hipStreamSynchronize(stream))
 
   call hipCheck(hipMemcpy(y,y_d,hipMemcpyDeviceToHost))
   call hipCheck(hipFree(x_d))

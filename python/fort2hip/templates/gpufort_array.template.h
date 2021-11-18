@@ -234,6 +234,8 @@ namespace gpufort {
       // do nothing
     }
 
+{% for async_suffix in ["_async",""] %}
+{% set is_async = async_suffix == "_async" %}
     /**
      * Initialize.
      * \param[in] data_host host data pointer (may be nullptr; see the note).
@@ -245,14 +247,15 @@ namespace gpufort {
      * the new hostpotr is allocated via hipHostMalloc.
      * Otherwise, it is allocated via classic malloc.
      */
-    __host__ hipError_t init(
+    __host__ hipError_t init{{async_suffix}}(
         int bytes_per_element,
         T* data_host,
         T* data_dev,
-{{ gm.bound_args_single_line("int ",rank) | indent(8,True) }},
+{{ gm.bound_args_single_line("int ",rank) | indent(8,True) }},{{"
+        hipStream_t stream," if is_async}}
         AllocMode alloc_mode = AllocMode::WrapHostAllocDevice,
-        SyncMode sync_mode   = SyncMode::None,
-        hipStream_t stream   = nullptr) {
+        SyncMode sync_mode   = SyncMode::None
+    ) {
       this->data.wrap(
           data_host,
           data_dev,
@@ -285,7 +288,7 @@ namespace gpufort {
           // do nothing as already set by data.wrap call
 	  break;
 	default:
-          std::cerr << "ERROR: gpufort::Array{{rank}}::init(...): Unexpected value for 'this->alloc_mode': " 
+          std::cerr << "ERROR: gpufort::Array{{rank}}::init{{async_suffix}}(...): Unexpected value for 'this->alloc_mode': " 
                     << static_cast<int>(this->alloc_mode) << std::endl; 
           std::terminate();
           break;
@@ -317,14 +320,14 @@ namespace gpufort {
             break;
           case SyncMode::Copy:
           case SyncMode::Copyin:
-            ierr = this->copy_to_device(stream);
+            ierr = this->copy_to_device{{async_suffix}}({{"stream" if is_async}});
             break;
           case SyncMode::InvertedCopy:
           case SyncMode::InvertedCopyin:
-            ierr = this->copy_to_host(stream);
+            ierr = this->copy_to_host{{async_suffix}}({{"stream" if is_async}});
             break;
           default:
-            std::cerr << "ERROR: gpufort::Array{{rank}}::destroy(...): Unexpected value for 'sync_mode': " 
+            std::cerr << "ERROR: gpufort::Array{{rank}}::init{{async_suffix}}(...): Unexpected value for 'sync_mode': " 
                       << static_cast<int>(sync_mode) << std::endl; 
             std::terminate();
             break;
@@ -332,23 +335,24 @@ namespace gpufort {
       }
       return ierr;
     }
-    
-    __host__ hipError_t init(
+   
+    __host__ hipError_t init{{async_suffix}}(
         int bytes_per_element,
         T* data_host,
         T* data_dev,
         int* sizes,
-        int* lower_bounds,
+        int* lower_bounds,{{"
+        hipStream_t stream," if is_async}}
         AllocMode alloc_mode = AllocMode::WrapHostAllocDevice,
-        SyncMode sync_mode   = SyncMode::None,
-        hipStream_t stream   = nullptr) {
-      return this->init(
+        SyncMode sync_mode   = SyncMode::None
+    ) {
+      return this->init{{async_suffix}}(
         bytes_per_element,
         data_host,
         data_dev,
         sizes[0],{% for d in range(1,rank) %}sizes[{{d}}],{% endfor %}{{""}}
-        lower_bounds[0],{% for d in range(1,rank) %}lower_bounds[{{d}}],{% endfor %}{{""}}
-        alloc_mode,sync_mode,stream);
+        lower_bounds[0],{% for d in range(1,rank) %}lower_bounds[{{d}}],{% endfor %}{{""}}{{"
+        stream," if is_async}}alloc_mode,sync_mode);
     }
 
     /**
@@ -358,18 +362,18 @@ namespace gpufort {
      * is used instead of free to deallocate
      * the host data.
      */
-    __host__ hipError_t destroy(hipStream_t stream) {
+    __host__ hipError_t destroy{{async_suffix}}({{"hipStream_t stream" if is_async}}) {
       hipError_t ierr = hipSuccess;
       if ( bytes_per_element > 0 ) {
         // synchronize host/device
         switch (this->sync_mode) {
           case SyncMode::Copy:
           case SyncMode::Copyout:
-            ierr = this->copy_to_host(stream);
+            ierr = this->copy_to_host{{async_suffix}}({{"stream"if is_async}});
             break;
           case SyncMode::InvertedCopy:
           case SyncMode::InvertedCopyout:
-            ierr = this->copy_to_device(stream);
+            ierr = this->copy_to_device{{async_suffix}}({{"stream"if is_async}});
             break;
           case SyncMode::None:
           case SyncMode::Copyin:
@@ -377,7 +381,7 @@ namespace gpufort {
             // do nothing
             break;
           default:
-            std::cerr << "ERROR: gpufort::Array{{rank}}::destroy(...): Unexpected value for 'sync_mode': " 
+            std::cerr << "ERROR: gpufort::Array{{rank}}::destroy{{async_suffix}}(...): Unexpected value for 'sync_mode': " 
                       << static_cast<int>(sync_mode) << std::endl; 
             std::terminate();
             break;
@@ -403,7 +407,7 @@ namespace gpufort {
             case AllocMode::WrapHostAllocDevice:
               break;
             default:
-              std::cerr << "ERROR: gpufort::Array{{rank}}::destroy(...): Unexpected value for 'alloc_mode': " 
+              std::cerr << "ERROR: gpufort::Array{{rank}}::destroy{{async_suffix}}(...): Unexpected value for 'alloc_mode': " 
                         << static_cast<int>(alloc_mode) << std::endl; 
               std::terminate();
               break;
@@ -435,40 +439,36 @@ namespace gpufort {
       return ierr;
     }
     
-    __host__ size_t num_data_bytes() {
-      return this->data.num_elements * this->bytes_per_element;
-    }
- 
     /**
      * Copy host data to the device.
      * \return Array code returned by the underlying hipMemcpy operation.
      */
-    __host__ hipError_t copy_to_host(hipStream_t stream = nullptr) {
+    __host__ hipError_t copy_to_host{{async_suffix}}({{"hipStream_t stream" if is_async}}) {
       #ifndef __HIP_DEVICE_COMPILE__
       assert(this->data.data_host!=nullptr);
       assert(this->data.data_dev!=nullptr);
       #endif
-      return hipMemcpyAsync(
+      return hipMemcpy{{"Async" if is_async}}(
         (void*) this->data.data_host, 
         (void*) this->data.data_dev,
         this->num_data_bytes(), 
-        hipMemcpyDeviceToHost, stream);
+        hipMemcpyDeviceToHost{{", stream" if is_async}});
     }
     
     /**
      * Copy device data to the host.
      * \return Array code returned by the underlying hipMemcpy operation.
      */
-    __host__ hipError_t copy_to_device(hipStream_t stream = nullptr) {
+    __host__ hipError_t copy_to_device{{async_suffix}}({{"hipStream_t stream" if is_async}}) {
       #ifndef __HIP_DEVICE_COMPILE__
       assert(this->data.data_host!=nullptr);
       assert(this->data.data_dev!=nullptr);
       #endif
-      return hipMemcpyAsync(
+      return hipMemcpy{{"Async" if is_async}}(
         (void*) this->data.data_dev, 
         (void*) this->data.data_host,
         this->num_data_bytes(),
-        hipMemcpyHostToDevice, stream);
+        hipMemcpyHostToDevice{{", stream" if is_async}});
     }
     
     /** 
@@ -477,16 +477,16 @@ namespace gpufort {
      * data_dev & data_host (shallow copy).
      * \param[in] device_struct device memory address to copy to
      */
-    __host__ hipError_t copy_self_to_device(
-        gpufort::array{{rank}}<T>* device_struct,
-        hipStream_t stream = nullptr
+    __host__ hipError_t copy_self_to_device{{async_suffix}}(
+        gpufort::array{{rank}}<T>* device_struct{{",
+        hipStream_t stream" if is_async}}
     ) {
       const size_t size = sizeof(array{{rank}}<char>); // sizeof(T*) = sizeof(char*)
-      return hipMemcpyAsync(
+      return hipMemcpy{{"Async" if is_async}}(
           (void*) device_struct, 
           (void*) this,
           size,
-          hipMemcpyHostToDevice, stream);
+          hipMemcpyHostToDevice{{", stream" if is_async}});
     }
 
     /** 
@@ -495,18 +495,24 @@ namespace gpufort {
      * data_dev & data_host (shallow copy).
      * \param[inout] device_copy pointer to device copy pointer 
      */
-    __host__ hipError_t create_device_copy(
-        gpufort::array{{rank}}<T>** device_copy,
-        hipStream_t stream = nullptr
+    __host__ hipError_t create_device_copy{{async_suffix}}(
+        gpufort::array{{rank}}<T>** device_copy{{",
+        hipStream_t stream" if is_async}}
     ) {
       const size_t size = sizeof(array{{rank}}<char>); // sizeof(T*) = sizeof(char*)
       hipError_t ierr   = hipMalloc((void**)device_copy,size);      
       if ( ierr == hipSuccess ) {
-        return this->copy_self_to_device(*device_copy,stream);
+        return this->copy_self_to_device{{async_suffix}}(*device_copy{{",stream" if is_async}});
       } else {
         return ierr;
       }
     }
+{% endfor %}
+
+    __host__ size_t num_data_bytes() {
+      return this->data.num_elements * this->bytes_per_element;
+    }
+ 
 
     /**
      * Linearize multi-dimensional index.

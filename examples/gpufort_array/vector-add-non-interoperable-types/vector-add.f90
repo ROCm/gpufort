@@ -33,13 +33,12 @@ program main
   !
   type(mesh_t)         :: mesh_orig
   type(mesh_t_interop) :: mesh_interop
-  type(c_ptr)          :: stream = c_null_ptr
   !
   call init_orig_type() 
 
   call init_interop_type()
   
-  call launch_vecadd_kernel_auto(0,stream,mesh_interop)
+  call launch_vecadd_kernel_auto(0,c_null_ptr,mesh_interop)
 
   call destroy_interop_type()
 
@@ -75,15 +74,15 @@ contains
 
     ! Copy to device; from non-interop type to interop type
     ! REQ: Need to know mesh_orig for value assignment
-    call c_f_pointer(mesh_interop%x%data%data_host,mesh_t_interop_x,shape=shape(mesh_orig%x))
+    call c_f_pointer(mesh_interop%x%data%data_host,&
+      mesh_t_interop_x,shape=shape(mesh_orig%x))
     mesh_t_interop_x(:)%val = mesh_orig%x(:)%val ! depends on members & rank
-    call hipCheck(gpufort_array_copy_to_device(mesh_interop%x,stream))
+    call hipCheck(gpufort_array_copy_to_device(mesh_interop%x))
 
     ! Init basic datatype array 
     call hipCheck(gpufort_array_init(mesh_interop%y,mesh_orig%y,&
       alloc_mode=gpufort_array_wrap_host_alloc_device,&
-      sync_mode=gpufort_array_sync_copy,&
-      stream=stream))
+      sync_mode=gpufort_array_sync_copy))
     mesh_interop%a = mesh_orig%a
   end subroutine
  
@@ -92,7 +91,7 @@ contains
     use gpufort_array
     use iso_c_binding
     implicit none
-    call hipCheck(gpufort_array_destroy(mesh_interop%x,stream))
-    call hipCheck(gpufort_array_destroy(mesh_interop%y,stream))
+    call hipCheck(gpufort_array_destroy(mesh_interop%x))
+    call hipCheck(gpufort_array_destroy(mesh_interop%y))
   end subroutine
 end program main

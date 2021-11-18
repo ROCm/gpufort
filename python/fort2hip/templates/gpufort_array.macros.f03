@@ -89,60 +89,58 @@ end subroutine
 {% set routine = "init" %}
 {% set binding  = f_array+"_"+routine %}
 {% set size_dims = ",dimension("+rank|string+")" %}
-function {{binding}}_host(&
+{% for async_suffix in ["_async",""] %}
+{% set is_async = async_suffix == "_async" %}
+function {{binding}}{{async_suffix}}_host(&
     mapped_array,&
     bytes_per_element,&
     sizes,lbounds,&
-    alloc_mode,sync_mode,stream) result(ierr)
+    {{"stream," if is_async}}alloc_mode,sync_mode) result(ierr)
   use iso_c_binding
   use hipfort_enums
   implicit none
   type({{f_array}}),intent(inout)        :: mapped_array
   integer(c_int){{size_dims}},intent(in)          :: sizes
-  integer(c_int){{size_dims}},intent(in),optional :: lbounds
+  integer(c_int){{size_dims}},intent(in),optional :: lbounds{{"
+  type(c_ptr),intent(in)                                                 :: stream" if is_async}}
   integer(c_int),intent(in)                                              :: bytes_per_element
   integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
   integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
-  type(c_ptr),intent(in),optional                                        :: stream
   !
   integer(kind(hipSuccess)) :: ierr
   !
   integer(c_int),dimension({{rank}})                 :: opt_lbounds
   integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
   integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
-  type(c_ptr)                                        :: opt_stream
   !
   opt_lbounds    = 1
   opt_alloc_mode = gpufort_array_alloc_host_alloc_device ! allocate both by default
   opt_sync_mode  = gpufort_array_sync_none
-  opt_stream     = c_null_ptr
   if ( present(lbounds) )    opt_lbounds    = lbounds             
   if ( present(alloc_mode) ) opt_alloc_mode = alloc_mode 
   if ( present(sync_mode) )  opt_sync_mode  = sync_mode 
-  if ( present(stream) )     opt_stream     = stream 
-  ierr = {{binding}}(&
+  ierr = {{binding}}{{async_suffix}}(&
     mapped_array,&
     bytes_per_element,&
     c_null_ptr,c_null_ptr, &
     sizes, opt_lbounds,&
-    opt_alloc_mode, opt_sync_mode, opt_stream)
+    {{"stream," if is_async}}opt_alloc_mode, opt_sync_mode )
 end function
 {% for tuple in datatypes %}
-function {{binding}}_{{tuple.f_kind}}(&
+function {{binding}}{{async_suffix}}_{{tuple.f_kind}}(&
     mapped_array,&
     data_host,lbounds,&
-    data_dev,&
-    alloc_mode,sync_mode,stream) result(ierr)
+    {{"stream," if is_async}}data_dev,alloc_mode,sync_mode) result(ierr)
   use iso_c_binding
   use hipfort_enums
   implicit none
   type({{f_array}}),intent(inout)        :: mapped_array
   {{tuple.f_type}},intent(in),target,dimension(:{% for i in range(1,rank) %},:{% endfor %}) :: data_host 
-  integer(c_int){{size_dims}},intent(in),optional :: lbounds
+  integer(c_int){{size_dims}},intent(in),optional :: lbounds{{"
+  type(c_ptr),intent(in)                                                 :: stream" if is_async}}
   type(c_ptr),intent(in),optional                                        :: data_dev
   integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
   integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
-  type(c_ptr),intent(in),optional                                        :: stream
   !
   integer(kind(hipSuccess))                                              :: ierr
   !
@@ -150,27 +148,25 @@ function {{binding}}_{{tuple.f_kind}}(&
   type(c_ptr)                                        :: opt_data_dev
   integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
   integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
-  type(c_ptr)                                        :: opt_stream
   !
   opt_lbounds    = 1
   opt_data_dev   = c_null_ptr
   opt_alloc_mode = gpufort_array_wrap_host_alloc_device
   opt_sync_mode  = gpufort_array_sync_none
-  opt_stream     = c_null_ptr
   if ( present(lbounds) )    opt_lbounds    = lbounds             
   if ( present(data_dev) )   opt_data_dev   = data_dev              
   if ( present(alloc_mode) ) opt_alloc_mode = alloc_mode 
   if ( present(sync_mode) )  opt_sync_mode  = sync_mode 
-  if ( present(stream) )     opt_stream     = stream 
-  ierr = {{binding}}(&
+  ierr = {{binding}}{{async_suffix}}(&
     mapped_array,&
     int({{tuple.bytes}}, c_int),&
     c_loc(data_host),opt_data_dev,&
     shape(data_host), opt_lbounds,&
-    opt_alloc_mode, opt_sync_mode, opt_stream)
+    {{"stream," if is_async}}opt_alloc_mode, opt_sync_mode)
 end function
-{% endfor %}
-{% endfor %}
+{% endfor %}{# datatypes #}
+{% endfor %}{# async_suffix #}
+{% endfor %}{# rank #}
 {%- endmacro -%}
 {# #}
 {# #}
@@ -185,9 +181,11 @@ end function
 {% set size_dims = ",dimension("+rank|string+")" %}
 {% for tuple in datatypes %}
 {% for dev in ["","_cptr"] %} 
-function {{f_array}}_wrap_{{tuple.f_kind}}{{dev}}(&
+{% for async_suffix in ["_async",""] %}
+{% set is_async = async_suffix == "_async" %}
+function {{f_array}}_wrap{{async_suffix}}_{{tuple.f_kind}}{{dev}}(&
     data_host,data_dev,lbounds,&
-    sync_mode,stream,ierr) result(mapped_array)
+    {{"stream," if is_async}}sync_mode,ierr) result(mapped_array)
   use iso_c_binding
   use hipfort_enums
   implicit none
@@ -197,38 +195,36 @@ function {{f_array}}_wrap_{{tuple.f_kind}}{{dev}}(&
 {% else %}
   {{tuple.f_type}},intent(in),target,dimension(:{% for i in range(1,rank) %},:{% endfor %}) :: data_dev 
 {% endif %}
-  integer(c_int){{size_dims}},intent(in),optional            :: lbounds
-  integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
-  type(c_ptr),intent(in),optional                            :: stream
+  integer(c_int){{size_dims}},intent(in),optional            :: lbounds{{" 
+  type(c_ptr),intent(in)                                     :: stream" if is_async}}
+  integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
   integer(kind(hipSuccess)),intent(inout),optional           :: ierr
   !
   type({{f_array}})         :: mapped_array
   !
   integer(c_int),dimension({{rank}})     :: opt_lbounds
   integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-  type(c_ptr)                            :: opt_stream
   integer(kind(hipSuccess))              :: opt_ierr
   !
   opt_lbounds    = 1
   opt_sync_mode  = gpufort_array_sync_none
-  opt_stream     = c_null_ptr
   if ( present(lbounds) )   opt_lbounds    = lbounds             
   if ( present(sync_mode) ) opt_sync_mode  = sync_mode 
-  if ( present(stream) )    opt_stream     = stream 
 {% if dev == "_cptr" %}
 {% set data_dev_arg = "data_dev" %}
 {% else %}
 {% set data_dev_arg = "c_loc(data_dev)" %}
 {% endif %}
-  opt_ierr = {{binding}}(&
+  opt_ierr = {{binding}}{{async_suffix}}(&
     mapped_array,&
     int({{tuple.bytes}}, c_int),&
     c_loc(data_host),{{data_dev_arg}},&
-    shape(data_host), opt_lbounds,&
+    shape(data_host), opt_lbounds {{",stream" if is_async}},&
     gpufort_array_wrap_host_wrap_device,&
-    opt_sync_mode,opt_stream)
+    opt_sync_mode)
   if ( present(ierr) ) ierr = opt_ierr
 end function
+{% endfor %}{# async #}
 {% endfor %}
 {% endfor %}
 {% set routine = "init" %}
@@ -289,7 +285,7 @@ function {{f_array}}_wrap_device_ptr_{{tuple.f_kind}}(&
     c_null_ptr,c_loc(data_dev),&
     shape(data_dev), opt_lbounds,&
     gpufort_array_wrap_host_wrap_device,&
-    gpufort_array_sync_none,c_null_ptr)
+    gpufort_array_sync_none)
   if ( present(ierr) ) ierr = opt_ierr
 end function
 {% endfor %}
@@ -304,17 +300,19 @@ end function
 {% set routine = "init" %}
 {% set iface = prefix+"_"+routine %}
 !> Initialize a gpufort_array of a rank that matches that of the input data.
-interface {{iface}}
+{% for async_suffix in ["_async",""] %}
+{% set is_async = async_suffix == "_async" %}
+interface {{iface}}{{async_suffix}}
 {% for rank in range(1,max_rank_ub) %}
 {% set size_dims = ",dimension("+rank|string+")" %}
 {% set f_array  = prefix+rank|string %}
 {% set binding  = f_array+"_"+routine %}
-  function {{binding}} (&
+  function {{binding}}{{async_suffix}} (&
       mapped_array,&
       bytes_per_element,&
       data_host,data_dev,&
       sizes, lbounds,&
-      alloc_mode,sync_mode,stream) &
+      {{"stream," if is_async}}alloc_mode,sync_mode) &
         bind(c,name="{{binding}}") &
           result(ierr)
     use iso_c_binding
@@ -328,8 +326,8 @@ interface {{iface}}
     type(c_ptr),intent(in),value                                        :: data_host, data_dev
     integer(c_int){{size_dims}},intent(in)                              :: sizes, lbounds
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),value :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),value             :: sync_mode 
-    type(c_ptr),intent(in),value                                        :: stream
+    integer(kind(gpufort_array_sync_none)),intent(in),value             :: sync_mode{{"
+    type(c_ptr),intent(in),value                                        :: stream" if is_async}}
     !
     integer(kind(hipSuccess)) :: ierr
   end function
@@ -338,19 +336,22 @@ interface {{iface}}
 {% for rank in range(1,max_rank_ub) %}
 {% set f_array  = prefix+rank|string %}
 {% set binding  = f_array+"_"+routine %}
-      {{binding}}_host,&
+      {{binding}}{{async_suffix}}_host,&
 {% for tuple in datatypes %}
-      {{binding}}_{{tuple.f_kind}}{{",&\n" if not loop.last}}{% endfor %}{{",&" if not loop.last}}
+      {{binding}}{{async_suffix}}_{{tuple.f_kind}}{{",&\n" if not loop.last}}{% endfor %}{{",&" if not loop.last}}
 {% endfor %}
 end interface
+{% endfor %}{# async_suffix #}
 
+{% for async_suffix in ["_async",""] %}
+{% set is_async = async_suffix == "_async" %}
 {% set routine = "wrap" %}
 {% set iface = prefix+"_"+routine %}
 !> Wrap a Fortran or type(c_ptr) pointer pair that points to host and device data.
 !> Only wrap, allocate nothing,
 !> and do not synchronize at initialization or destruction time.
 !> \return gpufort_array of a rank that matches that of the input data.
-interface {{iface}}
+interface {{iface}}{{async_suffix}}
     module procedure :: &{{"\n"}}
 {%- for rank in range(1,max_rank_ub) -%}
 {%- set size_dims = ",dimension("+rank|string+")" -%}
@@ -358,11 +359,12 @@ interface {{iface}}
 {%- set binding  = f_array+"_"+routine -%}
 {%- for tuple in datatypes -%}
 {%- for dev in ["","_cptr"] -%} 
-{{binding | indent(6,True)}}_{{tuple.f_kind}}{{dev}}{{",&\n" if not loop.last}}
+{{binding | indent(6,True)}}{{async_suffix}}_{{tuple.f_kind}}{{dev}}{{",&\n" if not loop.last}}
 {%- endfor -%}{{",&\n" if not loop.last}}
 {%- endfor -%}{{",&\n" if not loop.last}}
 {%- endfor %}{{""}}
 end interface
+{% endfor %}{# async_suffix #}
 
 {% set routine = "wrap_device_ptr" %}
 {% set iface = prefix+"_"+routine %}
@@ -384,26 +386,52 @@ interface {{iface}}
 {% endfor %}
 end interface
 
+{% for async_suffix in ["_async",""] %}
+{% set is_async = async_suffix == "_async" %}
 {% for routine in ["destroy","copy_to_host","copy_to_device"] %}
 {% set iface = prefix+"_"+routine %}
-interface {{iface}}
+interface {{iface}}{{async_suffix}}
 {% for rank in range(1,max_rank_ub) %}
 {% set f_array  = prefix+rank|string %}
 {% set binding  = f_array+"_"+routine %}
-  function {{binding}} (mapped_array,stream) &
+  function {{binding}}{{async_suffix}} (mapped_array{{",stream" if is_async}}) &
         bind(c,name="{{binding}}") &
           result(ierr)
     use iso_c_binding
     use hipfort_enums
     import {{f_array}}
     implicit none
-    type({{f_array}}),intent(inout) :: mapped_array
-    type(c_ptr),value,intent(in)    :: stream
+    type({{f_array}}),intent(inout) :: mapped_array{{"
+    type(c_ptr),value,intent(in)    :: stream" if is_async}}
     integer(kind(hipSuccess))       :: ierr
   end function
 {% endfor %}
 end interface
 {% endfor %}
+
+{% set routine = "dec_num_refs" %}
+{% set iface = prefix+"_"+routine %}
+interface {{iface}}{{async_suffix}}
+{% for rank in range(1,max_rank_ub) %}
+{% set f_array  = prefix+rank|string %}
+{% set binding  = f_array+"_"+routine %}
+  function {{binding}}{{async_suffix}}(&
+    mapped_array,destroy_if_zero_refs{{",&
+    stream" if is_async}}) &
+        bind(c,name="{{binding}}") &
+          result(ierr)
+    use iso_c_binding
+    use hipfort_enums
+    import {{f_array}}
+    implicit none
+    type({{f_array}}),intent(inout) :: mapped_array{{"
+    type(c_ptr),value,intent(in)               :: stream" if is_async}}
+    logical(c_bool),intent(in),value           :: destroy_if_zero_refs
+    integer(kind(hipSuccess))                  :: ierr
+  end function
+{% endfor %}
+end interface
+{% endfor %}{# async_suffix #}
 
 {% set routine = "inc_num_refs" %}
 {% set iface = prefix+"_"+routine %}
@@ -424,23 +452,4 @@ interface {{iface}}
 {% endfor %}
 end interface
 
-{% set routine = "dec_num_refs" %}
-{% set iface = prefix+"_"+routine %}
-interface {{iface}}
-{% for rank in range(1,max_rank_ub) %}
-{% set f_array  = prefix+rank|string %}
-{% set binding  = f_array+"_"+routine %}
-  function {{binding}} (mapped_array,destroy_if_zero_refs) &
-        bind(c,name="{{binding}}") &
-          result(ierr)
-    use iso_c_binding
-    use hipfort_enums
-    import {{f_array}}
-    implicit none
-    type({{f_array}}),intent(inout) :: mapped_array
-    logical(c_bool),intent(in),value           :: destroy_if_zero_refs
-    integer(kind(hipSuccess))                  :: ierr
-  end function
-{% endfor %}
-end interface
 {%- endmacro -%}

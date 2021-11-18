@@ -17,15 +17,13 @@ struct mesh_t {
   gpufort::array1<float> y;
 };
 
-// BEGIN main_26_e28c45
 /*
    HIP C++ implementation of the function/loop body of:
 
      !$cuf kernel do(1) <<<grid, tBlock>>>
-     do i=1,size(y,1)
-       y(i) = y(i) + a*xi
+     do i=1,size(mesh%y,1)
+       mesh%y(i) = mesh%y(i) + mesh%a*mesh%x(i)%val
      end do
-
 */
 
 __global__ void  vecadd_kernel(mesh_t mesh) {
@@ -49,5 +47,4 @@ extern "C" void launch_vecadd_kernel_auto_(
   // launch kernel
   hipLaunchKernelGGL((vecadd_kernel), grid, block, sharedmem, stream, mesh);
 }
-// END vecadd_kernel
 #endif // __KERNELS_HIP_CPP__ 

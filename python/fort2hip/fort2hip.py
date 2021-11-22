@@ -394,16 +394,11 @@ def _intrnl_update_context_from_loop_kernels(loop_kernels,index,hip_context,f_co
             ]
             f_interface_dict_auto["args"]    += kernel_args
             f_interface_dict_auto["argnames"] = [arg["name"] for arg in f_interface_dict_auto["args"]]
-
-            # for test
-            f_interface_dict_auto["do_test"]   = False # True
-            f_interface_dict_auto["test_comment"] = ["Fortran implementation:"] + stkernel.code
-            #f_interface_dict_auto["test_comment"] = ["","Hints:","Device variables in scope:"] + ["".join(declared.lines()).lower() for declared in device_vars_in_scope]
-
+            
             #######################################################################
             # Feed argument names back to STLoopKernel for host code modification
             #######################################################################
-            stkernel.kernel_arg_names = [arg["callarg_name"] for arg in kernel_args]
+            stkernel.kernel_arg_names = [arg["callarg_name"] for arg in kernel_args] # TODO(refactor): This is where we need to turn things around
             stkernel.grid_f_str       = parse_result.grid_expression_f_str()
             stkernel.block_f_str      = parse_result.block_expression_f_str()
             # TODO use indexer to check if block and dim expressions are actually dim3 types or introduce overloaded make_dim3 interface to hipfort
@@ -427,17 +422,17 @@ def _intrnl_update_context_from_loop_kernels(loop_kernels,index,hip_context,f_co
             f_context["interfaces"].append(f_interface_dict_manual)
             f_context["interfaces"].append(f_interface_dict_auto)
 
-            if generate_cpu_launcher:
+            if generate_cpu_launcher: # TODO(refactor): Might disable this at the beginning.
                 # External CPU interface
                 f_cpu_interface_dict = copy.deepcopy(f_interface_dict_auto)
-                f_cpu_interface_dict["f_name"] = kernel_launcher_name + "_cpu" 
-                f_cpu_interface_dict["c_name"] = kernel_launcher_name + "_cpu"
+                f_cpu_interface_dict["f_name"] = "{}_cpu".format(kernel_launcher_name)
+                f_cpu_interface_dict["c_name"] = "{}_cpu".format(kernel_launcher_name)
                 f_cpu_interface_dict["do_test"] = False
 
                 # Internal CPU routine
                 f_cpu_routine_dict = copy.deepcopy(f_interface_dict_auto)
-                f_cpu_routine_dict["f_name"]    = kernel_launcher_name + "_cpu1" 
-                f_cpu_routine_dict["c_name"]    = kernel_launcher_name + "_cpu1"
+                f_cpu_routine_dict["f_name"] = "{}_cpu1".format(kernel_launcher_name)
+                f_cpu_routine_dict["c_name"] = "{}_cpu1".format(kernel_launcher_name)
                 
                 # rename copied modified args
                 for i,val in enumerate(f_cpu_routine_dict["args"]):
@@ -589,65 +584,7 @@ def _intrnl_create_includes_from_used_modules(index_record,index):
             includes.append(iuse["name"] + HIP_FILE_EXT)
     return includes
 # API
-
-def generate_gpufort_headers(output_dir):
-    """Create the header files that all GPUFORT HIP kernels rely on."""
-    global LOG_PREFIX
-    global GPUFORT_HEADERS_MAX_DIM
-
-    utils.logging.log_enter_function(LOG_PREFIX,"generate_gpufort_headers",\
-      {"output_dir": output_dir})
-    
-    gpufort_header_file_path = os.path.join(output_dir,"gpufort.h")
-    model.GpufortHeaderModel().generate_file(gpufort_header_file_path)
-    msg = "created gpufort main header: ".ljust(40) + gpufort_header_file_path
-    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_headers",msg)
-    
-    gpufort_reduction_header_file_path = os.path.join(output_dir, "gpufort_reduction.h")
-    model.GpufortReductionHeaderModel().generate_file(gpufort_reduction_header_file_path)
-    msg = "created gpufort reductions header file: ".ljust(40) + gpufort_reduction_header_file_path
-    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_headers",msg)
-    
-    # gpufort arrays
-    gpufort_array_context={
-      "max_rank":GPUFORT_HEADERS_MAX_DIM,
-      "datatypes":GPUFORT_HEADERS_DATATYPES
-    }
-    gpufort_array_header_file_path = os.path.join(output_dir,"gpufort_array.h")
-    model.GpufortArrayHeaderModel().generate_file(gpufort_array_header_file_path,\
-      context=gpufort_array_context)
-    msg = "created gpufort arrays header file: ".ljust(40) + gpufort_array_header_file_path
-    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_headers",msg)
-    
-    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_headers",msg)
-
-def generate_gpufort_sources(output_dir):
-    """Create the source files that all GPUFORT HIP kernels rely on."""
-    global LOG_PREFIX
-    global GPUFORT_HEADERS_MAX_DIM
-
-    utils.logging.log_enter_function(LOG_PREFIX,"generate_gpufort_sources",\
-      {"output_dir": output_dir})
-    
-    # gpufort arrays
-    gpufort_array_context={
-      "max_rank":GPUFORT_HEADERS_MAX_DIM,
-      "datatypes":GPUFORT_HEADERS_DATATYPES
-    }
-    gpufort_array_source_file_path = os.path.join(output_dir,"gpufort_array.hip.cpp")
-    model.GpufortArraySourceModel().generate_file(gpufort_array_source_file_path,\
-      context=gpufort_array_context)
-    msg = "created gpufort arrays C++ source file: ".ljust(40) + gpufort_array_source_file_path
-    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_sources",msg)
-    
-    gpufort_array_fortran_interfaces_module_path = os.path.join(output_dir,"gpufort_array.f03")
-    model.GpufortArrayFortranInterfacesModel().generate_file(gpufort_array_fortran_interfaces_module_path,\
-      context=gpufort_array_context)
-    msg = "created gpufort arrays Fortran interface module: ".ljust(40) + gpufort_array_fortran_interfaces_module_path
-    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_sources",msg)
-
-    utils.logging.log_leave_function(LOG_PREFIX,"generate_gpufort_sources")
-    utils.logging.log_leave_function(LOG_PREFIX,"generate_gpufort_sources")
+exec(open(os.path.join(fort2hip_dir,"fort2hip_gpufort_sources.py.in")).read())
 
 def generate_hip_files(stree,index,kernels_to_convert_to_hip,translation_source_path,generate_code):
     """

@@ -66,10 +66,10 @@ namespace gpufort {
   struct array_descr{{rank}} {
     T*     data_host    = nullptr;
     T*     data_dev     = nullptr;
-    size_t num_elements = 0;     //> Number of represented by this array.
+    int num_elements    = 0;     //> Number of elements represented by this array.
     int    index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
 {% for d in range(1,rank_ub) %}
-    int    stride{{d}}      = -1;    //> Stride {{d}} for linearizing {{rank}}-dimensional index.
+    int    stride{{d}}  = -1;    //> Stride {{d}} for linearizing {{rank}}-dimensional index.
 {% endfor %}
  
     /**
@@ -288,7 +288,7 @@ namespace gpufort {
           // do nothing as already set by data.wrap call
 	  break;
 	default:
-          std::cerr << "ERROR: gpufort::Array{{rank}}::init{{async_suffix}}(...): Unexpected value for 'this->alloc_mode': " 
+          std::cerr << "ERROR: gpufort::array{{rank}}::init{{async_suffix}}(...): Unexpected value for 'this->alloc_mode': " 
                     << static_cast<int>(this->alloc_mode) << std::endl; 
           std::terminate();
           break;
@@ -327,8 +327,8 @@ namespace gpufort {
             ierr = this->copy_to_host{{async_suffix}}({{"stream" if is_async}});
             break;
           default:
-            std::cerr << "ERROR: gpufort::Array{{rank}}::init{{async_suffix}}(...): Unexpected value for 'sync_mode': " 
-                      << static_cast<int>(sync_mode) << std::endl; 
+            std::cerr << "ERROR: gpufort::array{{rank}}::init{{async_suffix}}(...): Unexpected value for 'sync_mode': " 
+                      << static_cast<int>(this->sync_mode) << std::endl; 
             std::terminate();
             break;
         }
@@ -381,8 +381,8 @@ namespace gpufort {
             // do nothing
             break;
           default:
-            std::cerr << "ERROR: gpufort::Array{{rank}}::destroy{{async_suffix}}(...): Unexpected value for 'sync_mode': " 
-                      << static_cast<int>(sync_mode) << std::endl; 
+            std::cerr << "ERROR: gpufort::array{{rank}}::destroy{{async_suffix}}(...): Unexpected value for 'sync_mode': " 
+                      << static_cast<int>(this->sync_mode) << std::endl; 
             std::terminate();
             break;
         }
@@ -407,7 +407,7 @@ namespace gpufort {
             case AllocMode::WrapHostAllocDevice:
               break;
             default:
-              std::cerr << "ERROR: gpufort::Array{{rank}}::destroy{{async_suffix}}(...): Unexpected value for 'alloc_mode': " 
+              std::cerr << "ERROR: gpufort::array{{rank}}::destroy{{async_suffix}}(...): Unexpected value for 'alloc_mode': " 
                         << static_cast<int>(alloc_mode) << std::endl; 
               std::terminate();
               break;
@@ -440,8 +440,48 @@ namespace gpufort {
     }
     
     /**
+     * Copy host data to a buffer.
+     * Depending on the hipMemcpyKind parameter,
+     * the destinaton buffer is interpreted as host or device variable
+     * and the source is the array's host or device buffer.
+     * \return  Error code returned by the underlying hipMemcpy operation.
+     * \note Use num_data_bytes() for determining the buffer size.
+     */
+    __host__ hipError_t copy_to_buffer{{async_suffix}}(
+       void* buffer, hipMemcpyKind memcpy_kind{{",
+       hipStream_t stream" if is_async}}
+    ) {
+      #ifndef __HIP_DEVICE_COMPILE__
+      assert(buffer!=nullptr);
+      assert(this->data.data_dev!=nullptr);
+      #endif
+      T* src = nullptr ;
+      switch (memcpy_kind) {
+        case hipMemcpyDeviceToHost: 
+        case hipMemcpyDeviceToDevice:
+          src = this->data.data_dev;
+          break;
+        case hipMemcpyHostToHost: 
+        case hipMemcpyHostToDevice:
+          src = this->data.data_host;
+          break;
+        default:
+          std::cerr << "ERROR: gpufort::array{{rank}}::copy_to_buffer{{async_suffix}}(...): Unexpected value for 'memcpy_kind': " 
+                    << static_cast<int>(memcpy_kind) << std::endl; 
+          std::terminate();
+          break;
+      }
+  
+      return hipMemcpy{{"Async" if is_async}}(
+        buffer, 
+        (void*) src,
+        this->num_data_bytes(), 
+        memcpy_kind{{", stream" if is_async}});
+    }
+    
+    /**
      * Copy host data to the device.
-     * \return Array code returned by the underlying hipMemcpy operation.
+     * \return  Error code returned by the underlying hipMemcpy operation.
      */
     __host__ hipError_t copy_to_host{{async_suffix}}({{"hipStream_t stream" if is_async}}) {
       #ifndef __HIP_DEVICE_COMPILE__
@@ -457,7 +497,7 @@ namespace gpufort {
     
     /**
      * Copy device data to the host.
-     * \return Array code returned by the underlying hipMemcpy operation.
+     * \return  Error code returned by the underlying hipMemcpy operation.
      */
     __host__ hipError_t copy_to_device{{async_suffix}}({{"hipStream_t stream" if is_async}}) {
       #ifndef __HIP_DEVICE_COMPILE__
@@ -509,10 +549,20 @@ namespace gpufort {
     }
 {% endfor %}
 
+    /** 
+     *  \return Number of bytes required to store 
+     *  the array elements on the host or the device.
+     */ 
     __host__ size_t num_data_bytes() {
       return this->data.num_elements * this->bytes_per_element;
     }
- 
+    
+    /**
+     * \return the number of elements of this array.
+     */
+    __host__ int num_elements() {
+      return this->data.num_elements;
+    }
 
     /**
      * Linearize multi-dimensional index.
@@ -601,9 +651,9 @@ namespace gpufort {
         print_mode==PrintMode::PrintCValues ||
         print_mode==PrintMode::PrintCValuesAndNorms;
       if ( !print_norms && !print_values && !print_values_c_style ) {
-          std::cerr << "ERROR: gpufort::Array{{rank}}::print_{{source}}_data(...): Unexpected value for 'print_mode': " 
-                    << static_cast<int>(this->alloc_mode) << std::endl; 
-          std::terminate();
+        std::cerr << "ERROR: gpufort::array{{rank}}::print_{{source}}_data(...): Unexpected value for 'print_mode': " 
+                  << static_cast<int>(print_mode) << std::endl; 
+        std::terminate();
       }
 {% for col in range(1,rank_ub) %}
       const int n{{col}}  = this->size({{col}});

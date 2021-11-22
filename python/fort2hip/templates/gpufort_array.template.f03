@@ -33,7 +33,7 @@ module gpufort_array
   type, bind(c) :: gpufort_array_descr{{rank}}
     type(c_ptr)       :: data_host    = c_null_ptr
     type(c_ptr)       :: data_dev     = c_null_ptr
-    integer(c_size_t) :: num_elements = 0  !> Number of represented by this array.
+    integer(c_int) :: num_elements = 0  !> Number of elements represented by this array.
     integer(c_int)    :: index_offset = -1 !> Offset for index calculation; scalar product of negative lower bounds and strides.
 {% for d in range(1,rank_ub) %}
     integer(c_int)    :: stride{{d}}  = -1 !> Stride for dimension {{d}}
@@ -59,4 +59,5 @@ contains
 {{ gam.gpufort_array_fortran_init_routines(datatypes,max_rank) | indent(2,True) }}
 {{ gam.gpufort_array_fortran_wrap_routines(datatypes,max_rank) | indent(2,True) }}
 {{ gam.gpufort_array_fortran_data_access_routines(datatypes,max_rank) | indent(2,True) }}
+{{ gam.gpufort_array_fortran_copy_to_buffer_routines(datatypes,max_rank) | indent(2,True) }}
 end module gpufort_array 

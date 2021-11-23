@@ -6,6 +6,7 @@
 {# C side #}
 extern "C" {
 {% for rank in range(1,max_rank+1) %}
+{% set rank_ub = rank+1 %}
 {% set c_type = "char" %}
 {% set c_prefix = "gpufort_array"+rank|string %}
 {% for async_suffix in ["_async",""] %}
@@ -71,6 +72,28 @@ extern "C" {
       return hipSuccess;
     }
   } 
+{% endfor %}
+
+{% for d in range(rank-1,0,-1) %}
+    /**
+     * Collapse the array by fixing {{rank-d}} indices.
+     * \return A gpufort array of rank {{d}}.
+     * \param[inout] result the collapsed array
+     * \param[in]    array  the original array
+     * \param[in]    i{{d+1}},...,i{{rank}} indices to fix.
+     */
+    __host__ void {{c_prefix}}_collapse_{{d}}(
+        gpufort::array{{d}}<{{c_type}}>* result,
+        gpufort::array{{rank}}<{{c_type}}>* array,
+{% for e in range(d+1,rank_ub) %}
+        const int i{{e}}{{"," if not loop.last}}
+{% endfor %}
+    ) {
+      auto collapsed_array = 
+        array->collapse( 
+{{"" | indent(10,True)}}{% for e in range(d+1,rank_ub) %}i{{e}}{{"," if not loop.last}}{%- endfor %});
+      result->copy(collapsed_array);
+    }
 {% endfor %}
   
   __host__ void {{c_prefix}}_inc_num_refs(

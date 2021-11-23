@@ -556,4 +556,34 @@ interface {{iface}}
 {% endfor %}
 end interface
 
+!> 
+!> Collapse the array by fixing indices.
+!> \return A gpufort array of reduced rank.
+!> \param[in] i2,i3,... indices to fix.
+!> 
+{% set routine = "collapse" %}
+{% set iface = prefix+"_"+routine %}
+interface {{iface}}
+{% for rank in range(1,max_rank_ub) %}
+{% set rank_ub = rank+1 %}
+{% set f_array  = prefix+rank|string %}
+{% set binding  = f_array+"_"+routine %}
+{% for d in range(rank-1,0,-1) %}
+{% set f_array_collapsed  = prefix+d|string %}
+  subroutine {{binding}}_{{d}} (collapsed_array,array,&
+{{"" | indent(6,True)}}{% for e in range(d+1,rank_ub) %}i{{e}}{{"," if not loop.last}}{%- endfor %}) &
+      bind(c,name="{{binding}}_{{d}}")
+    use iso_c_binding
+    use hipfort_enums
+    import {{f_array}}
+    import {{f_array_collapsed}}
+    implicit none
+    type({{f_array_collapsed}}),intent(inout) :: collapsed_array
+    type({{f_array}}),intent(in)              :: array
+    integer(c_int),value,intent(in) :: &
+{{"" | indent(6,True)}}{% for e in range(d+1,rank_ub) %}i{{e}}{{"," if not loop.last else "\n"}}{%- endfor %}
+  end subroutine
+{% endfor %}{# d #}
+{% endfor %}{# rank #}
+end interface
 {%- endmacro -%}

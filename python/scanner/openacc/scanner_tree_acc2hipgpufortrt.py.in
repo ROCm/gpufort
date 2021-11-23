@@ -1,29 +1,26 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+## DIRECTIVES
+# update
+HIP_GPUFORT_RT_ACC_UPDATE = "{indent}call gpufort_acc_update_{kind}({var}{asyncr})\n"
+# wait
+HIP_GPUFORT_RT_ACC_WAIT = "{indent}call gpufort_acc_wait({queue}{asyncr})\n"
 # init shutdown
 HIP_GPUFORT_RT_ACC_INIT     = "{indent}call gpufort_acc_init()\n"
 HIP_GPUFORT_RT_ACC_SHUTDOWN = "{indent}call gpufort_acc_shutdown()\n"
 # regions
 HIP_GPUFORT_RT_ACC_ENTER_REGION = "{indent}call gpufort_acc_enter_region({region_kind})\n"
 HIP_GPUFORT_RT_ACC_EXIT_REGION = "{indent}call gpufort_acc_exit_region({region_kind})\n"
+## CLAUSES
 # create
-HIP_GPUFORT_RT_ACC_CREATE = "{indent}{dev_var} = gpufort_acc_create({var})\n"
-# no_create
+HIP_GPUFORT_RT_ACC_CREATE    = "{indent}{dev_var} = gpufort_acc_create({var})\n"
 HIP_GPUFORT_RT_ACC_NO_CREATE = "{indent}{dev_var} = gpufort_acc_no_create({var})\n"
-# delete
-HIP_GPUFORT_RT_ACC_DELETE = "{indent}call gpufort_acc_delete({var}{alloc}{finalize})\n"
-# copyin
-HIP_GPUFORT_RT_ACC_COPYIN = "{indent}{dev_var} = gpufort_acc_copyin({var}{asyncr})\n"
-# copy
-HIP_GPUFORT_RT_ACC_COPY = "{indent}{dev_var} = gpufort_acc_copy({var}{asyncr})\n"
-# copyout
-HIP_GPUFORT_RT_ACC_COPYOUT = "{indent}{dev_var} = gpufort_acc_copyout({var}{asyncr})\n"
-# update
-HIP_GPUFORT_RT_ACC_UPDATE = "{indent}call gpufort_acc_update_{kind}({var}{asyncr})\n"
-# present
-HIP_GPUFORT_RT_ACC_PRESENT = "{indent}{dev_var} = gpufort_acc_present({var}{asyncr}{alloc})\n"
-# wait
-HIP_GPUFORT_RT_ACC_WAIT = "{indent}call gpufort_acc_wait({queue}{asyncr})\n"
+HIP_GPUFORT_RT_ACC_COPYIN    = "{indent}{dev_var} = gpufort_acc_copyin({var}{asyncr})\n"
+HIP_GPUFORT_RT_ACC_COPY      = "{indent}{dev_var} = gpufort_acc_copy({var}{asyncr})\n"
+HIP_GPUFORT_RT_ACC_COPYOUT   = "{indent}{dev_var} = gpufort_acc_copyout({var}{asyncr})\n"
+HIP_GPUFORT_RT_ACC_PRESENT   = "{indent}{dev_var} = gpufort_acc_present({var}{asyncr}{alloc})\n"
+
+HIP_GPUFORT_RT_ACC_DELETE    = "{indent}call gpufort_acc_delete({var}{alloc}{finalize})\n"
 
 MAPPING_CLAUSE_2_TEMPLATE_MAP = {
   "create": HIP_GPUFORT_RT_ACC_CREATE,

@@ -354,7 +354,7 @@ namespace gpufort {
         lower_bounds[0],{% for d in range(1,rank) %}lower_bounds[{{d}}],{% endfor %}{{""}}{{"
         stream," if is_async}}alloc_mode,sync_mode);
     }
-
+    
     /**
      * Destroy associated host and device data
      * if this is not a wrapper. Depending
@@ -550,6 +550,24 @@ namespace gpufort {
 {% endfor %}
 
     /** 
+     * Copy metadata from another gpufort array to this gpufort array.
+     * \note The allocation mode is always set to AllocMode::WrapHostWrapDevice
+     *       and the sync mode is set to SyncMode::None.
+     * \note No deep copy, i.e. the host and device data is not copied, just the pointers
+     * to the data.
+     */
+    __host__ void copy(const gpufort::array{{rank}}<T>& other) {
+      this->init(
+        other.bytes_per_element,
+        other.data.data_host,
+        other.data.data_dev,
+        other.size(1),{% for d in range(2,rank_ub) %}other.size({{d}}),{% endfor %}{{""}}
+        other.lbound(1),{% for d in range(2,rank_ub) %}other.lbound({{d}}),{% endfor %}{{""}}
+        AllocMode::WrapHostAllocDevice,
+        SyncMode::None);
+    }
+
+    /** 
      *  \return Number of bytes required to store 
      *  the array elements on the host or the device.
      */ 
@@ -624,6 +642,47 @@ namespace gpufort {
     __host__ __device__ __forceinline__ int ubound(int dim) const {
       return this->data.ubound(dim);
     }
+    
+
+{% for d in range(rank-1,0,-1) %}
+    /**
+     * Collapse the array by fixing {{rank-d}} indices.
+     * \return A gpufort array of rank {{d}}.
+     * \param[in] i{{d+1}},...,i{{rank}} indices to fix.
+     */
+    __host__ gpufort::array{{d}}<T> collapse(
+{% for e in range(d+1,rank_ub) %}
+        const int i{{e}}{{"," if not loop.last}}
+{% endfor %}
+    ) const {
+{% for e in range(1,d+1) %}
+      const int n{{e}}  = this->size({{e}});
+      const int lb{{e}} = this->lbound({{e}});
+{% endfor %}
+      const int index = linearized_index(
+{{"" | indent(8,True)}}{% for e in range(1,d+1) %}lb{{e}},{{"\n" if loop.last}}{%- endfor %}
+{{"" | indent(8,True)}}{% for e in range(d+1,rank_ub) %}i{{e}}{{"," if not loop.last}}{%- endfor %});
+      T* data_host_new = nullptr; 
+      if (this->data.data_host != nullptr) {
+        data_host_new = this->data.data_host + index;
+      }
+      T* data_dev_new = nullptr; 
+      if (this->data.data_dev != nullptr) {
+        data_dev_new = this->data.data_dev + index;
+      }
+      gpufort::array{{d}}<T> collapsed_array;
+      hipError_t ierr = 
+        collapsed_array.init(
+          this->bytes_per_element,
+          data_host_new,
+          data_dev_new,
+{{"" | indent(10,True)}}{% for e in range(1,d+1) %}n{{e}},{{"\n" if loop.last}}{%- endfor %}
+{{"" | indent(10,True)}}{% for e in range(1,d+1) %}lb{{e}},{{"\n" if loop.last}}{%- endfor %}
+          AllocMode::WrapHostWrapDevice,
+          SyncMode::None);
+      return collapsed_array;
+    }
+{% endfor %}
 
 {% for source in ["host","device"] %}
     /**

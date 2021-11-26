@@ -1,5 +1,5 @@
-TEST     ?= nested-types callbacks
-DEPS     ?= nested-types.cpp 
+TEST     ?= nested-types callbacks bindcpp
+DEPS     ?= nested-types.cpp bindcpp.cpp
 SOURCES  ?= $(TEST).f90 $(DEPS)
 DEPS_OBJ  = $(DEPS:.cpp=.o)
 LDFLAGS   = -lstdc++

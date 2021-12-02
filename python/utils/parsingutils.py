@@ -9,7 +9,9 @@ def tokenize(statement,padded_size=0):
                Disable padding by specifying value <= 0.
     """
     TOKENS_REMOVE = r"\s+|\t+"
-    TOKENS_KEEP   = r"(end|else|!\$?|(c|\*)\$|[(),]|::?|=>?|<<<|>>>|(<|>)=?|(/|=)=|\+|-|\*|/|(\.\w+\.))"
+    TOKENS_KEEP   = r"(end|else|!\$?|[c\*]\$|[(),]|::?|=>?|<<<|>>>|[<>]=?|[/=]=|\+|-|\*|/|\.\w+\.)"
+    # IMPORTANT: Use non-capturing groups (?:<expr>) to ensure that an inner group in TOKENS_KEEP
+    # is not captured.
     
     tokens1 = re.split(TOKENS_REMOVE,statement)
     tokens  = []

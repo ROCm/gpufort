@@ -117,9 +117,9 @@ class STNode:
         return first_line[0:num_indent_chars]
     def first_statement(self):
         """
-        :return: First line in first linemap.
+        :return: First statement in first linemap that belongs to this node.
         """
-        return self._linemaps[0]["statements"][0]["body"]
+        return self._linemaps[0]["statements"][self._first_statement_index]["body"]
     def append(self,child):
         self.children.append(child)
     def list_of_parents(self):

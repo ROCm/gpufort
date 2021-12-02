@@ -6,6 +6,7 @@ import pyparsing as pyp
 
 import addtoplevelpath
 import utils.logging
+import utils.parsingutils
 
 ERR_LINEMAPPER_MACRO_DEFINITION_NOT_FOUND = 11001
 
@@ -192,7 +193,7 @@ def _intrnl_convert_lines_to_statements(lines):
     """
     global PATTERN_LINE_CONTINUATION
 
-    p_continuation = re.compile(PATTERN_LINE_CONTINUATION)
+    p_continuation = re.compile(r"\&\s*([!c\*]\$\w+)?|([!c\*]\$\w+\&)",re.IGNORECASE)
     # we look for a sequence ") <word>" were word != "then".
     p_single_line_if = re.compile(r"^(?P<indent>[\s\t]*)(?P<head>if\s*\(.+\))\s*\b(?!then)(?P<body>\w.+)",re.IGNORECASE)
     
@@ -209,10 +210,22 @@ def _intrnl_convert_lines_to_statements(lines):
     indent_offset = num_indent_chars * indent_char
 
     # replace line continuation by whitespace, split at ";"
-    lines_content = " ".join(lines)
-    if "&" in lines_content:
-        lines_content = p_continuation.sub(" ",lines_content)
-    single_line_statements=lines_content.split(";")
+    statement_parts = []
+    comment_parts   = []
+    for line in lines:
+        indent,stmt_or_dir_part,comment,_ = \
+           utils.parsingutils.split_fortran_line(line)
+        if len(stmt_or_dir_part): 
+            statement_parts.append(stmt_or_dir_part)
+        if len(comment):
+            comment_parts.append(comment)
+    single_line_statements = []
+    if len(statement_parts):
+      combined_statements = "".join(statement_parts)
+      single_line_statements +=\
+        p_continuation.sub(" ",combined_statements).split(";")
+    if len(comment_parts):
+      single_line_statements = comment_parts + single_line_statements
     # unroll single-line if
     unrolled_statements = []
     for stmt in single_line_statements:
@@ -233,23 +246,24 @@ def _intrnl_convert_lines_to_statements(lines):
 
 def _intrnl_detect_line_starts(lines):
     """Fortran statements can be broken into multiple lines 
-    via the '&'. This routine linemaps in which line a statement
+    via the '&' characters. This routine detects in which line a statement
     (or multiple statements per line) begins.
     The difference between the line numbers of consecutive entries
     is the number of lines the first statement occupies.
     """
-    p_directive_continuation = re.compile(r"\n[!c\*]\$\w+\&")
+    p_directive_continuation = re.compile(r"[!c\*]\$\w+\&")
 
     # 1. save multi-line statements (&) in buffer
     buffering  = False
     line_starts = []
     for lineno,line in enumerate(lines,start=0):
         # Continue buffering if multiline CUF/ACC/OMP statement
-        buffering |= p_directive_continuation.match(line) != None
+        _,stmt_or_dir,comment,_ = \
+           utils.parsingutils.split_fortran_line(line)
+        buffering |= p_directive_continuation.match(stmt_or_dir) != None
         if not buffering:
             line_starts.append(lineno)
-        stripped_line = line.rstrip(" \t\n")  
-        if len(stripped_line) and stripped_line[-1] in ['&','\\']:
+        if len(stmt_or_dir) and stmt_or_dir[-1] in ['&','\\']:
             buffering = True
         else:
             buffering = False

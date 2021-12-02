@@ -1,5 +1,33 @@
 import re
 
+def split_fortran_line(line):
+     """Decomposes a Fortran line into preceding whitespace,
+     statement part, comment part, and trailing whitespace (including newline char).
+     """
+     len_line         = len(line)
+     len_preceding_ws = len_line-len(line.lstrip(" \n\t"))
+     len_trailing_ws  = len_line-len(line.rstrip(" \n\t"))
+     content          = line[len_preceding_ws:len_line-len_trailing_ws]
+
+     statement = ""
+     comment   = ""
+     if len(content):
+         if len_preceding_ws == 0 and content[0] in "!cC*" or\
+            content[0] == "!":
+             if content[1] == "$":
+                 statement = content
+             else:
+                 comment   = content
+         else:
+             content_parts = content.split("!",maxsplit=1)
+             if len(content_parts) > 0:
+                 statement = content_parts[0]
+             if len(content_parts) == 2:
+                 comment = "!"+content_parts[1]
+     preceding_ws = line[0:len_preceding_ws]
+     trailing_ws  = line[len_line-len_trailing_ws:]
+     return preceding_ws, statement.rstrip(" \t"), comment, trailing_ws
+
 def tokenize(statement,padded_size=0):
     """Splits string at whitespaces and substrings such as
     'end', '$', '!', '(', ')', '=>', '=', ',' and "::".

@@ -1,6 +1,10 @@
 import re
 
+COMMENT_CHARS="!cCdD*"
+
 def split_fortran_line(line):
+     global COMMENT_CHARS
+
      """Decomposes a Fortran line into preceding whitespace,
      statement part, comment part, and trailing whitespace (including newline char).
      """
@@ -12,7 +16,7 @@ def split_fortran_line(line):
      statement = ""
      comment   = ""
      if len(content):
-         if len_preceding_ws == 0 and content[0] in "!cC*" or\
+         if len_preceding_ws == 0 and content[0] in COMMENT_CHARS or\
             content[0] == "!":
              if content[1] == "$":
                  statement = content
@@ -27,6 +31,49 @@ def split_fortran_line(line):
      preceding_ws = line[0:len_preceding_ws]
      trailing_ws  = line[len_line-len_trailing_ws:]
      return preceding_ws, statement.rstrip(" \t"), comment, trailing_ws
+
+def relocate_inline_comments(lines):
+    """Move comments that follow after a line continuation char ('&')
+    before the 
+    Example. Input:
+ 
+    ```
+      call myroutine( & ! comment 1
+        arg1,&
+        ! comment 2
+
+
+        arg2) ! comment 3
+    ```
+    Output:
+    ```
+      call myroutine( & 
+        arg1,&
+        arg2)
+      ! comment 1
+      ! comment 2 
+      ! comment 3
+    ```
+    """ 
+    result         = []
+    comment_buffer = []
+    in_multiline_statement = False
+    for line in lines:
+       indent,stmt_or_dir,comment,trailing_ws = \
+         split_fortran_line(line)
+       if len(stmt_or_dir) and stmt_or_dir[-1] == "&":
+           in_multiline_statement = True
+       if in_multiline_statement and len(comment):
+           if len(stmt_or_dir):
+               result.append("".join([indent,stmt_or_dir,trailing_ws]))
+           comment_buffer.append("".join([indent,comment,trailing_ws]))
+       else:
+           result.append(line)
+       if len(stmt_or_dir) and stmt_or_dir[-1] != "&":
+           result += comment_buffer
+           comment_buffer.clear()
+           in_multiline_statement = False 
+    return result
 
 def tokenize(statement,padded_size=0):
     """Splits string at whitespaces and substrings such as

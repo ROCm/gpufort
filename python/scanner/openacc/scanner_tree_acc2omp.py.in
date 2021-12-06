@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 class Acc2Omp(AccBackendBase):
-    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[]):
         global LOG_PREFIX
         
         snippet = joined_statements
@@ -16,7 +16,7 @@ class Acc2Omp(AccBackendBase):
            utils.logging.log_exception(LOG_PREFIX,"Acc2Omp.transform","failed parse directive "+str(snippet))
 
 class AccLoopKernel2Omp(AccBackendBase):
-    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[]):
         global LOG_PREFIX
         
         if statements_fully_cover_lines:
@@ -24,12 +24,24 @@ class AccLoopKernel2Omp(AccBackendBase):
         else:
             snippet = joined_statements
         try:
-           parent_tag   = self._stnode._parent.tag()
-           scope        = scoper.create_scope(index_hints,parent_tag)
+           parent_tag   = self._stnode.parent.tag()
+           scope        = scoper.create_scope(index,parent_tag)
            parse_result = translator.parse_loop_kernel(snippet.split("\n"),scope)
            return parse_result.omp_f_str(snippet), True 
         except Exception as e:
            utils.logging.log_exception(LOG_PREFIX,"AccLoopKernel2Omp.transform","failed to convert kernel "+str(snippet))
            sys.exit(2)
 
-register_acc_backend("omp",Acc2Omp,AccLoopKernel2Omp,None)
+def AllocateOmp(stallocate,index):
+    return ""
+
+def DeallocateOmp(stdeallocate,index):
+    return ""
+
+register_acc_backend("omp",\
+  Acc2Omp,\
+  AccLoopKernel2Omp,\
+  AccPostprocessBackendBase,\
+  AllocateOmp,\
+  DeallocateOmp,\
+  None)

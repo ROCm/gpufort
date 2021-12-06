@@ -288,11 +288,9 @@ def _intrnl_update_context_from_loop_kernels(loop_kernels,index,hip_context,f_co
     
     hip_context["have_reductions"] = False
     for stkernel in loop_kernels:
-        parent_tag = stkernel._parent.tag()
-        scope     = scoper.create_scope(index,parent_tag)
-   
-        # translate and analyze kernels
-        parse_result = translator.parse_loop_kernel(stkernel.code,scope)
+        parse_result = stkernel.parse_result
+        parent_tag   = stkernel.parent.tag()
+        scope        = scoper.create_scope(index,parent_tag)
 
         kernel_args, c_kernel_local_vars, macros, input_arrays, local_cpu_routine_args =\
           _intrnl_derive_kernel_arguments(scope,\
@@ -304,7 +302,7 @@ def _intrnl_update_context_from_loop_kernels(loop_kernels,index,hip_context,f_co
         utils.logging.log_debug3(LOG_PREFIX,"_intrnl_update_context_from_loop_kernels","parse result:\n```"+parse_result.c_str().rstrip()+"\n```")
 
         # general
-        kernel_name         = stkernel.kernel_name()
+        kernel_name          = stkernel.kernel_name()
         kernel_launcher_name = stkernel.kernel_launcher_name()
    
         # treat reduction_vars vars / acc default(present) vars
@@ -482,26 +480,14 @@ def _intrnl_update_context_from_device_procedures(device_procedures,index,hip_co
     utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_update_context_from_device_procedures")
     
     for stprocedure in device_procedures:
-        scope       = scoper.create_scope(index,stprocedure.tag())
         iprocedure  = stprocedure.index_record
-        is_function  = iprocedure["kind"] == "function"
+        is_function = stprocedure.is_function()
+        scope       = scoper.create_scope(index,stprocedure.tag())
         
         hip_context["includes"] += _intrnl_create_includes_from_used_modules(iprocedure,index)
 
         fBody = "\n".join(stprocedure.code)
-        if is_function:
-            result_name = iprocedure["result_name"]
-            ivar_result = next([var for var in iprocedure["variables"] if var["name"] == iprocedure["result_name"]],None)
-            if ivar_result != None:
-                result_type = ivar_result["c_type"]
-                parse_result = translator.parse_procedure_body(stprocedure.code,scope,ivar_result["name"])
-            else:
-                msg = "could not identify return value for function ''"
-                utils.logging.log_error(msg)
-                sys.exit(INDEXER_ERROR_CODE)
-        else:
-            result_type = "void"
-            parse_result = translator.parse_procedure_body(stprocedure.code,scope)
+        parse_result = stprocedure.parse_result
         utils.logging.log_debug3(LOG_PREFIX,"_intrnl_update_context_from_device_procedures","parse result:\n```"+parse_result.c_str().rstrip()+"\n```")
 
         # TODO: look up functions and subroutines called internally and supply to parse_result before calling c_str()
@@ -535,7 +521,7 @@ def _intrnl_update_context_from_device_procedures(device_procedures,index,hip_co
         hip_kernel_dict["generate_launcher"]     = generate_launcher
         hip_kernel_dict["generate_cpu_launcher"] = False
         hip_kernel_dict["modifier"]              = "__global__" if stprocedure.is_kernel_subroutine() else "__device__"
-        hip_kernel_dict["return_type"]           = result_type
+        hip_kernel_dict["return_type"]           = stprocedure.c_result_type
         hip_kernel_dict["is_loop_kernel"]        = False
         hip_kernel_dict["kernel_name"]           = kernel_name
         hip_kernel_dict["macros"]                = macros
@@ -606,21 +592,62 @@ def _intrnl_create_includes_from_used_modules(index_record,index):
 
 def generate_gpufort_headers(output_dir):
     """Create the header files that all GPUFORT HIP kernels rely on."""
-    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_render_templates",\
+    global LOG_PREFIX
+    global GPUFORT_HEADERS_MAX_DIM
+
+    utils.logging.log_enter_function(LOG_PREFIX,"generate_gpufort_headers",\
       {"output_dir": output_dir})
     
-    gpufort_header_file_path = output_dir + "/gpufort.h"
+    gpufort_header_file_path = os.path.join(output_dir,"gpufort.h")
     model.GpufortHeaderModel().generate_file(gpufort_header_file_path)
     msg = "created gpufort main header: ".ljust(40) + gpufort_header_file_path
-    utils.logging.log_info(LOG_PREFIX,"_intrnl_render_templates",msg)
+    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_headers",msg)
     
-    gpufort_reductions_header_file_path = output_dir + "/gpufort_reductions.h"
-    model.GpufortReductionsHeaderModel().generate_file(gpufort_reductions_header_file_path)
-    msg = "created gpufort reductions header file: ".ljust(40) + gpufort_reductions_header_file_path
-    utils.logging.log_info(LOG_PREFIX,"_intrnl_render_templates",msg)
+    gpufort_reduction_header_file_path = os.path.join(output_dir, "gpufort_reduction.h")
+    model.GpufortReductionHeaderModel().generate_file(gpufort_reduction_header_file_path)
+    msg = "created gpufort reductions header file: ".ljust(40) + gpufort_reduction_header_file_path
+    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_headers",msg)
+    
+    # gpufort arrays
+    gpufort_array_context={
+      "max_rank":GPUFORT_HEADERS_MAX_DIM,
+      "datatypes":GPUFORT_HEADERS_DATATYPES
+    }
+    gpufort_array_header_file_path = os.path.join(output_dir,"gpufort_array.h")
+    model.GpufortArrayHeaderModel().generate_file(gpufort_array_header_file_path,\
+      context=gpufort_array_context)
+    msg = "created gpufort arrays header file: ".ljust(40) + gpufort_array_header_file_path
+    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_headers",msg)
+    
+    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_headers",msg)
 
-    utils.logging.log_leave_function(LOG_PREFIX,"generate_gpufort_headers")
+def generate_gpufort_sources(output_dir):
+    """Create the source files that all GPUFORT HIP kernels rely on."""
+    global LOG_PREFIX
+    global GPUFORT_HEADERS_MAX_DIM
 
+    utils.logging.log_enter_function(LOG_PREFIX,"generate_gpufort_sources",\
+      {"output_dir": output_dir})
+    
+    # gpufort arrays
+    gpufort_array_context={
+      "max_rank":GPUFORT_HEADERS_MAX_DIM,
+      "datatypes":GPUFORT_HEADERS_DATATYPES
+    }
+    gpufort_array_source_file_path = os.path.join(output_dir,"gpufort_array.hip.cpp")
+    model.GpufortArraySourceModel().generate_file(gpufort_array_source_file_path,\
+      context=gpufort_array_context)
+    msg = "created gpufort arrays C++ source file: ".ljust(40) + gpufort_array_source_file_path
+    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_sources",msg)
+    
+    gpufort_array_fortran_interfaces_module_path = os.path.join(output_dir,"gpufort_array.f03")
+    model.GpufortArrayFortranInterfacesModel().generate_file(gpufort_array_fortran_interfaces_module_path,\
+      context=gpufort_array_context)
+    msg = "created gpufort arrays Fortran interface module: ".ljust(40) + gpufort_array_fortran_interfaces_module_path
+    utils.logging.log_info(LOG_PREFIX,"generate_gpufort_sources",msg)
+
+    utils.logging.log_leave_function(LOG_PREFIX,"generate_gpufort_sources")
+    utils.logging.log_leave_function(LOG_PREFIX,"generate_gpufort_sources")
 
 def generate_hip_files(stree,index,kernels_to_convert_to_hip,translation_source_path,generate_code):
     """
@@ -647,7 +674,7 @@ def generate_hip_files(stree,index,kernels_to_convert_to_hip,translation_source_
         if not len(kernels_to_convert_to_hip):
             return False
         else: 
-            condition1 = not kernel._ignore_in_s2s_translation
+            condition1 = not kernel.ignore_in_s2s_translation
             condition2 = \
                     kernels_to_convert_to_hip[0] == "*" or\
                     kernel.min_lineno() in kernels_to_convert_to_hip or\

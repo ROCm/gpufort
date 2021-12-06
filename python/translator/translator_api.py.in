@@ -195,7 +195,7 @@ def parse_attributes(ttattributes):
 # TODO parsing and translation is similar but analysis differs between the different kernel
 # types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)
 # while they are specified with ACC,OMP.
-def parse_loop_kernel(fortran_statements,scope=[]):
+def parse_loop_kernel(fortran_statements,scope=None):
     """
     Return a csnippet equivalent to the original Fortran code.
     """
@@ -206,7 +206,7 @@ def parse_loop_kernel(fortran_statements,scope=[]):
     ttloopkernel.scope = scope
     return ttloopkernel
 
-def parse_procedure_body(fortran_statements,scope=[],result_name=""):
+def parse_procedure_body(fortran_statements,scope=None,result_name=""):
     """
     Parse a function/subroutine body.
     """

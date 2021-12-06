@@ -60,7 +60,7 @@ def _intrnl_translate_source(infilepath,stree,linemaps,index,preamble):
     # transform statements; to 'linemaps'
     def transform_(stnode):
         stnode.transform_statements(index)
-        for child in stnode._children:
+        for child in stnode.children:
             transform_(child)
     transform_(stree)
 
@@ -83,11 +83,11 @@ def parse_raw_command_line_arguments():
     the argparse switches and help information.
     Further transform some arguments.
     """
-    config_filepath = None
+    config_filepath  = None
     working_dir_path = os.getcwd()
-    include_dirs    = []
-    defines        = []
-    options = sys.argv[1:]
+    include_dirs     = []
+    defines          = []
+    options          = sys.argv[1:]
     for i,opt in enumerate(list(options)):
         if opt == "--working-dir":
             if i+1 < len(options):
@@ -142,7 +142,7 @@ def parse_config(config_filepath):
         utils.logging.log_error(LOG_PREFIX,"parse_config",msg)
         sys.exit(1)
 
-def parse_command_line_arguments():
+def parse_cl_args():
     """
     Parse command line arguments after all changes and argument transformations by the config file have been applied.
     """
@@ -159,6 +159,8 @@ def parse_command_line_arguments():
     global POST_CLI_ACTIONS
     global PRETTIFY_MODIFIED_TRANSLATION_SOURCE
     global INCLUDE_DIRS
+    global DUMP_LINEMAPS
+    global DUMP_LINEMAPS
 
     # parse command line arguments
     parser = argparse.ArgumentParser(description="S2S translation tool for CUDA Fortran and Fortran+X")
@@ -172,8 +174,10 @@ def parse_command_line_arguments():
     parser.add_argument("-d","--search-dirs", dest="search_dirs", help="Module search dir. Alternative -I<path> can be used (multiple times).", nargs="*",  required=False, default=[], type=str)
     parser.add_argument("-w","--wrap-in-ifdef",dest="wrap_in_ifdef",action="store_true",help="Wrap converted lines into ifdef in host code.")
     parser.add_argument("-E","--dest-dialect",dest="destination_dialect",default=None,type=str,help="One of: {}".format(", ".join(scanner.SUPPORTED_DESTINATION_DIALECTS)))
-    parser.add_argument("--gfortran_config",dest="print_gfortran_config",action="store_true",help="Print include and compile flags.")
-    parser.add_argument("--cpp_config",dest="print_cpp_config",action="store_true",help="Print include and compile flags.")
+    parser.add_argument("--gfortran_config",dest="print_gfortran_config",action="store_true",help="Print include and compile flags; output is influenced by HIP_PLATFORM environment variable.")
+    parser.add_argument("--cpp_config",dest="print_cpp_config",action="store_true",help="Print include and compile flags; output is influenced by HIP_PLATFORM environment variable.")
+    parser.add_argument("--ldflags",dest="print_ldflags",action="store_true",help="Print linker flags; output is influenced by HIP_PLATFORM environment variable.")
+    parser.add_argument("--ldflags-gpufort-rt",dest="print_ldflags_gpufort_rt",action="store_true",help="Print GPUFORT OpenACC runtime linker flags; output is influenced by HIP_PLATFORM environment variable.")
     parser.add_argument("--path",dest="print_path",action="store_true",help="Print path to the GPUFORT root directory.")
     # config options: shadow arguments that are actually taken care of by raw argument parsing
     group_config = parser.add_argument_group('Config file')
@@ -199,15 +203,19 @@ def parse_command_line_arguments():
     group_developer.add_argument("--log-level",dest="log_level",required=False,type=str,default="",help="Set log level. Overrides config value.")
     group_developer.add_argument("--log-filter",dest="log_filter",required=False,type=str,default=None,help="Filter the log output according to a regular expression.")
     group_developer.add_argument("--log-traceback",dest="log_traceback",required=False,action="store_true",help="Append gpufort traceback information to the log when encountering warning/error.")
+    group_developer.add_argument("--dump-linemaps",dest="dump_linemaps",required=False,action="store_true",help="Write the lines-to-statements mappings to disk pre & post applying code transformations.")
     group_developer.add_argument("--prof",dest="profiling_enable",required=False,action="store_true",help="Profile gpufort.")
     group_developer.add_argument("--prof-num-functions",dest="profiling_num_functions",required=False,type=int,default=50,help="The number of python functions to include into the summary [default=50].")
     group_developer.add_argument("--create-gpufort-headers",dest="create_gpufort_headers",action="store_true",help="Generate the GPUFORT header files.")
+    group_developer.add_argument("--create-gpufort-sources",dest="create_gpufort_sources",action="store_true",help="Generate the GPUFORT source files.")
 
-    parser.set_defaults(print_config_defaults=False,dump_index=False,\
-      wrap_in_ifdef=False,cublasV2=False,
+    parser.set_defaults(print_config_defaults=False,
+      dump_linemaps=False,wrap_in_ifdef=False,cublasV2=False,
       only_emit_kernels_and_launchers=False,only_emit_kernels=False,only_modify_translation_source=False,\
       emit_cpu_implementation=False,emit_debug_code=False,\
-      create_gpufort_headers=False,print_gfortran_config=False,print_cpp_config=False,\
+      create_gpufort_headers=False,create_gpufort_sources=False,\
+      print_gfortran_config=False,print_cpp_config=False,\
+      print_ldflags=False,print_ldflags_gpufort_rt=False,
       only_create_gpufort_module_files=False,skip_create_gpufort_module_files=False,verbose=False,\
       log_traceback=False,profiling_enable=False)
     args, unknown_args = parser.parse_known_args()
@@ -216,19 +224,37 @@ def parse_command_line_arguments():
     if args.print_path:
         print(__GPUFORT_ROOT_DIR,file=sys.stdout)
         sys.exit()
+    hip_platform=os.environ.get("HIP_PLATFORM","amd")
     if args.print_cpp_config:
         cpp_config  = "-D"+linemapper.LINE_GROUPING_IFDEF_MACRO
-        cpp_config += " -I"+__GPUFORT_ROOT_DIR+"/include"
+        cpp_config += " -I"+os.path.join(__GPUFORT_ROOT_DIR,"include")
+        cpp_config += " -I"+os.path.join(__GPUFORT_ROOT_DIR,"include",hip_platform)
         print(cpp_config,file=sys.stdout)
         sys.exit()
     if args.print_gfortran_config:
         fortran_config  = " -cpp -std=f2008 -ffree-line-length-none"
         fortran_config += " -D"+linemapper.LINE_GROUPING_IFDEF_MACRO
-        fortran_config += " -I"+__GPUFORT_ROOT_DIR+"/include"
+        fortran_config += " -I"+os.path.join(__GPUFORT_ROOT_DIR,"include")
+        fortran_config += " -I"+os.path.join(__GPUFORT_ROOT_DIR,"include",hip_platform)
         print(fortran_config,file=sys.stdout)
         sys.exit()
+    if args.print_ldflags:
+        ldflags = " -L"+os.path.join(__GPUFORT_ROOT_DIR,"lib") + " -lgpufort_"+hip_platform
+        print(ldflags,file=sys.stdout)
+        sys.exit()
+    if args.print_ldflags_gpufort_rt:
+        ldflags  = " -L"+os.path.join(__GPUFORT_ROOT_DIR,"lib") + " -lgpufort_acc_"+hip_platform
+        ldflags += " -lgpufort_"+hip_platform
+        print(ldflags,file=sys.stdout)
+        sys.exit()
+    call_exit = False
     if args.create_gpufort_headers:
         fort2hip.generate_gpufort_headers(os.getcwd())
+        call_exit = True
+    if args.create_gpufort_sources:
+        fort2hip.generate_gpufort_sources(os.getcwd())
+        call_exit = True
+    if call_exit:
         sys.exit()
     if args.print_config_defaults:
         gpufort_python_dir=os.path.dirname(os.path.realpath(__file__))
@@ -325,6 +351,9 @@ def parse_command_line_arguments():
     if args.profiling_enable:
         PROFILING_ENABLE = True
         PROFILING_OUTPUT_NUM_FUNCTIONS = args.profiling_num_functions
+    # developer: other
+    if args.dump_linemaps:
+        DUMP_LINEMAPS = True
     # CUDA Fortran
     if args.cublasV2:
         scanner.CUBLAS_VERSION = 2
@@ -352,7 +381,7 @@ if __name__ == "__main__":
     config_filepath, include_dirs, defines = parse_raw_command_line_arguments()
     if config_filepath != None:
         parse_config(config_filepath)
-    args, unknown_args = parse_command_line_arguments()
+    args, unknown_args = parse_cl_args()
     if len(POST_CLI_ACTIONS):
         msg = "run registered actions"
         utils.logging.log_info(msg,verbose=False)
@@ -385,6 +414,11 @@ if __name__ == "__main__":
         profiler.enable()
     #
     linemaps = linemapper.read_file(input_filepath,defines)
+    
+    if DUMP_LINEMAPS:
+        utils.logging.log_info(LOG_PREFIX,"__main__","dump linemaps (before translation)")
+        linemapper.dump_linemaps(linemaps,input_filepath+"-linemaps-pre.json")
+    
     index   = create_index(INCLUDE_DIRS,defines,input_filepath,linemaps)
     if not ONLY_CREATE_GPUFORT_MODULE_FILES:
         # configure fort2hip
@@ -422,6 +456,10 @@ if __name__ == "__main__":
         stats = pstats.Stats(profiler, stream=s).sort_stats(sortby)
         stats.print_stats(PROFILING_OUTPUT_NUM_FUNCTIONS)
         print(s.getvalue())
+
+    if DUMP_LINEMAPS:
+        utils.logging.log_info(LOG_PREFIX,"__main__","dump linemaps (after translation)")
+        linemapper.dump_linemaps(linemaps,input_filepath+"-linemaps-post.json")
 
     # shutdown logging
     msg = "log file:   {0} (log level: {1}) ".format(log_filepath,LOG_LEVEL)

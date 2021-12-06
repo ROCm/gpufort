@@ -33,25 +33,25 @@ def _intrnl_search_values_in_subtree(ttnode,search_filter,scope,min_rank=-1):
             tags.append(tag)
     return tags
 
-def _intrnl_variables_in_subtree(ttnode,scope=[]):
+def _intrnl_variables_in_subtree(ttnode,scope):
     """:return: all identifiers of LValue and RValues in the body."""
     def search_filter(node):
         return isinstance(node, IValue) and\
                type(node._value) in [TTDerivedTypeMember,TTIdentifier,TTFunctionCallOrTensorAccess]
     result = _intrnl_search_values_in_subtree(ttnode,search_filter,scope)
     return result
-def _intrnl_arrays_in_subtree(ttnode,scope=[]):
+def _intrnl_arrays_in_subtree(ttnode,scope):
     def search_filter(node):
         return isinstance(node,IValue) and\
                 type(node._value) is TTFunctionCallOrTensorAccess 
     return _intrnl_search_values_in_subtree(ttnode,search_filter,scope,1)
-def _intrnl_inout_arrays_in_subtree(ttnode,scope=[]):
+def _intrnl_inout_arrays_in_subtree(ttnode,scope):
     def search_filter(node):
         return type(node) is TTLValue and\
                 type(node._value) is TTFunctionCallOrTensorAccess 
     return _intrnl_search_values_in_subtree(ttnode,search_filter,scope,1)
 
-def _intrnl_flag_tensors(ttcontainer,scope=[]):
+def _intrnl_flag_tensors(ttcontainer,scope):
     """Clarify types of function calls / tensor access that are not members of a struct."""
     for value in find_all(ttcontainer.body,IValue):
         if type(value._value) is TTFunctionCallOrTensorAccess:
@@ -173,15 +173,15 @@ class IComputeConstruct():
     def gang_team_reductions(self,converter=make_f_str): 
         """ CUF,ACC: all scalars are private by default """ 
         return {}
-    def variables_in_body(self,scope=[]):
+    def variables_in_body(self):
         return []
-    def arrays_in_body(self,scope=[]):
+    def arrays_in_body(self):
         return []
-    def inout_arrays_in_body(self,scope=[]):
+    def inout_arrays_in_body(self):
         return []
     def local_scalars(self):
         return []
-    def reduction_candidates(self,scope=[]):
+    def reduction_candidates(self):
         return []
     def loop_vars(self):
         return []
@@ -208,7 +208,7 @@ class IComputeConstruct():
     def self_condition(self): 
         """ OMP,ACC: run on current CPU / device (and do not offload) """
         return ""
-    def deviceptrs(self,scope=[]):
+    def deviceptrs(self,scope):
         return []
     def create_alloc_vars(self):
         return []
@@ -232,6 +232,25 @@ class IComputeConstruct():
     def detach_vars(self):
         """ only ACC """
         return []
+    def all_mapped_arrays(self):
+        """:return: Name of all mapped variables. """
+        result = []
+        result += self.deviceptrs()
+        result += self.create_alloc_vars()
+        result += self.no_create_vars()
+        result += self.present_vars()
+        result += self.delete_release_vars()
+        result += self.copy_map_to_from_vars()
+        result += self.copyin_map_to_vars()
+        result += self.copyout_map_from_vars()
+        result += self.attach_vars()
+        result += self.detach_vars()
+        return result
+    def all_unmapped_arrays(self):
+        """:return: Name of all unmapped array variables"""  
+        mapped_vars        = self.all_mapped_arrays()
+        arrays_in_body = self.arrays_in_body()
+        return [ var for var in arrays_in_body if not var in mapped_vars ] 
     def present_by_default(self):
         """ only ACC parallel """
         return True
@@ -261,17 +280,11 @@ class TTLoopKernel(TTContainer,IComputeConstruct):
             return identifier_names[0:num_outer_loops_to_map]    
         else:
             return identifier_names
-    def variables_in_body(self,scope=[]):
-        if len(scope):
-            self.scope = scope
+    def variables_in_body(self):
         return _intrnl_variables_in_subtree(self,self.scope)
-    def arrays_in_body(self,scope=[]):
-        if len(scope):
-            self.scope = scope
+    def arrays_in_body(self):
         return _intrnl_arrays_in_subtree(self,self.scope)
-    def inout_arrays_in_body(self,scope=[]):
-        if len(scope):
-            self.scope = scope
+    def inout_arrays_in_body(self):
         return _intrnl_inout_arrays_in_subtree(self,self.scope)
     def __local_scalars_and_reduction_candidates(self,scope):
         """
@@ -316,14 +329,10 @@ class TTLoopKernel(TTContainer,IComputeConstruct):
             if var.lower() in loop_vars:
                 local_scalars.remove(var)
         return local_scalars, reduction_candidates
-    def local_scalars(self,scope=[]):
-        if len(scope):
-            self.scope = scope
+    def local_scalars(self):
         local_scalars,_ = self.__local_scalars_and_reduction_candidates(self.scope)
         return local_scalars 
-    def reduction_candidates(self,scope=[]):
-        if len(scope):
-            self.scope = scope
+    def reduction_candidates(self):
         _,reduction_candidates = self.__local_scalars_and_reduction_candidates(self.scope)
         return reduction_candidates
     def problem_size(self):
@@ -358,9 +367,9 @@ class TTLoopKernel(TTContainer,IComputeConstruct):
         return self.__parent_directive().if_condition()
     def self_condition(self): 
         return self.__parent_directive().self_condition
-    def deviceptrs(self,scope=[]):
+    def deviceptrs(self):
         if self.__parent_directive().all_arrays_are_on_device():
-            return self.arrays_in_body(scope)
+            return self.arrays_in_body()
         else:
             return self.__parent_directive().deviceptrs()
     def create_alloc_vars(self):
@@ -542,20 +551,14 @@ class TTProcedureBody(TTContainer):
         self.body         = tokens
         self.scope        = []
         self.result_name  = ""
-    def variables_in_body(self,scope=[]):
+    def variables_in_body(self):
         """
         :return: all identifiers of LValue and RValues in the body.
         """
-        if len(scope):
-            self.scope = scope
         return _intrnl_variables_in_subtree(self,self.scope)
-    def arrays_in_body(self,scope=[]):
-        if len(scope):
-            self.scope = scope
+    def arrays_in_body(self):
         return _intrnl_arrays_in_subtree(self,self.scope)
-    def inout_arrays_in_body(self,scope=[]):
-        if len(scope):
-            self.scope = scope
+    def inout_arrays_in_body(self):
         return _intrnl_inout_arrays_in_subtree(self,self.scope)
     def c_str(self):
         """

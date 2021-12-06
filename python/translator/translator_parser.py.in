@@ -8,7 +8,7 @@ def _intrnl_preprocess_fortran_statement(statement):
         result = power.transformString(result)
     return result
 
-def _intrnl_parse_fortran_code(statements,scope=[]):
+def _intrnl_parse_fortran_code(statements,scope=None):
     """
     :param list for
     

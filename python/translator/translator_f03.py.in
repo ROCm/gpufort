@@ -469,7 +469,7 @@ class TTPower(TTNode):
         self._base, self._exp = tokens
     def children(self):
         return [ self._base, self._exp ]
-    def gpufort_f_str(self,scope=[]):
+    def gpufort_f_str(self,scope=None):
         sign = ""
         base = self._base
         if type(self._base) is TTRValue:

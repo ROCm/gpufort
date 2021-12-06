@@ -1,12 +1,15 @@
-.PHONY: all headers modules
+.PHONY: all headers modules clean_all
+
+SUFFIX  = $(if $(HIP_PLATFORM),$(HIP_PLATFORM),amd)
 
 all: headers modules
 
 headers:
 	gpufort --create-gpufort-headers
+	touch cudafor-fort2hip.hip.cpp
 
 modules:
-	gpufort -K cudafor.f90
+	gpufort -c cudafor.f90
 
-make clean:
-	rm -rf *.gpufort_mod *-fort2hip.* *-gpufort.* *.h
+clean_all:
+	for expr in "*.json" "*.mod" "*.gpufort_mod" "*-fort2hip.*" "*-gpufort.*" "*.h"; do find . -name "$$expr" -delete; done

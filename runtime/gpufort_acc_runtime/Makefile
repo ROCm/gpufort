@@ -1,20 +1,19 @@
 include rules.mk
 
-.PHONY: build codegen all clean
+.PHONY: build codegen lib/$(LIBGPUFORT_ACC) clean
+
+lib/$(LIBGPUFORT_ACC): | codegen build
+
+codegen:
+	python3 codegen.py src/gpufort_acc_runtime.template.f90 -d 7
 
 build:
 	mkdir -p lib/
 	mkdir -p include/
-	make -C src/ libgpufort_acc.a
+	make -C src/ $(LIBGPUFORT_ACC)
 	mv src/*.mod include/
-	mv src/libgpufort_acc.a lib/
+	mv src/$(LIBGPUFORT_ACC) lib/
 	make -C src/ clean
-
-codegen:
-	cd codegen && python3 ./model.py
-	cp codegen/gpufort_acc_runtime.f90 src/gpufort_acc_runtime.f90
-
-all: | codegen build
 
 clean:
 	make -C src/ clean

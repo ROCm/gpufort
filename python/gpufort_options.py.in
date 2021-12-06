@@ -40,3 +40,7 @@ PROFILING_ENABLE               = False
         # Enable profiling of GPUFORT
 PROFILING_OUTPUT_NUM_FUNCTIONS = 50
         # Number of functions to output when profiling GPUFORT
+
+DUMP_LINEMAPS = False
+        # Write the lines-to-statements mappings to disk before & after
+        # applying code transformations; suffix="-linemaps-(pre|post).json"

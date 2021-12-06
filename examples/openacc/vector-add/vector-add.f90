@@ -12,7 +12,7 @@ program main
 
   !$acc data copy(x(1:N),y(1:N))
  
-  !$acc parallel loop
+  !$acc parallel loop present(x,y)
   do i = 1, N
     x(i) = 1
     y(i) = 2

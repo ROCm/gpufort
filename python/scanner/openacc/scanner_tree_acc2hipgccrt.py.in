@@ -52,19 +52,19 @@ class Acc2HipGccRT(AccBackendBase):
     def _create_mappings(self,parse_result,prefix=",mappings="):
         mappings=[]
         for clause in translator.find_all(parse_result,translator.TTAccMappingClause):
-            if clause.kind() == "present":
+            if clause.kind == "present":
                 mappings += [HIP_GCC_RT_MAP_PRESENT.format(var=expr) for expr in clause.var_expressions()]
-            elif clause.kind() == "create":
+            elif clause.kind == "create":
                 mappings += [HIP_GCC_RT_MAP_CREATE.format(var=expr) for expr in clause.var_expressions()]
-            elif clause.kind() == "no_create":
+            elif clause.kind == "no_create":
                 mappings += [HIP_GCC_RT_MAP_NO_CREATE.format(var=expr) for expr in clause.var_expressions()]
-            elif clause.kind() == "delete":
+            elif clause.kind == "delete":
                 mappings += [HIP_GCC_RT_MAP_DELETE.format(var=expr) for expr in clause.var_expressions()]
-            elif clause.kind() == "copy":
+            elif clause.kind == "copy":
                 mappings += [HIP_GCC_RT_MAP_COPY.format(var=expr) for expr in clause.var_expressions()]
-            elif clause.kind() == "copyin":
+            elif clause.kind == "copyin":
                 mappings += [HIP_GCC_RT_MAP_COPYIN.format(var=expr) for expr in clause.var_expressions()]
-            elif clause.kind() == "copyout":
+            elif clause.kind == "copyout":
                 mappings += [HIP_GCC_RT_MAP_COPYOUT.format(var=expr) for expr in clause.var_expressions()]
         if len(mappings):
             return prefix+"["+",".join(mappings)+"]"
@@ -104,7 +104,7 @@ class Acc2HipGccRT(AccBackendBase):
             return clause.condition()
         else:
             return ""
-    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[],handle_if=False):
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[],handle_if=False):
         f_snippet = joined_statements
         result = ""
         try:
@@ -150,14 +150,14 @@ class Acc2HipGccRT(AccBackendBase):
            return f_snippet, False 
 
 class AccLoopKernel2HipGccRT(Acc2HipGccRT):
-    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints=[]):
+    def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[]):
         stnode = self._stnode
         indent = stnode.first_line_indent()
         result = ""
         if stnode.is_parallel_loop_directive() or stnode.is_kernels_loop_directive():
-            partial_result, _ = Acc2HipGccRT.transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index_hints,handle_if=False) 
+            partial_result, _ = Acc2HipGccRT.transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index,handle_if=False) 
             result = partial_result
-        partial_result, _ = STLoopKernel.transform(stnode,joined_lines,joined_statements,statements_fully_cover_lines,index_hints) 
+        partial_result, _ = STLoopKernel.transform(stnode,joined_lines,joined_statements,statements_fully_cover_lines,index) 
         result += partial_result
         # add wait call if necessary
         arg = self._handle_async(None,"")
@@ -175,4 +175,16 @@ class AccLoopKernel2HipGccRT(Acc2HipGccRT):
               condition=condition,result=result.rstrip("\n"),original="".join(stnode._lines).rstrip("\n"))
         return result, len(result)
 
-register_acc_backend("hip-gcc-rt",Acc2HipGccRT,AccLoopKernel2HipGccRT,"openacc_gomp")
+def AllocateHipGccRT(stallocate,index):
+    return ""
+
+def DeallocateHipGccRT(stdeallocate,index):
+    return ""
+
+register_acc_backend("hip-gcc-rt",\
+  Acc2HipGccRT,\
+  AccLoopKernel2HipGccRT,\
+  AccPostprocessBackendBase,\
+  AllocateHipGccRT,\
+  DeallocateHipGccRT,\
+  "openacc_gomp")

@@ -2,24 +2,22 @@ GRAMMAR_TESTS      = $(shell find . -maxdepth 1 -name "test.grammar.*.py" -execd
 TRANSLATOR_TESTS   = $(shell find . -maxdepth 1 -name "test.translator.*.py" -execdir basename {} ';')
 INDEXER_TESTS      = $(shell find . -maxdepth 1 -name "test.indexer.*.py" -execdir basename {} ';')
 LINEMAPPER_TESTS   = $(shell find . -maxdepth 1 -name "test.linemapper.*.py" -execdir basename {} ';')
+UTILS_TESTS        = $(shell find . -maxdepth 1 -name "test.utils.*.py" -execdir basename {} ';')
 CUSTOM_TESTS       = $(shell find . -maxdepth 1 -name "test.custom.*.py" -execdir basename {} ';')
 
-.PHONY: $(GRAMMAR_TESTS) $(TRANSLATOR_TESTS) $(INDEXER_TESTS) $(LINEMAPPER_TESTS) $(CUSTOM_TESTS)\
-	test.grammar test.translator test.indexer test.linemapper test.custom
+TEST_COLLECTION_TARGETS = test.grammar test.translator test.indexer test.linemapper test.utils test.custom
+TESTS = $(GRAMMAR_TESTS) $(TRANSLATOR_TESTS) $(INDEXER_TESTS) $(LINEMAPPER_TESTS) $(UTILS_TESTS) $(CUSTOM_TESTS)
 
-all: test.grammar test.translator test.indexer test.linemapper test.custom
+all: $(TEST_COLLECTION_TARGETS)
 
-TESTS = $(GRAMMAR_TESTS) $(TRANSLATOR_TESTS) $(INDEXER_TESTS) $(LINEMAPPER_TESTS) $(CUSTOM_TESTS)
+.PHONY: $(TESTS) $(TEST_COLLECTION_TARGETS)
 
 $(TESTS): %:
 	python3 $@
 
-test.grammar: $(GRAMMAR_TESTS)
-
+test.grammar:    $(GRAMMAR_TESTS)
 test.translator: $(TRANSLATOR_TESTS)
-
-test.indexer: $(INDEXER_TESTS)
-
+test.indexer:    $(INDEXER_TESTS)
 test.linemapper: $(LINEMAPPER_TESTS)
-
-test.custom: $(CUSTOM_TESTS)
+test.utils:      $(UTILS_TESTS)
+test.custom:     $(CUSTOM_TESTS)

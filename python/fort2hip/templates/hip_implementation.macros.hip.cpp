@@ -1,18 +1,30 @@
 {########################################################################################}
-{%- macro render_param_decl(ivariable,prefix,suffix) -%}
-{% if ivariable.rank > 0 %} 
-{{prefix}}gpufort::array{{ivariable.rank}}<{{ivariable.c_type}}>{{suffix}} {{ivariable.name}}
-{% else %}
-{{prefix}}{{ivariable.c_type}}{{suffix}} {{ivariable.name}}
-{% endif %}
+{%- macro render_param_decl(ivar,prefix,suffix) -%}
+{%- set c_type = ivar.c_type -%}
+{%- if ivar.f_type=="type" -%}
+{%- set c_type = ivar.kind -%}
+{%- endif -%}
+{%- if ivar.rank > 0 -%}
+{{prefix}}gpufort::array{{ivar.rank}}<{{c_type}}>{{suffix}} {{ivar.name}}
+{%- else -%}
+{{prefix}}{{c_type}}{{suffix}} {{ivar.name}}
+{%- endif -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_param_decls(ivariables,prefix,suffix,sep) -%}
-{%- for ivar in ivariables -%}{{render_param_decl(ivariable,prefix,suffix)}}{{sep if not loop.last}}{% endfor -%}
+{%- macro render_param_decls(ivars,prefix,suffix,sep) -%}
+{%- for ivar in ivars -%}{{render_param_decl(ivar,prefix,suffix)}}{{sep if not loop.last}}{% endfor -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_params(ivariables) -%}
-{%- for ivar in ivariables -%}{{ivariable.name}}{{"," if not loop.last}}{% endfor -%}
+{%- macro render_params(ivars) -%}
+{%- for ivar in ivars -%}{{ivar.name}}{{"," if not loop.last}}{% endfor -%}
+{%- endmacro -%}
+{########################################################################################}
+{%- macro render_derived_types(types) -%}
+{% for derived_type in types %}
+typedef struct {
+{{ ( render_param_decls(derived_type.variables,"","",";\n")+";") | indent(2,True) }}
+} {{derived_type.name}};{{"\n" if not loop.last }}
+{% endfor %}
 {%- endmacro -%}
 {########################################################################################}
 {%- macro reductions_prepare(reduced_variables) -%}
@@ -37,7 +49,7 @@ HIP_CHECK(hipFree({{ rvar.buffer }}));
 {% for block_dim in block %}
 const int {{prefix}}block_dim_{{loop.index}} = {{block_dim}};
 {% endfor %}
-dim3 block({%- for -%});
+dim3 block({%- for block_dim in block -%}{{prefix}}block_dim_{{loop.index}}{{", " if not loop.last}}{%- endfor -%});
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_grid(prefix,block,grid,problem_size) -%}
@@ -56,7 +68,7 @@ dim3 grid({% for block_dim in block %}
 {% endif %}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_kernel_launcher_prolog(kernel_name,launcher_kind,ivariables) -%}
+{%- macro render_kernel_launcher_prolog(kernel_name,launcher_kind,ivars) -%}
 #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{kernel_name}})
 std::cout << "{{kernel_name}}:{{kind}}:args:";
 GPUFORT_PRINT_ARGS(grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream,});
@@ -72,16 +84,16 @@ GPUFORT_PRINT_ARGS(grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream
 #endif
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_kernel_launcher_epilog(kernel_name,launcher_kind,ivariables) -%}
+{%- macro render_kernel_launcher_epilog(kernel_name,launcher_kind,ivars) -%}
 {{ synchronize(kernel_name) }}
 #if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_{{kernel_name}})
-{% for ivar in ivariables %}
+{% for ivar in ivars %}
 {% if ivar.rank > 0 %}
 {{ivar}}.print_device_data(std::cout,"{{kernel_name}}:{{launcher_kind}}:out:",gpufort::PrintMode::PrintValuesAndNorms);
 {% endif %}
 {% endfor %}
 #elif defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_{{kernel_name}})
-{% for ivar in ivariables %}
+{% for ivar in ivars %}
 {% if ivar.rank > 0 %}
 {{ivar}}.print_device_data(std::cout,"{{kernel_name}}:{{launcher_kind}}:out:",gpufort::PrintMode::PrintNorms);
 {% endif %}
@@ -152,11 +164,13 @@ extern "C" hipError_t {{kernel.interface_name}}(
 {% endif %}
   return hipSuccess;
 }
+{%- endmacro -%}
 {########################################################################################}
 {%- macro render_cpu_kernel_interface(kernel) -%}
 extern "C" hipError_t {{kernel.interface_name}}_cpu1(
 {{ render_param_decls(kernel.params,"","&",",\n") | indent(4,True) }}
 );
+{%- endmacro -%}
 {########################################################################################}
 {%- macro render_cpu_kernel_launcher(kernel) -%}
 extern "C" hipError_t {{kernel.interface_name}}_cpu(
@@ -166,10 +180,15 @@ extern "C" hipError_t {{kernel.interface_name}}_cpu(
 ) {
   hipError_t ierr = hipSuccess;
 {{ reductions_prepare(kernel) | indent(2,True) }}
+{% if kernel.generate_debug_code %}
 {{ render_kernel_launcher_prolog(kernel.name,"cpu",kernel.params) | indent(2,True) }}
+{% endif %}
   if ( ierr != hipSuccess ) return ierr;
-  {{ reductions_finalize(kernel) }}
-  {{ render_kernel_launcher_epilog(kernel.name,"cpu",kernel.params) | indent(2,True) }} 
+{{ reductions_finalize(kernel) }}
+{% if kernel.generate_debug_code %}
+{{ render_kernel_launcher_epilog(kernel.name,"cpu",kernel.params) | indent(2,True) }} 
+{% endif %}
   return hipSuccess;
 }
+{%- endmacro -%}
 {########################################################################################}

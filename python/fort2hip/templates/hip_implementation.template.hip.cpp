@@ -11,12 +11,14 @@
 {#                 -[reductions:dict]                    #}
 {#                 -[c_body:str]                         #}
 {#                 -[f_body:str]                         #}
+{% import "templates/hip_implementation.macros.hip.cpp" as hm %}
 #ifndef {{ guard }}
 #define {{ guard }}
 {% for file in includes %}
 #include "{{file}}"
 {% endfor %}
 #include "gpufort.h"
+#include "gpufort_array.h"
 {% if have_reductions -%}
 #include "gpufort_reduction.h"
 {%- endif -%}
@@ -73,13 +75,7 @@
 {%- endif -%}
 {%- endmacro %}
 
-{% for derived_type in types %}
-typedef struct {
-{% for member in derived_type.members %}
-  {{member.c_type}} {{member.name}};
-{% endfor %}
-} {{derived_type.c_name}};
-{% endfor %}
+{{ hm.render_derived_types(types,"_interop") }}
 
 {% for kernel in kernels %}
 {% set krnl_prefix = kernel.kernel_name %}

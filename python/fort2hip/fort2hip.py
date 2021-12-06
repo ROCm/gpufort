@@ -33,47 +33,8 @@ def _intrnl_convert_dim3(dim3,dimensions,do_filter=True):
      for i,value in enumerate(specified):
           if i >= dimensions:
               break
-          el = {}
-          el["dim"]   = chr(ord("X")+i)
-          el["value"] = value
-          result.append(el)
+          result.append(value)
      return result
-
-EMPTY_ARG = {
-  "name"              : "", 
-  "callarg_name"      : "", 
-  "qualifiers"        : "", 
-  "type"              : "", 
-  "orig_type"         : "", 
-  "c_type"            : "", 
-  "c_size"            : "", 
-  "c_value"           : "", 
-  "c_suffix"          : "", 
-  "is_array"          : "", 
-  "reduction_op"      : "", 
-  "bytes_per_element" : "", 
-}
-
-# arg for kernel generator
-# array is split into multiple args
-def _intrnl_init_arg(argname,f_type,kind,qualifiers=[],c_type="",is_array=False):
-    f_type_final = f_type
-    if len(kind):
-        f_type_final += "({})".format(kind)
-    arg = dict(EMPTY_ARG)
-    arg["name"]         = argname
-    arg["callarg_name"] = argname
-    arg["qualifiers"]   = qualifiers
-    arg["type"]         = f_type_final
-    arg["orig_type"]    = f_type_final
-    arg["c_type"]       = c_type
-    arg["is_array"]     = is_array
-    arg["bytes_per_element"] = translator.num_bytes(f_type,kind,default="-1")
-    if not len(c_type):
-        arg["c_type"] = translator.convert_to_c_type(f_type,kind,"void")
-    if is_array:
-        arg["c_type"] += " * __restrict__"
-    return arg
 
 def _intrnl_search_derived_types(imodule,search_subprograms=True):
     # 1. find all types and tag them
@@ -102,6 +63,7 @@ def _intrnl_search_derived_types(imodule,search_subprograms=True):
     
     return itypes
 
+# TODO refactor - derived directly from index
 def _intrnl_update_context_from_derived_types(itypes,hip_context,f_context):
     global LOG_PREFIX
 
@@ -148,6 +110,7 @@ def _intrnl_update_context_from_derived_types(itypes,hip_context,f_context):
     
     utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_update_context_from_derived_types")
 
+# TODO(refactor) probably not needed anymore
 def _intrnl_create_argument_context(ivar,argname,deviceptr_names=[],is_loop_kernel_arg=False):
     """
     Create an argument context dictionary based on a indexed variable.
@@ -190,6 +153,7 @@ def _intrnl_create_argument_context(ivar,argname,deviceptr_names=[],is_loop_kern
             macro = { "expr" : ivar["index_macro_with_placeholders"] }
     return arg, lbound_args, count_args, macro
 
+# TODO(refactor) probably not needed anymore
 def _intrnl_derive_kernel_arguments(scope, varnames, local_vars, loop_vars, is_loop_kernel_arg=False, deviceptr_names=[]):
     """
     Derive code generation contexts for the different interfaces and subroutines that 

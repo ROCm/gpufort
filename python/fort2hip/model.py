@@ -27,15 +27,23 @@ class BaseModel():
 
 class HipImplementationModel(BaseModel):
     def __init__(self):
-        BaseModel.__init__(self,"templates/hip_implementation.template.cpp")
+        BaseModel.__init__(self,"templates/hip_implementation.template.hip.cpp")
 
 class InterfaceModuleModel(BaseModel):
     def __init__(self):
         BaseModel.__init__(self,"templates/interface_module.template.f03")
 
-class InterfaceModuleTestModel(BaseModel):
+class HipImplementationLegacyModel(BaseModel):
     def __init__(self):
-        BaseModel.__init__(self,"templates/interface_module_test.template.f03")
+        BaseModel.__init__(self,"templates/legacy/hip_implementation.template.cpp")
+
+class InterfaceModuleLegacyModel(BaseModel):
+    def __init__(self):
+        BaseModel.__init__(self,"templates/legacy/interface_module.template.f03")
+
+#class InterfaceModuleTestModel(BaseModel):
+#    def __init__(self):
+#        BaseModel.__init__(self,"templates/interface_module_test.template.f03")
 
 class GpufortHeaderModel(BaseModel):
     def __init__(self):

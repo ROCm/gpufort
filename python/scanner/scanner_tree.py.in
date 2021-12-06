@@ -77,7 +77,8 @@ class STNode:
         for i,line in enumerate(lines):
             lines[i] = line.replace(" ","").replace("\t","").replace("\n","").replace("&","")
     def lines(self):
-        return self.__get_linemap_content("lines")
+        original_lines = self.__get_linemap_content("lines")
+        return utils.parsingutils.relocate_inline_comments(original_lines)
     def statements(self,include_none_entries=False):
         """
         Extract the statements associated with this node from the linemaps associated with this node.
@@ -117,9 +118,9 @@ class STNode:
         return first_line[0:num_indent_chars]
     def first_statement(self):
         """
-        :return: First line in first linemap.
+        :return: First statement in first linemap that belongs to this node.
         """
-        return self._linemaps[0]["statements"][0]["body"]
+        return self._linemaps[0]["statements"][self._first_statement_index]["body"]
     def append(self,child):
         self.children.append(child)
     def list_of_parents(self):
@@ -270,9 +271,9 @@ class STNode:
             have_first_in_first_linemap   = self._first_statement_index == 0
             have_last_in_last_linemap     = self._last_statement_index  == -1 or\
                                             self._last_statement_index  == len(self._linemaps[-1]["statements"])-1
-            statements_fully_cover_lines  = have_first_in_first_linemap and have_last_in_last_linemap
             joined_statements             = "\n".join(self.statements())
             joined_lines                  = "".join(self.lines())
+            statements_fully_cover_lines  = have_first_in_first_linemap and have_last_in_last_linemap
             transformed_code, transformed = \
               self.transform(joined_lines,joined_statements,statements_fully_cover_lines,index)
             if transformed:

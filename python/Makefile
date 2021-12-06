@@ -1,5 +1,5 @@
 GRAMMAR_TRANSLATOR_TEST_COLLECTIONS_PREFIXES  := test.grammar_translator.openacc test.grammar_translator.cudafortran \
-	test.grammar_translator.linemapper
+	test.grammar_translator.linemapper test.grammar_translator
 GRAMMAR_TEST_COLLECTIONS                      := $(addsuffix .grammar,$(GRAMMAR_TRANSLATOR_TEST_COLLECTIONS_PREFIXES))
 TRANSLATOR_TEST_COLLECTIONS                   := $(addsuffix .translator,$(GRAMMAR_TRANSLATOR_TEST_COLLECTIONS_PREFIXES))
 

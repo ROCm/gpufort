@@ -1,7 +1,8 @@
 LOG_PREFIX="linemapper.linemapper" # prefix for logging
 PRETTY_PRINT_LINEMAPS_DUMP = False
        # Prettify linemaps JSON files.
-PATTERN_LINE_CONTINUATION=r"(\&\s*\n\s*([!c\*]\$\w+)?)|(^\s*[!c\*]\$\w+\&\s*)"
+#PATTERN_LINE_CONTINUATION=r"(\&\s*\n\s*([!c\*]\$\w+)?)|(^\s*[!c\*]\$\w+\&\s*)"
+PATTERN_LINE_CONTINUATION=r"\&([!c\*]\$\w+)?|([!c\*]\$\w+\&)"
        # line continuation pattern. The linemapper's preprocessor removes them.
 
 ERROR_HANDLING="strict"

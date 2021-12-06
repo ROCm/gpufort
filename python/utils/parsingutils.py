@@ -18,7 +18,7 @@ def split_fortran_line(line):
      if len(content):
          if len_preceding_ws == 0 and content[0] in COMMENT_CHARS or\
             content[0] == "!":
-             if content[1] == "$":
+             if len(content) > 1 and content[1] == "$":
                  statement = content
              else:
                  comment   = content

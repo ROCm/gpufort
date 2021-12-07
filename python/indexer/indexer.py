@@ -465,14 +465,16 @@ def _intrnl_parse_statements(file_statements,filepath):
         elif current_tokens[0].startswith("attributes"): # attributes(device) :: a
             try_to_parse_string("attributes",attributes)
         # cannot be combined with above checks
+        is_function = False
         if "function" in current_tokens:
-            try_to_parse_string("function",function_start)
+            is_function = try_to_parse_string("function",function_start)
         elif "subroutine" in current_tokens:
             try_to_parse_string("subroutine",subroutine_start)
-        for expr in ["type","character","integer","logical","real","complex","double"]: # type(dim3) :: a 
-           if expr in current_tokens[0]:
-               try_to_parse_string("declaration",datatype_reg)
-               break
+        if not is_function:
+            for expr in ["type","character","integer","logical","real","complex","double"]: # type(dim3) :: a 
+               if expr in current_tokens[0]:
+                   try_to_parse_string("declaration",datatype_reg)
+                   break
         #try_to_parse_string("declaration|type_start|use|attributes|module_start|program_start|function_start|subroutine_start",\
         #  datatype_reg|type_start|use|attributes|module_start|program_start|function_start|subroutine_start)
     task_executor.shutdown(wait=True) # waits till all tasks have been completed

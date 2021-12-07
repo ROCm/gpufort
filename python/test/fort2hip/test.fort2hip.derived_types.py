@@ -21,9 +21,11 @@ ENV    = jinja2.Environment(loader=LOADER, trim_blocks=True,
 
 # TEMPLATE
 TEMPLATE = "test/fort2hip/templates/derived_types"
-template_hip_cpp           = ENV.get_template(TEMPLATE+".template.hip.cpp")
-template_f03               = ENV.get_template(TEMPLATE+".template.f03")
-template_copy_scalars_f03  = ENV.get_template(TEMPLATE+"_copy_scalars.template.f03")
+template_hip_cpp               = ENV.get_template(TEMPLATE+".template.hip.cpp")
+template_f03                   = ENV.get_template(TEMPLATE+".template.f03")
+template_copy_scalars_f03      = ENV.get_template(TEMPLATE+"_copy_scalars.template.f03")
+template_copy_array_member_f03 = ENV.get_template(TEMPLATE+"_copy_array_member.template.f03")
+template_size_bytes_f03        = ENV.get_template(TEMPLATE+"_size_bytes.template.f03")
 
 testdata= \
 """
@@ -101,8 +103,12 @@ class TestDerivedTypes(unittest.TestCase):
         #print(self.clean(testdata_result_f03))
         self.assertEqual(self.clean(template_f03.render(SCOPE)),\
             self.clean(testdata_result_f03))
-    def test_3_render_fortran_copy_scalars_routines(self):
+    def test_3_render_fortran_size_bytes_routines(self):
+        print(template_size_bytes_f03.render(SCOPE))
+    def test_4_render_fortran_copy_scalars_routines(self):
         print(template_copy_scalars_f03.render(SCOPE))
+    def test_5_render_fortran_copy_array_member_routines(self):
+        print(template_copy_array_member_f03.render(SCOPE))
 
 if __name__ == '__main__':
     unittest.main() 

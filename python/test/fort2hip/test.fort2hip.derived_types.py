@@ -20,9 +20,10 @@ ENV    = jinja2.Environment(loader=LOADER, trim_blocks=True,
            lstrip_blocks=True, undefined=jinja2.StrictUndefined)
 
 # TEMPLATE
-TEMPLATE = "test/fort2hip/templates/test_derived_types.template"
-template_hip_cpp = ENV.get_template(TEMPLATE+".hip.cpp")
-template_f03 = ENV.get_template(TEMPLATE+".f03")
+TEMPLATE = "test/fort2hip/templates/derived_types"
+template_hip_cpp           = ENV.get_template(TEMPLATE+".template.hip.cpp")
+template_f03               = ENV.get_template(TEMPLATE+".template.f03")
+template_copy_scalars_f03  = ENV.get_template(TEMPLATE+"_copy_scalars.template.f03")
 
 testdata= \
 """
@@ -93,19 +94,15 @@ class TestDerivedTypes(unittest.TestCase):
         elapsed = time.time() - self._started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
     def test_1_render_cpp_structs(self):
-        global template_hip_cpp
-        global testdata
-        global testdata_result_cpp
         self.assertEqual(self.clean(template_hip_cpp.render(SCOPE)),\
             self.clean(testdata_result_cpp))
     def test_2_render_fortran_derived_types(self):
-        global template_hip_cpp
-        global testdata
-        global testdata_result_cpp
         #print(self.clean(template_f03.render(SCOPE)))
         #print(self.clean(testdata_result_f03))
         self.assertEqual(self.clean(template_f03.render(SCOPE)),\
             self.clean(testdata_result_f03))
+    def test_3_render_fortran_copy_scalars_routines(self):
+        print(template_copy_scalars_f03.render(SCOPE))
 
 if __name__ == '__main__':
     unittest.main() 

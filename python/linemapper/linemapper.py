@@ -225,7 +225,9 @@ def _intrnl_convert_lines_to_statements(lines):
       single_line_statements +=\
         p_continuation.sub(" ",combined_statements).split(";")
     if len(comment_parts):
-      single_line_statements = comment_parts + single_line_statements
+      if len(single_line_statements):
+        single_line_statements[-1] = single_line_statements[-1].rstrip("\n") + "\n"
+      single_line_statements += comment_parts
     # unroll single-line if
     unrolled_statements = []
     for stmt in single_line_statements:

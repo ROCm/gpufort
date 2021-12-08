@@ -1,10 +1,11 @@
 module mylib
 interface ! bind(c) procedures can be contained in Fortran program
-  subroutine mysubroutine2(a,b) bind(c,name="mysubroutine2")
-    implicit none
-    integer,intent(in)    :: a
-    integer,intent(inout) :: b
-  end subroutine
+  ! implicitly defined
+  !subroutine mysubroutine2(a,b) bind(c,name="mysubroutine2")
+  !  implicit none
+  !  integer,intent(in)    :: a
+  !  integer,intent(inout) :: b
+  !end subroutine
   
   function myfunction2(a,b) result(res) bind(c,name="myfunction2") 
     implicit none
@@ -30,7 +31,7 @@ contains ! bind(c) procedures cannot be contained in Fortran program
     integer,intent(inout) :: b
     !
     integer :: res
-    b = a + b
+    b = a + 2*b
     res = -5
   end function
 end module
@@ -51,6 +52,6 @@ program myprogram
   b = 2
   res = myfunction2(a,b)
   
-  print *, "Fortran code: value of 'b' [post]: ", b ! should be 7
-  print *, "Fortran code: value of 'b' [post]: ", b ! should be -5
+  print *, "Fortran code: value of 'b' [post]: ", b ! should be 9
+  print *, "Fortran code: value of 'res' [post]: ", res ! should be -5
 end program

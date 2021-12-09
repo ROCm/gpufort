@@ -19,6 +19,27 @@
 {%- for ivar in ivars -%}{{ivar.name}}{{"," if not loop.last}}{% endfor -%}
 {%- endmacro -%}
 {########################################################################################}
+{%- macro render_local_var_decl(ivar) -%}
+{%- set prefix = "__shared__ " if "shared" in ivar.qualifiers else "" -%}
+{%- set c_type = ivar.kind if ivar.f_type=="type" else ivar.c_type -%}
+{%- if ivar.rank > 0 -%}
+{#    todo add local C array init here too, that one gets a __shared__ prefix if needed #}
+gpufort::array{{ivar.rank}}<{{c_type}}> {{ivar.name}};
+{%- else -%}
+{{prefix}}{{c_type}} {{ivar.name}};
+{%- endif -%}
+{%- endmacro -%}
+{########################################################################################}
+{%- macro render_local_var_decls(ivars) -%}
+{# todo must be modified for arrays #}
+{%- for ivar in ivars -%}{{render_local_var_decl(ivar)}}{% endfor -%}
+{%- endmacro -%}
+{########################################################################################}
+{%- macro render_shared_var_decls(ivars) -%}
+{# todo must be modified arrays #}
+{%- for ivar in ivars -%}{{render_local_var_decl(ivar)}}{% endfor -%}
+{%- endmacro -%}
+{########################################################################################}
 {%- macro render_derived_types(types) -%}
 {% for derived_type in types %}
 typedef struct {
@@ -30,8 +51,8 @@ typedef struct {
 {%- macro reductions_prepare(reduced_variables) -%}
 {%- if reduced_variables|length > 0 -%}
 {%- for rvar in reduced_variables %} 
-{{ rvar.c_type }}* {{ rvar.buffer }};
-HIP_CHECK(hipMalloc((void **)&{{ rvar.buffer }}, __total_threads(grid,block) * sizeof({{ rvar.c_type }} )));
+{{rvar.c_type}}* {{rvar.buffer}};
+HIP_CHECK(hipMalloc((void **)&{{rvar.buffer}}, __total_threads(grid,block) * sizeof({{rvar.c_type}} )));
 {% endfor -%}
 {%- endif -%}
 {%- endmacro -%}
@@ -39,8 +60,8 @@ HIP_CHECK(hipMalloc((void **)&{{ rvar.buffer }}, __total_threads(grid,block) * s
 {%- macro reductions_finalize(reduced_variables) -%}
 {%- if reduced_variables|length > 0 -%}
 {%- for rvar in reduced_variables %} 
-reduce<{{ rvar.c_type }}, reduce_op_{{ rvar.op }}>({{ rvar.buffer }}, __total_threads(grid,block), {{ rvar.name }});
-HIP_CHECK(hipFree({{ rvar.buffer }}));
+reduce<{{rvar.c_type}}, reduce_op_{{rvar.op}}>({{rvar.buffer}}, __total_threads(grid,block), {{rvar.name}});
+HIP_CHECK(hipFree({{rvar.buffer}}));
 {% endfor -%}
 {%- endif -%}
 {%- endmacro %}
@@ -118,7 +139,8 @@ GPUFORT_PRINT_ARGS(grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream
 __global__ void {{kernel.launch_bounds}} {{kernel.name}}(
 {{ render_param_decls(kernel.params,"","",",\n") | indent(4,True) }}
 ){
-{{ render_locals(kernel.locals) | indent(2,True) }}
+{{ render_local_var_decls(kernel.local_vars) | indent(2,True) }}
+{{ render_shared_var_decls(kernel.shared_vars) | indent(2,True) }}
 {{kernel.c_body | indent(2, True)}}
 }
 {%- endmacro -%}
@@ -132,7 +154,8 @@ __global__ void {{kernel.launch_bounds}} {{kernel.name}}(
 __device__ {{kernel.return_type}} {{kernel.name}}(
 {{ render_param_decls(kernel.params,"","",",\n") | indent(4,True) }}
 ){
-{{ render_locals(kernel.locals) | indent(2,True) }}
+{{ render_local_var_decls(kernel.local_vars) | indent(2,True) }}
+{{ render_shared_var_decls(kernel.shared_vars) | indent(2,True) }}
 {{kernel.c_body | indent(2, True)}}
 }
 {%- endmacro -%}

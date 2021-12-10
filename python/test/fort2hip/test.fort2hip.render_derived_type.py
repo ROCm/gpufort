@@ -71,7 +71,7 @@ end type nested_interop
 
 SCOPE = None
 
-class TestDerivedTypes(unittest.TestCase):
+class TestRenderDerivedType(unittest.TestCase):
     def prepare(self,text):
         return text.strip().split("\n")
     def clean(self,text):

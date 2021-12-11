@@ -48,7 +48,7 @@ typedef struct {
 {% endfor %}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro reductions_prepare(reduced_variables) -%}
+{%- macro render_reductions_prepare(reduced_variables) -%}
 {%- if reduced_variables|length > 0 -%}
 {%- for rvar in reduced_variables %} 
 {{rvar.c_type}}* {{rvar.buffer}};
@@ -57,7 +57,7 @@ HIP_CHECK(hipMalloc((void **)&{{rvar.buffer}}, __total_threads(grid,block) * siz
 {%- endif -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro reductions_finalize(reduced_variables) -%}
+{%- macro render_reductions_finalize(reduced_variables) -%}
 {%- if reduced_variables|length > 0 -%}
 {%- for rvar in reduced_variables %} 
 reduce<{{rvar.c_type}}, reduce_op_{{rvar.op}}>({{rvar.buffer}}, __total_threads(grid,block), {{rvar.name}});
@@ -89,37 +89,26 @@ dim3 grid({% for block_dim in block %}
 {% endif %}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_kernel_launcher_prolog(kernel_name,launcher_kind,ivars) -%}
+{%- macro render_kernel_launcher_debug_output(prefix,stage,kernel_name,ivars) -%}
+{# Print kernel arguments and array device data (if specified) by runtime
+   :param prefix: prefix for every line written out
+   :param stage: "INPUT" or "OUTPUT" stage.
+   :param kernel_name: Name of the kernel for naming compiler flags
+   :param ivars: list of index variables #}
+{% set direction = "in" if stage == "INPUT" else "out" %}
 #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{kernel_name}})
-std::cout << "{{kernel_name}}:{{kind}}:args:";
-GPUFORT_PRINT_ARGS(grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream,});
+std::cout << "{{prefix}}:args:{direction}:";
+GPUFORT_PRINT_ARGS(grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream,{{render_params(ivars)}});
 #endif
-#if defined(GPUFORT_PRINT_INPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAYS_{{kernel_name}})
-{% for array in kernel.input_arrays %}
-{{array}}.print_device_data(std::cout,"{{kernel_name}}:{{launcher_kind}}in:",gpufort::PrintMode::PrintValuesAndNorms);
-{% endfor %}
-#elif defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_INPUT_ARRAY_NORMS_{{kernel_name}})
-{% for array in kernel.input_arrays %}
-{{array}}.print_device_data(std::cout,"{{kernel_name}}:{{launcher_kind}}:in:",gpufort::PrintMode::PrintNorms);
-{% endfor %}
-#endif
-{%- endmacro -%}
-{########################################################################################}
-{%- macro render_kernel_launcher_epilog(kernel_name,launcher_kind,ivars) -%}
-{{ synchronize(kernel_name) }}
-#if defined(GPUFORT_PRINT_OUTPUT_ARRAYS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAYS_{{kernel_name}})
 {% for ivar in ivars %}
-{% if ivar.rank > 0 %}
-{{ivar}}.print_device_data(std::cout,"{{kernel_name}}:{{launcher_kind}}:out:",gpufort::PrintMode::PrintValuesAndNorms);
-{% endif %}
-{% endfor %}
-#elif defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_ALL) || defined(GPUFORT_PRINT_OUTPUT_ARRAY_NORMS_{{kernel_name}})
-{% for ivar in ivars %}
-{% if ivar.rank > 0 %}
-{{ivar}}.print_device_data(std::cout,"{{kernel_name}}:{{launcher_kind}}:out:",gpufort::PrintMode::PrintNorms);
-{% endif %}
-{% endfor %}
+{%   if ivar.rank > 0 and ivar.type in ["logical","integer","float"] %}
+#if defined(GPUFORT_PRINT_{{stage}}_ARRAY_ALL) || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}})_ALL || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}}_{{ivar.name}})
+{{ivar}}.print_device_data(std::cout,"{{prefix}}",gpufort::PrintMode::PrintValuesAndNorms);
+#elif defined(GPUFORT_PRINT_{{stage}}_ARRAY_ALL) || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}})_ALL || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}}_{{ivar.name}})
+{{ivar}}.print_device_data(std::cout,"{{prefix}}",gpufort::PrintMode::PrintNorms);
 #endif
+{%   endif %}
+{% endfor %}
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_begin_kernel(kernel) -%}
@@ -130,12 +119,15 @@ GPUFORT_PRINT_ARGS(grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream
 // END {{kernel.name}} {{kernel.hash}}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_kernel(kernel) -%}
+{%- macro render_gpu_kernel_comment(kernel) -%}
 /**
    HIP C++ implementation of the function/loop body of:
 
 {{kernel.f_body | indent(3, True)}}
 */
+{%- endmacro -%}
+{########################################################################################}
+{%- macro render_gpu_kernel(kernel) -%}
 __global__ void {{kernel.launch_bounds}} {{kernel.name}}(
 {{ render_param_decls(kernel.params,"","",",\n") | indent(4,True) }}
 ){
@@ -160,9 +152,17 @@ __device__ {{kernel.return_type}} {{kernel.name}}(
 }
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_hip_kernel_launcher(kernel,launcher_kind) -%}
-extern "C" hipError_t {{kernel.interface_name}}(
-{% if launcher_kind != "auto" %}
+{% macro render_gpu_kernel_synchronization(kernel_name) %}
+#if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_{{kernel_name}})
+HIP_CHECK(hipStreamSynchronize(stream));
+#elif defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_{{kernel_name}})
+HIP_CHECK(hipDeviceSynchronize());
+#endif
+{% endmacro %}
+{########################################################################################}
+{%- macro render_gpu_kernel_launcher(kernel,kernel_launcher) -%}
+extern "C" hipError_t {{kernel_launcher.name}}(
+{% if kernel_launcher.kind != "auto" %}
   dim3& grid,
   dim3& block,
 {% endif %}
@@ -170,46 +170,47 @@ extern "C" hipError_t {{kernel.interface_name}}(
   hipStream_t& stream{{"," if kernel.params|length > 0}}
 {{ render_param_decls(kernel.params,"","&",",\n") | indent(4,True) }}
 ) {
-{% if launcher_kind == "auto" %}
-{{ render_block(kernel.block) }}
-{{ render_grid(kernel.block,kernel.grid,kernel.problem_size) }}   
+{% if kernel_launcher.kind == "auto" %}
+{{ render_block(kernel.name+"_",kernel_launcher.block) }}
+{{ render_grid(kernel.name+"_",kernel_launcher.block,kernel_launcher.grid,kernel_launcher.problem_size) }}   
 {% endif %}
 {% if kernel.generate_debug_code %}
-{{ render_kernel_launcher_prolog(kernel) | indent(2,True) }}
+{{ render_kernel_launcher_debug_output(kernel.name+":gpu:in:","INPUT",kernel.name,kernel.params) | indent(2,True) }}
 {% endif %}
-{{ reductions_prepare(kernel) | indent(2,True) }}
+{{ render_reductions_prepare(kernel) | indent(2,True) }}
   hipLaunchKernelGGL(({{kernel.name}}), grid, block, sharedmem, stream, {{render_params(kernel.params) | join(",")}});
+{{ render_gpu_kernel_synchronization(kernel_name) | indent(2,True) }}
   hipError_t ierr = hipGetLastError();	
   if ( ierr != hipSuccess ) return ierr;
-{{ reductions_finalize(kernel) | indent(2,True) }}
+{{ render_reductions_finalize(kernel) | indent(2,True) }}
 {% if kernel.generate_debug_code %}
-{{ render_kernel_launcher_epilog(kernel) | indent(2,True) }} 
+{{ render_kernel_launcher_debug_output(kernel.name+":gpu:out:","OUTPUT",kernel.name,kernel.params) | indent(2,True) }}
 {% endif %}
   return hipSuccess;
 }
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_cpu_kernel_interface(kernel) -%}
-extern "C" hipError_t {{kernel.interface_name}}_cpu1(
+extern "C" hipError_t {{kernel.launcher_name}}_cpu1(
 {{ render_param_decls(kernel.params,"","&",",\n") | indent(4,True) }}
 );
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_cpu_kernel_launcher(kernel) -%}
-extern "C" hipError_t {{kernel.interface_name}}_cpu(
+extern "C" hipError_t {{kernel.launcher_name}}_cpu(
   const int& sharedmem,
   const hipStream_t& stream{{"," if kernel.params|length > 0}}
 {{ render_param_decls(kernel.params,"","&",",\n") | indent(4,True) }}
 ) {
   hipError_t ierr = hipSuccess;
-{{ reductions_prepare(kernel) | indent(2,True) }}
+{{ render_reductions_prepare(kernel) | indent(2,True) }}
 {% if kernel.generate_debug_code %}
-{{ render_kernel_launcher_prolog(kernel.name,"cpu",kernel.params) | indent(2,True) }}
+{{ render_kernel_launcher_debug_output(kernel.name+":cpu:in:","INPUT",kernel.name,kernel.params) | indent(2,True) }}
 {% endif %}
   if ( ierr != hipSuccess ) return ierr;
-{{ reductions_finalize(kernel) }}
+{{ render_reductions_finalize(kernel) }}
 {% if kernel.generate_debug_code %}
-{{ render_kernel_launcher_epilog(kernel.name,"cpu",kernel.params) | indent(2,True) }} 
+{{ render_kernel_launcher_debug_output(kernel.name+":cpu:out:","OUTPUT",kernel.name,kernel.params) | indent(2,True) }}
 {% endif %}
   return hipSuccess;
 }

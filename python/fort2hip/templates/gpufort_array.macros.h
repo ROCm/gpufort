@@ -1,8 +1,8 @@
 {# SPDX-License-Identifier: MIT                                                 #}
 {# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved. #}
 {# requires that the bound_args and bound_args_single_line macros exist #}
-{% import "templates/gpufort.macros.h" as gm %}
-{%- macro gpufort_array_c_bindings(datatypes,max_rank) -%}
+{% import "gpufort.macros.h" as gm %}
+{%- macro render_gpufort_array_c_bindings(datatypes,max_rank) -%}
 {# C side #}
 extern "C" {
 {% for rank in range(1,max_rank+1) %}

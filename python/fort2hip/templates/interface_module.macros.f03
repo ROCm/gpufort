@@ -27,7 +27,7 @@ type(gpufort_array{{ivar.rank}}) :: {{ivar.name}}
 {%- for ivar in ivars -%}{{ivar.name}}{{"," if not loop.last}}{% endfor -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_derived_types(derived_types,interop_suffix) -%}
+{%- macro render_derived_types(derived_types,interop_suffix="_interop") -%}
 {% for derived_type in derived_types %}
 type, bind(c) :: {{derived_type.name}}{{interop_suffix}}
 {{ (render_param_decls(derived_type.variables,interop_suffix,"\n")) | indent(2,True) }}

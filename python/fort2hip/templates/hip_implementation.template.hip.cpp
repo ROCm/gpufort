@@ -11,7 +11,7 @@
 {#                 -[reductions:dict]                    #}
 {#                 -[c_body:str]                         #}
 {#                 -[f_body:str]                         #}
-{% import "templates/hip_implementation.macros.hip.cpp" as hm %}
+{% import "hip_implementation.macros.hip.cpp" as hm %}
 #ifndef {{ guard }}
 #define {{ guard }}
 {% for file in includes %}

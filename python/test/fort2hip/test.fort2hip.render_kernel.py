@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import os
 import json
-import jinja2
 import unittest
 import cProfile,pstats,io,time
 import addtoplevelpath
 import indexer.indexerutils
 import utils.logging
+import fort2hip.model
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
 utils.logging.VERBOSE    = False
@@ -14,15 +14,11 @@ utils.logging.init_logging("log.log",LOG_FORMAT,"warning")
 
 PROFILING_ENABLE = False
 
-ROOT   = os.path.realpath(os.path.join(os.path.dirname(__file__),"..",".."))
-LOADER = jinja2.FileSystemLoader(ROOT)
-ENV    = jinja2.Environment(loader=LOADER, trim_blocks=True,
-           lstrip_blocks=True, undefined=jinja2.StrictUndefined)
-
-TEST_TEMPLATE_DIR = os.path.join("test","fort2hip","templates")
-render_kernel_template              = ENV.get_template(os.path.join(TEST_TEMPLATE_DIR,"render_gpu_kernel.template.hip.cpp"))
-render_gpu_kernel_launcher_template = ENV.get_template(os.path.join(TEST_TEMPLATE_DIR,"render_gpu_kernel_launcher.template.hip.cpp"))
-render_cpu_kernel_launcher_template = ENV.get_template(os.path.join(TEST_TEMPLATE_DIR,"render_cpu_kernel_launcher.template.hip.cpp"))
+# render_hip_kernel_comment_hip_cpp
+# render_hip_kernel_hip_cpp
+# render_hip_kernel_synchronization_hip_cpp
+# render_hip_kernel_launcher_hip_cpp
+# render_cpu_kernel_launcher_hip_cpp
 
 declaration_list= \
 """
@@ -45,21 +41,18 @@ real(8)        :: scalar_double_local
 real(8),shared :: scalar_double_shared
 """
 
-SCOPE = None
-
 class TestRenderKernel(unittest.TestCase):
     def prepare(self,text):
         return text.strip().split("\n")
     def clean(self,text):
         return text.replace(" ","").replace("\t","").replace("\n","").replace("\r","")
     def setUp(self):
-        global SCOPE
         global PROFILING_ENABLE
         if PROFILING_ENABLE:
             self._profiler = cProfile.Profile()
             self._profiler.enable()
         self._started_at = time.time()
-        SCOPE = indexer.indexerutils.create_scope_from_declaration_list(declaration_list)
+        self._scope = indexer.indexerutils.create_scope_from_declaration_list(declaration_list)
     def tearDown(self):
         global PROFILING_ENABLE
         if PROFILING_ENABLE:
@@ -71,12 +64,10 @@ class TestRenderKernel(unittest.TestCase):
             print(s.getvalue())
         elapsed = time.time() - self._started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
-    def create_kernel_context(self,
-        kernel_name,
-        scope):
-        local_vars          = [ivar for ivar in scope["variables"] if "_local" in ivar["name"]]
-        shared_vars         = [ivar for ivar in scope["variables"] if "_shared" in ivar["name"]]
-        global_vars         = [ivar for ivar in scope["variables"] if ivar not in local_vars and\
+    def create_kernel_context(self,kernel_name):
+        local_vars          = [ivar for ivar in self._scope["variables"] if "_local" in ivar["name"]]
+        shared_vars         = [ivar for ivar in self._scope["variables"] if "_shared" in ivar["name"]]
+        global_vars         = [ivar for ivar in self._scope["variables"] if ivar not in local_vars and\
                               ivar not in shared_vars]
         global_reduced_vars = [] 
         #print([ivar["name"] for ivar in local_vars])
@@ -93,34 +84,35 @@ class TestRenderKernel(unittest.TestCase):
         kernel["f_body"]              = "! do nothing"
         return kernel
     def create_gpu_kernel_launcher_context(self,
-            kernel_name,kind="auto",
-            generate_debug_code=True):
+                                           kernel_name,kind="auto",
+                                           debug_output=True):
+        kernel_launcher = {}
         # for launcher interface
-        kernel_launcher["kind"]                = "auto"
-        kernel_launcher["name"]                = "_".join("launch",kernel_name,kind) 
-        kernel_launcher["block"]               = [1024,1,1]
-        kernel_launcher["grid"]                = [4,1,1] 
-        kernel_launcher["problem_size"]        = [4096,1,1] 
-        kernel_launcher["generate_debug_code"] = True
-    def create_cpu_kernel_launcher_context(self,kernel_name,kind="auto"):
+        kernel_launcher["kind"]         = "auto"
+        if len(kind):
+            kernel_launcher["name"]     = "_".join(["launch",kernel_name,kind])
+        else:
+            kernel_launcher["name"]     = "_".join(["launch",kernel_name])
+        kernel_launcher["block"]        = [1024,1,1]
+        kernel_launcher["grid"]         = [4,1,1] 
+        kernel_launcher["problem_size"] = [4096,1,1] 
+        kernel_launcher["debug_output"] = True
+        return kernel_launcher
+    def create_cpu_kernel_launcher_context(self,
+                                           kernel_name,kind="auto"):
         # for launcher interface
-        kernel_launcher["launcher_name"]       = "_".join(["launch",kernel["name"]])
-        kernel_launcher["block"]               = [1024,1,1]
-        kernel_launcher["grid"]                = [4,1,1] 
-        kernel_launcher["problem_size"]        = [4096,1,1] 
-        kernel_launcher["generate_debug_code"] = True
+        kernel_launcher = {}
+        kernel_launcher["launcher_name"] = "_".join(["launch",kernel_name,"cpu"])
+        kernel_launcher["debug_output"]  = True
+        return kernel_launcher
     def test_1_render_kernel(self):
-        context = {"kernel":self.create_kernel_context()}
-        print(render_kernel_template.render(context))
-    def test_2_render_gpu_kernel_launcher(self):
-        context = {"kernel":self.create_kernel_context(),"launcher_kind":"auto"}
-        print(render_gpu_kernel_launcher_template.render(context))
+        print(fort2hip.model.render_hip_kernel_hip_cpp(self.create_kernel_context("mykernel")))
+    def test_2_render_hip_kernel_launcher(self):
+        print(fort2hip.model.render_hip_kernel_launcher_hip_cpp(self.create_kernel_context("mykernel"),
+                                                                self.create_gpu_kernel_launcher_context("mykernel")))
     def test_3_render_cpu_kernel_launcher(self):
-        context = {
-         "kernel":self.create_kernel_context(),
-         "kernel_launcher": self.create_gpu_kernel_launcher_context( 
-        }
-        print(render_gpu_kernel_launcher_template.render(context))
+        print(fort2hip.model.render_cpu_kernel_launcher_hip_cpp(self.create_kernel_context("mykernel"),
+                                                                self.create_cpu_kernel_launcher_context("mykernel")))
         
 
 if __name__ == '__main__':

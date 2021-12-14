@@ -39,6 +39,7 @@ type(nested)       :: derived_type
 !
 real(8)        :: scalar_double_local
 real(8),shared :: scalar_double_shared
+real(8) :: scalar_double_reduced
 """
 
 class TestRenderKernel(unittest.TestCase):
@@ -64,12 +65,17 @@ class TestRenderKernel(unittest.TestCase):
             print(s.getvalue())
         elapsed = time.time() - self._started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
-    def create_kernel_context(self,kernel_name):
+    def create_kernel_context(self,kernel_name,no_reduced_var=True):
         local_vars          = [ivar for ivar in self._scope["variables"] if "_local" in ivar["name"]]
         shared_vars         = [ivar for ivar in self._scope["variables"] if "_shared" in ivar["name"]]
+        global_reduced_vars = [ivar for ivar in self._scope["variables"] if "_reduced" in ivar["name"]]
         global_vars         = [ivar for ivar in self._scope["variables"] if ivar not in local_vars and\
-                              ivar not in shared_vars]
-        global_reduced_vars = [] 
+                              ivar not in shared_vars and ivar not in global_reduced_vars]
+        if no_reduced_var:
+            global_reduced_vars.clear() 
+        else:
+            for rvar in global_reduced_vars:
+                rvar["op"] = "sum"
         #print([ivar["name"] for ivar in local_vars])
         #print([ivar["name"] for ivar in shared_vars])
         #print([ivar["name"] for ivar in global_vars])
@@ -83,7 +89,7 @@ class TestRenderKernel(unittest.TestCase):
         kernel["c_body"]              = "// do nothing" 
         kernel["f_body"]              = "! do nothing"
         return kernel
-    def create_gpu_kernel_launcher_context(self,
+    def create_hip_kernel_launcher_context(self,
                                            kernel_name,kind="auto",
                                            debug_output=True):
         kernel_launcher = {}
@@ -102,16 +108,24 @@ class TestRenderKernel(unittest.TestCase):
                                            kernel_name,kind="auto"):
         # for launcher interface
         kernel_launcher = {}
-        kernel_launcher["launcher_name"] = "_".join(["launch",kernel_name,"cpu"])
+        kernel_launcher["name"] = "_".join(["launch",kernel_name,"cpu"])
         kernel_launcher["debug_output"]  = True
         return kernel_launcher
     def test_1_render_kernel(self):
         print(fort2hip.model.render_hip_kernel_hip_cpp(self.create_kernel_context("mykernel")))
-    def test_2_render_hip_kernel_launcher(self):
-        print(fort2hip.model.render_hip_kernel_launcher_hip_cpp(self.create_kernel_context("mykernel"),
-                                                                self.create_gpu_kernel_launcher_context("mykernel")))
-    def test_3_render_cpu_kernel_launcher(self):
+    def test_2_render_kernel_with_reduced_vars(self):
+        print(fort2hip.model.render_hip_kernel_hip_cpp(self.create_kernel_context("mykernel",False)))
+    def test_3_render_hip_kernel_launcher(self):
+        print(fort2hip.model.render_hip_kernel_launcher_hip_cpp(self.create_kernel_context("mykernel",False),
+                                                                self.create_hip_kernel_launcher_context("mykernel")))
+    def test_4_render_hip_kernel_launcher_with_reduced_vars(self):
+        print(fort2hip.model.render_hip_kernel_launcher_hip_cpp(self.create_kernel_context("mykernel",False),
+                                                                self.create_hip_kernel_launcher_context("mykernel")))
+    def test_5_render_cpu_kernel_launcher(self):
         print(fort2hip.model.render_cpu_kernel_launcher_hip_cpp(self.create_kernel_context("mykernel"),
+                                                                self.create_cpu_kernel_launcher_context("mykernel")))
+    def test_6_render_cpu_kernel_launcher_with_reduced_vars(self):
+        print(fort2hip.model.render_cpu_kernel_launcher_hip_cpp(self.create_kernel_context("mykernel",False),
                                                                 self.create_cpu_kernel_launcher_context("mykernel")))
         
 

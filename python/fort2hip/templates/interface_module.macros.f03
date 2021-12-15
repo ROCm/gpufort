@@ -3,34 +3,34 @@
 {#- Jinja2 template for generating interface modules                            -#}
 {#- This template works with data structures of the form :                      -#}
 {########################################################################################}
-{%- macro render_param_decl(ivar,interop_suffix) -%}
+{%- macro render_param_decl(ivar,qualifiers="",interop_suffix="_interop") -%}
 {%- if ivar.f_type in ["integer","real","logical","type"] -%}
 {%-   if ivar.rank > 0 -%}
-type(gpufort_array{{ivar.rank}}) :: {{ivar.name}}
+type(gpufort_array{{ivar.rank}}){{qualifiers}} :: {{ivar.name}}
 {%-   else -%}
 {%-     if ivar.f_type == "type" -%}
-{{ivar.f_type}}({{ivar.kind}}{{interop_suffix}}) :: {{ivar.name}}
+{{ivar.f_type}}({{ivar.kind}}{{interop_suffix}}){{qualifiers}} :: {{ivar.name}}
 {%-     elif ivar.kind is not none and ivar.kind|length > 0 -%}
-{{ivar.f_type}}({{ivar.kind}}) :: {{ivar.name}}
+{{ivar.f_type}}({{ivar.kind}}){{qualifiers}} :: {{ivar.name}}
 {%-     else -%}
-{{ivar.f_type}} :: {{ivar.name}}
+{{ivar.f_type}}{{qualifiers}} :: {{ivar.name}}
 {%-     endif -%}
 {%-   endif -%}
 {%- endif -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_param_decls(ivars,interop_suffix,sep) -%}
-{%- for ivar in ivars -%}{{render_param_decl(ivar,interop_suffix)}}{{sep if not loop.last}}{% endfor -%}
+{%- macro render_param_decls(ivars,qualifiers="",interop_suffix="_interop",sep="\n") -%}
+{%- for ivar in ivars -%}{{render_param_decl(ivar,qualifiers,interop_suffix)}}{{sep if not loop.last}}{% endfor -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_params(ivars) -%}
-{%- for ivar in ivars -%}{{ivar.name}}{{"," if not loop.last}}{% endfor -%}
+{%- macro render_params(ivars,sep=",") -%}
+{%- for ivar in ivars -%}{{ivar.name}}{{sep if not loop.last}}{% endfor -%}
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_derived_types(derived_types,interop_suffix="_interop") -%}
 {% for derived_type in derived_types %}
 type, bind(c) :: {{derived_type.name}}{{interop_suffix}}
-{{ (render_param_decls(derived_type.variables,interop_suffix,"\n")) | indent(2,True) }}
+{{ (render_param_decls(derived_type.variables)) | indent(2,True) }}
 end type {{derived_type.name}}{{interop_suffix}}
 {% endfor %}
 {%- endmacro -%}
@@ -143,3 +143,66 @@ end subroutine{{"\n" if not loop.last}}
 {%   endfor %}
 {% endfor %}
 {%- endmacro -%}
+{########################################################################################}
+{%- macro render_used_modules(used_modules) -%}
+{% for module in used_modules %}
+use {{module.name}}{{(", only: "+module.only|join(",") if module.only|length>0)}}
+{% endfor %}
+{%- endmacro -%}
+{########################################################################################}
+{%- macro render_kernel_launcher(kernel,kernel_launcher) -%}
+{%- set num_global_vars = kernel.global_vars|length + kernel.global_reduced_vars|length -%}
+function {{kernel_launcher.name}}(&
+{% if kernel_launcher.kind in ["hip"] %}
+    grid, block,&
+{% endif %}
+    sharedmem,stream{{"," if num_global_vars > 0 }}&
+{{render_params(kernel.global_vars+kernel.global_reduced_vars,sep=",&\n") | indent(4,True)}}) bind(c,name="{{kernel_launcher.name}}") &
+      result(ierr)
+  use iso_c_binding
+  use hipfort
+  use gpufort_array
+{% if kernel_launcher.used_modules|length %}
+{{ render_used_modules(kernel_launcher.used_modules) | indent(2,True) }}
+{% endif %}
+  implicit none
+{% if kernel_launcher.kind in ["hip"] %}  type(dim3),intent(in) :: grid, block{% endif %}
+  integer(c_int),intent(in) :: sharedmem
+  type(c_ptr),intent(in)    :: stream{{"," if num_global_vars > 0}}
+{{ render_param_decls(kernel.global_vars+kernel.global_reduced_vars) | indent(2,True) }}
+  integer(kind(hipSuccess)) :: ierr
+end function
+{%- endmacro -%}
+{########################################################################################}
+{%- macro render_cpu_routine(kernel,kernel_launcher) -%}
+{%- set num_global_vars = kernel.global_vars|length + kernel.global_reduced_vars|length -%}
+function {{kernel_launcher.name}}_f(&
+    sharedmem,stream{{"," if num_global_vars > 0 }}&
+{{render_params(kernel.global_vars+kernel.global_reduced_vars,sep=",&\n") | indent(4,True)}}) bind(c,name="{{kernel_launcher.name}}_f") &
+      result(ierr)
+  use iso_c_binding
+  use hipfort
+  use gpufort_array
+{% if kernel_launcher.used_modules|length %}
+{{ render_used_modules(kernel_launcher.used_modules) | indent(2,True) }}
+{% endif %}
+  implicit none
+{% if kernel_launcher.kind in ["hip"] %}
+  type(dim3),intent(in) :: grid, block
+{% endif %}
+  integer(c_int),intent(in) :: sharedmem
+  type(c_ptr),intent(in)    :: stream{{"," if num_global_vars > 0}}
+{{ render_param_decls(kernel.global_vars+kernel.global_reduced_vars) | indent(2,True) }}
+  integer(kind(hipSuccess)) :: ierr
+{# TODO 
+ - rename gpufort_array inputs:
+   - give suffix _in
+ - create local arrays
+ - copy device data to local arrays from input gpufort arrays
+ - run code
+ - copy local host array data back to device data
+ - destroy local arrays
+#} 
+end function
+{%- endmacro -%}
+{########################################################################################}

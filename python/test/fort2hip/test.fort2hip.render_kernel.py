@@ -14,11 +14,13 @@ utils.logging.init_logging("log.log",LOG_FORMAT,"warning")
 
 PROFILING_ENABLE = False
 
-# render_hip_kernel_comment_hip_cpp
-# render_hip_kernel_hip_cpp
-# render_hip_kernel_synchronization_hip_cpp
-# render_hip_kernel_launcher_hip_cpp
-# render_cpu_kernel_launcher_hip_cpp
+# render_hip_kernel_comment_hip_cpp(kernel)
+# render_hip_kernel_hip_cpp(kernel)
+# render_hip_kernel_synchronization_hip_cpp(kernel_name)
+# render_hip_kernel_launcher_hip_cpp(kernel,kernel_launcher)
+# render_cpu_kernel_launcher_hip_cpp(kernel,kernel_launcher)
+# render_kernel_launcher_f03(kernel,kernel_launcher)
+# render_cpu_routine_f03(kernel,kernel_launcher)
 
 declaration_list= \
 """
@@ -90,11 +92,11 @@ class TestRenderKernel(unittest.TestCase):
         kernel["f_body"]              = "! do nothing"
         return kernel
     def create_hip_kernel_launcher_context(self,
-                                           kernel_name,kind="auto",
+                                           kernel_name,kind="hip_auto",
                                            debug_output=True):
         kernel_launcher = {}
         # for launcher interface
-        kernel_launcher["kind"]         = "auto"
+        kernel_launcher["kind"]         = kind
         if len(kind):
             kernel_launcher["name"]     = "_".join(["launch",kernel_name,kind])
         else:
@@ -103,30 +105,45 @@ class TestRenderKernel(unittest.TestCase):
         kernel_launcher["grid"]         = [4,1,1] 
         kernel_launcher["problem_size"] = [4096,1,1] 
         kernel_launcher["debug_output"] = True
+        kernel_launcher["used_modules"]  = []
         return kernel_launcher
     def create_cpu_kernel_launcher_context(self,
-                                           kernel_name,kind="auto"):
+                                           kernel_name):
         # for launcher interface
         kernel_launcher = {}
         kernel_launcher["name"] = "_".join(["launch",kernel_name,"cpu"])
         kernel_launcher["debug_output"]  = True
+        kernel_launcher["kind"]          = "cpu"
+        kernel_launcher["used_modules"]  = []
         return kernel_launcher
-    def test_1_render_kernel(self):
+    def test_1_render_hip_kernel_hip_cpp(self):
         print(fort2hip.model.render_hip_kernel_hip_cpp(self.create_kernel_context("mykernel")))
-    def test_2_render_kernel_with_reduced_vars(self):
+    def test_2_render_hip_kernel_with_reduced_vars_hip_cpp(self):
         print(fort2hip.model.render_hip_kernel_hip_cpp(self.create_kernel_context("mykernel",False)))
-    def test_3_render_hip_kernel_launcher(self):
+    def test_3_render_hip_kernel_launcher_hip_cpp(self):
         print(fort2hip.model.render_hip_kernel_launcher_hip_cpp(self.create_kernel_context("mykernel",False),
                                                                 self.create_hip_kernel_launcher_context("mykernel")))
-    def test_4_render_hip_kernel_launcher_with_reduced_vars(self):
+    def test_4_render_hip_kernel_launcher_with_reduced_vars_hip_cpp(self):
         print(fort2hip.model.render_hip_kernel_launcher_hip_cpp(self.create_kernel_context("mykernel",False),
                                                                 self.create_hip_kernel_launcher_context("mykernel")))
-    def test_5_render_cpu_kernel_launcher(self):
+    def test_5_render_cpu_kernel_launcher_hip_cpp(self):
         print(fort2hip.model.render_cpu_kernel_launcher_hip_cpp(self.create_kernel_context("mykernel"),
                                                                 self.create_cpu_kernel_launcher_context("mykernel")))
-    def test_6_render_cpu_kernel_launcher_with_reduced_vars(self):
+    def test_6_render_cpu_kernel_launcher_with_reduced_vars_hip_cpp(self):
         print(fort2hip.model.render_cpu_kernel_launcher_hip_cpp(self.create_kernel_context("mykernel",False),
                                                                 self.create_cpu_kernel_launcher_context("mykernel")))
+    def test_7_render_hip_kernel_launcher_f03(self):
+        print(fort2hip.model.render_kernel_launcher_f03(self.create_kernel_context("mykernel"),
+                                                        self.create_hip_kernel_launcher_context("mykernel")))
+    def test_8_render_hip_kernel_launcher_with_reduced_vars_f03(self):
+        print(fort2hip.model.render_kernel_launcher_f03(self.create_kernel_context("mykernel",False),
+                                                        self.create_hip_kernel_launcher_context("mykernel")))
+    def test_9_render_cpu_kernel_launcher_f03(self):
+        print(fort2hip.model.render_kernel_launcher_f03(self.create_kernel_context("mykernel"),
+                                                        self.create_cpu_kernel_launcher_context("mykernel")))
+    def test_10_render_cpu_kernel_launcher_with_reduced_vars_f03(self):
+        print(fort2hip.model.render_kernel_launcher_f03(self.create_kernel_context("mykernel",False),
+                                                        self.create_cpu_kernel_launcher_context("mykernel")))
         
 
 if __name__ == '__main__':

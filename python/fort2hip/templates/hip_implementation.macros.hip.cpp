@@ -80,7 +80,7 @@ gpufort::array{{ivar.rank}}<{{c_type}}> {{ivar.name}};
 {%- macro render_derived_types(types) -%}
 {% for derived_type in types %}
 typedef struct {
-{{ ( render_global_param_decls(derived_type.variables,"","",";\n")+";") | indent(2,True) }}
+{{ ( render_global_param_decls(derived_type.variables,";\n",True)+";") | indent(2,True) }}
 } {{derived_type.name}};{{"\n" if not loop.last }}
 {% endfor %}
 {%- endmacro -%}
@@ -200,14 +200,14 @@ HIP_CHECK(hipDeviceSynchronize());
 {%- macro render_hip_kernel_launcher(kernel,kernel_launcher) -%}
 {% set num_global_vars = kernel.global_vars|length + kernel.global_reduced_vars|length %}
 extern "C" hipError_t {{kernel_launcher.name}}(
-{% if kernel_launcher.kind != "auto" %}
+{% if kernel_launcher.kind != "hip_auto" %}
     dim3& grid,
     dim3& block,
 {% endif %}
     const int& sharedmem,
     hipStream_t& stream{{"," if num_global_vars > 0}}
 {{ render_all_global_param_decls(kernel.global_vars,kernel.global_reduced_vars) | indent(4,True) }}) {
-{% if kernel_launcher.kind == "auto" %}
+{% if kernel_launcher.kind == "hip_auto" %}
 {{ render_block(kernel.name+"_",kernel_launcher.block) | indent(2,True) }}
 {{ render_grid(kernel.name+"_",kernel_launcher.block,kernel_launcher.grid,kernel_launcher.problem_size) | indent(2,True) }}   
 {% endif %}

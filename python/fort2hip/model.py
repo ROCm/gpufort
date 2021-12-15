@@ -8,8 +8,23 @@ import jinja2
 import addtoplevelpath
 import utils.logging
         
-LOADER = jinja2.FileSystemLoader(os.path.realpath(os.path.join(os.path.dirname(__file__),"templates")))
-ENV    = jinja2.Environment(loader=LOADER, trim_blocks=True, lstrip_blocks=True, undefined=jinja2.StrictUndefined)
+LOADER    = jinja2.FileSystemLoader(os.path.realpath(os.path.join(os.path.dirname(__file__),"templates")))
+ENV       = jinja2.Environment(loader=LOADER, trim_blocks=True, lstrip_blocks=True, undefined=jinja2.StrictUndefined)
+TEMPLATES = {}
+    
+def generate_code(template_path,context={}):
+    global ENV
+    global TEMPLATES
+    if template_path in TEMPLATES:
+        template = TEMPLATES[template_path]
+    else:
+        template = ENV.get_template(template_path)
+        TEMPLATES[template_path] = template
+    try:
+        return template.render(context)
+    except Exception as e:
+        utils.logging.log_error("fort2hip.model","generate_code","could not render template '%s'" % template_path)
+        raise e
     
 class BaseModel():
     def __init__(self,template):

@@ -88,6 +88,7 @@ class TestRenderDerivedType(unittest.TestCase):
         elapsed = time.time() - self._started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
     def test_1_render_derived_types_hip_cpp(self):
+        #print(fort2hip.model.render_derived_types_hip_cpp(self._scope["types"]))
         self.assertEqual(self.clean(fort2hip.model.render_derived_types_hip_cpp(self._scope["types"])),\
             self.clean(testdata_result_cpp))
     def test_2_render_derived_types_f03(self):

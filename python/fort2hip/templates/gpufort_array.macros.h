@@ -46,6 +46,15 @@ extern "C" {
     return array->copy_to_buffer{{async_suffix}}(buffer,memcpy_kind{{",stream" if is_async}});
   } 
   
+  __host__ hipError_t {{c_prefix}}_copy_from_buffer{{async_suffix}} (
+      gpufort::array{{rank}}<{{c_type}}>* array,
+      void* buffer,
+      hipMemcpyKind memcpy_kind{{",
+      hipStream_t stream" if is_async}}
+  ) {
+    return array->copy_from_buffer{{async_suffix}}(buffer,memcpy_kind{{",stream" if is_async}});
+  } 
+  
   __host__ hipError_t {{c_prefix}}_copy_to_host{{async_suffix}} (
       gpufort::array{{rank}}<{{c_type}}>* array{{",
       hipStream_t stream" if is_async}}

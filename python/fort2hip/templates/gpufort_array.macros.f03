@@ -205,17 +205,17 @@ end function
 {# #}
 {# #}
 {# #}
-{%- macro render_gpufort_array_copy_to_buffer_routines(datatypes,max_rank) -%}
+{%- macro render_gpufort_array_copy_to_from_buffer_routines(datatypes,max_rank) -%}
 {% set prefix = "gpufort_array" %}
 {% set max_rank_ub = max_rank+1 %}
 {% for rank in range(1,max_rank_ub) %}
-{% set f_array  = prefix+rank|string %}
-{% set routine = "copy_to_buffer" %}
-{% set binding  = f_array+"_"+routine %}
-{% set size_dims = ",dimension("+rank|string+")" %}
-{% for tuple in datatypes %}
-{% for async_suffix in ["_async",""] %}
-{% set is_async = async_suffix == "_async" %}
+{%   set f_array  = prefix+rank|string %}
+{%   for routine in ["copy_from_buffer","copy_to_buffer"] %}
+{%     set binding  = f_array+"_"+routine %}
+{%     set size_dims = ",dimension("+rank|string+")" %}
+{%     for tuple in datatypes %}
+{%       for async_suffix in ["_async",""] %}
+{%         set is_async = async_suffix == "_async" %}
   function {{binding}}{{async_suffix}}_{{tuple.f_kind}}(&
     array,buffer,memcpy_kind{{",&
     stream" if is_async}}) &
@@ -232,8 +232,9 @@ end function
     ierr = {{binding}}{{async_suffix}}(&
       array,c_loc(buffer),memcpy_kind{{",stream" if is_async}})
   end function
-{% endfor %}{# datatypes #}
-{% endfor %}{# async_suffix #}
+{%       endfor %}{# async_suffix #}
+{%     endfor %}{# datatypes #}
+{%   endfor %}{# routines #}
 {% endfor %}{# rank #}
 {%- endmacro -%}
 {# #}
@@ -477,10 +478,14 @@ interface {{iface}}{{async_suffix}}
 end interface
 {% endfor %}
 
-{% set routine = "copy_to_buffer" %}
+{% for routine in ["copy_from_buffer","copy_to_buffer"] %}
 {% set iface = prefix+"_"+routine %}
 !>
-!> Copy host or device data to a host or device buffer.
+{% if routine == "copy_to_buffer" %}
+!> Copy host or device data TO a host or device buffer.
+{% else %}
+!> Copy host or device data FROM a host or device buffer.
+{% endif %}
 !>
 interface {{iface}}{{async_suffix}}
 {% for rank in range(1,max_rank_ub) %}
@@ -512,6 +517,7 @@ interface {{iface}}{{async_suffix}}
 {%- endfor -%}{{",&\n" if not loop.last}}
 {%- endfor %}{{""}}
 end interface
+{% endfor %}
 
 {% set routine = "dec_num_refs" %}
 {% set iface = prefix+"_"+routine %}

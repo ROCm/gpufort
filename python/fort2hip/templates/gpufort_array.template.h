@@ -440,7 +440,7 @@ namespace gpufort {
     }
     
     /**
-     * Copy host data to a buffer.
+     * Copy data to a buffer.
      * Depending on the hipMemcpyKind parameter,
      * the destinaton buffer is interpreted as host or device variable
      * and the source is the array's host or device buffer.
@@ -451,10 +451,6 @@ namespace gpufort {
        void* buffer, hipMemcpyKind memcpy_kind{{",
        hipStream_t stream" if is_async}}
     ) {
-      #ifndef __HIP_DEVICE_COMPILE__
-      assert(buffer!=nullptr);
-      assert(this->data.data_dev!=nullptr);
-      #endif
       T* src = nullptr ;
       switch (memcpy_kind) {
         case hipMemcpyDeviceToHost: 
@@ -471,10 +467,52 @@ namespace gpufort {
           std::terminate();
           break;
       }
-  
+      #ifndef __HIP_DEVICE_COMPILE__
+      assert(buffer!=nullptr);
+      assert(src!=nullptr);
+      #endif
       return hipMemcpy{{"Async" if is_async}}(
         buffer, 
         (void*) src,
+        this->num_data_bytes(), 
+        memcpy_kind{{", stream" if is_async}});
+    }
+    
+    /**
+     * Copy data from a buffer.
+     * Depending on the hipMemcpyKind parameter,
+     * the source buffer is interpreted as host or device variable
+     * and the destination is the array's host or device buffer.
+     * \return  Error code returned by the underlying hipMemcpy operation.
+     * \note Use num_data_bytes() for determining the buffer size.
+     */
+    __host__ hipError_t copy_from_buffer{{async_suffix}}(
+       void* buffer, hipMemcpyKind memcpy_kind{{",
+       hipStream_t stream" if is_async}}
+    ) {
+      T* dest = nullptr ;
+      switch (memcpy_kind) {
+        case hipMemcpyHostToDevice: 
+        case hipMemcpyDeviceToDevice:
+          dest = this->data.data_dev;
+          break;
+        case hipMemcpyHostToHost: 
+        case hipMemcpyDeviceToHost:
+          dest = this->data.data_host;
+          break;
+        default:
+          std::cerr << "ERROR: gpufort::array{{rank}}::copy_from_buffer{{async_suffix}}(...): Unexpected value for 'memcpy_kind': " 
+                    << static_cast<int>(memcpy_kind) << std::endl; 
+          std::terminate();
+          break;
+      }
+      #ifndef __HIP_DEVICE_COMPILE__
+      assert(buffer!=nullptr);
+      assert(dest!=nullptr);
+      #endif
+      return hipMemcpy{{"Async" if is_async}}(
+        (void*) dest,
+        buffer, 
         this->num_data_bytes(), 
         memcpy_kind{{", stream" if is_async}});
     }

@@ -59,5 +59,5 @@ contains
 {{ gam.render_gpufort_array_init_routines(datatypes,max_rank) | indent(2,True) }}
 {{ gam.render_gpufort_array_wrap_routines(datatypes,max_rank) | indent(2,True) }}
 {{ gam.render_gpufort_array_data_access_routines(datatypes,max_rank) | indent(2,True) }}
-{{ gam.render_gpufort_array_copy_to_buffer_routines(datatypes,max_rank) | indent(2,True) }}
+{{ gam.render_gpufort_array_copy_to_from_buffer_routines(datatypes,max_rank) | indent(2,True) }}
 end module gpufort_array 

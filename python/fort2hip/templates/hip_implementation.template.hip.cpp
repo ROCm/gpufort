@@ -14,89 +14,19 @@
 {% import "hip_implementation.macros.hip.cpp" as hm %}
 #ifndef {{ guard }}
 #define {{ guard }}
+#include "gpufort.h"
+#include "gpufort_array.h"
 {% for file in includes %}
 #include "{{file}}"
 {% endfor %}
-#include "gpufort.h"
-#include "gpufort_array.h"
-{% if have_reductions -%}
-#include "gpufort_reduction.h"
-{%- endif -%}
-{%- macro make_block(kernel) -%}
-{% set krnl_prefix = kernel.kernel_name %}
-{% set iface_prefix = kernel.interface_name %}
-{% for block_dim in kernel.block %}  const int {{krnl_prefix}}_block{{block_dim.dim}} = {{block_dim.value}};
-{% endfor %}
-  dim3 block({{ kernel.block_dims | join(",") }});
-{%- endmacro -%}
-{%- macro make_grid(kernel) -%}
-{% set krnl_prefix = kernel.kernel_name %}
-{% set iface_prefix = kernel.interface_name %}
-{% for size_dim in kernel.size %}  const int {{krnl_prefix}}_N{{size_dim.dim}} = {{size_dim.value}};
-{% endfor %}
-{% if kernel.grid|length > 0 %}
-{% for grid_dim in kernel.grid %}  const int {{krnl_prefix}}_grid{{grid_dim.dim}} = {{grid_dim.value}};
-  dim3 grid({% for grid_dim in kernel.grid -%}{{krnl_prefix}}_grid{{grid_dim.dim}}{{ "," if not loop.last }}{%- endfor %});
-{% endfor %}{% else %}
-{% for block_dim in kernel.block %}  const int {{krnl_prefix}}_grid{{block_dim.dim}} = divideAndRoundUp( {{krnl_prefix}}_N{{block_dim.dim}}, {{krnl_prefix}}_block{{block_dim.dim}} );
-{% endfor %}
-  dim3 grid({% for block_dim in kernel.block -%}{{krnl_prefix}}_grid{{block_dim.dim}}{{ "," if not loop.last }}{%- endfor %});
-{% endif %}
-{%- endmacro -%}
-{%- macro synchronize(krnl_prefix) -%}
-  #if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_{{krnl_prefix}})
-  HIP_CHECK(hipStreamSynchronize(stream));
-  #elif defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_{{krnl_prefix}})
-  HIP_CHECK(hipDeviceSynchronize());
-  #endif
-{%- endmacro -%}
-{%- macro print_array(krnl_prefix,inout,print_values,print_norms,array,rank) -%}
-  GPUFORT_PRINT_ARRAY{{rank}}("{{krnl_prefix}}:{{inout}}:",{{print_values}},{{print_norms}},{{array}},
-    {%- for i in range(1,rank+1) -%}{{array}}_n{{i}},{%- endfor -%}
-    {%- for i in range(1,rank+1) -%}{{array}}_lb{{i}}{{"," if not loop.last}}{%- endfor -%});
-{%- endmacro -%}
-{# REDUCTION MACROS #}
-{%- macro reductions_prepare(kernel,star) -%}
-{%- set krnl_prefix = kernel.kernel_name -%}
-{%- set iface_prefix = kernel.interface_name -%}
-{%- if kernel.reductions|length > 0 -%}
-{%- for var in kernel.reductions %} 
-  {{ var.type }}* {{ var.buffer }};
-  HIP_CHECK(hipMalloc((void **)&{{ var.buffer }}, __total_threads(({{star}}grid),({{star}}block)) * sizeof({{ var.type }} )));
-{% endfor -%}
-{%- endif -%}
-{%- endmacro -%}
-{%- macro reductions_finalize(kernel,star) -%}
-{% if kernel.reductions|length > 0 -%}
-{%- for var in kernel.reductions -%} 
-  reduce<{{ var.type }}, reduce_op_{{ var.op }}>({{ var.buffer }}, __total_threads(({{star}}grid),({{star}}block)), {{ var.name }});
-  HIP_CHECK(hipFree({{ var.buffer }}));
-{% endfor -%}
-{%- endif -%}
-{%- endmacro %}
 
-{{ hm.render_derived_types(types,"_interop") }}
-
-{% for kernel in kernels %}
-{% set krnl_prefix = kernel.kernel_name %}
-{% set iface_prefix = kernel.interface_name %}
-// BEGIN {{krnl_prefix}}
-/*
-   HIP C++ implementation of the function/loop body of:
-
-{{kernel.f_body | indent(3, True)}}
-*/
-{{kernel.interface_comment if (kernel.interface_comment|length>0)}}
-{{kernel.modifier}} {{kernel.return_type}} {{kernel.launch_bounds}} {{krnl_prefix}}(
-{% for arg in kernel.kernel_args %}
-{{ arg | indent(4,True) }}{{"," if not loop.last else ") {"}}
-{% endfor -%}
-{% for def in kernel.macros %}{{def.expr | indent(2,True) }}
+{% for rendered_types in rendered_typess %}
+{{rendered_types}}
 {% endfor %}
-{% for var in kernel.kernel_local_vars %}{{var | indent(2, True)}};
+
+{% for rendered_kernel in rendered_kernels %}
+{{rendered_kernel}}
 {% endfor %}
-{{kernel.c_body | indent(2, True)}}
-}
 {% if kernel.generate_launcher -%}
 extern "C" void {{iface_prefix}}(
     dim3* grid,

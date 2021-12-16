@@ -228,7 +228,7 @@ module {{name}}
 
 contains
 {% for rendered_routine in rendered_routines %}
-{{rendered_routine}}
+{{rendered_routine | indent(2,true)}}
 {% endfor %}
 {% endif %}
 end module {{name}}

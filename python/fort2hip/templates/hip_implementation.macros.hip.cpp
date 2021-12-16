@@ -251,3 +251,28 @@ extern "C" hipError_t {{kernel_launcher.name}}(
 }
 {%- endmacro -%}
 {########################################################################################}
+{%- macro render_c_file(prolog,guard,includes=[],snippets=[],includes_prolog="",includes_epilog="") -%}
+{% if prolog|length %}
+{{prolog}}
+{% endif %}
+#ifndef {{ guard }}
+#define {{ guard }}
+{% if includes_prolog|length %}
+{{includes_prolog}}
+{% endif %}
+{% for include in includes %}
+#include "{{include}}"
+{% endfor %}
+{% if includes_epilog|length %}
+{{includes_epilog}}
+{% endif %}
+{% if snippets|length > 0 %}
+
+{% for snippet in snippets %}
+{{snippet}}{{"\n" if not loop.last}}
+{% endfor %}
+{% endfor %}{# kernels #}
+{% endif %}
+#endif {{guard}}
+{%- endmacro -%}
+{########################################################################################}

@@ -3,8 +3,15 @@
 LOG_PREFIX = "fort2hip.fort2hip"
         # Prefix for log output that this component writes.
 
+HIP_FILE_PREAMBLE = "" 
+        # Preamble to write at the top of the generated HIP C++ files.
+        # Use it to place a copyright message at the top
+        # of a file, for example.
+
 FORTRAN_MODULE_PREAMBLE = "" 
         # Preamble to write at the top of the generated Fortran module file.
+        # Use it to place a copyright message at the top
+        # of a file, for example.
 
 FORTRAN_MODULE_SUFFIX = "_fort2hip"
         # Suffix for generated hip modules.

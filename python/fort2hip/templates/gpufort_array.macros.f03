@@ -2,9 +2,7 @@
 {# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved. #}
 {# Fortran side #}
 {% import "gpufort.macros.h" as gm %}
-{# #}
-{# #}
-{# #}
+{########################################################################################}
 {%- macro render_gpufort_array_data_access_interfaces(datatypes,max_rank) -%}
 {% set prefix      = "gpufort_array" %}
 {% set max_rank_ub = max_rank+1 %}
@@ -42,9 +40,7 @@ interface {{iface}}
 end interface
 {% endfor %}
 {%- endmacro -%}
-{# #}
-{# #}
-{# #}
+{########################################################################################}
 {%- macro render_gpufort_array_data_access_routines(datatypes,max_rank) -%}
 {% set prefix = "gpufort_array" %}
 {% set max_rank_ub = max_rank+1 %}
@@ -112,9 +108,7 @@ end subroutine
 {% endfor %}
 {% endfor %}
 {%- endmacro -%}
-{# #}
-{# #}
-{# #}
+{########################################################################################}
 {%- macro render_gpufort_array_init_routines(datatypes,max_rank) -%}
 {% set prefix = "gpufort_array" %}
 {% set max_rank_ub = max_rank+1 %}
@@ -202,9 +196,7 @@ end function
 {% endfor %}{# async_suffix #}
 {% endfor %}{# rank #}
 {%- endmacro -%}
-{# #}
-{# #}
-{# #}
+{########################################################################################}
 {%- macro render_gpufort_array_copy_to_from_buffer_routines(datatypes,max_rank) -%}
 {% set prefix = "gpufort_array" %}
 {% set max_rank_ub = max_rank+1 %}
@@ -237,9 +229,7 @@ end function
 {%   endfor %}{# routines #}
 {% endfor %}{# rank #}
 {%- endmacro -%}
-{# #}
-{# #}
-{# #}
+{########################################################################################}
 {%- macro render_gpufort_array_wrap_routines(datatypes,max_rank) -%}
 {% set prefix = "gpufort_array" %}
 {% set max_rank_ub = max_rank+1 %}
@@ -359,9 +349,7 @@ function {{f_array}}_wrap_device_ptr_{{tuple.f_kind}}(&
 end function
 {% endfor %}
 {% endfor %}
-{# #}
-{# #}
-{# #}
+{########################################################################################}
 {%- endmacro -%}
 {%- macro render_gpufort_array_interfaces(datatypes,max_rank) -%}
 {% set max_rank_ub = max_rank+1 %}
@@ -593,3 +581,4 @@ interface {{iface}}
 {% endfor %}{# rank #}
 end interface
 {%- endmacro -%}
+{########################################################################################}

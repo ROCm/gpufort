@@ -1,4 +1,4 @@
-TEST     ?= procedure-nesting
+TEST     ?= procedure-nesting procedure-nesting-types
 DEPS     ?= 
 SOURCES  ?= $(TEST).f90 $(DEPS)
 DEPS_OBJ  = $(DEPS:.cpp=.o)

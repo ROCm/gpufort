@@ -270,8 +270,7 @@ extern "C" hipError_t {{kernel_launcher.name}}(
 
 {% for snippet in snippets %}
 {{snippet}}{{"\n" if not loop.last}}
-{% endfor %}
-{% endfor %}{# kernels #}
+{% endfor %}{# snippets #}
 {% endif %}
 #endif {{guard}}
 {%- endmacro -%}

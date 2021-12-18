@@ -3,6 +3,7 @@
 #!/usr/bin/env python3
 import addtoplevelpath
 import os,sys,subprocess
+import copy
 import re
 import threading
 import concurrent.futures
@@ -11,6 +12,7 @@ import orjson
 
 import translator.translator as translator
 import utils.logging
+import linemapper.linemapperutils as linemapperutils
 
 GPUFORT_MODULE_FILE_SUFFIX=".gpufort_mod"
 
@@ -25,85 +27,26 @@ exec(open("{0}/indexer_options.py.in".format(indexer_dir)).read())
 p_filter       = re.compile(FILTER) 
 p_continuation = re.compile(CONTINUATION_FILTER)
 
-def _intrnl_read_fortran_file(filepath,preproc_options):
-    """
-    Read and preprocess a Fortran file. Make all
-    statements take a single line, i.e. remove all occurences
-    of "&".
-    """
-    global PREPROCESS_FORTRAN_FILE
-    global p_filter
-    global p_anti_filter
-    global p_continuation
-    global LOG_PREFIX
-
-    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_read_fortran_file",{"filepath":filepath,"preproc_options":preproc_options})
-    
-    def consider_statement(stripped_statement):
-        passes_filter = p_filter.match(stripped_statement) != None
-        return passes_filter
-    try:
-       command = PREPROCESS_FORTRAN_FILE.format(file=filepath,options=preproc_options)
-       output  = subprocess.check_output(command,shell=True).decode("UTF-8")
-       # remove Fortran line continuation and directive continuation
-       output = p_continuation.sub(" ",output.lower()) 
-       output = output.replace(";","\n") # convert multi-statement lines to multiple lines with a single statement; preprocessing removed comments
-       
-       # filter statements
-       filtered_statements = []
-       for line in output.split("\n"):
-           stripped_statement = line.strip(" \t\n")
-           if consider_statement(stripped_statement):
-               utils.logging.log_debug3(LOG_PREFIX,"_intrnl_read_fortran_file","select statement '{}'".format(stripped_statement))
-               filtered_statements.append(stripped_statement)
-           else:
-               utils.logging.log_debug3(LOG_PREFIX,"_intrnl_read_fortran_file","ignore statement '{}'".format(stripped_statement))
-    except subprocess.CalledProcessError as cpe:
-        raise cpe
-    
-    utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_read_fortran_file")
-    return filtered_statements
-
-def _intrnl_collect_statements(linemaps):
-    """Filter out relevant statements from linemaps.
-    @see linemapper
-    """
-    global PREPROCESS_FORTRAN_FILE
-    global p_filter
-    global p_anti_filter
-    global LOG_PREFIX
-
-    utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_collect_statements")
-    
-    def consider_statement(stripped_statement):
-        passes_filter = p_filter.match(stripped_statement) != None
-        return passes_filter
-    # filter statements
-    filtered_statements = []
-    for linemap in linemaps:
-        if linemap["is_active"]:
-            for stmt in linemap["statements"]:
-                stripped_statement = stmt["body"].lower().strip(" \t\n")
-                if consider_statement(stripped_statement):
-                    utils.logging.log_debug3(LOG_PREFIX,"_intrnl_collect_statements","select statement '{}'".format(stripped_statement))
-                    filtered_statements.append(stripped_statement)
-                else:
-                    utils.logging.log_debug3(LOG_PREFIX,"_intrnl_collect_statements","ignore statement '{}'".format(stripped_statement))
-    
-    utils.logging.log_leave_function(LOG_PREFIX,"_intrnl_collect_statements")
-    return filtered_statements
-
-class __Node():
+class Node():
     def __init__(self,kind,name,data,parent=None):
         self._kind     = kind
         self._name     = name
         self._parent   = parent 
         self._data     = data
+        self._begin    = (-1,-1) # first linemap no, first statement no
     def __str__(self):
         return "{}: {}".format(self._name,self._data)
+    def statements(self,linemaps,end):
+        assert self._begin[0] > -1
+        assert self._begin[1] > -1
+        assert end[0] > -1
+        assert end[1] > -1
+        linemaps_of_node = linemaps[self._begin[0]:end[0]+1] # upper bound is exclusive
+        return [stmt["body"] for stmt in linemapperutils.get_linemaps_content(linemaps_of_node,"statements",self._begin[1],end[1])]
     __repr__ = __str__
 
-def _intrnl_parse_statements(file_statements,filepath):
+def _intrnl_parse_statements(linemaps,filepath):
+    global LOG_PREFIX
     global PARSE_VARIABLE_DECLARATIONS_WORKER_POOL_SIZE
     global PARSE_VARIABLE_MODIFICATION_STATEMENTS_WORKER_POOL_SIZE 
 
@@ -217,7 +160,7 @@ def _intrnl_parse_statements(file_statements,filepath):
             log_leave_job_or_task_(self._parent_node, msg)
 
     # Parser events
-    root        = __Node("root","root",data=index,parent=None)
+    root        = Node("root","root",data=index,parent=None)
     current_node = root
     current_statement = None
 
@@ -254,10 +197,22 @@ def _intrnl_parse_statements(file_statements,filepath):
     def End():
         nonlocal root
         nonlocal current_node
+        nonlocal linemaps
+        nonlocal current_linemap_no
+        nonlocal current_statement_no
         nonlocal current_statement
         log_detection_("end of program/module/subroutine/function")
         if current_node._kind != "root":
             log_leave_node_()
+            accelerator_routine = False
+            if current_node._kind in ["subroutine","function"] and\
+               len(current_node._data["attributes"]):
+                for q in current_node._data["attributes"]:
+                    if q=="global" or "device" in q:
+                        accelerator_routine = True
+            if current_node._kind == "type" or accelerator_routine: 
+                end = (current_linemap_no,current_statement_no)
+                current_node._data["statements"] = current_node.statements(linemaps,end)
             current_node = current_node._parent
     def ModuleStart(tokens):
         nonlocal root
@@ -266,7 +221,7 @@ def _intrnl_parse_statements(file_statements,filepath):
         module = create_base_entry_("module",name,filepath)
         assert current_node == root
         current_node._data.append(module)
-        current_node = __Node("module",name,data=module,parent=current_node)
+        current_node = Node("module",name,data=module,parent=current_node)
         log_enter_node_()
     def ProgramStart(tokens):
         nonlocal root
@@ -275,7 +230,7 @@ def _intrnl_parse_statements(file_statements,filepath):
         program = create_base_entry_("program",name,filepath)
         assert current_node._kind == "root"
         current_node._data.append(program)
-        current_node = __Node("program",name,data=program,parent=current_node)
+        current_node = Node("program",name,data=program,parent=current_node)
         log_enter_node_()
     #host|device,name,[args]
     def SubroutineStart(tokens):
@@ -292,7 +247,8 @@ def _intrnl_parse_statements(file_statements,filepath):
                 current_node._data.append(subroutine)
             else:
                 current_node._data["subprograms"].append(subroutine)
-            current_node = __Node("subroutine",name,data=subroutine,parent=current_node)
+            current_node = Node("subroutine",name,data=subroutine,parent=current_node)
+            current_node._begin = (current_linemap_no,current_statement_no)
             log_enter_node_()
         else:
             utils.logging.log_warning(LOG_PREFIX,"_intrnl_parse_statements","found subroutine in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
@@ -306,21 +262,24 @@ def _intrnl_parse_statements(file_statements,filepath):
         if current_node._kind in ["root","module","program","subroutine","function"]:
             name = tokens[1]
             function = create_base_entry_("function",name,filepath)
-            function["attributes"]      = [q.lower() for q in tokens[0]]
-            function["dummy_args"]       = list(tokens[2])
-            function["result_name"]      = name if tokens[3] is None else tokens[3]
+            function["attributes"]  = [q.lower() for q in tokens[0]]
+            function["dummy_args"]  = list(tokens[2])
+            function["result_name"] = name if tokens[3] is None else tokens[3]
             if current_node._kind == "root":
                 current_node._data.append(function)
             else:
                 current_node._data["subprograms"].append(function)
-            current_node = __Node("function",name,data=function,parent=current_node)
+            current_node = Node("function",name,data=function,parent=current_node)
+            current_node._begin = (current_linemap_no,current_statement_no)
             log_enter_node_()
         else:
             utils.logging.log_warning(LOG_PREFIX,"_intrnl_parse_statements","found function in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
               format(current_statement,current_node._kind))
     def TypeStart(tokens):
         global LOG_PREFIX
+        nonlocal current_linemap_no
         nonlocal current_statement
+        nonlocal current_statement_no
         nonlocal current_node
         log_detection_("start of type")
         if current_node._kind in ["module","program","subroutine","function"]:
@@ -332,7 +291,8 @@ def _intrnl_parse_statements(file_statements,filepath):
             derived_type["variables"] = []
             derived_type["types"]     = []
             current_node._data["types"].append(derived_type)
-            current_node = __Node("type",name,data=derived_type,parent=current_node)
+            current_node = Node("type",name,data=derived_type,parent=current_node)
+            current_node._begin = (current_linemap_no,current_statement_no)
             log_enter_node_()
         else:
             utils.logging.log_warning(LOG_PREFIX,"_intrnl_parse_statements","found derived type in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
@@ -432,49 +392,58 @@ def _intrnl_parse_statements(file_statements,filepath):
            utils.logging.log_debug3(LOG_PREFIX,"_intrnl_parse_statements","did not find expression '{}' in statement '{}'".format(expression_name,current_statement))
            utils.logging.log_debug4(LOG_PREFIX,"_intrnl_parse_statements",str(e))
            return False
-
     def is_end_statement_(tokens,kind):
         result = tokens[0] == "end"+kind
         if not result and len(tokens):
             result = tokens[0] == "end" and tokens[1] == kind
         return result
+    def consider_statement(stripped_statement):
+        passes_filter = p_filter.match(stripped_statement) != None
+        return passes_filter
 
-    for current_statement in file_statements:
-        utils.logging.log_debug3(LOG_PREFIX,"_intrnl_parse_statements","process statement '{}'".format(current_statement))
-        current_tokens              = re.split(r"\s+|\t+",current_statement.lower().strip(" \t"))
-        current_statement_stripped  = "".join(current_tokens)
-        for expr in ["program","module","subroutine","function","type"]:
-            if is_end_statement_(current_tokens,expr):
-                 End()
-        for comment_char in "!*c":
-            if current_tokens[0] == comment_char+"$acc":
-                if current_tokens[1] == "declare":
-                    AccDeclare()
-                elif current_tokens[1] == "routine":
-                    AccRoutine()
-        if current_tokens[0] == "use":
-            try_to_parse_string("use",use)
-        #elif current_tokens[0] == "implicit":
-        #    try_to_parse_string("implicit",IMPLICIT)
-        elif current_tokens[0] == "module":
-            try_to_parse_string("module",module_start)
-        elif current_tokens[0] == "program":
-            try_to_parse_string("program",program_start)
-        elif current_tokens[0].startswith("type"): # type a ; type, bind(c) :: a
-            try_to_parse_string("type",type_start)
-        elif current_tokens[0].startswith("attributes"): # attributes(device) :: a
-            try_to_parse_string("attributes",attributes)
-        # cannot be combined with above checks
-        if "function" in current_tokens:
-            try_to_parse_string("function",function_start)
-        elif "subroutine" in current_tokens:
-            try_to_parse_string("subroutine",subroutine_start)
-        for expr in ["type","character","integer","logical","real","complex","double"]: # type(dim3) :: a 
-           if expr in current_tokens[0]:
-               try_to_parse_string("declaration",datatype_reg)
-               break
-        #try_to_parse_string("declaration|type_start|use|attributes|module_start|program_start|function_start|subroutine_start",\
-        #  datatype_reg|type_start|use|attributes|module_start|program_start|function_start|subroutine_start)
+    # parser loop
+    for current_linemap_no, current_linemap in enumerate(linemaps):
+        if current_linemap["is_active"]:
+            for current_statement_no,stmt in enumerate(current_linemap["statements"]):
+                current_statement = stmt["body"].lower().strip(" \t\n")
+                if not consider_statement(current_statement):
+                    utils.logging.log_debug3(LOG_PREFIX,"_intrnl_collect_statements","ignore statement '{}'".format(current_statement))
+                else:
+                    utils.logging.log_debug3(LOG_PREFIX,"_intrnl_parse_statements","process statement '{}'".format(current_statement))
+                    current_tokens              = re.split(r"\s+|\t+",current_statement.lower().strip(" \t"))
+                    current_statement_stripped  = "".join(current_tokens)
+                    for expr in ["program","module","subroutine","function","type"]:
+                        if is_end_statement_(current_tokens,expr):
+                             End()
+                    for comment_char in "!*c":
+                        if current_tokens[0] == comment_char+"$acc":
+                            if current_tokens[1] == "declare":
+                                AccDeclare()
+                            elif current_tokens[1] == "routine":
+                                AccRoutine()
+                    if current_tokens[0] == "use":
+                        try_to_parse_string("use",use)
+                    #elif current_tokens[0] == "implicit":
+                    #    try_to_parse_string("implicit",IMPLICIT)
+                    elif current_tokens[0] == "module":
+                        try_to_parse_string("module",module_start)
+                    elif current_tokens[0] == "program":
+                        try_to_parse_string("program",program_start)
+                    elif current_tokens[0].startswith("type"): # type a ; type, bind(c) :: a
+                        try_to_parse_string("type",type_start)
+                    elif current_tokens[0].startswith("attributes"): # attributes(device) :: a
+                        try_to_parse_string("attributes",attributes)
+                    # cannot be combined with above checks
+                    if "function" in current_tokens:
+                        try_to_parse_string("function",function_start)
+                    elif "subroutine" in current_tokens:
+                        try_to_parse_string("subroutine",subroutine_start)
+                    for expr in ["type","character","integer","logical","real","complex","double"]: # type(dim3) :: a 
+                       if expr in current_tokens[0]:
+                           try_to_parse_string("declaration",datatype_reg)
+                           break
+                    #try_to_parse_string("declaration|type_start|use|attributes|module_start|program_start|function_start|subroutine_start",\
+                    #  datatype_reg|type_start|use|attributes|module_start|program_start|function_start|subroutine_start)
     task_executor.shutdown(wait=True) # waits till all tasks have been completed
 
     # apply attributes and acc variable modifications
@@ -534,11 +503,8 @@ def update_index_from_linemaps(linemaps,index):
     global LOG_PREFIX
     utils.logging.log_enter_function(LOG_PREFIX,"update_index_from_linemaps") 
     
-    filtered_statements = _intrnl_collect_statements(linemaps)
-    utils.logging.log_debug2(LOG_PREFIX,"update_index_from_linemaps","extracted the following statements:\n>>>\n{}\n<<<".format(\
-        "\n".join(filtered_statements)))
     if len(linemaps):
-        index += _intrnl_parse_statements(filtered_statements,filepath=linemaps[0]["file"])
+        index += _intrnl_parse_statements(linemaps,filepath=linemaps[0]["file"])
     
     utils.logging.log_leave_function(LOG_PREFIX,"update_index_from_linemaps") 
 

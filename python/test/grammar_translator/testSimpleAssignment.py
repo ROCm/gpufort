@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 from pyparsing import *
 
 operand = Combine(Optional(Literal("-"),default="") + pyparsing_common.identifier) | pyparsing_common.number

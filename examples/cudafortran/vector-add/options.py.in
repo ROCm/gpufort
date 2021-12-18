@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 fort2hip.CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140, BinPackArguments: false, BinPackParameters: false}\""
 
 #fort2hip.EMIT_DEBUG_CODE = False

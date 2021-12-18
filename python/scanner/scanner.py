@@ -17,6 +17,7 @@ import re
 import addtoplevelpath
 import translator.translator as translator
 import indexer.scoper as scoper
+import linemapper.linemapperutils as linemapperutils
 import utils.pyparsingutils
 #import scanner.normalizer as normalizer
 

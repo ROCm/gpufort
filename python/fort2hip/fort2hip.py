@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 
 def _intrnl_search_derived_types(imodule,search_subprograms=True):
     # 1. find all types and tag them
@@ -104,11 +106,12 @@ def traverse_module(prefix):
     pass
 
 
-def render_derived_types_f03(itypes,used_modules):
+def render_derived_types_f03(itypes,itypes_local,used_modules):
     derived_type_snippets = []
     procedure_snippets    = []
 
-    fort2hip.model.render_derived_types_f03(derived_types,interop_suffix="_interop")
+    derived_type_snippets += fort2hip.model.render_derived_types_f03(derived_types,interop_suffix="_interop")
+    derived_type_snippets += fort2hip.model.render_derived_types_f03(derived_types,interop_suffix="_interop")
     fort2hip.model.render_derived_type_copy_scalars_routines_f03(derived_types,interop_suffix="_interop",used_modules=[])
     fort2hip.model.render_derived_type_size_bytes_routines_f03(derived_types,interop_suffix="_interop",used_modules=[])
     fort2hip.model.render_derived_type_copy_array_member_routines_f03(derived_types,interop_suffix="_interop",orig_var="orig_type",interop_var="interop_type",used_modules=[])
@@ -140,10 +143,10 @@ def traverse_scanner_tree(stree,index):
            used_modules += parent_fort2hip_modules_(stnode)  
            return used_modules
         # 
-        if type(stnode) == scanner.STRoot:
+        if isinstance(stnode, scanner.STRoot):
             for stchildnode in stnode.children:
                 traverse_node(stchildnode,index)
-        elif type(stnode) in [scanner.STProgram,scanner.STModule,STProcedure]:
+        elif isinstance(stnode,(scanner.STProgram,scanner.STModule,scanner.STProcedure)):
             stnode_name                 = stnode.name.lower()
             stnode_fort2hip_module_name = fort2hip_module_name_(stnode)
             inode = next((irecord for irecord in index if irecord["name"] == stnode_name),None)

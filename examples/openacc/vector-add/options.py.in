@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 scanner.DESTINATION_DIALECT="hip-gpufort-rt"
 scanner.LOOP_KERNEL_DEFAULT_LAUNCHER="auto"
 

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 from pyparsing import *
 
 identifier = pyparsing_common.identifier

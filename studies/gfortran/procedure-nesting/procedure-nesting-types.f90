@@ -1,3 +1,5 @@
+! SPDX-License-Identifier: MIT
+! Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 ! in program units such as 'program', 'subroutine' there must be only one `contains` statement
 ! and it must be in a top-level module,program, or procedure.
 !

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 import pyparsing as pyp
 
 number     = pyp.pyparsing_common.number.copy().setParseAction(lambda x: str(x))

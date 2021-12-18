@@ -138,6 +138,7 @@ def create_index_records_from_declaration(ttdeclaration):
         # arrays
         ivar["rank"]                       = 0
         dimension_qualifier = find_all(ttdeclaration.qualifiers,TTDimensionQualifier)
+        # TODO(refactor) some of the information below will become unnecessary
         if ttdeclaredvariable.has_bounds() or len(dimension_qualifier):
             ivar["f_interface_type"] = "type(c_ptr)"
             if len(dimension_qualifier):

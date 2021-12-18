@@ -1,3 +1,5 @@
+! SPDX-License-Identifier: MIT
+! Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 program main
 !$acc data copyin(a,b) copyout(c_gpu)
 !$acc parallel loop collapse(2) &

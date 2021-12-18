@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 def _intrnl_preprocess_fortran_statement(statement):
     """Performs the following operations:
     - replace power (**) expression by func call expression

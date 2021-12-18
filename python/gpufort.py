@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT                                                
 # Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 import os, sys
@@ -15,6 +17,7 @@ import indexer.indexer as indexer
 import linemapper.linemapper as linemapper
 import translator.translator as translator
 import fort2hip.fort2hip as fort2hip
+#import fort2hip.fort2hip_legacy as fort2hip
 
 __GPUFORT_PYTHON_DIR = os.path.dirname(os.path.abspath(__file__))
 __GPUFORT_ROOT_DIR   = os.path.abspath(os.path.join(__GPUFORT_PYTHON_DIR,".."))

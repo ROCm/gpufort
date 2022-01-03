@@ -43,9 +43,9 @@ def register_acc_backend(name,\
     ACC_ALLOCATE_BACKENDS[name]    = allocate_func
     ACC_DEALLOCATE_BACKENDS[name]  = deallocate_func
 
-exec(open("{0}/openacc/scanner_tree_acc2omp.py.in".format(scanner_dir)).read())
-exec(open("{0}/openacc/scanner_tree_acc2hipgpufortrt.py.in".format(scanner_dir)).read())
-exec(open("{0}/openacc/scanner_tree_acc2hipgccrt.py.in".format(scanner_dir)).read())
+exec(open(os.path.join(scanner_dir,"openacc","scanner_tree_acc2omp.py.in")).read())
+exec(open(os.path.join(scanner_dir,"openacc","scanner_tree_acc2hipgpufortrt.py.in")).read())
+exec(open(os.path.join(scanner_dir,"openacc","scanner_tree_acc2hipgccrt.py.in")).read())
 
 class STAccDirective(STDirective):
     """Class for handling ACC directives."""

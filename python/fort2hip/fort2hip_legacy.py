@@ -23,7 +23,7 @@ def GET_DEFAULT_LAUNCH_BOUNDS(kernel_name):
     return None
 
 fort2hip_dir = os.path.dirname(__file__)
-exec(open("{0}/fort2hip_options.py.in".format(fort2hip_dir)).read())
+exec(open(os.path.join(fort2hip_dir,"fort2hip_options.py.in")).read())
 
 def _intrnl_convert_dim3(dim3,dimensions,do_filter=True):
      result = []

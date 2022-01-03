@@ -18,11 +18,11 @@ GPUFORT_MODULE_FILE_SUFFIX=".gpufort_mod"
 
 CASELESS    = False
 GRAMMAR_DIR = os.path.join(os.path.dirname(__file__),"../grammar")
-exec(open("{0}/grammar.py".format(GRAMMAR_DIR)).read())
+exec(open(os.path.join(GRAMMAR_DIR,"grammar.py")).read())
 
 # configurable parameters
 indexer_dir = os.path.dirname(__file__)
-exec(open("{0}/indexer_options.py.in".format(indexer_dir)).read())
+exec(open(os.path.join(indexer_dir,"indexer_options.py.in")).read())
     
 p_filter       = re.compile(FILTER) 
 p_continuation = re.compile(CONTINUATION_FILTER)

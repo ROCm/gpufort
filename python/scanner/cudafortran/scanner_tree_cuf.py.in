@@ -16,8 +16,8 @@ def register_cuf_backend(name,loop_kernel_generator_class,runtime_module_name):
     RUNTIME_MODULE_NAMES[name]     = runtime_module_name
     CUF_LOOP_KERNEL_BACKENDS[name] = loop_kernel_generator_class
 
-exec(open("{0}/cudafortran/scanner_tree_cuf2omp.py.in".format(scanner_dir)).read())
-exec(open("{0}/cudafortran/scanner_tree_cuf2hip.py.in".format(scanner_dir)).read())
+exec(open(os.path.join(scanner_dir,"cudafortran","scanner_tree_cuf2omp.py.in")).read())
+exec(open(os.path.join(scanner_dir,"cudafortran","scanner_tree_cuf2hip.py.in")).read())
 
 class STCufDirective(STDirective):
     """

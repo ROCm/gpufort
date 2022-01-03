@@ -16,7 +16,7 @@ import utils.pyparsingutils
 #from grammar import *
 CASELESS    = True
 GRAMMAR_DIR = os.path.join(os.path.dirname(__file__),"../grammar")
-exec(open("{0}/grammar.py".format(GRAMMAR_DIR)).read())
+exec(open(os.path.join(GRAMMAR_DIR,"grammar.py")).read())
 
 TRANSLATOR_DIR = os.path.dirname(os.path.abspath(__file__))
 exec(open(os.path.join(TRANSLATOR_DIR, "translator_options.py.in")).read())

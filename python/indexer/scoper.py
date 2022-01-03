@@ -13,7 +13,7 @@ import utils.parsingutils
 
 # configurable parameters
 indexer_dir = os.path.dirname(__file__)
-exec(open("{0}/scoper_options.py.in".format(indexer_dir)).read())
+exec(open(os.path.join(indexer_dir,"scoper_options.py.in")).read())
 
 ERR_SCOPER_RESOLVE_DEPENDENCIES_FAILED = 1001
 ERR_SCOPER_LOOKUP_FAILED = 1002

@@ -30,12 +30,12 @@ RUNTIME_MODULE_NAMES = {}
 #from grammar import *
 CASELESS    = True
 GRAMMAR_DIR = os.path.join(os.path.dirname(__file__),"../grammar")
-exec(open("{0}/grammar.py".format(GRAMMAR_DIR)).read())
+exec(open(os.path.join(GRAMMAR_DIR,"grammar.py")).read())
 scanner_dir = os.path.dirname(__file__)
-exec(open("{0}/scanner_options.py.in".format(scanner_dir)).read())
-exec(open("{0}/scanner_tree.py.in".format(scanner_dir)).read())
-exec(open("{0}/openacc/scanner_tree_acc.py.in".format(scanner_dir)).read())
-exec(open("{0}/cudafortran/scanner_tree_cuf.py.in".format(scanner_dir)).read())
+exec(open(os.path.join(scanner_dir,"scanner_options.py.in")).read())
+exec(open(os.path.join(scanner_dir,"scanner_tree.py.in")).read())
+exec(open(os.path.join(scanner_dir,"openacc","scanner_tree_acc.py.in")).read())
+exec(open(os.path.join(scanner_dir,"cudafortran","scanner_tree_cuf.py.in")).read())
 
 def check_destination_dialect(destination_dialect):
     if destination_dialect in SUPPORTED_DESTINATION_DIALECTS:

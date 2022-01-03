@@ -13,8 +13,8 @@ import utils.parsingutils
 ERR_LINEMAPPER_MACRO_DEFINITION_NOT_FOUND = 11001
 
 linemapper_dir = os.path.dirname(__file__)
-exec(open("{0}/linemapper_options.py.in".format(linemapper_dir)).read())
-exec(open("{0}/grammar.py".format(linemapper_dir)).read())
+exec(open(os.path.join(linemapper_dir,"linemapper_options.py.in")).read())
+exec(open(os.path.join(linemapper_dir,"grammar.py")).read())
 
 def _intrnl_evaluate_defined(input_string,macro_stack):
     # expand macro; one at a time

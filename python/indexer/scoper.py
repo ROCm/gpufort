@@ -167,7 +167,7 @@ def _intrnl_search_index_for_type_or_subprogram(index,parent_tag,entry_name,entr
     return _intrnl_search_scope_for_type_or_subprogram(scope,entry_name,entry_type,empty_record)
 
 # API
-def create_index_search_tag_for_variable(variable_expression):
+def create_index_search_tag_for_var(var_expr):
     """
     Creates tag from variable expressions such as 'A%b(i)%c' that
     can be used to search the index via the scoper module.
@@ -175,10 +175,10 @@ def create_index_search_tag_for_variable(variable_expression):
     All array indexing expressions are stripped away.
     A single identifer 'a' would be translated to the tag 'a'.
 
-    :param str variable_expression: a simple identifier such as 'a' or 'A_d' or a more complicated derived-type member variable expression such as 'a%b%c' or 'A%b(i)%c'.
+    :param str var_expr: a simple identifier such as 'a' or 'A_d' or a more complicated derived-type member variable expression such as 'a%b%c' or 'A%b(i)%c'.
     :see: indexer.scoper.search_index_for_variable
     """
-    result = variable_expression.lstrip("-+") # remove trailing minus sign
+    result = var_expr.lstrip("-+") # remove trailing minus sign
     if not "(" in result:
         return result.lower()
     else:
@@ -289,20 +289,20 @@ def create_scope(index,tag):
         utils.logging.log_leave_function(LOG_PREFIX,"create_scope")
         return new_scope
 
-def search_scope_for_variable(scope,variable_expression,error_handling=None,resolve=False):
+def search_scope_for_variable(scope,var_expr,error_handling=None,resolve=False):
     """
     %param str variable_tag% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c' or 'a%b(i,j)%c(a%i5)'.
     """
     global LOG_PREFIX
     global ERROR_HANDLING
     utils.logging.log_enter_function(LOG_PREFIX,"search_scope_for_variable",\
-      {"variable_expression":variable_expression})
+      {"var_expr":var_expr})
 
     result = None
     # reverse access such that entries from the inner-most scope come first
     scope_types = reversed(scope["types"])
 
-    variable_tag      = create_index_search_tag_for_variable(variable_expression)
+    variable_tag      = create_index_search_tag_for_var(var_expr)
     list_of_var_names = variable_tag.split("%") 
     def lookup_from_left_to_right_(scope_variables,pos=0):
         """:note: recursive"""
@@ -385,17 +385,17 @@ def search_scope_for_subprogram(scope,subprogram_name):
     utils.logging.log_leave_function(LOG_PREFIX,"search_scope_for_subprogram")
     return result
 
-def search_index_for_variable(index,parent_tag,variable_expression,error_handling=None,resolve=False):
+def search_index_for_variable(index,parent_tag,var_expr,error_handling=None,resolve=False):
     """
     :param str parent_tag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
-    %param str variable_expression% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c'. Note that all array indexing expressions must be stripped away.
+    %param str var_expr% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c'. Note that all array indexing expressions must be stripped away.
     """
     global LOG_PREFIX
     utils.logging.log_enter_function(LOG_PREFIX,"search_index_for_variable",\
-      {"parent_tag":parent_tag,"variable_expression":variable_expression})
+      {"parent_tag":parent_tag,"var_expr":var_expr})
 
     scope = create_scope(index,parent_tag)
-    return search_scope_for_variable(scope,variable_expression,error_handling,resolve)
+    return search_scope_for_variable(scope,var_expr,error_handling,resolve)
 
 def search_index_for_type(index,parent_tag,type_name):
     """

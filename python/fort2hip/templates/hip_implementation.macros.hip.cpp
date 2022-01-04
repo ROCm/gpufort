@@ -251,7 +251,7 @@ extern "C" hipError_t {{kernel_launcher.name}}(
 }
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_c_file(prolog,guard,includes=[],snippets=[],includes_prolog="",includes_epilog="") -%}
+{%- macro render_c_file(prolog,guard,snippets=[],includes=[],includes_prolog="",includes_epilog="") -%}
 {% if prolog|length %}
 {{prolog}}
 {% endif %}
@@ -266,7 +266,7 @@ extern "C" hipError_t {{kernel_launcher.name}}(
 {% if includes_epilog|length %}
 {{includes_epilog}}
 {% endif %}
-{% if snippets|length > 0 %}
+{% if snippets|length %}
 
 {% for snippet in snippets %}
 {{snippet}}{{"\n" if not loop.last}}

@@ -294,7 +294,7 @@ def _intrnl_update_context_from_loop_kernels(loop_kernels,index,hip_context,f_co
 
         kernel_args, c_kernel_local_vars, macros, input_arrays, local_cpu_routine_args =\
           _intrnl_derive_kernel_arguments(scope,\
-            parse_result.variables_in_body(),\
+            parse_result.vars_in_body(),\
             parse_result.local_scalars(),\
             parse_result.loop_vars(),\
             True, parse_result.deviceptrs())
@@ -493,7 +493,7 @@ def _intrnl_update_context_from_device_procedures(device_procedures,index,hip_co
         kernel_launcher_name = "launch_" + kernel_name
 
         # sort identifiers: put dummy args first
-        varnames   = [scoper.create_index_search_tag_for_variable(varexpr) for varexpr in parse_result.variables_in_body()]
+        varnames   = [scoper.create_index_search_tag_for_var(var_expr) for var_expr in parse_result.vars_in_body()]
         local_vars = [varname for varname in varnames if varname not in iprocedure["dummy_args"]]
         ordered_varnames = iprocedure["dummy_args"] + local_vars
 

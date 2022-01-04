@@ -5,6 +5,8 @@ import os,sys
 import re
 import pyparsing as pyp
 
+VERBOSE = True
+
 MACRO_FILES = [
   "hip_implementation.macros.hip.cpp",
   "gpufort_array.macros.h",
@@ -23,7 +25,8 @@ render_hip_kernel_comment
 render_hip_kernel_launcher
 render_kernel_launcher\b
 render_cpu_routine
-render_interface_module""".split("\n"))),
+render_interface_module
+render_c_file""".split("\n"))),
   re.compile("|".join(\
 r"""render_gpufort_array_c_bindings
 render_gpufort_array_data_access_interfaces
@@ -42,7 +45,8 @@ def iterate_macro_files(template_dir,action):
     macro_close = pyp.Regex(r"\s-#\}").suppress()
     LPAR,RPAR   = map(pyp.Suppress,"()")
     EQ          = pyp.Suppress("=")
-    RHS         = pyp.Regex(r"\[\]|\"\w*\"|[0-9]+")
+    printables  = pyp.printables+r'\s\t\n'
+    RHS         = pyp.Regex(r"\"\s*\"|\[\s*\]|\"["+printables+r"]*\"|[0-9]+")
     arg         = pyp.Group(ident + pyp.Optional(EQ + RHS, default=""))
     arglist     = pyp.delimitedList(arg)
     macro       = macro_open + ident + LPAR + arglist + RPAR 
@@ -54,7 +58,7 @@ def iterate_macro_files(template_dir,action):
             for parse_result in macro.searchString(content):
                 for regex in MACRO_FILTERS:
                     if regex.match(parse_result[0]):
-                       #print(parse_result)
+                       if VERBOSE: print(parse_result)
                        macro_name = parse_result[0]
                        macro_args = parse_result[1:]
                        macro_signature = "".join([macro_name,"(",\

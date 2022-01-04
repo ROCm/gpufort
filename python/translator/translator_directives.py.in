@@ -167,13 +167,13 @@ class IComputeConstruct():
     def num_threads_in_block(self):
         return [CLAUSE_NOT_FOUND]
     def gang_team_private_vars(self,converter=make_f_str): 
+        """ CUF,ACC: all scalars are private by default """ 
         return []
     def gang_team_firstprivate_vars(self,converter=make_f_str): 
         return []
     def gang_team_reductions(self,converter=make_f_str): 
-        """ CUF,ACC: all scalars are private by default """ 
         return {}
-    def variables_in_body(self):
+    def vars_in_body(self):
         return []
     def arrays_in_body(self):
         return []
@@ -280,7 +280,7 @@ class TTLoopKernel(TTContainer,IComputeConstruct):
             return identifier_names[0:num_outer_loops_to_map]    
         else:
             return identifier_names
-    def variables_in_body(self):
+    def vars_in_body(self):
         return _intrnl_variables_in_subtree(self,self.scope)
     def arrays_in_body(self):
         return _intrnl_arrays_in_subtree(self,self.scope)
@@ -551,7 +551,7 @@ class TTProcedureBody(TTContainer):
         self.body         = tokens
         self.scope        = []
         self.result_name  = ""
-    def variables_in_body(self):
+    def vars_in_body(self):
         """
         :return: all identifiers of LValue and RValues in the body.
         """

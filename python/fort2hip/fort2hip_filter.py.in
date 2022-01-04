@@ -1,0 +1,19 @@
+def consider_kernel(kernel,kernels_to_convert_to_hip):
+    nonlocal kernels_to_convert_to_hip
+    if not len(kernels_to_convert_to_hip):
+        return False
+    else: 
+        condition1 = not kernel.ignore_in_s2s_translation
+        condition2 = \
+                kernels_to_convert_to_hip[0] == "*" or\
+                kernel.min_lineno() in kernels_to_convert_to_hip or\
+                kernel.kernel_name() in kernels_to_convert_to_hip
+        return condition1 and condition2
+
+def loop_kernel_filter(child,kernels_to_convert_to_hip=["*"]):
+    return isinstance(child, scanner.STLoopKernel) and consider_kernel(child,kernels_to_convert_to_hip)
+#  TODO distinguish between device routines and global routines
+
+def device_procedure_filter(child,kernels_to_convert_to_hip=["*"]):
+    return type(child) is scanner.STProcedure and\
+      child.must_be_available_on_device() and consider_kernel(child,kernels_to_convert_to_hip)

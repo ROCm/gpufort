@@ -200,7 +200,7 @@ HIP_CHECK(hipDeviceSynchronize());
 {%- macro render_hip_kernel_launcher(kernel,kernel_launcher) -%}
 {% set num_global_vars = kernel.global_vars|length + kernel.global_reduced_vars|length %}
 extern "C" hipError_t {{kernel_launcher.name}}(
-{% if kernel_launcher.kind != "hip_auto" %}
+{% if kernel_launcher.kind == "hip" %}
     dim3& grid,
     dim3& block,
 {% endif %}

@@ -17,28 +17,39 @@ exec(open(os.path.join(fort2hip_dir,"fort2hip_options.py.in")).read())
 exec(open(os.path.join(fort2hip_dir,"fort2hip_filter.py.in")).read())
 exec(open(os.path.join(fort2hip_dir,"fort2hip_render.py.in")).read())
 
-# scope          = create_scope(index,stloopkernel.parent.tag())
-# ttloopkernel   = stloopkernel.parse_result
-# all_vars       = ttloopkernel.vars_in_body()
-# reduction_vars = ttloopkernel.gang_team_reductions()
-# shared_vars    = ttloopkernel.gang_team_shared_vars()
-# local_vars     = ttloopkernel.local_scalars()
-def lookup_index_entries_for_variables(scope,all_vars,reduction_vars,shared_vars,local_vars,index,error_handling=None):
-    # TODO check which variable expression points to a struct member, identify top-level struct and pass only that one
-    # can be done as preprocessing step
-    # possible issue with struct members that are reduced as we lose information in this step
-    # pass reduced variables as extra argument put original expression into rvar?
+def lookup_index_entries_for_vars_in_kernel_body(scope,
+                                                 all_vars,
+                                                 reductions,
+                                                 shared_vars,
+                                                 local_vars,
+                                                 error_handling=None):
+    Lookup index variables
+    """
+    :param list all_vars: List of all variable expressions (var)
+    :param list reductions: List of tuples pairing a reduction operation with the associated
+                             variable expressions
+    :param list shared:     List of variable expressions that are shared by the workitems/threads in a workgroup/threadblock
+    :param list local_vars: List of variable expressions that can be mapped to local variables per workitem/thread
+    :param str error_handling: Emit error messages if set to 'strict'; else emit warning
+    :note: Emits errors (or warning) if a variable in another list is not present in all_vars
+    :note: Emits errors (or warning) if a reduction variable is part of a struct.
+    :return: A tuple containing (in this order): global variables, reduced global variables, shared variables, local variables
+             as list of index entries. The reduced global variables have an extra field 'op' that
+             contains the reduction operation.
+    """
+    utils.logging.log_enter_function(LOG_PREFIX,"lookup_index_entries_for_variables")
+
     def strip_member_access_(var_exprs):
         result = []
         return [var_expr.split("%")[0] for var_expr in var_exprs]
-    all_vars2 = strip_member_access_(all_vars)
 
+    all_vars2 = strip_member_access_(all_vars)
     def lookup_index_vars_(var_exprs):
         nonlocal all_vars2
         ivars = []
         for var_expr in var_exprs:
             ivar, _ = scoper.search_scope_for_variable(scope,var_expr,error_handling)
-            ivars.append(ivar) 
+            ivars.append(ivar)
             try:
                 all_vars2.remove(var_expr)
             except:
@@ -47,76 +58,131 @@ def lookup_index_entries_for_variables(scope,all_vars,reduction_vars,shared_vars
 
     ilocal_vars          = lookup_index_vars_(strip_member_access_(local_vars))
     ishared_vars         = lookup_index_vars_(strip_member_access_(shared_vars))
-    iglobal_reduced_vars = []
+    rglobal_reduced_vars = []
     iglobal_vars         = []
-    
-    for reduction_op,var_exprs in reduction_vars.items():
-        ivar, _ = scoper.search_scope_for_variable(scope,var_expr,error_handling)
-        rvars = copy.deepcopy(ivar)
-        rvar["op"] = reduction_op
-        global_reduced_vars.append(rvar)
-        try:
-            all_vars.remove(var_expr)
-        except:
-            pass # TODO error
-    for var_expr in all_vars:
+
+    for reduction_op,var_exprs in reductions.items():
+        for var_expr in var_exprs:
+            if "%" in var_expr:
+               if error_handling=="strict":
+                   pass # TODO error
+               else:
+                   pass # TOOD warn
+            else:
+               ivar, _ = scoper.search_scope_for_variable(scope,var_expr,error_handling)
+               rvar    = copy.deepcopy(ivar)
+               rvar["op"] = reduction_op
+               global_reduced_vars.append(rvar)
+            try:
+                all_vars2.remove(var_expr)
+            except:
+                pass # TODO error
+    for var_expr in all_vars2:
         ivar, _ = scoper.search_scope_for_variable(scope,var_expr,error_handling)
         global_vars.append(ivar)
-    return global_vars, global_reduced_vars, shared_vars, local_vars
- 
-def create_loop_kernel_context(stloopkernel,kernel_name):
-    local_vars          = stloopkernel.local_scalars()
-    shared_vars         = [] 
-    global_reduced_vars = stloopkernel.gang_team_reductions()
-    global_vars         =  
-    
-    kernel = {}
-    kernel["launch_bounds"]       = "__launch_bounds___(1024,1)"
-    kernel["name"]                = kernel_name
-    kernel["shared_vars"]         = shared_vars
-    kernel["local_vars"]          = local_vars
-    kernel["global_vars"]         = global_vars
-    kernel["global_reduced_vars"] = global_reduced_vars
-    kernel["c_body"]              = "// do nothing" 
-    kernel["f_body"]              = "! do nothing"
+
+    utils.logging.log_leave_function(LOG_PREFIX,"lookup_index_entries_for_variables")
+    return iglobal_vars, rglobal_reduced_vars, ishared_vars, ilocal_vars
+
+def create_kernel_base_context(kernel_name,
+                               c_body)
+    global GET_LAUNCH_BOUNDS
+    launch_bounds = GET_LAUNCH_BOUNDS(kernel_name)
+    return {
+           "name"          : kernel_name,
+           "launch_bounds" : "" if launch_bounds == None else launch_bounds,
+           "c_body"        : c_body,
+           }
+
+#ttloopkernel = stloopkernel.parse_result
+#scope        = scoper.create_scope(index,
+#                                   stloopkernel.parent.tag())
+def create_loop_kernel_context(kernel_name,
+                               ttloopkernel,
+                               scope,
+                               error_handling=None):
+    kernel = create_kernel_base_context(kernel_name,
+                                        ttloopkernel.c_str())
+    kernel["global_vars"],
+    kernel["global_reduced_vars"],
+    kernel["shared_vars"],
+    kernel["local_vars"] = lookup_index_entries_for_variables(scope,
+                                                              ttloopkernel.vars_in_body(),
+                                                              ttloopkernel.gang_team_reductions(),
+                                                              ttloopkernel.gang_team_shared_vars(),
+                                                              ttloopkernel.local_scalars(),
+                                                              index,
+                                                              error_handling)
     return kernel
 
-def render_loop_kernel(stkernel,index,current_cpp_file_ctx,current_f03_file_ctx):
-    utils.logging.log_enter_function(LOG_PREFIX,"render_loop_kernel")
-    
-    generate_launcher     = EMIT_KERNEL_LAUNCHER
-    generate_cpu_launcher = generate_launcher and EMIT_CPU_IMPLEMENTATION
-    
-    parse_result = stkernel.parse_result
-    parent_tag   = stkernel.parent.tag()
-    scope        = scoper.create_scope(index,parent_tag)
+def create_kernel_launcher_base_context(kernel_name,
+                                        kind,
+                                        problem_size,
+                                        debug_output):
+    return {
+           "kind"         : kind,
+           "name"         : "_".join(["launch",kernel_name,kind]),
+           "used_modules" : [],
+           "problem_size" : problem_size,
+           "debug_output" : debug_output,
+           }
 
-    #    kernel_args, c_kernel_local_vars, macros, input_arrays, local_cpu_routine_args =\
-    #      _intrnl_derive_kernel_arguments(scope,\
-    #        parse_result.vars_in_body(),\
-    #        parse_result.local_scalars(),\
-    #        parse_result.loop_vars(),\
-    #        True, parse_result.deviceptrs())
-        
-    utils.logging.log_debug3(LOG_PREFIX,"_intrnl_update_context_from_loop_kernels","parse result:\n```"+parse_result.c_str().rstrip()+"\n```")
+def create_hip_kernel_launcher_context(kernel_name,
+                                       kind,
+                                       grid,
+                                       block,
+                                       problem_size,
+                                       debug_output):
+    kernel_launcher = create_kernel_launcher_base_context(kernel_name,
+                                                          kind,
+                                                          problem_size,
+                                                          debug_output)
+    if kind == "hip":
+        kernel_launcher["grid"]  = grid
+        kernel_launcher["block"] = block
+    return kernel_launcher
+def create_cpu_kernel_launcher_context(self,
+                                       kernel_name):
+    # for launcher interface
+    kernel_launcher = {}
+    kernel_launcher["name"] = "_".join(["launch",kernel_name,"cpu"])
+    kernel_launcher["debug_output"]  = True
+    kernel_launcher["kind"]          = "cpu"
+    kernel_launcher["used_modules"]  = []
+    return kernel_launcher
+
+#generate_launcher     = EMIT_KERNEL_LAUNCHER
+#generate_cpu_launcher = generate_launcher and EMIT_CPU_IMPLEMENTATION
+def render_loop_kernel(stkernel,
+                       index,
+                       current_cpp_file_ctx,
+                       current_f03_file_ctx):
+    utils.logging.log_enter_function(LOG_PREFIX,"render_loop_kernel")
+
+    ttloopkernel = stkernel.parse_result
+    scope        = scoper.create_scope(stkernel.parent_tag)
+
+    utils.logging.log_debug3(LOG_PREFIX,"_intrnl_update_context_from_loop_kernels","parse result:\n```"+ttloopkernel.c_str().rstrip()+"\n```")
 
     # general
     kernel_name          = stkernel.kernel_name()
     kernel_launcher_name = stkernel.kernel_launcher_name()
-   
+
+    kernel_context = create_loop_kernel_context(stkernel.kernel_name(),
+                                                ttloopkernel,
+                                                scope,
+                                                error_handling):
     # treat reduction_vars vars / acc default(present) vars
+
+
     hip_context["have_reductions"] = False # |= len(reduction_ops)
-    kernel_call_arg_names     = []
-    cpu_kernel_call_arg_names = []
-    reductions                = parse_result.gang_team_reductions(translator.make_c_str)
-    reduction_vars            = []
-    
+
     fort2hip.model.render_hip_kernel_hip_cpp(self.create_kernel_context("mykernel"))
     fort2hip.model.render_hip_kernel_launcher_hip_cpp(self.create_kernel_context("mykernel",False),
                                                       self.create_hip_kernel_launcher_context("mykernel"))
     fort2hip.model.render_cpu_kernel_launcher_hip_cpp(self.create_kernel_context("mykernel"),
                                                       self.create_cpu_kernel_launcher_context("mykernel"))
-    
+
     fort2hip.model.render_kernel_launcher_f03(self.create_kernel_context("mykernel"),
                                               self.create_hip_kernel_launcher_context("mykernel"))
 
@@ -125,8 +191,8 @@ def render_device_procedure(stnode,index,current_cpp_file_ctx,current_f03_file_c
 def traverse_scanner_tree(stree,index,kernels_to_convert_to_hip=["*"]):
     cpp_file_contexts   = []
     f03_module_contexts = []
-    current_cpp_file_ctx = None 
-    current_f03_file_ctx = None 
+    current_cpp_file_ctx = None
+    current_f03_file_ctx = None
     def traverse_node_(stnode)
         """Traverse the scanner tree and emit code generation context.
         """
@@ -136,7 +202,7 @@ def traverse_scanner_tree(stree,index,kernels_to_convert_to_hip=["*"]):
         nonlocal f03_file_contexts
         nonlocal current_cpp_file_ctx
         nonlocal current_f03_file_ctx
-        # main 
+        # main
         if isinstance(stnode, scanner.STRoot):
             pass
         elif loop_kernel_filter(stnode,kernels_to_convert_to_hip):
@@ -157,7 +223,7 @@ def traverse_scanner_tree(stree,index,kernels_to_convert_to_hip=["*"]):
             itypes_local       = inode["types"] # local types
             local_used_modules = used_modules(stnode,inode)
             # derived_type_snippets = render_types(itypes)
-            if stnode_is_module: 
+            if stnode_is_module:
                 module_used_modules = local_used_modules
             # no loop kernels in parent but device routines or global kernels
             current_cpp_file_ctx = copy.copy(EMPTY_CPP_FILE_CONTEXT)

@@ -40,7 +40,7 @@ def render_gpufort_array_header_file(output_path,context={}):
     generate_file(output_path,"gpufort_array.template.h",context)
 
 def render_gpufort_array_source_file(output_path,context={}):
-    generate_file(output_path,"gpufort_array.template.hip.cpp",context)
+    generate_file(output_path,"gpufort_array.template.cpp",context)
 
 def render_gpufort_array_fortran_interfaces_file(context={}):
     generate_file(output_path,"gpufort_array.template.f03",context)

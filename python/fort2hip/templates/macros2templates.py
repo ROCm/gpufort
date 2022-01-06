@@ -8,7 +8,7 @@ import pyparsing as pyp
 VERBOSE = True
 
 MACRO_FILES = [
-  "hip_implementation.macros.hip.cpp",
+  "hip_implementation.macros.cpp",
   "gpufort_array.macros.h",
   "interface_module.macros.f03",
   "gpufort_array.macros.f03"

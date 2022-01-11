@@ -10,19 +10,13 @@ import addtoplevelpath
 import indexer.indexerutils
 import utils.logging
 
-import fort2hip.model
+import fort2hip.render
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
 utils.logging.VERBOSE    = False
 utils.logging.init_logging("log.log",LOG_FORMAT,"warning")
 
 PROFILING_ENABLE = False
-
-# render_derived_type_copy_array_member_routines_f03
-# render_derived_type_copy_scalars_routines_f03
-# render_derived_types_f03
-# render_derived_types_hip_cpp
-# render_derived_type_size_bytes_routines_f03
 
 testdata= \
 """
@@ -89,21 +83,21 @@ class TestRenderDerivedType(unittest.TestCase):
             print(s.getvalue())
         elapsed = time.time() - self._started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
-    def test_1_render_derived_types_hip_cpp(self):
-        #print(fort2hip.model.render_derived_types_hip_cpp(self._scope["types"]))
-        self.assertEqual(self.clean(fort2hip.model.render_derived_types_hip_cpp(self._scope["types"])),\
+    def test_1_render_derived_types_cpp(self):
+        #print(fort2hip.render.render_derived_types_cpp(self._scope["types"]))
+        self.assertEqual(self.clean(fort2hip.render.render_derived_types_cpp(self._scope["types"])),\
             self.clean(testdata_result_cpp))
     def test_2_render_derived_types_f03(self):
-        #print(self.clean(fort2hip.model.render_derived_types_f03(self._scope["types"]))
+        #print(self.clean(fort2hip.render.render_derived_types_f03(self._scope["types"]))
         #print(self.clean(testdata_result_f03))
-        self.assertEqual(self.clean(fort2hip.model.render_derived_types_f03(self._scope["types"])),\
+        self.assertEqual(self.clean(fort2hip.render.render_derived_types_f03(self._scope["types"])),\
             self.clean(testdata_result_f03))
     def test_3_render_derived_type_size_bytes_routines_f03(self):
-        print(fort2hip.model.render_derived_type_size_bytes_routines_f03(self._scope["types"]))
+        print(fort2hip.render.render_derived_type_size_bytes_routines_f03(self._scope["types"]))
     def test_4_render_derived_type_copy_scalars_routines_f03(self):
-        print(fort2hip.model.render_derived_type_copy_scalars_routines_f03(self._scope["types"]))
+        print(fort2hip.render.render_derived_type_copy_scalars_routines_f03(self._scope["types"]))
     def test_5_render_derived_type_copy_array_member_routines_f03(self):
-        print(fort2hip.model.render_derived_type_copy_array_member_routines_f03(self._scope["types"]))
+        print(fort2hip.render.render_derived_type_copy_array_member_routines_f03(self._scope["types"]))
 
 if __name__ == '__main__':
     unittest.main() 

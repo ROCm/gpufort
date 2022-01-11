@@ -3,7 +3,9 @@
 {#- Jinja2 template for generating interface modules                            -#}
 {#- This template works with data structures of the form :                      -#}
 {########################################################################################}
-{%- macro render_param_decl(ivar,qualifiers="",interop_suffix="_interop") -%}
+{%- macro render_param_decl(ivar,
+                            qualifiers="",
+                            interop_suffix="_interop") -%}
 {%- if ivar.f_type in ["integer","real","logical","type"] -%}
 {%-   if ivar.rank > 0 -%}
 type(gpufort_array{{ivar.rank}}){{qualifiers}} :: {{ivar.name}}
@@ -19,15 +21,20 @@ type(gpufort_array{{ivar.rank}}){{qualifiers}} :: {{ivar.name}}
 {%- endif -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_param_decls(ivars,qualifiers="",interop_suffix="_interop",sep="\n") -%}
+{%- macro render_param_decls(ivars,
+                             qualifiers="",
+                             interop_suffix="_interop",
+                             sep="\n") -%}
 {%- for ivar in ivars -%}{{render_param_decl(ivar,qualifiers,interop_suffix)}}{{sep if not loop.last}}{% endfor -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_params(ivars,sep=",") -%}
+{%- macro render_params(ivars,
+                        sep=",") -%}
 {%- for ivar in ivars -%}{{ivar.name}}{{sep if not loop.last}}{% endfor -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_derived_types(derived_types,interop_suffix="_interop") -%}
+{%- macro render_derived_types(derived_types,
+                               interop_suffix="_interop") -%}
 {% for derived_type in derived_types %}
 type, bind(c) :: {{derived_type.name}}{{interop_suffix}}
 {{ (render_param_decls(derived_type.variables)) | indent(2,True) }}
@@ -35,9 +42,12 @@ end type {{derived_type.name}}{{interop_suffix}}
 {% endfor %}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_derived_type_copy_scalars( derived_type, derived_types,
-          inline=False, interop_suffix="_interop", 
-          orig_var="orig_type", interop_var="interop_type" ) -%}
+{%- macro render_derived_type_copy_scalars(derived_type,
+                                           derived_types,
+                                           inline=False,
+                                           interop_suffix="_interop",
+                                           orig_var="orig_type",
+                                           interop_var="interop_type") -%}
 {% for ivar in derived_type.variables %}
 {%   if ivar.rank == 0 %}
 {%     if ivar.f_type in ["integer","real","logical"] %}
@@ -64,7 +74,8 @@ use {{module.name}}{{(", only: "+module.only|join(",") if module.only|length>0)}
 {% endfor %}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_derived_type_copy_scalars_routines(derived_types,interop_suffix="_interop",
+{%- macro render_derived_type_copy_scalars_routines(derived_types,
+                                                    interop_suffix="_interop",
                                                     used_modules=[]) -%}
 {% for derived_type in derived_types %}
 subroutine {{derived_type.name}}{{interop_suffix}}_copy_scalars(interop_type,orig_type)
@@ -79,7 +90,8 @@ end subroutine{{"\n" if not loop.last}}
 {% endfor %}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_derived_type_size_bytes_routines(derived_types,interop_suffix="_interop",
+{%- macro render_derived_type_size_bytes_routines(derived_types,
+                                                  interop_suffix="_interop",
                                                   used_modules=[]) -%}
 {% for derived_type in derived_types %} 
 function {{derived_type.name}}{{interop_suffix}}_size_bytes() result(size_bytes)
@@ -94,10 +106,13 @@ end function
 {% endfor %}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_derived_type_copy_array_member(derived_type, member,
-          derived_types, sync_mode="gpufort_array_sync_copy",
-          interop_suffix="_interop", 
-          orig_var="orig_type", interop_var="interop_type") -%}
+{%- macro render_derived_type_copy_array_member(derived_type,
+                                                member,
+                                                derived_types,
+                                                sync_mode="gpufort_array_sync_copy",
+                                                interop_suffix="_interop", 
+                                                orig_var="orig_type",
+                                                interop_var="interop_type") -%}
 {% for ivar in derived_type.variables %}
 {%   if ivar.name == member %}
 {%     if ivar.f_type in ["integer","real","logical"] %}
@@ -120,9 +135,10 @@ call c_f_pointer({{interop_var}}%{{member}}%data%data_host,&
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_derived_type_copy_array_member_routines(derived_types,
-          used_modules=[],
-          interop_suffix="_interop", 
-          orig_var="orig_type",interop_var="interop_type") -%}
+                                                         used_modules=[],
+                                                         interop_suffix="_interop", 
+                                                         orig_var="orig_type",
+                                                         interop_var="interop_type") -%}
 {% for derived_type in derived_types %}
 {%   for ivar in derived_type.variables %}
 {%     if ivar.rank > 0 %} 
@@ -145,7 +161,8 @@ end subroutine{{"\n" if not loop.last}}
 {% endfor %}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_kernel_launcher(kernel,kernel_launcher) -%}
+{%- macro render_kernel_launcher(kernel,
+                                 kernel_launcher) -%}
 {%- set num_global_vars = kernel.global_vars|length + kernel.global_reduced_vars|length -%}
 function {{kernel_launcher.name}}(&
 {% if kernel_launcher.kind in ["hip"] %}
@@ -168,11 +185,12 @@ function {{kernel_launcher.name}}(&
 end function
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_cpu_routine(kernel,kernel_launcher) -%}
+{%- macro render_cpu_routine(kernel,
+                             kernel_launcher) -%}
 {%- set num_global_vars = kernel.global_vars|length + kernel.global_reduced_vars|length -%}
-function {{kernel_launcher.name}}_f(&
+function {{kernel.name}}_cpu(&
     sharedmem,stream{{"," if num_global_vars > 0 }}&
-{{render_params(kernel.global_vars+kernel.global_reduced_vars,sep=",&\n") | indent(4,True)}}) bind(c,name="{{kernel_launcher.name}}_f") &
+{{render_params(kernel.global_vars+kernel.global_reduced_vars,sep=",&\n") | indent(4,True)}}) bind(c,name="{{kernel.name}}_cpu") &
       result(ierr)
   use iso_c_binding
   use hipfort
@@ -199,7 +217,12 @@ function {{kernel_launcher.name}}_f(&
 end function
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_interface_module(name,prolog="! This file was autogenerated by gpufort",used_modules=[],rendered_types=[],rendered_interfaces=[],rendered_routines=[]) -%}
+{%- macro render_interface_module(name,
+                                  prolog="! This file was autogenerated by gpufort",
+                                  used_modules=[],
+                                  rendered_types=[],
+                                  rendered_interfaces=[],
+                                  rendered_routines=[]) -%}
 {{prolog}}
 module {{name}}
 {% if used_modules|length %}

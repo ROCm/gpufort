@@ -161,23 +161,23 @@ end subroutine{{"\n" if not loop.last}}
 {% endfor %}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_kernel_launcher(kernel,
-                                 kernel_launcher) -%}
+{%- macro render_launcher(kernel,
+                          launcher) -%}
 {%- set num_global_vars = kernel.global_vars|length + kernel.global_reduced_vars|length -%}
-function {{kernel_launcher.name}}(&
-{% if kernel_launcher.kind in ["hip"] %}
+function {{launcher.name}}(&
+{% if launcher.kind in ["hip"] %}
     grid, block,&
 {% endif %}
     sharedmem,stream{{"," if num_global_vars > 0 }}&
-{{render_params(kernel.global_vars+kernel.global_reduced_vars,sep=",&\n") | indent(4,True)}}) bind(c,name="{{kernel_launcher.name}}") &
+{{render_params(kernel.global_vars+kernel.global_reduced_vars,sep=",&\n") | indent(4,True)}}) bind(c,name="{{launcher.name}}") &
       result(ierr)
   use iso_c_binding
   use hipfort
-{% if kernel_launcher.used_modules|length %}
-{{ render_used_modules(kernel_launcher.used_modules) | indent(2,True) }}
+{% if launcher.used_modules|length %}
+{{ render_used_modules(launcher.used_modules) | indent(2,True) }}
 {% endif %}
   implicit none
-{% if kernel_launcher.kind in ["hip"] %}  type(dim3),intent(in) :: grid, block{% endif %}
+{% if launcher.kind in ["hip"] %}  type(dim3),intent(in) :: grid, block{% endif %}
   integer(c_int),intent(in) :: sharedmem
   type(c_ptr),intent(in)    :: stream{{"," if num_global_vars > 0}}
 {{ render_param_decls(kernel.global_vars+kernel.global_reduced_vars) | indent(2,True) }}
@@ -186,7 +186,7 @@ end function
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_cpu_routine(kernel,
-                             kernel_launcher) -%}
+                             launcher) -%}
 {%- set num_global_vars = kernel.global_vars|length + kernel.global_reduced_vars|length -%}
 function {{kernel.name}}_cpu(&
     sharedmem,stream{{"," if num_global_vars > 0 }}&
@@ -194,11 +194,11 @@ function {{kernel.name}}_cpu(&
       result(ierr)
   use iso_c_binding
   use hipfort
-{% if kernel_launcher.used_modules|length %}
-{{ render_used_modules(kernel_launcher.used_modules) | indent(2,True) }}
+{% if launcher.used_modules|length %}
+{{ render_used_modules(launcher.used_modules) | indent(2,True) }}
 {% endif %}
   implicit none
-{% if kernel_launcher.kind in ["hip"] %}
+{% if launcher.kind in ["hip"] %}
   type(dim3),intent(in) :: grid, block
 {% endif %}
   integer(c_int),intent(in) :: sharedmem

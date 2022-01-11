@@ -25,7 +25,8 @@ def _intrnl_search_values_in_subtree(ttnode,search_filter,scope,min_rank=-1):
     
     tags = [] 
     for ttvalue in find_all_matching_exclude_directives_(ttnode.body,search_filter): # includes the identifiers of the function calls
-        tag = scoper.create_index_search_tag_for_variable(ttvalue.f_str())
+        #tag = scoper.create_index_search_tag_for_variable(ttvalue.f_str()) # TODO need to reintroduce this method
+        tag = ttvalue.f_str()
         ivar,found_in_scope = scoper.search_scope_for_variable(scope,tag)
         if found_in_scope and\
            ivar["rank"] >= min_rank and\
@@ -173,6 +174,8 @@ class IComputeConstruct():
         return []
     def gang_team_reductions(self,converter=make_f_str): 
         return {}
+    def gang_team_shared_vars(self,converter=make_f_str): 
+        return [] 
     def vars_in_body(self):
         return []
     def arrays_in_body(self):

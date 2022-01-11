@@ -505,6 +505,36 @@ def preprocess_and_normalize(fortran_file_lines,fortran_filepath,macro_stack=[],
     utils.logging.log_leave_function(LOG_PREFIX,"preprocess_and_normalize")
     return linemaps
 
+def read_lines(fortran_lines,
+               options="",
+               fortran_filepath="<none>"):
+    """
+    A C and Fortran preprocessor (cpp and fpp).
+
+    Current limitations:
+
+    * Only considers if/ifdef/ifndef/elif/else/define/undef/include 
+
+    :return: The input data structure without the entries whose statements where not in active code region
+             as determined by the preprocessor.
+    :param str options: a sequence of compiler options such as '-D<key> -D<key>=<value>'.
+    :param str fortran_filepath: File path to write into the linemaps.
+    """
+    # TODO check if order of read_file routines can be simplified using this method
+    global LOG_PREFIX
+    global ERROR_HANDLING
+
+    utils.logging.log_enter_function(LOG_PREFIX,"read_lines",{
+      "options":options
+    })
+
+    macro_stack = init_macros(options)
+    linemaps = preprocess_and_normalize(fortran_lines,
+                                        fortran_filepath,
+                                        macro_stack)
+    utils.logging.log_leave_function(LOG_PREFIX,"read_lines")
+    return linemaps
+
 def read_file(fortran_filepath,options=""):
     """
     A C and Fortran preprocessor (cpp and fpp).

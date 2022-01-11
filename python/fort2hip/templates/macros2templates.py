@@ -18,14 +18,14 @@ macro_filters = [
 render_derived_type_copy_scalars_routines
 render_derived_types
 render_derived_type_size_bytes_routines
-render_cpu_launcher
 render_(begin|end)_kernel
 render_hip_kernel\b
 render_hip_kernel_comment
 render_hip_launcher
 render_hip_device_routine
-render_kernel_launcher\b
+render_launcher\b
 render_cpu_routine
+render_cpu_launcher
 render_interface_module
 render_c_file""".split("\n"))),
   re.compile("|".join(r"""render_gpufort_array_c_bindings

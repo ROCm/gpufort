@@ -26,9 +26,10 @@ class HipKernelGeneratorBase(fort2hip.kernelgen.KernelGeneratorBase):
     def _create_kernel_context(self):
         kernel = self._create_kernel_base_context(self.kernel_name,
                                                   self.c_body)
-        kernel["global_vars"],
-        kernel["global_reduced_vars"],
-        kernel["shared_vars"],
+        # '\' is required; cannot be omitted
+        kernel["global_vars"],\
+        kernel["global_reduced_vars"],\
+        kernel["shared_vars"],\
         kernel["local_vars"] = fort2hip.kernelgen.KernelGeneratorBase.lookup_index_entries_for_vars_in_kernel_body(self.scope,
                                                                                                                    self.all_vars,
                                                                                                                    self.global_reductions,

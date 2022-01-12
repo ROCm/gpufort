@@ -38,57 +38,62 @@ class HipKernelGeneratorBase(fort2hip.kernelgen.KernelGeneratorBase):
                                                                                                                    self.error_handling)
         return kernel
     def __create_launcher_base_context(self,
-                                              kind,
-                                              debug_output,
-                                              problem_size):
+                                       kind,
+                                       debug_output,
+                                       used_modules=[]):
         """Create base context for kernel launcher code generation."""
         return {
                "kind"         : kind,
                "name"         : "_".join(["launch",self.kernel_name,kind]),
-               "used_modules" : [],
-               "problem_size" : problem_size,
+               "used_modules" : used_modules,
                "debug_output" : debug_output,
                }
     def create_launcher_context(self,
-                                       kind,
-                                       debug_output,
-                                       problem_size,
-                                       grid  = [],
-                                       block = []):
+                                kind,
+                                debug_output,
+                                used_modules = [],
+                                problem_size = [],
+                                grid         = [],
+                                block        = []):
         """Create context for HIP kernel launcher code generation.
-        :param str kind:   
+        :param str kind:one of 'hip', 'hip_auto', or 'cpu'.
         :param list grid:  d-dimensional list of string expressions for the grid dimensions
         :param list block: d-dimensional list of string expressions for the block dimensions
-        :note: Parameters grid & block are only required if the kind is set to "hip".
+        :note: Parameters problem_size & grid & block are only required if the kind is set to "hip".
         """
-        kernel_launcher = self.__create_launcher_base_context(kind,
-                                                              debug_output,
-                                                              problem_size)
-        if kind == "hip":
-            kernel_launcher["grid"]  = grid
-            kernel_launcher["block"] = block
-        return kernel_launcher
+        launcher = self.__create_launcher_base_context(kind,
+                                                       debug_output,
+                                                       used_modules)
+        if kind == "hip_auto":
+            launcher["problem_size"] = problem_size
+            launcher["grid"]         = grid
+            launcher["block"]        = block
+        return launcher
     def render_gpu_kernel_cpp(self):
         return [
                fort2hip.render.render_hip_kernel_comment_cpp(self.fortran_snippet),
                fort2hip.render.render_hip_kernel_cpp(self.kernel),
                ]
     def render_begin_kernel_comment_cpp(self):
-        return [fort2hip.render.render_begin_kernel_cpp(self.kernel)]
+        return [" ".join(["//","BEGIN",self.kernel_name,self.kernel_hash])]
     def render_end_kernel_comment_cpp(self):
-        return [fort2hip.render.render_end_kernel_cpp(self.kernel)]
-    def render_gpu_launcher_cpp(kernel_launcher):
-        return [fort2hip.render.render_hip_kernel_launcher_cpp(self.kernel,
-                                                               kernel_launcher)]
-    def render_cpu_launcher_cpp(self):
+        return [" ".join(["//","END",self.kernel_name,self.kernel_hash])]
+    def render_begin_kernel_comment_f03(self):
+        return [" ".join(["!","BEGIN",self.kernel_name,self.kernel_hash])]
+    def render_end_kernel_comment_f03(self):
+        return [" ".join(["!","END",self.kernel_name,self.kernel_hash])]
+    def render_gpu_launcher_cpp(self,launcher):
+        return [fort2hip.render.render_hip_launcher_cpp(self.kernel,
+                                                        launcher)]
+    def render_cpu_launcher_cpp(self,launcher):
         return [
                fort2hip.render.render_cpu_routine_cpp(self.kernel),
-               fort2hip.render.render_cpu_launcher_cpp(self.kernel,kernel_launcher),
+               fort2hip.render.render_cpu_launcher_cpp(self.kernel,launcher),
                ]
-    def render_launcher_interface_f03(kernel_launcher):
-        return [fort2hip.render.render_launcher_interface_f03(self.kernel,kernel_launcher)]
-    def render_cpu_routine_f03(kernel_launcher):
-        return [fort2hip.render.render_cpu_routine_f03(self.kernel,kernel_launcher)]
+    def render_launcher_interface_f03(self,launcher):
+        return [fort2hip.render.render_launcher_f03(self.kernel,launcher)]
+    def render_cpu_routine_f03(self,launcher):
+        return [fort2hip.render.render_cpu_routine_f03(self.kernel,launcher,self.fortran_snippet)]
 
 # derived classes
 class HipKernelGenerator4LoopNest(HipKernelGeneratorBase):
@@ -124,7 +129,7 @@ class HipKernelGenerator4CufKernel(HipKernelGeneratorBase):
                  error_handling=None):
         HipKernelGeneratorBase.__init__(self,
                                         procedure_name,
-                                        
+                                        procedure_hash,
                                         scope,
                                         fortran_snippet,
                                         error_handling)
@@ -135,11 +140,11 @@ class HipKernelGenerator4CufKernel(HipKernelGeneratorBase):
         self.global_reductions = {}
         # 
         self.kernel            = self._create_kernel_context()
-    def render_cpu_routine_f03(kernel_launcher):
+    def render_cpu_routine_f03(self,launcher):
         return []
     def render_cpu_launcher_cpp(self):
         return []
 
 class HipKernelGenerator4AcceleratorRoutine(HipKernelGenerator4CufKernel):
-    def render_gpu_launcher_cpp(kernel_launcher):
+    def render_gpu_launcher_cpp(self,launcher):
         return []

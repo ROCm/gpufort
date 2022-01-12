@@ -148,14 +148,6 @@ GPUFORT_PRINT_ARGS(grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream
 {% endfor %}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_begin_kernel(kernel_name,kernel_id) -%}
-// BEGIN {{kernel_name}} {{kernel_id}}
-{%- endmacro -%}
-{########################################################################################}
-{%- macro render_end_kernel(kernel_name,kernel_id) -%}
-// END {{kernel_name}} {{kernel_id}}
-{%- endmacro -%}
-{########################################################################################}
 {%- macro render_hip_kernel_comment(fortran_snippet) -%}
 /**
    HIP C++ implementation of the function/loop body of:
@@ -218,12 +210,16 @@ extern "C" hipError_t {{launcher.name}}(
 {% if launcher.debug_output %}
 {{ render_launcher_debug_output(kernel.name+":gpu:in:","INPUT",kernel.name,kernel.global_vars,kernel.global_reduced_vars) | indent(2,True) }}
 {% endif %}
+{% if kernel.global_reduced_vars|length %}
 {{ render_reductions_prepare(kernel.global_reduced_vars) | indent(2,True) }}
+{% endif %}
   hipLaunchKernelGGL(({{kernel.name}}), grid, block, sharedmem, stream, {{render_all_global_params(kernel.global_vars,kernel.global_reduced_vars,True)}});
 {{ render_hip_kernel_synchronization(kernel.name) | indent(2,True) }}
   hipError_t ierr = hipGetLastError();	
   if ( ierr != hipSuccess ) return ierr;
+{% if kernel.global_reduced_vars|length %}
 {{ render_reductions_finalize(kernel.global_reduced_vars) | indent(2,True) }}
+{% endif %}
 {% if launcher.debug_output %}
 {{ render_launcher_debug_output(kernel.name+":gpu:out:","OUTPUT",kernel.name,kernel.global_vars,kernel.global_reduced_vars) | indent(2,True) }}
 {% endif %}

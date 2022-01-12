@@ -181,8 +181,9 @@ class TTFunctionCallOrTensorAccess(TTNode):
             return "min" + str(num_args)
         return raw_name
     def c_str(self):
+        global FORTRAN_STYLE_TENSOR_ACCESS
         name = self.__name_c_str()
-        if self.is_tensor():
+        if (not FORTRAN_STYLE_TENSOR_ACCESS) and self.is_tensor():
             return "{0}[_idx_{0}({1})]".format(name,",".join([make_c_str(s) for s in self._args])) # Fortran identifiers cannot start with "_"
         else:
             return "{}({})".format(name,",".join([make_c_str(s) for s in self._args]))

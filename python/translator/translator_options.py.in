@@ -5,6 +5,13 @@ LOG_PREFIX="translator.translator"
 
 COMMENT = r"(!|^\s*[\*cCdD])[^\$].+"
 
+FORTRAN_STYLE_TENSOR_ACCESS = True
+    # For a Fortran tensor access, emit `a(i,j,k,...)` 
+    # instead of the C style `a[_idx_a(i,j,k)]`.
+    # This assumes that the generated kernel code makes use
+    # of C++ classes such as those of the gpufort::array type
+    # that are equipped with an overloaded () operator.
+
 KEYWORD_CASE = "lower" # one of ["lower","upper","camel"]
         
 CHARACTER_FORMAT    = "{type}({len})"  

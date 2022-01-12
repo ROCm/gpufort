@@ -18,7 +18,6 @@ macro_filters = [
 render_derived_type_copy_scalars_routines
 render_derived_types
 render_derived_type_size_bytes_routines
-render_(begin|end)_kernel
 render_hip_kernel\b
 render_hip_kernel_comment
 render_hip_launcher

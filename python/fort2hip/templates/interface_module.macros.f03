@@ -8,11 +8,11 @@
                             interop_suffix="_interop") -%}
 {%- if ivar.f_type in ["integer","real","logical","type"] -%}
 {%-   if ivar.rank > 0 -%}
-type(gpufort_array{{ivar.rank}}){{qualifiers}} :: {{ivar.name}}
+type(gpufort_array{{ivar.rank}}){{qualifiers}} :: {{ivar.name}}{{interop_suffix}}
 {%-   else -%}
 {%-     if ivar.f_type == "type" -%}
-{{ivar.f_type}}({{ivar.kind}}{{interop_suffix}}){{qualifiers}} :: {{ivar.name}}
-{%-     elif ivar.kind is not none and ivar.kind|length > 0 -%}
+{{ivar.f_type}}({{ivar.kind}}{{interop_suffix}}){{qualifiers}} :: {{ivar.name}}{{interop_suffix}}
+{%-     elif ivar.kind is not none and ivar.kind|length -%}
 {{ivar.f_type}}({{ivar.kind}}){{qualifiers}} :: {{ivar.name}}
 {%-     else -%}
 {{ivar.f_type}}{{qualifiers}} :: {{ivar.name}}
@@ -35,6 +35,7 @@ type(gpufort_array{{ivar.rank}}){{qualifiers}} :: {{ivar.name}}
 {########################################################################################}
 {%- macro render_derived_types(derived_types,
                                interop_suffix="_interop") -%}
+{# TODO consider extend #}
 {% for derived_type in derived_types %}
 type, bind(c) :: {{derived_type.name}}{{interop_suffix}}
 {{ (render_param_decls(derived_type.variables)) | indent(2,True) }}
@@ -177,7 +178,9 @@ function {{launcher.name}}(&
 {{ render_used_modules(launcher.used_modules) | indent(2,True) }}
 {% endif %}
   implicit none
-{% if launcher.kind in ["hip"] %}  type(dim3),intent(in) :: grid, block{% endif %}
+{% if launcher.kind in ["hip"] %}  
+  type(dim3),intent(in) :: grid, block
+{% endif %}
   integer(c_int),intent(in) :: sharedmem
   type(c_ptr),intent(in)    :: stream{{"," if num_global_vars > 0}}
 {{ render_param_decls(kernel.global_vars+kernel.global_reduced_vars) | indent(2,True) }}
@@ -186,7 +189,8 @@ end function
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_cpu_routine(kernel,
-                             launcher) -%}
+                             launcher,
+                             fortran_snippet) -%}
 {%- set num_global_vars = kernel.global_vars|length + kernel.global_reduced_vars|length -%}
 function {{kernel.name}}_cpu(&
     sharedmem,stream{{"," if num_global_vars > 0 }}&
@@ -213,7 +217,9 @@ function {{kernel.name}}_cpu(&
  - run code
  - copy local host array data back to device data
  - destroy local arrays
-#} 
+#}
+  !
+{{ fortran_snippet | indent(2,True) }}
 end function
 {%- endmacro -%}
 {########################################################################################}

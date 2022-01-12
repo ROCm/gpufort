@@ -95,10 +95,10 @@ class KernelGeneratorBase:
                "local_vars"          : [],
                }
     def _create_launcher_base_context(self,
-                                             kernel_name,
-                                             kind,
-                                             problem_size,
-                                             debug_output):
+                                      kernel_name,
+                                      kind,
+                                      problem_size,
+                                      debug_output):
         return {
                "kind"         : kind,
                "name"         : "_".join(["launch",kernel_name,kind]),
@@ -121,22 +121,27 @@ class KernelGeneratorBase:
         :note: to be defined by subclass.
         """
         return []
-    def render_gpu_launcher_cpp(kernel_launcher):
+    def render_begin_kernel_comment_f03(self):
         """:return: snippets created by this routine.
         :note: to be defined by subclass.
         """
         return []
-    def render_cpu_launcher_cpp(self):
+    def render_end_kernel_comment_f03(self):
         """:return: snippets created by this routine.
         :note: to be defined by subclass.
         """
         return []
-    def render_launcher_interface_f03(kernel_launcher):
+    def render_cpu_launcher_cpp(self,launcher):
         """:return: snippets created by this routine.
         :note: to be defined by subclass.
         """
         return []
-    def render_cpu_routine_f03(kernel_launcher):
+    def render_launcher_interface_f03(self,launcher):
+        """:return: snippets created by this routine.
+        :note: to be defined by subclass.
+        """
+        return []
+    def render_cpu_routine_f03(self,launcher):
         """:return: snippets created by this routine.
         :note: to be defined by subclass.
         """

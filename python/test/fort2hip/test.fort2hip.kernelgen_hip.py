@@ -69,10 +69,59 @@ class TestHipKernelGenerator4LoopNest(unittest.TestCase):
             print(s.getvalue())
         elapsed = time.time() - self.started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
-    def test_0_init_kernel_generator(self):
+    def test_00_init_kernel_generator(self):
         pass
-    def test_0_init_kernel_generator(self):
+    def test_01_render_gpu_kernel_cpp(self):
         print("\n".join(self.kernelgen.render_gpu_kernel_cpp()))
+    def test_02_render_begin_kernel_comment_cpp(self):
+        print("\n".join(self.kernelgen.render_begin_kernel_comment_cpp()))
+    def test_03_render_end_kernel_comment_cpp(self):
+        print("\n".join(self.kernelgen.render_end_kernel_comment_cpp()))
+    def test_04_render_begin_kernel_comment_f03(self):
+        print("\n".join(self.kernelgen.render_begin_kernel_comment_f03()))
+    def test_05_render_end_kernel_comment_f03(self):
+        print("\n".join(self.kernelgen.render_end_kernel_comment_f03()))
+    def test_06_render_hip_launcher_cpp(self):
+        launcher = self.kernelgen.create_launcher_context(kind="hip",
+                                                          debug_output=False,
+                                                          used_modules=[])
+        print("\n".join(self.kernelgen.render_gpu_launcher_cpp(launcher)))
+    def test_07_render_hip_auto_launcher_cpp(self):
+        launcher = self.kernelgen.create_launcher_context(kind="hip_auto",
+                                                          debug_output=False,
+                                                          used_modules=[],
+                                                          problem_size=[1024,1,1],
+                                                          grid  = [1,1,1],
+                                                          block = [64,1,1])
+        print("\n".join(self.kernelgen.render_gpu_launcher_cpp(launcher)))
+    def test_08_render_hip_launcher_f03(self):
+        launcher = self.kernelgen.create_launcher_context(kind="hip",
+                                                          debug_output=False,
+                                                          used_modules=[])
+        print("\n".join(self.kernelgen.render_launcher_interface_f03(launcher)))
+    def test_09_render_hip_auto_launcher_f03(self):
+        launcher = self.kernelgen.create_launcher_context(kind="hip_auto",
+                                                          debug_output=False,
+                                                          used_modules=[],
+                                                          problem_size=[1024,1,1],
+                                                          grid  = [1,1,1],
+                                                          block = [64,1,1])
+        print("\n".join(self.kernelgen.render_launcher_interface_f03(launcher)))
+    def test_10_render_cpu_launcher_cpp(self):
+        launcher = self.kernelgen.create_launcher_context(kind="cpu",
+                                                          debug_output=False,
+                                                          used_modules=[])
+        print("\n".join(self.kernelgen.render_cpu_launcher_cpp(launcher)))
+    def test_11_render_cpu_launcher_f03(self):
+        launcher = self.kernelgen.create_launcher_context(kind="cpu",
+                                                          debug_output=False,
+                                                          used_modules=[])
+        print("\n".join(self.kernelgen.render_launcher_interface_f03(launcher)))
+    def test_12_render_cpu_routine_f03(self):
+        launcher = self.kernelgen.create_launcher_context(kind="cpu",
+                                                          debug_output=False,
+                                                          used_modules=[])
+        print("\n".join(self.kernelgen.render_cpu_routine_f03(launcher)))
 
 if __name__ == '__main__':
     unittest.main() 

@@ -124,22 +124,22 @@ class TestRenderKernel(unittest.TestCase):
         print(fort2hip.render.render_hip_kernel_cpp(self.create_kernel_context("mykernel",False)))
     def test_3_render_hip_launcher_cpp(self):
         print(fort2hip.render.render_hip_launcher_cpp(self.create_kernel_context("mykernel",False),
-                                                                self.create_hip_launcher_context("mykernel")))
+                                                      self.create_hip_launcher_context("mykernel")))
     def test_4_render_hip_launcher_with_reduced_vars_cpp(self):
         print(fort2hip.render.render_hip_launcher_cpp(self.create_kernel_context("mykernel",False),
-                                                                self.create_hip_launcher_context("mykernel")))
+                                                      self.create_hip_launcher_context("mykernel")))
     def test_5_render_cpu_launcher_cpp(self):
         print(fort2hip.render.render_cpu_launcher_cpp(self.create_kernel_context("mykernel"),
-                                                                self.create_cpu_launcher_context("mykernel")))
+                                                      self.create_cpu_launcher_context("mykernel")))
     def test_6_render_cpu_launcher_with_reduced_vars_cpp(self):
         print(fort2hip.render.render_cpu_launcher_cpp(self.create_kernel_context("mykernel",False),
-                                                                self.create_cpu_launcher_context("mykernel")))
+                                                      self.create_cpu_launcher_context("mykernel")))
     def test_7_render_hip_launcher_f03(self):
         print(fort2hip.render.render_launcher_f03(self.create_kernel_context("mykernel"),
-                                                        self.create_hip_launcher_context("mykernel")))
+                                                  self.create_hip_launcher_context("mykernel")))
     def test_8_render_hip_launcher_with_reduced_vars_f03(self):
         print(fort2hip.render.render_launcher_f03(self.create_kernel_context("mykernel",False),
-                                                        self.create_hip_launcher_context("mykernel")))
+                                                  self.create_hip_launcher_context("mykernel")))
     def test_9_render_cpu_launcher_f03(self):
         print(fort2hip.render.render_launcher_f03(self.create_kernel_context("mykernel"),
                                                   self.create_cpu_launcher_context("mykernel")))

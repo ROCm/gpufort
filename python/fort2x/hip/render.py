@@ -23,7 +23,7 @@ def generate_code(template_path,context={}):
     try:
         return template.render(context)
     except Exception as e:
-        utils.logging.log_error("fort2hip.render","generate_code","could not render template '%s'" % template_path)
+        utils.logging.log_error("fort2x.hip.render","generate_code","could not render template '%s'" % template_path)
         raise e
 
 def generate_file(output_path,template_path,context={}):

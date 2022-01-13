@@ -5,7 +5,7 @@ import copy
 import logging
 
 import addtoplevelpath
-import fort2hip.render as model
+import fort2x.hip.render as model
 import translator.translator as translator
 import indexer.indexer as indexer
 import indexer.scoper as scoper

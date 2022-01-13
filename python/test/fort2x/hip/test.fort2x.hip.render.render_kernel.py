@@ -8,7 +8,7 @@ import cProfile,pstats,io,time
 import addtoplevelpath
 import indexer.indexerutils
 import utils.logging
-import fort2hip.render
+import fort2x.hip.render
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
 utils.logging.VERBOSE    = False
@@ -119,32 +119,32 @@ class TestRenderKernel(unittest.TestCase):
         launcher["used_modules"]  = []
         return launcher
     def test_1_render_hip_kernel_cpp(self):
-        print(fort2hip.render.render_hip_kernel_cpp(self.create_kernel_context("mykernel")))
+        print(fort2x.hip.render.render_hip_kernel_cpp(self.create_kernel_context("mykernel")))
     def test_2_render_hip_kernel_with_reduced_vars_cpp(self):
-        print(fort2hip.render.render_hip_kernel_cpp(self.create_kernel_context("mykernel",False)))
+        print(fort2x.hip.render.render_hip_kernel_cpp(self.create_kernel_context("mykernel",False)))
     def test_3_render_hip_launcher_cpp(self):
-        print(fort2hip.render.render_hip_launcher_cpp(self.create_kernel_context("mykernel",False),
+        print(fort2x.hip.render.render_hip_launcher_cpp(self.create_kernel_context("mykernel",False),
                                                       self.create_hip_launcher_context("mykernel")))
     def test_4_render_hip_launcher_with_reduced_vars_cpp(self):
-        print(fort2hip.render.render_hip_launcher_cpp(self.create_kernel_context("mykernel",False),
+        print(fort2x.hip.render.render_hip_launcher_cpp(self.create_kernel_context("mykernel",False),
                                                       self.create_hip_launcher_context("mykernel")))
     def test_5_render_cpu_launcher_cpp(self):
-        print(fort2hip.render.render_cpu_launcher_cpp(self.create_kernel_context("mykernel"),
+        print(fort2x.hip.render.render_cpu_launcher_cpp(self.create_kernel_context("mykernel"),
                                                       self.create_cpu_launcher_context("mykernel")))
     def test_6_render_cpu_launcher_with_reduced_vars_cpp(self):
-        print(fort2hip.render.render_cpu_launcher_cpp(self.create_kernel_context("mykernel",False),
+        print(fort2x.hip.render.render_cpu_launcher_cpp(self.create_kernel_context("mykernel",False),
                                                       self.create_cpu_launcher_context("mykernel")))
     def test_7_render_hip_launcher_f03(self):
-        print(fort2hip.render.render_launcher_f03(self.create_kernel_context("mykernel"),
+        print(fort2x.hip.render.render_launcher_f03(self.create_kernel_context("mykernel"),
                                                   self.create_hip_launcher_context("mykernel")))
     def test_8_render_hip_launcher_with_reduced_vars_f03(self):
-        print(fort2hip.render.render_launcher_f03(self.create_kernel_context("mykernel",False),
+        print(fort2x.hip.render.render_launcher_f03(self.create_kernel_context("mykernel",False),
                                                   self.create_hip_launcher_context("mykernel")))
     def test_9_render_cpu_launcher_f03(self):
-        print(fort2hip.render.render_launcher_f03(self.create_kernel_context("mykernel"),
+        print(fort2x.hip.render.render_launcher_f03(self.create_kernel_context("mykernel"),
                                                   self.create_cpu_launcher_context("mykernel")))
     def test_10_render_cpu_launcher_with_reduced_vars_f03(self):
-        print(fort2hip.render.render_launcher_f03(self.create_kernel_context("mykernel",False),
+        print(fort2x.hip.render.render_launcher_f03(self.create_kernel_context("mykernel",False),
                                                    self.create_cpu_launcher_context("mykernel")))
         
 

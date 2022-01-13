@@ -2,7 +2,7 @@ import addtoplevelpath
 import indexer.scoper as scoper
 import utils.logging 
 
-LOG_PREFIX = "fort2hip.kernelgen.KernelGeneratorBase"
+LOG_PREFIX = "fort2x.hip.kernelgen.KernelGeneratorBase"
 
 class KernelGeneratorBase:
     @staticmethod

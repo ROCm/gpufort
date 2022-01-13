@@ -76,13 +76,13 @@ def render_loop_kernel(stkernel,
 
     hip_context["have_reductions"] = False # |= len(reduction_ops)
 
-    fort2hip.render.render_hip_kernel_cpp(self.create_kernel_context("mykernel"))
-    fort2hip.render.render_hip_kernel_launcher_cpp(self.create_kernel_context("mykernel",False),
+    fort2x.hip.render.render_hip_kernel_cpp(self.create_kernel_context("mykernel"))
+    fort2x.hip.render.render_hip_kernel_launcher_cpp(self.create_kernel_context("mykernel",False),
                                                       self.create_hip_kernel_launcher_context("mykernel"))
-    fort2hip.render.render_cpu_kernel_launcher_cpp(self.create_kernel_context("mykernel"),
+    fort2x.hip.render.render_cpu_kernel_launcher_cpp(self.create_kernel_context("mykernel"),
                                                       self.create_cpu_kernel_launcher_context("mykernel"))
 
-    fort2hip.render.render_kernel_launcher_f03(self.create_kernel_context("mykernel"),
+    fort2x.hip.render.render_kernel_launcher_f03(self.create_kernel_context("mykernel"),
                                               self.create_hip_kernel_launcher_context("mykernel"))
 
 def render_device_procedure(stnode,index,current_cpp_file_ctx,current_f03_file_ctx):
@@ -102,12 +102,20 @@ def traverse_scanner_tree(stree,index,kernels_to_convert_to_hip=["*"]):
         nonlocal current_cpp_file_ctx
         nonlocal current_f03_file_ctx
         # main
-        if isinstance(stnode, scanner.STRoot):
+        if isinstance(stnode,scanner.STRoot):
             pass
-        elif loop_kernel_filter(stnode,kernels_to_convert_to_hip):
-            render_loop_kernel(stnode,index,current_cpp_file_ctx,current_f03_file_ctx)
-        elif device_procedure_filter(stnode,kernels_to_convert_to_hip): # handle before STProcedure (without attributes) is handled
-            render_device_procedure(stnode,index,current_cpp_file_ctx,current_f03_file_ctx)
+        elif loop_kernel_filter(stnode,
+                                kernels_to_convert_to_hip):
+            render_loop_kernel(stnode,
+                               index,
+                               current_cpp_file_ctx,
+                               current_f03_file_ctx)
+        elif device_procedure_filter(stnode,
+                                     kernels_to_convert_to_hip): # handle before STProcedure (without attributes) is handled
+            render_device_procedure(stnode,
+                                    index,
+                                    current_cpp_file_ctx,
+                                    current_f03_file_ctx)
         elif isinstance(stnode,(scanner.STProgram,scanner.STModule,scanner.STProcedure)):
             stnode_name      = stnode.name.lower()
             stnode_is_module = isinstance(stnode,STModule)

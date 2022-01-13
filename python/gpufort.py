@@ -16,8 +16,8 @@ import scanner.scanner as scanner
 import indexer.indexer as indexer
 import linemapper.linemapper as linemapper
 import translator.translator as translator
-import fort2hip.fort2hip as fort2hip
-#import fort2hip.fort2hip_legacy as fort2hip
+import fort2x.hip.fort2hip as fort2hip
+#import fort2x.hip.fort2hip_legacy as fort2hip
 
 __GPUFORT_PYTHON_DIR = os.path.dirname(os.path.abspath(__file__))
 __GPUFORT_ROOT_DIR   = os.path.abspath(os.path.join(__GPUFORT_PYTHON_DIR,".."))
@@ -58,7 +58,7 @@ def _intrnl_translate_source(infilepath,stree,linemaps,index,preamble):
     utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_translate_source",{"infilepath":infilepath})
     
     # post process
-    scanner.postprocess(stree,index,fort2hip.FORTRAN_MODULE_SUFFIX)
+    scanner.postprocess(stree,index,fort2x.hip.FORTRAN_MODULE_SUFFIX)
     
     # transform statements; to 'linemaps'
     def transform_(stnode):
@@ -190,11 +190,11 @@ def parse_cl_args():
     
     # fort2hip
     group_fort2hip = parser.add_argument_group('Fortran-to-HIP')
-    group_fort2hip.add_argument("-m","--only-modify-host-code",dest="only_modify_translation_source",action="store_true",help="Only modify host code; do not generate kernels [default: False].")
-    group_fort2hip.add_argument("-k","--only-emit-kernels-and-launchers",dest="only_emit_kernels_and_launchers",action="store_true",help="Only emit kernels and kernel launchers; do not modify host code [default: False].")
-    group_fort2hip.add_argument("-K","--only-emit-kernels",dest="only_emit_kernels",action="store_true",help="Only emit kernels; do not emit kernel launchers and do not modify host code [default: False].")
-    group_fort2hip.add_argument("-C","--emit-cpu-impl",dest="emit_cpu_implementation",action="store_true",help="Per detected loop kernel, also extract the CPU implementation  [default: (default) config value].")
-    group_fort2hip.add_argument("-G","--emit-debug-code",dest="emit_debug_code",action="store_true",help="Generate debug code into the kernel launchers that allows to print kernel arguments, launch parameters, input/output array norms and elements, or to synchronize a kernel [default: (default) config value].")
+    group_fort2x.hip.add_argument("-m","--only-modify-host-code",dest="only_modify_translation_source",action="store_true",help="Only modify host code; do not generate kernels [default: False].")
+    group_fort2x.hip.add_argument("-k","--only-emit-kernels-and-launchers",dest="only_emit_kernels_and_launchers",action="store_true",help="Only emit kernels and kernel launchers; do not modify host code [default: False].")
+    group_fort2x.hip.add_argument("-K","--only-emit-kernels",dest="only_emit_kernels",action="store_true",help="Only emit kernels; do not emit kernel launchers and do not modify host code [default: False].")
+    group_fort2x.hip.add_argument("-C","--emit-cpu-impl",dest="emit_cpu_implementation",action="store_true",help="Per detected loop kernel, also extract the CPU implementation  [default: (default) config value].")
+    group_fort2x.hip.add_argument("-G","--emit-debug-code",dest="emit_debug_code",action="store_true",help="Generate debug code into the kernel launchers that allows to print kernel arguments, launch parameters, input/output array norms and elements, or to synchronize a kernel [default: (default) config value].")
     
     # CUDA Fortran
     group_cuf = parser.add_argument_group('CUDA Fortran input')
@@ -252,10 +252,10 @@ def parse_cl_args():
         sys.exit()
     call_exit = False
     if args.create_gpufort_headers:
-        fort2hip.generate_gpufort_headers(os.getcwd())
+        fort2x.hip.generate_gpufort_headers(os.getcwd())
         call_exit = True
     if args.create_gpufort_sources:
-        fort2hip.generate_gpufort_sources(os.getcwd())
+        fort2x.hip.generate_gpufort_sources(os.getcwd())
         call_exit = True
     if call_exit:
         sys.exit()
@@ -426,13 +426,13 @@ if __name__ == "__main__":
     if not ONLY_CREATE_GPUFORT_MODULE_FILES:
         # configure fort2hip
         if ONLY_EMIT_KERNELS_AND_LAUNCHERS:
-            fort2hip.EMIT_KERNEL_LAUNCHER = True
+            fort2x.hip.EMIT_KERNEL_LAUNCHER = True
         if ONLY_EMIT_KERNELS:
-            fort2hip.EMIT_KERNEL_LAUNCHER = False
+            fort2x.hip.EMIT_KERNEL_LAUNCHER = False
         if args.emit_cpu_implementation:
-            fort2hip.EMIT_CPU_IMPLEMENTATION = True
+            fort2x.hip.EMIT_CPU_IMPLEMENTATION = True
         if args.emit_debug_code:
-            fort2hip.EMIT_DEBUG_CODE = True
+            fort2x.hip.EMIT_DEBUG_CODE = True
         stree   = scanner.parse_file(linemaps,index,input_filepath)    
  
         # extract kernels
@@ -441,7 +441,7 @@ if __name__ == "__main__":
         else:
             kernels_to_convert_to_hip = scanner.KERNELS_TO_CONVERT_TO_HIP
         fortran_module_filepath, main_hip_filepath =\
-          fort2hip.generate_hip_files(stree,index,kernels_to_convert_to_hip,input_filepath,\
+          fort2x.hip.generate_hip_files(stree,index,kernels_to_convert_to_hip,input_filepath,\
            generate_code=not ONLY_MODIFY_TRANSLATION_SOURCE)
         # modify original file
         if fortran_module_filepath != None:

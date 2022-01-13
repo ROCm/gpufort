@@ -1,4 +1,4 @@
-include ../Makefile.in
+include ../../Makefile.in
 
 .PHONY: clean
 

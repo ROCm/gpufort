@@ -12,7 +12,7 @@ import indexer.indexer as indexer
 import indexer.indexerutils as indexerutils 
 import translator.translator as translator
 import utils.logging
-import fort2hip.kernelgen_hip
+import fort2x.hip.kernelgen
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
 utils.logging.VERBOSE    = False
@@ -53,7 +53,7 @@ class TestHipKernelGenerator4LoopNest(unittest.TestCase):
         ttloopnest         = translator.parse_loop_kernel(fortran_statements,
                                                           scope)
         #print(self.ttloopnest.c_str())
-        self.kernelgen = fort2hip.kernelgen_hip.HipKernelGenerator4LoopNest("mykernel",
+        self.kernelgen = fort2x.hip.kernelgen_hip.HipKernelGenerator4LoopNest("mykernel",
                                                                             "abcdefgh",
                                                                             ttloopnest,
                                                                             scope,

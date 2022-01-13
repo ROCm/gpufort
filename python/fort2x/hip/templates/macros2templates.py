@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 import addtoplevelpath
-import fort2hip.templategen
+import fort2x.templategen
 
 import os
 import re
@@ -37,7 +37,7 @@ render_gpufort_array_interfaces""".split("\n")))
   ]
     
 root_dir  = os.path.abspath(os.path.join(__file__,".."))
-generator = fort2hip.templategen.TemplateGenerator(root_dir,
+generator = fort2x.hip.templategen.TemplateGenerator(root_dir,
                                           macro_files,
                                           macro_filters)
 generator.verbose = True

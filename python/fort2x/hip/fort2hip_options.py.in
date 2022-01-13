@@ -8,7 +8,7 @@ def GET_DEFAULT_BLOCK_DIMS(kernel_name,dim):
 def GET_DEFAULT_LAUNCH_BOUNDS(kernel_name):
     return None
 # OPTIONS
-LOG_PREFIX = "fort2hip.fort2hip"
+LOG_PREFIX = "fort2x.hip.fort2hip"
         # Prefix for log output that this component writes.
 
 HIP_FILE_PREAMBLE = "" 
@@ -24,10 +24,10 @@ FORTRAN_MODULE_PREAMBLE = ""
 FORTRAN_MODULE_SUFFIX = "_fort2hip"
         # Suffix for generated hip modules.
 
-FORTRAN_MODULE_FILE_EXT = "-fort2hip.f08"
+FORTRAN_MODULE_FILE_EXT = "-fort2x.hip.f08"
         # Suffix appended to the generated Fortran module.
 
-HIP_FILE_EXT = "-fort2hip.hip.cpp"
+HIP_FILE_EXT = "-fort2x.hip.hip.cpp"
         # Suffix appended to the generated HIP C++ files.
 
 GET_BLOCK_DIMS    = GET_DEFAULT_BLOCK_DIMS

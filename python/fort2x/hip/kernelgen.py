@@ -1,9 +1,9 @@
 import addtoplevelpath
 
-import fort2hip.kernelgen
-import fort2hip.render
+import fort2x.kernelgen
+import fort2x.hip.render
 
-class HipKernelGeneratorBase(fort2hip.kernelgen.KernelGeneratorBase):
+class HipKernelGeneratorBase(fort2x.kernelgen.KernelGeneratorBase):
     """
     """
     def __init__(self,
@@ -30,7 +30,7 @@ class HipKernelGeneratorBase(fort2hip.kernelgen.KernelGeneratorBase):
         kernel["global_vars"],\
         kernel["global_reduced_vars"],\
         kernel["shared_vars"],\
-        kernel["local_vars"] = fort2hip.kernelgen.KernelGeneratorBase.lookup_index_entries_for_vars_in_kernel_body(self.scope,
+        kernel["local_vars"] = fort2x.hip.kernelgen.KernelGeneratorBase.lookup_index_entries_for_vars_in_kernel_body(self.scope,
                                                                                                                    self.all_vars,
                                                                                                                    self.global_reductions,
                                                                                                                    self.shared_vars,
@@ -71,8 +71,8 @@ class HipKernelGeneratorBase(fort2hip.kernelgen.KernelGeneratorBase):
         return launcher
     def render_gpu_kernel_cpp(self):
         return [
-               fort2hip.render.render_hip_kernel_comment_cpp(self.fortran_snippet),
-               fort2hip.render.render_hip_kernel_cpp(self.kernel),
+               fort2x.hip.render.render_hip_kernel_comment_cpp(self.fortran_snippet),
+               fort2x.hip.render.render_hip_kernel_cpp(self.kernel),
                ]
     def render_begin_kernel_comment_cpp(self):
         return [" ".join(["//","BEGIN",self.kernel_name,self.kernel_hash])]
@@ -83,17 +83,17 @@ class HipKernelGeneratorBase(fort2hip.kernelgen.KernelGeneratorBase):
     def render_end_kernel_comment_f03(self):
         return [" ".join(["!","END",self.kernel_name,self.kernel_hash])]
     def render_gpu_launcher_cpp(self,launcher):
-        return [fort2hip.render.render_hip_launcher_cpp(self.kernel,
+        return [fort2x.hip.render.render_hip_launcher_cpp(self.kernel,
                                                         launcher)]
     def render_cpu_launcher_cpp(self,launcher):
         return [
-               fort2hip.render.render_cpu_routine_cpp(self.kernel),
-               fort2hip.render.render_cpu_launcher_cpp(self.kernel,launcher),
+               fort2x.hip.render.render_cpu_routine_cpp(self.kernel),
+               fort2x.hip.render.render_cpu_launcher_cpp(self.kernel,launcher),
                ]
     def render_launcher_interface_f03(self,launcher):
-        return [fort2hip.render.render_launcher_f03(self.kernel,launcher)]
+        return [fort2x.hip.render.render_launcher_f03(self.kernel,launcher)]
     def render_cpu_routine_f03(self,launcher):
-        return [fort2hip.render.render_cpu_routine_f03(self.kernel,launcher,self.fortran_snippet)]
+        return [fort2x.hip.render.render_cpu_routine_f03(self.kernel,launcher,self.fortran_snippet)]
 
 # derived classes
 class HipKernelGenerator4LoopNest(HipKernelGeneratorBase):

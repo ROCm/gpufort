@@ -11,25 +11,6 @@ def GET_DEFAULT_LAUNCH_BOUNDS(kernel_name):
 LOG_PREFIX = "fort2x.hip.fort2hip"
         # Prefix for log output that this component writes.
 
-HIP_FILE_PREAMBLE = "" 
-        # Preamble to write at the top of the generated HIP C++ files.
-        # Use it to place a copyright message at the top
-        # of a file, for example.
-
-FORTRAN_MODULE_PREAMBLE = "" 
-        # Preamble to write at the top of the generated Fortran module file.
-        # Use it to place a copyright message at the top
-        # of a file, for example.
-
-FORTRAN_MODULE_SUFFIX = "_fort2hip"
-        # Suffix for generated hip modules.
-
-FORTRAN_MODULE_FILE_EXT = "-fort2x.hip.f08"
-        # Suffix appended to the generated Fortran module.
-
-HIP_FILE_EXT = "-fort2x.hip.hip.cpp"
-        # Suffix appended to the generated HIP C++ files.
-
 GET_BLOCK_DIMS    = GET_DEFAULT_BLOCK_DIMS
         # Callback to provide default block dimensions for a given kernel.
         # callback arguments: kernel_name,filepath,lineno,dim
@@ -48,27 +29,3 @@ EMIT_CPU_IMPLEMENTATION  = False
 EMIT_DEBUG_CODE          = False 
         # Generate debug routine calls into the code that can be used 
         # to print out kernel argument values or device array elements and norms.
-
-PRETTIFY_EMITTED_FORTRAN_CODE = False 
-        # Prettify the emitted Fortran code with fprettify
-
-PRETTIFY_EMITTED_C_CODE       = False  
-        # Prettify the emitted HIP C++ code with clang-format.
-CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140, BinPackArguments: false, BinPackParameters: false, AllowAllArgumentsOnNextLine: false, AllowAllParametersOfDeclarationOnNextLine: false}\"" 
-        # Format style that is passed to clang-format
-
-GPUFORT_HEADERS_MAX_DIM = 7
-        # Generate rank-dependent classes and expressions up to
-        # this dimension.
-GPUFORT_HEADERS_DATATYPES = [
-        {"c_type":"bool"            ,"f_kind":"c_bool"          ,"bytes":"c_bool"            ,"f_type":"logical(c_bool)" },
-        {"c_type":"short"           ,"f_kind":"c_short"         ,"bytes":"c_short"           ,"f_type":"integer(c_short)"},
-        {"c_type":"int"             ,"f_kind":"c_int"           ,"bytes":"c_int"             ,"f_type":"integer(c_int)"  },
-        {"c_type":"long"            ,"f_kind":"c_long"          ,"bytes":"c_long"            ,"f_type":"integer(c_long)" },
-        {"c_type":"float"           ,"f_kind":"c_float"         ,"bytes":"c_float"           ,"f_type":"real(c_float)" },
-        {"c_type":"double"          ,"f_kind":"c_double"        ,"bytes":"c_double"          ,"f_type":"real(c_double)"},
-        {"c_type":"hipFloatComplex" ,"f_kind":"c_float_complex" ,"bytes":"2*c_float_complex" ,"f_type":"complex(c_float_complex)"},
-        {"c_type":"hipDoubleComplex","f_kind":"c_double_complex","bytes":"2*c_double_complex","f_type":"complex(c_double_complex)"},
-        ]
-        # Generate rank-dependent classes and expressions for these
-        # datatypes.

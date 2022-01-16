@@ -44,3 +44,6 @@ def render_gpufort_array_source_file(output_path,context={}):
 
 def render_gpufort_array_fortran_interfaces_file(context={}):
     generate_file(output_path,"gpufort_array.template.f03",context)
+
+fort2x_dir = os.path.dirname(__file__)
+exec(open(os.path.join(fort2x_dir,"templates","render.py.in")).read())

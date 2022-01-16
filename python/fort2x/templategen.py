@@ -23,7 +23,8 @@ class TemplateGenerator:
         macro_close = pyp.Regex(r"\s-#\}").suppress()
         LPAR,RPAR   = map(pyp.Suppress,"()")
         EQ          = pyp.Suppress("=")
-        RHS         = pyp.Regex(r"\[\]|\"\w*\"|[0-9]+")
+        printables  = pyp.printables
+        RHS         = pyp.Regex(r"\[\]|\"[^\"]*\"|[0-9]+")
         arg         = pyp.Group(ident + pyp.Optional(EQ + RHS, default=""))
         arglist     = pyp.delimitedList(arg)
         macro       = macro_open + ident + LPAR + arglist + RPAR

@@ -8,7 +8,7 @@ import jinja2
 import addtoplevelpath
 import utils.logging
         
-from fort2x.render import *
+from fort2x.render import generate_code
 
 fort2hip_dir = os.path.dirname(__file__)
 exec(open(os.path.join(fort2hip_dir,"templates","render.py.in")).read())

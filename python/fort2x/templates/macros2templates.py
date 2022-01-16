@@ -8,21 +8,12 @@ import os
 import re
 
 macro_files = [
-  "hip_implementation.macros.cpp",
-  "interface_module.macros.f03",
+  "filegen.macros.cpp",
+  "filegen.macros.f03"
   ]
 macro_filters = [
-  re.compile("|".join(r"""render_derived_type_copy_array_member_routines
-render_derived_type_copy_scalars_routines
-render_derived_types
-render_derived_type_size_bytes_routines
-render_hip_kernel\b
-render_hip_kernel_comment
-render_hip_launcher
-render_hip_device_routine
-render_launcher\b
-render_cpu_routine
-render_cpu_launcher""".split("\n")))
+  re.compile("|".join(r"""render_interface_module
+render_c_file""".split("\n")))
   ]
     
 root_dir  = os.path.abspath(os.path.join(__file__,".."))

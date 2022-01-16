@@ -1,3 +1,5 @@
+{#- SPDX-License-Identifier: MIT                                        -#}
+{#- Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.-#}
 {########################################################################################}
 {%- macro render_global_param_decl(ivar,taken_by_kernel=False) -%}
 {%- set c_type = ivar.kind if ivar.f_type=="type" else ivar.c_type -%}
@@ -252,28 +254,3 @@ extern "C" hipError_t {{launcher.name}}(
   return hipSuccess;
 }
 {%- endmacro -%}
-{########################################################################################}
-{%- macro render_c_file(prolog,guard,snippets=[],includes=[],includes_prolog="",includes_epilog="") -%}
-{% if prolog|length %}
-{{prolog}}
-{% endif %}
-#ifndef {{ guard }}
-#define {{ guard }}
-{% if includes_prolog|length %}
-{{includes_prolog}}
-{% endif %}
-{% for include in includes %}
-#include "{{include}}"
-{% endfor %}
-{% if includes_epilog|length %}
-{{includes_epilog}}
-{% endif %}
-{% if snippets|length %}
-
-{% for snippet in snippets %}
-{{snippet}}{{"\n" if not loop.last}}
-{% endfor %}{# snippets #}
-{% endif %}
-#endif {{guard}}
-{%- endmacro -%}
-{########################################################################################}

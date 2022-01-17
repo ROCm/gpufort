@@ -64,20 +64,6 @@ def render_cpu_launcher_cpp(kernel,launcher):
       }
     return render_cpu_launcher_cpp_ctx(context)
     
-def render_c_file_cpp_ctx(context):
-    return generate_code("render_c_file.template.cpp",context)
-    
-def render_c_file_cpp(prolog,guard,snippets=[],includes=[],includes_prolog="",includes_epilog=""):
-    context = {
-      "prolog" : prolog,
-      "guard" : guard,
-      "snippets" : snippets,
-      "includes" : includes,
-      "includes_prolog" : includes_prolog,
-      "includes_epilog" : includes_epilog
-      }
-    return render_c_file_cpp_ctx(context)
-    
 def render_derived_types_f03_ctx(context):
     return generate_code("render_derived_types.template.f03",context)
     

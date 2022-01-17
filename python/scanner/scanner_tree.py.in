@@ -381,6 +381,11 @@ class STUseStatement(STNode):
                 snippet = re.sub(r"\bcu(\w+)\b",HIP_MATH_MODULE_PREFIX+r"hip\1",snippet,re.IGNORECASE)
         return snippet, use_cuda
 
+class STContains(STNode):
+    def __init__(self,first_linemap,first_linemap_first_statement):
+        STNode.__init__(self,first_linemap,first_linemap_first_statement)
+        self.name = None
+
 class STPlaceHolder(STNode):
     def __init__(self,first_linemap,first_linemap_first_statement):
         STNode.__init__(self,first_linemap,first_linemap_first_statement)

@@ -30,12 +30,12 @@ class HipKernelGeneratorBase(fort2x.kernelgen.KernelGeneratorBase):
         kernel["global_vars"],\
         kernel["global_reduced_vars"],\
         kernel["shared_vars"],\
-        kernel["local_vars"] = fort2x.hip.kernelgen.KernelGeneratorBase.lookup_index_entries_for_vars_in_kernel_body(self.scope,
-                                                                                                                   self.all_vars,
-                                                                                                                   self.global_reductions,
-                                                                                                                   self.shared_vars,
-                                                                                                                   self.local_vars,
-                                                                                                                   self.error_handling)
+        kernel["local_vars"] = fort2x.kernelgen.KernelGeneratorBase.lookup_index_entries_for_vars_in_kernel_body(self.scope,
+                                                                                                                 self.all_vars,
+                                                                                                                 self.global_reductions,
+                                                                                                                 self.shared_vars,
+                                                                                                                 self.local_vars,
+                                                                                                                 self.error_handling)
         return kernel
     def __create_launcher_base_context(self,
                                        kind,

@@ -3,13 +3,14 @@
 {########################################################################################}
 {%- macro render_param_decl(ivar,
                             qualifiers="",
+                            array_and_type_suffix="",
                             interop_suffix="_interop") -%}
 {%- if ivar.f_type in ["integer","real","logical","type"] -%}
 {%-   if ivar.rank > 0 -%}
-type(gpufort_array{{ivar.rank}}){{qualifiers}} :: {{ivar.name}}{{interop_suffix}}
+type(gpufort_array{{ivar.rank}}){{qualifiers}} :: {{ivar.name}}
 {%-   else -%}
 {%-     if ivar.f_type == "type" -%}
-{{ivar.f_type}}({{ivar.kind}}{{interop_suffix}}){{qualifiers}} :: {{ivar.name}}{{interop_suffix}}
+{{ivar.f_type}}({{ivar.kind}}{{interop_suffix}}){{qualifiers}} :: {{ivar.name}}
 {%-     elif ivar.kind is not none and ivar.kind|length -%}
 {{ivar.f_type}}({{ivar.kind}}){{qualifiers}} :: {{ivar.name}}
 {%-     else -%}
@@ -21,9 +22,10 @@ type(gpufort_array{{ivar.rank}}){{qualifiers}} :: {{ivar.name}}{{interop_suffix}
 {########################################################################################}
 {%- macro render_param_decls(ivars,
                              qualifiers="",
+                             array_and_type_suffix="",
                              interop_suffix="_interop",
                              sep="\n") -%}
-{%- for ivar in ivars -%}{{render_param_decl(ivar,qualifiers,interop_suffix)}}{{sep if not loop.last}}{% endfor -%}
+{%- for ivar in ivars -%}{{render_param_decl(ivar,qualifiers,array_and_type_suffix,interop_suffix)}}{{sep if not loop.last}}{% endfor -%}
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_params(ivars,
@@ -146,12 +148,10 @@ subroutine {{derived_type.name}}{{interop_suffix}}_copy_{{ivar.name}}({{interop_
 {{ render_used_modules(used_modules) }}
 {% endif %}
   type({{derived_type.name}}{{interop_suffix}}),intent(inout) :: {{interop_var}}
-  type(c_ptr),intent(in) :: {{orig_var}}_ptr
+  type({{derived_type.name}},intent(in) :: {{orig_var}}
   !
-  type({{derived_type.name}}) :: {{orig_var}}
   integer(kind(gpufort_array_sync_none)),intent(in) :: sync_mode
   !
-  call c_f_pointer({{orig_var}}_ptr,{{orig_var}})
 {{ render_derived_type_copy_array_member(derived_type, ivar.name,
                                          derived_types, "sync_mode") | indent(2,True) }}
 end subroutine{{"\n" if not loop.last}}
@@ -205,7 +205,7 @@ function {{kernel.name}}_cpu(&
 {% endif %}
   integer(c_int),intent(in) :: sharedmem
   type(c_ptr),intent(in)    :: stream{{"," if num_global_vars > 0}}
-{{ render_param_decls(kernel.global_vars+kernel.global_reduced_vars) | indent(2,True) }}
+{{ render_param_decls(kernel.global_vars+kernel.global_reduced_vars,"","_in") | indent(2,True) }}
   integer(kind(hipSuccess)) :: ierr
 {# TODO 
  - rename gpufort_array inputs:

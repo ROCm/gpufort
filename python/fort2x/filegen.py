@@ -27,8 +27,8 @@ class CPPFileGenerator(FileGenerator):
        pass
     def merge(self,
               other):
-        self.snippets += other.snippets
-        self.includes += other.includes 
+        self.snippets        += other.snippets
+        self.includes        += other.includes 
     def generate_code(self):
         return fort2x.render.render_c_file_cpp(self.guard,
                                                self.snippets,

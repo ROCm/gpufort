@@ -5,7 +5,6 @@ import indexer.scoper as scoper
 
 class DerivedTypeGenerator:
     def __init__(itypes,
-                 itypes_local=[],
                  used_modules=[]):
         """Constructor.
         :param list itypes:       all derived type index entries for a given scope (including local derived types) 
@@ -15,7 +14,6 @@ class DerivedTypeGenerator:
                                   the copy routines.
         """
         self.itypes         = itypes
-        self.itypes_local   = itypes_local
         self.interop_suffix = "_interop"
         self.orig_var       = "orig_type",
         self.interop_var    = "interop_type",
@@ -26,8 +24,6 @@ class DerivedTypeGenerator:
                    fort2x.hip.render.render_derived_types_f03(self.itypes,
                                                            self.interop_suffix),
                    ]
-        for itype in self.itypes_local:
-            snippets.append("".join(itype["statements"]))
         return snippets 
     def render_derived_type_routines_f03(self):
         return [

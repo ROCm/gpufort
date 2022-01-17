@@ -168,7 +168,7 @@ def parse_file(linemaps,index,fortran_filepath):
             current_node._last_statement_index = current_statement_no
             current_node.complete_init(index)
             keep_recording = False
-        if not keep_recording and type(current_node) in [STProcedure,STProgram]:
+        if not keep_recording and type(current_node):
             new = STEndOrReturn(current_linemap,current_statement_no)
             append_if_not_recording_(new)
         ascend_()
@@ -250,6 +250,15 @@ def parse_file(linemaps,index,fortran_filepath):
         nonlocal current_statement_no
         log_detection_("placeholder")
         new = STPlaceHolder(current_linemap,current_statement_no)
+        new.ignore_in_s2s_translation = not translation_enabled
+        append_if_not_recording_(new)
+    def Contains():
+        nonlocal translation_enabled
+        nonlocal current_node
+        nonlocal current_linemap
+        nonlocal current_statement_no
+        log_detection_("contains")
+        new = STContains(current_linemap,current_statement_no)
         new.ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
     def NonZeroCheck(tokens):
@@ -527,8 +536,10 @@ def parse_file(linemaps,index,fortran_filepath):
                         # 
                         if current_tokens[0] == "use":
                             try_to_parse_string("use",use)
-                        elif current_tokens[0] in ["implicit","contains"]:
+                        elif current_tokens[0] == "implicit":
                             PlaceHolder()
+                        elif current_tokens[0] == "contains":
+                            Contains()
                         elif current_tokens[0] == "module":
                             try_to_parse_string("module",module_start)
                         elif current_tokens[0:2] == ["end","type"]:
@@ -562,14 +573,20 @@ def postprocess(stree,index,hip_module_suffix):
             return isinstance(child,STLoopKernel) or\
                    (type(child) is STProcedure and child.is_kernel_subroutine())
         
-        for stmodule in stree.find_all(filter=lambda child: type(child) in [STModule,STProgram],recursively=False):
+        for stmodule in stree.find_all(filter=lambda child: isinstance(child,
+                                                                       (STModule,
+                                                                       STProgram),
+                                                                       recursively=False):
             module_name = stmodule.name 
             kernels    = stmodule.find_all(filter=is_accelerated, recursively=True)
             for kernel in kernels:
                 if "hip" in DESTINATION_DIALECT or\
                   kernel.min_lineno() in kernels_to_convert_to_hip or\
                   kernel.kernel_name() in kernels_to_convert_to_hip:
-                    stnode = kernel.parent.find_first(filter=lambda child: type(child) in [STUseStatement,STDeclaration,STPlaceHolder])
+                    stnode = kernel.parent.find_first(filter=lambda child: isinstance(child,(STUseStatement,
+                                                                                             STDeclaration,
+                                                                                             STContains,
+                                                                                             STPlaceHolder)))
                     assert not stnode is None
                     indent = stnode.first_line_indent()
                     stnode.add_to_prolog("{}use {}{}\n".format(indent,module_name,hip_module_suffix))

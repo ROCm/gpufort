@@ -53,11 +53,11 @@ class TestHipKernelGenerator4LoopNest(unittest.TestCase):
         ttloopnest         = translator.parse_loop_kernel(fortran_statements,
                                                           scope)
         #print(self.ttloopnest.c_str())
-        self.kernelgen = fort2x.hip.kernelgen_hip.HipKernelGenerator4LoopNest("mykernel",
-                                                                            "abcdefgh",
-                                                                            ttloopnest,
-                                                                            scope,
-                                                                            "\n".join(fortran_statements))
+        self.kernelgen = fort2x.hip.kernelgen.HipKernelGenerator4LoopNest("mykernel",
+                                                                          "abcdefgh",
+                                                                          ttloopnest,
+                                                                          scope,
+                                                                          "\n".join(fortran_statements))
     def tearDown(self):
         global PROFILING_ENABLE
         if PROFILING_ENABLE:

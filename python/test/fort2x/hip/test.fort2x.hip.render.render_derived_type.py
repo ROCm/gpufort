@@ -88,8 +88,8 @@ class TestRenderDerivedType(unittest.TestCase):
         self.assertEqual(self.clean(fort2x.hip.render.render_derived_types_cpp(self._scope["types"])),\
             self.clean(testdata_result_cpp))
     def test_2_render_derived_types_f03(self):
-        #print(self.clean(fort2x.hip.render.render_derived_types_f03(self._scope["types"]))
-        #print(self.clean(testdata_result_f03))
+        print(fort2x.hip.render.render_derived_types_f03(self._scope["types"]))
+        print(testdata_result_f03)
         self.assertEqual(self.clean(fort2x.hip.render.render_derived_types_f03(self._scope["types"])),\
             self.clean(testdata_result_f03))
     def test_3_render_derived_type_size_bytes_routines_f03(self):

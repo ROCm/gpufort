@@ -6,13 +6,8 @@ import json
 import unittest
 import cProfile,pstats,io,time
 import addtoplevelpath
-import linemapper.linemapper as linemapper
-import linemapper.linemapperutils as linemapperutils
-import indexer.indexer as indexer
-import indexer.indexerutils as indexerutils 
-import translator.translator as translator
 import utils.logging
-import fort2x.hip.kernelgen
+import fort2x.hip.fort2hiputils as fort2hiputils
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
 utils.logging.VERBOSE    = False
@@ -47,17 +42,10 @@ class TestHipKernelGenerator4LoopNest(unittest.TestCase):
             self.profiler.enable()
         self.started_at = time.time()
         # 
-        scope              = indexerutils.create_scope_from_declaration_list(declaration_list)
-        linemaps           = linemapper.read_lines(annotated_loop_nest.split("\n"))
-        fortran_statements = linemapperutils.get_statement_bodies(linemaps)
-        ttloopnest         = translator.parse_loop_kernel(fortran_statements,
-                                                          scope)
-        #print(self.ttloopnest.c_str())
-        self.kernelgen = fort2x.hip.kernelgen.HipKernelGenerator4LoopNest("mykernel",
-                                                                          "abcdefgh",
-                                                                          ttloopnest,
-                                                                          scope,
-                                                                          "\n".join(fortran_statements))
+        self.kernelgen = fort2hiputils.create_kernel_generator_from_loop_nest(declaration_list,
+                                                                              annotated_loop_nest,
+                                                                              "mykernel",
+                                                                              "abcdefgh")
     def tearDown(self):
         global PROFILING_ENABLE
         if PROFILING_ENABLE:

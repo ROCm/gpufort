@@ -3,13 +3,8 @@
 # Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 import os
 import addtoplevelpath
-import linemapper.linemapper as linemapper
-import linemapper.linemapperutils as linemapperutils
-import indexer.indexer as indexer
-import indexer.indexerutils as indexerutils 
-import translator.translator as translator
 import utils.logging
-import fort2x.hip.kernelgen
+import fort2x.hip.fort2hiputils as fort2hiputils
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
 utils.logging.VERBOSE    = False
@@ -31,21 +26,13 @@ do i = 1, N
 end do
 """  
 
-# TODO simplify
-scope              = indexerutils.create_scope_from_declaration_list(declaration_list)
-linemaps           = linemapper.read_lines(annotated_loop_nest.split("\n"))
-fortran_statements = linemapperutils.get_statement_bodies(linemaps)
-ttloopnest         = translator.parse_loop_kernel(fortran_statements,
-                                                  scope)
 #print(ttloopnest.c_str())
-kernelgen = fort2x.hip.kernelgen.HipKernelGenerator4LoopNest("mykernel",
-                                                             "abcdefgh",
-                                                             ttloopnest,
-                                                             scope,
-                                                             "\n".join(fortran_statements))
+kernelgen = fort2hiputils.create_kernel_generator_from_loop_nest(declaration_list,
+                                                                 annotated_loop_nest,
+                                                                 "mykernel")
 
 print("\n".join(kernelgen.render_gpu_kernel_cpp()))
 launcher = kernelgen.create_launcher_context(kind="hip",
-                                                  debug_output=False,
-                                                  used_modules=[])
+                                             debug_output=False,
+                                             used_modules=[])
 print("\n".join(kernelgen.render_gpu_launcher_cpp(launcher)))

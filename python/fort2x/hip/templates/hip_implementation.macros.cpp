@@ -107,37 +107,26 @@ if ( ierr != hipSuccess ) return ierr;
 {%- endfor -%}
 {%- endmacro %}
 {########################################################################################}
-{%- macro render_block(prefix,block) -%}
-{% for block_dim in block %}
-const int {{prefix}}block_dim_{{loop.index}} = {{block_dim}};
-{% endfor %}
-dim3 block({%- for block_dim in block -%}{{prefix}}block_dim_{{loop.index}}{{", " if not loop.last}}{%- endfor -%});
+{%- macro render_grid() -%}
+dim3 grid({% for dim in ["x","y","z"] %}divideAndRoundUp(problem_size.{{dim}},block.{{dim}}){{ ",\n          " if not loop.last else ");" }}{% endfor %}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_grid(prefix,block,grid,problem_size) -%}
-{% if grid|length > 0 %}
-{% for grid_dim in grid %}const int {{prefix}}grid_dim_{{loop.index}} = {{grid_dim}};
-{% endfor %}
-dim3 grid({% for grid_dim in grid -%}{{prefix}}grid_dim_{{loop.index}}{{ "," if not loop.last }}{%- endfor %});
-{% else %}
-{% for size_dim in problem_size %}const int {{prefix}}N_{{loop.index}} = {{size_dim}};
-{% endfor %}
-dim3 grid({% for block_dim in block %}
-  divideAndRoundUp( {{prefix}}N_{{loop.index}}, {{prefix}}block_{{loop.index}} ){{ "," if not loop.last else ");" }}
-{% endfor %}
-{% endif %}
-{%- endmacro -%}
-{########################################################################################}
-{%- macro render_launcher_debug_output(prefix,stage,kernel_name,global_vars,global_reduced_vars) -%}
+{%- macro render_launcher_debug_output(prefix,
+                                       stage,
+                                       kernel_name,
+                                       global_vars,
+                                       global_reduced_vars,
+                                       have_problem_size=False) -%}
 {# Print kernel arguments and array device data (if specified) by runtime
    :param prefix: prefix for every line written out
    :param stage: "INPUT" or "OUTPUT" stage.
    :param kernel_name: Name of the kernel for naming compiler flags
    :param global_vars: list of index variables #}
+{% set num_global_vars = global_vars|length + global_reduced_vars|length %}
 {% set direction = "in" if stage == "INPUT" else "out" %}
 #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{kernel_name}})
 std::cout << "{{prefix}}:args:{{direction}}:";
-GPUFORT_PRINT_ARGS(grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream,{{render_global_params(global_vars+global_reduced_vars)}});
+GPUFORT_PRINT_ARGS({% if have_problem_size %}problem_size.x,problem_size.y,problem_size.y,{% endif %}grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream{% if num_global_vars %},{{render_global_params(global_vars+global_reduced_vars)}}{% endif %});
 #endif
 {% for ivar in global_vars %}
 {%   if ivar.rank > 0 and ivar.f_type in ["logical","integer","float"] %}
@@ -197,35 +186,34 @@ HIP_CHECK(hipDeviceSynchronize());
 {########################################################################################}
 {%- macro render_hip_launcher(kernel,launcher) -%}
 {% set num_global_vars = kernel.global_vars|length + kernel.global_reduced_vars|length %}
-extern "C" hipError_t {{launcher.name}}(
-{% if launcher.kind == "hip" %}
-    dim3& grid,
+{% set have_problem_size = launcher.kind == "hip_ps" %}
+extern "C" hipError_t {{launcher.name}}_(
+    dim3& {{"problem_size" if have_problem_size else "grid"}},
     dim3& block,
-{% endif %}
     const int& sharedmem,
     hipStream_t& stream{{"," if num_global_vars > 0}}
 {{ render_all_global_param_decls(kernel.global_vars,kernel.global_reduced_vars) | indent(4,True) }}) {
-{% if launcher.kind == "hip_auto" %}
-{{ render_block(kernel.name+"_",launcher.block) | indent(2,True) }}
-{{ render_grid(kernel.name+"_",launcher.block,launcher.grid,launcher.problem_size) | indent(2,True) }}   
+  hipError_t ierr = hipSuccess;
+{% if have_problem_size %}
+{{ render_grid() | indent(2,True) }}   
 {% endif %}
 {% if launcher.debug_output %}
-{{ render_launcher_debug_output(kernel.name+":gpu:in:","INPUT",kernel.name,kernel.global_vars,kernel.global_reduced_vars) | indent(2,True) }}
+{{ render_launcher_debug_output(kernel.name+":gpu:in:","INPUT",kernel.name,kernel.global_vars,kernel.global_reduced_vars,have_problem_size) | indent(2,True) }}
 {% endif %}
 {% if kernel.global_reduced_vars|length %}
 {{ render_reductions_prepare(kernel.global_reduced_vars) | indent(2,True) }}
 {% endif %}
   hipLaunchKernelGGL(({{kernel.name}}), grid, block, sharedmem, stream, {{render_all_global_params(kernel.global_vars,kernel.global_reduced_vars,True)}});
 {{ render_hip_kernel_synchronization(kernel.name) | indent(2,True) }}
-  hipError_t ierr = hipGetLastError();	
+  ierr = hipGetLastError();	
   if ( ierr != hipSuccess ) return ierr;
 {% if kernel.global_reduced_vars|length %}
 {{ render_reductions_finalize(kernel.global_reduced_vars) | indent(2,True) }}
 {% endif %}
 {% if launcher.debug_output %}
-{{ render_launcher_debug_output(kernel.name+":gpu:out:","OUTPUT",kernel.name,kernel.global_vars,kernel.global_reduced_vars) | indent(2,True) }}
+{{ render_launcher_debug_output(kernel.name+":gpu:out:","OUTPUT",kernel.name,kernel.global_vars,kernel.global_reduced_vars,have_problem_size) | indent(2,True) }}
 {% endif %}
-  return hipSuccess;
+  return ierr;
 }
 {%- endmacro -%}
 {########################################################################################}
@@ -239,7 +227,7 @@ extern "C" hipError_t {{kernel.name}}_cpu(
 {########################################################################################}
 {%- macro render_cpu_launcher(kernel,launcher) -%}
 {% set num_global_vars = kernel.global_vars|length + kernel.global_reduced_vars|length %}
-extern "C" hipError_t {{launcher.name}}(
+extern "C" hipError_t {{launcher.name}}_(
     const int& sharedmem,
     const hipStream_t& stream{{"," if num_global_vars > 0}}
 {{ render_all_global_param_decls(kernel.global_vars,kernel.global_reduced_vars) | indent(4,True) }}) {

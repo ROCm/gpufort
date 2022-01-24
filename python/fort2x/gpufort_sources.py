@@ -3,8 +3,9 @@
 import os,sys
 
 import addtoplevelpath
-import fort2x.render
 import utils.logging
+
+import fort2x.render
 
 def generate_gpufort_headers(output_dir):
     """Create the header files that all GPUFORT HIP kernels rely on."""

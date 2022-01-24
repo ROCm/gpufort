@@ -13,6 +13,7 @@ macro_files = [
   ]
 macro_filters = [
   re.compile("|".join(r"""render_interface_module
+render_used_modules
 render_c_file""".split("\n")))
   ]
     

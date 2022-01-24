@@ -9,8 +9,8 @@
 {% if prolog|length %}
 {{prolog}}
 {% endif %}
-#ifndef {{ guard }}
-#define {{ guard }}
+#ifndef {{guard}}
+#define {{guard}}
 {% if includes_prolog|length %}
 {{includes_prolog}}
 {% endif %}
@@ -26,5 +26,5 @@
 {{snippet}}{{"\n" if not loop.last}}
 {% endfor %}{# snippets #}
 {% endif %}
-#endif {{guard}}
+#endif // {{guard}}
 {%- endmacro -%}

@@ -168,7 +168,7 @@ function {{launcher.name}}(&
     grid, block,&
 {% endif %}
     sharedmem,stream{{"," if num_global_vars > 0 }}&
-{{render_params(kernel.global_vars+kernel.global_reduced_vars,sep=",&\n") | indent(4,True)}}) bind(c,name="{{launcher.name}}") &
+{{render_params(kernel.global_vars+kernel.global_reduced_vars,sep=",&\n") | indent(4,True)}}) bind(c,name="{{launcher.name}}_") &
       result(ierr)
   use iso_c_binding
   use hipfort

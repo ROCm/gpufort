@@ -132,11 +132,17 @@ class STNode:
         descend_(self)       
         return result
     def find_first(self,filter=lambda child: True):
+        """:return: First child that matches the filter, or None.
+        :note: Not recursively applied to children.
+        """
         for child in self.children:
             if filter(child):
                 return child
         return None
     def find_last(self,filter=lambda child: True):
+        """:return: Last child that matches the filter, or None.
+        :note: Not recursively applied to children.
+        """
         for child in reversed(self.children):
             if filter(child):
                 return child
@@ -263,23 +269,32 @@ class STNode:
             if transformed:
                self._modify_linemaps(transformed_code)
 
-def decl_list_entry_filter(stnode):
-    """:return: If the scanner tree node is member of the declaration list."""
-    return type(stnode) in [STUseStatement,STDeclaration,STPlaceHolder]
-
 class STContainerBase(STNode): 
+    @staticmethod
+    def decl_list_entry_filter(stnode):
+        """:return: If the scanner tree node is member of the declaration list."""
+        return isinstance(stnode,
+                          (STUseStatement,
+                          STDeclaration,
+                          STPlaceHolder))
     def first_entry_in_decl_list(self):
-        result = self.find_first(filter=decl_list_entry_filter)
+        result = self.find_first(filter=STContainerBase.decl_list_entry_filter)
         if result == None:
             return self
         return result
     def last_entry_in_decl_list(self):
-        result = self.find_last(filter=decl_list_entry_filter)
+        result = self.find_last(filter=STContainerBase.decl_list_entry_filter)
         if result == None:
             return self
         return result
     def return_or_end_statements(self):
-        return self.find_all(filter=lambda stnode: type(stnode) == STEndOrReturn)
+        return self.find_all(filter=lambda stnode: isinstance(stnode,STTEndOrReturn))
+    def end_statement(self):
+        """:return: The child of type STEnd."""
+        return self.find_last(filter=lambda stnode: isinstance(stnode,STEnd))
+    def has_contains_statement(self):
+        """:return: A child of type STContains, or None if no such child node can be found."""
+        return self.find_first(filter=lambda stnode: isinstance(stnode,STContains)) != None
     def append_to_decl_list(self,lines,prepend=False):
         """
         Append lines to the last statement in the declaration list.
@@ -343,8 +358,10 @@ class STEndOrReturn(STNode):
             transformed_code  = joined_prolog + "\n" + joined_statements
             self._modify_linemaps(transformed_code)
         self._linemaps[0]["prolog"].clear()
-             
-
+class STEnd(STEndOrReturn):
+    pass
+class STReturn(STEndOrReturn):
+    pass
 class STRoot(STContainerBase):
     def __init__(self):
         STNode.__init__(self,None,-1)
@@ -497,6 +514,15 @@ class STLoopKernel(STNode):
         return LOOP_KERNEL_NAME_TEMPLATE.format(parent=self.parent.name.lower(),lineno=self.min_lineno(),hash=self.__hash())
     def kernel_launcher_name(self):
         return "launch_{}".format(self.kernel_name())
+    def set_kernel_call_arguments(ivars):
+        """Add a kernel argument to the list of kernel arguments.
+        Subroutines may wrap the argument name 
+        into additional code, e.g. code to obtain device
+        data from an OpenACC runtime.
+        :param str argname: Argument name; never a derived type member access 
+                            or array element access expression.
+        """
+        assert False, "Must be implemented by subclass!"
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[]):
         indent = self.first_line_indent()
         try:
@@ -515,8 +541,7 @@ class STLoopKernel(STNode):
         return result, True
 
 class STDeclaration(STNode):
-    """
-    Works with Fortran declarations such as
+    """Represents Fortran declarations such as
     ```Fortran
     Complex(DP), allocatable, device :: dev_array(:,:)
     ```
@@ -694,7 +719,7 @@ class STMemcpy(STNode):
         return repl_memcpy_(self._parse_result)
         #return utils.pyparsingutils.replace_all(joined_statements,translator.memcpy,repl_memcpy)
 
-class STCudaLibCall(STNode):
+class STCufLibCall(STNode):
     def __init__(self,first_linemap,first_linemap_first_statement):
         STNode.__init__(self,first_linemap,first_linemap_first_statement)
         self._cuda_api = ""
@@ -742,9 +767,11 @@ class STCudaLibCall(STNode):
         transformed = snippet.lower() != oldf_snippet 
         return snippet, transformed
 
-class STCudaKernelCall(STNode):
-    """Convers CUDA kernel calls to calls to subroutine interfaces.
+class STCufKernelCall(STNode):
+    """Convers CUDA Fortran kernel calls to calls to subroutine interfaces.
     """
+    # TODO add wrapper call
+    # TODO ensure use gpufort_array is added to one of the parent nodes
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[]):
         snippet = joined_statements
         for tokens,start,end in translator.cuf_kernel_call.scanString(snippet):

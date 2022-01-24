@@ -74,26 +74,20 @@ class TestHipKernelGenerator4LoopNest(unittest.TestCase):
                                                           debug_output=False,
                                                           used_modules=[])
         print("\n".join(self.kernelgen.render_gpu_launcher_cpp(launcher)))
-    def test_07_render_hip_auto_launcher_cpp(self):
-        launcher = self.kernelgen.create_launcher_context(kind="hip_auto",
+    def test_07_render_hip_ps_launcher_cpp(self):
+        launcher = self.kernelgen.create_launcher_context(kind="hip_ps",
                                                           debug_output=False,
-                                                          used_modules=[],
-                                                          problem_size=[1024,1,1],
-                                                          grid  = [1,1,1],
-                                                          block = [64,1,1])
+                                                          used_modules=[])
         print("\n".join(self.kernelgen.render_gpu_launcher_cpp(launcher)))
     def test_08_render_hip_launcher_f03(self):
         launcher = self.kernelgen.create_launcher_context(kind="hip",
                                                           debug_output=False,
                                                           used_modules=[])
         print("\n".join(self.kernelgen.render_launcher_interface_f03(launcher)))
-    def test_09_render_hip_auto_launcher_f03(self):
-        launcher = self.kernelgen.create_launcher_context(kind="hip_auto",
+    def test_09_render_hip_ps_launcher_f03(self):
+        launcher = self.kernelgen.create_launcher_context(kind="hip_ps",
                                                           debug_output=False,
-                                                          used_modules=[],
-                                                          problem_size=[1024,1,1],
-                                                          grid  = [1,1,1],
-                                                          block = [64,1,1])
+                                                          used_modules=[])
         print("\n".join(self.kernelgen.render_launcher_interface_f03(launcher)))
     def test_10_render_cpu_launcher_cpp(self):
         launcher = self.kernelgen.create_launcher_context(kind="cpu",

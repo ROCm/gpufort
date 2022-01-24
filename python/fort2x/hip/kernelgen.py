@@ -5,6 +5,10 @@ import fort2x.hip.render
 
 class HipKernelGeneratorBase(fort2x.kernelgen.KernelGeneratorBase):
     """
+    :param str kernel_name: Name for the kernel.
+    :param str kernel_hash: Hash code encoding the significant kernel content (expressions and directives).
+    :param dict scope: A dictionary containing index entries for the scope that the kernel is in
+    :param  
     """
     def __init__(self,
                  kernel_name,
@@ -18,11 +22,19 @@ class HipKernelGeneratorBase(fort2x.kernelgen.KernelGeneratorBase):
         self.fortran_snippet = fortran_snippet
         self.error_handling  = error_handling 
         # to be set by subclass:
-        self.c_body                = ""
-        self.all_vars              = []
-        self.global_reductions     = {}
-        self.shared_vars           = []
-        self.local_vars            = []
+        self.c_body            = ""
+        self.all_vars          = []
+        self.global_reductions = {}
+        self.shared_vars       = []
+        self.local_vars        = []
+        #
+        self.kernel = None
+    def get_kernel_arguments(self):
+        """:return: index records for the variables
+                    that must be passed as kernel arguments.
+        """
+        return self.kernel["global_vars"] +
+               self.kernel["global_reduced_vars"]
     def _create_kernel_context(self):
         kernel = self._create_kernel_base_context(self.kernel_name,
                                                   self.c_body)
@@ -51,23 +63,13 @@ class HipKernelGeneratorBase(fort2x.kernelgen.KernelGeneratorBase):
     def create_launcher_context(self,
                                 kind,
                                 debug_output,
-                                used_modules = [],
-                                problem_size = [],
-                                grid         = [],
-                                block        = []):
+                                used_modules = []):
         """Create context for HIP kernel launcher code generation.
-        :param str kind:one of 'hip', 'hip_auto', or 'cpu'.
-        :param list grid:  d-dimensional list of string expressions for the grid dimensions
-        :param list block: d-dimensional list of string expressions for the block dimensions
-        :note: Parameters problem_size & grid & block are only required if the kind is set to "hip".
+        :param str kind:one of 'hip', 'hip_ps', or 'cpu'.
         """
         launcher = self.__create_launcher_base_context(kind,
                                                        debug_output,
                                                        used_modules)
-        if kind == "hip_auto":
-            launcher["problem_size"] = problem_size
-            launcher["grid"]         = grid
-            launcher["block"]        = block
         return launcher
     def render_gpu_kernel_cpp(self):
         return [
@@ -84,7 +86,7 @@ class HipKernelGeneratorBase(fort2x.kernelgen.KernelGeneratorBase):
         return [" ".join(["!","END",self.kernel_name,self.kernel_hash])]
     def render_gpu_launcher_cpp(self,launcher):
         return [fort2x.hip.render.render_hip_launcher_cpp(self.kernel,
-                                                        launcher)]
+                                                          launcher)]
     def render_cpu_launcher_cpp(self,launcher):
         return [
                fort2x.hip.render.render_cpu_routine_cpp(self.kernel),

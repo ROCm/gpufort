@@ -120,18 +120,18 @@ class TTDo(TTContainer):
         tid      = self._thread_index
         assert not tid is None
         begin    = make_c_str(self._begin._rhs)
-        size     = self.problem_size_c_str()
+        size     = self.problem_size()
         step     = make_c_str(self._step)
         # int i<n> = begin<n> + step<n>*(i<denominator<n>> % size<n>)
         return "{indent}int {var} = {begin} + ({step})*({tid}{denom} % {size});\n".format(\
                 indent=self.indent,var=ivar,begin=begin,tid=tid,denom=denominator,size=size,step=step)
-    def problem_size_c_str(self):
+    def problem_size(self,converter=make_c_str):
         if self._step == "1":
             return "(1 + (({end}) - ({begin})))".format(\
-                begin=make_c_str(self._begin._rhs),end=make_c_str(self._end),step=make_c_str(self._step) )
+                begin=converter(self._begin._rhs),end=converter(self._end),step=converter(self._step) )
         else:
             return "(1 + (({end}) - ({begin}))/({step}))".format(\
-                begin=make_c_str(self._begin._rhs),end=make_c_str(self._end),step=make_c_str(self._step))
+                begin=converter(self._begin._rhs),end=converter(self._end),step=converter(self._step))
     def hip_thread_bound_c_str(self) :
         ivar = self.loop_var()
         begin    = make_c_str(self._begin._rhs)
@@ -346,7 +346,7 @@ class TTLoopKernel(TTContainer,IComputeConstruct):
             do_loops = find_all(self.body[0],TTDo)
             for i,loop in enumerate(do_loops):
                 if i < num_outer_loops_to_map:
-                    result[i] = loop.problem_size_c_str()
+                    result[i] = loop.problem_size()
             return result
         else: # "collapse"
             result = ""
@@ -354,7 +354,7 @@ class TTLoopKernel(TTContainer,IComputeConstruct):
             for loop in reversed(do_loops[0:num_outer_loops_to_map]):
                 if len(result):
                     result += "*"
-                result += loop.problem_size_c_str()
+                result += loop.problem_size()
             if len(result):
                 return [result]
             else:
@@ -542,7 +542,7 @@ class TTLoopKernel(TTContainer,IComputeConstruct):
                     indices += loop.collapsed_loop_index_c_str("/("+"*".join(denominator_factors)+")")
                 else:
                     indices += loop.collapsed_loop_index_c_str("")
-                denominator_factors.append(loop.problem_size_c_str())
+                denominator_factors.append(loop.problem_size())
                 conditions.append(loop.hip_thread_bound_c_str())
         # TODO fix indenting
         c_snippet = "{0}{2}if ({1}) {{\n{3}\n}}".format(\

@@ -88,7 +88,7 @@ def postprocess_tree_cuf(stree,index,destination_dialect=""):
     # cublas_v1 detection
     if CUBLAS_VERSION == 1:
         def has_cublas_call_(child):
-            return type(child) is STCudaLibCall and child.has_cublas()
+            return type(child) is STCufLibCall and child.has_cublas()
         cuf_cublas_calls = stree.find_all(filter=has_cublas_call_, recursively=True)
         for call in cuf_cublas_calls:
             last_decl_list_node = call.parent.last_entry_in_decl_list() 

@@ -168,8 +168,8 @@ def parse_file(linemaps,index,fortran_filepath):
             current_node._last_statement_index = current_statement_no
             current_node.complete_init(index)
             keep_recording = False
-        if not keep_recording and type(current_node):
-            new = STEndOrReturn(current_linemap,current_statement_no)
+        if not keep_recording:
+            new = STEnd(current_linemap,current_statement_no)
             append_if_not_recording_(new)
         ascend_()
     def Return():
@@ -177,8 +177,10 @@ def parse_file(linemaps,index,fortran_filepath):
         nonlocal current_linemap
         nonlocal keep_recording
         log_detection_("return statement")
-        if not keep_recording and type(current_node) in [STProcedure,STProgram]:
-            new = STEndOrReturn(current_linemap,current_statement_no)
+        if not keep_recording and isinstance(current_node,
+                                             (STProcedure,
+                                             STProgram)):
+            new = STReturn(current_linemap,current_statement_no)
             append_if_not_recording_(new)
     def in_kernels_acc_region_and_not_recording():
         nonlocal current_node
@@ -316,8 +318,8 @@ def parse_file(linemaps,index,fortran_filepath):
         nonlocal keep_recording
         log_detection_("CUDA API call")
         cudaApi, args = tokens 
-        if not type(current_node) in [STCudaLibCall,STCudaKernelCall]:
-            new = STCudaLibCall(current_linemap,current_statement_no)
+        if not type(current_node) in [STCufLibCall,STCufKernelCall]:
+            new = STCufLibCall(current_linemap,current_statement_no)
             new.ignore_in_s2s_translation = not translation_enabled
             new.cudaApi  = cudaApi
             #print("finishes_on_first_line={}".format(finishes_on_first_line))
@@ -332,7 +334,7 @@ def parse_file(linemaps,index,fortran_filepath):
         log_detection_("CUDA kernel call")
         kernel_name, kernel_launch_args, args = tokens 
         assert type(current_node) in [STModule,STProcedure,STProgram], "type is: "+str(type(current_node))
-        new = STCudaKernelCall(current_linemap,current_statement_no)
+        new = STCufKernelCall(current_linemap,current_statement_no)
         new.ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
     def AccDirective():

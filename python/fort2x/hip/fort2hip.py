@@ -105,7 +105,7 @@ class HipCodeGenerator(fort2x.fort2x.CodeGenerator):
                                                                          stloopnest.kernel_hash(),
                                                                          stloopnest.parse_result,
                                                                          scope,
-                                                                         "\n".join(fortran_statements))
+                                                                         "".join(stloopnest.lines()))
 
         self.__render_kernel(kernelgen,
                              cpp_filegen,
@@ -128,7 +128,7 @@ class HipCodeGenerator(fort2x.fort2x.CodeGenerator):
                                                                              stprocedure.parse_result,
                                                                              iprocedure,
                                                                              scope,
-                                                                             "\n".join(fortran_statements))
+                                                                             "".join(stlprocedure.lines()))
         else:
             kernelgen = fort2x.hip.kernelgen_hip.HipKernelGenerator4AcceleratorRoutine(stprocedure.kernel_name(),
                                                                                        stprocedure.kernel_hash(),

@@ -33,8 +33,8 @@ class HipKernelGeneratorBase(fort2x.kernelgen.KernelGeneratorBase):
         """:return: index records for the variables
                     that must be passed as kernel arguments.
         """
-        return self.kernel["global_vars"] +
-               self.kernel["global_reduced_vars"]
+        return (self.kernel["global_vars"]
+               + self.kernel["global_reduced_vars"])
     def _create_kernel_context(self):
         kernel = self._create_kernel_base_context(self.kernel_name,
                                                   self.c_body)
@@ -53,10 +53,19 @@ class HipKernelGeneratorBase(fort2x.kernelgen.KernelGeneratorBase):
                                        kind,
                                        debug_output,
                                        used_modules=[]):
-        """Create base context for kernel launcher code generation."""
+        """Create base context for kernel launcher code generation.
+        :param str kind:one of 'hip', 'hip_ps', or 'cpu'.
+        """
+        launcher_name_tokens=["launch",self.kernel_name,kind]
+        if kind == "hip":
+            launcher_name_tokens=["launch",self.kernel_name]
+        elif kind == "hip_ps":
+            launcher_name_tokens=["launch",self.kernel_name,"ps"]
+        else:
+            launcher_name_tokens=["launch",self.kernel_name,"cpu"]
         return {
                "kind"         : kind,
-               "name"         : "_".join(["launch",self.kernel_name,kind]),
+               "name"         : "_".join(launcher_name_tokens),
                "used_modules" : used_modules,
                "debug_output" : debug_output,
                }

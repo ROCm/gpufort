@@ -77,11 +77,12 @@ def render_derived_types_f03(derived_types,interop_suffix="_interop"):
 def render_derived_type_copy_scalars_routines_f03_ctx(context):
     return generate_code("render_derived_type_copy_scalars_routines.template.f03",context)
     
-def render_derived_type_copy_scalars_routines_f03(derived_types,interop_suffix="_interop",used_modules=[]):
+def render_derived_type_copy_scalars_routines_f03(derived_types,direction="to",used_modules=[],interop_suffix="_interop"):
     context = {
       "derived_types" : derived_types,
-      "interop_suffix" : interop_suffix,
-      "used_modules" : used_modules
+      "direction" : direction,
+      "used_modules" : used_modules,
+      "interop_suffix" : interop_suffix
       }
     return render_derived_type_copy_scalars_routines_f03_ctx(context)
     
@@ -99,7 +100,21 @@ def render_derived_type_size_bytes_routines_f03(derived_types,interop_suffix="_i
 def render_derived_type_copy_array_member_routines_f03_ctx(context):
     return generate_code("render_derived_type_copy_array_member_routines.template.f03",context)
     
-def render_derived_type_copy_array_member_routines_f03(derived_types,used_modules=[],interop_suffix="_interop",orig_var="orig_type",interop_var="interop_type"):
+def render_derived_type_copy_array_member_routines_f03(derived_types,direction="in",used_modules=[],interop_suffix="_interop",orig_var="orig_type",interop_var="interop_type"):
+    context = {
+      "derived_types" : derived_types,
+      "direction" : direction,
+      "used_modules" : used_modules,
+      "interop_suffix" : interop_suffix,
+      "orig_var" : orig_var,
+      "interop_var" : interop_var
+      }
+    return render_derived_type_copy_array_member_routines_f03_ctx(context)
+    
+def render_derived_type_init_array_member_routines_f03_ctx(context):
+    return generate_code("render_derived_type_init_array_member_routines.template.f03",context)
+    
+def render_derived_type_init_array_member_routines_f03(derived_types,used_modules=[],interop_suffix="_interop",orig_var="orig_type",interop_var="interop_type"):
     context = {
       "derived_types" : derived_types,
       "used_modules" : used_modules,
@@ -107,7 +122,20 @@ def render_derived_type_copy_array_member_routines_f03(derived_types,used_module
       "orig_var" : orig_var,
       "interop_var" : interop_var
       }
-    return render_derived_type_copy_array_member_routines_f03_ctx(context)
+    return render_derived_type_init_array_member_routines_f03_ctx(context)
+    
+def render_derived_type_destroy_array_member_routines_f03_ctx(context):
+    return generate_code("render_derived_type_destroy_array_member_routines.template.f03",context)
+    
+def render_derived_type_destroy_array_member_routines_f03(derived_types,used_modules=[],interop_suffix="_interop",orig_var="orig_type",interop_var="interop_type"):
+    context = {
+      "derived_types" : derived_types,
+      "used_modules" : used_modules,
+      "interop_suffix" : interop_suffix,
+      "orig_var" : orig_var,
+      "interop_var" : interop_var
+      }
+    return render_derived_type_destroy_array_member_routines_f03_ctx(context)
     
 def render_launcher_f03_ctx(context):
     return generate_code("render_launcher.template.f03",context)

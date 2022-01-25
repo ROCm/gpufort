@@ -39,34 +39,44 @@ type(gpufort_array{{ivar.rank}}){{qualifiers}} :: {{ivar.name}}
 {% for derived_type in derived_types %}
 type, bind(c) :: {{derived_type.name}}{{interop_suffix}}
 {{ (render_param_decls(derived_type.variables)) | indent(2,True) }}
-end type {{derived_type.name}}{{interop_suffix}}
+end type {{derived_type.name}}{{interop_suffix}}{{"\n" if not loop.last}}
 {% endfor %}
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_derived_type_copy_scalars(derived_type,
                                            derived_types,
                                            inline=False,
+                                           direction="in",
                                            interop_suffix="_interop",
                                            orig_var="orig_type",
                                            interop_var="interop_type") -%}
 {% for ivar in derived_type.variables %}
 {%   if ivar.rank == 0 %}
 {%     if ivar.f_type in ["integer","real","logical"] %}
+{%       if direction == "in" %}
 {{interop_var}}%{{ivar.name}} = {{orig_var}}%{{ivar.name }}
+{%       else %}
+{{orig_var}}%{{ivar.name}} = {{interop_var}}%{{ivar.name }}
+{%-      endif %}
 {%     elif ivar.f_type == "type" %}
 {%       if inline %}
 {%         for derived_type2 in derived_types %}
 {%           if derived_type2.name == ivar.kind %}
-{{ render_derived_type_copy_scalars( derived_type2, derived_types,
-     True, interop_suffix, orig_var+"%"+ivar.name, interop_var+"%"+ivar.name ) }}
-{%           endif %}
+{{ render_derived_type_copy_scalars(derived_type2,
+                                    derived_types,
+                                    True,
+                                    direction,
+                                    interop_suffix,
+                                    orig_var+"%"+ivar.name,
+                                    interop_var+"%"+ivar.name) }}
+{%-          endif %}
 {%         endfor %}
-{%       else %}
-call {{ivar.kind}}{{interop_suffix}}_copy_scalars({{interop_var}}%{{ivar.name}},{{orig_var}}%{{ivar.name}})  
-{%       endif %}
-{%     endif %}
-{%   endif %}
-{% endfor %}
+{%-       else %}
+call {{ivar.kind}}{{interop_suffix}}_copy{{direction}}_scalars({{interop_var}}%{{ivar.name}},{{orig_var}}%{{ivar.name}})  
+{%-       endif %}
+{%-     endif %}
+{%-   endif %}
+{%- endfor %}
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_used_modules(used_modules) -%}
@@ -76,17 +86,23 @@ use {{module.name}}{{(", only: "+module.only|join(",") if module.only|length>0)}
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_derived_type_copy_scalars_routines(derived_types,
-                                                    interop_suffix="_interop",
-                                                    used_modules=[]) -%}
+                                                    direction="to",
+                                                    used_modules=[],
+                                                    interop_suffix="_interop") -%}
 {% for derived_type in derived_types %}
-subroutine {{derived_type.name}}{{interop_suffix}}_copy_scalars(interop_type,orig_type)
+subroutine {{derived_type.name}}{{interop_suffix}}_copy{{direction}}_scalars(interop_type,orig_type)
 {% if used_modules|length %}
-{{ render_used_modules(used_modules) }}
-{% endif %}
+{{ render_used_modules(used_modules) | indent(2,True) }}
+{%- endif %}
+  implicit none
   type({{derived_type.name}}{{interop_suffix}}),intent(inout) :: interop_type
   type({{derived_type.name}}),intent(in) :: orig_type
   !
-  {{ render_derived_type_copy_scalars(derived_type,derived_types,False,interop_suffix) }}
+  {{ render_derived_type_copy_scalars(derived_type,
+                                      derived_types,
+                                      False,
+                                      direction,
+                                      interop_suffix) }}
 end subroutine{{"\n" if not loop.last}}
 {% endfor %}
 {%- endmacro -%}
@@ -97,8 +113,9 @@ end subroutine{{"\n" if not loop.last}}
 {% for derived_type in derived_types %} 
 function {{derived_type.name}}{{interop_suffix}}_size_bytes() result(size_bytes)
 {% if used_modules|length %}
-{{ render_used_modules(used_modules) }}
-{% endif %}
+{{ render_used_modules(used_modules) | indent(2,True) }}
+{%- endif %}
+  implicit none
   type({{derived_type.name}}{{interop_suffix}}) :: dummy
   integer(c_int) :: size_bytes
   !
@@ -107,53 +124,167 @@ end function
 {% endfor %}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_derived_type_copy_array_member(derived_type,
+{%- macro render_derived_type_copy_array_member(interop_type_name,
                                                 member,
-                                                derived_types,
-                                                sync_mode="gpufort_array_sync_copy",
-                                                interop_suffix="_interop", 
+                                                rank,
+                                                direction="in",
                                                 orig_var="orig_type",
                                                 interop_var="interop_type") -%}
-{% for ivar in derived_type.variables %}
-{%   if ivar.name == member %}
-{%     if ivar.f_type in ["integer","real","logical"] %}
-call hipCheck(gpufort_array_init({{interop_var}}%{{member}},{{orig_var}}%{{member}},&
-  alloc_mode=gpufort_array_wrap_host_alloc_device,&
-  sync_mode={{sync_mode}}))
-{%     elif ivar.f_type == "type" %}
-call hipCheck(gpufort_array_init({{interop_var}}%{{member}},&
-  {{ivar.kind}}{{interop_suffix}}_size_bytes(),&
-  shape({{orig_var}}%{{member}}),&
-  lbounds=lbound({{orig_var}}%{{member}}),&
-  alloc_mode=gpufort_array_alloc_pinned_host_alloc_device)) 
-  ! 
 call c_f_pointer({{interop_var}}%{{member}}%data%data_host,&
   {{interop_var}}_{{member}},shape=shape({{orig_var}}%{{member}}))
-!call hipCheck(gpufort_array_copy_to_device(mesh_interop%x))
-{%     endif %}
-{%   endif %}
+{% set rank_ub=rank+1 %}
+{% set index = "i"+range(1,rank_ub)|join(",i") %}
+{% for i in range(1,rank_ub) -%}
+do i{{i}} = lbound({{orig_var}},{{i}}),ubound({{orig_var}},{{i}})
 {% endfor %}
-{%- endmacro -%}
+    call {{interop_type_name}}_copy{{direction}}_scalars({{interop_var}}_{{member}}({{index}}),orig_type%{{member}}({{index}}))
+{% for i in range(1,rank_ub) -%}
+end do{{"\n" if not loop.last}}
+{%- endfor %}
+{% endmacro %}
 {########################################################################################}
 {%- macro render_derived_type_copy_array_member_routines(derived_types,
+                                                         direction="in",
                                                          used_modules=[],
                                                          interop_suffix="_interop", 
                                                          orig_var="orig_type",
                                                          interop_var="interop_type") -%}
 {% for derived_type in derived_types %}
+{% set interop_type_name = derived_type.name + interop_suffix %}
+{%   for ivar in derived_type.variables %}
+{%     if ivar.rank > 0 and ivar.f_type == "type" %} 
+subroutine {{interop_type_name}}_copy{{direction}}_{{ivar.name}}({{interop_var}},{{orig_var}})
+{% if used_modules|length %}
+{{ render_used_modules(used_modules) | indent(2,True) }}
+{%- endif %}
+  implicit none
+  type({{interop_type_name}}),intent(inout) :: {{interop_var}}
+  type({{derived_type.name}}),intent(in) :: {{orig_var}}
+{%   if ivar.f_type == "type" %}
+  !
+  type({{ivar.kind}}{{interop_suffix}}),pointer :: {{interop_var}}_{{ivar.name}}
+{%-   endif %}
+  !
+{{ render_derived_type_copy_array_member(interop_type_name,
+                                         ivar.name,
+                                         ivar.rank,
+                                         direction,
+                                         orig_var,
+                                         interop_var) | indent(2,True) }}
+end subroutine{{"\n" if not loop.last}}
+{%-     endif %}
+{%   endfor %}
+{% endfor %}
+{%- endmacro -%}
+{########################################################################################}
+{%- macro render_derived_type_init_array_member(derived_type,
+                                                member,
+                                                interop_suffix="_interop", 
+                                                orig_var="orig_type",
+                                                interop_var="interop_type") -%}
+{% set interop_type_name = derived_type.name + interop_suffix %}
+{% for ivar in derived_type.variables %}
+{%   if ivar.name == member %}
+{%     if ivar.f_type in ["integer","real","logical"] %}
+call hipCheck(gpufort_array_init({{interop_var}}%{{member}},{{orig_var}}%{{member}},&
+  alloc_mode=gpufort_array_wrap_host_alloc_device,&
+  sync_mode=sync_mode))
+{%-     elif ivar.f_type == "type" %}
+call hipCheck(gpufort_array_init({{interop_var}}%{{member}},&
+  {{ivar.kind}}{{interop_suffix}}_size_bytes(),&
+  shape({{orig_var}}%{{member}}),&
+  lbounds=lbound({{orig_var}}%{{member}}),&
+  alloc_mode=gpufort_array_alloc_pinned_host_alloc_device))
+{{interop_var}}%{{member}}%sync_mode=sync_mode ! set post init to prevent unnecessary copy at init
+!
+call {{interop_type_name}}_copyin_{{ivar.name}}({{interop_var}},{{orig_var}})
+!
+if ( sync_mode .eq. gpufort_array_sync_copy .or.&
+     sync_mode .eq. gpufort_array_sync_copyin) then
+  call hipCheck(gpufort_array_copy_to_device({{interop_var}}%{{member}}))
+endif
+{%-     endif %}
+{%-   endif %}
+{%- endfor %}
+{%- endmacro -%}
+{########################################################################################}
+{%- macro render_derived_type_init_array_member_routines(derived_types,
+                                                         used_modules=[],
+                                                         interop_suffix="_interop", 
+                                                         orig_var="orig_type",
+                                                         interop_var="interop_type") -%}
+{% for derived_type in derived_types %}
+{% set interop_type_name = derived_type.name + interop_suffix %}
 {%   for ivar in derived_type.variables %}
 {%     if ivar.rank > 0 %} 
-subroutine {{derived_type.name}}{{interop_suffix}}_copy_{{ivar.name}}({{interop_var}},{{orig_var}}_ptr,sync_mode)
+subroutine {{interop_type_name}}_init_{{ivar.name}}(&
+    {{interop_var}},&
+    {{orig_var}},&
+    sync_mode)
 {% if used_modules|length %}
-{{ render_used_modules(used_modules) }}
-{% endif %}
+{{ render_used_modules(used_modules) | indent(2,True) }}
+{%- endif %}
+  implicit none
   type({{derived_type.name}}{{interop_suffix}}),intent(inout) :: {{interop_var}}
-  type({{derived_type.name}},intent(in) :: {{orig_var}}
-  !
+  type({{derived_type.name}}),intent(in) :: {{orig_var}}
   integer(kind(gpufort_array_sync_none)),intent(in) :: sync_mode
   !
-{{ render_derived_type_copy_array_member(derived_type, ivar.name,
-                                         derived_types, "sync_mode") | indent(2,True) }}
+{{ render_derived_type_init_array_member(derived_type, 
+                                         ivar.name,
+                                         interop_suffix, 
+                                         orig_var,
+                                         interop_var) | indent(2,True) }}
+end subroutine{{"\n" if not loop.last}}
+{%     endif %}
+{%   endfor %}
+{% endfor %}
+{%- endmacro -%}
+{########################################################################################}
+{%- macro render_derived_type_destroy_array_member(derived_type,
+                                                   member,
+                                                   interop_suffix="_interop", 
+                                                   orig_var="orig_type",
+                                                   interop_var="interop_type") -%}
+{% set interop_type_name = derived_type.name + interop_suffix %}
+{% for ivar in derived_type.variables %}
+{%   if ivar.name == member %}
+{%     if ivar.f_type == "type" %}{# destroy is sufficient for arrays of basic datatypes #}
+if ( {{interop_var}}%{{member}}%sync_mode .eq. gpufort_array_sync_copy .or.&
+     {{interop_var}}%{{member}}%sync_mode .eq. gpufort_array_sync_copyin) then
+  call hipCheck(gpufort_array_copy_to_host({{interop_var}}%{{member}}))
+  call {{interop_type_name}}_copyout_{{ivar.name}}({{interop_var}},{{orig_var}})
+endif
+!
+{{interop_var}}%{{member}}%sync_mode=gpufort_array_sync_none ! set pre destruction to prevent unnecessary copy at destruction
+{%     endif %}
+call hipCheck(gpufort_array_destroy({{interop_var}}%{{member}}))
+{%-   endif %}
+{%- endfor %}
+{%- endmacro -%}
+{########################################################################################}
+{%- macro render_derived_type_destroy_array_member_routines(derived_types,
+                                                            used_modules=[],
+                                                            interop_suffix="_interop", 
+                                                            orig_var="orig_type",
+                                                            interop_var="interop_type") -%}
+{% for derived_type in derived_types %}
+{% set interop_type_name = derived_type.name + interop_suffix %}
+{%   for ivar in derived_type.variables %}
+{%     if ivar.rank > 0 %} 
+subroutine {{interop_type_name}}_destroy_{{ivar.name}}({{interop_var}},{{orig_var}})
+{% if used_modules|length %}
+{{ render_used_modules(used_modules) | indent(2,True) }}
+{%- endif %}
+  implicit none
+  type({{interop_type_name}}),intent(inout) :: {{interop_var}}
+  type({{derived_type.name}}),intent(in) :: {{orig_var}}
+  integer(kind(gpufort_array_sync_none)),intent(in) :: sync_mode
+  !
+{{ render_derived_type_destroy_array_member(derived_type, 
+                                            ivar.name,
+                                            interop_suffix, 
+                                            orig_var,
+                                            interop_var) | indent(2,True) }}
 end subroutine{{"\n" if not loop.last}}
 {%     endif %}
 {%   endfor %}

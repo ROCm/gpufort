@@ -13,6 +13,8 @@ macro_files = [
   ]
 macro_filters = [
   re.compile("|".join(r"""render_derived_type_copy_array_member_routines
+render_derived_type_destroy_array_member_routines
+render_derived_type_init_array_member_routines
 render_derived_type_copy_scalars_routines
 render_derived_types
 render_derived_type_size_bytes_routines

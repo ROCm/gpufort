@@ -20,7 +20,7 @@ fort2hip_dir = os.path.dirname(__file__)
 exec(open(os.path.join(fort2hip_dir,"fort2hip_options.py.in")).read())
     
 class HipCodeGenerator(fort2x.fort2x.CodeGenerator):
-    """
+    """Code generator for generating HIP C++ kernels and kernel launchers.
     :param bool emit_fortran_interfaces: Render explicit Fortran interfaces for the extracted kernels.
     :param bool emit_cpu_launcher: Render a launcher that runs the original loop nest on the CPU (only for loop nests).
     :param bool emit_debug_code: Write debug code such as printing of kernel arguments or device array norms and elements
@@ -99,8 +99,6 @@ class HipCodeGenerator(fort2x.fort2x.CodeGenerator):
         scope = scoper.create_scope(self.index,
                                          stloopnest._parent.tag())
         
-        kernel_name          = iprocedure["name"]
-        kernel_launcher_name = "launch_" + kernel_name
         kernelgen = fort2x.hip.kernelgen_hip.HipKernelGenerator4LoopNest(stloopnest.kernel_name(),
                                                                          stloopnest.kernel_hash(),
                                                                          stloopnest.parse_result,
@@ -120,6 +118,7 @@ class HipCodeGenerator(fort2x.fort2x.CodeGenerator):
                                  iprocedure,
                                  cpp_filegen,
                                  fortran_filegen):
+        kernel_name = iprocedure["name"]
         scope = scoper.create_scope(index,
                                     stprocedure._parent.tag())
         if stprocedure.is_kernel_subroutine():  

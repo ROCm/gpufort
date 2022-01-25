@@ -10,8 +10,6 @@ LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
 utils.logging.VERBOSE    = False
 utils.logging.init_logging("log.log",LOG_FORMAT,"warning")
 
-PROFILING_ENABLE = False
-
 declaration_list= """\
 type inner
   real(8)            :: scalar_double

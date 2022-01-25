@@ -36,3 +36,7 @@ launcher = kernelgen.create_launcher_context(kind="hip",
                                              debug_output=False,
                                              used_modules=[])
 print("\n".join(kernelgen.render_gpu_launcher_cpp(launcher)))
+launcher = kernelgen.create_launcher_context(kind="hip_ps",
+                                             debug_output=False,
+                                             used_modules=[])
+print("\n".join(kernelgen.render_gpu_launcher_cpp(launcher)))

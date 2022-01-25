@@ -50,7 +50,7 @@ class CodeGenerator:
             ]
         #
         self.main_filegen = fort2x.filegen.CppFileGenerator("",
-                                                     cpp_file_preamble)
+                                                            cpp_file_preamble)
         self.filegens_per_module = []
         self._traversed          = False
     @staticmethod

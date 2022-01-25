@@ -64,8 +64,7 @@ class STNode:
         original_lines = self.__get_linemaps_content("lines")
         return utils.parsingutils.relocate_inline_comments(original_lines)
     def statements(self,include_none_entries=False):
-        """
-        Extract the statements associated with this node from the linemaps associated with this node.
+        """Extract the statements associated with this node from the linemaps associated with this node.
         :param bool include_none_entries: Also include entries that are None [default=False].
         :note: None entries might have been introduced by other nodes transforming the same linemap(s).
         """
@@ -710,7 +709,6 @@ class STMemcpy(STNode):
               src_name,error_handling="off")
             dest_on_device = index_variable_is_on_device(dest_indexed_var)
             src_on_device  = index_variable_is_on_device(src_indexed_var)
-            bytes_per_element = dest_indexed_var["bytes_per_element"]
             if dest_on_device or src_on_device:
                 subst = parse_result.hip_f_str(dest_on_device,src_on_device)
                 return (subst,True)

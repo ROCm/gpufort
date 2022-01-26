@@ -9,7 +9,10 @@ import addtoplevelpath
 import utils.logging
         
 LOADER    = jinja2.FileSystemLoader(os.path.realpath(os.path.join(os.path.dirname(__file__),"templates")))
-ENV       = jinja2.Environment(loader=LOADER, trim_blocks=True, lstrip_blocks=True, undefined=jinja2.StrictUndefined)
+ENV       = jinja2.Environment(loader=LOADER,
+                               trim_blocks=True,
+                               #lstrip_blocks=True,
+                               undefined=jinja2.StrictUndefined)
 TEMPLATES = {}
     
 def generate_code(template_path,context={}):

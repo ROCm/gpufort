@@ -223,8 +223,8 @@ namespace gpufort {
                                                                         //> wrap the host and allocate device data
     SyncMode               sync_mode  = SyncMode::None;                 //> How data should be synchronized
                                                                         //> during the initialization and destruction of this GPUFORT array.
-    int num_refs           = 0;         //> Number of references.
-    int bytes_per_element  = -1;        //> Bytes per element; stored to make num_data_bytes routine independent of T 
+    int num_refs             = 0;  //> Number of references.
+    size_t bytes_per_element = -1; //> Bytes per element; stored to make num_data_bytes routine independent of T 
 
     array{{rank}}() {
       // do nothing

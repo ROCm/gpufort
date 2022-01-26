@@ -19,13 +19,14 @@ end type inner
 type outer
   type(inner)                            :: single_inner
   type(inner),allocatable,dimension(:,:) :: array_inner
-  integer(4),pointer                      :: array_integer(:,:,:)
+  integer(4),pointer                     :: array_integer(:,:,:)
 end type outer
 """
 
 used_modules = [{"name" : mod, "only" : []} for mod in [
                                                        "iso_c_binding",
                                                        "hipfort_check",
+                                                       "hipfort",
                                                        "gpufort_array",
                                                        ]]
 

@@ -575,10 +575,8 @@ def postprocess(stree,index,hip_module_suffix):
             return isinstance(child,STLoopKernel) or\
                    (type(child) is STProcedure and child.is_kernel_subroutine())
         
-        for stmodule in stree.find_all(filter=lambda child: isinstance(child,
-                                                                       (STModule,
-                                                                       STProgram),
-                                                                       recursively=False):
+        for stmodule in stree.find_all(filter=lambda child: isinstance(child,(STModule,STProgram)),
+                                       recursively=False):
             module_name = stmodule.name 
             kernels    = stmodule.find_all(filter=is_accelerated, recursively=True)
             for kernel in kernels:

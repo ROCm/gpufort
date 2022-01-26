@@ -73,8 +73,8 @@ class HipCodeGenerator(fort2x.fort2x.CodeGenerator):
         if is_loopnest and self.emit_cpu_launcher:
             cpu_launcher = copy.deepcopy(hip_launcher)
             cpu_launcher["kind"] = "cpu"
-            rendered_launchers_cpp.append(kernelgen.render_cpu_launcher_cpp(cpu_launcher)
-            rendered_interfaces_f03.append(kernelgen.render_launcher_interface_f03(cpu_launcher)
+            rendered_launchers_cpp  += kernelgen.render_cpu_launcher_cpp(cpu_launcher)
+            rendered_interfaces_f03 += kernelgen.render_launcher_interface_f03(cpu_launcher)
             fortran_filegen.rendered_routines += (kernelgen.render_begin_kernel_comment_f03()
                                                  + kernelgen.render_cpu_routine_f03(cpu_launcher)
                                                  + kernelgen.render_end_kernel_comment_f03())
@@ -87,7 +87,7 @@ class HipCodeGenerator(fort2x.fort2x.CodeGenerator):
             fortran_filegen.rendered_interfaces += (kernelgen.render_begin_kernel_comment_f03()
                                                    + rendered_interfaces_f03
                                                    + kernelgen.render_end_kernel_comment_f03())
-     def _render_loop_nest(self,
+    def _render_loop_nest(self,
                            stloopnest,
                            cpp_filegen,
                            fortran_filegen):

@@ -53,5 +53,5 @@ def create_interoperable_derived_type_generator(declaration_list_snippet,
     """
     scope = indexerutils.create_scope_from_declaration_list(declaration_list_snippet,
                                                             preproc_options)
-    return fort2x.hip.derivedtypegen.DerivedTypeGenerator(scope["types"],
-                                                          used_modules)
+    return fort2x.hip.derivedtypegen.HipDerivedTypeGenerator(scope["types"],
+                                                             used_modules)

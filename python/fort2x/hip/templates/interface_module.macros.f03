@@ -16,7 +16,7 @@ function {{launcher.name}}(&
   use iso_c_binding
   use hipfort
 {% if launcher.used_modules|length %}
-{{ cm.render_used_modules(launcher.used_modules) | indent(2,True) }}
+{{ cm.render_used_modules(launcher.used_modules) | indent(2,True) -}}
 {% endif %}
   implicit none
 {% if launcher.kind in ["hip"] %}  
@@ -40,7 +40,7 @@ function {{kernel.name}}_cpu(&
   use iso_c_binding
   use hipfort
 {% if launcher.used_modules|length %}
-{{ cm.render_used_modules(launcher.used_modules) | indent(2,True) }}
+{{ cm.render_used_modules(launcher.used_modules) | indent(2,True) -}}
 {% endif %}
   implicit none
 {% if launcher.kind in ["hip"] %}

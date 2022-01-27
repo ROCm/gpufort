@@ -9,12 +9,21 @@ import re
 
 macro_files = [
   "filegen.macros.cpp",
-  "filegen.macros.f03"
+  "filegen.macros.f03",
+  "derived_type.macros.f03",
+  "derived_type.macros.cpp",
   ]
 macro_filters = [
   re.compile("|".join(r"""render_interface_module
 render_used_modules
-render_c_file""".split("\n")))
+render_c_file""".split("\n"))),
+  re.compile("|".join(r"""render_derived_type_copy_array_member_routines
+render_derived_type_destroy_array_member_routines
+render_derived_type_init_array_member_routines
+render_derived_type_copy_scalars_routines
+render_derived_type_destroy_routines
+render_derived_types
+render_derived_type_size_bytes_routines""".split("\n"))),
   ]
     
 root_dir  = os.path.abspath(os.path.join(__file__,".."))

@@ -30,5 +30,5 @@ root_dir  = os.path.abspath(os.path.join(__file__,".."))
 generator = fort2x.templategen.TemplateGenerator(root_dir,
                                                  macro_files,
                                                  macro_filters)
-generator.verbose = True
+generator.verbose = False
 generator.convert_macros_to_templates()

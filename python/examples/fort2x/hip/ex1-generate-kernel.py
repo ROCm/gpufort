@@ -13,16 +13,18 @@ utils.logging.init_logging("log.log",LOG_FORMAT,"warning")
 PROFILING_ENABLE = False
 
 declaration_list= """\
-integer, parameter :: N = 1000
-integer :: i
+integer, parameter :: N = 1000, M=2000
+integer :: i,j
 integer(4) :: x(N), y(N), y_exact(N)
 """
 
 annotated_loop_nest = """\
 !$acc parallel loop present(x,y)
 do i = 1, N
-  x(i) = 1
-  y(i) = 2
+do j = 1, M
+  x(i,j) = 1
+  y(i,j) = 2
+end do
 end do
 """  
 

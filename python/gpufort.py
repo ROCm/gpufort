@@ -189,12 +189,13 @@ def parse_cl_args():
     group_config.add_argument("--config-file",default=None,type=argparse.FileType("r"),dest="config_file",help="Provide a config file.")
     
     # fort2hip
+    group_fort2x = parser.add_argument_group('All Fortran-to-X backends (HIP,...)')
+    group_fort2x.add_argument("-m","--only-modify-host-code",dest="only_modify_translation_source",action="store_true",help="Only modify host code; do not generate kernels [default: False].")
+    group_fort2x.add_argument("-k","--only-emit-kernels-and-launchers",dest="only_emit_kernels_and_launchers",action="store_true",help="Only emit kernels and kernel launchers; do not modify host code [default: False].")
+    group_fort2x.add_argument("-K","--only-emit-kernels",dest="only_emit_kernels",action="store_true",help="Only emit kernels; do not emit kernel launchers and do not modify host code [default: False].")
     group_fort2hip = parser.add_argument_group('Fortran-to-HIP')
-    group_fort2x.hip.add_argument("-m","--only-modify-host-code",dest="only_modify_translation_source",action="store_true",help="Only modify host code; do not generate kernels [default: False].")
-    group_fort2x.hip.add_argument("-k","--only-emit-kernels-and-launchers",dest="only_emit_kernels_and_launchers",action="store_true",help="Only emit kernels and kernel launchers; do not modify host code [default: False].")
-    group_fort2x.hip.add_argument("-K","--only-emit-kernels",dest="only_emit_kernels",action="store_true",help="Only emit kernels; do not emit kernel launchers and do not modify host code [default: False].")
-    group_fort2x.hip.add_argument("-C","--emit-cpu-impl",dest="emit_cpu_implementation",action="store_true",help="Per detected loop kernel, also extract the CPU implementation  [default: (default) config value].")
-    group_fort2x.hip.add_argument("-G","--emit-debug-code",dest="emit_debug_code",action="store_true",help="Generate debug code into the kernel launchers that allows to print kernel arguments, launch parameters, input/output array norms and elements, or to synchronize a kernel [default: (default) config value].")
+    group_fort2hip.add_argument("-C","--emit-cpu-impl",dest="emit_cpu_implementation",action="store_true",help="Per detected loop kernel, also extract the CPU implementation  [default: (default) config value].")
+    group_fort2hip.add_argument("-G","--emit-debug-code",dest="emit_debug_code",action="store_true",help="Generate debug code into the kernel launchers that allows to print kernel arguments, launch parameters, input/output array norms and elements, or to synchronize a kernel [default: (default) config value].")
     
     # CUDA Fortran
     group_cuf = parser.add_argument_group('CUDA Fortran input')

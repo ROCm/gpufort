@@ -34,7 +34,7 @@ class CPPFileGenerator(FileGenerator):
        pass
     def stores_any_code_or_includes(self):
         return len(self.snippets)\
-               len(self.includes)
+               or len(self.includes)
     def merge(self,
               other):
         """Merge two file generator instances.
@@ -66,7 +66,7 @@ class FortranModuleGenerator(FileGenerator):
     PROLOG = ""
 
     def __init__(self,
-                 name
+                 name,
                  prolog = ""):
        self.name                 = name
        self.prolog               = FortranModuleGenerator.PROLOG + prolog

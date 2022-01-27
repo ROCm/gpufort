@@ -32,20 +32,10 @@ class HipCodeGenerator(fort2x.fort2x.CodeGenerator):
                  kernels_to_convert        = ["*"],
                  emit_fortran_interfaces   = True, 
                  emit_debug_code           = False,
-                 emit_cpu_launcher         = False,
-                 fortran_module_preamble   = FORTAN_MODULE_PREAMBLE,
-                 cpp_file_preamble         = CPP_FILE_PREAMBLE,
-                 fortran_module_suffix     = FORTRAN_MODULE_SUFFIX,
-                 fortran_module_file_ext   = FORTRAN_MODULE_FILE_EXT,
-                 cpp_file_ext              = CPP_FILE_EXT):
+                 emit_cpu_launcher         = False):
         fort2x.fort2x.CodeGenerator.__init__(stree,
                                              index,
-                                             kernels_to_convert,
-                                             fortran_module_preamble,
-                                             cpp_file_preamble,
-                                             fortran_module_suffix,
-                                             fortran_module_file_ext,
-                                             cpp_file_ext)
+                                             kernels_to_convert)
         self.emit_debug_code         = emit_debug_code
         self.emit_cpu_launcher       = emit_cpu_launcher
         self.emit_fortran_interfaces = emit_fortran_interfaces

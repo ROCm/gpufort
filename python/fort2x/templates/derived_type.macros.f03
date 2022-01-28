@@ -223,14 +223,24 @@ call {{error_check}}(gpufort_array_init({{interop_var}}%{{member}},&
   int({{ivar.kind}}{{interop_suffix}}_size_bytes(),c_int),&
   shape({{orig_var}}%{{member}}),&
   lbounds=lbound({{orig_var}}%{{member}}),&
-  alloc_mode=gpufort_array_alloc_pinned_host_alloc_device))
+  alloc_mode=alloc_mode))
 {{interop_var}}%{{member}}%sync_mode=sync_mode ! set post init to prevent unnecessary copy at init
 !
 call {{interop_type_name}}_copyin_{{ivar.name}}({{interop_var}},{{orig_var}})
 !
 if ( sync_mode .eq. gpufort_array_sync_copy .or.&
      sync_mode .eq. gpufort_array_sync_copyin) then
-  call {{error_check}}(gpufort_array_copy_to_device{{async}}({{interop_var}}%{{member}}{{",queue" if is_async}}))
+  if ( alloc_mode .eq. gpufort_array_alloc_pinned_host_alloc_device .or.&
+       alloc_mode .eq. gpufort_array_alloc_host_alloc_device ) then
+    call {{error_check}}(gpufort_array_copy_to_device{{async}}({{interop_var}}%{{member}}{{",queue" if is_async}}))
+  if ( alloc_mode .eq. gpufort_array_wrap_host_alloc_device ) then
+    call {{error_check}}{{host_allocate}}(&
+      {{interop_var}}%{{member}}%data%data_host,&
+      gpufort_array_num_data_bytes({{interop_var}}%{{member}}))
+
+          ierr = hipHostMalloc((void**) &this->data.data_host,this->num_data_bytes(),0);
+    call {{error_check}}(gpufort_array_copy_to_device{{async}}({{interop_var}}%{{member}}{{",queue" if is_async}}))
+  endif
 endif
 {%     endif  %}
 {%   endif  %}

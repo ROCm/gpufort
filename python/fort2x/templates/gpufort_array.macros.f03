@@ -202,7 +202,7 @@ end function
 {% set max_rank_ub = max_rank+1 %}
 {% for rank in range(1,max_rank_ub) %}
 {%   set f_array  = prefix+rank|string %}
-{%   for routine in ["copy_from_buffer","copy_to_buffer"] %}
+{%   for routine in ["copy_from_buffer","copy_to_buffer","duplicate_data"] %}
 {%     set binding  = f_array+"_"+routine %}
 {%     set size_dims = ",dimension("+rank|string+")" %}
 {%     for tuple in datatypes %}
@@ -466,13 +466,16 @@ interface {{iface}}{{async_suffix}}
 end interface
 {% endfor %}
 
-{% for routine in ["copy_from_buffer","copy_to_buffer"] %}
+{% for routine in ["copy_from_buffer","copy_to_buffer","duplicate_data"] %}
 {% set iface = prefix+"_"+routine %}
 !>
 {% if routine == "copy_to_buffer" %}
 !> Copy host or device data TO a host or device buffer.
-{% else %}
+{% elif routine == "copy_from_buffer" %}
 !> Copy host or device data FROM a host or device buffer.
+{% else %}
+!> Allocate a host or device buffer and copy this array's 
+!> host or device data to this buffer.
 {% endif %}
 !>
 interface {{iface}}{{async_suffix}}

@@ -477,6 +477,97 @@ namespace gpufort {
         this->num_data_bytes(), 
         memcpy_kind{{", stream" if is_async}});
     }
+    /**
+     * Copy data to a buffer.
+     * Depending on the hipMemcpyKind parameter,
+     * the destinaton buffer is interpreted as host or device variable
+     * and the source is the array's host or device buffer.
+     * \return  Error code returned by the underlying hipMemcpy operation.
+     * \note Use num_data_bytes() for determining the buffer size.
+     */
+    __host__ hipError_t copy_to_buffer{{async_suffix}}(
+       void* buffer, hipMemcpyKind memcpy_kind{{",
+       hipStream_t stream" if is_async}}
+    ) {
+      T* src = nullptr ;
+      switch (memcpy_kind) {
+        case hipMemcpyDeviceToHost: 
+        case hipMemcpyDeviceToDevice:
+          src = this->data.data_dev;
+          break;
+        case hipMemcpyHostToHost: 
+        case hipMemcpyHostToDevice:
+          src = this->data.data_host;
+          break;
+        default:
+          std::cerr << "ERROR: gpufort::array{{rank}}::copy_to_buffer{{async_suffix}}(...): Unexpected value for 'memcpy_kind': " 
+                    << static_cast<int>(memcpy_kind) << std::endl; 
+          std::terminate();
+          break;
+      }
+      #ifndef __HIP_DEVICE_COMPILE__
+      assert(buffer!=nullptr);
+      assert(src!=nullptr);
+      #endif
+      return hipMemcpy{{"Async" if is_async}}(
+        buffer, 
+        (void*) src,
+        this->num_data_bytes(), 
+        memcpy_kind{{", stream" if is_async}});
+    }
+    
+    /**
+     * Allocate a host or device buffer and copy
+     * copy host or device data to this buffer.
+     * Depending on the hipMemcpyKind parameter,
+     * the destinaton buffer is interpreted as host or device variable
+     * and the source is the array's host or device buffer.
+     * \return  Error code returned by the underlying hipMemcpy operation.
+     * \note Use num_data_bytes() for determining the buffer size.
+     */
+    __host__ hipError_t duplicate_data{{async_suffix}}(
+       void** buffer, hipMemcpyKind memcpy_kind{{",
+       hipStream_t stream" if is_async}}
+    ) {
+      T* src  = nullptr ;
+      switch (memcpy_kind) {
+        case hipMemcpyDeviceToHost: 
+        case hipMemcpyDeviceToDevice:
+          src = this->data.data_dev;
+          break;
+        case hipMemcpyHostToHost: 
+        case hipMemcpyHostToDevice:
+          src = this->data.data_host;
+          break;
+        default:
+          std::cerr << "ERROR: gpufort::array{{rank}}::copy_to_buffer{{async_suffix}}(...): Unexpected value for 'memcpy_kind': " 
+                    << static_cast<int>(memcpy_kind) << std::endl; 
+          std::terminate();
+          break;
+      }
+      #ifndef __HIP_DEVICE_COMPILE__
+      assert(buffer!=nullptr);
+      assert(src!=nullptr);
+      #endif
+      int ierr = hipSuccess;
+      switch (memcpy_kind) {
+        case hipMemcpyHostToDevice:
+        case hipMemcpyDeviceToDevice:
+          ierr = hipMalloc(buffer,this->num_data_bytes());
+          if ( ierr != hipSuccess ) return ierr;
+          break;
+        case hipMemcpyDeviceToHost: 
+        case hipMemcpyHostToHost: 
+          ierr = hipMalloc(buffer,this->num_data_bytes(),0);
+          if ( ierr != hipSuccess ) return ierr;
+	  break;
+      }
+      return hipMemcpy{{"Async" if is_async}}(
+        buffer, 
+        (void*) src,
+        this->num_data_bytes(), 
+        memcpy_kind{{", stream" if is_async}});
+    }
     
     /**
      * Copy data from a buffer.

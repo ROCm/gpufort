@@ -1,7 +1,24 @@
 {# SPDX-License-Identifier: MIT                                                 #}
 {# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved. #}
 {# Fortran side #}
+{########################################################################################}
 {% import "gpufort.macros.h" as gm %}
+{% import "common.macros.f03" as cm %}
+{########################################################################################}
+{%- macro render_module_procedure(prefix,
+                                  max_rank_ub,
+                                  routine,
+                                  datatypes) -%}
+module procedure :: &{{"\n"}}
+{%- for rank in range(1,max_rank_ub) -%}
+{%-   set size_dims = ",dimension("+rank|string+")" -%}
+{%-   set f_array  = prefix+rank|string -%}
+{%-   set binding  = f_array+"_"+routine -%}
+{%-   for tuple in datatypes -%}
+{{binding | indent(4,True)}}_{{tuple.f_kind}}{{",&\n" if not loop.last}}
+{%-   endfor -%}{{",&\n" if not loop.last}}
+{%- endfor %}{{""}}
+{%- endmacro -%}
 {########################################################################################}
 {%- macro render_gpufort_array_data_access_interfaces(datatypes,max_rank) -%}
 {% set prefix      = "gpufort_array" %}
@@ -65,9 +82,9 @@ end function
 
 {% for loc in ["host","dev"] %}
 {% for rank in range(1,max_rank_ub) %}
-{% set f_array  = prefix+rank|string %}
+{% set f_array = prefix+rank|string %}
 {% set routine = (loc+"ptr") | replace("dev","device") %}
-{% set binding  = f_array+"_"+routine %}
+{% set binding = f_array+"_"+routine %}
 {% set size_dims = ",dimension("+rank|string+")" %}
 {% for tuple in datatypes %}
 subroutine {{binding}}_{{tuple.f_kind}}(&
@@ -79,9 +96,9 @@ subroutine {{binding}}_{{tuple.f_kind}}(&
   type({{f_array}}),intent(in)        :: array
   {{tuple.f_type}},intent(inout),pointer,dimension(:{% for i in range(1,rank) %},:{% endfor %}) :: data_{{loc}} 
   !
-  integer(c_int)    :: offset_remainder
-  integer(c_int)    :: {{ gm.separated_list_single_line("n",",",rank) }},&
-                       {{ gm.separated_list_single_line("lb",",",rank) }}
+  integer(c_int) :: offset_remainder
+  integer(c_int) :: {{ gm.separated_list_single_line("n",",",rank) }},&
+                    {{ gm.separated_list_single_line("lb",",",rank) }}
   !
   {{tuple.f_type}},pointer,dimension(:{% for i in range(1,rank) %},:{% endfor %}) :: tmp
   !
@@ -172,7 +189,7 @@ function {{binding}}{{async_suffix}}_{{tuple.f_kind}}(&
   !
   integer(kind(hipSuccess))                                              :: ierr
   !
-  integer(c_int),dimension({{rank}})                     :: opt_lbounds
+  integer(c_int),dimension({{rank}}) :: opt_lbounds
   type(c_ptr)                                        :: opt_data_dev
   integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
   integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
@@ -202,7 +219,7 @@ end function
 {% set max_rank_ub = max_rank+1 %}
 {% for rank in range(1,max_rank_ub) %}
 {%   set f_array  = prefix+rank|string %}
-{%   for routine in ["copy_from_buffer","copy_to_buffer","duplicate_data"] %}
+{%   for routine in ["copy_from_buffer","copy_to_buffer"] %}
 {%     set binding  = f_array+"_"+routine %}
 {%     set size_dims = ",dimension("+rank|string+")" %}
 {%     for tuple in datatypes %}
@@ -228,6 +245,100 @@ end function
 {%     endfor %}{# datatypes #}
 {%   endfor %}{# routines #}
 {% endfor %}{# rank #}
+{%- endmacro -%}
+{########################################################################################}
+{%- macro render_gpufort_array_allocate_buffer_routines(datatypes,max_rank) -%}
+{% set prefix = "gpufort_array" %}
+{% set max_rank_ub = max_rank+1 %}
+{% for target in ["host","device"] %}
+{% set is_host = target == "host" %}
+{%   for rank in range(1,max_rank_ub) %}
+{%     set f_array  = prefix+rank|string %}
+{%     set routine = "allocate_"+target+"_buffer" %}
+{%     set binding  = f_array+"_"+routine %}
+{%     set size_dims = ",dimension("+rank|string+")" %}
+{%     for tuple in datatypes %}
+  function {{binding}}_{{tuple.f_kind}}(&
+      array,buffer{{",&
+      pinned,flags" if is_host}}) &
+        result(ierr)
+    use iso_c_binding
+    use hipfort_enums
+    implicit none
+    type({{f_array}}),intent(in) :: array
+    {{tuple.f_type}},intent(inout),pointer,dimension(:{% for i in range(1,rank) %},:{% endfor %}) :: buffer 
+{%     if is_host %}
+    logical(c_bool),value,optional,intent(in) :: pinned
+    integer(c_int),value,optional,intent(in)  :: flags
+{%     endif %}
+    integer(kind(hipSuccess)) :: ierr
+{%     if is_host %}
+    !
+    logical(c_bool) :: opt_pinned
+    integer(c_int)  :: opt_flags
+{%     endif %}
+{%     if is_host %}
+    !
+    opt_pinned = .true.
+    opt_flags  = 0
+    if ( present(pinned) ) opt_pinned = pinned
+    if ( present(flags) ) opt_flags = flags
+{%     endif      %}
+    !
+    ierr = {{binding}}(&
+      array,c_loc(buffer){{",opt_pinned,opt_flags" if is_host}})
+{% set rank_ub=rank+1 %}
+    buffer(&
+{% for i in range(1,rank_ub) %}
+      gpufort_array{{rank}}_lbound(array,{{i}}):{{ "," if not loop.last else ")" }}&
+{% endfor %}
+        => buffer
+  end function
+{%     endfor %}{# datatypes #}
+{%   endfor %}{# rank #}
+{% endfor %}{# target #}
+{%- endmacro -%}
+{########################################################################################}
+{%- macro render_gpufort_array_deallocate_buffer_routines(datatypes,max_rank) -%}
+{% set prefix = "gpufort_array" %}
+{% set max_rank_ub = max_rank+1 %}
+{% for target in ["host","device"] %}
+{% set is_host = target == "host" %}
+{%   for rank in range(1,max_rank_ub) %}
+{%     set f_array  = prefix+rank|string %}
+{%     set routine = "deallocate_"+target+"_buffer" %}
+{%     set binding  = f_array+"_"+routine %}
+{%     set size_dims = ",dimension("+rank|string+")" %}
+{%     for tuple in datatypes %}
+  function {{binding}}_{{tuple.f_kind}}(&
+      array,buffer{{",&
+      pinned" if is_host}}) &
+        result(ierr)
+    use iso_c_binding
+    use hipfort_enums
+    implicit none
+    type({{f_array}}),intent(in) :: array
+    {{tuple.f_type}},intent(inout),pointer,dimension(:{% for i in range(1,rank) %},:{% endfor %}) :: buffer 
+{%     if is_host %}
+    logical(c_bool),value,optional,intent(in) :: pinned
+{%     endif %}
+    integer(kind(hipSuccess)) :: ierr
+{%     if is_host %}
+    !
+    logical(c_bool) :: opt_pinned
+{%     endif %}
+{%     if is_host %}
+    !
+    opt_pinned = .true.
+    if ( present(pinned) ) opt_pinned = pinned
+{%     endif      %}
+    !
+    ierr = {{binding}}(&
+      array,c_loc(buffer){{",pinned" if is_host}})
+  end function
+{%     endfor %}{# datatypes #}
+{%   endfor %}{# rank #}
+{% endfor %}{# target #}
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_gpufort_array_wrap_routines(datatypes,max_rank) -%}
@@ -289,38 +400,6 @@ end function
 {% set routine = "init" %}
 {% set binding  = f_array+"_"+routine %}
 {% set size_dims = ",dimension("+rank|string+")" %}
-{# function {{f_array}}_wrap_device_ptr_cptr(& #}
-{#     data_dev,& #}
-{#     sizes,lbounds,& #}
-{#     bytes_per_element,ierr) result(array) #}
-{#   use iso_c_binding #}
-{#   use hipfort_enums #}
-{#   implicit none #}
-{#   type(c_ptr),intent(in)                           :: data_dev  #}
-{#   integer(c_int){{size_dims}},intent(in)           :: sizes #}
-{#   integer(c_int){{size_dims}},intent(in),optional  :: lbounds #}
-{#   integer(c_int),intent(in),optional               :: bytes_per_element #}
-{#   integer(kind(hipSuccess)),intent(inout),optional :: ierr #}
-{#   ! #}
-{#   type({{f_array}}) :: array #}
-{#   ! #}
-{#   integer(c_int),dimension({{rank}}) :: opt_lbounds #}
-{#   integer(c_int)                     :: opt_bytes_per_element #}
-{#   integer(kind(hipSuccess))          :: opt_ierr #}
-{#   ! #}
-{#   opt_lbounds           = 1 #}
-{#   opt_bytes_per_element = -1 #}
-{#   if ( present(lbounds) )           opt_lbounds           = lbounds              #}
-{#   if ( present(bytes_per_element) ) opt_bytes_per_element = bytes_per_element              #}
-{#   opt_ierr = {{binding}}(& #}
-{#     array,& #}
-{#     opt_bytes_per_element,& #}
-{#     c_null_ptr,data_dev,& #}
-{#     sizes, opt_lbounds,& #}
-{#     gpufort_array_wrap_host_wrap_device,& #}
-{#     gpufort_array_sync_none,c_null_ptr) #}
-{#   if ( present(ierr) ) ierr = opt_ierr #}
-{# end function #}
 {% for tuple in datatypes %}
 function {{f_array}}_wrap_device_ptr_{{tuple.f_kind}}(&
     data_dev,lbounds,ierr) result(array)
@@ -354,16 +433,17 @@ end function
 {%- macro render_gpufort_array_interfaces(datatypes,max_rank) -%}
 {% set max_rank_ub = max_rank+1 %}
 {% set prefix = "gpufort_array" %}
+{# INIT #}
 {% set routine = "init" %}
 {% set iface = prefix+"_"+routine %}
 !> Initialize a gpufort_array of a rank that matches that of the input data.
 {% for async_suffix in ["_async",""] %}
-{% set is_async = async_suffix == "_async" %}
+{%   set is_async = async_suffix == "_async" %}
 interface {{iface}}{{async_suffix}}
-{% for rank in range(1,max_rank_ub) %}
-{% set size_dims = ",dimension("+rank|string+")" %}
-{% set f_array  = prefix+rank|string %}
-{% set binding  = f_array+"_"+routine %}
+{%   for rank in range(1,max_rank_ub) %}
+{%     set size_dims = ",dimension("+rank|string+")" %}
+{%     set f_array  = prefix+rank|string %}
+{%     set binding  = f_array+"_"+routine %}
   function {{binding}}{{async_suffix}} (&
       array,&
       bytes_per_element,&
@@ -388,38 +468,38 @@ interface {{iface}}{{async_suffix}}
     !
     integer(kind(hipSuccess)) :: ierr
   end function
-{% endfor %}
+{%   endfor %}
     module procedure :: &
-{% for rank in range(1,max_rank_ub) %}
-{% set f_array  = prefix+rank|string %}
-{% set binding  = f_array+"_"+routine %}
+{%   for rank in range(1,max_rank_ub) %}
+{%     set f_array  = prefix+rank|string %}
+{%     set binding  = f_array+"_"+routine %}
       {{binding}}{{async_suffix}}_host,&
-{% for tuple in datatypes %}
+{%     for tuple in datatypes %}
       {{binding}}{{async_suffix}}_{{tuple.f_kind}}{{",&\n" if not loop.last}}{% endfor %}{{",&" if not loop.last}}
-{% endfor %}
+{%   endfor %}
 end interface
 {% endfor %}{# async_suffix #}
-
+{# WRAP #}
 {% for async_suffix in ["_async",""] %}
-{% set is_async = async_suffix == "_async" %}
-{% set routine = "wrap" %}
-{% set iface = prefix+"_"+routine %}
+{%   set is_async = async_suffix == "_async" %}
+{%   set routine = "wrap" %}
+{%   set iface = prefix+"_"+routine %}
 !> Wrap a Fortran or type(c_ptr) pointer pair that points to host and device data.
 !> Only wrap, allocate nothing,
 !> and do not synchronize at initialization or destruction time.
 !> \return gpufort_array of a rank that matches that of the input data.
 interface {{iface}}{{async_suffix}}
     module procedure :: &{{"\n"}}
-{%- for rank in range(1,max_rank_ub) -%}
-{%- set size_dims = ",dimension("+rank|string+")" -%}
-{%- set f_array  = prefix+rank|string -%}
-{%- set binding  = f_array+"_"+routine -%}
-{%- for tuple in datatypes -%}
-{%- for dev in ["","_cptr"] -%} 
+{%-  for rank in range(1,max_rank_ub) -%}
+{%-    set size_dims = ",dimension("+rank|string+")" -%}
+{%-    set f_array  = prefix+rank|string -%}
+{%-    set binding  = f_array+"_"+routine -%}
+{%-    for tuple in datatypes -%}
+{%-      for dev in ["","_cptr"] -%} 
 {{binding | indent(6,True)}}{{async_suffix}}_{{tuple.f_kind}}{{dev}}{{",&\n" if not loop.last}}
-{%- endfor -%}{{",&\n" if not loop.last}}
-{%- endfor -%}{{",&\n" if not loop.last}}
-{%- endfor %}{{""}}
+{%-      endfor -%}{{",&\n" if not loop.last}}
+{%-    endfor -%}{{",&\n" if not loop.last}}
+{%-  endfor %}{{""}}
 end interface
 {% endfor %}{# async_suffix #}
 
@@ -434,24 +514,25 @@ end interface
 interface {{iface}}
     module procedure :: &
 {% for rank in range(1,max_rank_ub) %}
-{% set size_dims = ",dimension("+rank|string+")" %}
-{% set f_array  = prefix+rank|string %}
-{% set binding  = f_array+"_"+routine %}
+{%   set size_dims = ",dimension("+rank|string+")" %}
+{%   set f_array  = prefix+rank|string %}
+{%   set binding  = f_array+"_"+routine %}
 {#      {{binding}}_cptr,& #}
-{% for tuple in datatypes %}
+{%   for tuple in datatypes %}
       {{binding}}_{{tuple.f_kind}}{{",&\n" if not loop.last}}{% endfor %}{{",&" if not loop.last}}
 {% endfor %}
 end interface
 
 {% for async_suffix in ["_async",""] %}
-{% set is_async = async_suffix == "_async" %}
-{% for routine in ["destroy","copy_to_host","copy_to_device"] %}
-{% set iface = prefix+"_"+routine %}
+{%   set is_async = async_suffix == "_async" %}
+{# DESTROY, COPY_TO_HOST, COPY_TO_DEVICE #}
+{%   for routine in ["destroy","copy_to_host","copy_to_device"] %}
+{%     set iface = prefix+"_"+routine %}
 interface {{iface}}{{async_suffix}}
-{% for rank in range(1,max_rank_ub) %}
-{% set f_array  = prefix+rank|string %}
-{% set binding  = f_array+"_"+routine %}
-  function {{binding}}{{async_suffix}} (array{{",stream" if is_async}}) &
+{%     for rank in range(1,max_rank_ub) %}
+{%       set f_array  = prefix+rank|string %}
+{%       set binding  = f_array+"_"+routine %}
+  function {{binding}}{{async_suffix}}(array{{",stream" if is_async}}) &
         bind(c,name="{{binding}}") &
           result(ierr)
     use iso_c_binding
@@ -462,26 +543,23 @@ interface {{iface}}{{async_suffix}}
     type(c_ptr),value,intent(in)    :: stream" if is_async}}
     integer(kind(hipSuccess))       :: ierr
   end function
-{% endfor %}
+{%     endfor %}
 end interface
-{% endfor %}
-
-{% for routine in ["copy_from_buffer","copy_to_buffer","duplicate_data"] %}
-{% set iface = prefix+"_"+routine %}
+{%   endfor %}
+{# COPY_FROM_BUFFER, COPY_TO_BUFFER #}
+{%   for routine in ["copy_from_buffer","copy_to_buffer"] %}
+{%     set iface = prefix+"_"+routine %}
 !>
-{% if routine == "copy_to_buffer" %}
-!> Copy host or device data TO a host or device buffer.
-{% elif routine == "copy_from_buffer" %}
-!> Copy host or device data FROM a host or device buffer.
-{% else %}
-!> Allocate a host or device buffer and copy this array's 
-!> host or device data to this buffer.
-{% endif %}
+{%     if routine == "copy_to_buffer" %}
+!> Copy this array's host or device data TO a host or device buffer.
+{%     else %}
+!> Copy this array's host or device data FROM a host or device buffer.
+{%     endif %}
 !>
 interface {{iface}}{{async_suffix}}
-{% for rank in range(1,max_rank_ub) %}
-{% set f_array  = prefix+rank|string %}
-{% set binding  = f_array+"_"+routine %}
+{%     for rank in range(1,max_rank_ub) %}
+{%       set f_array  = prefix+rank|string %}
+{%       set binding  = f_array+"_"+routine %}
   function {{binding}}{{async_suffix}}(&
     array,buffer,memcpy_kind{{",&
     stream" if is_async}}) &
@@ -497,25 +575,20 @@ interface {{iface}}{{async_suffix}}
     type(c_ptr),value,intent(in)                          :: stream" if is_async}}
     integer(kind(hipSuccess))                             :: ierr
   end function
-{% endfor %}
-  module procedure :: &{{"\n"}}
-{%- for rank in range(1,max_rank_ub) -%}
-{%- set size_dims = ",dimension("+rank|string+")" -%}
-{%- set f_array  = prefix+rank|string -%}
-{%- set binding  = f_array+"_"+routine -%}
-{%- for tuple in datatypes -%}
-{{binding | indent(6,True)}}{{async_suffix}}_{{tuple.f_kind}}{{",&\n" if not loop.last}}
-{%- endfor -%}{{",&\n" if not loop.last}}
-{%- endfor %}{{""}}
+{%     endfor %}
+{{ render_module_procedure(prefix,
+                           max_rank_ub,
+                           routine,
+                           datatypes) | indent(2,True) }}
 end interface
-{% endfor %}
-
-{% set routine = "dec_num_refs" %}
-{% set iface = prefix+"_"+routine %}
+{%   endfor %}
+{# DEC_NUM_REFS #}
+{%   set routine = "dec_num_refs" %}
+{%   set iface = prefix+"_"+routine %}
 interface {{iface}}{{async_suffix}}
-{% for rank in range(1,max_rank_ub) %}
-{% set f_array  = prefix+rank|string %}
-{% set binding  = f_array+"_"+routine %}
+{%   for rank in range(1,max_rank_ub) %}
+{%     set f_array  = prefix+rank|string %}
+{%     set binding  = f_array+"_"+routine %}
   function {{binding}}{{async_suffix}}(&
     array,destroy_if_zero_refs{{",&
     stream" if is_async}}) &
@@ -530,17 +603,96 @@ interface {{iface}}{{async_suffix}}
     logical(c_bool),intent(in),value :: destroy_if_zero_refs
     integer(kind(hipSuccess))        :: ierr
   end function
-{% endfor %}
+{%   endfor %}
 end interface
 {% endfor %}{# async_suffix #}
-
+{# ALLOCATE_BUFFER #}
+{% for target in ["host","device"] %}
+{%   set is_host = target == "host" %}
+{%   set routine = "allocate_"+target+"_buffer" %}
+{%   set iface = prefix+"_"+routine %}
+!> Allocate a {{target}} buffer with
+!> the same size as the data buffers
+!> associated with this gpufort array.
+!> @see num_data_bytes()
+!> \param[inout] pointer to the buffer to allocate
+{%   if is_host %}
+!> \param[in] pinned If the memory should be pinned.
+!> \param[in] flags  Flags to pass to host memory allocation.
+{%   endif %}
+interface {{iface}}
+{%   for rank in range(1,max_rank_ub) %}
+{%     set f_array  = prefix+rank|string %}
+{%     set binding  = f_array+"_"+routine %}
+  function {{binding}}(&
+      array,buffer{{",pinned,flags" if is_host}}) &
+        bind(c,name="{{binding}}") &
+          result(ierr)
+    use iso_c_binding
+    use hipfort_enums
+    import {{f_array}}
+    implicit none
+    type({{f_array}}),intent(in) :: array
+    type(c_ptr),intent(in) :: buffer
+{%     if is_host %}
+    logical(c_bool),value :: pinned
+    integer(c_int),value ::  flags
+{%     endif %}
+    integer(kind(hipSuccess)) :: ierr
+  end function
+{%   endfor %}
+{{ render_module_procedure(prefix,
+                           max_rank_ub,
+                           routine,
+                           datatypes) | indent(2,True) }}
+end interface
+{% endfor %}
+{# DEALLOCATE_BUFFER #}
+{% for target in ["host","device"] %}
+{%   set is_host = target == "host" %}
+{%   set routine = "deallocate_"+target+"_buffer" %}
+{%   set iface = prefix+"_"+routine %}
+!> Deallocate a {{target}} buffer
+!> created via the allocate_{{target}}_buffer routine.
+!> \see num_data_bytes(), allocate_{{target}}_buffer
+!> \param[inout] the buffer to deallocate
+{%   if is_host %}
+!> \param[in] pinned If the memory to deallocate is pinned.
+{%   endif %}
+interface {{iface}}
+{%   for rank in range(1,max_rank_ub) %}
+{%     set f_array  = prefix+rank|string %}
+{%     set binding  = f_array+"_"+routine %}
+  function {{binding}}(&
+      array,buffer{{",pinned" if is_host}}) &
+        bind(c,name="{{binding}}") &
+          result(ierr)
+    use iso_c_binding
+    use hipfort_enums
+    import {{f_array}}
+    implicit none
+    type({{f_array}}),intent(in) :: array
+    type(c_ptr),value,intent(in) :: buffer
+{%     if is_host %}
+    logical(c_bool),value :: pinned
+{%     endif %}
+    integer(kind(hipSuccess)) :: ierr
+  end function
+{%   endfor %}
+{{ render_module_procedure(prefix,
+                           max_rank_ub,
+                           routine,
+                           datatypes) | indent(2,True) }}
+end interface
+{% endfor %}
+{# INC_NUM_REFS #}
 {% set routine = "inc_num_refs" %}
 {% set iface = prefix+"_"+routine %}
 interface {{iface}}
 {% for rank in range(1,max_rank_ub) %}
-{% set f_array  = prefix+rank|string %}
-{% set binding  = f_array+"_"+routine %}
-  function {{binding}} (array) &
+{%   set f_array  = prefix+rank|string %}
+{%   set binding  = f_array+"_"+routine %}
+  function {{binding}}(array) &
         bind(c,name="{{binding}}") &
           result(ierr)
     use iso_c_binding
@@ -552,7 +704,29 @@ interface {{iface}}
   end function
 {% endfor %}
 end interface
-
+{# SIZE,LBOUND,UBOUND #}
+{% for routine in ["size","lbound","ubound"] %}
+{%   set iface = prefix+"_"+routine %}
+interface {{iface}}
+{%   for rank in range(1,max_rank_ub) %}
+{%     set f_array = prefix+rank|string %}
+{%     set binding = f_array+"_"+routine %}
+  function {{binding}}(array,d) &
+        bind(c,name="{{binding}}") &
+          result(retval)
+    use iso_c_binding
+    use hipfort_enums
+    import {{f_array}}
+    implicit none
+    type({{f_array}}),intent(in) :: array
+    integer(c_int),intent(in),value :: d
+    !
+    integer(c_int) :: retval
+  end function
+{%   endfor %}
+end interface
+{% endfor %}
+{# COLLAPSE #}
 !> 
 !> Collapse the array by fixing indices.
 !> \return A gpufort array of reduced rank.

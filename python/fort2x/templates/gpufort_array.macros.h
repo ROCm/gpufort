@@ -37,15 +37,6 @@ extern "C" {
     return array->destroy{{async_suffix}}({{"stream" if is_async}});
   } 
   
-  __host__ hipError_t {{c_prefix}}_duplicate_data{{async_suffix}} (
-      gpufort::array{{rank}}<{{c_type}}>* array,
-      void* buffer,
-      hipMemcpyKind memcpy_kind{{",
-      hipStream_t stream" if is_async}}
-  ) {
-    return array->duplicate_data{{async_suffix}}(buffer,memcpy_kind{{",stream" if is_async}});
-  } 
-  
   __host__ hipError_t {{c_prefix}}_copy_to_buffer{{async_suffix}} (
       gpufort::array{{rank}}<{{c_type}}>* array,
       void* buffer,
@@ -91,6 +82,72 @@ extern "C" {
     }
   } 
 {% endfor %}
+
+{% for target in ["host","device"] %}
+{% set is_host = target == "host" %}
+    /**
+     * Allocate a {{target}} buffer with
+     * the same size as the data buffers
+     * associated with this gpufort array.
+     * \see num_data_bytes()
+     * \param[inout] pointer to the buffer to allocate
+{% if is_host %}
+     * \param[in] pinned If the memory should be pinned (default=true)
+     * \param[in] flags  Flags for the host memory allocation (default=0).
+{% endif %}
+     */
+    __host__ hipError_t {{c_prefix}}_allocate_{{target}}_buffer(
+      gpufort::array{{rank}}<{{c_type}}>* array,
+      void** buffer{{",bool pinned=true,int flags=0" if is_host}}
+    ) {
+      return array->allocate_{{target}}_buffer(buffer{{",pinned,flags" if is_host}});
+    }
+
+    /**
+     * Deallocate a {{target}} buffer
+     * created via the allocate_{{target}}_buffer routine.
+     * \see num_data_bytes(), allocate_{{target}}_buffer
+     * \param[inout] the buffer to deallocte
+{% if is_host %}
+     * \param[in] pinned If the memory to deallocate is pinned [default=true]
+{% endif %}
+     */
+    __host__ hipError_t {{c_prefix}}_deallocate_{{target}}_buffer(
+        gpufort::array{{rank}}<{{c_type}}>* array,
+        void* buffer{{",bool pinned=true" if is_host}}) {
+      return array->deallocate_{{target}}_buffer(buffer{{",pinned" if is_host}});
+    }
+{% endfor %}{# target #}
+     
+    /**
+     * \return Size of the array in dimension 'dim'.
+     * \param[in] dim selected dimension: 1,...,{{rank}}
+     */
+    __host__ __forceinline__ int {{c_prefix}}_size(
+        gpufort::array{{rank}}<{{c_type}}>* array,
+        int dim) {
+      return array->data.size(dim);
+    }
+    
+    /**
+     * \return Lower bound (inclusive) of the array in dimension 'dim'.
+     * \param[in] dim selected dimension: 1,...,{{rank}}
+     */
+    __host__ __forceinline__ int {{c_prefix}}_lbound(
+        gpufort::array{{rank}}<{{c_type}}>* array,
+        int dim) {
+      return array->data.lbound(dim);
+    }
+    
+    /**
+     * \return Upper bound (inclusive) of the array in dimension 'dim'.
+     * \param[in] dim selected dimension: 1,...,{{rank}}
+     */
+    __host__ __forceinline__ int {{c_prefix}}_ubound(
+        gpufort::array{{rank}}<{{c_type}}>* array,
+        int dim) {
+      return array->data.ubound(dim);
+    }
 
 {% for d in range(rank-1,0,-1) %}
     /**

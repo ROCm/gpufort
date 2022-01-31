@@ -39,3 +39,14 @@ use {{module.name}}{{(", only: "+module.only|join(",") if module.only|length>0)}
 {% endfor %}
 {%- endmacro -%}
 {########################################################################################}
+{% macro render_set_fptr_lower_bound(fptr,
+                                     array,
+                                     rank) %}
+{% set rank_ub=rank+1 %}
+{{fptr}}(&
+{% for i in range(1,rank_ub) %}
+  lbound({{array}},{{i}}):{{ "," if not loop.last else ")" }}&
+{% endfor %}
+    => {{fptr}}
+{% endmacro  %}
+{#######################################################################################}

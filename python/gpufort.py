@@ -16,8 +16,9 @@ import scanner.scanner as scanner
 import indexer.indexer as indexer
 import linemapper.linemapper as linemapper
 import translator.translator as translator
+import fort2x.fort2x as fort2x
+import fort2x.gpufort_sources as gpufort_sources
 import fort2x.hip.fort2hip as fort2hip
-#import fort2x.hip.fort2hip_legacy as fort2hip
 
 __GPUFORT_PYTHON_DIR = os.path.dirname(os.path.abspath(__file__))
 __GPUFORT_ROOT_DIR   = os.path.abspath(os.path.join(__GPUFORT_PYTHON_DIR,".."))
@@ -58,7 +59,7 @@ def _intrnl_translate_source(infilepath,stree,linemaps,index,preamble):
     utils.logging.log_enter_function(LOG_PREFIX,"_intrnl_translate_source",{"infilepath":infilepath})
     
     # post process
-    scanner.postprocess(stree,index,fort2x.hip.FORTRAN_MODULE_SUFFIX)
+    scanner.postprocess(stree,index,fort2x.FORTRAN_MODULE_SUFFIX)
     
     # transform statements; to 'linemaps'
     def transform_(stnode):
@@ -253,10 +254,10 @@ def parse_cl_args():
         sys.exit()
     call_exit = False
     if args.create_gpufort_headers:
-        fort2x.hip.generate_gpufort_headers(os.getcwd())
+        gpufort_sources.generate_gpufort_headers(os.getcwd())
         call_exit = True
     if args.create_gpufort_sources:
-        fort2x.hip.generate_gpufort_sources(os.getcwd())
+        gpufort_sources.generate_gpufort_sources(os.getcwd())
         call_exit = True
     if call_exit:
         sys.exit()
@@ -427,14 +428,14 @@ if __name__ == "__main__":
     if not ONLY_CREATE_GPUFORT_MODULE_FILES:
         # configure fort2hip
         if ONLY_EMIT_KERNELS_AND_LAUNCHERS:
-            fort2x.hip.EMIT_KERNEL_LAUNCHER = True
+            fort2hip.EMIT_KERNEL_LAUNCHER = True
         if ONLY_EMIT_KERNELS:
-            fort2x.hip.EMIT_KERNEL_LAUNCHER = False
+            fort2hip.EMIT_KERNEL_LAUNCHER = False
         if args.emit_cpu_implementation:
-            fort2x.hip.EMIT_CPU_IMPLEMENTATION = True
+            fort2hip.EMIT_CPU_IMPLEMENTATION = True
         if args.emit_debug_code:
-            fort2x.hip.EMIT_DEBUG_CODE = True
-        stree   = scanner.parse_file(linemaps,index,input_filepath)    
+            fort2hip.EMIT_DEBUG_CODE = True
+        stree = scanner.parse_file(linemaps,index,input_filepath)    
  
         # extract kernels
         if "hip" in scanner.DESTINATION_DIALECT: 
@@ -442,7 +443,7 @@ if __name__ == "__main__":
         else:
             kernels_to_convert_to_hip = scanner.KERNELS_TO_CONVERT_TO_HIP
         fortran_module_filepath, main_hip_filepath =\
-          fort2x.hip.generate_hip_files(stree,index,kernels_to_convert_to_hip,input_filepath,\
+          fort2hip.generate_hip_files(stree,index,kernels_to_convert_to_hip,input_filepath,\
            generate_code=not ONLY_MODIFY_TRANSLATION_SOURCE)
         # modify original file
         if fortran_module_filepath != None:

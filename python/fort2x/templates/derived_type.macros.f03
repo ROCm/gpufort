@@ -95,17 +95,6 @@ function {{derived_type.name}}{{interop_suffix}}_size_bytes() result(size_bytes)
 end function
 {% endfor %}
 {% endmacro  %}
-{#######################################################################################}
-{% macro render_set_fptr_lower_bound(fptr,
-                                     array,
-                                     rank) %}
-{% set rank_ub=rank+1 %}
-{{fptr}}(
-{% for i in range(1,rank_ub) %}
-  lbound({{array}},{{i}}):{{ ",&" if not loop.last else ")" }}
-{% endfor %}
-    => {{fptr}}
-{% endmacro  %}
 {########################################################################################}
 {% macro render_derived_type_copy_derived_type_array_member(interop_type_name,
                                                             member,
@@ -117,7 +106,7 @@ end function
 {% set index = "i"+range(1,rank_ub)|join(",i") %}
 call c_f_pointer({{interop_var}}%{{member}}%data%data_host,&
   {{interop_var}}_{{member}},shape=shape({{orig_var}}%{{member}}))
-{{ render_set_fptr_lower_bound(interop_var+"_"+member,
+{{ cm.render_set_fptr_lower_bound(interop_var+"_"+member,
                           orig_var+"%"+member,
                           rank) -}}
 !
@@ -167,15 +156,21 @@ subroutine {{interop_type_name}}_copy{{direction}}_{{ivar.name}}{{async}}(&
   implicit none
   type({{interop_type_name}}),intent(inout) :: {{interop_var}}
   type({{derived_type.name}}),intent(in) :: {{orig_var}}
-  logical :: {{tofrom}}_device
+  logical,intent(in) :: {{tofrom}}_device
 {%      if async == "_async"  %}
   type(c_ptr),intent(in) :: queue
 {%      endif  %}
 {%      if ivar.f_type == "type"  %}
   !
+  logical :: allocate_temporary_host_buffer
   type({{ivar.kind}}{{interop_suffix}}),pointer :: {{interop_var}}_{{ivar.name}}
 {%      endif  %}
   !
+  allocate_temporary_host_buffer = {{interop_var}}%{{ivar.name}}%alloc_mode == gpufort_array_wrap_host_alloc_device .and. &
+                         .not. c_associated({{interop_var}}%{{ivar.name}}%data%data_host)
+  if ( allocate_temporary_host_buffer ) then ! allocate host array
+    call gpufort_array_allocate_temporary_host_buffer({{interop_var}}%{{ivar.name}}%data%data_host,pinned=True,0)  
+  endif
 {%      if direction != "in"  %}
   if (from_device) then
     call {{error_check}}(gpufort_array_copy_to_host{{async}}({{interop_var}}%{{ivar.name}}{{",queue" if is_async}}))
@@ -195,6 +190,10 @@ subroutine {{interop_type_name}}_copy{{direction}}_{{ivar.name}}{{async}}(&
   !
   if (to_device) then
     call {{error_check}}(gpufort_array_copy_to_device{{async}}({{interop_var}}%{{ivar.name}}{{",queue" if is_async}}))
+  endif
+  if ( allocate_temporary_host_buffer ) then ! allocate host array
+    call {{error_check}}({{synchronize_queue}}(queue)}}
+    call gpufort_array_deallocate_temporary_host_buffer({{interop_var}}%{{ivar.name}}%data%data_host,pinned=True,0)  
   endif
 {%      endif  %}
 end subroutine{{"\n" if not loop.last}}
@@ -226,21 +225,9 @@ call {{error_check}}(gpufort_array_init({{interop_var}}%{{member}},&
   alloc_mode=alloc_mode))
 {{interop_var}}%{{member}}%sync_mode=sync_mode ! set post init to prevent unnecessary copy at init
 !
-call {{interop_type_name}}_copyin_{{ivar.name}}({{interop_var}},{{orig_var}})
-!
 if ( sync_mode .eq. gpufort_array_sync_copy .or.&
      sync_mode .eq. gpufort_array_sync_copyin) then
-  if ( alloc_mode .eq. gpufort_array_alloc_pinned_host_alloc_device .or.&
-       alloc_mode .eq. gpufort_array_alloc_host_alloc_device ) then
-    call {{error_check}}(gpufort_array_copy_to_device{{async}}({{interop_var}}%{{member}}{{",queue" if is_async}}))
-  if ( alloc_mode .eq. gpufort_array_wrap_host_alloc_device ) then
-    call {{error_check}}{{host_allocate}}(&
-      {{interop_var}}%{{member}}%data%data_host,&
-      gpufort_array_num_data_bytes({{interop_var}}%{{member}}))
-
-          ierr = hipHostMalloc((void**) &this->data.data_host,this->num_data_bytes(),0);
-    call {{error_check}}(gpufort_array_copy_to_device{{async}}({{interop_var}}%{{member}}{{",queue" if is_async}}))
-  endif
+  call {{interop_type_name}}_copyin_{{member}}{{async}}({{interop_var}},{{orig_var}},.true.{{",queue" if is_async}})
 endif
 {%     endif  %}
 {%   endif  %}
@@ -248,12 +235,12 @@ endif
 {% endmacro  %}
 {########################################################################################}
 {% macro render_derived_type_init_array_member_routines(derived_types,
-                                                         async="_async",
-                                                         used_modules=[],
-                                                         error_check="hipCheck",
-                                                         interop_suffix="_interop",
-                                                         orig_var="orig_type",
-                                                         interop_var="interop_type")  %}
+                                                        async="_async",
+                                                        used_modules=[],
+                                                        error_check="hipCheck",
+                                                        interop_suffix="_interop",
+                                                        orig_var="orig_type",
+                                                        interop_var="interop_type")  %}
 {% set is_async = async == "_async" %}
 {% for derived_type in derived_types %}
 {% set interop_type_name = derived_type.name + interop_suffix %}
@@ -269,17 +256,28 @@ endif
 subroutine {{interop_type_name}}_init_{{ivar.name}}{{async}}(&
     {{interop_var}},&
     {{orig_var}},&
-    {{"queue," if is_async}}sync_mode)
+    sync_mode,&
+    keep_host_copy,&
+    {{"queue," if is_async}})
 {%      if used_modules|length  %}
 {{ cm.render_used_modules(used_modules) | indent(2,True) -}}
 {%      endif  %}
   implicit none
   type({{derived_type.name}}{{interop_suffix}}),intent(inout) :: {{interop_var}}
   type({{derived_type.name}}),intent(in) :: {{orig_var}}
+  integer(kind(gpufort_array_sync_none)),intent(in) :: sync_mode
+  logical,intent(in) :: keep_host_copy
 {%      if is_async  %}
   type(c_ptr),intent(in) :: queue
 {%      endif  %}
-  integer(kind(gpufort_array_sync_none)),intent(in) :: sync_mode
+  !
+  integer(kind(gpufort_array_sync_none)) :: alloc_mode
+  !
+  if ( keep_host_copy ) then
+    alloc_mode = gpufort_array_alloc_pinned_host_alloc_device
+  else 
+    alloc_mode = gpufort_array_wrap_host_alloc_device
+  endif 
   !
 {{ render_derived_type_init_array_member(derived_type,
                                          ivar.name,
@@ -306,7 +304,7 @@ end subroutine{{"\n" if not loop.last}}
 {% set index = "i"+range(1,rank_ub)|join(",i") %}
 call c_f_pointer({{interop_var}}%{{member}}%data%data_host,&
   {{interop_var}}_{{member}},shape=shape({{orig_var}}%{{member}}))
-{{ render_set_fptr_lower_bound(interop_var+"_"+member,
+{{ cm.render_set_fptr_lower_bound(interop_var+"_"+member,
                                orig_var+"%"+member,
                                rank) -}}
 !
@@ -320,13 +318,13 @@ end do
 {% endmacro %}
 {########################################################################################}
 {% macro render_derived_type_destroy_array_member(derived_type,
-                                                   member,
-                                                   async="_async",
-                                                   synchronize_queue="hipStreamSynchronize",
-                                                   error_check="hipCheck",
-                                                   interop_suffix="_interop",
-                                                   orig_var="orig_type",
-                                                   interop_var="interop_type")  %}
+                                                  member,
+                                                  async="_async",
+                                                  synchronize_queue="hipStreamSynchronize",
+                                                  error_check="hipCheck",
+                                                  interop_suffix="_interop",
+                                                  orig_var="orig_type",
+                                                  interop_var="interop_type")  %}
 {% set is_async = async == "_async" %}
 {% set interop_type_name = derived_type.name + interop_suffix %}
 {% for ivar in derived_type.variables %}
@@ -342,9 +340,7 @@ end do
 !
 if ( {{interop_var}}%{{member}}%sync_mode .eq. gpufort_array_sync_copy .or.&
      {{interop_var}}%{{member}}%sync_mode .eq. gpufort_array_sync_copyin) then
-  call {{error_check}}(gpufort_array_copy_to_host{{async}}({{interop_var}}%{{member}}))
-  call {{error_check}}({{synchronize_queue}}(queue)) ! must be completed before copy to original type
-  call {{interop_type_name}}_copyout_{{ivar.name}}({{interop_var}},{{orig_var}})
+  call {{interop_type_name}}_copyout_{{member}}{{async}}({{interop_var}},{{orig_var}},.true.{{",queue" if is_async}})
 endif
 !
 {{interop_var}}%{{member}}%sync_mode=gpufort_array_sync_none ! set pre destruction to prevent unnecessary copy at destruction

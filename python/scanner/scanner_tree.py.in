@@ -361,6 +361,7 @@ class STEnd(STEndOrReturn):
     pass
 class STReturn(STEndOrReturn):
     pass
+
 class STRoot(STContainerBase):
     def __init__(self):
         STNode.__init__(self,None,-1)

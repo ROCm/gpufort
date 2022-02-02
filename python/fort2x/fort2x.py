@@ -21,38 +21,40 @@ exec(open(os.path.join(fort2x_dir,"fort2x_options.py.in")).read())
 # might be partially used within the original file again
 
 class CodeGenerator:
-    """Generate code from a scanner tree and index information."""
-    def _init__(self,
-                stree,
-                index,
-                kernels_to_convert      = ["*"],
-                fortran_module_preamble = FORTRAN_MODULE_PREAMBLE,
-                cpp_file_preamble       = CPP_FILE_PREAMBLE,
-                fortran_module_suffix   = FORTRAN_MODULE_SUFFIX,
-                fortran_module_file_ext = FORTRAN_MODULE_FILE_EXT,
-                cpp_file_ext            = CPP_FILE_EXT):
-        self.stree                   = stree  
-        self.index                   = index
-        self.kernels_to_convert      = kernels_to_convert 
-        self.fortran_module_suffix   = fortran_module_suffix
-        self.fortran_module_file_ext = fortran_module_file_ext
-        self.cpp_file_ext            = cpp_file_ext           
+    """Modify a scanner tree and generate Fortran and C/C++ code from it."""
+    def __init__(self,
+                 stree,
+                 index,
+                 **kwargs):
+        r"""Constructor.
+        :param stree: Scanner tree created by GPUFORT's scanner component.
+        :param index: Index data structure created by GPUFORT's indexer component.
+        
+        :param \*\*kwargs: See below.
+        
+        :Keyword Arguments:
+
+        * *kernels_to_convert* (`list`):
+            Filter the kernels to convert to C++ by their name or their id. Pass ['*'] 
+            to extract all kernels [default: ['*']]
+        * *cpp_file_preamble* (`str`):
+            A preamble to write at the top of the files produced by the C++ generators
+            that can be created by this class [default: fort2x.CPP_FILE_PREAMBLE].
+        * *cpp_file_ext* (`str`):
+            File extension for the generated C++ files [default: fort2x.CPP_FILE_EXT].
+        """
+        self.stree = stree  
+        self.index = index
+        utils.kwargs.set_from_kwargs(self,"kernels_to_convert",["*"],**kwargs)
+        utils.kwargs.set_from_kwargs(self,"cpp_file_preamble",CPP_FILE_PREAMBLE,**kwargs)
+        utils.kwargs.set_from_kwargs(self,"cpp_file_ext",CPP_FILE_EXT,**kwargs)
+        utils.kwargs.set_from_kwargs(self,"default_modules",DEFAULT_MODULES,**kwargs)
+        utils.kwargs.set_from_kwargs(self,"default_includes",DEFAULT_INCLUDES,**kwargs)
+        # must be adjusted by subclasses
         #
-        self.main_filegen = fort2x.filegen.CppFileGenerator("",
-                                                            cpp_file_preamble)
+        self.main_filegen        = fort2x.filegen.CppFileGenerator("",self.cpp_file_preamble)
         self.filegens_per_module = []
         self._traversed          = False
-        # must be adjusted by subclasses
-        self.default_modules = [ 
-            "iso_c_binding",
-            "hipfort",
-            "gpufort_array",
-            ]
-        self.default_includes = [
-            "gpufort.h",
-            "gpufort_reduction.h",
-            "gpufort_array.h",
-            ]
     @staticmethod
     def _indent(text,indent):
         return "\n".join([indent+line for line in text.split("\n")])
@@ -176,7 +178,7 @@ class CodeGenerator:
                     cpp_filegen = fort2x.filegen.CppFileGenerator(CodeGenerator._create_cpp_guard(cpp_file_name),
                                                                   self.cpp_file_preamble)
                     fortran_modulegen = fort2x.filegen.FortranModuleGenerator("",
-                                                                              self.fortran_module_preamble)
+                                                                              self.fortran_preamble)
                     fortran_modulegen.default_modules = self._make_module_dicts(self.default_modules)
                 else:
                     assert isinstance(stnode,STProcedure)
@@ -203,7 +205,7 @@ class CodeGenerator:
                 for stchildnode in stnode.children:
                     traverse_node_(stchildnode)
 
-                if stnode.parent == scanner.STRoot:
+                if isinstance(stnode.parent,(scanner.STRoot,scanner.STModule)):
                     if fortran_modulegen.stores_any_code():
                         self._modify_stcontainer(stnode,fortran_modulegen)
                
@@ -217,8 +219,8 @@ class CodeGenerator:
                     self.main_filegen.merge(cpp_filegen)
         traverse_node_(self.stree)
         traversed = True
-    def generate_cpp_code(self,
-                           guard="MY_GUARD_H"):
+    def traverse_and_create_cpp_generators(self,
+                                                guard="MY_GUARD_H"):
         """Generates one C++ file ('main C++ file') for the non-module program units
         in the Fortran file plus one C++ file per each of the modules in the Fortran 
         file. The main C++ file includes the per-module C++ files.
@@ -233,8 +235,8 @@ class CodeGenerator:
         # main file
         self.main_filegen.guard = guard 
         return self.main_filegen, self.filegens_per_module 
-    def generate_cpp_files(self,
-                           main_cpp_file_path):
+    def traverse_and_generate_cpp_files(self,
+                                        main_cpp_file_path):
         """Writes one C++ file ('main C++ file') for the non-module program units
         in the Fortran file plus one C++ file per each of the modules in the file.
         The main C++ file includes the per-module C++ files.

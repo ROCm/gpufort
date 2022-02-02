@@ -49,21 +49,26 @@ def check_destination_dialect(destination_dialect):
 # API
 
 # Pyparsing actions that create scanner tree (ST)
-def parse_file(linemaps,index,fortran_filepath):
+def parse_file(linemaps,
+               index):
+    """Generates a tree representation of the Fortran constructs
+    in a Fortran file that is called *scanner tree*.
+    :param list linemaps: List of linemaps created by GPUFORT's linemapper
+                          component.
+    :param list index: Index records created by GPUFORT's indexer
+                       component.
     """
-    Generate an object tree (OT). 
-    """
-    utils.logging.log_enter_function(LOG_PREFIX,"parse_file",
-        {"fortran_filepath":fortran_filepath})
+    utils.logging.log_enter_function(LOG_PREFIX,"parse_file")
 
     translation_enabled = TRANSLATION_ENABLED_BY_DEFAULT
     
-    current_node   = STRoot()
-    do_loop_ctr     = 0     
-    keep_recording = False
-    current_file   = str(fortran_filepath)
-    current_linemap = None
-    directive_no   = 0
+    current_node     = STRoot()
+    do_loop_ctr      = 0     
+    keep_recording   = False
+    fortran_filepath = linemaps[0]["file"] 
+    current_file     = str(fortran_filepath)
+    current_linemap  = None
+    directive_no     = 0
 
     def log_detection_(kind):
         nonlocal current_node
@@ -559,8 +564,8 @@ def parse_file(linemaps,index,fortran_filepath):
                         current_node.add_linemap(current_linemap)
                         current_node._last_statement_index = current_statement_no
 
-    assert type(current_node) is STRoot
     utils.logging.log_leave_function(LOG_PREFIX,"parse_file")
+    assert type(current_node) is STRoot
     return current_node
 
 def postprocess(stree,index,hip_module_suffix):

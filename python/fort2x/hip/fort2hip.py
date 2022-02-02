@@ -11,6 +11,7 @@ import indexer.scoper as scoper
 import scanner.scanner as scanner
 import utils.logging
 import utils.fileutils
+import utils.kwargs
 
 import fort2x.fort2x
 import fort2x.hip.derivedtypegen
@@ -20,25 +21,42 @@ fort2hip_dir = os.path.dirname(__file__)
 exec(open(os.path.join(fort2hip_dir,"fort2hip_options.py.in")).read())
     
 class HipCodeGenerator(fort2x.fort2x.CodeGenerator):
-    """Code generator for generating HIP C++ kernels and kernel launchers.
-    :param bool emit_fortran_interfaces: Render explicit Fortran interfaces for the extracted kernels.
-    :param bool emit_cpu_launcher: Render a launcher that runs the original loop nest on the CPU (only for loop nests).
-    :param bool emit_debug_code: Write debug code such as printing of kernel arguments or device array norms and elements
-                                   into the generated kernel launchers.
-    """
+    """Code generator for generating HIP C++ kernels and kernel launchers
+       that can be called from Fortran code."""
     def __init__(self,
                  stree,
                  index,
-                 kernels_to_convert        = ["*"],
-                 emit_fortran_interfaces   = True, 
-                 emit_debug_code           = False,
-                 emit_cpu_launcher         = False):
-        fort2x.fort2x.CodeGenerator.__init__(stree,
+                 **kwargs):
+        r"""Constructor.
+        :param stree: Scanner tree created by GPUFORT's scanner component.
+        :param index: Index data structure created by GPUFORT's indexer component.
+        :param \*\*kwargs: See below.
+        
+        :Keyword Arguments:
+
+        * *kernels_to_convert* (`list`):
+            Filter the kernels to convert to C++ by their name or their id. Pass ['*'] 
+            to extract all kernels [default: ['*']]
+        * *cpp_file_preamble* (`str`):
+            A preamble to write at the top of the files produced by the C++ generators
+            that can be created by this class [default: fort2x.CPP_FILE_PREAMBLE].
+        * *cpp_file_ext* (`str`):
+            File extension for the generated C++ files [default: fort2x.CPP_FILE_EXT].
+        * *emit_fortran_interfaces* (``bool``):
+            Render **explicit** Fortran interfaces for the extracted kernels.
+        * *emit_cpu_launcher* (``bool``):
+            Render a launcher that runs the original loop nest on the CPU (only for loop nests).
+        * *emit_debug_code* (``bool``):
+            Write debug code such as printing of kernel arguments or device array norms and elements
+            into the generated kernel launchers.
+"""
+        fort2x.fort2x.CodeGenerator.__init__(self,
+                                             stree,
                                              index,
-                                             kernels_to_convert)
-        self.emit_debug_code         = emit_debug_code
-        self.emit_cpu_launcher       = emit_cpu_launcher
-        self.emit_fortran_interfaces = emit_fortran_interfaces
+                                             **kwargs)
+        utils.kwargs.set_from_kwargs(self,"emit_debug_code",True,**kwargs)
+        utils.kwargs.set_from_kwargs(self,"emit_cpu_launcher",False,**kwargs)
+        utils.kwargs.set_from_kwargs(self,"emit_fortran_interfaces",False,**kwargs)
      
     def __render_kernel(self,
                         kernelgen,
@@ -87,7 +105,7 @@ class HipCodeGenerator(fort2x.fort2x.CodeGenerator):
         utils.logging.log_enter_function(LOG_PREFIX,"self._render_loop_nest")
     
         scope = scoper.create_scope(self.index,
-                                         stloopnest._parent.tag())
+                                    stloopnest._parent.tag())
         
         kernelgen = fort2x.hip.kernelgen_hip.HipKernelGenerator4LoopNest(stloopnest.kernel_name(),
                                                                          stloopnest.kernel_hash(),

@@ -8,7 +8,7 @@ class FileGenerator():
         with open(filepath,"w") as outfile:
             outfile.write(self.generate_code())
 
-class CPPFileGenerator(FileGenerator):
+class CppFileGenerator(FileGenerator):
     PROLOG = ""
 
     # TODO do not just write but read and replace certain
@@ -19,7 +19,7 @@ class CPPFileGenerator(FileGenerator):
                  includes_prolog = "",
                  includes_epilog = ""):
        self.guard           = guard
-       self.prolog          = CPPFileGenerator.PROLOG + prolog
+       self.prolog          = CppFileGenerator.PROLOG + prolog
        self.includes_prolog = includes_prolog
        self.includes_epilog = includes_epilog
        # 

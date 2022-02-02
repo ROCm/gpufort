@@ -10,7 +10,7 @@ import addtoplevelpath
 import indexer.indexerutils
 import utils.logging
 
-import fort2x.hip.render
+import fort2x.render
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
 utils.logging.VERBOSE    = False
@@ -84,20 +84,20 @@ class TestRenderDerivedType(unittest.TestCase):
         elapsed = time.time() - self._started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
     def test_1_render_derived_types_cpp(self):
-        #print(fort2x.hip.render.render_derived_types_cpp(self._scope["types"]))
-        self.assertEqual(self.clean(fort2x.hip.render.render_derived_types_cpp(self._scope["types"])),\
+        #print(fort2x.render.render_derived_types_cpp(self._scope["types"]))
+        self.assertEqual(self.clean(fort2x.render.render_derived_types_cpp(self._scope["types"])),\
             self.clean(testdata_result_cpp))
     def test_2_render_derived_types_f03(self):
-        print(fort2x.hip.render.render_derived_types_f03(self._scope["types"]))
+        print(fort2x.render.render_derived_types_f03(self._scope["types"]))
         print(testdata_result_f03)
-        self.assertEqual(self.clean(fort2x.hip.render.render_derived_types_f03(self._scope["types"])),\
+        self.assertEqual(self.clean(fort2x.render.render_derived_types_f03(self._scope["types"])),\
             self.clean(testdata_result_f03))
     def test_3_render_derived_type_size_bytes_routines_f03(self):
-        print(fort2x.hip.render.render_derived_type_size_bytes_routines_f03(self._scope["types"]))
+        print(fort2x.render.render_derived_type_size_bytes_routines_f03(self._scope["types"]))
     def test_4_render_derived_type_copy_scalars_routines_f03(self):
-        print(fort2x.hip.render.render_derived_type_copy_scalars_routines_f03(self._scope["types"]))
+        print(fort2x.render.render_derived_type_copy_scalars_routines_f03(self._scope["types"]))
     def test_5_render_derived_type_copy_array_member_routines_f03(self):
-        print(fort2x.hip.render.render_derived_type_copy_array_member_routines_f03(self._scope["types"]))
+        print(fort2x.render.render_derived_type_copy_array_member_routines_f03(self._scope["types"]))
 
 if __name__ == '__main__':
     unittest.main() 

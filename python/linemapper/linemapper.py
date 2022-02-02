@@ -16,7 +16,8 @@ linemapper_dir = os.path.dirname(__file__)
 exec(open(os.path.join(linemapper_dir,"linemapper_options.py.in")).read())
 exec(open(os.path.join(linemapper_dir,"grammar.py")).read())
 
-def _intrnl_evaluate_defined(input_string,macro_stack):
+def _intrnl_evaluate_defined(input_string,
+                             macro_stack):
     # expand macro; one at a time
     result = input_string
     macro_names = [ macro["name"] for macro in reversed(macro_stack) ]
@@ -31,7 +32,8 @@ def _intrnl_evaluate_defined(input_string,macro_stack):
             break
     return result
 
-def _intrnl_expand_macros(input_string,macro_stack):
+def _intrnl_expand_macros(input_string,
+                          macro_stack):
     # expand defined(...) expressions
     result = _intrnl_evaluate_defined(input_string,macro_stack)
     # expand macro; one at a time

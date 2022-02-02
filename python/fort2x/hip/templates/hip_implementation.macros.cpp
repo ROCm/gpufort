@@ -68,10 +68,10 @@ __global__ void {{kernel.launch_bounds}} {{kernel.name}}(
 {{ cm.render_all_global_param_decls(kernel.global_vars,kernel.global_reduced_vars,True) | indent(4,True) }}
 ){
 {% if kernel.local_vars|length %}
-{{ render_local_var_decls(kernel.local_vars) | indent(2,True) }}
+{{ cm.render_local_var_decls(kernel.local_vars) | indent(2,True) }}
 {% endif %}
 {% if kernel.shared_vars|length %}
-{{ render_shared_var_decls(kernel.shared_vars) | indent(2,True) }}
+{{ cm.render_shared_var_decls(kernel.shared_vars) | indent(2,True) }}
 {% endif %}
 {{kernel.c_body | indent(2, True)}}
 }

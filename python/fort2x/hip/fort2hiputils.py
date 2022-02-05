@@ -28,12 +28,12 @@ def create_kernel_generator_from_loop_nest(declaration_list_snippet,
  
     * *preproc_options* (`str`):
         C-style preprocessor options [default: '']
-    * *kernel_name* (`str`): 
-        A name for the kernel [default: 'mykernel']
+    * *kernel_name* (`str`):
+        Name to give the kernel.
+    * *kernel_hash* (`str`):
+        Hash code encoding the significant kernel content (expressions and directives).
     """
-    kernel_name        = utils.kwargs.get_value("kernel_name","mykernel",**kwargs)
-    kernel_hash        = utils.kwargs.get_value("kernel_hash","",**kwargs)
-    preproc_options    = utils.kwargs.get_value("preproc_options",""**kwargs)
+    preproc_options    = utils.kwargs.get_value("preproc_options","",**kwargs)
     scope              = indexerutils.create_scope_from_declaration_list(declaration_list_snippet,
                                                                          preproc_options)
     linemaps           = linemapper.read_lines(loop_nest_snippet.split("\n"),
@@ -42,11 +42,10 @@ def create_kernel_generator_from_loop_nest(declaration_list_snippet,
     ttloopnest         = translator.parse_loop_kernel(fortran_statements,
                                                       scope)
 
-    return fort2x.hip.kernelgen.HipKernelGenerator4LoopNest(kernel_name,
-                                                            kernel_hash,
-                                                            ttloopnest,
+    return fort2x.hip.kernelgen.HipKernelGenerator4LoopNest(ttloopnest,
                                                             scope,
-                                                            "\n".join(fortran_statements))
+                                                            fortran_snippet="\n".join(fortran_statements),
+                                                            **kwargs)
 
 def create_interoperable_derived_type_generator(declaration_list_snippet,
                                                 used_modules=[],
@@ -95,5 +94,4 @@ def create_code_generator(**kwargs):
             Index records created via GPUFORT's indexer component.
     """ 
     stree, index, linemaps = scannerutils.parse_file(**kwargs)
-    print(stree)
-    return fort2x.hip.fort2hip.HipCodeGenerator(stree,index,**kwargs)
+    return fort2x.hip.fort2hip.HipCodeGenerator(stree,index,**kwargs), linemaps

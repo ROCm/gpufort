@@ -44,8 +44,8 @@ class TestHipKernelGenerator4LoopNest(unittest.TestCase):
         # 
         self.kernelgen = fort2hiputils.create_kernel_generator_from_loop_nest(declaration_list,
                                                                               annotated_loop_nest,
-                                                                              "mykernel",
-                                                                              "abcdefgh")
+                                                                              kernel_name="mykernel",
+                                                                              kernel_hash="abcdefgh")
     def tearDown(self):
         global PROFILING_ENABLE
         if PROFILING_ENABLE:

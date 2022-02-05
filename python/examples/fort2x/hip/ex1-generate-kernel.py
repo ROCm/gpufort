@@ -31,7 +31,7 @@ end do
 #print(ttloopnest.c_str())
 kernelgen = fort2hiputils.create_kernel_generator_from_loop_nest(declaration_list,
                                                                  annotated_loop_nest,
-                                                                 "mykernel")
+                                                                 kernel_name="mykernel")
 
 print("\n".join(kernelgen.render_gpu_kernel_cpp()))
 launcher = kernelgen.create_launcher_context(kind="hip",

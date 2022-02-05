@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
-import os
+import os,sys
 import addtoplevelpath
 import utils.logging
 import fort2x.hip.fort2hiputils as fort2hiputils
+import linemapper.linemapper as linemapper
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
 utils.logging.VERBOSE    = False
@@ -25,16 +26,32 @@ module mymod
 end module
 """
 
-codegen = fort2hiputils.create_code_generator(file_content=file_content)
+codegen, linemaps = fort2hiputils.create_code_generator(file_content=file_content)
+codegen.run()
+
 stree = codegen.stree
-main_filegen, per_module_filegens = codegen.traverse_and_create_cpp_generators(guard="MY_GUARD_H")
+sys.exit()
+print("modified Fortran file:")
+print("```")
+print(linemapper.modify_file(linemaps,file_content=file_content))
+print("```")
 
-print(main_filegen.__dict__)
-print(per_module_filegens)
+print("main C++ file:")
+print("```")
+print(codegen.cpp_filegen.generate_code())
+print("```")
+for path,filegen in codegen.cpp_filegens_per_module:
+    print("{}:".format(path))
+    print("```")
+    print(filegen.generate_code())
+    print("```")
 
-#print("# Interoperable Fortran derived types:\n")
-#print("\n".join(derivedtypegen.render_derived_type_definitions_f03()))
-#print("\n# Copy routines for creating interoperable from original type:\n")
-#print("\n".join(derivedtypegen.render_derived_type_routines_f03()))
-#print("\n# C++ definitions:\n")
-#print("\n".join(derivedtypegen.render_derived_type_definitions_cpp()))
+#for modulegen in codegen.fortran_modulegens:
+#    modulegen.used_modules.append({"name" : "iso_c_binding", "only" : []}) 
+#    modulegen.used_modules.append({"name" : "gpufort_array", "only" : []}) 
+#    modulegen.used_modules.append({"name" : "hipfort", "only" : []}) 
+#    modulegen.used_modules.append({"name" : "hipfort_check", "only" : []}) 
+#    print("Module {}:".format(modulegen.name))
+#    print("```")
+#    print(modulegen.generate_code())
+#    print("```")

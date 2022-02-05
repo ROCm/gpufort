@@ -2,25 +2,34 @@ import addtoplevelpath
 
 import fort2x.kernelgen
 import fort2x.hip.render
+import utils.kwargs
 
 class HipKernelGeneratorBase(fort2x.kernelgen.KernelGeneratorBase):
-    """
-    :param str kernel_name: Name for the kernel.
-    :param str kernel_hash: Hash code encoding the significant kernel content (expressions and directives).
-    :param dict scope: A dictionary containing index entries for the scope that the kernel is in
-    :param  
-    """
+    """Base class for constructing HIP kernel generators."""
     def __init__(self,
-                 kernel_name,
-                 kernel_hash,
                  scope,
-                 fortran_snippet="",
-                 error_handling=None):
-        self.kernel_name     = kernel_name
-        self.kernel_hash     = kernel_hash
+                 **kwargs):
+        r"""Constructor. 
+        :param dict scope: A dictionary containing index entries for the scope that the kernel is in
+        :param \*\*kwargs: See below.
+        
+        :Keyword Arguments:
+
+        * *kernel_name* (`str`):
+            Name to give the kernel.
+        * *kernel_hash* (`str`):
+            Hash code encoding the significant kernel content (expressions and directives).
+        * *fortran_snippet* (`str`):
+           Original Fortran snippet to put into the kernel documentation. 
+        * *error_handling* (`str`):
+           Error handling mode. TODO review
+        :param  
+        """
+        utils.kwargs.set_from_kwargs(self,"kernel_name","mykernel",**kwargs)
+        utils.kwargs.set_from_kwargs(self,"kernel_hash","",**kwargs)
+        utils.kwargs.set_from_kwargs(self,"fortran_snippet","",**kwargs)
+        utils.kwargs.set_from_kwargs(self,"error_handling",None,**kwargs)
         self.scope           = scope
-        self.fortran_snippet = fortran_snippet
-        self.error_handling  = error_handling 
         # to be set by subclass:
         self.c_body            = ""
         self.all_vars          = []
@@ -109,18 +118,11 @@ class HipKernelGeneratorBase(fort2x.kernelgen.KernelGeneratorBase):
 # derived classes
 class HipKernelGenerator4LoopNest(HipKernelGeneratorBase):
     def __init__(self,
-                 kernel_name,
-                 kernel_hash,
                  ttloopnest,
                  scope,
-                 fortran_snippet="",
-                 error_handling=None):
-        HipKernelGeneratorBase.__init__(self,
-                                        kernel_name,
-                                        kernel_hash,
-                                        scope,
-                                        fortran_snippet,
-                                        error_handling)
+                 **kwargs):
+        HipKernelGeneratorBase.__init__(self,scope,**kwargs)
+        #
         self.all_vars          = ttloopnest.vars_in_body()
         self.global_reductions = ttloopnest.gang_team_reductions()
         self.shared_vars       = ttloopnest.gang_team_shared_vars()
@@ -131,19 +133,12 @@ class HipKernelGenerator4LoopNest(HipKernelGeneratorBase):
 
 class HipKernelGenerator4CufKernel(HipKernelGeneratorBase):
     def __init__(self,
-                 procedure_name,
-                 procedure_hash,
                  ttprocedure,
                  iprocedure,
                  scope,
-                 fortran_snippet=None,
-                 error_handling=None):
-        HipKernelGeneratorBase.__init__(self,
-                                        procedure_name,
-                                        procedure_hash,
-                                        scope,
-                                        fortran_snippet,
-                                        error_handling)
+                 **kwargs):
+        HipKernelGeneratorBase.__init__(self,scope,**kwargs)
+        #
         self.shared_vars       = [ivar["name"] for ivar in iprocedure["variables"] if "shared" in ivar["qualifiers"]]
         self.local_vars        = [ivar["name"] for ivar in iprocedure["variables"] if ivar["name"] not in iprocedure["dummy_args"]]
         all_var_exprs          = self._strip_member_access(ttprocedure.vars_in_body()) # in the body, there might be variables present from used modules

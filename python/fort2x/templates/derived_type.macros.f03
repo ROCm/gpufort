@@ -86,7 +86,6 @@ end subroutine{{"\n" if not loop.last}}
 {% for derived_type in derived_types %}
 !> :return: Size of type '{{derived_type.name}}{{interop_suffix}}' in bytes.
 function {{derived_type.name}}{{interop_suffix}}_size_bytes() result(size_bytes)
-  use iso_c_binding
   implicit none
   type({{derived_type.name}}{{interop_suffix}}) :: dummy
   integer(c_size_t) :: size_bytes

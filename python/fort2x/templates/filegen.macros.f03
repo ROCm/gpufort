@@ -1,11 +1,7 @@
 {#- SPDX-License-Identifier: MIT                                        -#}
 {#- Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.-#}
 {########################################################################################}
-{%- macro render_used_modules(used_modules) -%}
-{% for module in used_modules %}
-use {{module.name}}{{(", only: "+module.only|join(",") if module.only|length>0)}}
-{% endfor %}
-{%- endmacro -%}
+{% import "common.macros.f03" as cm %}
 {########################################################################################}
 {%- macro render_interface_module(name,
                                   used_modules=[],
@@ -16,21 +12,22 @@ use {{module.name}}{{(", only: "+module.only|join(",") if module.only|length>0)}
 {{prolog}}
 module {{name}}
 {% if used_modules|length %}
-{{ render_used_modules(used_modules) }}
+{{cm.render_used_modules(used_modules)|indent(2,True)-}}
 {% endif %}
+  implicit none
 {% if rendered_types|length %}
 
 {% for rendered_type in rendered_types %}
 {{rendered_type|indent(2,True)}}
 {% endfor %}
 {% endif %}
-{% if rendered_interfaces|length 0 %}
+{% if rendered_interfaces|length %}
 
 {% for rendered_interface in rendered_interfaces %}
 {{rendered_interface|indent(2,True)}}
 {% endfor %}
 {% endif %}
-{% if rendered_routines|length 0 %}
+{% if rendered_routines|length %}
 
 contains
 {% for rendered_routine in rendered_routines %}

@@ -9,6 +9,7 @@ import pyparsing as pyp
 import addtoplevelpath
 import utils.logging
 import utils.parsingutils
+import utils.kwargs
 
 ERR_LINEMAPPER_MACRO_DEFINITION_NOT_FOUND = 11001
 
@@ -567,53 +568,80 @@ def read_file(fortran_filepath,options=""):
     except Exception as e:
         raise e
 
-def write_modified_file(outfile_path,infile_path,linemaps,preamble=""):
-    """TODO docu"""
-    global LINE_GROUPING_WRAP_IN_IFDEF
-    global LINE_GROUPING_MACRO
+def modify_file(linemaps,**kwargs):
+    """Modify a file's file_content based on 
+    the changes encoded by the linemaps.
+    :param \*\*kwargs: See below.
+    :param list linemaps: A list of linemaps that encode changes to each line.
+    :return: The modified file's file_content as str. 
     
-    utils.logging.log_enter_function(LOG_PREFIX,"write_modified_file",\
-      {"infile_path":infile_path,"outfile_path":outfile_path})
+    :Keyword Arguments:
+    
+    * *file_lines* (``str``):
+        Lines of the file that should be parsed.
+    * *file_content* (``str``):
+        Content of the file that should be parsed.
+    * *preamble* (``str``):
+        A preamble to put at the top of the output.
+    * *wrap_in_ifdef* (``bool``):
+        Introduce ifdef-else-endif preprocessor block around modified lines and keep the original in the else branch. 
+    * *ifdef_macro* (``str``):
+        Macro to use in the ifdef directive.
+    """
+    global LINE_GROUPING_WRAP_IN_IFDEF
+    global LINE_GROUPING_IFDEF_MACRO
+    file_lines, have_lines = utils.kwargs.get_value("file_lines",[],**kwargs)
+    if not have_lines:
+        file_content, have_content = utils.kwargs.get_value("file_content",None,**kwargs)
+        if have_content:
+            file_lines = file_content.split("\n")
+        else:
+            raise ValueError("Missing keyword argument: One of 'file_content' (str) or 'file_lines' (list of str) must be present.") 
+        
+    preamble, _     = utils.kwargs.get_value("preamble","",**kwargs)
+    wrap_in_ifdef,_ = utils.kwargs.get_value("wrap_in_ifdef",LINE_GROUPING_WRAP_IN_IFDEF,**kwargs)
+    ifdef_macro,_   = utils.kwargs.get_value("ifdef_macro",LINE_GROUPING_IFDEF_MACRO,**kwargs)
+ 
+    utils.logging.log_enter_function(LOG_PREFIX,"modify_file")
 
     blocks = _intrnl_group_modified_linemaps(linemaps)
 
     output      = ""
     block_id     = 0
     lines_to_skip = -1
-    with open(infile_path,"r") as infile:
-        for lineno,line in enumerate(infile.readlines(),start=1):
-            if block_id < len(blocks) and\
-               lineno == blocks[block_id]["min_lineno"]:
-                block       = blocks[block_id]
-                lines_to_skip = block["max_lineno"] - block["min_lineno"]
-                subst       = block["subst"].rstrip("\n")
-                original    = block["orig"].rstrip("\n")
-                if LINE_GROUPING_WRAP_IN_IFDEF:
-                    if block["only_epilog"]:
-                        output += "{2}\n#ifdef {0}\n{1}\n#endif\n".format(\
-                          LINE_GROUPING_IFDEF_MACRO,subst,original)
-                    elif block["only_prolog"]:
-                        output += "#ifdef {0}\n{1}\n#endif\n{2}\n".format(\
-                          LINE_GROUPING_IFDEF_MACRO,subst,original)
-                    else:
-                        if len(block["subst"].strip(" \n\t")):
-                            output += "#ifdef {0}\n{1}\n#else\n{2}\n#endif\n".format(\
-                              LINE_GROUPING_IFDEF_MACRO,subst,original)
-                        else:
-                            output += "#ifndef {0}\n{2}\n#endif\n".format(\
-                              LINE_GROUPING_IFDEF_MACRO,subst,original)
+    for lineno,line in enumerate(file_lines,start=1):
+        if block_id < len(blocks) and\
+           lineno == blocks[block_id]["min_lineno"]:
+            block       = blocks[block_id]
+            lines_to_skip = block["max_lineno"] - block["min_lineno"]
+            subst       = block["subst"].rstrip("\n")
+            original    = block["orig"].rstrip("\n")
+            if wrap_in_ifdef:
+                if block["only_epilog"]:
+                    output += "{2}\n#ifdef {0}\n{1}\n#endif\n".format(\
+                      ifdef_macro,subst,original)
+                elif block["only_prolog"]:
+                    output += "#ifdef {0}\n{1}\n#endif\n{2}\n".format(\
+                      ifdef_macro,subst,original)
                 else:
-                    if block["only_epilog"]:
-                        output += original + "\n" + subst + "\n"
-                    elif block["only_prolog"]:
-                        output += subst + "\n" + original + "\n"
+                    if len(block["subst"].strip(" \n\t")):
+                        output += "#ifdef {0}\n{1}\n#else\n{2}\n#endif\n".format(\
+                          ifdef_macro,subst,original)
                     else:
-                        output += subst + "\n"
-                block_id +=1
-            elif lines_to_skip > 0:
-                lines_to_skip -= 1
+                        output += "#ifndef {0}\n{2}\n#endif\n".format(\
+                          ifdef_macro,subst,original)
             else:
-                output += line
+                if block["only_epilog"]:
+                    output += original + "\n" + subst + "\n"
+                elif block["only_prolog"]:
+                    output += subst + "\n" + original + "\n"
+                else:
+                    output += subst + "\n"
+            block_id +=1
+        elif lines_to_skip > 0:
+            lines_to_skip -= 1
+        else:
+            output += line
     if preamble != None and len(preamble):
         if LINE_GROUPING_WRAP_IN_IFDEF:
             preamble2 = "#ifdef {}\n{}\n#endif".format(\
@@ -621,12 +649,24 @@ def write_modified_file(outfile_path,infile_path,linemaps,preamble=""):
         else:
             preamble2 = preamble.rstrip("\n")
         output = preamble2+"\n" + output
-    with open(outfile_path,"w") as outfile:
-        outfile.write(output.rstrip("\n"))
+    utils.logging.log_leave_function(LOG_PREFIX,"modify_file")
+    return output
+
+def write_modified_file(outfile_path,infile_path,linemaps,preamble=""):
+    """TODO docu"""
+    utils.logging.log_enter_function(LOG_PREFIX,"write_modified_file",\
+      {"infile_path":infile_path,"outfile_path":outfile_path})
+
+    with open(infile_path,"r") as infile,\
+         open(outfile_path,"w") as outfile:
+        outfile.write(modify_file(infile.readlines(),linemaps,preamble).rstrip())
     
     utils.logging.log_leave_function(LOG_PREFIX,"write_modified_file")
 
-def render_file(linemaps,stage="statements",include_inactive=False,include_preprocessor_directives=False):
+def render_file(linemaps,
+                stage="statements",
+                include_inactive=False,
+                include_preprocessor_directives=False):
     """
     :param str stage: either 'lines', 'statements' or 'expanded_statements', i.e. the preprocessor stage.
     :param bool include_inactive: include also code lines in inactive code regions.

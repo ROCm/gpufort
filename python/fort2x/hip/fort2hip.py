@@ -14,7 +14,7 @@ import utils.fileutils
 import utils.kwargs
 
 import fort2x.fort2x
-import fort2x.hip.derivedtypegen
+import fort2x.derivedtypegen
 import fort2x.hip.kernelgen
 
 fort2hip_dir = os.path.dirname(__file__)
@@ -44,17 +44,22 @@ class HipCodeGenerator(fort2x.fort2x.CodeGenerator):
             File extension for the generated C++ files [default: fort2x.CPP_FILE_EXT].
         * *emit_fortran_interfaces* (``bool``):
             Render **explicit** Fortran interfaces for the extracted kernels.
+        * *emit_grid_launcher* (``bool``):
+            Only for loop nests: Render a launcher that takes the grid as first argument [default: true].
+            This launcher is always rendered for kernel procedures, i.e. this option 
+            does not affect them.
+        * *emit_problem_size_launcher* (``bool``):
+            Only for loop nests: Render a launcher that takes the problem size as first argument [default: true].
         * *emit_cpu_launcher* (``bool``):
-            Render a launcher that runs the original loop nest on the CPU (only for loop nests).
+            Only for loop nests: Render a launcher that runs the original loop nest on the CPU [default: False].
         * *emit_debug_code* (``bool``):
             Write debug code such as printing of kernel arguments or device array norms and elements
             into the generated kernel launchers.
 """
-        fort2x.fort2x.CodeGenerator.__init__(self,
-                                             stree,
-                                             index,
-                                             **kwargs)
+        fort2x.fort2x.CodeGenerator.__init__(self,stree,index,**kwargs)
         utils.kwargs.set_from_kwargs(self,"emit_debug_code",True,**kwargs)
+        utils.kwargs.set_from_kwargs(self,"emit_grid_launcher",False,**kwargs)
+        utils.kwargs.set_from_kwargs(self,"emit_problem_size_launcher",True,**kwargs)
         utils.kwargs.set_from_kwargs(self,"emit_cpu_launcher",False,**kwargs)
         utils.kwargs.set_from_kwargs(self,"emit_fortran_interfaces",False,**kwargs)
      
@@ -66,20 +71,23 @@ class HipCodeGenerator(fort2x.fort2x.CodeGenerator):
         cpp_filegen.rendered_kernels += (kernelgen.render_begin_kernel_comment_cpp()
                                         + kernelgen.render_gpu_kernel_cpp()
                                         + kernelgen.render_end_kernel_comment_cpp())
-        hip_launcher = kernelgen.create_launcher_context("hip",
-                                                         self.emit_debug_code,
-                                                         self._make_module_dicts(self.default_modules))
-        rendered_launchers_cpp  = kernelgen.render_gpu_launcher_cpp(hip_launcher)
-        rendered_interfaces_f03 = kernelgen.render_launcher_interface_f03(hip_launcher)
-        
-        hip_ps_launcher = copy.deepcopy(hip_launcher)
-        hip_ps_launcher["kind"] = "hip_ps"
-        
-        rendered_launchers_cpp  += kernelgen.render_gpu_launcher_cpp(hip_ps_launcher)
-        rendered_interfaces_f03 += kernelgen.render_launcher_interface_f03(hip_ps_launcher)
+        rendered_launchers_cpp  = []
+        rendered_interfaces_f03 = []
+        grid_launcher = kernelgen.create_launcher_context("hip",
+                                                          self.emit_debug_code,
+                                                          fortran_filegen.used_modules)
+        if not is_loopnest or self.emit_grid_launcher:
+            kernelgen.render_gpu_launcher_cpp(grid_launcher)            
+            kernelgen.render_launcher_interface_f03(grid_launcher)
+
+        if is_loopnest and self.emit_problem_size_launcher:
+            problem_size_launcher = copy.deepcopy(grid_launcher)
+            problem_size_launcher["kind"] = "hip_ps"
+            rendered_launchers_cpp  += kernelgen.render_gpu_launcher_cpp(problem_size_launcher)
+            rendered_interfaces_f03 += kernelgen.render_launcher_interface_f03(problem_size_launcher)
 
         if is_loopnest and self.emit_cpu_launcher:
-            cpu_launcher = copy.deepcopy(hip_launcher)
+            cpu_launcher = copy.deepcopy(grid_launcher)
             cpu_launcher["kind"] = "cpu"
             rendered_launchers_cpp  += kernelgen.render_cpu_launcher_cpp(cpu_launcher)
             rendered_interfaces_f03 += kernelgen.render_launcher_interface_f03(cpu_launcher)
@@ -96,9 +104,9 @@ class HipCodeGenerator(fort2x.fort2x.CodeGenerator):
                                                    + rendered_interfaces_f03
                                                    + kernelgen.render_end_kernel_comment_f03())
     def _render_loop_nest(self,
-                           stloopnest,
-                           cpp_filegen,
-                           fortran_filegen):
+                          stloopnest,
+                          cpp_filegen,
+                          fortran_filegen):
         """
         :note: Writes back to stloopnest argument.
         """
@@ -107,7 +115,7 @@ class HipCodeGenerator(fort2x.fort2x.CodeGenerator):
         scope = scoper.create_scope(self.index,
                                     stloopnest._parent.tag())
         
-        kernelgen = fort2x.hip.kernelgen_hip.HipKernelGenerator4LoopNest(stloopnest.kernel_name(),
+        kernelgen = fort2x.hip.kernelgen.HipKernelGenerator4LoopNest(stloopnest.kernel_name(),
                                                                          stloopnest.kernel_hash(),
                                                                          stloopnest.parse_result,
                                                                          scope,
@@ -118,7 +126,7 @@ class HipCodeGenerator(fort2x.fort2x.CodeGenerator):
                              fortran_filegen,
                              is_loopnest=True)
 
-        stloopnest.set_kernel_arguments(kernelgen.get_kernel_arguments)
+        # stloopnest.set_kernel_arguments(kernelgen.get_kernel_arguments)
  
         utils.logging.log_leave_function(LOG_PREFIX,"self._render_loop_nest")
     
@@ -130,14 +138,14 @@ class HipCodeGenerator(fort2x.fort2x.CodeGenerator):
         scope = scoper.create_scope(index,
                                     stprocedure._parent.tag())
         if stprocedure.is_kernel_subroutine():  
-            kernelgen = fort2x.hip.kernelgen_hip.HipKernelGenerator4CufKernel(iprocedure["name"],
+            kernelgen = fort2x.hip.kernelgen.HipKernelGenerator4CufKernel(iprocedure["name"],
                                                                              stprocedure.kernel_hash(),
                                                                              stprocedure.parse_result,
                                                                              iprocedure,
                                                                              scope,
                                                                              "".join(stlprocedure.lines()))
         else:
-            kernelgen = fort2x.hip.kernelgen_hip.HipKernelGenerator4AcceleratorRoutine(stprocedure.kernel_name(),
+            kernelgen = fort2x.hip.kernelgen.HipKernelGenerator4AcceleratorRoutine(stprocedure.kernel_name(),
                                                                                        stprocedure.kernel_hash(),
                                                                                        stprocedure.parse_result,
                                                                                        iprocedure,
@@ -149,15 +157,14 @@ class HipCodeGenerator(fort2x.fort2x.CodeGenerator):
                              fortran_filegen,
                              is_loopnest=False)
 
-        stloopnest.set_kernel_arguments(kernelgen.get_kernel_arguments)
+        # stloopnest.set_kernel_arguments(kernelgen.get_kernel_arguments)
  
         utils.logging.log_leave_function(LOG_PREFIX,"self._render_loop_nest")
     def _render_derived_types(self,
                               itypes,
-                              used_modules,
                               cpp_filegen,
                               fortran_modulegen):
-        derivedtypegen = DerivedTypeGenerator(itypes,used_modules) 
+        derivedtypegen = fort2x.derivedtypegen.DerivedTypeGenerator(itypes,[]) 
         cpp_filegen.rendered_types          += derivedtypegen.render_derived_type_definitions_cpp()
         fortran_modulegen.rendered_types    += derivedtypegen.render_derived_type_definitions_f03()
         fortran_modulegen.rendered_routines += derivedtypegen.render_derived_type_routines_f03()

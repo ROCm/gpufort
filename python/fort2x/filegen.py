@@ -1,3 +1,5 @@
+import addtoplevelpath
+import utils.kwargs
 import fort2x.render
 
 class FileGenerator():
@@ -13,24 +15,43 @@ class CppFileGenerator(FileGenerator):
 
     # TODO do not just write but read and replace certain
     # code sections; make aware of kernel names and their hash value
-    def __init__(self,
-                 guard,
-                 prolog          = "",
-                 includes_prolog = "",
-                 includes_epilog = ""):
-       self.guard           = guard
-       self.prolog          = CppFileGenerator.PROLOG + prolog
-       self.includes_prolog = includes_prolog
-       self.includes_epilog = includes_epilog
+    def __init__(self,**kwargs):
+       r"""Constructor.
+       :param \*\*kwargs: See below.
+
+       :Keyword Arguments:
+
+       * *guard* (`str`):
+           Include guard symbol.
+       * *prolog* (`str`):
+           A prolog to put at the top of the file.
+       * *includes_prolog* (`str`):
+           A prolog to put before the includes.
+       * *includes_epilog* (`str`):
+           An epilog to put below the includes.
+       * *default_includes* (`list`):
+           The default includes.
+       * *emit_only_types* (`str`):
+           Only types and no kernels and no launchers
+           shall be written into the generated file.
+       * *emit_only_kernels* (`str`):
+           Only kernels and types, as they might be required by the kernels,
+           shall be written into the generated file.
+       """
+       utils.kwargs.set_from_kwargs(self,"guard","",**kwargs)
+       utils.kwargs.set_from_kwargs(self,"prolog","",**kwargs)
+       self.prolog = CppFileGenerator.PROLOG + self.prolog
+       utils.kwargs.set_from_kwargs(self,"includes_prolog","",**kwargs)
+       utils.kwargs.set_from_kwargs(self,"includes_epilog","",**kwargs)
+       utils.kwargs.set_from_kwargs(self,"default_includes",[],**kwargs)
+       utils.kwargs.set_from_kwargs(self,"emit_only_types",False ,**kwargs)
+       utils.kwargs.set_from_kwargs(self,"emit_only_kernels",False ,**kwargs)
        # 
        self.rendered_types     = []
        self.rendered_kernels   = []
        self.rendered_launchers = []
-       self.default_includes   = []
        self.includes           = []
        #
-       self.emit_only_types   = False 
-       self.emit_only_kernels = False 
        pass
     def stores_any_code_or_includes(self):
         return len(self.snippets)\
@@ -65,17 +86,30 @@ class CppFileGenerator(FileGenerator):
 class FortranModuleGenerator(FileGenerator):
     PROLOG = ""
 
-    def __init__(self,
-                 name,
-                 prolog = ""):
-       self.name                 = name
-       self.prolog               = FortranModuleGenerator.PROLOG + prolog
-       self.default_used_modules = []
+    def __init__(self,**kwargs):
+       r"""Constructor.
+       :param \*\*kwargs: See below.
+
+       :Keyword Arguments:
+
+       * *prolog* (`str`):
+           Prolog to put at the top of the file.
+       * *name* (`str`):
+           Name to give the module [default: 'mymodule'].
+       * *default_used_modules* (`list`):
+           The default modules that the generated interfaces
+           and routines shall use [default: []].
+       """
+       utils.kwargs.set_from_kwargs(self,"prolog","",**kwargs)
+       self.prolog = FortranModuleGenerator.PROLOG + self.prolog
+       utils.kwargs.set_from_kwargs(self,"name","mymodule",**kwargs)
+       utils.kwargs.set_from_kwargs(self,"default_used_modules",[],**kwargs)
+       #
        self.used_modules         = []
        self.rendered_types       = []
        self.rendered_interfaces  = []
        self.rendered_routines    = [] 
-       pass 
+       pass
     def stores_any_code(self):
         return len(self.rendered_types)\
                or len(self.rendered_interfaces)\
@@ -89,7 +123,7 @@ class FortranModuleGenerator(FileGenerator):
         self.rendered_routines   += other.rendered_routines
     def generate_code(self):
         return fort2x.render.render_interface_module_f03(self.name,
-                                                         self.default_used_modules+self.used_modules,
+                                                         self.used_modules,
                                                          self.rendered_types,
                                                          self.rendered_interfaces,
                                                          self.rendered_routines,

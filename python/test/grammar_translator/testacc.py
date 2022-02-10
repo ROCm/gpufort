@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import sys
 sys.path.append("..")
 sys.path.append("../../")
@@ -28,8 +28,8 @@ testdata.append("""!$acc kernels copyin(a,b)
         end do
         !$acc end kernels
         !$acc wait""")
-#testdata.append("""!$acc kernels async(0) 
-#        !$acc loop independent 
+#testdata.append("""!$acc kernels async(0)
+#        !$acc loop independent
 #        do i= 1, N
 #          a(i) = 10
 #        end do

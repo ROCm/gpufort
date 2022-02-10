@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import os
 import addtoplevelpath
-import utils.logging
-import fort2x.hip.fort2hiputils as fort2hiputils
+from gpufort import util
+from gpufort import fort2x
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
-utils.logging.VERBOSE    = False
-utils.logging.init_logging("log.log",LOG_FORMAT,"warning")
+util.logging.opts.verbose    = False
+util.logging.init_logging("log.log",LOG_FORMAT,"warning")
 
 declaration_list= """\
 type inner
@@ -19,7 +19,20 @@ end type inner
 type outer
   type(inner)                            :: single_inner
   type(inner),allocatable,dimension(:,:) :: array_inner
-  integer(4),pointer                     :: array_integer(:,:,:)
+#ifdef MORE_FIELDS
+  integer(4),pointer                     :: array_integer01(:,:,:)
+  integer(4),pointer                     :: array_integer02(:,:,:)
+  integer(4),pointer                     :: array_integer03(:,:,:)
+  integer(4),pointer                     :: array_integer04(:,:,:)
+  integer(4),pointer                     :: array_integer05(:,:,:)
+  integer(4),pointer                     :: array_integer06(:,:,:)
+  integer(4),pointer                     :: array_integer07(:,:,:)
+  integer(4),pointer                     :: array_integer08(:,:,:)
+  integer(4),pointer                     :: array_integer09(:,:,:)
+  integer(4),pointer                     :: array_integer10(:,:,:)
+  integer(4),pointer                     :: array_integer11(:,:,:)
+  integer(4),pointer                     :: array_integer12(:,:,:)
+#endif
 end type outer
 """
 
@@ -30,9 +43,10 @@ used_modules = [{"name" : mod, "only" : []} for mod in [
                                                        "gpufort_array",
                                                        ]]
 
-derivedtypegen = fort2hiputils.create_interoperable_derived_type_generator(declaration_list,
-                                                                           used_modules=used_modules,
-                                                                           preproc_options="")
+derivedtypegen = fort2x.hip.create_derived_type_generator(declaration_list,
+                                                          used_modules=used_modules,
+                                                          preproc_options="")
+                                                          #preproc_options="-DMORE_FIELDS")
 print("# Interoperable Fortran derived types:\n")
 print("\n".join(derivedtypegen.render_derived_type_definitions_f03()))
 print("\n# Copy routines for creating interoperable from original type:\n")

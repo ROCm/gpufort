@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import time
 import unittest
 import cProfile,pstats,io
 
 import addtoplevelpath
-import indexer.indexer as indexer
-import indexer.scoper as scoper
-import utils.logging
-import linemapper.linemapper as linemapper
+from gpufort import indexer
+from gpufort import util
+from gpufort import linemapper
 
 log_format = "[%(levelname)s]\tgpufort:%(message)s"
 log_level                   = "debug2"
-utils.logging.VERBOSE       = False
-utils.logging.TRACEBACK = False
-utils.logging.init_logging("log.log",log_format,log_level)
+util.logging.opts.verbose   = False
+util.logging.opts.traceback = False
+util.logging.init_logging("log.log",log_format,log_level)
 
 gfortran_options="-DCUDA"
 
@@ -146,7 +145,7 @@ class TestIndexer(unittest.TestCase):
         self.assertEqual(func2["kind"],"function")
         self.assertEqual(func2["result_name"],"res")
         self.assertEqual(len(func2["subprograms"]),2)
-        # nested subprogram 1 
+        # nested subprogram 1
         func3 = next((sub for sub in func2["subprograms"] if sub["name"] == "func3".lower()),None)
         self.assertEqual(func3["kind"],"function")
         self.assertEqual(func3["result_name"],"func3")

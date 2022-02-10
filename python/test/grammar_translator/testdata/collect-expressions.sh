@@ -12,7 +12,7 @@ done
 #  subfolder=$1
 #  grep -r -h "\s*::\s*" $(find $ROOT_DIR/$subfolder -name *.f90) | grep -v "!" |\
 #     tr -d ' ' | grep -v -e "^[0-9]\+" -e "IMPORT" -e "PUBLIC" |\
-#     grep -v -e "&\s*$" | grep "^\w\+" |  sort -u 
+#     grep -v -e "&\s*$" | grep "^\w\+" |  sort -u
 #}
 #
 #for subfolder in PW; do

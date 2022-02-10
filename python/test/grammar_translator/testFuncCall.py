@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import test
-import translator.translator
+import gpufort.translator
 
 testdata ="""
 a0(1,2)
 a0(1)
-""".strip(" ").strip("\n").split("\n")
+""".strip(" ").strip("\n").splitlines()
 
 test.run(
    expression     = translator.func_call,

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 #include "hip/hip_runtime.h"
 #include "hip/hip_runtime_api.h"
 

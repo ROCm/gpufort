@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import time
 import unittest
 import cProfile,pstats,io
 import re
 import ast
 
-import addtoplevelpath
-import linemapper.grammar as grammar
-import linemapper.linemapper as linemapper
+import gpufort.linemapper.grammar
+import gpufort.linemapper
 
-#import utils.logging
+#import gpufort.util.logging
 #
 #LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
-#utils.logging.VERBOSE    = False
+#gpufort.util.logging.opts.verbose    = False
 
 PROFILING_ENABLE = False
 
@@ -56,7 +55,7 @@ class TestPreprocessorGrammar(unittest.TestCase):
             for result,_,__ in grammar.pp_dir_undef.scanString(text):
                 self.assertEqual(names[n],result.name) 
             n += 1
-        #define 
+        #define
         testdata = [
             "#define a",
             "#define a1 5",

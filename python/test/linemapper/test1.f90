@@ -1,8 +1,6 @@
-! SPDX-License-Identifier: MIT
-! Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 program main 
 
-#define b 2 
+#define b 2
 #define c 5
 #define size8(x) 8*(x)*b
 

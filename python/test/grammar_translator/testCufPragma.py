@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import sys
 sys.path.append("..")
 from translator import *
@@ -38,7 +38,7 @@ cufKernelDoVariants="""!$cuf kernel do
 !$cuf kernel do(3) <<<*,*, 0, dfft%a2a_comp>>>
 !$cuf kernel do(3) <<<*,*,0,dfft%a2a_comp>>>
 !$cuf kernel do(3) <<<*,(16,16,1), 0, stream>>>
-!$cuf kernel do(4)""".split("\n")
+!$cuf kernel do(4)""".splitlines()
 
 for v in cufKernelDoVariants:
   try:

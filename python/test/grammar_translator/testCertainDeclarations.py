@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
-import addtoplevelpath
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import sys
 import test
-import translator.translator as translator
-#import grammar as translator
+import gpufort.translator
+import addtoplevelpath
+from gpufort import grammar
 
 #print(translator.declared_variable.parseString("f_d ( : )")[0]._bounds._bounds[0].__dict__)
 #print(translator.declared_variable.parseString("f_d ( -5: )")[0]._bounds._bounds[0].__dict__)

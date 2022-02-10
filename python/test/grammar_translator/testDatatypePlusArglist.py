@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import sys
 import test
-#import translator.translator
+#import gpufort.translator
 
-import grammar as translator
+import addtoplevelpath
+from gpufort import grammar
 
 for lib in ["LAXlib","PW","FFTXlib"]:
     testdata = open("testdata/datatypePlusArgList-{}.txt".format(lib),"r").readlines() 

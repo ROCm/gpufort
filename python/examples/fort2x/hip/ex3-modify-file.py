@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import os,sys
 import addtoplevelpath
-import utils.logging
-import fort2x.hip.fort2hiputils as fort2hiputils
-import linemapper.linemapper as linemapper
+from gpufort import util
+from gpufort import linemapper
+from gpufort import fort2x
+
+import json
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
-utils.logging.VERBOSE    = False
-utils.logging.init_logging("log.log",LOG_FORMAT,"warning")
+util.logging.opts.verbose    = False
+util.logging.init_logging("log.log",LOG_FORMAT,"warning")
 
 file_content= """\
 module mymod
@@ -26,14 +28,15 @@ module mymod
 end module
 """
 
-codegen, linemaps = fort2hiputils.create_code_generator(file_content=file_content)
+codegen, linemaps = fort2x.hip.create_code_generator(file_content=file_content)
 codegen.run()
 
-stree = codegen.stree
-sys.exit()
 print("modified Fortran file:")
 print("```")
-print(linemapper.modify_file(linemaps,file_content=file_content))
+print(linemapper.modify_file(linemaps,
+                             file_content=file_content,
+                             ifdef_macro=None))
+                             #ifdef_macro="_GPUFORT"))
 print("```")
 
 print("main C++ file:")
@@ -47,10 +50,10 @@ for path,filegen in codegen.cpp_filegens_per_module:
     print("```")
 
 #for modulegen in codegen.fortran_modulegens:
-#    modulegen.used_modules.append({"name" : "iso_c_binding", "only" : []}) 
-#    modulegen.used_modules.append({"name" : "gpufort_array", "only" : []}) 
-#    modulegen.used_modules.append({"name" : "hipfort", "only" : []}) 
-#    modulegen.used_modules.append({"name" : "hipfort_check", "only" : []}) 
+#    modulegen.used_modules.append({"name" : "iso_c_binding", "only" : []})
+#    modulegen.used_modules.append({"name" : "gpufort_array", "only" : []})
+#    modulegen.used_modules.append({"name" : "hipfort", "only" : []})
+#    modulegen.used_modules.append({"name" : "hipfort_check", "only" : []})
 #    print("Module {}:".format(modulegen.name))
 #    print("```")
 #    print(modulegen.generate_code())

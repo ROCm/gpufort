@@ -1,5 +1,5 @@
 ! SPDX-License-Identifier: MIT
-! Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 ! 1. simple_base and base: arrays, scalars, types, device attributes, and use statements
 module simple_base
   integer :: z1, z2
@@ -46,17 +46,17 @@ contains
   contains
 
     function func3(a)
-      real,intent(in) :: a ! scoper: should hide the a in scoper
+      real,intent(in) :: a ! gpufort.scope: should hide the a in gpufort.scope
       integer :: func3
-      integer :: e(n,n) ! scoper: should hide the e in module
+      integer :: e(n,n) ! gpufort.scope: should hide the e in module
       func3 = a 
     end function
     
     function func4(a)
       !$acc routine seq
-      real,intent(in) :: a ! scoper: should hide the a in scoper
+      real,intent(in) :: a ! gpufort.scope: should hide the a in gpufort.scope
       integer :: func3
-      integer :: e(n,n) ! scoper: should hide the e in module
+      integer :: e(n,n) ! gpufort.scope: should hide the e in module
       func3 = a 
     end function
   end function

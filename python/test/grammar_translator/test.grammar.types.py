@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
-import addtoplevelpath
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import os,sys
 import time
 import unittest
-import grammar.grammar as grammar
+import addtoplevelpath
+from gpufort import grammar
 
 print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.stderr)
 

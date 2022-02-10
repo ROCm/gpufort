@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import time
 import unittest
 import cProfile,pstats,io
 import json
 
-import addtoplevelpath
-import linemapper.linemapper as linemapper
-import utils.logging
+import __init__
+from gpufort import linemapper
+import util as util
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
-utils.logging.VERBOSE    = False
-utils.logging.init_logging("log.log",LOG_FORMAT,"warning")
+util.logging.opts.verbose = False
+util.logging.init_logging("log.log",LOG_FORMAT,"warning")
 
 PROFILING_ENABLE = False
 

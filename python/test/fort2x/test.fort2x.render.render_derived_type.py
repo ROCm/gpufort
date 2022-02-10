@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import os
 import json
 import jinja2
 import unittest
 import cProfile,pstats,io,time
-import addtoplevelpath
-import indexer.indexerutils
-import utils.logging
+import gpufort.indexer
+import gpufort.util.logging
 
 import fort2x.render
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
-utils.logging.VERBOSE    = False
-utils.logging.init_logging("log.log",LOG_FORMAT,"warning")
+util.logging.opts.verbose    = False
+util.logging.init_logging("log.log",LOG_FORMAT,"warning")
 
 PROFILING_ENABLE = False
 
@@ -62,7 +61,7 @@ end type nested_interop
 
 class TestRenderDerivedType(unittest.TestCase):
     def prepare(self,text):
-        return text.strip().split("\n")
+        return text.strip().splitlines()
     def clean(self,text):
         return text.replace(" ","").replace("\t","").replace("\n","").replace("\r","")
     def setUp(self):
@@ -71,7 +70,7 @@ class TestRenderDerivedType(unittest.TestCase):
             self._profiler = cProfile.Profile()
             self._profiler.enable()
         self._started_at = time.time()
-        self._scope      = indexer.indexerutils.create_scope_from_declaration_list(testdata)
+        self._scope      = indexer.create_scope_from_declaration_list(testdata)
     def tearDown(self):
         global PROFILING_ENABLE
         if PROFILING_ENABLE:

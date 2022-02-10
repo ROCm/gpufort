@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import os
 import addtoplevelpath
-import utils.logging
-import fort2x.hip.fort2hiputils as fort2hiputils
+from gpufort import util
+from gpufort import fort2x
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
-utils.logging.VERBOSE    = False
-utils.logging.init_logging("log.log",LOG_FORMAT,"warning")
-
-PROFILING_ENABLE = False
+util.logging.opts.verbose    = False
+util.logging.init_logging("log.log",LOG_FORMAT,"debug")
 
 declaration_list= """\
 integer, parameter :: N = 1000, M=2000
@@ -29,7 +27,7 @@ end do
 """  
 
 #print(ttloopnest.c_str())
-kernelgen = fort2hiputils.create_kernel_generator_from_loop_nest(declaration_list,
+kernelgen = fort2x.hip.create_kernel_generator_from_loop_nest(declaration_list,
                                                                  annotated_loop_nest,
                                                                  kernel_name="mykernel")
 

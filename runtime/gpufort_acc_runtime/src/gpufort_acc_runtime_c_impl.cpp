@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT                                                
-// Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+// Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 #include "gpufort_acc_runtime_c_impl.h"
 
 #include <iostream>

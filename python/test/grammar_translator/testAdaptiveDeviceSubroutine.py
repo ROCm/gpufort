@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
-import addtoplevelpath
-import translator.translator as translator
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+import gpufort.translator
             
 testdata = []
 testdata.append("""

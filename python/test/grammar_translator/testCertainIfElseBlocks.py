@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import sys
 import test
-import translator.translator
+import gpufort.translator
 
-#print(_else_if_statement.parseString("""  
+#print(_else_if_statement.parseString("""
 #elseif ( lp < 16 ) then
 #    phi  = atan( g(2,ig)/g(1,ig) ) + pi
 #"""))

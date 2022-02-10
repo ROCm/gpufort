@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
-import addtoplevelpath
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import os,sys
 import time
 import unittest
-import translator.translator as translator
-import utils.logging
+import addtoplevelpath
+from gpufort import translator
+from gpufort import util
 
 print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.stderr)
 
 log_format = "[%(levelname)s]\tgpufort:%(message)s"
 log_level                   = "debug2"
-utils.logging.VERBOSE       = False
-utils.logging.TRACEBACK     = False
-utils.logging.init_logging("log.log",log_format,log_level)
+util.logging.opts.verbose       = False
+util.logging.opts.traceback     = False
+util.logging.init_logging("log.log",log_format,log_level)
 
 testdata1_types = """
 real
@@ -66,7 +66,7 @@ class TestDeclaration(unittest.TestCase):
         elapsed = time.time() - self._started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 9)))
     def prepare(self,testdata):
-        return testdata.strip().split("\n")
+        return testdata.strip().splitlines()
     def test1_pass(self):
         testdata = self.prepare(testdata1_pass)
         types    = self.prepare(testdata1_types)

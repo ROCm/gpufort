@@ -6,16 +6,23 @@ import json
 import jinja2
 import unittest
 import cProfile,pstats,io,time
-import gpufort.indexer
-import gpufort.util.logging
 
-import fort2x.render
+import addtoplevelpath
+from gpufort import indexer
+from gpufort import util
+from gpufort import fort2x
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
 util.logging.opts.verbose    = False
 util.logging.init_logging("log.log",LOG_FORMAT,"warning")
 
 PROFILING_ENABLE = False
+
+VERBOSE = False
+def print_(text):
+    global VERBOSE
+    if VERBOSE:
+        print(text)
 
 testdata= \
 """
@@ -67,36 +74,36 @@ class TestRenderDerivedType(unittest.TestCase):
     def setUp(self):
         global PROFILING_ENABLE
         if PROFILING_ENABLE:
-            self._profiler = cProfile.Profile()
-            self._profiler.enable()
-        self._started_at = time.time()
-        self._scope      = indexer.create_scope_from_declaration_list(testdata)
+            self.profiler = cProfile.Profile()
+            self.profiler.enable()
+        self.started_at = time.time()
+        self.scope      = indexer.scope.create_scope_from_declaration_list(testdata)
     def tearDown(self):
         global PROFILING_ENABLE
         if PROFILING_ENABLE:
-            self._profiler.disable() 
+            self.profiler.disable() 
             s = io.StringIO()
             sortby = 'cumulative'
-            stats = pstats.Stats(self._profiler, stream=s).sort_stats(sortby)
+            stats = pstats.Stats(self.profiler, stream=s).sort_stats(sortby)
             stats.print_stats(10)
             print(s.getvalue())
-        elapsed = time.time() - self._started_at
+        elapsed = time.time() - self.started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
     def test_1_render_derived_types_cpp(self):
-        #print(fort2x.render.render_derived_types_cpp(self._scope["types"]))
-        self.assertEqual(self.clean(fort2x.render.render_derived_types_cpp(self._scope["types"])),\
+        #print_(fort2x.render.render_derived_types_cpp(self.scope["types"]))
+        self.assertEqual(self.clean(fort2x.render.render_derived_types_cpp(self.scope["types"])),\
             self.clean(testdata_result_cpp))
     def test_2_render_derived_types_f03(self):
-        print(fort2x.render.render_derived_types_f03(self._scope["types"]))
-        print(testdata_result_f03)
-        self.assertEqual(self.clean(fort2x.render.render_derived_types_f03(self._scope["types"])),\
+        print_(fort2x.render.render_derived_types_f03(self.scope["types"]))
+        print_(testdata_result_f03)
+        self.assertEqual(self.clean(fort2x.render.render_derived_types_f03(self.scope["types"])),\
             self.clean(testdata_result_f03))
     def test_3_render_derived_type_size_bytes_routines_f03(self):
-        print(fort2x.render.render_derived_type_size_bytes_routines_f03(self._scope["types"]))
+        print_(fort2x.render.render_derived_type_size_bytes_routines_f03(self.scope["types"]))
     def test_4_render_derived_type_copy_scalars_routines_f03(self):
-        print(fort2x.render.render_derived_type_copy_scalars_routines_f03(self._scope["types"]))
+        print_(fort2x.render.render_derived_type_copy_scalars_routines_f03(self.scope["types"]))
     def test_5_render_derived_type_copy_array_member_routines_f03(self):
-        print(fort2x.render.render_derived_type_copy_array_member_routines_f03(self._scope["types"]))
+        print_(fort2x.render.render_derived_type_copy_array_member_routines_f03(self.scope["types"]))
 
 if __name__ == '__main__':
     unittest.main() 

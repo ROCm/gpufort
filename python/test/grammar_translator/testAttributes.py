@@ -5,7 +5,7 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import sys
 import test
-import gpufort.translator
+from gpufort import translator
 
 for lib in ["PW"]:
     testdata = open("testdata/attributes-{}.txt".format(lib),"r").readlines()

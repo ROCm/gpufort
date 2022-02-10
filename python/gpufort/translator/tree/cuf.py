@@ -107,7 +107,7 @@ class TTCufKernelDo(base.TTNode,directives.IComputeConstruct,directives.ILoopAnn
         return base.make_f_str(self._block)
     def num_gangs_teams_blocks(self,converter=base.make_f_str):
         if self._grid == "*":
-            return [CLAUSE_NOT_FOUND]*self._num_outer_loops_to_map
+            return [grammar.CLAUSE_NOT_FOUND]*self._num_outer_loops_to_map
         elif isinstance(self._block,fortran.IValue):
             # TODO Check if IValue is actually a dim3 or not
             result = []
@@ -118,7 +118,7 @@ class TTCufKernelDo(base.TTNode,directives.IComputeConstruct,directives.ILoopAnn
             return [converter(gridDim) for gridDim in self._grid]
     def num_threads_in_block(self,converter=base.make_f_str):
         if self._block == "*":
-            return [CLAUSE_NOT_FOUND]*self._num_outer_loops_to_map
+            return [grammar.CLAUSE_NOT_FOUND]*self._num_outer_loops_to_map
         elif isinstance(self._block,fortran.IValue):
             # TODO Check if IValue is actually a dim3 or not
             result = []
@@ -143,12 +143,12 @@ class TTCufKernelDo(base.TTNode,directives.IComputeConstruct,directives.ILoopAnn
         thread_limit = ""
         first = True
         for val in grid:
-            if val != CLAUSE_NOT_FOUND:
+            if val != grammar.CLAUSE_NOT_FOUND:
                 num_teams = "*"+val if not first else val
                 first = False
         first = True
         for val in block:
-            if val != CLAUSE_NOT_FOUND:
+            if val != grammar.CLAUSE_NOT_FOUND:
                 thread_limit = "*"+val if not first else val
                 first = False
         if len(num_teams):
@@ -160,7 +160,7 @@ class TTCufKernelDo(base.TTNode,directives.IComputeConstruct,directives.ILoopAnn
             if len(variables):
                 result += " reduction({0}:{1})".format(kind,",".join(variables))
         # if, async
-        if self.stream() != str(CLAUSE_NOT_FOUND):
+        if self.stream() != str(grammar.CLAUSE_NOT_FOUND):
             result += " nowait"
             if len(depend):
                 for kind,variables in depend.items():

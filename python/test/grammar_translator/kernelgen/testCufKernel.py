@@ -7,7 +7,7 @@ import sys
 sys.path.append("..")
 sys.path.append("../../")
 sys.path.append("../../../")
-import gpufort.translator
+from gpufort import translator
             
 testdata = ["""
 !$cuf kernel do(1) <<<*,*,0,stream>>>

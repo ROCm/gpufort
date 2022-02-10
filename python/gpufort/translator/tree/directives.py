@@ -3,19 +3,20 @@
 import pyparsing
 
 from gpufort import indexer
+from gpufort import util
 from .. import prepostprocess
 from .. import opts
 from . import base
 from . import fortran
 from . import grammar
 
-def _intrnl_search_values_in_subtree(ttnode,search_filter,scope,min_rank=-1):
+def _search_values_in_subtree(ttnode,search_filter,scope,min_rank=-1):
     #TODO exclude other annotations as well from this search
     #TODO improve
     def find_all_matching_exclude_directives_(body,filter_expr=lambda x: True):
         """Find all nodes in tree of type 'searched_type'."""
         result = []
-        def traverse__(curr):
+        def traverse_(curr):
             if isinstance(curr,ILoopAnnotation):
                 return
             if filter_expr(curr):
@@ -23,11 +24,11 @@ def _intrnl_search_values_in_subtree(ttnode,search_filter,scope,min_rank=-1):
             if isinstance(curr,pyparsing.ParseResults) or\
                isinstance(curr,list):
                 for el in curr:
-                    traverse__(el)
+                    traverse_(el)
             elif isinstance(curr,base.TTNode):
                 for el in curr.children():
-                    traverse__(el)
-        traverse__(ttnode)
+                    traverse_(el)
+        traverse_(ttnode)
         return result
     
     tags = [] 
@@ -40,24 +41,24 @@ def _intrnl_search_values_in_subtree(ttnode,search_filter,scope,min_rank=-1):
            not tag in tags: # ordering important
             tags.append(tag)
     return tags
-def _intrnl_variables_in_subtree(ttnode,scope):
+def _variables_in_subtree(ttnode,scope):
     """:return: all identifiers of LValue and RValues in the body."""
     def search_filter(node):
         return isinstance(node,fortran.IValue) and\
                type(node._value) in [fortran.TTDerivedTypeMember,fortran.TTIdentifier,fortran.TTFunctionCallOrTensorAccess]
-    result = _intrnl_search_values_in_subtree(ttnode,search_filter,scope)
+    result = _search_values_in_subtree(ttnode,search_filter,scope)
     return result
-def _intrnl_arrays_in_subtree(ttnode,scope):
+def _arrays_in_subtree(ttnode,scope):
     def search_filter(node):
         return isinstance(node,fortran.IValue) and\
                 type(node._value) is fortran.TTFunctionCallOrTensorAccess 
-    return _intrnl_search_values_in_subtree(ttnode,search_filter,scope,1)
-def _intrnl_inout_arrays_in_subtree(ttnode,scope):
+    return _search_values_in_subtree(ttnode,search_filter,scope,1)
+def _inout_arrays_in_subtree(ttnode,scope):
     def search_filter(node):
-        return type(node) is TTLValue and\
+        return type(node) is fortran.TTLValue and\
                 type(node._value) is fortran.TTFunctionCallOrTensorAccess 
-    return _intrnl_search_values_in_subtree(ttnode,search_filter,scope,1)
-def _intrnl_flag_tensors(ttcontainer,scope):
+    return _search_values_in_subtree(ttnode,search_filter,scope,1)
+def _flag_tensors(ttcontainer,scope):
     """Clarify types of function calls / tensor access that are not members of a struct."""
     for value in base.find_all(ttcontainer.body,fortran.IValue):
         if type(value._value) is fortran.TTFunctionCallOrTensorAccess:
@@ -66,9 +67,9 @@ def _intrnl_flag_tensors(ttcontainer,scope):
                 value._value._is_tensor_access = base.True3
 class ILoopAnnotation():
     def num_collapse(self):
-        return CLAUSE_NOT_FOUND
+        return grammar.CLAUSE_NOT_FOUND
     def tile_sizes(self):
-        return [CLAUSE_NOT_FOUND]
+        return [grammar.CLAUSE_NOT_FOUND]
     def grid_expression_f_str(self):
         """ only CUF """
         return ""
@@ -76,14 +77,14 @@ class ILoopAnnotation():
         """ only CUF """
         return ""
     def num_gangs_teams_blocks(self):
-        return [CLAUSE_NOT_FOUND]
+        return [grammar.CLAUSE_NOT_FOUND]
     def num_threads_in_block(self):
-        return [CLAUSE_NOT_FOUND]
+        return [grammar.CLAUSE_NOT_FOUND]
     def num_workers(self): 
         """ only ACC """
-        return CLAUSE_NOT_FOUND
+        return grammar.CLAUSE_NOT_FOUND
     def simdlen_vector_length(self):
-        return CLAUSE_NOT_FOUND
+        return grammar.CLAUSE_NOT_FOUND
     def data_independent_iterations(self):
         return True
     def private_vars(self,converter=base.make_f_str): 
@@ -92,6 +93,8 @@ class ILoopAnnotation():
     def lastprivate_vars(self,converter=base.make_f_str): 
         """ only OMP """
         return []
+    def discover_reduction_candidates(self):
+        return False
     def reductions(self,converter=base.make_f_str): 
         """ CUF: Scalar lvalues are reduced by default """
         return {}
@@ -156,7 +159,7 @@ class TTDo(base.TTContainer):
             return body_content
 class IComputeConstruct():
     def num_collapse(self):
-        return CLAUSE_NOT_FOUND
+        return grammar.CLAUSE_NOT_FOUND
     def num_dimensions(self):
         return 1
     def discover_reduction_candidates(self):
@@ -168,9 +171,9 @@ class IComputeConstruct():
         """ only CUF """
         return None
     def num_gangs_teams_blocks(self):
-        return [CLAUSE_NOT_FOUND]
+        return [grammar.CLAUSE_NOT_FOUND]
     def num_threads_in_block(self):
-        return [CLAUSE_NOT_FOUND]
+        return [grammar.CLAUSE_NOT_FOUND]
     def gang_team_private_vars(self,converter=base.make_f_str): 
         """ CUF,ACC: all scalars are private by default """ 
         return []
@@ -195,8 +198,8 @@ class IComputeConstruct():
     def problem_size(self):
         return []
     def async_nowait(): 
-        """value != CLAUSE_NOT_FOUND means True"""
-        return CLAUSE_NOT_FOUND
+        """value != grammar.CLAUSE_NOT_FOUND means True"""
+        return grammar.CLAUSE_NOT_FOUND
     def stream(self,converter=base.make_f_str):
         return "c_null_ptr"
     def sharedmem(self,converter=base.make_f_str):
@@ -287,11 +290,11 @@ class TTLoopNest(base.TTContainer,IComputeConstruct):
         else:
             return identifier_names
     def vars_in_body(self):
-        return _intrnl_variables_in_subtree(self,self.scope)
+        return _variables_in_subtree(self,self.scope)
     def arrays_in_body(self):
-        return _intrnl_arrays_in_subtree(self,self.scope)
+        return _arrays_in_subtree(self,self.scope)
     def inout_arrays_in_body(self):
-        return _intrnl_inout_arrays_in_subtree(self,self.scope)
+        return _inout_arrays_in_subtree(self,self.scope)
     def __local_scalars_and_reduction_candidates(self,scope):
         """
         local variable      - scalar variable that is not read before the assignment (and is no derived type member)
@@ -361,7 +364,7 @@ class TTLoopNest(base.TTContainer,IComputeConstruct):
             else:
                 return ["-1"]
     def async_nowait(): 
-        """value != CLAUSE_NOT_FOUND means True"""
+        """value != grammar.CLAUSE_NOT_FOUND means True"""
         return self.__parent_directive().async_nowait() 
     def depend(self): 
         return self.__parent_directive().depend()
@@ -420,6 +423,11 @@ class TTLoopNest(base.TTContainer,IComputeConstruct):
         :note: The string used for parsing was preprocessed. Hence
                we pass the original Fortran snippet here.
         """
+        # TODO circular dependency, directives parent module knows about 
+        # entities in cuf and acc child modules
+        from .cuf import TTCufKernelDo
+        from .acc import TTAccClauseGang
+
         # TODO There is only one loop or loop-like expression
         # in a parallel loop.
         # There might me multiple loops or look-like expressions
@@ -443,7 +451,7 @@ class TTLoopNest(base.TTContainer,IComputeConstruct):
                 return parse_result.omp_f_str(arrays_in_body,inout_arrays_in_body,reduction,depend), True
             
             result,_ = util.pyparsing.replace_first(f_snippet,\
-                cuf_kernel_do,\
+                grammar.cuf_kernel_do,\
                 cuf_kernel_do_repl)
             return result
         else:
@@ -468,16 +476,16 @@ class TTLoopNest(base.TTContainer,IComputeConstruct):
                 return parse_result.strip()+"!$omp end target", True
             
             result,_ = util.pyparsing.replace_first(f_snippet,\
-                    acc_parallel | acc_parallel_loop | acc_kernels | acc_kernels_loop,\
+                    grammar.acc_parallel | grammar.acc_parallel_loop | grammar.acc_kernels | grammar.acc_kernels_loop,\
                     acc_compute_repl)
             result,_ = util.pyparsing.replace_all(result,\
-                    acc_loop,\
+                    grammar.acc_loop,\
                     acc_loop_repl)
             result,_ = util.pyparsing.replace_first(result,\
-                    Optional(White(),default="") + ( ACC_END_PARALLEL | ACC_END_KERNELS ),
+                    grammar.Optional(grammar.White(),default="") + ( grammar.ACC_END_PARALLEL | grammar.ACC_END_KERNELS ),
                     acc_end_repl)
             result,_ = util.pyparsing.erase_all(result,\
-                    ACC_END_PARALLEL_LOOP | ACC_END_KERNELS_LOOP)
+                    grammar.ACC_END_PARALLEL_LOOP | grammar.ACC_END_KERNELS_LOOP)
             return result
     def c_str(self):
         """
@@ -485,7 +493,7 @@ class TTLoopNest(base.TTContainer,IComputeConstruct):
         """
         # 0. Clarify types of function calls / tensor access that are not
         # members of a struct
-        _intrnl_flag_tensors(self,self.scope)
+        _flag_tensors(self,self.scope)
         # TODO look up correct signature of called device functions from index
         # 1.1 Collapsing
         num_outer_loops_to_map = int(self.__parent_directive().num_collapse())
@@ -557,11 +565,11 @@ class TTProcedureBody(base.TTContainer):
         """
         :return: all identifiers of LValue and RValues in the body.
         """
-        return _intrnl_variables_in_subtree(self,self.scope)
+        return _variables_in_subtree(self,self.scope)
     def arrays_in_body(self):
-        return _intrnl_arrays_in_subtree(self,self.scope)
+        return _arrays_in_subtree(self,self.scope)
     def inout_arrays_in_body(self):
-        return _intrnl_inout_arrays_in_subtree(self,self.scope)
+        return _inout_arrays_in_subtree(self,self.scope)
     def c_str(self):
         """
         :return: body of a procedure as C/C++ code.
@@ -570,7 +578,7 @@ class TTProcedureBody(base.TTContainer):
         """
         # 0. Clarify types of function calls / tensor access that are not
         # members of a struct
-        _intrnl_flag_tensors(self,self.scope)
+        _flag_tensors(self,self.scope)
         # 2. Propagate result variable name to return statements
         if len(self.result_name):
             for expr in base.find_all(self.body,TTReturn):

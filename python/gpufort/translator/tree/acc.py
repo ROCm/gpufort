@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 from .. import opts
+from . import grammar
 from . import base
 from . import directives
-from . import grammar
+
 class TTAccClauseGang(base.TTNode):
     def _assign_fields(self,tokens):
         self._value = tokens[0]
@@ -104,7 +105,7 @@ class TTAccDirectiveBase(base.TTNode):
                 result += clause.var_expressions()
         return result
     def _format(self,f_snippet):
-        return format_directive(f_snippet,80) 
+        return directives.format_directive(f_snippet,80) 
     def omp_f_str(self):
         assert False, "Not implemented"     
 # TODO add host data
@@ -136,7 +137,7 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
         if not clause is None:
             return base.make_f_str(clause.expression())
         else:
-            return CLAUSE_NOT_FOUND
+            return grammar.CLAUSE_NOT_FOUND
     def deviceptrs(self):
         return self.handle_mapping_clause(["deviceptr"])
     def create_alloc_vars(self):
@@ -220,7 +221,7 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
         if len(deviceptr_list):
             result += " use_device_ptr("+",".join(deviceptr_list)+")"
         # if, async
-        if self.async_nowait() != CLAUSE_NOT_FOUND:
+        if self.async_nowait() != grammar.CLAUSE_NOT_FOUND:
             result += " nowait"
             if len(depend):
                 for kind,variables in depend.items():
@@ -368,18 +369,18 @@ class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
         return [1]
     def num_gangs_teams_blocks(self):
         clauses = base.find_all_matching(self._clauses,lambda x: isinstance(x,TTAccClauseGang),2)
-        return [CLAUSE_NOT_FOUND] if clause is None else [max([c.value() for c in clauses])]
+        return [grammar.CLAUSE_NOT_FOUND] if clause is None else [max([c.value() for c in clauses])]
     def num_workers(self):
         clauses = base.find_all_matching(self._clauses,lambda x: isinstance(x,TTAccClauseWorker),2)
-        return CLAUSE_NOT_FOUND if clause is None else max([c.value() for c in clauses])
+        return grammar.CLAUSE_NOT_FOUND if clause is None else max([c.value() for c in clauses])
     def simdlen_vector_length(self):
         clauses = base.find_all_matching(self._clauses,lambda x: isinstance(x,TTAccClauseVector),2)
-        return CLAUSE_NOT_FOUND if clause is None else max([c.value() for c in clauses])
+        return grammar.CLAUSE_NOT_FOUND if clause is None else max([c.value() for c in clauses])
     def num_threads_in_block(self):
         workers   = self.num_workers()
         vector_len = self.len_simd_vector()
         if workers[0] < 1 or vector_len[0] < 1:
-            return [CLAUSE_NOT_FOUND]
+            return [grammar.CLAUSE_NOT_FOUND]
         else:
             return [workers[0] * vector_len[0]]
     def data_independent_iterations(self):

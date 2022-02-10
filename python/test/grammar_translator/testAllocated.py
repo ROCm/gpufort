@@ -6,7 +6,7 @@
 import test
 import addtoplevelpath
 from gpufort import grammar
-import gpufort.translator
+from gpufort import translator
 
 testdata ="""
 allocated(A_d)
@@ -20,7 +20,7 @@ test.run(
    raiseException = True
 )
 
-import gpufort.translator
+from gpufort import translator
 
 test.run(
    expression     = translator.allocated,

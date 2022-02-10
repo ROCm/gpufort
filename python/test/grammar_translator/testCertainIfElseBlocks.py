@@ -5,7 +5,7 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import sys
 import test
-import gpufort.translator
+from gpufort import translator
 
 #print(_else_if_statement.parseString("""
 #elseif ( lp < 16 ) then

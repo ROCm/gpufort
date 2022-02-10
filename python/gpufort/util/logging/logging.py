@@ -13,8 +13,8 @@ __LOG_FORMAT             = "%(levelname)s:%(message)s"
 __LOG_FILE_PATH          = None
 __LOGGING_IS_INITIALIZED = False
 
-ERR_UTILS_LOGGING_UNSUPPORTED_LOG_LEVEL  = 91001
-ERR_UTILS_LOGGING_LOG_DIR_DOES_NOT_EXIST = 91002
+ERR_UTIL_LOGGING_UNSUPPORTED_LOG_LEVEL  = 91001
+ERR_UTIL_LOGGING_LOG_DIR_DOES_NOT_EXIST = 91002
 
 def shutdown():
     logging.shutdown()
@@ -51,7 +51,7 @@ def init_logging(logfile_basename="log.log",log_format=__LOG_FORMAT,log_level="w
     if log_level.upper() not in supported_levels:
         msg = "unsupported log level: {}; must be one of (arbitrary case): {}".format(log_level,",".join(supported_levels))
         print("ERROR: "+msg,file=sys.stderr)
-        sys.exit(ERR_UTILS_LOGGING_UNSUPPORTED_LOG_LEVEL)
+        sys.exit(ERR_UTIL_LOGGING_UNSUPPORTED_LOG_LEVEL)
     try:
         __LOG_FILE_PATH="{0}/{1}".format(log_dir,logfile_basename)
         __LOG_LEVEL_AS_INT       = getattr(logging,log_level.upper(),getattr(logging,"WARNING"))
@@ -62,7 +62,7 @@ def init_logging(logfile_basename="log.log",log_format=__LOG_FORMAT,log_level="w
         msg = "directory for storing log files '{}' cannot be accessed".format(log_dir)
         print("ERROR: "+msg,file=sys.stderr)
         raise e
-        sys.exit(ERR_UTILS_LOGGING_LOG_DIR_DOES_NOT_EXIST)
+        sys.exit(ERR_UTIL_LOGGING_LOG_DIR_DOES_NOT_EXIST)
     return __LOG_FILE_PATH
 
 def _intrnl_register_additional_debug_levels(max_level=5):

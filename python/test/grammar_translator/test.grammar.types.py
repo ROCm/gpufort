@@ -14,9 +14,9 @@ print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.std
 class TestIndexer(unittest.TestCase):
     def setUp(self):
         global index
-        self._started_at = time.time()
+        self.started_at = time.time()
     def tearDown(self):
-        elapsed = time.time() - self._started_at
+        elapsed = time.time() - self.started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 9)))
     def test_0_type_start_pass(self):
         testdata = []

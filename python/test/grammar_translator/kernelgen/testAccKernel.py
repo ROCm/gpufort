@@ -3,7 +3,7 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-import gpufort.translator
+from gpufort import translator
 
 testdata=[]
 testdata.append("""!$acc kernels if(2>3) self  num_workers(64) num_gangs(8) async(0) wait(1,2) copy(a,b,c) default(PRESENT) private(a,b) reduction(+:a) detach(aaim,a) collapse(3) bind(a) seq tile(4,4)

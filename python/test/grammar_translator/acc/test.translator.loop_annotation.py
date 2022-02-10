@@ -9,9 +9,10 @@ import unittest
 import cProfile,pstats,io
 import re
 
-import gpufort.util.logging
-import gpufort.translator
-import gpufort.indexer
+import addtoplevelpath
+from gpufort import util
+from gpufort import translator
+from gpufort import indexer
 
 log_format = "[%(levelname)s]\tgpufort:%(message)s"
 log_level                   = "warning"
@@ -35,7 +36,7 @@ class TestParseLoopAnnotation(unittest.TestCase):
     def test_0_parse_loop_annotation(self):
         for snippet in self.testdata:
             try:
-                result = translator.loop_annotation.parseString(snippet,parseAll=True)
+                result = translator.tree.grammar.loop_annotation.parseString(snippet,parseAll=True)
             except Exception as e:
                 print("failed to parse '{}'".format(snippet),file=sys.stderr)
                 raise e

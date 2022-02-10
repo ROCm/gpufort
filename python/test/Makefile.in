@@ -2,13 +2,12 @@ GRAMMAR_TESTS    = $(shell find . -maxdepth 1 -name "test.grammar.*.py" -execdir
 TRANSLATOR_TESTS = $(shell find . -maxdepth 1 -name "test.translator.*.py" -execdir basename {} ';')
 INDEXER_TESTS    = $(shell find . -maxdepth 1 -name "test.indexer.*.py" -execdir basename {} ';')
 LINEMAPPER_TESTS = $(shell find . -maxdepth 1 -name "test.linemapper.*.py" -execdir basename {} ';')
-UTILS_TESTS      = $(shell find . -maxdepth 1 -name "test.util.*.py" -execdir basename {} ';')
-FORT2X_TESTS = $(shell find . -maxdepth 2 -name "test.fort2x.*.py" -execdir basename {} ';')
-FORT2X_HIP_TESTS = $(shell find . -maxdepth 2 -name "test.fort2x.hip.*.py" -execdir basename {} ';')
+UTIL_TESTS      = $(shell find . -maxdepth 1 -name "test.util.*.py" -execdir basename {} ';')
+FORT2X_TESTS =  $(shell find . -maxdepth 1 -name "test.fort2x.*.py" -execdir basename {} ';')
 CUSTOM_TESTS     = $(shell find . -maxdepth 1 -name "test.custom.*.py" -execdir basename {} ';')
 
-TEST_COLLECTION_TARGETS = test.grammar test.translator test.indexer test.linemapper test.utils test.custom test.fort2x test.fort2x.hip
-TESTS = $(GRAMMAR_TESTS) $(TRANSLATOR_TESTS) $(INDEXER_TESTS) $(LINEMAPPER_TESTS) $(UTILS_TESTS) $(FORT2X_TESTS) $(FORT2X_HIP_TESTS) $(CUSTOM_TESTS)
+TEST_COLLECTION_TARGETS = test.grammar test.translator test.indexer test.linemapper test.util test.custom test.fort2x test.fort2x.hip
+TESTS = $(GRAMMAR_TESTS) $(TRANSLATOR_TESTS) $(INDEXER_TESTS) $(LINEMAPPER_TESTS) $(UTIL_TESTS) $(FORT2X_TESTS) $(CUSTOM_TESTS)
 
 all: $(TEST_COLLECTION_TARGETS)
 
@@ -21,7 +20,6 @@ test.grammar:    $(GRAMMAR_TESTS)
 test.translator: $(TRANSLATOR_TESTS)
 test.indexer:    $(INDEXER_TESTS)
 test.linemapper: $(LINEMAPPER_TESTS)
-test.utils:      $(UTILS_TESTS)
+test.util:      $(UTIL_TESTS)
 test.fort2x:     $(FORT2X_TESTS)
-test.fort2x.hip: $(FORT2X_HIP_TESTS)
 test.custom:     $(CUSTOM_TESTS)

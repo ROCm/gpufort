@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import test
-import gpufort.translator
+from gpufort import translator
 
 translator.bounds.parseString("(1:n)")
 

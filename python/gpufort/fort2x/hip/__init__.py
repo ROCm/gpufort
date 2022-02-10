@@ -4,3 +4,5 @@ from .hipcodegen import *
 from .hipderivedtypegen import *
 from .hipkernelgen import *
 from .factory import *
+from . import opts
+from . import render

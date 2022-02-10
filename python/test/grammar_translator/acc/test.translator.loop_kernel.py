@@ -9,9 +9,10 @@ import unittest
 import cProfile,pstats,io
 import re
 
-import gpufort.util.logging
-import gpufort.translator
-import gpufort.indexer
+import addtoplevelpath
+from gpufort import util
+from gpufort import translator
+from gpufort import indexer
 
 log_format = "[%(levelname)s]\tgpufort:%(message)s"
 log_level                   = "warning"
@@ -21,7 +22,7 @@ util.logging.init_logging("log.log",log_format,log_level)
 
 class TestParseLoopKernel(unittest.TestCase):
     def setUp(self):
-        self.scope = indexer.create_scope_from_declaration_list(
+        self.scope = indexer.scope.create_scope_from_declaration_list(
         """
         integer :: i,j,k,n,c
         integer,dimension(:)     :: a,b

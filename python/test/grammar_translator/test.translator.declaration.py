@@ -61,9 +61,9 @@ logical,save,parameter   :: test = .false.
 class TestDeclaration(unittest.TestCase):
     def setUp(self):
         global index
-        self._started_at = time.time()
+        self.started_at = time.time()
     def tearDown(self):
-        elapsed = time.time() - self._started_at
+        elapsed = time.time() - self.started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 9)))
     def prepare(self,testdata):
         return testdata.strip().splitlines()

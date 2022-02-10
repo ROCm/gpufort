@@ -27,21 +27,21 @@ index = []
 class TestScoper(unittest.TestCase):
     def setUp(self):
         global index
-        self._index = index
-        self._started_at = time.time()
+        self.index = index
+        self.started_at = time.time()
     def tearDown(self):
-        elapsed = time.time() - self._started_at
+        elapsed = time.time() - self.started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
     def test_0_donothing(self):
         pass 
     def test_1_indexer_scan_files(self):
         global USE_EXTERNAL_PREPROCESSOR
         if USE_EXTERNAL_PREPROCESSOR:
-            indexer.scan_file("test_modules.f90",gfortran_options,self._index)
-            indexer.scan_file("test1.f90",gfortran_options,self._index)
+            indexer.scan_file("test_modules.f90",gfortran_options,self.index)
+            indexer.scan_file("test1.f90",gfortran_options,self.index)
         else:
-            indexer.update_index_from_linemaps(linemapper.read_file("test_modules.f90",gfortran_options),self._index)
-            indexer.update_index_from_linemaps(linemapper.read_file("test1.f90",gfortran_options),self._index)
+            indexer.update_index_from_linemaps(linemapper.read_file("test_modules.f90",gfortran_options),self.index)
+            indexer.update_index_from_linemaps(linemapper.read_file("test1.f90",gfortran_options),self.index)
     def test_2_scope_search_for_variables(self):
         c   = indexer.scope.search_index_for_variable(index,"test1","c") # included from module 'simple'
         indexer.opts.scopes.clear()

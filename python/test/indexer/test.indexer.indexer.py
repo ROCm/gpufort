@@ -26,10 +26,10 @@ index = []
 class TestIndexer(unittest.TestCase):
     def setUp(self):
         global index
-        self._index = index
-        self._started_at = time.time()
+        self.index = index
+        self.started_at = time.time()
     def tearDown(self):
-        elapsed = time.time() - self._started_at
+        elapsed = time.time() - self.started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
     def test_0_donothing(self):
         pass 
@@ -41,11 +41,11 @@ class TestIndexer(unittest.TestCase):
             profiler = cProfile.Profile()
             profiler.enable()
         if USE_EXTERNAL_PREPROCESSOR:
-            indexer.scan_file("test_modules.f90",gfortran_options,self._index)
-            indexer.scan_file("test1.f90",gfortran_options,self._index)
+            indexer.scan_file("test_modules.f90",gfortran_options,self.index)
+            indexer.scan_file("test1.f90",gfortran_options,self.index)
         else:
-            indexer.update_index_from_linemaps(linemapper.read_file("test_modules.f90",gfortran_options),self._index)
-            indexer.update_index_from_linemaps(linemapper.read_file("test1.f90",gfortran_options),self._index)
+            indexer.update_index_from_linemaps(linemapper.read_file("test_modules.f90",gfortran_options),self.index)
+            indexer.update_index_from_linemaps(linemapper.read_file("test1.f90",gfortran_options),self.index)
         if PROFILING_ENABLE:
             profiler.disable() 
             s = io.StringIO()
@@ -56,14 +56,14 @@ class TestIndexer(unittest.TestCase):
     def test_2_indexer_write_module_files(self):
         indexer.write_gpufort_module_files(index,"./")
     def test_3_indexer_load_module_files(self):
-        self._index.clear()
-        indexer.load_gpufort_module_files(["./"],self._index)
+        self.index.clear()
+        indexer.load_gpufort_module_files(["./"],self.index)
     def test_4_indexer_check_modules_programs(self):
-        self.assertEqual(len([mod for mod in self._index if mod["name"] == "simple"]),1, "Did not find module 'simple'")
-        self.assertEqual(len([mod for mod in self._index if mod["name"] == "nested_subprograms"]),1, "Did not find module 'nested_subprograms'")
-        self.assertEqual(len([mod for mod in self._index if mod["name"] == "simple"]),1, "Did not find module 'simple'")
+        self.assertEqual(len([mod for mod in self.index if mod["name"] == "simple"]),1, "Did not find module 'simple'")
+        self.assertEqual(len([mod for mod in self.index if mod["name"] == "nested_subprograms"]),1, "Did not find module 'nested_subprograms'")
+        self.assertEqual(len([mod for mod in self.index if mod["name"] == "simple"]),1, "Did not find module 'simple'")
     def test_5_indexer_check_program_test1(self):
-        test1 = next((mod for mod in self._index if mod["name"] == "test1"),None)
+        test1 = next((mod for mod in self.index if mod["name"] == "test1"),None)
         float_scalar = next((var for var in test1["variables"] if var["name"] == "float_scalar".lower()),None)
         self.assertIsNotNone(float_scalar)
         self.assertEqual(float_scalar["c_type"],"float")
@@ -79,7 +79,7 @@ class TestIndexer(unittest.TestCase):
         t = next((var for var in test1["variables"] if var["name"] == "t".lower()),None)
         self.assertIsNotNone(t)
     def test_6_indexer_check_module_simple(self):
-        simple = next((mod for mod in self._index if mod["name"] == "simple"),None)
+        simple = next((mod for mod in self.index if mod["name"] == "simple"),None)
         a = next((var for var in simple["variables"] if var["name"] == "a".lower()),None)
         self.assertIsNotNone(a)
         self.assertEqual(a["c_type"],"int")
@@ -105,7 +105,7 @@ class TestIndexer(unittest.TestCase):
         self.assertEqual(b["counts"][0],"n")
         self.assertEqual(b["lbounds"][0],"1")
     def test_7_indexer_check_module_nested_subprograms(self):
-        nested_subprograms = next((mod for mod in self._index if mod["name"] == "nested_subprograms"),None)
+        nested_subprograms = next((mod for mod in self.index if mod["name"] == "nested_subprograms"),None)
         a = next((var for var in nested_subprograms["variables"] if var["name"] == "a".lower()),None)
         self.assertIsNotNone(a)
         self.assertEqual(a["c_type"],"int")

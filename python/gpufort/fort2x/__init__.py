@@ -11,3 +11,4 @@ from .kernelgen import *
 from .templategen import *
 from . import hip
 from . import opts
+from . import render

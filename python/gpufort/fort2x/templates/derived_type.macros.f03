@@ -4,7 +4,7 @@
 {% import "common.macros.f03" as cm %}
 {########################################################################################}
 {% macro render_derived_types(derived_types,
-                               interop_suffix="_interop")  %}
+                              interop_suffix="_interop")  %}
 {# TODO consider extend #}
 {% if derived_types|length %}
 

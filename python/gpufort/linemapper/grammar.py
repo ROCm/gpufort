@@ -16,9 +16,11 @@ pp_defined    = pyparsing.Regex(r"defined\(\s*(?P<name>\w+)\s*\)",re.IGNORECASE)
 
 pp_value = pyparsing.Forward()
 
-pp_op_and = pyparsing.Regex(r"\.and\.|&&",re.IGNORECASE).setParseAction(lambda tk: "and")
-pp_op_or  = pyparsing.Regex(r"\.or\.|\|\|",re.IGNORECASE).setParseAction(lambda tk: "or")
-pp_op_not = pyparsing.Regex(r"\.not\.|!",re.IGNORECASE).setParseAction(lambda tk: "not ")
+pp_op_and = pyparsing.Regex(r"(\.and\.)|(&&)",re.IGNORECASE).setParseAction(lambda tk: " and ")
+pp_op_or  = pyparsing.Regex(r"(\.or\.)|(\|\|)",re.IGNORECASE).setParseAction(lambda tk: " or ")
+pp_op_not = pyparsing.Regex(r"(\.not\.)|!",re.IGNORECASE).setParseAction(lambda tk: "not ")
+
+pp_ops = pp_op_and | pp_op_or | pp_op_not
 
 # only needed for macro args because we hand conditions to the python ast.literal_eval function
 # after performing some transformations
@@ -55,5 +57,3 @@ pp_dir_define  = pyparsing.Regex(r"#\s*define\s+(?P<name>\w+)(\((?P<args>(\w|[, 
 pp_dir_undef   = pyparsing.Regex(r"#\s*undef\s+(?P<name>\w+)",re.IGNORECASE)
 # other
 pp_compiler_option = pyparsing.Regex(r"-D(?P<name>\w+)(=(?P<value>["+pyparsing.printables+r"]+))?")
-
-pp_ops = pp_op_and | pp_op_or | pp_op_not

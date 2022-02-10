@@ -11,14 +11,13 @@ from . import opts
 
 _ERR_LINEMAPPER_MACRO_DEFINITION_NOT_FOUND = 11001
 
-def _intrnl_evaluate_defined(input_string,
-                             macro_stack):
+def _evaluate_defined(input_string,
+                      macro_names):
     # expand macro; one at a time
     result = input_string
-    macro_names = [ macro["name"] for macro in reversed(macro_stack) ]
     iterate = True
     while iterate:
-        iterate   = False
+        iterate = False
         for match,start,end in grammar.pp_defined.scanString(result):
             substring = result[start:end].strip(" \t\n")
             subst = "1" if match.name in macro_names else "0"
@@ -27,36 +26,63 @@ def _intrnl_evaluate_defined(input_string,
             break
     return result
 
-def _intrnl_expand_macros(input_string,
-                          macro_stack):
-    # expand defined(...) expressions
-    result = _intrnl_evaluate_defined(input_string,macro_stack)
+def _expand_macros(input_string,
+                   macro_stack):
     # expand macro; one at a time
     macro_names = [ macro["name"] for macro in macro_stack ]
-    iterate    = True
+    # check if macro identifiers appear in string before scanning the result 
+    iterate = True
+    for name in macro_names:
+        if name in input_string:
+            iterate = True    
+    if iterate or "defined" in input_string:
+        result = _evaluate_defined(input_string,macro_names)
+    else:
+        result = input_string
     while iterate:
+        # Requires N+1 iterations to perform N replacements
         iterate = False
-        # finds all identifiers
-        for parse_result,start,end in grammar.pp_macro_eval.scanString(result):
-            name = parse_result[0]
-            if name in macro_names:
-                substring = result[start:end].strip(" \t\n")
-                args      = parse_result[1].asList()
-                macro     = next((macro for macro in macro_stack if macro["name"] == name),None)
-                subst     = macro["subst"].strip(" \n\t")
-                for n,placeholder in enumerate(macro["args"]):
-                    subst = re.sub(r"\b{}\b".format(placeholder),args[n],subst)
-                result  = result.replace(substring,subst)
-                iterate = True
-                break
+        for macro in macro_stack:
+            name  = macro["name"]
+            if name in result: 
+                if len(macro["args"]):
+                    calls = util.parsing.extract_function_calls(result,name)
+                    if len(calls):
+                        substring = calls[-1][0] # always start from right-most (=inner-most) call site
+                        args      = calls[-1][1]
+                        subst     = macro["subst"].strip(" \n\t")
+                        for n,placeholder in enumerate(macro["args"]):
+                            subst = re.sub(r"\b{}\b".format(placeholder),args[n],subst)
+                        result  = result.replace(substring,subst) # result has changed
+                        iterate = True
+                        break
+                else:
+                    old_result = result
+                    subst  = macro["subst"].strip(" \n\t")
+                    result = re.sub(r"\b{}\b".format(name),subst,result)
+                    if result != old_result:
+                        iterate = True
+                    break
     return result
-def _intrnl_linearize_statements(linemap):
+
+def _linearize_statements(linemap):
     result = []
     for stmt in linemap["statements"]:
         result += stmt["prolog"]
         result.append(stmt["body"])
         result += stmt["epilog"]
     return result
+
+def _convert_operators(input_string):
+    """Converts Fortran and C logical operators to python ones.
+    :note: Adds whitespace around the operators as they 
+    """
+    return input_string.replace(r".and."," and ").\
+                        replace(r".or."," or ").\
+                        replace(r".not.","not ").\
+                        replace(r"&&"," and ").\
+                        replace(r"||"," or ").\
+                        replace(r"!","not ")
 
 def evaluate_condition(input_string,macro_stack):
     """
@@ -65,11 +91,11 @@ def evaluate_condition(input_string,macro_stack):
     :note: Input validation performed according to:
            https://realpython.com/python-eval-function/#minimizing-the-security-issues-of-eval
     """
-    transformed_input_string = grammar.pp_ops.transformString(_intrnl_expand_macros(input_string,macro_stack))
+    transformed_input_string = _convert_operators(_expand_macros(input_string,macro_stack))
     code = compile(transformed_input_string, "<string>", "eval") 
     return eval(code, {"__builtins__": {}},{}) > 0
 
-def _intrnl_handle_preprocessor_directive(lines,fortran_filepath,macro_stack,region_stack1,region_stack2):
+def _handle_preprocessor_directive(lines,fortran_filepath,macro_stack,region_stack1,region_stack2):
     """
     :param str fortran_filepath: needed to load included files where only relative path is specified
     :param list macro_stack: A stack for storing/removing macro definition based on preprocessor directives.
@@ -81,7 +107,7 @@ def _intrnl_handle_preprocessor_directive(lines,fortran_filepath,macro_stack,reg
     def region_stack_format(stack):
         return "-".join([str(int(el)) for el in stack])
     macro_names = ",".join([macro["name"] for macro in macro_stack])
-    util.logging.log_enter_function(opts.log_prefix,"_intrnl_handle_preprocessor_directive",\
+    util.logging.log_enter_function(opts.log_prefix,"_handle_preprocessor_directive",\
       {"fortran-file-path": fortran_filepath,\
        "region-stack-1":    region_stack_format(region_stack1),\
        "region-stack-2":    region_stack_format(region_stack2),\
@@ -93,10 +119,10 @@ def _intrnl_handle_preprocessor_directive(lines,fortran_filepath,macro_stack,reg
     # strip away whitespace chars
     try:
         stripped_first_line = lines[0].lstrip("# \t").lower()
-        single_line_statement = _intrnl_convert_lines_to_statements(lines)[0] # does not make sense for define
+        single_line_statement = _convert_lines_to_statements(lines)[0] # does not make sense for define
         if region_stack1[-1]:
            if stripped_first_line.startswith("define"):
-               util.logging.log_debug3(opts.log_prefix,"_intrnl_handle_preprocessor_directive","found define in line '{}'".format(lines[0].rstrip("\n")))
+               util.logging.log_debug3(opts.log_prefix,"_handle_preprocessor_directive","found define in line '{}'".format(lines[0].rstrip("\n")))
                # TODO error handling
                result   = grammar.pp_dir_define.parseString(lines[0],parseAll=True)
                subst_lines = [line.strip("\n")+"\n" for line in [result.subst] + lines[1:]]
@@ -109,24 +135,24 @@ def _intrnl_handle_preprocessor_directive(lines,fortran_filepath,macro_stack,reg
                macro_stack.append(new_macro)
                handled = True
            elif stripped_first_line.startswith("undef"):
-               util.logging.log_debug3(opts.log_prefix,"_intrnl_handle_preprocessor_directive","found undef in line '{}'".format(lines[0].rstrip("\n")))
+               util.logging.log_debug3(opts.log_prefix,"_handle_preprocessor_directive","found undef in line '{}'".format(lines[0].rstrip("\n")))
                result = grammar.pp_dir_define.parseString(single_line_statement,parseAll=True)
                for macro in list(macro_stack): # shallow copy
                    if macro["name"] == result.name:
                        macro_stack.remove(macro)
                handled = True
            elif stripped_first_line.startswith("include"):
-               util.logging.log_debug3(opts.log_prefix,"_intrnl_handle_preprocessor_directive","found include in line '{}'".format(lines[0].rstrip("\n")))
+               util.logging.log_debug3(opts.log_prefix,"_handle_preprocessor_directive","found include in line '{}'".format(lines[0].rstrip("\n")))
                result     = grammar.pp_dir_include.parseString(single_line_statement,parseAll=True)
                filename   = result.filename.strip(" \t")
                current_dir = os.path.dirname(fortran_filepath)
                if not filename.startswith("/") and len(current_dir):
                    filename = os.path.dirname(fortran_filepath) + "/" + filename
-               included_linemaps = _intrnl_preprocess_and_normalize_fortran_file(filename,macro_stack,region_stack1,region_stack2)
+               included_linemaps = _preprocess_and_normalize_fortran_file(filename,macro_stack,region_stack1,region_stack2)
                handled = True
         # if cond. true, push new region to stack
         if stripped_first_line.startswith("if"):
-            util.logging.log_debug3(opts.log_prefix,"_intrnl_handle_preprocessor_directive","found if/ifdef/ifndef in line '{}'".format(lines[0].rstrip("\n")))
+            util.logging.log_debug3(opts.log_prefix,"_handle_preprocessor_directive","found if/ifdef/ifndef in line '{}'".format(lines[0].rstrip("\n")))
             if region_stack1[-1] and stripped_first_line.startswith("ifdef"):
                 result = grammar.pp_dir_ifdef.parseString(single_line_statement,parseAll=True)
                 condition = "defined("+result.name+")"
@@ -145,7 +171,7 @@ def _intrnl_handle_preprocessor_directive(lines,fortran_filepath,macro_stack,reg
             handled = True
         # elif
         elif stripped_first_line.startswith("elif"):
-            util.logging.log_debug3(opts.log_prefix,"_intrnl_handle_preprocessor_directive","found elif in line '{}'".format(lines[0].rstrip("\n")))
+            util.logging.log_debug3(opts.log_prefix,"_handle_preprocessor_directive","found elif in line '{}'".format(lines[0].rstrip("\n")))
             region_stack1.pop() # rm previous if/elif-branch
             if region_stack1[-1] and not region_stack2[-1]: # TODO allow to have multiple options specified at once
                 result    = grammar.pp_dir_elif.parseString(single_line_statement,parseAll=True)
@@ -158,7 +184,7 @@ def _intrnl_handle_preprocessor_directive(lines,fortran_filepath,macro_stack,reg
             handled = True
         # else
         elif stripped_first_line.startswith("else"):
-            util.logging.log_debug3(opts.log_prefix,"_intrnl_handle_preprocessor_directive","found else in line '{}'".format(lines[0].rstrip("\n")))
+            util.logging.log_debug3(opts.log_prefix,"_handle_preprocessor_directive","found else in line '{}'".format(lines[0].rstrip("\n")))
             region_stack1.pop() # rm previous if/elif-branch
             active = region_stack1[-1] and not region_stack2[-1]
             region_stack1.append(active)
@@ -173,12 +199,12 @@ def _intrnl_handle_preprocessor_directive(lines,fortran_filepath,macro_stack,reg
 
     if not handled:
         # TODO add ignore filter
-        util.logging.log_warning(opts.log_prefix,"_intrnl_handle_preprocessor_directive",\
+        util.logging.log_warning(opts.log_prefix,"_handle_preprocessor_directive",\
           "preprocessor directive '{}' was ignored".format(single_line_statement))
 
     return included_linemaps
 
-def _intrnl_convert_lines_to_statements(lines):
+def _convert_lines_to_statements(lines):
     """Fortran lines can contain multiple statements that
     are separated by a semicolon.
     This routine unrolls such lines into multiple single statements.
@@ -238,7 +264,7 @@ def _intrnl_convert_lines_to_statements(lines):
             unrolled_statements.append(indent_offset + stmt.lstrip(indent_char))
     return unrolled_statements
 
-def _intrnl_detect_line_starts(lines):
+def _detect_line_starts(lines):
     """Fortran statements can be broken into multiple lines 
     via the '&' characters. This routine detects in which line a statement
     (or multiple statements per line) begins.
@@ -264,24 +290,24 @@ def _intrnl_detect_line_starts(lines):
     line_starts.append(len(lines))
     return line_starts
 
-def _intrnl_preprocess_and_normalize_fortran_file(fortran_filepath,macro_stack,region_stack1,region_stack2):
+def _preprocess_and_normalize_fortran_file(fortran_filepath,macro_stack,region_stack1,region_stack2):
     """
     :throws: IOError if the specified file cannot be found/accessed.
     """
-    util.logging.log_enter_function(opts.log_prefix,"_intrnl_preprocess_and_normalize_fortran_file",{
+    util.logging.log_enter_function(opts.log_prefix,"_preprocess_and_normalize_fortran_file",{
       "fortran_filepath":fortran_filepath
     })
 
     try:
         with open(fortran_filepath,"r") as infile:
             linemaps = preprocess_and_normalize(infile.readlines(),fortran_filepath,macro_stack,region_stack1,region_stack2)
-            util.logging.log_leave_function(opts.log_prefix,"_intrnl_preprocess_and_normalize_fortran_file")
+            util.logging.log_leave_function(opts.log_prefix,"_preprocess_and_normalize_fortran_file")
             return linemaps
     except Exception as e:
             raise e
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def _intrnl_group_modified_linemaps(linemaps,wrap_in_ifdef):
+def _group_modified_linemaps(linemaps,wrap_in_ifdef):
     """Find contiguous blocks of modified lines and blank lines between them."""
 
     EMPTY_BLOCK    = { "min_lineno": -1, "max_lineno": -1, "orig": "", "subst": "",\
@@ -325,7 +351,7 @@ def _intrnl_group_modified_linemaps(linemaps,wrap_in_ifdef):
             for linemap in linemap["included_linemaps"]:
                 subst += collect_subst_(linemap)
         elif linemap["modified"]:
-            subst += _intrnl_linearize_statements(linemap)
+            subst += _linearize_statements(linemap)
         else: # for included linemaps
             subst += linemap["lines"]
         if len(linemap["epilog"]):
@@ -406,7 +432,7 @@ def preprocess_and_normalize(fortran_file_lines,fortran_filepath,macro_stack=[],
     assert opts.default_indent_char in [' ','\t'], "Indent char must be whitespace ' ' or tab '\\t'"
 
     # 1. detect line starts
-    line_starts = _intrnl_detect_line_starts(fortran_file_lines)
+    line_starts = _detect_line_starts(fortran_file_lines)
 
     # 2. go through the blocks of buffered lines
     linemaps = []
@@ -419,23 +445,23 @@ def preprocess_and_normalize(fortran_file_lines,fortran_filepath,macro_stack=[],
         is_preprocessor_directive = lines[0].startswith("#")
         if is_preprocessor_directive and not opts.only_apply_user_defined_macros:
             try:
-                included_linemaps = _intrnl_handle_preprocessor_directive(lines,fortran_filepath,macro_stack,region_stack1,region_stack2)
+                included_linemaps = _handle_preprocessor_directive(lines,fortran_filepath,macro_stack,region_stack1,region_stack2)
                 statements1 = []
                 statements3 = []
             except Exception as e:
                 raise e
         elif region_stack1[-1]: # in_active_region
             # Convert line to statememts
-            statements1 = _intrnl_convert_lines_to_statements(lines)
+            statements1 = _convert_lines_to_statements(lines)
             # 2. Apply macros to statements
             statements2  = []
             for stmt1 in statements1:
-                statements2.append(_intrnl_expand_macros(stmt1,macro_stack))
+                statements2.append(_expand_macros(stmt1,macro_stack))
             # 3. Above processing might introduce multiple statements per line againa.
             # Hence, convert each element of statements2 to single statements again
             statements3 = []
             for stmt2 in statements2:
-                for stmt3 in _intrnl_convert_lines_to_statements([stmt2]):
+                for stmt3 in _convert_lines_to_statements([stmt2]):
                     statement = { 
                       "epilog": [],
                       "prolog": [],
@@ -511,7 +537,7 @@ def read_file(fortran_filepath,options=""):
 
     macro_stack = init_macros(options)
     try:
-        linemaps = _intrnl_preprocess_and_normalize_fortran_file(fortran_filepath,macro_stack,\
+        linemaps = _preprocess_and_normalize_fortran_file(fortran_filepath,macro_stack,\
            region_stack1=[True],region_stack2=[True]) # init value of region_stack[0] can be arbitrary
         util.logging.log_leave_function(opts.log_prefix,"read_file")
         return linemaps
@@ -545,7 +571,7 @@ def modify_file(linemaps,**kwargs):
     preamble, _     = util.kwargs.get_value("preamble","",**kwargs)
     ifdef_macro,_   = util.kwargs.get_value("ifdef_macro",opts.line_grouping_ifdef_macro,**kwargs)
 
-    blocks = _intrnl_group_modified_linemaps(linemaps,ifdef_macro!=None)
+    blocks = _group_modified_linemaps(linemaps,ifdef_macro!=None)
 
     output      = ""
     block_id     = 0
@@ -627,7 +653,7 @@ def render_file(linemaps,
                 if len(linemap["included_linemaps"]):
                     result += render_file_(linemap["included_linemaps"])
                 elif stage=="statements":
-                    result += "".join(_intrnl_linearize_statements(linemap))
+                    result += "".join(_linearize_statements(linemap))
                 else:
                     result += "".join(linemap[stage])
         return result

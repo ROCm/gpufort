@@ -787,7 +787,7 @@ class TTDeclaredVariable(base.TTNode):
     Spawned from grammar:
     
     ```python
-    declaration_variable = Group( identifier + Optional(LPAR + dimension_list + RPAR,default=[]) + Optional(EQ + ( matrix_arithmetic_expression | complex_arithmetic_expression | arithmetic_expression ), default=None)) # ! emits [*,[*],*]
+    declaration_variable = grammar.Group( identifier + grammar.Optional(LPAR + dimension_list + RPAR,default=[]) + grammar.Optional(EQ + ( matrix_arithmetic_expression | complex_arithmetic_expression | arithmetic_expression ), default=None)) # ! emits [*,[*],*]
     ```
     """
     def _assign_fields(self,tokens):
@@ -840,11 +840,11 @@ class TTDeclaration(base.TTNode,Attributed):
     """ 
     Spawned from grammar:
     ```python
-    declaration = datatype + Optional(COMMA + qualifier_list,default=[]) + COLONS + Group(delimitedList(declaration_variable))   # ! emits *,[*],[*]
+    declaration = datatype + grammar.Optional(COMMA + qualifier_list,default=[]) + COLONS + grammar.Group(delimitedList(declaration_variable))   # ! emits *,[*],[*]
     ```
     """
     def _assign_fields(self,tokens):
-        #declaration = datatype + Optional(COMMA + attribute_list,default=[]) + COLONS + Group(delimitedList(declaration_variable))   # ! emits *,[*],[*]
+        #declaration = datatype + grammar.Optional(COMMA + attribute_list,default=[]) + COLONS + grammar.Group(delimitedList(declaration_variable))   # ! emits *,[*],[*]
         self.type, self.kind, self.qualifiers, self._rhs = tokens
         self.ignore_list = []
     def is_derived_type(self):

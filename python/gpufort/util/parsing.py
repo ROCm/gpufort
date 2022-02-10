@@ -116,35 +116,52 @@ def next_tokens_till_open_bracket_is_closed(tokens,open_brackets=0):
         elif tk == ")":
             open_brackets -= 1
         criterion = idx < len(tokens) and open_brackets > 0
+    # TODO throw error if open_brackets still > 0
     return result
 
 def create_comma_separated_list(tokens,open_brackets=0,separators=[","],terminators=["::","\n","!"]):
     # ex:
     # input: ["parameter",",","intent","(","inout",")",",","dimension","(",":",",",":",")","::"]
     # result : ["parameter", "intent(inout)", "dimension(:,:)" ]
-    result            = []
-    idx               = 0
-    current_qualifier = ""
-    criterion         = len(tokens)
+    result         = []
+    idx            = 0
+    current_substr = ""
+    criterion      = len(tokens)
     while criterion:
         tk  = tokens[idx]
         idx += 1
         criterion = idx < len(tokens)
         if tk in separators and open_brackets == 0:
-            if len(current_qualifier):
-                result.append(current_qualifier)
-            current_qualifier = ""
+            if len(current_substr):
+                result.append(current_substr)
+            current_substr = ""
         elif tk in terminators:
             criterion = False
         else:
-            current_qualifier += tk
+            current_substr += tk
         if tk == "(":
             open_brackets += 1
         elif tk == ")":
             open_brackets -= 1
-    if len(current_qualifier):
-        result.append(current_qualifier)
+    if len(current_substr):
+        result.append(current_substr)
     return result
+
+def extract_function_calls(text,func_name):
+    """Extract all calls of the function `func_name` from the input text.
+    :param str text: the input text.
+    :param str func_name: Name of the function.
+    :note: Input text must not contain any line break/continuation characters.
+    :return: List of tuples that each contain the function call substring at position 0
+             and the list of function call argument substrings at position 1.
+    """
+    result = []
+    for m in re.finditer(r"{}\s*\(".format(func_name),text):
+        rest_substr = next_tokens_till_open_bracket_is_closed(text[m.end():],1)
+        args = create_comma_separated_list(rest_substr[:-1],0,[","],[]) # clip the ')' at the end
+        end  = m.end()+len(rest_substr)
+        result.append((text[m.start():end],args))
+    return result 
 
 # rules
 def is_declaration(tokens):

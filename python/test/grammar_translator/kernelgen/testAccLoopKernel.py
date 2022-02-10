@@ -5,7 +5,7 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import addtoplevelpath
 from gpufort import grammar
-import gpufort.translator
+from gpufort import translator
 
 test=\
 """

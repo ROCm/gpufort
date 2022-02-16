@@ -36,8 +36,8 @@ def _parse_file(linemaps,index):
     current_node     = tree.STRoot()
     do_loop_ctr      = 0     
     keep_recording   = False
-    fortran_filepath = linemaps[0]["file"] 
-    current_file     = str(fortran_filepath)
+    fortran_file_path = linemaps[0]["file"] 
+    current_file     = str(fortran_file_path)
     current_linemap  = None
     directive_no     = 0
 
@@ -162,7 +162,7 @@ def _parse_file(linemaps,index):
         nonlocal current_node
         nonlocal keep_recording
         return not keep_recording and\
-            (type(current_node) is acc.STAccDirective) and\
+            (type(current_node) is tree.acc.STAccDirective) and\
             (current_node.is_kernels_directive())
     def DoLoop_visit():
         nonlocal translation_enabled
@@ -172,7 +172,7 @@ def _parse_file(linemaps,index):
         nonlocal keep_recording
         log_detection_("do loop")
         if in_kernels_acc_region_and_not_recording():
-            new = acc.STAccLoopNest(current_linemap,current_statement_no)
+            new = tree.acc.STAccLoopNest(current_linemap,current_statement_no)
             new.ignore_in_s2s_translation = not translation_enabled
             new._do_loop_ctr_memorised=do_loop_ctr
             descend_(new) 
@@ -219,7 +219,7 @@ def _parse_file(linemaps,index):
         log_detection_("use statement")
         new = tree.STUseStatement(current_linemap,current_statement_no)
         new.ignore_in_s2s_translation = not translation_enabled
-        new.name = translator.make_f_str(tokens[1]) # just get the name, ignore specific includes
+        new.name = translator.tree.make_f_str(tokens[1]) # just get the name, ignore specific includes
         append_if_not_recording_(new)
     def PlaceHolder():
         nonlocal translation_enabled
@@ -295,7 +295,7 @@ def _parse_file(linemaps,index):
         log_detection_("CUDA API call")
         cudaApi, args = tokens 
         if not type(current_node) in [cuf.STCufLibCall,cuf.STCufKernelCall]:
-            new = cuf.STCufLibCall(current_linemap,current_statement_no)
+            new = tree.cuf.STCufLibCall(current_linemap,current_statement_no)
             new.ignore_in_s2s_translation = not translation_enabled
             new.cudaApi  = cudaApi
             #print("finishes_on_first_line={}".format(finishes_on_first_line))
@@ -310,7 +310,7 @@ def _parse_file(linemaps,index):
         log_detection_("CUDA kernel call")
         kernel_name, kernel_launch_args, args = tokens 
         assert type(current_node) in [tree.STModule,tree.STProcedure,tree.STProgram], "type is: "+str(type(current_node))
-        new = cuf.STCufKernelCall(current_linemap,current_statement_no)
+        new = tree.cuf.STCufKernelCall(current_linemap,current_statement_no)
         new.ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
     def AccDirective():
@@ -322,17 +322,17 @@ def _parse_file(linemaps,index):
         nonlocal do_loop_ctr
         nonlocal directive_no
         log_detection_("OpenACC directive")
-        new = acc.STAccDirective(current_linemap,current_statement_no,directive_no)
+        new = tree.acc.STAccDirective(current_linemap,current_statement_no,directive_no)
         new.ignore_in_s2s_translation = not translation_enabled
         directive_no += 1
         # if end directive ascend
-        if new.is_end_directive() and type(current_node) is acc.STAccDirective and\
+        if new.is_end_directive() and type(current_node) is tree.acc.STAccDirective and\
            current_node.is_kernels_directive():
            ascend_()
         # descend in constructs or new node
         elif new.is_parallel_loop_directive() or new.is_kernels_loop_directive() or\
              (not new.is_end_directive() and new.is_parallel_directive()):
-            new        = acc.STAccLoopNest(current_linemap,current_statement_no,directive_no)
+            new        = tree.acc.STAccLoopNest(current_linemap,current_statement_no,directive_no)
             new.kind   = "acc-compute-construct"
             new.ignore_in_s2s_translation = not translation_enabled
             new._do_loop_ctr_memorised=do_loop_ctr
@@ -353,7 +353,7 @@ def _parse_file(linemaps,index):
         nonlocal keep_recording
         nonlocal directive_no
         log_detection_("CUDA Fortran loop kernel directive")
-        new = cuf.STCufLoopNest(current_linemap,current_statement_no,directive_no)
+        new = tree.cuf.STCufLoopNest(current_linemap,current_statement_no,directive_no)
         new.kind = "cuf-kernel-do"
         new.ignore_in_s2s_translation = not translation_enabled
         new._do_loop_ctr_memorised=do_loop_ctr
@@ -371,7 +371,7 @@ def _parse_file(linemaps,index):
             parse_result = translator.assignment_begin.parseString(current_statement["body"])
             lvalue = translator.find_first(parse_result,translator.TTLValue)
             if not lvalue is None and lvalue.has_matrix_range_args():
-                new  = acc.STAccLoopNest(current_linemap,current_statement_no)
+                new  = tree.acc.STAccLoopNest(current_linemap,current_statement_no)
                 new.ignore_in_s2s_translation = not translation_enabled
                 append_if_not_recording_(new)
     def GpufortControl():
@@ -413,7 +413,7 @@ def _parse_file(linemaps,index):
     # GPUFORT control
     tree.grammar.gpufort_control.setParseAction(GpufortControl)
 
-    current_file = str(fortran_filepath)
+    current_file = str(fortran_file_path)
     current_node.children.clear()
 
     def scan_string(expression_name,expression):
@@ -491,7 +491,7 @@ def _parse_file(linemaps,index):
                             if "attributes" in current_tokens:
                                 try_to_parse_string("attributes",tree.grammar.attributes)
                             if "cu" in current_statement_stripped_no_comments:
-                                scan_string("cuda_lib_call",cuda_lib_call)
+                                scan_string("cuda_lib_call",tree.grammar.cuda_lib_call)
                             if "<<<" in current_tokens:
                                 try_to_parse_string("cuf_kernel_call",tree.grammar.cuf_kernel_call)
                             for comment_char in "!*c":
@@ -500,9 +500,9 @@ def _parse_file(linemaps,index):
                         if "=" in current_tokens:
                             if not try_to_parse_string("memcpy",tree.grammar.memcpy,parseAll=True):
                                 try_to_parse_string("assignment",tree.grammar.assignment_begin)
-                                scan_string("non_zero_check",non_zero_check)
+                                scan_string("non_zero_check",tree.grammar.non_zero_check)
                         if "allocated" in current_tokens:
-                            scan_string("allocated",ALLOCATED)
+                            scan_string("allocated",tree.grammar.ALLOCATED)
                         if "deallocate" in current_tokens:
                             try_to_parse_string("deallocate",tree.grammar.DEALLOCATE) 
                         if "allocate" in current_tokens:
@@ -550,6 +550,7 @@ def postprocess(stree,index,hip_module_suffix):
             return isinstance(child,tree.STLoopNest) or\
                    (type(child) is tree.STProcedure and child.is_kernel_subroutine())
         
+        print(stree)
         for stmodule in stree.find_all(filter=lambda child: isinstance(child,(tree.STModule,tree.STProgram)),
                                        recursively=False):
             module_name = stmodule.name 
@@ -567,9 +568,9 @@ def postprocess(stree,index,hip_module_suffix):
                     stnode.add_to_prolog("{}use {}{}\n".format(indent,module_name,hip_module_suffix))
    
     if "cuf" in opts.source_dialects:
-         postprocess_tree_cuf(stree,index)
+         tree.cuf.postprocess_tree_cuf(stree,index)
     if "acc" in opts.source_dialects:
-         postprocess_tree_acc(stree,index)
+         tree.acc.postprocess_tree_acc(stree,index)
 
 def parse_file(**kwargs):
     r"""Create scanner tree from file content.
@@ -634,4 +635,4 @@ def parse_file(**kwargs):
                                           preproc_options)
     return _parse_file(linemaps,index), index, linemaps
 
-__all__ = ["parse_file"]
+__all__ = ["parse_file","postprocess"]

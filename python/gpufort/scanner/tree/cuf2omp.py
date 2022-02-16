@@ -1,9 +1,11 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-
+from gpufort import translator
 from gpufort import util
+from .. import opts
+from . import cuf
 
-class CufLoopNest2Omp(CufBackendBase):
+class CufLoopNest2Omp(cuf.CufBackendBase):
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[]):
         """
         Analyze based on statements but modify original lines if these are
@@ -19,4 +21,4 @@ class CufLoopNest2Omp(CufBackendBase):
             util.logging.log_exception(LOG_PREFIX,"CufLoopNest2Omp.transform","failed to parse loop kernel")
             sys.exit(2) # TODO error code
 
-register_cuf_backend("omp",CufLoopNest2Omp,None)
+cuf.register_cuf_backend("omp",CufLoopNest2Omp,None)

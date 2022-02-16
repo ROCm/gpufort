@@ -292,6 +292,7 @@ class STNode:
             if transformed:
                self._modify_linemaps(transformed_code)
 
+
 class IDeclListEntry
     pass
 
@@ -299,7 +300,10 @@ class STContainerBase(STNode):
     @staticmethod
     def decl_list_entry_filter(stnode):
         """:return: If the scanner tree node is member of the declaration list."""
-        return isinstance(stnode,IDeclListEntry))
+        return isinstance(stnode,
+                          (STUseStatement,
+                          STDeclaration,
+                          STPlaceHolder))
     def first_entry_in_decl_list(self):
         result = self.find_first(filter=STContainerBase.decl_list_entry_filter)
         if result == None:

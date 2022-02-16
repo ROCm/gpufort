@@ -122,7 +122,7 @@ class STAccDirective(base.STDirective):
         if self.is_purely_declarative():
             return base.STNode.transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index) 
         else:
-            checked_dialect = base.check_destination_dialect(DESTINATION_DIALECT)
+            checked_dialect = base.check_destination_dialect(opts.destination_dialect)
             return ACC_BACKENDS[checked_dialect](self).transform(\
                     joined_lines,joined_statements,statements_fully_cover_lines,index)
 class STAccLoopNest(STAccDirective,base.STLoopNest):
@@ -135,14 +135,14 @@ class STAccLoopNest(STAccDirective,base.STLoopNest):
                                    should be translated via another backend.
         """
         checked_dialect = base.check_destination_dialect(\
-            DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
+            opts.destination_dialect if not len(destination_dialect) else destination_dialect)
         return ACC_LOOP_KERNEL_BACKENDS[checked_dialect](self).transform(\
                 joined_lines,joined_statements,statements_fully_cover_lines,index)
 
 def handle_allocate_acc(stallocate,joined_statements,index,destination_dialect=""):
     indent = stallocate.first_line_indent() 
     checked_dialect = base.check_destination_dialect(\
-        DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
+        opts.destination_dialect if not len(destination_dialect) else destination_dialect)
     if checked_dialect in ACC_ALLOCATE_BACKENDS:
         epilog = ACC_ALLOCATE_BACKENDS[checked_dialect](stallocate,index)
         for line in epilog:
@@ -152,7 +152,7 @@ def handle_allocate_acc(stallocate,joined_statements,index,destination_dialect="
 def handle_deallocate_acc(stdeallocate,joined_statements,index,destination_dialect=""):
     indent = stdeallocate.first_line_indent() 
     checked_dialect = base.check_destination_dialect(\
-        DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
+        opts.destination_dialect if not len(destination_dialect) else destination_dialect)
     if checked_dialect in ACC_DEALLOCATE_BACKENDS:
         prolog = ACC_DEALLOCATE_BACKENDS[checked_dialect](stdeallocate,index)
         for line in prolog:
@@ -163,7 +163,7 @@ def handle_deallocate_acc(stdeallocate,joined_statements,index,destination_diale
 def postprocess_tree_acc(stree,index,destination_dialect=""):
     """Add use statements."""
     checked_dialect = base.check_destination_dialect(\
-        DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
+        opts.destination_dialect if not len(destination_dialect) else destination_dialect)
     if checked_dialect in ACC_POSTPROCESS_BACKENDS: 
         def directive_filter(node):
             return isinstance(node,STAccDirective) and\

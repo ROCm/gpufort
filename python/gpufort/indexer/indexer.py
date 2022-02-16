@@ -43,7 +43,7 @@ class Node():
     __repr__ = __str__
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def _intrnl_parse_statements(linemaps,filepath):
+def _intrnl_parse_statements(linemaps,file_path):
     # Regex
     datatype_reg = Regex(r"\b(type\s*\(|character|integer|logical|real|complex|double\s+precision)\b")
 
@@ -152,11 +152,11 @@ def _intrnl_parse_statements(linemaps,filepath):
     current_node = root
     current_statement = None
 
-    def create_base_entry_(kind,name,filepath):
+    def create_base_entry_(kind,name,file_path):
         entry = {}
         entry["kind"]        = kind
         entry["name"]        = name
-        #entry["file"]        = filepath
+        #entry["file"]        = file_path
         entry["variables"]   = []
         entry["types"]       = []
         entry["subprograms"] = []
@@ -205,7 +205,7 @@ def _intrnl_parse_statements(linemaps,filepath):
         nonlocal root
         nonlocal current_node
         name = tokens[0]
-        module = create_base_entry_("module",name,filepath)
+        module = create_base_entry_("module",name,file_path)
         assert current_node == root
         current_node._data.append(module)
         current_node = Node("module",name,data=module,parent=current_node)
@@ -214,7 +214,7 @@ def _intrnl_parse_statements(linemaps,filepath):
         nonlocal root
         nonlocal current_node
         name    = tokens[0]
-        program = create_base_entry_("program",name,filepath)
+        program = create_base_entry_("program",name,file_path)
         assert current_node._kind == "root"
         current_node._data.append(program)
         current_node = Node("program",name,data=program,parent=current_node)
@@ -226,7 +226,7 @@ def _intrnl_parse_statements(linemaps,filepath):
         log_detection_("start of subroutine")
         if current_node._kind in ["root","module","program","subroutine","function"]:
             name = tokens[1]
-            subroutine = create_base_entry_("subroutine",name,filepath)
+            subroutine = create_base_entry_("subroutine",name,file_path)
             subroutine["attributes"]      = [q.lower() for q in tokens[0]]
             subroutine["dummy_args"]       = list(tokens[2])
             if current_node._kind == "root":
@@ -246,7 +246,7 @@ def _intrnl_parse_statements(linemaps,filepath):
         log_detection_("start of function")
         if current_node._kind in ["root","module","program","subroutine","function"]:
             name = tokens[1]
-            function = create_base_entry_("function",name,filepath)
+            function = create_base_entry_("function",name,file_path)
             function["attributes"]  = [q.lower() for q in tokens[0]]
             function["dummy_args"]  = list(tokens[2])
             function["result_name"] = name if tokens[3] is None else tokens[3]
@@ -443,35 +443,35 @@ def _intrnl_parse_statements(linemaps,filepath):
     return index
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def _intrnl_write_json_file(index,filepath):
-    with open(filepath,"wb") as outfile:
+def _intrnl_write_json_file(index,file_path):
+    with open(file_path,"wb") as outfile:
          if opts.pretty_print_index_file:
              outfile.write(orjson.dumps(index,option=orjson.OPT_INDENT_2))
          else:
              outfile.write(orjson.dumps(index))
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def _intrnl_read_json_file(filepath):
-    with open(filepath,"rb") as infile:
+def _intrnl_read_json_file(file_path):
+    with open(file_path,"rb") as infile:
          return orjson.loads(infile.read())
 
 # API
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def scan_file(filepath,
+def scan_file(file_path,
               preproc_options,
               index):
     """Creates an index from a single file.
     """
-    filtered_statements = _intrnl_read_fortran_file(filepath,preproc_options)
+    filtered_statements = _intrnl_read_fortran_file(file_path,preproc_options)
     util.logging.log_debug2(opts.log_prefix,"scan_file","extracted the following statements:\n>>>\n{}\n<<<".format(\
         "\n".join(filtered_statements)))
-    index += _intrnl_parse_statements(filtered_statements,filepath)
+    index += _intrnl_parse_statements(filtered_statements,file_path)
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def update_index_from_linemaps(linemaps,index):
     """Updates index from a number of linemaps."""
     if len(linemaps):
-        index += _intrnl_parse_statements(linemaps,filepath=linemaps[0]["file"])
+        index += _intrnl_parse_statements(linemaps,file_path=linemaps[0]["file"])
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def update_index_from_snippet(index,snippet,preproc_options=""):
@@ -523,8 +523,8 @@ def write_gpufort_module_files(index,output_dir):
     :param str output_dir: [in] Output directory.
     """
     for mod in index:
-        filepath = output_dir + "/" + mod["name"] + GPUFORT_MODULE_FILE_SUFFIX
-        _intrnl_write_json_file(mod,filepath)
+        file_path = output_dir + "/" + mod["name"] + GPUFORT_MODULE_FILE_SUFFIX
+        _intrnl_write_json_file(mod,file_path)
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def load_gpufort_module_files(input_dirs,index):

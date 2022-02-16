@@ -63,5 +63,5 @@ for a in "$@"; do
 done 
 
 if [ -z ${USED_DEVELOPER_TOOL} ]; then
-  python3 $GPUFORT_BIN_DIR/../python/gpufort/main.py --working-dir $(pwd) "${@}"
+  python3 $GPUFORT_BIN_DIR/../python/converter.py --working-dir $(pwd) "${@}"
 fi

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-fort2hip.CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140, BinPackArguments: false, BinPackParameters: false}\""
+fort2x.hip.opts.clang_format_style="\"{BasedOnStyle: llvm, ColumnLimit: 140, BinPackArguments: false, BinPackParameters: false}\""
 
 #fort2hip.EMIT_DEBUG_CODE = False
 
@@ -17,8 +17,8 @@ def myLaunchBounds(kernelName):
 
 #fort2hip.GET_LAUNCH_BOUNDS = myLaunchBounds
 
-PRETTIFY_MODIFIED_TRANSLATION_SOURCE = True
+opts.prettify_modified_translation_source = True
 
-LOG_DIR="log"
+opts.log_dir="log"
 
-scanner.LOOP_KERNEL_DEFAULT_LAUNCHER="cpu"
+scanner.opts.loop_kernel_default_launcher="hip_ps"

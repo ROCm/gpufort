@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+from gpufort import translator
+from gpufort import util
+from .. import opts
 from . import acc
 
 ## DIRECTIVES
@@ -67,7 +70,7 @@ class Acc2HipGpufortRT(acc.AccBackendBase):
         """
         result = ""
         if queue is None:
-            for parse_result in translator.acc_clause_async.searchString(queue,1):
+            for parse_result in translator.tree.grammar.acc_clause_async.searchString(queue,1):
                 #print(parse_result)
                 # TODO find ...
                 result = parse_result[0].queue()
@@ -79,7 +82,7 @@ class Acc2HipGpufortRT(acc.AccBackendBase):
         :return: If a finalize clause is present
         :rtype: bool
         """
-        return len(translator.acc_clause_finalize.searchString(self.first_statement(),1))
+        return len(translator.tree.grammar.acc_clause_finalize.searchString(self.first_statement(),1))
     def _handle_mapping_clauses(self):
         """
         """
@@ -87,7 +90,7 @@ class Acc2HipGpufortRT(acc.AccBackendBase):
         temp_vars = set()
         indent = self._stnode.first_line_indent()
         #
-        for parse_result in translator.acc_mapping_clause.scanString(self._stnode.first_statement()):
+        for parse_result in translator.tree.grammar.acc_mapping_clause.scanString(self._stnode.first_statement()):
             clause         = parse_result[0][0]
             if clause.kind in MAPPING_CLAUSE_2_TEMPLATE_MAP:
                 var_names       = clause.var_names()
@@ -106,7 +109,7 @@ class Acc2HipGpufortRT(acc.AccBackendBase):
         result = ""
         indent = self._stnode.first_line_indent()
         # update host
-        for parse_result in translator.acc_mapping_clause.scanString(self._stnode.first_statement()):
+        for parse_result in translator.tree.grammar.acc_mapping_clause.scanString(self._stnode.first_statement()):
             clause = parse_result[0][0]
             if clause.kind in ["self","host","device"]:
                 clause_kind = "host" if clause.kind=="self" else clause.kind
@@ -123,7 +126,7 @@ class Acc2HipGpufortRT(acc.AccBackendBase):
         # wait
         indent = self._stnode.first_line_indent()
         template = HIP_GPUFORT_RT_ACC_WAIT
-        for parse_result in translator.acc_clause_wait.scanString(self._stnode.first_statement()):
+        for parse_result in translator.tree.grammar.acc_clause_wait.scanString(self._stnode.first_statement()):
             queue_list=[]
             asyncr_list=[]
             for rvalue in parse_result[0][0]: # queue ids
@@ -144,7 +147,7 @@ class Acc2HipGpufortRT(acc.AccBackendBase):
         :rtype: str
         """
         condition = ""
-        for parse_result in translator.acc_clause_if.searchString(self._stnode.first_statement(),1):
+        for parse_result in translator.tree.grammar.acc_clause_if.searchString(self._stnode.first_statement(),1):
             condition = parse_result[0].condition()
         return condition
     def transform(self,joined_lines,joined_statements,statements_fully_cover_lines,index=[],handle_if=True):
@@ -231,7 +234,7 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
         "{indent}{dev_var} = gpufort_acc_present({var}{asyncr}{alloc})\n"
         template        = HIP_GPUFORT_RT_ACC_PRESENT
         indent          = stloopkernel.first_line_indent()
-        default_clauses = translator.acc_clause_default.searchString(stloopkernel.first_statement(),1)
+        default_clauses = translator.tree.grammar.acc_clause_default.searchString(stloopkernel.first_statement(),1)
         if len(default_clauses):
             value = str(default_clauses[0][0][0]).lower()
             #print(value)
@@ -360,7 +363,6 @@ def AllocateHipGpufortRT(stallocate,index):
                indent=indent,var=host_var,asyncr="",\
                alloc=module_var+",or=gpufort_acc_event_"+map_kind,dev_var=dev_var))
            temp_vars.append(dev_var)
-
    if len(acc_present_calls):
        stcontainer.append_vars_to_decl_list(temp_vars)
        if implicit_region: add_implicit_region(stcontainer)

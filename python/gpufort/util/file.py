@@ -43,11 +43,11 @@ def prettify_f_file(fPath):
     #return subprocess.check_output(command,shell=True).decode('ascii')
     #pass
 
-def read_c_file_without_comments(filepath,unifdef_args=""):
+def read_c_file_without_comments(file_path,unifdef_args=""):
     """
     Requires gcc, unifdef
     """
-    command="gcc -w -fmax-errors=100 -fpreprocessed -dD -E {0}".format(filepath)
+    command="gcc -w -fmax-errors=100 -fpreprocessed -dD -E {0}".format(file_path)
     if len(unifdef_args):
         command += " | unifdef {0}".format(unifdef_args)
     try: 
@@ -59,11 +59,11 @@ def read_c_file_without_comments(filepath,unifdef_args=""):
            output = cpe.output.decode("UTF-8")
     return output
 
-def read_c_file(filepath,unifdef_args=""):
+def read_c_file(file_path,unifdef_args=""):
     """
     Requires unifdef
     """
-    command="cat {0}".format(filepath)
+    command="cat {0}".format(file_path)
     if len(unifdef_args):
         command += " | unifdef {0}".format(unifdef_args)
     try: 

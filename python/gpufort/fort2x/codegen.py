@@ -247,23 +247,33 @@ class CodeGenerator(abc.ABC):
         """
         if not self._traversed:
             self._traverse_scanner_tree()
-    def write_cpp_files(self,
-                        main_cpp_file_path):
+    def write_cpp_files(self,main_cpp_file_path):
         """Writes one C++ file ('main C++ file') for the non-module program units
         in the Fortran file plus one C++ file per each of the modules in the file.
         The main C++ file includes the per-module C++ files.
+        
         :param str main_cpp_file_path: File name for the main C++ file.
+        
+        :return: Paths to all generated files (list of strings).
+        :rtype: list
+       
         :note: Always creates the main C++ file even if no code was generated
                to always have the same output.
         """
-        parent_dir         = os.path.dirname(main_cpp_file_path)
         main_cpp_file_name = os.path.basename(main_cpp_file_path)
+        output_dir         = os.path.dirname(main_cpp_file_path)
         if not self._traversed:
             self._traverse_scanner_tree()
         # main file
         self.cpp_filegen.guard = CodeGenerator._create_cpp_guard(main_cpp_file_name)
         self.cpp_filegen.generate_file(main_cpp_file_path)
         # 
+        paths = [ main_cpp_file_path ]
+        #
         for pair in self.cpp_filegens_per_module:
             cpp_file_name, cpp_filegen = pair
-            cpp_filegen.generate_file(os.path.join(output_dir,cpp_file_name))
+            cpp_file_path = os.path.join(output_dir,cpp_file_name)
+            cpp_filegen.generate_file(cpp_file_path)
+            paths.append(cpp_file_path)
+        return paths
+        

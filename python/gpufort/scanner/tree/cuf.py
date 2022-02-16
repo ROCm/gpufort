@@ -3,6 +3,7 @@
 from . import base
 from gpufort import util
 from .. import opts
+from . import grammar
 
 class CufBackendBase:
     def __init__(self,stnode):
@@ -36,7 +37,7 @@ class STCufLoopNest(STCufDirective,base.STLoopNest):
                                    should be translated via another backend.
         """
         checked_dialect = base.check_destination_dialect(\
-            DESTINATION_DIALECT if not len(destination_dialect) else destination_dialect)
+            opts.destination_dialect if not len(destination_dialect) else destination_dialect)
         return CUF_LOOP_KERNEL_BACKENDS[checked_dialect](self).transform(\
           joined_lines,joined_statements,statements_fully_cover_lines,index)
 
@@ -78,9 +79,9 @@ def postprocess_tree_cuf(stree,index,destination_dialect=""):
     """
     
     # cublas_v1 detection
-    if CUBLAS_VERSION == 1:
+    if opts.cublas_version == 1:
         def has_cublas_call_(child):
-            return type(child) is STCufLibCall and child.has_cublas()
+            return type(child) is base.STCufLibCall and child.has_cublas()
         cuf_cublas_calls = stree.find_all(filter=has_cublas_call_, recursively=True)
         for call in cuf_cublas_calls:
             last_decl_list_node = call.parent.last_entry_in_decl_list() 

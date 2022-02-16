@@ -7,8 +7,8 @@ class FileGenerator():
     def generate_code(self):
         assert False, "Not implemented!"
         return ""
-    def generate_file(self,filepath):
-        with open(filepath,"w") as outfile:
+    def generate_file(self,file_path):
+        with open(file_path,"w") as outfile:
             outfile.write(self.generate_code())
 
 class CppFileGenerator(FileGenerator):

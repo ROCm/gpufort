@@ -95,9 +95,9 @@ def evaluate_condition(input_string,macro_stack):
     code = compile(transformed_input_string, "<string>", "eval") 
     return eval(code, {"__builtins__": {}},{}) > 0
 
-def _handle_preprocessor_directive(lines,fortran_filepath,macro_stack,region_stack1,region_stack2):
+def _handle_preprocessor_directive(lines,fortran_file_path,macro_stack,region_stack1,region_stack2):
     """
-    :param str fortran_filepath: needed to load included files where only relative path is specified
+    :param str fortran_file_path: needed to load included files where only relative path is specified
     :param list macro_stack: A stack for storing/removing macro definition based on preprocessor directives.
     :param list region_stack1: A stack that stores if the current code region is active or inactive.
     :param list region_stack2: A stack that stores if any if/elif branch in the current if-elif-else-then
@@ -108,7 +108,7 @@ def _handle_preprocessor_directive(lines,fortran_filepath,macro_stack,region_sta
         return "-".join([str(int(el)) for el in stack])
     macro_names = ",".join([macro["name"] for macro in macro_stack])
     util.logging.log_enter_function(opts.log_prefix,"_handle_preprocessor_directive",\
-      {"fortran-file-path": fortran_filepath,\
+      {"fortran-file-path": fortran_file_path,\
        "region-stack-1":    region_stack_format(region_stack1),\
        "region-stack-2":    region_stack_format(region_stack2),\
        "macro-names":       macro_names})
@@ -145,9 +145,9 @@ def _handle_preprocessor_directive(lines,fortran_filepath,macro_stack,region_sta
                util.logging.log_debug3(opts.log_prefix,"_handle_preprocessor_directive","found include in line '{}'".format(lines[0].rstrip("\n")))
                result     = grammar.pp_dir_include.parseString(single_line_statement,parseAll=True)
                filename   = result.filename.strip(" \t")
-               current_dir = os.path.dirname(fortran_filepath)
+               current_dir = os.path.dirname(fortran_file_path)
                if not filename.startswith("/") and len(current_dir):
-                   filename = os.path.dirname(fortran_filepath) + "/" + filename
+                   filename = os.path.dirname(fortran_file_path) + "/" + filename
                included_linemaps = _preprocess_and_normalize_fortran_file(filename,macro_stack,region_stack1,region_stack2)
                handled = True
         # if cond. true, push new region to stack
@@ -290,17 +290,17 @@ def _detect_line_starts(lines):
     line_starts.append(len(lines))
     return line_starts
 
-def _preprocess_and_normalize_fortran_file(fortran_filepath,macro_stack,region_stack1,region_stack2):
+def _preprocess_and_normalize_fortran_file(fortran_file_path,macro_stack,region_stack1,region_stack2):
     """
     :throws: IOError if the specified file cannot be found/accessed.
     """
     util.logging.log_enter_function(opts.log_prefix,"_preprocess_and_normalize_fortran_file",{
-      "fortran_filepath":fortran_filepath
+      "fortran_file_path":fortran_file_path
     })
 
     try:
-        with open(fortran_filepath,"r") as infile:
-            linemaps = preprocess_and_normalize(infile.readlines(),fortran_filepath,macro_stack,region_stack1,region_stack2)
+        with open(fortran_file_path,"r") as infile:
+            linemaps = preprocess_and_normalize(infile.readlines(),fortran_file_path,macro_stack,region_stack1,region_stack2)
             util.logging.log_leave_function(opts.log_prefix,"_preprocess_and_normalize_fortran_file")
             return linemaps
     except Exception as e:
@@ -421,13 +421,13 @@ def init_macros(options):
         macro_stack.append(macro)
     return macro_stack
 
-def preprocess_and_normalize(fortran_file_lines,fortran_filepath,macro_stack=[],region_stack1=[True],region_stack2=[True]):
+def preprocess_and_normalize(fortran_file_lines,fortran_file_path,macro_stack=[],region_stack1=[True],region_stack2=[True]):
     """:param list file_lines: Lines of a file, terminated with line break characters ('\n').
     :returns: a list of dicts with keys 'lineno', 'original_lines', 'statements'.
     """
 
     util.logging.log_enter_function(opts.log_prefix,"preprocess_and_normalize",{
-      "fortran_filepath":fortran_filepath
+      "fortran_file_path":fortran_file_path
     })
     assert opts.default_indent_char in [' ','\t'], "Indent char must be whitespace ' ' or tab '\\t'"
 
@@ -445,7 +445,7 @@ def preprocess_and_normalize(fortran_file_lines,fortran_filepath,macro_stack=[],
         is_preprocessor_directive = lines[0].startswith("#")
         if is_preprocessor_directive and not opts.only_apply_user_defined_macros:
             try:
-                included_linemaps = _handle_preprocessor_directive(lines,fortran_filepath,macro_stack,region_stack1,region_stack2)
+                included_linemaps = _handle_preprocessor_directive(lines,fortran_file_path,macro_stack,region_stack1,region_stack2)
                 statements1 = []
                 statements3 = []
             except Exception as e:
@@ -470,7 +470,7 @@ def preprocess_and_normalize(fortran_file_lines,fortran_filepath,macro_stack=[],
                     statements3.append(statement)
         #if len(included_linemaps) or (not is_preprocessor_directive and region_stack1[-1]):
         linemap = {
-          "file":                      fortran_filepath,
+          "file":                      fortran_file_path,
           "lineno":                    line_start+1, # key
           "lines":                     lines,
           "raw_statements":            statements1,
@@ -490,7 +490,7 @@ def preprocess_and_normalize(fortran_file_lines,fortran_filepath,macro_stack=[],
 
 def read_lines(fortran_lines,
                options="",
-               fortran_filepath="<none>"):
+               fortran_file_path="<none>"):
     """
     A C and Fortran preprocessor (cpp and fpp).
 
@@ -501,7 +501,7 @@ def read_lines(fortran_lines,
     :return: The input data structure without the entries whose statements where not in active code region
              as determined by the preprocessor.
     :param str options: a sequence of compiler options such as '-D<key> -D<key>=<value>'.
-    :param str fortran_filepath: File path to write into the linemaps.
+    :param str fortran_file_path: File path to write into the linemaps.
     """
     # TODO check if order of read_file routines can be simplified using this method
 
@@ -511,14 +511,13 @@ def read_lines(fortran_lines,
 
     macro_stack = init_macros(options)
     linemaps = preprocess_and_normalize(fortran_lines,
-                                        fortran_filepath,
+                                        fortran_file_path,
                                         macro_stack)
     util.logging.log_leave_function(opts.log_prefix,"read_lines")
     return linemaps
 
-def read_file(fortran_filepath,options=""):
-    """
-    A C and Fortran preprocessor (cpp and fpp).
+def read_file(fortran_file_path,options=""):
+    """A C and Fortran preprocessor (cpp and fpp).
 
     Current limitations:
 
@@ -531,13 +530,13 @@ def read_file(fortran_filepath,options=""):
     """
 
     util.logging.log_enter_function(opts.log_prefix,"read_file",{
-      "fortran_filepath":fortran_filepath,
+      "fortran_file_path":fortran_file_path,
       "options":options
     })
 
     macro_stack = init_macros(options)
     try:
-        linemaps = _preprocess_and_normalize_fortran_file(fortran_filepath,macro_stack,\
+        linemaps = _preprocess_and_normalize_fortran_file(fortran_file_path,macro_stack,\
            region_stack1=[True],region_stack2=[True]) # init value of region_stack[0] can be arbitrary
         util.logging.log_leave_function(opts.log_prefix,"read_file")
         return linemaps
@@ -619,7 +618,15 @@ def modify_file(linemaps,**kwargs):
     return output
 
 def write_modified_file(outfile_path,infile_path,linemaps,preamble=""):
-    """TODO docu"""
+    """Create a modified version of the input file from
+    the modified linemaps and write it to the output file path.
+    
+    :param str outfile_path: Output file path.
+    :param str infile_path: Input file path.
+    :param list linemaps: A list of linemaps created via GPUFORT's linemapper component.
+    :param str preamble: A preamble to put at the begin of the output file file.
+    :see: gpufort.linemapper
+    """
     util.logging.log_enter_function(opts.log_prefix,"write_modified_file",\
       {"infile_path":infile_path,"outfile_path":outfile_path})
 
@@ -662,8 +669,8 @@ def render_file(linemaps,
     return render_file_(linemaps).strip("\n")
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def dump_linemaps(linemaps,filepath):
-    with open(filepath,"wb") as outfile:
+def dump_linemaps(linemaps,file_path):
+    with open(file_path,"wb") as outfile:
          if opts.pretty_print_linemaps_dump:
              outfile.write(orjson.dumps(linemaps,option=orjson.OPT_INDENT_2))
          else:

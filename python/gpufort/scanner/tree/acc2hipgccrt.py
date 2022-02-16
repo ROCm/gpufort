@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+from gpufort import translator
+from gpufort import util
+from .. import opts
 from . import acc
 
 # init shutdown
@@ -53,7 +56,7 @@ HIP_GCC_RT_MAP_PRESENT           = "goacc_map_present({var})"
 class Acc2HipGccRT(acc.AccBackendBase):
     def _create_mappings(self,parse_result,prefix=",mappings="):
         mappings=[]
-        for clause in translator.find_all(parse_result,translator.TTAccMappingClause):
+        for clause in translator.find_all(parse_result,translator.tree.TTAccMappingClause):
             if clause.kind == "present":
                 mappings += [HIP_GCC_RT_MAP_PRESENT.format(var=expr) for expr in clause.var_expressions()]
             elif clause.kind == "create":
@@ -73,7 +76,7 @@ class Acc2HipGccRT(acc.AccBackendBase):
         else:
             return ""
     def _handle_async(self,parse_result,prefix=",asyncr="):
-        clause = translator.find_first(parse_result,translator.TTAccClauseAsync)
+        clause = translator.find_first(parse_result,translator.tree.TTAccClauseAsync)
         if clause != None:
             value = clause.expression()
             if str(value) == str(CLAUSE_VALUE_NOT_SPECIFIED):
@@ -83,7 +86,7 @@ class Acc2HipGccRT(acc.AccBackendBase):
         else:
             return ""
     def _handle_wait(self,parse_result,prefix=",wait=",wrap_in_brackets=True):
-        clause = translator.find_first(parse_result,translator.TTAccClauseWait)
+        clause = translator.find_first(parse_result,translator.tree.TTAccClauseWait)
         if clause != None:
             result = ",".join(clause.expressions())
             if wrap_in_brackets:
@@ -92,7 +95,7 @@ class Acc2HipGccRT(acc.AccBackendBase):
         else:
             return ""
     def _handle_device(self,parse_result):
-        clause = translator.find_first(parse_result,translator.TTAccClauseDevice)
+        clause = translator.find_first(parse_result,translator.tree.TTAccClauseDevice)
         if clause != None:
             result = ",".join(clause.expressions())
             if wrap_in_brackets:
@@ -101,7 +104,7 @@ class Acc2HipGccRT(acc.AccBackendBase):
         else:
             return ""
     def _handle_if(self,parse_result):
-        clause = translator.find_first(parse_result,translator.TTAccClauseIf)
+        clause = translator.find_first(parse_result,translator.tree.TTAccClauseIf)
         if clause != None:
             return clause.condition()
         else:
@@ -110,38 +113,38 @@ class Acc2HipGccRT(acc.AccBackendBase):
         f_snippet = joined_statements
         result = ""
         try:
-           parse_result = translator.acc_host_directive.parseString(f_snippet)[0]
+           parse_result = translator.tree.grammar.acc_host_directive.parseString(f_snippet)[0]
            #
-           if type(parse_result) in [translator.TTAccData,\
-                   translator.TTAccParallel,translator.TTAccParallelLoop,
-                   translator.TTAccKernels,translator.TTAccKernelsLoop]:
+           if type(parse_result) in [translator.tree.TTAccData,\
+                   translator.tree.TTAccParallel,translator.tree.TTAccParallelLoop,
+                   translator.tree.TTAccKernels,translator.tree.TTAccKernelsLoop]:
               result = HIP_GCC_RT_GOACC_DATA_START.format(\
                 device   = "acc_device_default",\
                 mappings = self._create_mappings(parse_result),\
                 asyncr    = self._handle_async(parse_result))
-           elif type(parse_result) in [translator.TTAccEnterData,translator.TTAccExitData]: 
+           elif type(parse_result) in [translator.tree.TTAccEnterData,translator.tree.TTAccExitData]: 
               result = HIP_GCC_RT_GOACC_ENTER_EXIT_DATA.format(\
                 device   = "acc_device_default",\
                 mappings = self._create_mappings(parse_result),\
                 asyncr    = self._handle_async(parse_result),\
                 wait     = self._handle_wait(parse_result))
-           elif type(parse_result) is translator.TTAccEndData: 
+           elif type(parse_result) is translator.tree.TTAccEndData: 
               result = HIP_GCC_RT_GOACC_DATA_END
-           elif type(parse_result) is translator.TTAccWait:
+           elif type(parse_result) is translator.tree.TTAccWait:
               arg   = self._handle_wait(parse_result,"",False)
               asyncr = self._handle_async(parse_result)
               result = HIP_GCC_RT_ACC_WAIT_MAP[len(arg)][len(asyncr)].format(\
                 arg=arg,asyncr=asyncr)
               pass
-           elif type(parse_result) is translator.TTAccUpdate: 
+           elif type(parse_result) is translator.tree.TTAccUpdate: 
               host   = self._handle_self(parse_result)
               device = self._handle_device(parse_result) 
               asyncr  = self._handle_async(parse_result,"")
               result = HIP_GCC_RT_ACC_UPDATE_MAP[len(host)][len(asyncr)].format(\
                 arg=arg,asyncr=asyncr)
-           elif type(parse_result) is translator.TTAccRoutine: 
+           elif type(parse_result) is translator.tree.TTAccRoutine: 
               pass
-           elif type(parse_result) is translator.TTAccDeclare:
+           elif type(parse_result) is translator.tree.TTAccDeclare:
               pass
            else:
               print("failed: "+f_snippet) #TODO
@@ -170,7 +173,7 @@ class AccLoopNest2HipGccRT(Acc2HipGccRT):
 
         # wrap in if-then-else-endif if necessary
         f_snippet = joined_statements
-        parse_result = translator.acc_host_directive.parseString(f_snippet)[0]
+        parse_result = translator.tree.grammar.acc_host_directive.parseString(f_snippet)[0]
         condition = self._handle_if(parse_result)
         if len(condition):
             result = "if ( {condition} ) then\n{result}\nelse\n {original}\n endif".format(\

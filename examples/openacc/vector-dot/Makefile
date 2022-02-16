@@ -6,11 +6,11 @@ TEST_NAME = $(TEST_SRC:.f90=)
 .PHONY: build.hip build.omp codegen.hip codegen.omp clean
 
 codegen.hip:
-	gpufort -w $(TEST_SRC) -E hip-gpufort-rt --config-file options.py.in
+	gpufort $(TEST_SRC) --wrap --dest hip-gpufort-rt --config config.py
 codegen.hip-gcc:
-	gpufort -w $(TEST_SRC) -E hip-gcc-rt --config-file options.py.in
+	gpufort $(TEST_SRC) --wrap --dest hip-gcc-rt --config config.py
 codegen.omp:
-	gpufort -w $(TEST_SRC) -E omp --config-file options.py.in
+	gpufort $(TEST_SRC) --wrap --dest omp --config config.py
 build.hip: codegen.hip
 	$(HIPCC) $(HIPCC_CFLAGS) -c $(TEST_SRC)-fort2hip.hip.cpp
 	$(HIPFC) $(TEST_SRC)-gpufort.f08 -o $(TEST_NAME) $(TEST_SRC)-fort2hip.hip.o $(CFLAGS)

@@ -5,11 +5,12 @@
 from .cuda_enums import *
 from .cuda_libs import *
 
-R_ARITH_OPERATOR=["**"]
-L_ARITH_OPERATOR="+ - * /".split(" ")
-COMP_OPERATOR_LOWER="<= >= == /= < > .eq. .ne. .lt. .gt. .le. .ge. .and. .or. .xor. .and. .or. .not. .eqv. .neqv.".split(" ") # can be uppercase too!
+R_ARITH_OPERATOR = ["**"]
+L_ARITH_OPERATOR = "+ - * /".split(" ")
+COMP_OPERATOR_LOWER = "<= >= == /= < > .eq. .ne. .lt. .gt. .le. .ge. .and. .or. .xor. .and. .or. .not. .eqv. .neqv.".split(
+    " ") # can be uppercase too!
 
-F77_KEYWORDS="""assign
+F77_KEYWORDS = """assign
 backspace
 block data
 call
@@ -50,7 +51,7 @@ subroutine
 then
 write""".splitlines()
 
-F90_KEYWORDS="""allocatable
+F90_KEYWORDS = """allocatable
 allocate
 case
 contains
@@ -80,11 +81,11 @@ use
 while
 where""".splitlines() + F77_KEYWORDS
 
-F95_KEYWORDS="""elemental
+F95_KEYWORDS = """elemental
 forall
 pure""".splitlines() + F90_KEYWORDS
 
-F03_KEYWORDS="""abstract
+F03_KEYWORDS = """abstract
 associate
 asynchronous
 bind
@@ -105,7 +106,7 @@ value
 volatile
 wait""".splitlines() + F95_KEYWORDS
 
-F08_KEYWORDS="""block
+F08_KEYWORDS = """block
 codimension
 do concurrent
 contiguous
@@ -118,9 +119,10 @@ sync memory
 lock
 unlock""".splitlines() + F03_KEYWORDS
 
-FORTRAN_VARIABLE_QUALIFIERS="allocatable pointer private public external parameter".split(" ")
+FORTRAN_VARIABLE_QUALIFIERS = "allocatable pointer private public external parameter".split(
+    " ")
 
-FORTRAN_INTRINSICS="""abs
+FORTRAN_INTRINSICS = """abs
 aimag
 aint
 anint
@@ -201,17 +203,17 @@ minloc
 minval
 product
 sum""".splitlines()
-FORTRAN_INTRINSICS += ["ubound","lbound"]
-FORTRAN_INTRINSICS += ["amax1","amin1","float","nint"]
+FORTRAN_INTRINSICS += ["ubound", "lbound"]
+FORTRAN_INTRINSICS += ["amax1", "amin1", "float", "nint"]
 
 # Host modules
-HOST_MODULES="""cudafor
+HOST_MODULES = """cudafor
 cublas
 cufft
 cusparse""".splitlines()
 
 # Device Management
-HOST_DEVICE_MANAGEMENT="""cudaChooseDevice
+HOST_DEVICE_MANAGEMENT = """cudaChooseDevice
 cudaDeviceGetAttribute
 cudaDeviceGetCacheConfig
 cudaDeviceGetLimit
@@ -230,16 +232,16 @@ cudaSetDeviceFlags
 cudaSetValidDevices""".splitlines()
 
 # Thread Management
-HOST_THREAD_MANAGEMENT="""cudaThreadExit
+HOST_THREAD_MANAGEMENT = """cudaThreadExit
 cudaThreadSynchronize""".splitlines()
 
 # Error Handling
-HOST_ERROR_HANDLING="""cudaGetErrorString
+HOST_ERROR_HANDLING = """cudaGetErrorString
 cudaGetLastError
 cudaPeekAtLastError""".splitlines()
 
 # Stream Management
-HOST_STREAM_MANAGEMENT="""cudaforGetDefaultStream
+HOST_STREAM_MANAGEMENT = """cudaforGetDefaultStream
 cudaforSetDefaultStream
 cudaStreamAttachMemAsync
 cudaStreamCreate
@@ -252,7 +254,7 @@ cudaStreamSynchronize
 cudaStreamWaitEvent""".splitlines()
 
 # Event Management
-HOST_EVENT_MANAGEMENT="""cudaEventCreate
+HOST_EVENT_MANAGEMENT = """cudaEventCreate
 cudaEventCreateWithFlags
 cudaEventDestroy
 cudaEventElapsedTime
@@ -261,7 +263,7 @@ cudaEventRecord
 cudaEventSynchronize""".splitlines()
 
 # Execution Control
-HOST_EXECUTION_CONTROL="""cudaFuncGetAttributes
+HOST_EXECUTION_CONTROL = """cudaFuncGetAttributes
 cudaFuncSetAttribute
 cudaFuncSetCacheConfig
 cudaFuncSetSharedMemConfig
@@ -269,11 +271,11 @@ cudaSetDoubleForDevice
 cudaSetDoubleForHost""".splitlines()
 
 # Occupancy
-HOST_OCCUPANCY="""cudaOccupancyMaxActiveBlocksPerMultiprocessor
+HOST_OCCUPANCY = """cudaOccupancyMaxActiveBlocksPerMultiprocessor
 cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags""".splitlines()
 
 # Memory Management
-HOST_MEMORY_MANAGEMENT="""cudaFree
+HOST_MEMORY_MANAGEMENT = """cudaFree
 cudaFreeArray
 cudaFreeHost
 cudaGetSymbolAddress
@@ -316,31 +318,31 @@ cudaMemset2D
 cudaMemset3D""".splitlines()
 
 # Unified Addressing and Peer Device Memory Access
-HOST_UNIFIED_ADDRESSING_AND_PEER_DEVICE_MEMORY_ACCESS="""cudaDeviceCanAccessPeer
+HOST_UNIFIED_ADDRESSING_AND_PEER_DEVICE_MEMORY_ACCESS = """cudaDeviceCanAccessPeer
 cudaDeviceDisablePeerAccess
 cudaDeviceEnablePeerAccess
 cudaPointerGetAttributes""".splitlines()
 
 # Version Management
-HOST_VERSION_MANAGEMENT="""cudaDriverGetVersion
+HOST_VERSION_MANAGEMENT = """cudaDriverGetVersion
 cudaRuntimeGetVersion""".splitlines()
 
-ALL_HOST_ROUTINES=HOST_DEVICE_MANAGEMENT + HOST_THREAD_MANAGEMENT + HOST_ERROR_HANDLING + HOST_STREAM_MANAGEMENT + HOST_EVENT_MANAGEMENT + HOST_EXECUTION_CONTROL + HOST_OCCUPANCY + HOST_MEMORY_MANAGEMENT + HOST_UNIFIED_ADDRESSING_AND_PEER_DEVICE_MEMORY_ACCESS + HOST_VERSION_MANAGEMENT + FORTRAN_INTRINSICS
+ALL_HOST_ROUTINES = HOST_DEVICE_MANAGEMENT + HOST_THREAD_MANAGEMENT + HOST_ERROR_HANDLING + HOST_STREAM_MANAGEMENT + HOST_EVENT_MANAGEMENT + HOST_EXECUTION_CONTROL + HOST_OCCUPANCY + HOST_MEMORY_MANAGEMENT + HOST_UNIFIED_ADDRESSING_AND_PEER_DEVICE_MEMORY_ACCESS + HOST_VERSION_MANAGEMENT + FORTRAN_INTRINSICS
 
-FUNCTION_QUALIFIERS="""host
+FUNCTION_QUALIFIERS = """host
 global
 device
 host,device
 grid_global""".splitlines()
 
-DEVICE_VARIABLE_QUALIFIERS="""device
+DEVICE_VARIABLE_QUALIFIERS = """device
 managed
 constant
 shared
 pinned
 texture""".splitlines()
 
-DEVICE_PREDEFINED_VARIABLES="""threadidx
+DEVICE_PREDEFINED_VARIABLES = """threadidx
 blockdim
 blockidx
 griddim
@@ -359,7 +361,7 @@ griddim%z
 warpsize""".splitlines()
 
 # Synchronisation functions
-DEVICE_SYNCHRONISATION_FUNCTIONS="""syncthreads
+DEVICE_SYNCHRONISATION_FUNCTIONS = """syncthreads
 syncthreads_count
 syncthreads_and
 syncthread_or
@@ -369,7 +371,7 @@ threadfence_block
 threadfence_system""".splitlines()
 
 # Atomics
-DEVICE_ATOMICS="""atomicadd
+DEVICE_ATOMICS = """atomicadd
 atomicsub
 atomicmax
 atomicmin
@@ -382,7 +384,7 @@ atomicdec
 atomiccas""".splitlines()
 
 # Warp-Vote operations
-DEVICE_WARP_VOTE_OPERATIONS="""allthreads
+DEVICE_WARP_VOTE_OPERATIONS = """allthreads
 anythread
 ballot
 activemask
@@ -393,13 +395,13 @@ match_all_sync
 match_any_sync""".splitlines()
 
 # Shuffle functions
-DEVICE_SHUFFLE_FUNCTIONS="""__shfl
+DEVICE_SHUFFLE_FUNCTIONS = """__shfl
 __shfl_up
 __shfl_down
 __shfl_xor""".splitlines()
 
 # Device routines
-DEVICE_ROUTINES="""__brev
+DEVICE_ROUTINES = """__brev
 __brevll
 clock
 clock64
@@ -549,7 +551,7 @@ __umulhi
 __usa""".splitlines()
 
 # libm routines
-LIBM_ROUTINES="""cbrt
+LIBM_ROUTINES = """cbrt
 cbrtf
 ceil
 ceilf
@@ -619,40 +621,43 @@ ALL_DEVICE_ROUTINES = \
    FORTRAN_INTRINSICS +\
    LIBM_ROUTINES
 
-CUDA_FORTRAN_KEYWORDS=F08_KEYWORDS+DEVICE_VARIABLE_QUALIFIERS+FUNCTION_QUALIFIERS
-CUDA_FORTRAN_VARIABLE_QUALIFIERS=FORTRAN_VARIABLE_QUALIFIERS + DEVICE_VARIABLE_QUALIFIERS
+CUDA_FORTRAN_KEYWORDS = F08_KEYWORDS + DEVICE_VARIABLE_QUALIFIERS + FUNCTION_QUALIFIERS
+CUDA_FORTRAN_VARIABLE_QUALIFIERS = FORTRAN_VARIABLE_QUALIFIERS + DEVICE_VARIABLE_QUALIFIERS
 
-R_ARITH_OPERATOR_STR=" ".join(R_ARITH_OPERATOR)
-L_ARITH_OPERATOR_STR=" ".join(L_ARITH_OPERATOR)
-COMP_OPERATOR_LOWER_STR=" ".join(COMP_OPERATOR_LOWER)
-F77_KEYWORDS_STR=" ".join(F77_KEYWORDS)
-F90_KEYWORDS_STR=" ".join(F90_KEYWORDS)
-F95_KEYWORDS_STR=" ".join(F95_KEYWORDS)
-F03_KEYWORDS_STR=" ".join(F03_KEYWORDS)
-F08_KEYWORDS_STR=" ".join(F08_KEYWORDS)
-FORTRAN_VARIABLE_QUALIFIERS_STR=" ".join(FORTRAN_VARIABLE_QUALIFIERS)
-CUDA_FORTRAN_KEYWORDS_STR=" ".join(CUDA_FORTRAN_KEYWORDS)
-CUDA_FORTRAN_VARIABLE_QUALIFIERS_STR=" ".join(CUDA_FORTRAN_VARIABLE_QUALIFIERS)
-HOST_MODULES_STR=" ".join(HOST_MODULES)
-HOST_DEVICE_MANAGEMENT_STR=" ".join(HOST_DEVICE_MANAGEMENT)
-HOST_THREAD_MANAGEMENT_STR=" ".join(HOST_THREAD_MANAGEMENT)
-HOST_ERROR_HANDLING_STR=" ".join(HOST_ERROR_HANDLING)
-HOST_STREAM_MANAGEMENT_STR=" ".join(HOST_STREAM_MANAGEMENT)
-HOST_EVENT_MANAGEMENT_STR=" ".join(HOST_EVENT_MANAGEMENT)
-HOST_EXECUTION_CONTROL_STR=" ".join(HOST_EXECUTION_CONTROL)
-HOST_OCCUPANCY_STR=" ".join(HOST_OCCUPANCY)
-HOST_MEMORY_MANAGEMENT_STR=" ".join(HOST_MEMORY_MANAGEMENT)
-HOST_UNIFIED_ADDRESSING_AND_PEER_DEVICE_MEMORY_ACCESS_STR=" ".join(HOST_UNIFIED_ADDRESSING_AND_PEER_DEVICE_MEMORY_ACCESS)
-HOST_VERSION_MANAGEMENT_STR=" ".join(HOST_VERSION_MANAGEMENT)
-ALL_HOST_ROUTINES_STR=" ".join(ALL_HOST_ROUTINES)
-FUNCTION_QUALIFIERS_STR=" ".join(FUNCTION_QUALIFIERS)
-DEVICE_VARIABLE_QUALIFIERS_STR=" ".join(DEVICE_VARIABLE_QUALIFIERS)
-DEVICE_PREDEFINED_VARIABLES_STR=" ".join(DEVICE_PREDEFINED_VARIABLES)
-FORTRAN_INTRINSICS_STR=" ".join(FORTRAN_INTRINSICS)
-DEVICE_SYNCHRONISATION_FUNCTIONS_STR=" ".join(DEVICE_SYNCHRONISATION_FUNCTIONS)
-DEVICE_ATOMICS_STR=" ".join(DEVICE_ATOMICS)
-DEVICE_WARP_VOTE_OPERATIONS_STR=" ".join(DEVICE_WARP_VOTE_OPERATIONS)
-DEVICE_SHUFFLE_FUNCTIONS_STR=" ".join(DEVICE_SHUFFLE_FUNCTIONS)
-DEVICE_ROUTINES_STR=" ".join(DEVICE_ROUTINES)
-ALL_DEVICE_ROUTINES_STR=" ".join(ALL_DEVICE_ROUTINES)
-LIBM_ROUTINES_STR=" ".join(LIBM_ROUTINES)
+R_ARITH_OPERATOR_STR = " ".join(R_ARITH_OPERATOR)
+L_ARITH_OPERATOR_STR = " ".join(L_ARITH_OPERATOR)
+COMP_OPERATOR_LOWER_STR = " ".join(COMP_OPERATOR_LOWER)
+F77_KEYWORDS_STR = " ".join(F77_KEYWORDS)
+F90_KEYWORDS_STR = " ".join(F90_KEYWORDS)
+F95_KEYWORDS_STR = " ".join(F95_KEYWORDS)
+F03_KEYWORDS_STR = " ".join(F03_KEYWORDS)
+F08_KEYWORDS_STR = " ".join(F08_KEYWORDS)
+FORTRAN_VARIABLE_QUALIFIERS_STR = " ".join(FORTRAN_VARIABLE_QUALIFIERS)
+CUDA_FORTRAN_KEYWORDS_STR = " ".join(CUDA_FORTRAN_KEYWORDS)
+CUDA_FORTRAN_VARIABLE_QUALIFIERS_STR = " ".join(
+    CUDA_FORTRAN_VARIABLE_QUALIFIERS)
+HOST_MODULES_STR = " ".join(HOST_MODULES)
+HOST_DEVICE_MANAGEMENT_STR = " ".join(HOST_DEVICE_MANAGEMENT)
+HOST_THREAD_MANAGEMENT_STR = " ".join(HOST_THREAD_MANAGEMENT)
+HOST_ERROR_HANDLING_STR = " ".join(HOST_ERROR_HANDLING)
+HOST_STREAM_MANAGEMENT_STR = " ".join(HOST_STREAM_MANAGEMENT)
+HOST_EVENT_MANAGEMENT_STR = " ".join(HOST_EVENT_MANAGEMENT)
+HOST_EXECUTION_CONTROL_STR = " ".join(HOST_EXECUTION_CONTROL)
+HOST_OCCUPANCY_STR = " ".join(HOST_OCCUPANCY)
+HOST_MEMORY_MANAGEMENT_STR = " ".join(HOST_MEMORY_MANAGEMENT)
+HOST_UNIFIED_ADDRESSING_AND_PEER_DEVICE_MEMORY_ACCESS_STR = " ".join(
+    HOST_UNIFIED_ADDRESSING_AND_PEER_DEVICE_MEMORY_ACCESS)
+HOST_VERSION_MANAGEMENT_STR = " ".join(HOST_VERSION_MANAGEMENT)
+ALL_HOST_ROUTINES_STR = " ".join(ALL_HOST_ROUTINES)
+FUNCTION_QUALIFIERS_STR = " ".join(FUNCTION_QUALIFIERS)
+DEVICE_VARIABLE_QUALIFIERS_STR = " ".join(DEVICE_VARIABLE_QUALIFIERS)
+DEVICE_PREDEFINED_VARIABLES_STR = " ".join(DEVICE_PREDEFINED_VARIABLES)
+FORTRAN_INTRINSICS_STR = " ".join(FORTRAN_INTRINSICS)
+DEVICE_SYNCHRONISATION_FUNCTIONS_STR = " ".join(
+    DEVICE_SYNCHRONISATION_FUNCTIONS)
+DEVICE_ATOMICS_STR = " ".join(DEVICE_ATOMICS)
+DEVICE_WARP_VOTE_OPERATIONS_STR = " ".join(DEVICE_WARP_VOTE_OPERATIONS)
+DEVICE_SHUFFLE_FUNCTIONS_STR = " ".join(DEVICE_SHUFFLE_FUNCTIONS)
+DEVICE_ROUTINES_STR = " ".join(DEVICE_ROUTINES)
+ALL_DEVICE_ROUTINES_STR = " ".join(ALL_DEVICE_ROUTINES)
+LIBM_ROUTINES_STR = " ".join(LIBM_ROUTINES)

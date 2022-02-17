@@ -26,27 +26,32 @@ else:
 # - try using enablePackrat()
 # - use MatchFirst(|) instead of Or(^)
 ParserElement.setDefaultWhitespaceChars("\r\n\t &;")
-ParserElement.enablePackrat() 
+ParserElement.enablePackrat()
+
 
 # helper functions
-def makeCaselessLiteral(commaSeparatedList,suppress=False,forceCaseLess=False):
-     if forceCaseLess:
+def makeCaselessLiteral(commaSeparatedList,
+                        suppress=False,
+                        forceCaseLess=False):
+    if forceCaseLess:
         result1 = map(CaselessLiteral, commaSeparatedList.split(","))
-     else: # can be overwritten via options
+    else: # can be overwritten via options
         result1 = map(CASELESS_LITERAL, commaSeparatedList.split(","))
-     if suppress:
+    if suppress:
         result2 = []
         for element in result1:
-             result2.append(element.suppress())
+            result2.append(element.suppress())
         return result2
-     else:
+    else:
         return result1
 
-def separatedSequence(tokens,separator=Suppress(",")):
+
+def separatedSequence(tokens, separator=Suppress(",")):
     result = tokens[0]
     for token in tokens[1:]:
-         result += separator + token
+        result += separator + token
     return result
+
 
 exec(open(os.path.join(GRAMMAR_DIR, "grammar_f03.py.in")).read())
 exec(open(os.path.join(GRAMMAR_DIR, "grammar_directives.py.in")).read())

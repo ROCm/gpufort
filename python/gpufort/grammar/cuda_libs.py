@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-CUDA_MATH_LIB_FUNCTIONS="""cublasCreate
+CUDA_MATH_LIB_FUNCTIONS = """cublasCreate
 cublasDestroy
 cublasSetStream
 cublasGetStream

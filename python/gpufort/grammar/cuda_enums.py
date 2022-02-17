@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 # Semi-auto generated; list may not be complete
-CUDA_RUNTIME_ENUMS="""cudaRoundNearest
+CUDA_RUNTIME_ENUMS = """cudaRoundNearest
 cudaRoundZero
 cudaRoundPosInf
 cudaRoundMinInf
@@ -373,7 +373,7 @@ cudaFilterModeLinear
 cudaReadModeElementType
 cudaReadModeNormalizedFloat""".splitlines()
 
-CUDA_LIB_ENUMS="""CUBLAS_STATUS_SUCCESS
+CUDA_LIB_ENUMS = """CUBLAS_STATUS_SUCCESS
 CUBLAS_STATUS_NOT_INITIALIZED
 CUBLAS_STATUS_ALLOC_FAILED
 CUBLAS_STATUS_INVALID_VALUE

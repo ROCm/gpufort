@@ -11,14 +11,14 @@ from . import hipderivedtypegen
 from . import hipcodegen
 
 __all__ = [
-          "create_kernel_generator_from_loop_nest",
-          "create_derived_type_generator",
-          "create_code_generator",
-          ]
+    "create_kernel_generator_from_loop_nest",
+    "create_derived_type_generator",
+    "create_code_generator",
+]
+
 
 def create_kernel_generator_from_loop_nest(declaration_list_snippet,
-                                           loop_nest_snippet,
-                                           **kwargs):
+                                           loop_nest_snippet, **kwargs):
     r"""Create HIP kernel generator from a declaration list snippet and
     the snippet of an directive-annotated loop nest.
     :return a code generator that can generate a HIP kernel
@@ -39,19 +39,20 @@ def create_kernel_generator_from_loop_nest(declaration_list_snippet,
     * *kernel_hash* (`str`):
         Hash code encoding the significant kernel content (expressions and directives).
     """
-    preproc_options    = util.kwargs.get_value("preproc_options","",**kwargs)
-    scope              = indexer.scope.create_scope_from_declaration_list(declaration_list_snippet,
-                                                                    preproc_options)
-    linemaps           = linemapper.read_lines(loop_nest_snippet.splitlines(keepends=True),
-                                               preproc_options)
+    preproc_options = util.kwargs.get_value("preproc_options", "", **kwargs)
+    scope = indexer.scope.create_scope_from_declaration_list(
+        declaration_list_snippet, preproc_options)
+    linemaps = linemapper.read_lines(
+        loop_nest_snippet.splitlines(keepends=True), preproc_options)
     fortran_statements = linemapper.get_statement_bodies(linemaps)
-    ttloopnest         = translator.parse_loop_kernel(fortran_statements,
-                                                      scope)
+    ttloopnest = translator.parse_loop_kernel(fortran_statements, scope)
 
-    return hipkernelgen.HipKernelGenerator4LoopNest(ttloopnest,
-                                                 scope,
-                                                 fortran_snippet="\n".join(fortran_statements),
-                                                 **kwargs)
+    return hipkernelgen.HipKernelGenerator4LoopNest(
+        ttloopnest,
+        scope,
+        fortran_snippet="\n".join(fortran_statements),
+        **kwargs)
+
 
 def create_derived_type_generator(declaration_list_snippet,
                                   used_modules=[],
@@ -67,10 +68,11 @@ def create_derived_type_generator(declaration_list_snippet,
     :param list used_modules: List of dicts with keys 'name' (str) and 'only' (list of str)
     :param str preproc_options: C-style preprocessor options
     """
-    scope = indexer.scope.create_scope_from_declaration_list(declaration_list_snippet,
-                                                        preproc_options)
+    scope = indexer.scope.create_scope_from_declaration_list(
+        declaration_list_snippet, preproc_options)
     return hipderivedtypegen.HipDerivedTypeGenerator(scope["types"],
                                                      used_modules)
+
 
 def create_code_generator(**kwargs):
     r"""Create HIP code generator from an input file and its dependencies.
@@ -99,6 +101,6 @@ def create_code_generator(**kwargs):
         NOTE: It is assumed that these files have not been indexed yet.
     * *index* (``list``):
         Index records created via GPUFORT's indexer component.
-    """ 
+    """
     stree, index, linemaps = scanner.parse_file(**kwargs)
-    return hipcodegen.HipCodeGenerator(stree,index,**kwargs), linemaps
+    return hipcodegen.HipCodeGenerator(stree, index, **kwargs), linemaps

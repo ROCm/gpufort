@@ -1,0 +1,41 @@
+Driving: gfortran -v -fopenacc -cpp parallel-loop-1.f90 -o parallel-loop-1 -l gfortran -l m -shared-libgcc
+Using built-in specs.
+COLLECT_GCC=gfortran
+COLLECT_LTO_WRAPPER=/opt/rh/gcc-toolset-10/root/usr/libexec/gcc/x86_64-redhat-linux/10/lto-wrapper
+Target: x86_64-redhat-linux
+Configured with: ../configure --enable-bootstrap --enable-languages=c,c++,fortran,lto --prefix=/opt/rh/gcc-toolset-10/root/usr --mandir=/opt/rh/gcc-toolset-10/root/usr/share/man --infodir=/opt/rh/gcc-toolset-10/root/usr/share/info --with-bugurl=http://bugzilla.redhat.com/bugzilla --enable-shared --enable-threads=posix --enable-checking=release --enable-multilib --with-system-zlib --enable-__cxa_atexit --disable-libunwind-exceptions --enable-gnu-unique-object --enable-linker-build-id --with-gcc-major-version-only --with-linker-hash-style=gnu --enable-plugin --enable-initfini-array --with-isl=/builddir/build/BUILD/gcc-10.2.1-20201112/obj-x86_64-redhat-linux/isl-install --disable-libmpx --enable-gnu-indirect-function --with-tune=generic --with-arch_32=x86-64 --build=x86_64-redhat-linux
+Thread model: posix
+Supported LTO compression algorithms: zlib zstd
+gcc version 10.2.1 20201112 (Red Hat 10.2.1-8) (GCC) 
+COLLECT_GCC_OPTIONS='-v' '-fopenacc' '-cpp' '-o' 'parallel-loop-1' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-pthread'
+ /opt/rh/gcc-toolset-10/root/usr/libexec/gcc/x86_64-redhat-linux/10/f951 parallel-loop-1.f90 -cpp=/tmp/ccf7X1i5.f90 -quiet -v -D_REENTRANT parallel-loop-1.f90 -quiet -dumpbase parallel-loop-1.f90 -mtune=generic -march=x86-64 -auxbase parallel-loop-1 -version -fopenacc -fintrinsic-modules-path /opt/rh/gcc-toolset-10/root/usr/lib/gcc/x86_64-redhat-linux/10/finclude -fpre-include=/usr/include/finclude/math-vector-fortran.h -o /tmp/ccGu5qG4.s
+GNU Fortran (GCC) version 10.2.1 20201112 (Red Hat 10.2.1-8) (x86_64-redhat-linux)
+	compiled by GNU C version 10.2.1 20201112 (Red Hat 10.2.1-8), GMP version 6.1.2, MPFR version 3.1.6-p2, MPC version 1.1.0, isl version isl-0.16.1-GMP
+
+GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+ignoring nonexistent directory "/opt/rh/gcc-toolset-10/root/usr/lib/gcc/x86_64-redhat-linux/10/include-fixed"
+ignoring nonexistent directory "/opt/rh/gcc-toolset-10/root/usr/lib/gcc/x86_64-redhat-linux/10/../../../../x86_64-redhat-linux/include"
+#include "..." search starts here:
+#include <...> search starts here:
+ /opt/rh/gcc-toolset-10/root/usr/lib/gcc/x86_64-redhat-linux/10/finclude
+ /opt/rh/gcc-toolset-10/root/usr/lib/gcc/x86_64-redhat-linux/10/include
+ /usr/local/include
+ /opt/rh/gcc-toolset-10/root/usr/include
+ /usr/include
+End of search list.
+GNU Fortran2008 (GCC) version 10.2.1 20201112 (Red Hat 10.2.1-8) (x86_64-redhat-linux)
+	compiled by GNU C version 10.2.1 20201112 (Red Hat 10.2.1-8), GMP version 6.1.2, MPFR version 3.1.6-p2, MPC version 1.1.0, isl version isl-0.16.1-GMP
+
+GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+COLLECT_GCC_OPTIONS='-v' '-fopenacc' '-cpp' '-o' 'parallel-loop-1' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-pthread'
+ as -v --64 -o /tmp/cc5dMgU7.o /tmp/ccGu5qG4.s
+GNU assembler version 2.30 (x86_64-redhat-linux) using BFD version version 2.30-93.el8
+Reading specs from /opt/rh/gcc-toolset-10/root/usr/lib/gcc/x86_64-redhat-linux/10/libgfortran.spec
+rename spec lib to liborig
+COLLECT_GCC_OPTIONS='-v' '-fopenacc' '-cpp' '-o' 'parallel-loop-1' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-pthread'
+COMPILER_PATH=/opt/rh/gcc-toolset-10/root/usr/libexec/gcc/x86_64-redhat-linux/10/:/opt/rh/gcc-toolset-10/root/usr/libexec/gcc/x86_64-redhat-linux/10/:/opt/rh/gcc-toolset-10/root/usr/libexec/gcc/x86_64-redhat-linux/:/opt/rh/gcc-toolset-10/root/usr/lib/gcc/x86_64-redhat-linux/10/:/opt/rh/gcc-toolset-10/root/usr/lib/gcc/x86_64-redhat-linux/
+LIBRARY_PATH=/opt/rh/gcc-toolset-10/root/usr/lib/gcc/x86_64-redhat-linux/10/:/opt/rh/gcc-toolset-10/root/usr/lib/gcc/x86_64-redhat-linux/10/../../../../lib64/:/lib/../lib64/:/usr/lib/../lib64/:/opt/rh/gcc-toolset-10/root/usr/lib/gcc/x86_64-redhat-linux/10/../../../:/lib/:/usr/lib/
+Reading specs from /opt/rh/gcc-toolset-10/root/usr/lib/gcc/x86_64-redhat-linux/10/libgomp.spec
+COLLECT_GCC_OPTIONS='-v' '-fopenacc' '-cpp' '-o' 'parallel-loop-1' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-pthread'
+ /opt/rh/gcc-toolset-10/root/usr/libexec/gcc/x86_64-redhat-linux/10/collect2 -plugin /opt/rh/gcc-toolset-10/root/usr/libexec/gcc/x86_64-redhat-linux/10/liblto_plugin.so -plugin-opt=/opt/rh/gcc-toolset-10/root/usr/libexec/gcc/x86_64-redhat-linux/10/lto-wrapper -plugin-opt=-fresolution=/tmp/ccInzTB7.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lquadmath -plugin-opt=-pass-through=-lm -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lpthread -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --no-add-needed --eh-frame-hdr --hash-style=gnu -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o parallel-loop-1 /lib/../lib64/crt1.o /lib/../lib64/crti.o /opt/rh/gcc-toolset-10/root/usr/lib/gcc/x86_64-redhat-linux/10/crtbegin.o -L/opt/rh/gcc-toolset-10/root/usr/lib/gcc/x86_64-redhat-linux/10 -L/opt/rh/gcc-toolset-10/root/usr/lib/gcc/x86_64-redhat-linux/10/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/opt/rh/gcc-toolset-10/root/usr/lib/gcc/x86_64-redhat-linux/10/../../.. /tmp/cc5dMgU7.o -lgfortran -lm -lgomp -lgcc_s -lgcc -lquadmath -lm -lgcc_s -lgcc -lpthread -lc -lgcc_s -lgcc /opt/rh/gcc-toolset-10/root/usr/lib/gcc/x86_64-redhat-linux/10/crtend.o /lib/../lib64/crtn.o
+COLLECT_GCC_OPTIONS='-v' '-fopenacc' '-cpp' '-o' 'parallel-loop-1' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-pthread'

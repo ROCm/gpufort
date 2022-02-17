@@ -6,16 +6,17 @@ import pprint
 import jinja2
 
 from gpufort import util
-        
-LOADER = jinja2.FileSystemLoader(os.path.realpath(os.path.join(os.path.dirname(__file__),
-                                                               "templates")))
+
+LOADER = jinja2.FileSystemLoader(
+    os.path.realpath(os.path.join(os.path.dirname(__file__), "templates")))
 ENV = jinja2.Environment(loader=LOADER,
                          trim_blocks=True,
                          lstrip_blocks=True,
                          undefined=jinja2.StrictUndefined)
 TEMPLATES = {}
-    
-def generate_code(template_path,context={}):
+
+
+def generate_code(template_path, context={}):
     global ENV
     global TEMPLATES
     if template_path in TEMPLATES:
@@ -26,12 +27,16 @@ def generate_code(template_path,context={}):
     try:
         return template.render(context)
     except Exception as e:
-        util.logging.log_error("render","generate_code","could not render template '%s'" % template_path)
+        util.logging.log_error(
+            "render", "generate_code",
+            "could not render template '%s'" % template_path)
         raise e
 
-def generate_file(output_path,template_path,context={}):
+
+def generate_file(output_path, template_path, context={}):
     with open(output_path, "w") as output:
-        output.write(generate_code(template_path,context))
+        output.write(generate_code(template_path, context))
+
 
 parent_dir = os.path.dirname(__file__)
-exec(open(os.path.join(parent_dir,"templates","render.py.in")).read())
+exec(open(os.path.join(parent_dir, "templates", "render.py.in")).read())

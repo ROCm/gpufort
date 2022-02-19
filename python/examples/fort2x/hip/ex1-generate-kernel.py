@@ -7,10 +7,10 @@ from gpufort import util
 from gpufort import fort2x
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
-util.logging.opts.verbose    = False
-util.logging.init_logging("log.log",LOG_FORMAT,"debug")
+util.logging.opts.verbose = False
+util.logging.init_logging("log.log", LOG_FORMAT, "debug")
 
-declaration_list= """\
+declaration_list = """\
 integer, parameter :: N = 1000, M=2000
 integer :: i,j
 integer(4) :: x(N), y(N), y_exact(N)
@@ -24,12 +24,11 @@ do j = 1, M
   y(i,j) = 2
 end do
 end do
-"""  
+"""
 
 #print(ttloopnest.c_str())
-kernelgen = fort2x.hip.create_kernel_generator_from_loop_nest(declaration_list,
-                                                                 annotated_loop_nest,
-                                                                 kernel_name="mykernel")
+kernelgen = fort2x.hip.create_kernel_generator_from_loop_nest(
+    declaration_list, annotated_loop_nest, kernel_name="mykernel")
 
 print("\n".join(kernelgen.render_gpu_kernel_cpp()))
 launcher = kernelgen.create_launcher_context(kind="hip",

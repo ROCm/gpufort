@@ -632,45 +632,6 @@ def _parse_file(linemaps, index):
     return current_node
 
 
-@util.logging.log_entry_and_exit(opts.log_prefix)
-def postprocess(stree, index, hip_module_suffix):
-    """
-    Add use statements as well as handles plus their creation and destruction for certain
-    math libraries.
-    """
-    if "hip" in opts.destination_dialect or len(
-            opts.kernels_to_convert_to_hip):
-        # insert use statements at appropriate point
-        def is_accelerated(child):
-            return isinstance(child,tree.STLoopNest) or\
-                   (type(child) is tree.STProcedure and child.is_kernel_subroutine())
-
-        print(stree)
-        for stmodule in stree.find_all(filter=lambda child: isinstance(
-                child, (tree.STModule, tree.STProgram)),
-                                       recursively=False):
-            module_name = stmodule.name
-            kernels = stmodule.find_all(filter=is_accelerated,
-                                        recursively=True)
-            for kernel in kernels:
-                if "hip" in opts.destination_dialect or\
-                  kernel.min_lineno() in kernels_to_convert_to_hip or\
-                  kernel.kernel_name() in kernels_to_convert_to_hip:
-                    stnode = kernel.parent.find_first(
-                        filter=lambda child: isinstance(
-                            child, (tree.STUseStatement, tree.STDeclaration,
-                                    tree.STContains, tree.STPlaceHolder)))
-                    assert not stnode is None
-                    indent = stnode.first_line_indent()
-                    stnode.add_to_prolog("{}use {}{}\n".format(
-                        indent, module_name, hip_module_suffix))
-
-    if "cuf" in opts.source_dialects:
-        tree.cuf.postprocess_tree_cuf(stree, index)
-    if "acc" in opts.source_dialects:
-        tree.acc.postprocess_tree_acc(stree, index)
-
-
 def parse_file(**kwargs):
     r"""Create scanner tree from file content.
     :param \*\*kwargs: See below.
@@ -740,4 +701,4 @@ def parse_file(**kwargs):
     return _parse_file(linemaps, index), index, linemaps
 
 
-__all__ = ["parse_file", "postprocess"]
+__all__ = ["parse_file"]

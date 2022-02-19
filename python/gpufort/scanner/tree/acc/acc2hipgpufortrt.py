@@ -3,7 +3,7 @@
 from gpufort import translator
 from gpufort import util
 from ... import opts
-from . import backends
+from . import accbackends
 
 ## DIRECTIVES
 # update
@@ -68,7 +68,7 @@ def add_implicit_region(stcontainer):
             indent=indent,region_kind="implicit_region=.true."))
 
 
-class Acc2HipGpufortRT(backends.AccBackendBase):
+class Acc2HipGpufortRT(accbackends.AccBackendBase):
     # clauses
     def _handle_async(self, queue=None, prefix=",asyncr="):
         """
@@ -351,8 +351,8 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
                 "\n") + "\n" + HIP_GPUFORT_RT_ACC_WAIT.format(
                     indent=indent, queue=queue, asyncr="")
         #if stloopkernel.is_parallel_loop_directive() or stloopkernel.is_kernels_loop_directive():
-        if stloopkernel.is_kernels_loop_directive(
-        ) or stloopkernel.is_parallel_loop_directive():
+        if (stloopkernel.is_kernels_loop_directive() or
+                stloopkernel.is_parallel_loop_directive()):
             result = result.rstrip(
                 "\n") + "\n" + HIP_GPUFORT_RT_ACC_EXIT_REGION.format(
                     indent=indent, region_kind="")
@@ -362,65 +362,6 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
             result = "if ( {condition} ) then\n{result}\nelse\n {original}\n endif".format(\
                     condition=condition, result=result.rstrip("\n"), original="".join(stloopkernel._lines).rstrip("\n"))
         return result, len(result)
-
-
-class Acc2HipGpufortRTPostprocess(backends.AccPostprocessBackendBase):
-
-    def run(self, stree, index):
-        """:param stree: the full scanner tree
-           :param staccdirectives: All acc directive tree accnodes."""
-
-        # TODO check if there is any acc used in the
-        # construct at all
-        # TODO handle directly via directives; only variables occuring
-        # in directives need to be available on device
-        containers = stree.find_all(\
-          lambda node: type(node) in [STProgram,STProcedure],
-          recursively=True)
-        for stcontainer in containers:
-            last_decl_list_node = stcontainer.last_entry_in_decl_list()
-            indent = last_decl_list_node.first_line_indent()
-            scope = scope.create_scope(index, stcontainer.tag())
-            scope_vars = scope["variables"]
-            local_var_names, dummy_arg_names = stcontainer.local_and_dummy_variable_names(
-                index)
-            # TODO also process type members
-            acc_present_calls = ""
-            temp_vars = []
-            implicit_region = False
-            for ivar in scope_vars:
-                host_var = ivar["name"]
-                dev_var = dev_var_name(host_var)
-                is_local_var = host_var in local_var_names
-                is_arg = host_var in dummy_arg_names
-                is_used_module_var = not is_local_var and not is_arg
-                is_allocatable = "allocatable" in ivar["qualifiers"]
-                is_pointer = "pointer" in ivar["qualifiers"]
-                if not is_allocatable:
-                    if not is_used_module_var:
-                        implicit_region = True
-                    module_var = ",module_var=.true." if is_used_module_var else ""
-                    if is_pointer:
-                        cond = "{indent}if (associated({var})) "
-                        acc_present_template = (
-                            cond + HIP_GPUFORT_RT_ACC_PRESENT.replace(
-                                "{indent}", ""))
-                    else:
-                        acc_present_template = HIP_GPUFORT_RT_ACC_PRESENT
-                    # find return and end, emit 1 new implicit region for all
-                    if ivar["declare_on_target"] in HIP_GPUFORT_RT_CLAUSES_OMP2ACC.keys(
-                    ):
-                        map_kind = HIP_GPUFORT_RT_CLAUSES_OMP2ACC[
-                            ivar["declare_on_target"]]
-                        acc_present_calls += acc_present_template.format(\
-                            indent=indent,var=host_var,asyncr="",\
-                            alloc=module_var+",or=gpufort_acc_event_"+map_kind,dev_var=dev_var)
-                        temp_vars.append(dev_var)
-            if len(acc_present_calls):
-                stcontainer.append_vars_to_decl_list(temp_vars)
-                if implicit_region:
-                    add_implicit_region(stcontainer)
-                last_decl_list_node.add_to_epilog(acc_present_calls)
 
 
 def AllocateHipGpufortRT(stallocate, index):
@@ -488,8 +429,65 @@ def DeallocateHipGpufortRT(stdeallocate, index):
     return acc_delete_calls
 
 
-backends.register_acc_backend("hip-gpufort-rt", Acc2HipGpufortRT,
-                              AccLoopNest2HipGpufortRT,
-                              Acc2HipGpufortRTPostprocess,
-                              AllocateHipGpufortRT, DeallocateHipGpufortRT,
-                              "gpufort_acc_runtime")
+def Acc2HipGpufortRTPostprocess(stree, index):
+    """:param stree: the full scanner tree
+       :param staccdirectives: All acc directive tree accnodes."""
+    accbackends.add_runtime_module_use_statements("gpufort_acc_runtime")
+
+    # TODO check if there is any acc used in the
+    # construct at all
+    # TODO handle directly via directives; only variables occuring
+    # in directives need to be available on device
+    containers = stree.find_all(\
+      lambda node: type(node) in [STProgram,STProcedure],
+      recursively=True)
+    for stcontainer in containers:
+        last_decl_list_node = stcontainer.last_entry_in_decl_list()
+        indent = last_decl_list_node.first_line_indent()
+        scope = scope.create_scope(index, stcontainer.tag())
+        scope_vars = scope["variables"]
+        local_var_names, dummy_arg_names = stcontainer.local_and_dummy_variable_names(
+            index)
+        # TODO also process type members
+        acc_present_calls = ""
+        temp_vars = []
+        implicit_region = False
+        for ivar in scope_vars:
+            host_var = ivar["name"]
+            dev_var = dev_var_name(host_var)
+            is_local_var = host_var in local_var_names
+            is_arg = host_var in dummy_arg_names
+            is_used_module_var = not is_local_var and not is_arg
+            is_allocatable = "allocatable" in ivar["qualifiers"]
+            is_pointer = "pointer" in ivar["qualifiers"]
+            if not is_allocatable:
+                if not is_used_module_var:
+                    implicit_region = True
+                module_var = ",module_var=.true." if is_used_module_var else ""
+                if is_pointer:
+                    cond = "{indent}if (associated({var})) "
+                    acc_present_template = (
+                        cond
+                        + HIP_GPUFORT_RT_ACC_PRESENT.replace("{indent}", ""))
+                else:
+                    acc_present_template = HIP_GPUFORT_RT_ACC_PRESENT
+                # find return and end, emit 1 new implicit region for all
+                if ivar["declare_on_target"] in HIP_GPUFORT_RT_CLAUSES_OMP2ACC.keys(
+                ):
+                    map_kind = HIP_GPUFORT_RT_CLAUSES_OMP2ACC[
+                        ivar["declare_on_target"]]
+                    acc_present_calls += acc_present_template.format(\
+                        indent=indent,var=host_var,asyncr="",\
+                        alloc=module_var+",or=gpufort_acc_event_"+map_kind,dev_var=dev_var)
+                    temp_vars.append(dev_var)
+        if len(acc_present_calls):
+            stcontainer.append_vars_to_decl_list(temp_vars)
+            if implicit_region:
+                add_implicit_region(stcontainer)
+            last_decl_list_node.add_to_epilog(acc_present_calls)
+
+
+accbackends.register_acc_backend("hip-gpufort-rt", Acc2HipGpufortRT,
+                                 AccLoopNest2HipGpufortRT,
+                                 Acc2HipGpufortRTPostprocess,
+                                 AllocateHipGpufortRT, DeallocateHipGpufortRT)

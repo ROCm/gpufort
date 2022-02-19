@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-from gpufort import fort2x
+from gpufort import util
 from .. import render
 from . import opts
+
+import os
 
 
 def generate_gpufort_headers(output_dir):
@@ -25,8 +27,8 @@ def generate_gpufort_headers(output_dir):
 
     # gpufort arrays
     gpufort_array_context = {
-        "max_rank": opts.gpufort_headers_max_dim,
-        "datatypes": opts.gpufort_headers_datatypes
+        "max_rank": opts.max_dim,
+        "datatypes": opts.datatypes
     }
     gpufort_array_header_file_path = os.path.join(output_dir,
                                                   "gpufort_array.h")
@@ -47,8 +49,8 @@ def generate_gpufort_sources(output_dir):
 
     # gpufort arrays
     gpufort_array_context = {
-        "max_rank": opts.gpufort_headers_max_dim,
-        "datatypes": opts.gpufort_headers_datatypes,
+        "max_rank": opts.max_dim,
+        "datatypes": opts.datatypes,
     }
     gpufort_array_source_file_path = os.path.join(output_dir,
                                                   "gpufort_array.hip.cpp")

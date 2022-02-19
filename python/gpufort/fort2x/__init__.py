@@ -12,3 +12,4 @@ from .templategen import *
 from . import hip
 from . import opts
 from . import render
+from . import gpufort_sources

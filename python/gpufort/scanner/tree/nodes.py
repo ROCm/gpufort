@@ -9,23 +9,9 @@ from gpufort import translator
 from gpufort import indexer
 from .. import opts
 from . import grammar
+from . import backends
 
 SCANNER_ERROR_CODE = 1000
-#SUPPORTED_DESTINATION_DIALECTS = ["omp","hip-gpufort-rt","hip-gcc-rt","hip-hpe-rt","hip"]
-SUPPORTED_DESTINATION_DIALECTS = []
-RUNTIME_MODULE_NAMES = {}
-
-
-def check_destination_dialect(destination_dialect):
-    if destination_dialect in SUPPORTED_DESTINATION_DIALECTS:
-        return destination_dialect
-    else:
-        msg = "scanner: destination dialect '{}' is not supported. Must be one of: {}".format(\
-                destination_dialect,", ".join(SUPPORTED_DESTINATION_DIALECTS))
-        util.logging.log_error(opts.log_prefix, "check_destination_dialect",
-                               msg)
-        sys.exit(SCANNER_ERROR_CODE)
-
 
 p_attributes = re.compile(r"attributes\s*\(\s*\w+\s*(,\s*\w+)?\s*\)\s*",
                           flags=re.IGNORECASE)
@@ -343,6 +329,7 @@ class STNode:
             joined_statements = "\n".join(self.statements())
             joined_lines = "".join(self.lines())
             statements_fully_cover_lines = have_first_in_first_linemap and have_last_in_last_linemap
+            print(self.__class__)
             transformed_code, transformed = \
               self.transform(joined_lines,joined_statements,statements_fully_cover_lines,index)
             if transformed:
@@ -523,9 +510,10 @@ class STUseStatement(STNode, IDeclListEntry):
                                      snippet, re.IGNORECASE)
                     snippet = snippet.rstrip(
                         "\n") + "\n" + "{0}use hipfort_check".format(indent)
-                snippet = re.sub(r"\bcu(\w+)\b",
-                                 opts.hip_math_module_prefix + r"hip\1",
-                                 snippet, re.IGNORECASE)
+                snippet = re.sub(
+                    r"\bcu(\w+)\b",
+                    "".join([opts.hip_math_module_prefix,
+                             r"hip\1"]), snippet, re.IGNORECASE)
         return snippet, use_cuda
 
 
@@ -896,43 +884,64 @@ class STAllocated(STNode):
         return result, transformed
 
 
-class STAllocate(STNode):
+class IWithBackend:
+    _backends = []
+
+    @classmethod
+    def register_backend(cls, src_dialect, dest_dialect, func):
+        IWithBackend._backends.append((src_dialect, dest_dialect, func))
+
+    def transform(self,
+                  joined_lines,
+                  joined_statements,
+                  statements_fully_cover_lines,
+                  index=[]):
+        """Applies the registered backends's actions to 
+        the joined statements if a backend's source dialect is in the list
+        of source dialects that should be translated. Further checks if the
+        backend's destination dialect is a substring(!) of the specified destination dialect.
+
+        :param str joined_lines: The original lines joined to a string.
+        :param str joined_statements: The (pre-processed) statements derived from the original lines
+                                      joined to a string.
+        :param bool statements_fully_cover_lines: If the lines do not contain unrelated
+                                                  statements at the begin of the first line or end of the last line.
+        :return: A tuple of the transformed string and if it differs from the original.
+        """
+        indent = self.first_line_indent()
+        result = joined_statements
+        transformed = False
+        for src_dialect, dest_dialect, func in IWithBackend._backends:
+            if (src_dialect in opts.source_dialects and
+                    dest_dialect in opts.destination_dialect):
+                result, transformed1 = func(self, result, index)
+                transformed = transformed or transformed1
+        return result, transformed
+
+
+class STAllocate(STNode, IWithBackend):
 
     def __init__(self, first_linemap, first_linemap_first_statement):
         STNode.__init__(self, first_linemap, first_linemap_first_statement)
         self.parse_result = translator.tree.grammar.allocate.parseString(
             self.statements()[0])[0]
         self.variable_names = self.parse_result.variable_names()
-
-    def transform(self,
-                  joined_lines,
-                  joined_statements,
-                  statements_fully_cover_lines,
-                  index=[]): # TODO
-        indent = self.first_line_indent()
-        result1, transformed1 = cuf.handle_allocate_cuf(
-            self, joined_statements, index)
-        result2, transformed2 = acc.handle_allocate_acc(self, result1, index)
-        return result2, (transformed1 or transformed2)
+        #result1, transformed1 = cuf.handle_allocate_cuf(
+        #    self, joined_statements, index)
+        #result2, transformed2 = acc.handle_allocate_acc(self, result1, index)
 
 
-class STDeallocate(STNode):
+class STDeallocate(STNode, IWithBackend):
 
     def __init__(self, first_linemap, first_linemap_first_statement):
         STNode.__init__(self, first_linemap, first_linemap_first_statement)
         self.parse_result = translator.tree.grammar.deallocate.parseString(
             self.statements()[0])[0]
         self.variable_names = self.parse_result.variable_names()
-
-    def transform(self,
-                  joined_lines,
-                  joined_statements,
-                  statements_fully_cover_lines,
-                  index=[]): # TODO
-        result1, transformed1 = cuf.handle_deallocate_cuf(
-            self, joined_statements, index)
-        result2, transformed2 = acc.handle_deallocate_acc(self, result1, index)
-        return result2, (transformed1 or transformed2)
+        #result1, transformed1 = cuf.handle_deallocate_cuf(
+        #    self, joined_statements, index)
+        #result2, transformed2 = acc.handle_deallocate_acc(self, result1, index)
+        #return result2, (transformed1 or transformed2)
 
 
 class STMemcpy(STNode):

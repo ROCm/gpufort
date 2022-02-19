@@ -2,7 +2,7 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 from ... import opts
 from .. import nodes
-from . import backends
+from . import accbackends
 from gpufort import util
 
 
@@ -124,7 +124,7 @@ class STAccDirective(nodes.STDirective):
         else:
             checked_dialect = nodes.check_destination_dialect(
                 opts.destination_dialect)
-            return backends.ACC_BACKENDS[checked_dialect](self).transform(\
+            return accbackends.ACC_BACKENDS[checked_dialect](self).transform(\
                     joined_lines,joined_statements,statements_fully_cover_lines,index)
 
 
@@ -149,5 +149,5 @@ class STAccLoopNest(STAccDirective, nodes.STLoopNest):
         """
         checked_dialect = nodes.check_destination_dialect(\
             opts.destination_dialect if not len(destination_dialect) else destination_dialect)
-        return backends.ACC_LOOP_KERNEL_BACKENDS[checked_dialect](self).transform(\
+        return accbackends.ACC_LOOP_KERNEL_BACKENDS[checked_dialect](self).transform(\
                 joined_lines,joined_statements,statements_fully_cover_lines,index)

@@ -34,8 +34,8 @@ def create_index(search_dirs, options, file_path, linemaps=None):
             "file_path": file_path,
             "options": " ".join(options),
             "search_dirs": " ".join(search_dirs),
-            },
-        )
+        },
+    )
 
     options_as_str = " ".join(options)
 
@@ -57,7 +57,9 @@ def create_index(search_dirs, options, file_path, linemaps=None):
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def translate_source(infile_path, stree, linemaps, index, preamble):
     # post process
-    scanner.postprocess(stree, index, fort2x.opts.fortran_module_suffix)
+    scanner.tree.postprocess(
+        stree,
+        index) # , fortran_module_suffix=fort2x.opts.fortran_module_suffix)
 
     # transform statements to 'linemaps'
     def transform_(stnode):
@@ -68,10 +70,9 @@ def translate_source(infile_path, stree, linemaps, index, preamble):
     transform_(stree)
 
     # write the file
-    outfile_path = infile_path + opts.modified_file_ext
-    linemapper.write_modified_file(
-        outfile_path, infile_path, linemaps, preamble
-        )
+    outfile_path = infile_path + opts.fortran_file_ext
+    linemapper.write_modified_file(outfile_path, infile_path, linemaps,
+                                   preamble)
 
     # prettify the file
     # if opts.fortran_prettifier != None
@@ -128,20 +129,17 @@ def parse_config(config_file_path):
             CONFIG_FILE = config_file_path
         else:
             CONFIG_FILE = os.path.join(
-                os.path.dirname(os.path.realpath(__file__)), config_file_path
-                )
+                os.path.dirname(os.path.realpath(__file__)), config_file_path)
         exec(open(CONFIG_FILE).read())
         msg = "config file '{}' found and successfully parsed".format(
-            CONFIG_FILE
-            )
+            CONFIG_FILE)
         util.logging.log_info(opts.log_prefix, "parse_config", msg)
     except FileNotFoundError:
         msg = "no '{}' file found. Use defaults.".format(CONFIG_FILE)
         util.logging.log_warning(opts.log_prefix, "parse_config", msg)
     except Exception as e:
         msg = "failed to parse config file '{}'. REASON: {}. ABORT".format(
-            CONFIG_FILE, str(e)
-            )
+            CONFIG_FILE, str(e))
         util.logging.log_error(opts.log_prefix, "parse_config", msg)
         sys.exit(1)
 
@@ -157,21 +155,18 @@ def print_config_defaults():
         "gpufort/scanner/opts.py",
         "gpufort/translator/opts.py",
         "gpufort/util/logging/opts.py",
-        ]
+    ]
     print("\nConfigurable GPUFORT options (default values):")
     for options_file in options_files:
-        prefix = (
-            options_file.replace("/", ".").replace("gpufort.",
-                                                   "").replace(".py", "")
-            )
+        prefix = (options_file.replace("/",
+                                       ".").replace("gpufort.",
+                                                    "").replace(".py", ""))
         print("\n---- " + prefix + " -----------------------------")
         with open(os.path.join(gpufort_python_dir, options_file)) as f:
             for line in f.readlines():
-                if (
-                    len(line.strip())
-                    and "# SPDX-License-Identifier:" not in line
-                    and "# Copyright (c)" not in line
-                    ):
+                if (len(line.strip()) and
+                        "# SPDX-License-Identifier:" not in line and
+                        "# Copyright (c)" not in line):
                     if line[0] not in [" ", "#", "}", "]"] and "=" in line:
                         parts = line.split("=")
                         key = (prefix + "." + parts[0].rstrip()).ljust(36)
@@ -186,20 +181,21 @@ def parse_cl_args():
     """Parse command line arguments after all changes and argument transformations by the config file have been applied."""
     # parse command line arguments
     parser = argparse.ArgumentParser(
-        description="S2S translation tool for CUDA Fortran and Fortran+X"
-        )
+        description="S2S translation tool for CUDA Fortran and Fortran+X")
 
     # General options
-    parser.add_argument(
-        "input", help="The input file.", type=str, nargs="?", default=None
-        )
+    parser.add_argument("input",
+                        help="The input file.",
+                        type=str,
+                        nargs="?",
+                        default=None)
     parser.add_argument(
         "--working-dir",
         dest="working_dir",
         default=os.getcwd(),
         type=str,
         help="Set working directory.",
-        ) # shadow arg
+    ) # shadow arg
     parser.add_argument(
         "--search-dirs",
         dest="search_dirs",
@@ -209,7 +205,7 @@ def parse_cl_args():
         required=False,
         default=[],
         type=str,
-        )
+    )
     parser.add_argument(
         "--wrap",
         dest="wrap_in_ifdef",
@@ -225,44 +221,43 @@ def parse_cl_args():
         dest="destination_dialect",
         default=None,
         type=str,
-        help="One of: {}".format(
-            ", ".join(scanner.tree.SUPPORTED_DESTINATION_DIALECTS)
-            ),
-        )
+        help="One of: {}".format(", ".join(
+            scanner.tree.SUPPORTED_DESTINATION_DIALECTS)),
+    )
     parser.add_argument(
         "--gfortran_config",
         dest="print_gfortran_config",
         action="store_true",
         help=
         "Print include and compile flags; output is influenced by HIP_PLATFORM environment variable.",
-        )
+    )
     parser.add_argument(
         "--cpp_config",
         dest="print_cpp_config",
         action="store_true",
         help=
         "Print include and compile flags; output is influenced by HIP_PLATFORM environment variable.",
-        )
+    )
     parser.add_argument(
         "--ldflags",
         dest="print_ldflags",
         action="store_true",
         help=
         "Print linker flags; output is influenced by HIP_PLATFORM environment variable.",
-        )
+    )
     parser.add_argument(
         "--ldflags-gpufort-rt",
         dest="print_ldflags_gpufort_rt",
         action="store_true",
         help=
         "Print GPUFORT OpenACC runtime linker flags; output is influenced by HIP_PLATFORM environment variable.",
-        )
+    )
     parser.add_argument(
         "--path",
         dest="print_path",
         action="store_true",
         help="Print path to the GPUFORT root directory.",
-        )
+    )
     # config options: shadow arguments that are actually taken care of by raw argument parsing
     group_config = parser.add_argument_group("Config file")
     group_config.add_argument(
@@ -271,52 +266,51 @@ def parse_cl_args():
         action="store_true",
         help="Print config defaults. " +
         "Config values can be overriden by providing a config file. A number of config values can be overwritten via this CLI.",
-        )
+    )
     group_config.add_argument(
         "--config-file",
         default=None,
         type=argparse.FileType("r"),
         dest="config_file",
         help="Provide a config file.",
-        )
+    )
     parser.add_argument(
         "--only-create-mod-files",
         dest="only_create_gpufort_module_files",
         action="store_true",
         help="Only create GPUFORT modules files. No other output is created.",
-        )
+    )
     parser.add_argument(
         "--skip-create-mod-files",
         dest="skip_create_gpufort_module_files",
         action="store_true",
         help=
         "Skip creating GPUFORT modules, e.g. if they already exist. Mutually exclusive with '-c' option.",
-        )
+    )
 
     # fort2x.hip.codegen
     group_fort2x = parser.add_argument_group(
-        "All Fortran-to-X backends (HIP,...)"
-        )
+        "All Fortran-to-X backends (HIP,...)")
     group_fort2x.add_argument(
         "--only-modify-source",
         dest="only_modify_translation_source",
         action="store_true",
         help="Only modify host code; do not generate kernels [default: False].",
-        )
+    )
     group_fort2x.add_argument(
         "--only-emit-kernels-and-launchers",
         dest="only_emit_kernels_and_launchers",
         action="store_true",
         help=
         "Only emit kernels and kernel launchers; do not modify host code [default: False].",
-        )
+    )
     group_fort2x.add_argument(
         "--only-emit-kernels",
         dest="only_emit_kernels",
         action="store_true",
         help=
         "Only emit kernels; do not emit kernel launchers and do not modify host code [default: False].",
-        )
+    )
     group_fort2x_hip = parser.add_argument_group("Fortran-to-HIP")
     group_fort2x_hip.add_argument(
         "--emit-fortran-interfaces",
@@ -324,21 +318,21 @@ def parse_cl_args():
         action="store_true",
         help=
         "Emit explicit Fortran interfaces to the C++ kernel launchers  [default: (default) config value].",
-        )
+    )
     group_fort2x_hip.add_argument(
         "--emit-cpu-impl",
         dest="emit_cpu_implementation",
         action="store_true",
         help=
         "Per detected loop kernel, also extract the CPU implementation  [default: (default) config value].",
-        )
+    )
     group_fort2x_hip.add_argument(
         "--emit-debug-code",
         dest="emit_debug_code",
         action="store_true",
         help=
         "Generate debug code into the kernel launchers that allows to print kernel arguments, launch parameters, input/output array norms and elements, or to synchronize a kernel [default: (default) config value].",
-        )
+    )
 
     # CUDA Fortran
     group_cuf = parser.add_argument_group("CUDA Fortran input")
@@ -348,12 +342,11 @@ def parse_cl_args():
         action="store_true",
         help=
         "Assume cublas v2 function signatures that use a handle. Overrides config value.",
-        )
+    )
 
     # developer options
     group_developer = parser.add_argument_group(
-        "Developer options (logging, profiling, ...)"
-        )
+        "Developer options (logging, profiling, ...)")
     group_developer.add_argument(
         "-v",
         "--verbose",
@@ -361,7 +354,7 @@ def parse_cl_args():
         required=False,
         action="store_true",
         help="Print all log messages to error output stream too.",
-        )
+    )
     group_developer.add_argument(
         "--log-level",
         dest="log_level",
@@ -369,7 +362,7 @@ def parse_cl_args():
         type=str,
         default="",
         help="Set log level. Overrides config value.",
-        )
+    )
     group_developer.add_argument(
         "--log-filter",
         dest="log_filter",
@@ -377,7 +370,7 @@ def parse_cl_args():
         type=str,
         default=None,
         help="Filter the log output according to a regular expression.",
-        )
+    )
     group_developer.add_argument(
         "--log-traceback",
         dest="log_traceback",
@@ -385,7 +378,7 @@ def parse_cl_args():
         action="store_true",
         help=
         "Append gpufort traceback information to the log when encountering warning/error.",
-        )
+    )
     group_developer.add_argument(
         "--dump-linemaps",
         dest="dump_linemaps",
@@ -393,14 +386,14 @@ def parse_cl_args():
         action="store_true",
         help=
         "Write the lines-to-statements mappings to disk pre & post applying code transformations.",
-        )
+    )
     group_developer.add_argument(
         "--prof",
         dest="profiling_enable",
         required=False,
         action="store_true",
         help="Profile gpufort.",
-        )
+    )
     group_developer.add_argument(
         "--prof-num-functions",
         dest="profiling_num_functions",
@@ -409,19 +402,19 @@ def parse_cl_args():
         default=50,
         help=
         "The number of python functions to include into the summary [default=50].",
-        )
+    )
     group_developer.add_argument(
         "--create-gpufort-headers",
         dest="create_gpufort_headers",
         action="store_true",
         help="Generate the GPUFORT header files.",
-        )
+    )
     group_developer.add_argument(
         "--create-gpufort-sources",
         dest="create_gpufort_sources",
         action="store_true",
         help="Generate the GPUFORT source files.",
-        )
+    )
 
     parser.set_defaults(
         print_config_defaults=False,
@@ -444,7 +437,7 @@ def parse_cl_args():
         verbose=False,
         log_traceback=False,
         profiling_enable=False,
-        )
+    )
     args, unknown_args = parser.parse_known_args()
 
     # Simple output commands
@@ -463,32 +456,33 @@ def parse_cl_args():
         fortran_config = " -cpp -std=f2008 -ffree-line-length-none"
         fortran_config += " -D" + linemapper.opts.line_grouping_ifdef_macro
         fortran_config += " -I" + os.path.join(__GPUFORT_ROOT_DIR, "include")
-        fortran_config += " -I" + os.path.join(
-            __GPUFORT_ROOT_DIR, "include", hip_platform
-            )
+        fortran_config += " -I" + os.path.join(__GPUFORT_ROOT_DIR, "include",
+                                               hip_platform)
         print(fortran_config, file=sys.stdout)
         sys.exit()
     if args.print_ldflags:
-        ldflags = (
-            " -L" + os.path.join(__GPUFORT_ROOT_DIR, "lib") + " -lgpufort_"
-            + hip_platform
-            )
+        ldflags = "".join([
+            " -L",
+            os.path.join(__GPUFORT_ROOT_DIR, "lib"), " -lgpufort_",
+            hip_platform
+        ])
+
         print(ldflags, file=sys.stdout)
         sys.exit()
     if args.print_ldflags_gpufort_rt:
-        ldflags = (
-            " -L" + os.path.join(__GPUFORT_ROOT_DIR, "lib") + " -lgpufort_acc_"
-            + hip_platform
-            )
-        ldflags += " -lgpufort_" + hip_platform
+        ldflags = "".join([
+            " -L",
+            os.path.join(__GPUFORT_ROOT_DIR, "lib"), " -lgpufort_acc_",
+            hip_platform, " -lgpufort_", hip_platform
+        ])
         print(ldflags, file=sys.stdout)
         sys.exit()
     call_exit = False
     if args.create_gpufort_headers:
-        gpufort_sources.generate_gpufort_headers(os.getcwd())
+        fort2x.gpufort_sources.generate_gpufort_headers(os.getcwd())
         call_exit = True
     if args.create_gpufort_sources:
-        gpufort_sources.generate_gpufort_sources(os.getcwd())
+        fort2x.gpufort_sources.generate_gpufort_sources(os.getcwd())
         call_exit = True
     if call_exit:
         sys.exit(0)
@@ -501,18 +495,15 @@ def parse_cl_args():
         print("ERROR: " + msg, file=sys.stderr)
         sys.exit(2)
     # mutually exclusive arguments
-    if (
-        int(args.only_emit_kernels_and_launchers) +
-        int(args.only_emit_kernels) + int(args.only_modify_translation_source)
-        ) > 1:
+    if (int(args.only_emit_kernels_and_launchers) + int(args.only_emit_kernels)
+            + int(args.only_modify_translation_source)) > 1:
         msg = "switches '--only-emit-kernels', '--only-emit-kernels-and-launchers', and 'only-modify-host-code' are mutually exclusive."
         print("ERROR: " + msg, file=sys.stderr)
         sys.exit(2)
     # unknown options
     if len(unknown_args):
         msg = "unknown arguments (may be used by registered actions): {}".format(
-            " ".join(unknown_args)
-            )
+            " ".join(unknown_args))
         print("WARNING: " + msg, file=sys.stderr)
     # check if input is set
     if args.input is None:
@@ -535,8 +526,7 @@ def map_args_to_opts(args):
     # parse file and create index in parallel
     if args.destination_dialect != None:
         scanner.opts.destination_dialect = scanner.tree.check_destination_dialect(
-            args.destination_dialect
-            )
+            args.destination_dialect)
     # only create modules files / skip module file generation
     if args.only_create_gpufort_module_files:
         opts.only_create_gpufort_module_files = True
@@ -584,34 +574,31 @@ def map_args_to_opts(args):
         scanner.opts.cublas_version = 2
         translator.opts.cublas_version = 2
 
+
 def init_logging(input_file_path):
     """Init logging infrastructure.
     :param str input_file_path: Input file path."""
-    input_file_path_hash = hashlib.md5(input_file_path.encode()
-                                       ).hexdigest()[0:8]
+    input_file_path_hash = hashlib.md5(
+        input_file_path.encode()).hexdigest()[0:8]
     logfile_basename = "log-{}.log".format(input_file_path_hash)
 
     log_format = opts.log_format.replace("%(filename)s", input_file_path)
-    log_file_path = util.logging.init_logging(
-        logfile_basename, log_format, opts.log_level
-        )
+    log_file_path = util.logging.init_logging(logfile_basename, log_format,
+                                              opts.log_level)
 
-    msg = "input file: {0} (log id: {1})".format(
-        input_file_path, input_file_path_hash
-        )
+    msg = "input file: {0} (log id: {1})".format(input_file_path,
+                                                 input_file_path_hash)
     util.logging.log_info(opts.log_prefix, "init_logging", msg)
-    msg = "log file:   {0} (log level: {1}) ".format(
-        log_file_path, opts.log_level
-        )
+    msg = "log file:   {0} (log level: {1}) ".format(log_file_path,
+                                                     opts.log_level)
     util.logging.log_info(opts.log_prefix, "init_logging", msg)
     return log_file_path
 
 
 def shutdown_logging(log_file_path):
     """Shutdown the logging infrastructure."""
-    msg = "log file:   {0} (log level: {1}) ".format(
-        log_file_path, opts.log_level
-        )
+    msg = "log file:   {0} (log level: {1}) ".format(log_file_path,
+                                                     opts.log_level)
     util.logging.log_info(opts.log_prefix, "__main__", msg)
     util.logging.shutdown()
 
@@ -624,21 +611,18 @@ def run(preproc_options):
 
     linemaps = linemapper.read_file(input_file_path, preproc_options)
     if opts.dump_linemaps:
-        util.logging.log_info(
-            opts.log_prefix, "__main__", "dump linemaps (before translation)"
-            )
-        linemapper.dump_linemaps(
-            linemaps, input_file_path + "-linemaps-pre.json"
-            )
+        util.logging.log_info(opts.log_prefix, "__main__",
+                              "dump linemaps (before translation)")
+        linemapper.dump_linemaps(linemaps,
+                                 input_file_path + "-linemaps-pre.json")
 
-    index = create_index(
-        opts.include_dirs, preproc_options, input_file_path, linemaps
-        )
+    index = create_index(opts.include_dirs, preproc_options, input_file_path,
+                         linemaps)
     cpp_file_paths = []
     if not opts.only_create_gpufort_module_files:
-        stree, _, __ = scanner.parse_file(
-            linemaps=linemaps, index=index, file_path=input_file_path
-            )
+        stree, _, __ = scanner.parse_file(linemaps=linemaps,
+                                          index=index,
+                                          file_path=input_file_path)
 
         # extract kernels
         if "hip" in scanner.opts.destination_dialect:
@@ -647,20 +631,15 @@ def run(preproc_options):
             kernels_to_convert_to_hip = scanner.opts.kernels_to_convert_to_hip
         # debug
         codegen, linemaps = fort2x.hip.create_code_generator(
-            file_content=input_file_path
-            )
+            file_content=input_file_path)
         codegen.run()
-        cpp_file_paths += codegen.write_cpp_files(
-            "".join([input_file_path, opts.cpp_file_ext])
-            )
+        cpp_file_paths += codegen.write_cpp_files("".join(
+            [input_file_path, opts.cpp_file_ext]))
 
-        if not (
-            opts.only_emit_kernels or opts.only_emit_kernels_and_launchers
-            ):
-            translate_source(
-                input_file_path, stree, linemaps, index,
-                opts.fortran_file_preamble
-                )
+        if not (opts.only_emit_kernels or
+                opts.only_emit_kernels_and_launchers):
+            translate_source(input_file_path, stree, linemaps, index,
+                             opts.fortran_file_preamble)
     #
     if opts.profiling_enable:
         profiler.disable()
@@ -671,12 +650,10 @@ def run(preproc_options):
         print(s.getvalue())
 
     if opts.dump_linemaps:
-        util.logging.log_info(
-            opts.log_prefix, "__main__", "dump linemaps (after translation)"
-            )
-        linemapper.dump_linemaps(
-            linemaps, input_file_path + "-linemaps-post.json"
-            )
+        util.logging.log_info(opts.log_prefix, "__main__",
+                              "dump linemaps (after translation)")
+        linemapper.dump_linemaps(linemaps,
+                                 input_file_path + "-linemaps-post.json")
     return cpp_file_paths
 
 
@@ -689,8 +666,7 @@ def set_include_dirs(working_dir, include_dirs):
             opts.include_dirs[i] = os.path.join(working_dir, directory)
         if not os.path.exists(opts.include_dirs[i]):
             msg = "search directory '{}' cannot be found".format(
-                opts.include_dirs[i]
-                )
+                opts.include_dirs[i])
             util.logging.log_error(msg, verbose=False)
             one_or_more_search_dirs_not_found = True
     opts.include_dirs.append(working_dir)

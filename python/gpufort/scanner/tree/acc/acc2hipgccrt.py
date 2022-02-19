@@ -3,7 +3,7 @@
 from gpufort import translator
 from gpufort import util
 from ... import opts
-from . import backends
+from . import accbackends
 
 # init shutdown
 HIP_GCC_RT_ACC_INIT = "acc_init({devicetype})"
@@ -72,7 +72,7 @@ HIP_GCC_RT_MAP_COPYOUT = "goacc_map_copyout({var})"
 HIP_GCC_RT_MAP_PRESENT = "goacc_map_present({var})"
 
 
-class Acc2HipGccRT(backends.AccBackendBase):
+class Acc2HipGccRT(accbackends.AccBackendBase):
 
     def _create_mappings(self, parse_result, prefix=",mappings="):
         mappings = []
@@ -270,7 +270,10 @@ def DeallocateHipGccRT(stdeallocate, index):
     return ""
 
 
-backends.register_acc_backend("hip-gcc-rt", Acc2HipGccRT, AccLoopNest2HipGccRT,
-                              backends.AccPostprocessBackendBase,
-                              AllocateHipGccRT, DeallocateHipGccRT,
-                              "openacc_gomp")
+def Acc2HipGccRTPostprocess(stree, index):
+    accbackends.add_runtime_module_use_statements("openacc_gomp")
+
+
+accbackends.register_acc_backend("hip-gcc-rt", Acc2HipGccRT,
+                                 AccLoopNest2HipGccRT, Acc2HipGccRTPostprocess,
+                                 AllocateHipGccRT, DeallocateHipGccRT)

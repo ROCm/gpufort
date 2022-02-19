@@ -2,10 +2,10 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 from gpufort import translator
 from gpufort import util
-from . import backends
+from . import cufbackends
 
 
-class CufLoopNest2Hip(backends.CufBackendBase):
+class CufLoopNest2Hip(cufbackends.CufBackendBase):
 
     def transform(self,
                   joined_lines,
@@ -17,4 +17,4 @@ class CufLoopNest2Hip(backends.CufBackendBase):
                                           statements_fully_cover_lines, index)
 
 
-backends.register_cuf_backend("hip", CufLoopNest2Hip, None)
+cufbackends.register_cuf_backend("hip", CufLoopNest2Hip)

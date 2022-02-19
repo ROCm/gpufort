@@ -691,7 +691,7 @@ def modify_file(linemaps, **kwargs):
         else:
             output += line
     if preamble != None and len(preamble):
-        if opts.LINE_GROUPING_WRAP_IN_IFDEF:
+        if opts.line_grouping_ifdef_macro != None:
             preamble2 = "#ifdef {}\n{}\n#endif".format(\
               opts.line_grouping_ifdef_macro,preamble.rstrip("\n"))
         else:
@@ -716,31 +716,41 @@ def write_modified_file(outfile_path, infile_path, linemaps, preamble=""):
     with open(infile_path,"r") as infile,\
          open(outfile_path,"w") as outfile:
         outfile.write(
-            modify_file(infile.readlines(), linemaps, preamble).rstrip())
+            modify_file(linemaps,
+                        file_lines=infile.readlines(),
+                        preamble=preamble).rstrip())
     util.logging.log_leave_function(opts.log_prefix, "write_modified_file")
 
 
-def render_file(linemaps,
-                stage="statements",
-                include_inactive=False,
-                include_preprocessor_directives=False):
+@util.logging.log_entry_and_exit(opts.log_prefix)
+def render_file(linemaps, **kwargs):
+    """Render a file according to the linemaps.
+    :param \*\*kwargs: See below.
+
+    :Keyword Arguments:
+    
+    *stage* (`str`) 
+        Either 'lines', 'statements' or 'expanded_statements', i.e. the preprocessor stage.
+    *include_inactive* (`bool`) 
+        Unclude also code lines in inactive code regions.
+    *keep_preprocessor_directives* (`bool`) 
+        Include also preprocessor directives in the output (except include directives).
     """
-    :param str stage: either 'lines', 'statements' or 'expanded_statements', i.e. the preprocessor stage.
-    :param bool include_inactive: include also code lines in inactive code regions.
-    :param include_preprocessor_directives: include also preprocessor directives in the output (except include directives).
-    """
-    util.logging.log_enter_function(opts.log_prefix,"render_file",\
-      {"stage": stage})
+    stage, _ = util.kwargs.get_value("stage", "statements", **kwargs)
+    include_inactive, _ = util.kwargs.get_value("include_inactive", False,
+                                                **kwargs)
+    keep_preprocessor_directives, _ = util.kwargs.get_value(
+        "keep_preprocessor_directives", False, **kwargs)
 
     def render_file_(linemaps):
         nonlocal stage
         nonlocal include_inactive
-        nonlocal include_preprocessor_directives
+        nonlocal keep_preprocessor_directives
 
         result = ""
         for linemap in linemaps:
             condition1 = include_inactive or (linemap["is_active"])
-            condition2 = include_preprocessor_directives or (
+            condition2 = keep_preprocessor_directives or (
                 len(linemap["included_linemaps"]) or
                 not linemap["is_preprocessor_directive"])
             if condition1 and condition2:
@@ -752,7 +762,6 @@ def render_file(linemaps,
                     result += "".join(linemap[stage])
         return result
 
-    util.logging.log_leave_function(opts.log_prefix, "render_file")
     return render_file_(linemaps).strip("\n")
 
 

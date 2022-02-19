@@ -3,10 +3,10 @@
 from gpufort import translator
 from gpufort import util
 from ... import opts
-from . import backends
+from . import accbackends
 
 
-class Acc2Omp(backends.AccBackendBase):
+class Acc2Omp(accbackends.AccBackendBase):
 
     def transform(self,
                   joined_lines,
@@ -29,7 +29,7 @@ class Acc2Omp(backends.AccBackendBase):
                 "failed parse directive " + str(snippet))
 
 
-class AccLoopNest2Omp(backends.AccBackendBase):
+class AccLoopNest2Omp(accbackends.AccBackendBase):
 
     def transform(self,
                   joined_lines,
@@ -62,6 +62,9 @@ def DeallocateOmp(stdeallocate, index):
     return ""
 
 
-backends.register_acc_backend("omp", Acc2Omp, AccLoopNest2Omp,
-                              backends.AccPostprocessBackendBase, AllocateOmp,
-                              DeallocateOmp, None)
+def _nop(*args, **kwargs):
+    pass
+
+
+accbackends.register_acc_backend("omp", Acc2Omp, AccLoopNest2Omp, _nop,
+                                 AllocateOmp, DeallocateOmp)

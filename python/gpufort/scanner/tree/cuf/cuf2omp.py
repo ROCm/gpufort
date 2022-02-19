@@ -3,18 +3,17 @@
 from gpufort import translator
 from gpufort import util
 from ... import opts
-from . import backends
+from . import cufbackends
 
 
-class CufLoopNest2Omp(backends.CufBackendBase):
+class CufLoopNest2Omp(cufbackends.CufBackendBase):
 
     def transform(self,
                   joined_lines,
                   joined_statements,
                   statements_fully_cover_lines,
                   index=[]):
-        """
-        Analyze based on statements but modify original lines if these are
+        """Analyze based on statements but modify original lines if these are
         fully covered by the statements.
         """
         try:
@@ -30,4 +29,4 @@ class CufLoopNest2Omp(backends.CufBackendBase):
             sys.exit(2) # TODO error code
 
 
-backends.register_cuf_backend("omp", CufLoopNest2Omp, None)
+cufbackends.register_cuf_backend("omp", CufLoopNest2Omp)

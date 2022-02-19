@@ -5,6 +5,7 @@ from gpufort import translator
 from .. import nodes
 from .. import opts
 from .. import grammar
+from . import cufbackends
 
 
 class STCufDirective(nodes.STDirective):
@@ -39,15 +40,17 @@ class STCufLoopNest(STCufDirective, nodes.STLoopNest):
                   joined_statements,
                   statements_fully_cover_lines,
                   index=[],
-                  destination_dialect=""):
+                  dest_dialect=""):
         """
-        :param destination_dialect: allows to override default if this kernel
+        :param dest_dialect: allows to override default if this kernel
                                    should be translated via another backend.
         """
-        checked_dialect = nodes.check_destination_dialect(\
-            opts.destination_dialect if not len(destination_dialect) else destination_dialect)
-        return CUF_LOOP_KERNEL_BACKENDS[checked_dialect](self).transform(\
-          joined_lines,joined_statements,statements_fully_cover_lines,index)
+        if dest_dialect in cufbackends.LOOP_KERNEL_BACKENDS:
+            return cufbackends.LOOP_KERNEL_BACKENDS[dest_dialect](
+                self).transform(joined_lines, joined_statements,
+                                statements_fully_cover_lines, index)
+        else:
+            return "", False
 
 
 class STCufLibCall(nodes.STNode):

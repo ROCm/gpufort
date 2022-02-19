@@ -132,12 +132,12 @@ namespace {
 
   // type conversions
 {% for float_type in ["float", "double"] %}  // make {{float_type}}
-{%- for type in ["short int",  "unsigned short int",  "unsigned int",  "int",  "long int",  "unsigned long int",  "long long int",  "unsigned long long int",  "signed char",  "unsigned char",  "float",  "double",  "long double"] +%}
+{%- for type in ["short int",  "unsigned short int",  "unsigned int",  "int",  "long int",  "unsigned long int",  "long long int",  "unsigned long long int",  "signed char",  "unsigned char",  "float",  "double",  "long double"] %}
   __device__ __forceinline__ {{float_type}} make_{{float_type}}(const {{type}} a) {
     return static_cast<{{float_type}}>(a);
   }
 {%- endfor %}
-{%- for type in ["hipFloatComplex", "hipDoubleComplex" ] +%}
+{%- for type in ["hipFloatComplex", "hipDoubleComplex" ] %}
   __device__ __forceinline__ {{float_type}} make_{{float_type}}(const {{type}} a) {
     return static_cast<{{float_type}}>(a.x);
   }

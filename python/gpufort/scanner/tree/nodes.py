@@ -2,11 +2,13 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import re
 import sys
+import hashlib
 
 from gpufort import util
 from gpufort import linemapper
 from gpufort import translator
 from gpufort import indexer
+
 from .. import opts
 from . import grammar
 from . import backends
@@ -649,8 +651,8 @@ class STLoopNest(STNode):
         self.code = []
         self.parse_result = None
         self._do_loop_ctr_memorised = -1
-
-    def __hash(self):
+        self.__hash = None
+    def __hash_kernel(self):
         """Compute hash code for this kernel. Must be done before any transformations are performed."""
         statements = list(self.code) # copy
         self.remove_comments(statements)
@@ -660,16 +662,20 @@ class STLoopNest(STNode):
 
     def complete_init(self, index=[]):
         self.code = self.statements()
+        self.__hash = self.__hash_kernel()
         parent_tag = self.parent.tag()
         scope = indexer.scope.create_scope(index, parent_tag)
         self.parse_result = translator.parse_loop_kernel(self.code, scope)
 
     def kernel_name(self):
-        """Derive a name for the kernel"""
+        """derive a name for the kernel"""
         return opts.loop_kernel_name_template.format(
             parent=self.parent.name.lower(),
             lineno=self.min_lineno(),
-            hash=self.__hash())
+            hash=self.__hash)
+
+    def kernel_hash(self):
+        return self.__hash
 
     def kernel_launcher_name(self):
         return "launch_{}".format(self.kernel_name())

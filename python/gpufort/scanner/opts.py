@@ -14,7 +14,7 @@ loop_variables = "integer :: {}".format(",".join([
     "_" + chr(ord("a") + i) for i in range(0, 20)
 ])) # integer :: _a,_b,_c,_d,...
 
-loop_kernel_name_template = "{parent}_{lineno}_{hash}" # parent: name of parent module,program,subroutine (lower case)
+loop_kernel_name_template = "{parent}_{lineno}" # parent: name of parent module,program,subroutine (lower case)
 # lineno: line number
 # hash: Hash of the kernel (whitespaces are removed beforehand)
 

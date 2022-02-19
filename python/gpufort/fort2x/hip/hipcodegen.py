@@ -117,11 +117,13 @@ class HipCodeGenerator(codegen.CodeGenerator):
         """:note: Writes back to stloopnest argument.
         """
 
-        scope = scope.create_scope(self.index, stloopnest._parent.tag())
+        scope = indexer.scope.create_scope(self.index, stloopnest.parent.tag())
 
         mykernelgen = hipkernelgen.HipKernelGenerator4LoopNest(
-            stloopnest.kernel_name(), stloopnest.kernel_hash(),
-            stloopnest.parse_result, scope, "".join(stloopnest.lines()))
+            stloopnest.parse_result, scope,
+            kernel_name = stloopnest.kernel_name(),
+            kernel_hash = stloopnest.kernel_hash(),
+            fortran_snippet = "".join(stloopnest.lines()))
 
         self.__render_kernel(mykernelgen,
                              cpp_filegen,
@@ -133,17 +135,19 @@ class HipCodeGenerator(codegen.CodeGenerator):
     def _render_device_procedure(stprocedure, iprocedure, cpp_filegen,
                                  fortran_filegen):
         kernel_name = iprocedure["name"]
-        scope = scope.create_scope(index, stprocedure._parent.tag())
+        scope = indexer.scope.create_scope(index, stprocedure.parent.tag())
         if stprocedure.is_kernel_subroutine():
             mykernelgen = hipkernelgen.HipKernelGenerator4CufKernel(
-                iprocedure["name"], stprocedure.kernel_hash(),
                 stprocedure.parse_result, iprocedure, scope,
-                "".join(stlprocedure.lines()))
+                kernel_name = iprocedure["name"],
+                kernel_hash = stprocedure.kernel_hash(),
+                fortran_snippet = "".join(stlprocedure.lines()))
         else:
             mykernelgen = hipkernelgen.HipKernelGenerator4AcceleratorRoutine(
-                stprocedure.kernel_name(), stprocedure.kernel_hash(),
                 stprocedure.parse_result, iprocedure, scope,
-                "\n".join(fortran_statements))
+                kernel_name = iprocedure["name"],
+                kernel_hash = stprocedure.kernel_hash(),
+                fortran_snippet = "".join(stlprocedure.lines()))
 
         self.__render_kernel(mykernelgen,
                              cpp_filegen,

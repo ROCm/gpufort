@@ -35,7 +35,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
             that can be created by this class [default: fort2x.opts.cpp_file_preamble].
         * *cpp_file_ext* (`str`):
             File extension for the generated C++ files [default: fort2x.opts.cpp_file_ext].
-        * *emit_fortran_interfaces* (``bool``):
+        * *emit_launcher_interfaces* (``bool``):
             Render **explicit** Fortran interfaces to the generated launchers.
         * *emit_grid_launcher* (``bool``):
             Only for loop nests: Render a launcher that takes the grid as first argument [default: true].
@@ -62,8 +62,9 @@ class HipCodeGenerator(codegen.CodeGenerator):
                                     opts.emit_problem_size_launcher, **kwargs)
         util.kwargs.set_from_kwargs(self, "emit_cpu_launcher",
                                     opts.emit_cpu_launcher, **kwargs)
-        util.kwargs.set_from_kwargs(self, "emit_fortran_interfaces",
-                                    opts.emit_fortran_interfaces, **kwargs)
+        print(self.emit_cpu_launcher)
+        util.kwargs.set_from_kwargs(self, "emit_launcher_interfaces",
+                                    opts.emit_launcher_interfaces, **kwargs)
 
     def __render_kernel(self,
                         mykernelgen,
@@ -107,7 +108,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
                 mykernelgen.render_begin_kernel_comment_cpp()
                 + rendered_launchers_cpp
                 + mykernelgen.render_end_kernel_comment_cpp())
-        if self.emit_fortran_interfaces and len(rendered_interfaces_f03):
+        if self.emit_launcher_interfaces and len(rendered_interfaces_f03):
             fortran_filegen.rendered_interfaces += (
                 mykernelgen.render_begin_kernel_comment_f03()
                 + rendered_interfaces_f03

@@ -47,7 +47,8 @@ program main
 end program
 """
 
-codegen, linemaps = fort2x.hip.create_code_generator(file_content=file_content)
+codegen, linemaps = fort2x.hip.create_code_generator(file_content=file_content,
+                                                     emit_cpu_launcher=True)
 codegen.run()
 
 print("modified Fortran file:")
@@ -55,8 +56,8 @@ print("```")
 print(
     linemapper.modify_file(linemaps,
                            file_content=file_content,
-                           ifdef_macro=None))
-#ifdef_macro="_GPUFORT"))
+                           ifdef_macro="_GPUFORT"))
+                           #ifdef_macro=None))
 print("```")
 
 print("main C++ file:")

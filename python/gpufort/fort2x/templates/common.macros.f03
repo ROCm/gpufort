@@ -40,7 +40,10 @@ use {{module.name}}{{(", only: "+module.only|join(",") if module.only|length>0)}
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_imports(ivars) -%}
-import {% for ivar in ivars %}{% if ivar.rank == 0 and ivar.f_type == "type" %}{{ivar.kind}}{{"," if not loop.last}}{% endif %}{% endfor %}
+{% for ivar in ivars %}
+{% if ivar.rank == 0 and ivar.f_type == "type" %}
+import {{ivar.kind}}
+{% endif %}{% endfor %}
 {%- endmacro -%}
 {########################################################################################}
 {% macro render_set_fptr_lower_bound(fptr,

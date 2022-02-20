@@ -33,7 +33,9 @@ end function
 {########################################################################################}
 {%- macro render_launcher(kernel,
                           launcher) -%}
+interface
 {{ render_launcher_binding(kernel,launcher) | indent(2,True) }}
+end interface
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_cpu_routine(kernel,

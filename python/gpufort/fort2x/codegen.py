@@ -130,10 +130,9 @@ class CodeGenerator(abc.ABC):
         # add GPUFORT use statements
         indent_parent = stcontainer.first_line_indent()
         indent = indent_parent + " "*2
-        if len(fortran_modulegen.rendered_types):
-            for mod in self.default_modules:
-                stcontainer.add_to_epilog("{}use {}".format(indent, mod),
-                                          prepend=True)
+        for mod in reversed(self.default_modules): # reverse due to prepending
+            stcontainer.add_to_epilog("{}use {}".format(indent, mod),
+                                      prepend=True)
         # types and interfaces
         stlastdeclnode = stcontainer.last_entry_in_decl_list()
         for snippet in fortran_modulegen.rendered_types:
@@ -143,14 +142,13 @@ class CodeGenerator(abc.ABC):
             stlastdeclnode.add_to_epilog(CodeGenerator._indent(
                 snippet, indent))
         # routines
-        stend = stcontainer.end_statement()
-        #add_to_prolog(self,line,prepend=False):
-        for snippet in fortran_modulegen.rendered_routines:
-            stend.add_to_prolog(CodeGenerator._indent(snippet, indent))
-        if not stcontainer.has_contains_statement():
-            stend.add_to_prolog(CodeGenerator._indent("contains",
-                                                      indent_parent),
-                                prepend=True)
+        if len(fortran_modulegen.rendered_routines):
+            stend = stcontainer.end_statement()
+            for snippet in fortran_modulegen.rendered_routines:
+                stend.add_to_prolog(CodeGenerator._indent(snippet, indent))
+            if not stcontainer.has_contains_statement():
+                stend.add_to_prolog(CodeGenerator._indent("contains",indent_parent),
+                                    prepend=True)
 
     def _traverse_scanner_tree(self):
         """Traverse scanner tree and call subcalls render methods.

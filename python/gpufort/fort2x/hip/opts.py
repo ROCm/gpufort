@@ -29,8 +29,8 @@ emit_grid_launcher = True
 # does not affect them.
 emit_problem_size_launcher = True
 # Only for loop nests: Render a launcher that takes the problem size as first argument, defaults to True.
-emit_fortran_interfaces = True
-# Emit explict Fortran interfaces to the kernel launchers, defaults to True.
+emit_launcher_interfaces = False
+# Emit explict Fortran interfaces to the kernel launchers, defaults to False.
 emit_cpu_launcher = False
 # Generate CPU kernel launch routines from Fortran loop nests. (EMIT_KERNEL_LAUNCHER must be set to True too.)
 emit_debug_code = False

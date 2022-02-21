@@ -273,7 +273,7 @@ class CodeGenerator(abc.ABC):
         
         :param str main_cpp_file_path: File name for the main C++ file.
         
-        :return: Paths to all generated files (list of strings).
+        :return: Paths to all generated files (list of strings). First entry is the main C++ file.
         :rtype: list
        
         :note: Always creates the main C++ file even if no code was generated

@@ -4,7 +4,7 @@ log_prefix = "scanner" # log prefix
 
 translation_enabled_by_default = True
 
-source_dialects = ["cuf", "acc"] # one of ["acc","cuf","omp"]
+source_dialects     = set(["cuf", "acc"]) # one of ["acc","cuf","omp"]
 destination_dialect = "omp" # one of ["omp","hip-runtime-rt"]
 
 kernels_to_convert_to_hip = [

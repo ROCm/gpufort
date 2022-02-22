@@ -2,8 +2,6 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import os
 import copy
-import logging
-import abc
 
 from gpufort import translator
 from gpufort import indexer
@@ -13,8 +11,7 @@ from gpufort import util
 from . import filegen
 from . import opts
 
-
-class CodeGenerator(abc.ABC):
+class CodeGenerator():
     """Modify a scanner tree and generate Fortran and C/C++ code from it."""
 
     def __init__(self, stree, index, **kwargs):
@@ -119,6 +116,7 @@ class CodeGenerator(abc.ABC):
     def _render_device_procedure(self, stnode, cpp_filegen, fortran_modulegen):
         pass
 
+    @util.logging.log_entry_and_exit(opts.log_prefix+".CodeGenerator")
     def _modify_stcontainer(self, stcontainer, fortran_modulegen):
         """This routine performs the following operations:
         - Add default GPUFORT use statements to the container node.
@@ -141,6 +139,11 @@ class CodeGenerator(abc.ABC):
         for snippet in fortran_modulegen.rendered_interfaces:
             stlastdeclnode.add_to_epilog(CodeGenerator._indent(
                 snippet, indent))
+        print(fortran_modulegen.rendered_types)
+        print(fortran_modulegen.rendered_interfaces)
+        print(fortran_modulegen.rendered_routines)
+        print(stcontainer.get_epilog())
+        print(stlastdeclnode.get_epilog())
         # routines
         if len(fortran_modulegen.rendered_routines):
             stend = stcontainer.end_statement()
@@ -149,7 +152,9 @@ class CodeGenerator(abc.ABC):
             if not stcontainer.has_contains_statement():
                 stend.add_to_prolog(CodeGenerator._indent("contains",indent_parent),
                                     prepend=True)
+            print(stend.get_prolog())
 
+    @util.logging.log_entry_and_exit(opts.log_prefix+".CodeGenerator")
     def _traverse_scanner_tree(self):
         """Traverse scanner tree and call subcalls render methods.
         """
@@ -253,8 +258,9 @@ class CodeGenerator(abc.ABC):
                     self.cpp_filegen.merge(cpp_filegen)
 
         traverse_node_(self.stree)
-        traversed = True
+        self._traversed = True
 
+    @util.logging.log_entry_and_exit(opts.log_prefix+".CodeGenerator")
     def run(self):
         """Generates one C++ file ('main C++ file') for the non-module program units
         in the Fortran file plus one C++ file per each of the modules in the Fortran 
@@ -266,6 +272,7 @@ class CodeGenerator(abc.ABC):
         if not self._traversed:
             self._traverse_scanner_tree()
 
+    @util.logging.log_entry_and_exit(opts.log_prefix+".CodeGenerator")
     def write_cpp_files(self, main_cpp_file_path):
         """Writes one C++ file ('main C++ file') for the non-module program units
         in the Fortran file plus one C++ file per each of the modules in the file.

@@ -62,10 +62,11 @@ class HipCodeGenerator(codegen.CodeGenerator):
                                     opts.emit_problem_size_launcher, **kwargs)
         util.kwargs.set_from_kwargs(self, "emit_cpu_launcher",
                                     opts.emit_cpu_launcher, **kwargs)
-        print(self.emit_cpu_launcher)
         util.kwargs.set_from_kwargs(self, "emit_launcher_interfaces",
                                     opts.emit_launcher_interfaces, **kwargs)
+        print(self.emit_launcher_interfaces)
 
+    @util.logging.log_entry_and_exit(opts.log_prefix+".HipCodeGenerator")
     def __render_kernel(self,
                         mykernelgen,
                         cpp_filegen,
@@ -114,6 +115,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
                 + rendered_interfaces_f03
                 + mykernelgen.render_end_kernel_comment_f03())
 
+    @util.logging.log_entry_and_exit(opts.log_prefix+".HipCodeGenerator")
     def _render_loop_nest(self, stloopnest, cpp_filegen, fortran_filegen):
         """:note: Writes back to stloopnest argument.
         """
@@ -133,6 +135,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
 
         # stloopnest.set_kernel_arguments(mykernelgen.get_kernel_arguments)
 
+    @util.logging.log_entry_and_exit(opts.log_prefix+".HipCodeGenerator")
     def _render_device_procedure(stprocedure, iprocedure, cpp_filegen,
                                  fortran_filegen):
         kernel_name = iprocedure["name"]
@@ -159,6 +162,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
 
         util.logging.log_leave_function(LOG_PREFIX, "self._render_loop_nest")
 
+    @util.logging.log_entry_and_exit(opts.log_prefix+".HipCodeGenerator")
     def _render_derived_types(self, itypes, cpp_filegen, fortran_modulegen):
         derivedtypegen = hipderivedtypegen.HipDerivedTypeGenerator(itypes, [])
         cpp_filegen.rendered_types += derivedtypegen.render_derived_type_definitions_cpp(

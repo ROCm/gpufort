@@ -205,25 +205,24 @@ have a '--' prefix while this tool's options have a '-' prefix."""))
     hardcode_pure_converter_opts()
 
     try:
-        infile_path, object_files = check_inputs(args.inputs)
+        _path, object_files = check_inputs(args.inputs)
     except UserValueError as uve:
         util.logging.log_error(opts.log_prefix, "_main__", str(uve))
         sys.abort(2)
-    log_file_path = converter.init_logging(infile_path)
+    log_file_path = converter.init_logging(_path)
 
-    fortran_file_paths, cpp_file_paths = converter.run(defines)
+    fortran_file_paths, cpp_file_paths = converter.run(_path,defines)
     cpp_file_path = cpp_file_paths[0] # main C++ file is first item
-    modified_file_path = fortran_file_paths[
-        0] # modified input file is first item
+    modified_file_path = fortran_file_paths[0] # modified input file is first item
 
     # output file name
     outfile_path = args.output
     if args.outfile == None:
         if args.only_compile:
             outfile_path = get_object_path(
-                infile_path) # ! object file should be named after object file
+                _path) # ! object file should be named after object file
         else:
-            outfile_path = os.path.join(os.path.dirname(infile_path), "a.out")
+            outfile_path = os.path.join(os.path.dirname(_path), "a.out")
 
     # configure scanner source dialects based on -openacc flag
     if not args.openacc and "acc" in gpufort.scanner.opts.source_dialects:

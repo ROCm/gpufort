@@ -258,8 +258,8 @@ def populate_cl_arg_parser(parser,for_converter=True):
     group_fort2x_hip = parser.add_argument_group("Fortran-to-HIP")
     if for_converter:
         group_fort2x_hip.add_argument(
-            "--emit-fortran-interfaces",
-            dest="emit_fortran_interfaces",
+            "--emit-launcher-interfaces",
+            dest="emit_launcher_interfaces",
             action="store_true",
             help=
             "Emit explicit Fortran interfaces to the C++ kernel launchers  [default: (default) config value].",
@@ -370,7 +370,7 @@ def populate_cl_arg_parser(parser,for_converter=True):
         only_modify_translation_source=False,
         emit_cpu_implementation=False,
         emit_debug_code=False,
-        emit_fortran_interfaces=False,
+        emit_launcher_interfaces=False,
         create_gpufort_headers=False,
         create_gpufort_sources=False,
         print_gfortran_config=False,
@@ -508,8 +508,8 @@ def map_args_to_opts(args):
         fort2x.hip.opts.emit_problem_size_launcher = False
     if args.emit_cpu_implementation:
         fort2x.hip.opts.emit_cpu_launcher = True
-    if args.emit_fortran_interfaces:
-        fort2x.hip.opts.emit_fortran_interfaces = True
+    if args.emit_launcher_interfaces:
+        fort2x.hip.opts.emit_launcher_interfaces = True
     if args.emit_debug_code:
         fort2x.hip.opts.emit_debug_code = True
     # wrap modified lines in ifdef
@@ -536,19 +536,19 @@ def map_args_to_opts(args):
         translator.opts.cublas_version = 2
 
 
-def init_logging(input_file_path):
+def init_logging(infile_path):
     """Init logging infrastructure.
-    :param str input_file_path: Input file path."""
-    input_file_path_hash = hashlib.md5(
-        input_file_path.encode()).hexdigest()[0:8]
-    logfile_basename = "log-{}.log".format(input_file_path_hash)
+    :param str infile_path: Input file path."""
+    infile_path_hash = hashlib.md5(
+        infile_path.encode()).hexdigest()[0:8]
+    logfile_basename = "log-{}.log".format(infile_path_hash)
 
-    log_format = opts.log_format.replace("%(filename)s", input_file_path)
+    log_format = opts.log_format.replace("%(filename)s", infile_path)
     log_file_path = util.logging.init_logging(logfile_basename, log_format,
                                               opts.log_level)
 
-    msg = "input file: {0} (log id: {1})".format(input_file_path,
-                                                 input_file_path_hash)
+    msg = "input file: {0} (log id: {1})".format(infile_path,
+                                                 infile_path_hash)
     util.logging.log_info(opts.log_prefix, "init_logging", msg)
     msg = "log file:   {0} (log level: {1}) ".format(log_file_path,
                                                      opts.log_level)
@@ -619,43 +619,36 @@ def translate_source(infile_path, stree, linemaps, index, preamble):
     return outfile_path
 
 
-def run(preproc_options):
+def run(infile_path,preproc_options):
     """Converter runner."""
     if opts.profiling_enable:
         profiler = cProfile.Profile()
         profiler.enable()
 
-    linemaps = linemapper.read_file(input_file_path, preproc_options)
+    linemaps = linemapper.read_file(infile_path, preproc_options)
     if opts.dump_linemaps:
         util.logging.log_info(opts.log_prefix, "__main__",
                               "dump linemaps (before translation)")
         linemapper.dump_linemaps(linemaps,
-                                 input_file_path + "-linemaps-pre.json")
+                                 infile_path + "-linemaps-pre.json")
 
-    index = create_index(opts.include_dirs, preproc_options, input_file_path,
+    index = create_index(opts.include_dirs, preproc_options, infile_path,
                          linemaps)
     fortran_file_paths = []
     cpp_file_paths     = []
     if not opts.only_create_gpufort_module_files:
-        stree, _, __ = scanner.parse_file(linemaps=linemaps,
-                                          index=index,
-                                          file_path=input_file_path)
-
-        # extract kernels
+        stree, _, __ = scanner.parse_file(file_linemaps=linemaps,
+                                          file_path=infile_path,
+                                          index=index)
         if "hip" in scanner.opts.destination_dialect:
-            kernels_to_convert_to_hip = ["*"]
-        else:
-            kernels_to_convert_to_hip = scanner.opts.kernels_to_convert_to_hip
-        # debug
-        codegen, linemaps = fort2x.hip.create_code_generator(
-            file_content=input_file_path)
-        codegen.run()
-        cpp_file_paths += codegen.write_cpp_files("".join(
-            [input_file_path, opts.cpp_file_ext]))
+            codegen = fort2x.hip.hipcodegen.HipCodeGenerator(stree, index)
+            codegen.run()
+            cpp_file_paths += codegen.write_cpp_files("".join(
+                [infile_path, opts.cpp_file_ext]))
 
         if not (opts.only_emit_kernels or
                 opts.only_emit_kernels_and_launchers):
-            outfile_path = translate_source(input_file_path, stree, linemaps, index,
+            outfile_path = translate_source(infile_path, stree, linemaps, index,
                            opts.fortran_file_preamble)
             fortran_file_paths.append(outfile_path)
     #
@@ -671,7 +664,7 @@ def run(preproc_options):
         util.logging.log_info(opts.log_prefix, "__main__",
                               "dump linemaps (after translation)")
         linemapper.dump_linemaps(linemaps,
-                                 input_file_path + "-linemaps-post.json")
+                                 infile_path + "-linemaps-post.json")
     return fortran_file_paths, cpp_file_paths
 
 
@@ -709,9 +702,10 @@ if __name__ == "__main__":
                 action(args, unknown_args)
     map_args_to_opts(args)
     set_include_dirs(args.working_dir, args.search_dirs + include_dirs)
- 
-    log_file_path = init_logging(os.path.abspath(args.input))
 
-    run(defines)
+    infile_path = os.path.abspath(args.input) 
+    log_file_path   = init_logging(infile_path)
+
+    run(infile_path,defines)
 
     shutdown_logging(log_file_path)

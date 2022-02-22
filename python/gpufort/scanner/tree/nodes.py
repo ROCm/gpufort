@@ -48,8 +48,6 @@ class STNode:
             self._linemaps.append(first_linemap)
         self._first_statement_index = first_statement_index
         self._last_statement_index = first_statement_index # inclusive
-        self._prolog = []
-        self._epilog = []
         # metadata
         self.parent = None
         self.children = []
@@ -216,14 +214,35 @@ class STNode:
             result.append(text[start:end])
         return result
 
-    def add_to_prolog(self, line, prepend=False):
-        """Add some prolog lines to the first linemap."""
-        line_preproc = line.rstrip()
+    def get_prolog(self):
+        """:return: the first statement's prolog or the
+        first linemap's prolog if the first statement is
+        the first statement in the first linemap.
+        """
         prolog = self._linemaps[0]["statements"][
             self._first_statement_index]["prolog"]
         if self._first_statement_index == 0:
             prolog = self._linemaps[0]["prolog"]
-        else:
+        return prolog
+          
+    def get_epilog(self):
+        """:return: the last statement's epilog or the
+        last linemap's epilog if the last statement is
+        the last statement in the last linemap.
+        """
+        epilog = self._linemaps[-1]["statements"][
+            self._last_statement_index]["epilog"]
+        have_last_in_last_linemap = self._last_statement_index  == -1 or\
+                                    self._last_statement_index  == len(self._linemaps[-1]["statements"])-1
+        if have_last_in_last_linemap:
+            epilog = self._linemaps[0]["epilog"]
+        return epilog
+
+    def add_to_prolog(self, line, prepend=False):
+        """Add some prolog lines to the first linemap."""
+        line_preproc = line.rstrip()
+        prolog = self.get_prolog() 
+        if self._first_statement_index > 0:
             self._linemaps[0]["modified"] = True
         if not line_preproc.lower() in map(str.lower, prolog):
             if prepend:
@@ -234,13 +253,10 @@ class STNode:
     def add_to_epilog(self, line, prepend=False):
         """Add some epilog lines to the first linemap."""
         line_preproc = line.rstrip()
-        epilog = self._linemaps[-1]["statements"][
-            self._last_statement_index]["epilog"]
+        epilog = self.get_epilog() 
         have_last_in_last_linemap = self._last_statement_index  == -1 or\
                                     self._last_statement_index  == len(self._linemaps[-1]["statements"])-1
-        if have_last_in_last_linemap:
-            epilog = self._linemaps[0]["epilog"]
-        else:
+        if not have_last_in_last_linemap:
             self._linemaps[0]["modified"] = True
         if not line_preproc.lower() in map(str.lower, epilog):
             if prepend:
@@ -331,7 +347,6 @@ class STNode:
             joined_statements = "\n".join(self.statements())
             joined_lines = "".join(self.lines())
             statements_fully_cover_lines = have_first_in_first_linemap and have_last_in_last_linemap
-            print(self.__class__)
             transformed_code, transformed = \
               self.transform(joined_lines,joined_statements,statements_fully_cover_lines,index)
             if transformed:

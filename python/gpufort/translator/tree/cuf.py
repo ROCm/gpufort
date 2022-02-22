@@ -361,7 +361,7 @@ class TTCufAllocate(base.TTNode): # TODO not specific to CUF
     This statement has nearly no context except the bounds (in elements, not bytes)
     of the array that is allocated.
     Most information needs to be provided from calling function in order
-    to convert this call to a hip malloc.
+    to convert this call to a hipMalloc.
     """
 
     def _assign_fields(self, tokens):
@@ -384,10 +384,8 @@ class TTCufAllocate(base.TTNode): # TODO not specific to CUF
     def hip_f_str(self,
                   bytes_per_element,
                   array_qualifiers,
-                  indent="",
                   vars_are_c_ptrs=False):
-        """
-        Generate HIP ISO C Fortran expression for all
+        """Generate HIP ISO C Fortran expression for all
         device and pinned host allocations.
         Use standard allocate for all other allocations.
         :param array_qualifiers: List storing per variable, one of 'managed', 'constant', 'shared', 'pinned', 'texture', 'device' or None.
@@ -405,12 +403,12 @@ class TTCufAllocate(base.TTNode): # TODO not specific to CUF
                 size = ",".join(
                     array.counts_f_str()) # element counts per dimension
             if array_qualifiers[i] == "device":
-                line = "{2}call hipCheck(hipMalloc({0}, {1}))".format(
-                    array.var_name(), size, indent)
+                line = "call hipCheck(hipMalloc({0}, {1}))".format(
+                    array.var_name(), size)
                 result.append(line)
             elif array_qualifiers[i] == "pinned":
-                line = "{2}call hipCheck(hipHostMalloc({0}, {1}, 0))".format(
-                    array.var_name(), size, indent)
+                line = "call hipCheck(hipHostMalloc({0}, {1}, 0))".format(
+                    array.var_name(), size)
                 result.append(line)
             else:
                 other_arrays.append(base.make_f_str(array))
@@ -419,7 +417,7 @@ class TTCufAllocate(base.TTNode): # TODO not specific to CUF
             ]:
                 result += array.bound_variable_assignments(array.var_name())
         if len(other_arrays):
-            line = "{1}ALLOCATE({0})".format(",".join(other_arrays), indent)
+            line = "allocate({0})".format(",".join(other_arrays))
             result.append(line)
         return "\n".join(result)
 
@@ -448,7 +446,7 @@ class TTCufDeallocate(base.TTNode): # TODO not specific to CUF
     def omp_f_str(self, array_qualifiers, indent="", vars_are_c_ptrs=False):
         assert False, "Not implemented!" # TODO omp target free
 
-    def hip_f_str(self, array_qualifiers, indent=""):
+    def hip_f_str(self, array_qualifiers):
         """
         Generate HIP ISO C Fortran expression for all
         device and pinned host allocations.
@@ -462,17 +460,17 @@ class TTCufDeallocate(base.TTNode): # TODO not specific to CUF
 
         for i, array in enumerate(self._vars):
             if array_qualifiers[i] == "device":
-                line = "{1}call hipCheck(hipFree({0}))".format(
-                    array.var_name(), indent)
+                line = "call hipCheck(hipFree({0}))".format(
+                    array.var_name())
                 result.append(line)
             elif array_qualifiers[i] == "pinned":
-                line = "{1}call hipCheck(hipHostFree({0}))".format(
-                    array.var_name(), indent)
+                line = "call hipCheck(hipHostFree({0}))".format(
+                    array.var_name())
                 result.append(line)
             else:
                 other_arrays.append(base.make_f_str(array))
         if len(other_arrays):
-            line = "{1}deallocate({0})".format(",".join(other_arrays), indent)
+            line = "deallocate({0})".format(",".join(other_arrays))
             result.append(line)
         return "\n".join(result)
 
@@ -562,15 +560,14 @@ class TTCufMemcpyIntrinsic(base.TTNode, CufMemcpyBase):
     def hip_f_str(self,
                   dest_on_device,
                   src_on_device,
-                  bytes_per_element=1,
-                  indent=""): # TODO backend specific
+                  bytes_per_element=1): # TODO backend specific
         api = "hipMemcpy"
         args = []
         args.append(self.dest_f_str(dest_on_device, bytes_per_element))
         args.append(self.src_f_str(src_on_device, bytes_per_element))
         args.append(self.memcpy_kind(dest_on_device, src_on_device))
-        return "{indent}call hipCheck({api}({args}))".format(
-            api=api, args=", ".join(args), indent=indent)
+        return "call hipCheck({api}({args}))".format(
+            api=api, args=", ".join(args))
 
 
 class TTCufCudaMemcpy(base.TTNode, CufMemcpyBase):

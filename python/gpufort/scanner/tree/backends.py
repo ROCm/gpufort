@@ -27,34 +27,6 @@ def postprocess(stree, index, **kwargs):
     """Add use statements as well as handles plus their creation and 
     destruction for certain math libraries.
     """
-    # TODO first part still necessary?
-    #if "hip" in opts.destination_dialect or len(
-    #        opts.kernels_to_convert_to_hip):
-    #    # insert use statements at appropriate point
-    #    def is_accelerated(child):
-    #        return isinstance(child,tree.STLoopNest) or\
-    #               (type(child) is tree.STProcedure and child.is_kernel_subroutine())
-
-    #    print(stree)
-    #    for stmodule in stree.find_all(filter=lambda child: isinstance(
-    #            child, (tree.STModule, tree.STProgram)),
-    #                                   recursively=False):
-    #        module_name = stmodule.name
-    #        kernels = stmodule.find_all(filter=is_accelerated,
-    #                                    recursively=True)
-    #        for kernel in kernels:
-    #            if "hip" in opts.destination_dialect or\
-    #              kernel.min_lineno() in kernels_to_convert_to_hip or\
-    #              kernel.kernel_name() in kernels_to_convert_to_hip:
-    #                stnode = kernel.parent.find_first(
-    #                    filter=lambda child: isinstance(
-    #                        child, (tree.STUseStatement, tree.STDeclaration,
-    #                                tree.STContains, tree.STPlaceHolder)))
-    #                assert not stnode is None
-    #                indent = stnode.first_line_indent()
-    #                stnode.add_to_prolog("{}use {}{}\n".format(
-    #                    indent, module_name, hip_module_suffix))
-
     for src_dialect, dest_dialect, func in POSTPROCESS_BACKENDS:
         if (src_dialect in opts.source_dialects and
                 dest_dialect in opts.destination_dialect):

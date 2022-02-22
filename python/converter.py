@@ -265,6 +265,13 @@ def populate_cl_arg_parser(parser,for_converter=True):
             "Emit explicit Fortran interfaces to the C++ kernel launchers  [default: (default) config value].",
         )
     group_fort2x_hip.add_argument(
+        "--emit-grid-launcher",
+        dest="emit_cpu_implementation",
+        action="store_true",
+        help=
+        "Per detected loop kernel, also emit a grid launcher [default: (default) config value].",
+    )
+    group_fort2x_hip.add_argument(
         "--emit-cpu-impl",
         dest="emit_cpu_implementation",
         action="store_true",

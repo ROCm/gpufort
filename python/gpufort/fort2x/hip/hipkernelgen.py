@@ -69,12 +69,6 @@ class HipKernelGeneratorBase(kernelgen.KernelGeneratorBase):
         :param str kind:one of 'hip', 'hip_ps', or 'cpu'.
         """
         launcher_name_tokens = ["launch", self.kernel_name, kind]
-        if kind == "hip":
-            launcher_name_tokens = ["launch", self.kernel_name]
-        elif kind == "hip_ps":
-            launcher_name_tokens = ["launch", self.kernel_name, "ps"]
-        else:
-            launcher_name_tokens = ["launch", self.kernel_name, "cpu"]
         return {
             "kind": kind,
             "name": "_".join(launcher_name_tokens),

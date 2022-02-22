@@ -126,11 +126,11 @@ class CodeGenerator():
         - Add "contains" (if not present) to end statement.
         """
         # add GPUFORT use statements
+        for mod in reversed(self.default_modules): # reverse due to prepending
+            stcontainer.add_use_statement(mod)
+
         indent_parent = stcontainer.first_line_indent()
         indent = indent_parent + " "*2
-        for mod in reversed(self.default_modules): # reverse due to prepending
-            stcontainer.add_to_epilog("{}use {}".format(indent, mod),
-                                      prepend=True)
         # types and interfaces
         stlastdeclnode = stcontainer.last_entry_in_decl_list()
         for snippet in fortran_modulegen.rendered_types:
@@ -139,11 +139,6 @@ class CodeGenerator():
         for snippet in fortran_modulegen.rendered_interfaces:
             stlastdeclnode.add_to_epilog(CodeGenerator._indent(
                 snippet, indent))
-        print(fortran_modulegen.rendered_types)
-        print(fortran_modulegen.rendered_interfaces)
-        print(fortran_modulegen.rendered_routines)
-        print(stcontainer.get_epilog())
-        print(stlastdeclnode.get_epilog())
         # routines
         if len(fortran_modulegen.rendered_routines):
             stend = stcontainer.end_statement()
@@ -152,7 +147,6 @@ class CodeGenerator():
             if not stcontainer.has_contains_statement():
                 stend.add_to_prolog(CodeGenerator._indent("contains",indent_parent),
                                     prepend=True)
-            print(stend.get_prolog())
 
     @util.logging.log_entry_and_exit(opts.log_prefix+".CodeGenerator")
     def _traverse_scanner_tree(self):

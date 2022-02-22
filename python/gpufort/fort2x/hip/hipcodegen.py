@@ -38,18 +38,16 @@ class HipCodeGenerator(codegen.CodeGenerator):
         * *emit_launcher_interfaces* (``bool``):
             Render **explicit** Fortran interfaces to the generated launchers.
         * *emit_grid_launcher* (``bool``):
-            Only for loop nests: Render a launcher that takes the grid as first argument [default: true].
-            This launcher is always rendered for kernel subroutines, i.e. this option 
-            does not affect them.
+            Render a launcher that takes the grid as first argument, defaults to opts value.
         * *emit_problem_size_launcher* (``bool``):
-            Only for loop nests: Render a launcher that takes the problem size as first argument [default: true].
+            Render a launcher that takes the problem size as first argument, defaults to opts value.
         * *emit_cpu_launcher* (``bool``):
-            Only for loop nests: Render a launcher that runs the original loop nest on the CPU [default: False].
+            Only for loop nests: Render a launcher that runs the original loop nest on the CPU, defaults to opts value
         * *emit_gpu_kernel* (``bool``):
-            Emit GPU kernels. [default: True].
+            Emit GPU kernels, defaults to opts value.
         * *emit_debug_code* (``bool``):
             Write debug code such as printing of kernel arguments or device array norms and elements
-            into the generated kernel launchers.
+            into the generated kernel launchers. Defaults to opts value.
 """
         codegen.CodeGenerator.__init__(self, stree, index, **kwargs)
         util.kwargs.set_from_kwargs(self, "emit_debug_code",
@@ -64,7 +62,6 @@ class HipCodeGenerator(codegen.CodeGenerator):
                                     opts.emit_cpu_launcher, **kwargs)
         util.kwargs.set_from_kwargs(self, "emit_launcher_interfaces",
                                     opts.emit_launcher_interfaces, **kwargs)
-        print(self.emit_launcher_interfaces)
 
     @util.logging.log_entry_and_exit(opts.log_prefix+".HipCodeGenerator")
     def __render_kernel(self,
@@ -79,23 +76,24 @@ class HipCodeGenerator(codegen.CodeGenerator):
                 + mykernelgen.render_end_kernel_comment_cpp())
         rendered_launchers_cpp = []
         rendered_interfaces_f03 = []
-        grid_launcher = mykernelgen.create_launcher_context(
-            "hip", self.emit_debug_code, fortran_filegen.used_modules)
-        if not is_loopnest or self.emit_grid_launcher:
-            mykernelgen.render_gpu_launcher_cpp(grid_launcher)
-            mykernelgen.render_launcher_interface_f03(grid_launcher)
-
-        if is_loopnest and self.emit_problem_size_launcher:
-            problem_size_launcher = copy.deepcopy(grid_launcher)
-            problem_size_launcher["kind"] = "hip_ps"
+  
+        if self.emit_grid_launcher:
+            grid_launcher = mykernelgen.create_launcher_context(
+                "hip", self.emit_debug_code, fortran_filegen.used_modules)
+            rendered_launchers_cpp  += mykernelgen.render_gpu_launcher_cpp(grid_launcher)
+            rendered_interfaces_f03 += mykernelgen.render_launcher_interface_f03(grid_launcher)
+        
+        if self.emit_problem_size_launcher:
+            problem_size_launcher = mykernelgen.create_launcher_context(
+                "hip_ps", self.emit_debug_code, fortran_filegen.used_modules)
             rendered_launchers_cpp += mykernelgen.render_gpu_launcher_cpp(
                 problem_size_launcher)
             rendered_interfaces_f03 += mykernelgen.render_launcher_interface_f03(
                 problem_size_launcher)
 
         if is_loopnest and self.emit_cpu_launcher:
-            cpu_launcher = copy.deepcopy(grid_launcher)
-            cpu_launcher["kind"] = "cpu"
+            cpu_launcher = mykernelgen.create_launcher_context(
+                "cpu", self.emit_debug_code, fortran_filegen.used_modules)
             rendered_launchers_cpp += mykernelgen.render_cpu_launcher_cpp(
                 cpu_launcher)
             rendered_interfaces_f03 += mykernelgen.render_launcher_interface_f03(
@@ -104,11 +102,13 @@ class HipCodeGenerator(codegen.CodeGenerator):
                 mykernelgen.render_begin_kernel_comment_f03()
                 + mykernelgen.render_cpu_routine_f03(cpu_launcher)
                 + mykernelgen.render_end_kernel_comment_f03())
+       
         if len(rendered_launchers_cpp):
             cpp_filegen.rendered_launchers += (
                 mykernelgen.render_begin_kernel_comment_cpp()
                 + rendered_launchers_cpp
                 + mykernelgen.render_end_kernel_comment_cpp())
+       
         if self.emit_launcher_interfaces and len(rendered_interfaces_f03):
             fortran_filegen.rendered_interfaces += (
                 mykernelgen.render_begin_kernel_comment_f03()

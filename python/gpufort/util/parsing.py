@@ -125,7 +125,7 @@ def next_tokens_till_open_bracket_is_closed(tokens, open_brackets=0):
     return result
 
 
-def create_comma_separated_list(tokens,
+def get_highest_level_arguments(tokens,
                                 open_brackets=0,
                                 separators=[","],
                                 terminators=["::", "\n", "!"]):
@@ -156,7 +156,6 @@ def create_comma_separated_list(tokens,
         result.append(current_substr)
     return result
 
-
 def extract_function_calls(text, func_name):
     """Extract all calls of the function `func_name` from the input text.
     :param str text: the input text.
@@ -169,12 +168,70 @@ def extract_function_calls(text, func_name):
     for m in re.finditer(r"{}\s*\(".format(func_name), text):
         rest_substr = next_tokens_till_open_bracket_is_closed(
             text[m.end():], 1)
-        args = create_comma_separated_list(rest_substr[:-1], 0, [","],
+        args = get_highest_level_arguments(rest_substr[:-1], 0, [","],
                                            []) # clip the ')' at the end
         end = m.end() + len(rest_substr)
         result.append((text[m.start():end], args))
     return result
 
+def parse_use_statement(statement):
+    """Extracts module name and 'only' variables
+    from the statement.
+    :return: A tuple of containing module name and a list of 'only' 
+    variables (in that order).
+
+    :Example:
+    
+    `import mod, only: var1, var2`
+
+    will result in the tuple:
+
+    ("mod",["var1","var2"])
+    """
+    tokens = tokenize(statement)
+    mod = tokens[1]
+    only = []
+    if len(tokens) > 5: # and tokens[2,3,4] == [",","only",":"]:
+        only += [tk for tk in range(5,len(tokens)) if tk != ","]
+    return mod, only
+
+#def parse_allocate_statement(statement):
+#    """Parses:
+#  
+#      (deallocate|allocate) (allocation-list [, stat=stat-variable])
+#
+#    where each entry in allocation-list has the following syntax:
+#
+#      name( [lower-bound :] upper-bound [, ...] )  
+#
+#    :return: List of tuples pairing variable names and bound information plus
+#             a status variable expression if the `stat` variable is set. Otherwise
+#             the second return value is None.
+#
+#    :Example:
+#    
+#    `allocate(a(1,N),b(-1:m,n)`
+#
+#    will result in the list:
+#
+#    [("a",[("1","N")]),("b",[("-1","m"),("1","n)])]
+#
+#    where `1` is the default lower bound if none is present.
+#    """
+#    result1 = [] 
+#    result2 = None
+#    args = get_highest_level_arguments(tokenize(text)[2:-1]) # : [...,"b(-1:m,n)"]
+#    for arg in args:
+#        tokens = tokenize(arg)
+#        if tokens[0].lower() == "stat":
+#            result2 = " ".join(tokens[2:])
+#        else:
+#            varname = tokens[0] # : "b"
+#            bounds = get_highest_level_arguments(tokens[2:]) # : ["-1:m", "n"]
+#            for bound in bounds:
+#                bound.split(":")
+#            pair = (tokens[0],[])
+#    return result1, result2
 
 # rules
 def is_declaration(tokens):

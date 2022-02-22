@@ -3,6 +3,7 @@
 import re
 import sys
 import hashlib
+import textwrap
 
 from gpufort import util
 from gpufort import linemapper
@@ -364,6 +365,19 @@ class STContainerBase(STNode):
         """:return: If the scanner tree node is member of the declaration list."""
         return isinstance(stnode, IDeclListEntry)
 
+    def add_use_statement(self,module,only=[]):
+        """Add a use statement to the top of
+        the module's declaration list.
+        :param str module: Module name
+        :param list only: 
+        """
+        indent_parent = self.first_line_indent()
+        indent = indent_parent + " "*2
+        statement = "{}use {}".format(indent,module)
+        if len(only):
+            statement += ", only: "+",".join(only)
+        self.add_to_epilog(statement,prepend=True)
+
     def first_entry_in_decl_list(self):
         result = self.find_first(filter=STContainerBase.decl_list_entry_filter)
         if result == None:
@@ -503,50 +517,11 @@ class STProgram(STContainerBase):
         self.name = name.lower()
         self.kind = "program"
 
-
-class STUseStatement(STNode, IDeclListEntry):
-
-    def __init__(self, first_linemap, first_linemap_first_statement):
-        STNode.__init__(self, first_linemap, first_linemap_first_statement)
-
-    def transform(self,
-                  joined_lines,
-                  joined_statements,
-                  statements_fully_cover_lines,
-                  index=[]):
-        # TODO clean
-        indent = self.first_line_indent()
-        snippet = joined_statements
-        use_cuda = False
-        for lib in grammar.HOST_MODULES:
-            lib_lower = lib.lower()
-            if lib_lower in snippet.lower():
-                use_cuda = True
-                if lib_lower == "cudafor":
-                    snippet = re.sub(r"\bcudafor\b", opts.hip_module_name,
-                                     snippet, re.IGNORECASE)
-                    snippet = snippet.rstrip(
-                        "\n") + "\n" + "{0}use hipfort_check".format(indent)
-                snippet = re.sub(
-                    r"\bcu(\w+)\b",
-                    "".join([opts.hip_math_module_prefix,
-                             r"hip\1"]), snippet, re.IGNORECASE)
-        return snippet, use_cuda
-
-
 class STContains(STNode):
-
-    def __init__(self, first_linemap, first_linemap_first_statement):
-        STNode.__init__(self, first_linemap, first_linemap_first_statement)
-        self.name = None
-
+    pass
 
 class STPlaceHolder(STNode, IDeclListEntry):
-
-    def __init__(self, first_linemap, first_linemap_first_statement):
-        STNode.__init__(self, first_linemap, first_linemap_first_statement)
-        self.name = None
-
+    pass
 
 class STProcedure(STContainerBase):
 
@@ -825,8 +800,7 @@ class STDeclaration(STNode, IDeclListEntry):
 
 
 class STAttributes(STNode):
-    """
-    CUDA Fortran specific intrinsic that needs to be removed/commented out
+    """CUDA Fortran specific intrinsic that needs to be removed/commented out
     in any case.
     """
 
@@ -906,11 +880,9 @@ class STAllocated(STNode):
 
 
 class IWithBackend:
-    _backends = []
-
     @classmethod
     def register_backend(cls, src_dialect, dest_dialect, func):
-        IWithBackend._backends.append((src_dialect, dest_dialect, func))
+        cls._backends.append((src_dialect, dest_dialect, func))
 
     def transform(self,
                   joined_lines,
@@ -932,38 +904,46 @@ class IWithBackend:
         indent = self.first_line_indent()
         result = joined_statements
         transformed = False
-        for src_dialect, dest_dialect, func in IWithBackend._backends:
+        for src_dialect, dest_dialect, func in self.__class__._backends:
             if (src_dialect in opts.source_dialects and
                     dest_dialect in opts.destination_dialect):
-                result, transformed1 = func(self, result, index)
+                result, transformed1 = func(self, result, index, opts.destination_dialect)
                 transformed = transformed or transformed1
         return result, transformed
 
+class STUseStatement(STNode, IDeclListEntry, IWithBackend):
+    _backends = []
+    
+    def __init__(self, *args, **kwargs):
+        STNode.__init__(self, *args, **kwargs)
+    
+    def transform(self,*args,**kwargs):
+        return IWithBackend.transform(self,*args,**kwargs)
 
 class STAllocate(STNode, IWithBackend):
+    _backends = []
 
     def __init__(self, first_linemap, first_linemap_first_statement):
         STNode.__init__(self, first_linemap, first_linemap_first_statement)
         self.parse_result = translator.tree.grammar.allocate.parseString(
             self.statements()[0])[0]
         self.variable_names = self.parse_result.variable_names()
-        #result1, transformed1 = cuf.handle_allocate_cuf(
-        #    self, joined_statements, index)
-        #result2, transformed2 = acc.handle_allocate_acc(self, result1, index)
+    
+    def transform(self,*args,**kwargs):
+        return IWithBackend.transform(self,*args,**kwargs)
 
 
 class STDeallocate(STNode, IWithBackend):
+    _backends = []
 
     def __init__(self, first_linemap, first_linemap_first_statement):
         STNode.__init__(self, first_linemap, first_linemap_first_statement)
         self.parse_result = translator.tree.grammar.deallocate.parseString(
             self.statements()[0])[0]
         self.variable_names = self.parse_result.variable_names()
-        #result1, transformed1 = cuf.handle_deallocate_cuf(
-        #    self, joined_statements, index)
-        #result2, transformed2 = acc.handle_deallocate_acc(self, result1, index)
-        #return result2, (transformed1 or transformed2)
-
+    
+    def transform(self,*args,**kwargs):
+        return IWithBackend.transform(self,*args,**kwargs)
 
 class STMemcpy(STNode):
 
@@ -978,6 +958,7 @@ class STMemcpy(STNode):
                   statements_fully_cover_lines,
                   index=[]): # TODO
 
+        indent = self.first_line_indent()
         def repl_memcpy_(parse_result):
             dest_name = parse_result.dest_name_f_str()
             src_name = parse_result.src_name_f_str()
@@ -989,7 +970,7 @@ class STMemcpy(STNode):
             src_on_device = index_variable_is_on_device(src_indexed_var)
             if dest_on_device or src_on_device:
                 subst = parse_result.hip_f_str(dest_on_device, src_on_device)
-                return (subst, True)
+                return (textwrap.indent(subst,indent), True)
             else:
                 return ("", False) # no transformation; will not be considered
 

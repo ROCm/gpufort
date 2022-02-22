@@ -332,7 +332,7 @@ def parse_declaration(fortran_statement):
     tokens = tokens[idx_last_consumed_token + 1:] # remove type part tokens
     idx_last_consumed_token = None
     if tokens[0] == "," and DOUBLE_COLON in tokens:
-        qualifiers = util.parsing.create_comma_separated_list(tokens)
+        qualifiers = util.parsing.get_highest_level_arguments(tokens)
         idx_last_consumed_token = tokens.index(DOUBLE_COLON)
     elif tokens[0] == DOUBLE_COLON:
         idx_last_consumed_token = 0
@@ -342,13 +342,13 @@ def parse_declaration(fortran_statement):
             "could not parse qualifier list in variable declaration statement '{}'"
             .format(fortran_statement))
         sys.exit(2)
-    qualifiers_raw = util.parsing.create_comma_separated_list(tokens)
+    qualifiers_raw = util.parsing.get_highest_level_arguments(tokens)
 
     # handle variables list
     if idx_last_consumed_token != None:
         tokens = tokens[idx_last_consumed_token
                         + 1:] # remove qualifier list tokens
-    variables_raw = util.parsing.create_comma_separated_list(tokens)
+    variables_raw = util.parsing.get_highest_level_arguments(tokens)
 
     util.logging.log_debug2(
         opts.log_prefix, "parse_declaration",

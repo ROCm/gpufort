@@ -39,10 +39,11 @@ class AccBackendBase:
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def handle_allocate_acc(stallocate, joined_statements, index, dest_dialect=""):
-    epilog = ALLOCATE_BACKENDS[dest_dialect](stallocate, index)
-    for line in epilog:
-        stallocate.add_to_epilog(line)
+def handle_allocate_acc(stallocate, joined_statements, index, dest_dialect):
+    if dest_dialect in ALLOCATE_BACKENDS:
+        epilog = ALLOCATE_BACKENDS[dest_dialect](stallocate, index)
+        for line in epilog:
+            stallocate.add_to_epilog(line)
     return joined_statements, False
 
 
@@ -50,10 +51,11 @@ def handle_allocate_acc(stallocate, joined_statements, index, dest_dialect=""):
 def handle_deallocate_acc(stdeallocate,
                           joined_statements,
                           index,
-                          dest_dialect=""):
-    prolog = DEALLOCATE_BACKENDS[dest_dialect](stdeallocate, index)
-    for line in prolog:
-        stdeallocate.add_to_prolog(line)
+                          dest_dialect):
+    if dest_dialect in DEALLOCATE_BACKENDS:
+        prolog = DEALLOCATE_BACKENDS[dest_dialect](stdeallocate, index)
+        for line in prolog:
+            stdeallocate.add_to_prolog(line)
     return joined_statements, False
 
 

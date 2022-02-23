@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MIT                                                 
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+# check if required software installed
 GPUFORT_BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 # check if required python packages are installed
@@ -24,25 +25,6 @@ fi
 
 # all dependencies are met and we can continue
 
-for a in "$@"; do
-  if [ "$a" == "--print-grammar" ]; then
-    printf "\n-------------------\n"
-    printf "BEGIN GPUFORT GRAMMAR"
-    printf "\n-------------------\n\n"
-    GRAMMAR_DIR=${GPUFORT_BIN_DIR}/../python/grammar
-    cat ${GRAMMAR_DIR}/grammar_f03.py.in
-    cat ${GRAMMAR_DIR}/grammar_directives.py.in
-    cat ${GRAMMAR_DIR}/grammar_cuf.py.in
-    cat ${GRAMMAR_DIR}/grammar_acc.py.in
-    cat ${GRAMMAR_DIR}/grammar_gpufort_control.py.in
-    cat ${GRAMMAR_DIR}/grammar_epilog.py.in
-    printf "\n-------------------\n"
-    printf "END GPUFORT GRAMMAR"
-    printf "\n-------------------\n"
-    USED_DEVELOPER_TOOL=1
-  fi
-done 
-
 if [ -z ${USED_DEVELOPER_TOOL} ]; then
-  python3 $GPUFORT_BIN_DIR/../python/converter.py --working-dir $(pwd) "${@}"
+  python3 $GPUFORT_BIN_DIR/../python/fc.hip.py --working-dir $(pwd) "${@}"
 fi

@@ -6,7 +6,7 @@ TEST_NAME = $(TEST_SRC:.f90=)
 .PHONY: build.hip build.omp codegen.hip codegen.omp clean
 
 codegen.hip:
-	gpufort $(TEST_SRC) --wrap --dest hip --config config.py --log-level DEBUG3 --emit-cpu-impl --emit-debug-code --verbose
+	gpufort $(TEST_SRC) --wrap --dest hip --config config.py --log-level DEBUG3 --emit-cpu-impl --emit-debug-code
 	#gpufort -w vector-add.f90 -E hip --emit-debug-code --emit-cpu-impl
 codegen.omp:
 	gpufort $(TEST_SRC) --wrap --dest omp --config config.py
@@ -17,4 +17,4 @@ build.omp: codegen.omp
 	$(OMPFC) -ffree-form $(OMPFC_CFLAGS) -fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx906 $(TEST_NAME).hipified.f90 -o $(TEST_NAME)
 
 clean:
-	rm -rf *-gpufort.* *-fort2hip.* *.o *.mod gpufort*.h $(TEST_NAME) *.gpufort_mod log/
+	rm -rf *-gpufort.* *-fort2*.* *.o *.mod gpufort*.h $(TEST_NAME) *.gpufort_mod log/ *linemaps*.json

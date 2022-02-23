@@ -11,6 +11,6 @@ $(TEST_NAME): %: %.f90-gpufort.f08
 	$(HIPFC) $^ -o $@ $@.f90-fort2hip.hip.o $(CFLAGS)
 
 $(TEST_CONV_SRC): %-gpufort.f08: %
-	gpufort --wrap $^ --dest hip-gpufort-rt
+	gpufort --wrap $^ --dest hipgpufort
 clean:
-	rm -rf *-gpufort.* *-fort2hip.* *.o *.mod gpufort*.h $(TEST_NAME) *.gpufort_mod *-linemaps-*.json log/
+	rm -rf *-gpufort.* *-fort2*.* *.o *.mod gpufort*.h $(TEST_NAME) *.gpufort_mod *-linemaps-*.json log/

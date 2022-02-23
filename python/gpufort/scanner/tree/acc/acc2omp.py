@@ -2,9 +2,16 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 from gpufort import translator
 from gpufort import util
-from ... import opts
-from . import accbackends
 
+from ... import opts
+
+from .. import backends
+
+from . import accbackends
+from . import accnodes
+
+dest_dialects = ["omp"]
+backends.supported_destination_dialects.update(set(dest_dialects)) 
 
 class Acc2Omp(accbackends.AccBackendBase):
 
@@ -43,7 +50,7 @@ class AccLoopNest2Omp(accbackends.AccBackendBase):
             snippet = joined_statements
         try:
             parent_tag = self._stnode.parent.tag()
-            scope = scope.create_scope(index, parent_tag)
+            scope = indexer.scope.create_scope(index, parent_tag)
             parse_result = translator.parse_loop_kernel(
                 snippet.splitlines(), scope)
             return parse_result.omp_f_str(snippet), True
@@ -53,18 +60,5 @@ class AccLoopNest2Omp(accbackends.AccBackendBase):
                 "failed to convert kernel " + str(snippet))
             sys.exit(2)
 
-
-def AllocateOmp(stallocate, index):
-    return ""
-
-
-def DeallocateOmp(stdeallocate, index):
-    return ""
-
-
-def _nop(*args, **kwargs):
-    pass
-
-
-accbackends.register_acc_backend("omp", Acc2Omp, AccLoopNest2Omp, _nop,
-                                 AllocateOmp, DeallocateOmp)
+accnodes.STAccDirective.register_backend(dest_dialects,Acc2Omp())
+accnodes.STAccLoopNest.register_backend(dest_dialects,AccLoopNest2Omp())

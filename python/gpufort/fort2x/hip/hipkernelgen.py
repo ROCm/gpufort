@@ -151,12 +151,13 @@ class HipKernelGenerator4CufKernel(HipKernelGeneratorBase):
             for ivar in iprocedure["variables"]
             if ivar["name"] not in iprocedure["dummy_args"]
         ]
-        all_var_exprs = self._strip_member_access(ttprocedure.vars_in_body(
+        all_var_exprs = kernelgen.KernelGeneratorBase.strip_member_access(ttprocedure.vars_in_body(
         )) # in the body, there might be variables present from used modules
         self.all_vars = iprocedure["dummy_args"] + [
             v for v in all_var_exprs if v not in iprocedure["dummy_args"]
         ]
         self.global_reductions = {}
+        self.c_body = ttprocedure.c_str()
         #
         self.kernel = self._create_kernel_context()
 

@@ -119,7 +119,6 @@ class HipCodeGenerator(codegen.CodeGenerator):
     def _render_loop_nest(self, stloopnest, cpp_filegen, fortran_filegen):
         """:note: Writes back to stloopnest argument.
         """
-
         scope = indexer.scope.create_scope(self.index, stloopnest.parent.tag())
 
         mykernelgen = hipkernelgen.HipKernelGenerator4LoopNest(
@@ -136,22 +135,22 @@ class HipCodeGenerator(codegen.CodeGenerator):
         # stloopnest.set_kernel_arguments(mykernelgen.get_kernel_arguments)
 
     @util.logging.log_entry_and_exit(opts.log_prefix+".HipCodeGenerator")
-    def _render_device_procedure(stprocedure, iprocedure, cpp_filegen,
-                                 fortran_filegen):
+    def _render_device_procedure(self, stprocedure, cpp_filegen, fortran_filegen):
+        iprocedure = stprocedure.index_record
         kernel_name = iprocedure["name"]
-        scope = indexer.scope.create_scope(index, stprocedure.parent.tag())
+        scope = indexer.scope.create_scope(self.index, stprocedure.parent.tag())
         if stprocedure.is_kernel_subroutine():
             mykernelgen = hipkernelgen.HipKernelGenerator4CufKernel(
                 stprocedure.parse_result, iprocedure, scope,
                 kernel_name = iprocedure["name"],
-                kernel_hash = stprocedure.kernel_hash(),
-                fortran_snippet = "".join(stlprocedure.lines()))
+                kernel_hash = "", 
+                fortran_snippet = "".join(stprocedure.lines()))
         else:
             mykernelgen = hipkernelgen.HipKernelGenerator4AcceleratorRoutine(
                 stprocedure.parse_result, iprocedure, scope,
                 kernel_name = iprocedure["name"],
-                kernel_hash = stprocedure.kernel_hash(),
-                fortran_snippet = "".join(stlprocedure.lines()))
+                kernel_hash = "", 
+                fortran_snippet = "".join(stprocedure.lines()))
 
         self.__render_kernel(mykernelgen,
                              cpp_filegen,
@@ -160,7 +159,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
 
         # stloopnest.set_kernel_arguments(mykernelgen.get_kernel_arguments)
 
-        util.logging.log_leave_function(LOG_PREFIX, "self._render_loop_nest")
+        util.logging.log_leave_function(opts.log_prefix, "self._render_loop_nest")
 
     @util.logging.log_entry_and_exit(opts.log_prefix+".HipCodeGenerator")
     def _render_derived_types(self, itypes, cpp_filegen, fortran_modulegen):

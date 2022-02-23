@@ -1,12 +1,18 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-from ... import opts
-from .. import nodes
-from . import accbackends
 from gpufort import util
 
+from ... import opts
+
+from .. import nodes
 
 class STAccDirective(nodes.STDirective):
+    _backends = []
+
+    @classmethod
+    def register_backend(cls, dest_dialects, singleton):
+        cls._backends.append((dest_dialects, singleton))
+
     """Class for handling ACC directives."""
 
     def __init__(self, first_linemap, first_linemap_first_statement,
@@ -17,6 +23,7 @@ class STAccDirective(nodes.STDirective):
                                    directive_no,
                                    sentinel="!$acc")
         self._default_present_vars = []
+        self.dest_dialect = opts.destination_dialect
 
     def find_substring(self, token):
         return token in self.first_statement()
@@ -112,23 +119,22 @@ class STAccDirective(nodes.STDirective):
 
     __repr__ = __str__
 
-    def transform(self,
-                  joined_lines,
-                  joined_statements,
-                  statements_fully_cover_lines,
-                  index=[]):
+    def transform(self,*args,**kwargs):
         if self.is_purely_declarative():
-            return nodes.STNode.transform(self, joined_lines,
-                                          joined_statements,
-                                          statements_fully_cover_lines, index)
+            return nodes.STNode.transform(self,*args,**kwargs)
         else:
-            checked_dialect = nodes.check_destination_dialect(
-                opts.destination_dialect)
-            return accbackends.ACC_BACKENDS[checked_dialect](self).transform(\
-                    joined_lines,joined_statements,statements_fully_cover_lines,index)
+            for dest_dialects, singleton in self.__class__._backends:
+                if self.dest_dialect in dest_dialects:
+                    singleton.configure(self)
+                    return singleton.transform(*args,**kwargs)
 
 
 class STAccLoopNest(STAccDirective, nodes.STLoopNest):
+    _backends = []
+
+    @classmethod
+    def register_backend(cls, dest_dialects, singleton):
+        cls._backends.append((dest_dialects, singleton))
 
     def __init__(self, first_linemap, first_linemap_first_statement,
                  directive_no):
@@ -136,18 +142,9 @@ class STAccLoopNest(STAccDirective, nodes.STLoopNest):
                                 first_linemap_first_statement, directive_no)
         nodes.STLoopNest.__init__(self, first_linemap,
                                   first_linemap_first_statement)
-
-    def transform(self,
-                  joined_lines,
-                  joined_statements,
-                  statements_fully_cover_lines,
-                  index=[],
-                  destination_dialect=""):
-        """
-        :param destination_dialect: allows to override default if this kernel
-                                   should be translated via another backend.
-        """
-        checked_dialect = nodes.check_destination_dialect(\
-            opts.destination_dialect if not len(destination_dialect) else destination_dialect)
-        return accbackends.ACC_LOOP_KERNEL_BACKENDS[checked_dialect](self).transform(\
-                joined_lines,joined_statements,statements_fully_cover_lines,index)
+        self.dest_dialect = opts.destination_dialect
+    def transform(self,*args,**kwargs):
+        for dest_dialects, singleton in self.__class__._backends:
+            if self.dest_dialect in dest_dialects:
+                singleton.configure(self)
+                return singleton.transform(*args,**kwargs)

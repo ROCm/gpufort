@@ -30,11 +30,12 @@ def parse_raw_cl_args():
 
     prefix = "-gpufort"
     targets = ["host", "target"]
-    flags = ["compiler", "cflags", "ldflags"]
+    flags = ["compiler", "cflags"]
 
     compiler_options = [
         "-".join([prefix, x, y]) for x in targets for y in flags
     ]
+    compiler_options.append("-".join([prefix,"ldflags"]))
     result = {}
     for copt in compiler_options:
         result[copt] = []
@@ -78,7 +79,7 @@ def populate_cl_arg_parser(parser):
         default="hipfc",
         type=str,
         help=
-        "Compiler for host code, defaults to HIPFORT's gfortran-based 'hipfc'. Use '--gpufort-host-cflags <flags>' to set compilation flags and '--gpufort-host-ldflags <flags>' to set linker flags. Flags to CPUFORT related libraries are added by default if not specified otherwise. Host and target compiler and their respective options must be specified after all other GPUFORT options.",
+        "Compiler for host code, defaults to HIPFORT's gfortran-based 'hipfc'. Use '--gpufort-host-cflags <flags>' to set compilation flags and '--gpufort-ldflags <flags>' to set linker flags. Flags to CPUFORT related libraries are added by default if not specified otherwise. Host and target compiler and their respective options must be specified after all other GPUFORT options.",
     )
     parser.add_argument(
         "-gpufort-target-compiler",
@@ -86,7 +87,7 @@ def populate_cl_arg_parser(parser):
         default="hipcc",
         type=str,
         help=
-        "Compiler for offload target code, defaults to 'hipcc'. Use '--gpufort-target-cflags <flags>' to set compilation flags and '--gpufort-target-ldflags <flags>' to set linker flags. Flags to GPUFORT related libraries are added by default if not specified otherwise. Host and target compiler and their respective options must be specified after all other GPUFORT options.",
+        "Compiler for offload target code, defaults to 'hipcc'. Use '--gpufort-target-cflags <flags>' to set compilation flags and '--gpufort-dflags <flags>' to set linker flags. Flags to GPUFORT related libraries are added by default if not specified otherwise. Host and target compiler and their respective options must be specified after all other GPUFORT options.",
     )
     parser.add_argument(
         "-openacc",
@@ -246,8 +247,7 @@ have a '--' prefix while this tool's options have a '-' prefix."""))
     # cpp compilation
     cpp_cmd = ([args.target_compiler] + cpp_cflags
                + host_and_target_compiler_options["target_cflags"]
-               + ["-c", cpp_file_path] + ldflags
-               + host_and_target_compiler_options["target_ldflags"]
+               + ["-c", cpp_file_path]
                + ["-o", cpp_object_path])
     handle_subprocess_output(run_subprocess(cpp_cmd))
     # fortran compilation
@@ -256,9 +256,7 @@ have a '--' prefix while this tool's options have a '-' prefix."""))
     if args.only_compile:
         fortran_cmd = ([args.host_compiler] + fortran_cflags
                        + host_and_target_compiler_options["host_cflags"]
-                       + ["-c", modified_file_path] + [cpp_object_path]
-                       + ldflags
-                       + host_and_target_compiler_options["host_ldflags"]
+                       + ["-c", modified_file_path]
                        + ["-o", modified_object_path])
         handle_subprocess_output(run_subprocess(fortran_cmd))
         # merge object files; produces: outfile_path
@@ -272,8 +270,10 @@ have a '--' prefix while this tool's options have a '-' prefix."""))
     else:
         fortran_cmd = ([args.host_compiler] + fortran_cflags
                        + host_and_target_compiler_options["host_cflags"]
-                       + [modified_file_path] + [cpp_object_path] + ldflags
-                       + host_and_target_compiler_options["host_ldflags"]
+                       + [modified_file_path] 
+                       + [cpp_object_path] 
+                       + ldflags
+                       + host_and_target_compiler_options["ldflags"]
                        + ["-o", outfile_path])
         handle_subprocess_output(run_subprocess(fortran_cmd))
         # merge object files; produces: outfile_path

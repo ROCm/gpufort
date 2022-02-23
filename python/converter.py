@@ -165,7 +165,7 @@ def populate_cl_arg_parser(parser,for_converter=True):
             default=None,
             type=str,
             help="One of: {}".format(", ".join(
-                scanner.tree.SUPPORTED_DESTINATION_DIALECTS)),
+                scanner.tree.supported_destination_dialects)),
         )
     parser.add_argument(
         "--gfortran_config",
@@ -409,6 +409,7 @@ def get_gfortran_cflags():
 
 def get_basic_ldflags(with_runtime):
     ldflags = []
+    hip_platform = os.environ.get("HIP_PLATFORM", "amd")
     if with_runtime:
         ldflags.append("".join([
             " -L",
@@ -433,7 +434,6 @@ def parse_cl_args(parser,for_converter=True):
     if args.print_path:
         print(__GPUFORT_ROOT_DIR, file=sys.stdout)
         sys.exit()
-    hip_platform = os.environ.get("HIP_PLATFORM", "amd")
     if args.print_cpp_config:
         print(" ".join(get_basic_cflags()), file=sys.stdout)
         sys.exit()
@@ -606,6 +606,7 @@ def translate_source(infile_path, stree, linemaps, index, preamble):
 
     # transform statements to 'linemaps'
     def transform_(stnode):
+        print(stnode)
         stnode.transform_statements(index)
         for child in stnode.children:
             transform_(child)

@@ -102,7 +102,7 @@ class CodeGenerator():
 
     def _device_procedure_filter(self, stprocedure):
         return isinstance(stprocedure, scanner.tree.STProcedure) and\
-               stprocedure.must_be_available_on_device() and consider_kernel(stprocedure)
+               stprocedure.must_be_available_on_device() and self._consider_kernel(stprocedure)
 
     def _make_module_dicts(self, module_names):
         return [{"name": mod, "only": []} for mod in module_names]
@@ -171,10 +171,7 @@ class CodeGenerator():
             elif self._device_procedure_filter(
                     stnode
             ): # handle before STProcedure (without attributes) is handled
-                inode = next((irecord for irecord in self.index
-                              if irecord["name"] == stnode_name), None)
-                self._render_device_procedure(stnode, inode, cpp_filegen,
-                                              fortran_modulegen)
+                self._render_device_procedure(stnode, cpp_filegen, fortran_modulegen)
             elif isinstance(stnode,
                             (scanner.tree.STProgram, scanner.tree.STModule,
                              scanner.tree.STProcedure)):

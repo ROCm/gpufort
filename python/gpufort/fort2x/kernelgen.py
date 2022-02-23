@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+import copy
+
 from gpufort import util
 from gpufort import indexer
 
 LOG_PREFIX = "fort2x.hip.kernelgen.KernelGeneratorBase"
-
 
 class KernelGeneratorBase:
 
@@ -17,7 +18,7 @@ class KernelGeneratorBase:
         return [var_expr.split("%", maxsplit=1)[0] for var_expr in var_exprs]
 
     @staticmethod
-    def lookup_index_vars(var_exprs, consumed_var_exprs=[]):
+    def lookup_index_vars(scope, var_exprs, consumed_var_exprs=[], error_handling=None):
         """Search scope for index vars and remove corresponding 
            var expression from all_vars2 list."""
         ivars = []
@@ -52,8 +53,10 @@ class KernelGeneratorBase:
 
         consumed = []
         ilocal_vars = KernelGeneratorBase.lookup_index_vars(
+            scope,
             KernelGeneratorBase.strip_member_access(local_vars), consumed)
         ishared_vars = KernelGeneratorBase.lookup_index_vars(
+            scope,
             KernelGeneratorBase.strip_member_access(shared_vars), consumed)
         all_vars2 = [
             v for v in KernelGeneratorBase.strip_member_access(all_vars)

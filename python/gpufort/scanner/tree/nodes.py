@@ -392,7 +392,7 @@ class STContainerBase(STNode):
 
     def return_or_end_statements(self):
         return self.find_all(
-            filter=lambda stnode: isinstance(stnode, STTEndOrReturn))
+            filter=lambda stnode: isinstance(stnode, STEndOrReturn))
 
     def end_statement(self):
         """:return: The child of type STEnd."""
@@ -631,8 +631,8 @@ class STDirective(STNode):
 
 class STLoopNest(STNode):
 
-    def __init__(self, first_linemap, first_linemap_first_statement):
-        STNode.__init__(self, first_linemap, first_linemap_first_statement)
+    def __init__(self, *args, **kwargs):
+        STNode.__init__(self, *args, **kwargs)
         self.grid_f_str = None
         self.block_f_str = None
         self.sharedmem_f_str = "0" # set from extraction routine
@@ -670,7 +670,7 @@ class STLoopNest(STNode):
     def kernel_launcher_name(self):
         return "launch_{}".format(self.kernel_name())
 
-    def set_kernel_call_arguments(ivars):
+    def set_kernel_call_arguments(self,ivars):
         """Add a kernel argument to the list of kernel arguments.
         Subroutines may wrap the argument name 
         into additional code, e.g. code to obtain device
@@ -692,14 +692,14 @@ class STLoopNest(STNode):
         except:
             stream = self.stream_f_str
         if self.grid_f_str == None or self.block_f_str == None or opts.loop_kernel_default_launcher == "cpu": # use auto or cpu launcher
-            result="{indent}! extracted to HIP C++ file\n{indent}call {0}_{launcher}({1},{2},{3})".format(\
+            result="! extracted to HIP C++ file\ncall {0}_{launcher}({1},{2},{3})".format(\
               self.kernel_launcher_name(),self.sharedmem_f_str,stream,\
-                ",".join(self.kernel_arg_names),indent=indent,launcher=opts.loop_kernel_default_launcher)
+                ",".join(self.kernel_arg_names),launcher=opts.loop_kernel_default_launcher)
         else:
-            result="{indent}! extracted to HIP C++ file\n{indent}call {0}({1},{2},{3},{4},{5})".format(\
+            result="! extracted to HIP C++ file\ncall {0}({1},{2},{3},{4},{5})".format(\
               self.kernel_launcher_name(),self.grid_f_str,self.block_f_str,self.sharedmem_f_str,stream,\
-                ",".join(self.kernel_arg_names),indent=indent)
-        return result, True
+                ",".join(self.kernel_arg_names))
+        return textwrap.indent(result,indent), True
 
 
 class STDeclaration(STNode, IDeclListEntry):
@@ -709,8 +709,8 @@ class STDeclaration(STNode, IDeclListEntry):
     ```
     """
 
-    def __init__(self, first_linemap, first_linemap_first_statement):
-        STNode.__init__(self, first_linemap, first_linemap_first_statement)
+    def __init__(self, *args, **kwargs):
+        STNode.__init__(self, *args, **kwargs)
         self._ttdeclaration = translator.parse_declaration(
             self.first_statement())
         self._vars = [
@@ -803,10 +803,6 @@ class STAttributes(STNode):
     """CUDA Fortran specific intrinsic that needs to be removed/commented out
     in any case.
     """
-
-    def __init__(self, first_linemap, first_linemap_first_statement):
-        STNode.__init__(self, first_linemap, first_linemap_first_statement)
-
     def transform(self,
                   joined_lines,
                   joined_statements,
@@ -830,10 +826,7 @@ def pinned_or_on_device(ivar):
 
 
 class STNonZeroCheck(STNode):
-
-    def __init__(self, first_linemap, first_linemap_first_statement):
-        STNode.__init__(self, first_linemap, first_linemap_first_statement)
-
+    
     def transform(self,
                   joined_lines,
                   joined_statements,
@@ -857,9 +850,6 @@ class STNonZeroCheck(STNode):
 
 class STAllocated(STNode):
 
-    def __init__(self, first_linemap, first_linemap_first_statement):
-        STNode.__init__(self, first_linemap, first_linemap_first_statement)
-
     def transform(self,
                   joined_lines,
                   joined_statements,
@@ -881,8 +871,8 @@ class STAllocated(STNode):
 
 class IWithBackend:
     @classmethod
-    def register_backend(cls, src_dialect, dest_dialect, func):
-        cls._backends.append((src_dialect, dest_dialect, func))
+    def register_backend(cls, src_dialect, dest_dialects, func):
+        cls._backends.append((src_dialect, dest_dialects, func))
 
     def transform(self,
                   joined_lines,
@@ -901,13 +891,12 @@ class IWithBackend:
                                                   statements at the begin of the first line or end of the last line.
         :return: A tuple of the transformed string and if it differs from the original.
         """
-        indent = self.first_line_indent()
         result = joined_statements
         transformed = False
-        for src_dialect, dest_dialect, func in self.__class__._backends:
+        for src_dialect, dest_dialects, func in self.__class__._backends:
             if (src_dialect in opts.source_dialects and
-                    dest_dialect in opts.destination_dialect):
-                result, transformed1 = func(self, result, index, opts.destination_dialect)
+                  opts.destination_dialect in dest_dialects):
+                result, transformed1 = func(self, result, index)
                 transformed = transformed or transformed1
         return result, transformed
 
@@ -947,8 +936,8 @@ class STDeallocate(STNode, IWithBackend):
 
 class STMemcpy(STNode):
 
-    def __init__(self, first_linemap, first_linemap_first_statement):
-        STNode.__init__(self, first_linemap, first_linemap_first_statement)
+    def __init__(self, *args, **kwargs):
+        STNode.__init__(self, *args, **kwargs)
         self._parse_result = translator.tree.grammar.memcpy.parseString(
             self.statements()[0])[0]
 

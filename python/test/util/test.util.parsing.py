@@ -8,7 +8,6 @@ import json
 
 import addtoplevelpath
 from gpufort import util
-from gpufort import util
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
 util.logging.opts.verbose    = False
@@ -113,5 +112,21 @@ class TestParsingUtils(unittest.TestCase):
             result = util.parsing.extract_function_calls(testdata3,c)
             #print(result)
             self.assertEqual(result,testdata3_result[c])
+    def test_4_parse_use_statement(self):
+        statements = [
+          "use mymod",
+          "use mymod, only: var1",
+          "use mymod, only: var1, var2",
+          "use mymod, only: var1, var2=>var3",
+        ]
+        results = [
+          ('mymod', {}),
+          ('mymod', {'var1': 'var1'}),
+          ('mymod', {'var1': 'var1', 'var2': 'var2'}),
+          ('mymod', {'var1': 'var1', 'var2': 'var3'}),
+        ]
+        for i,stmt in enumerate(statements):
+            #print(util.parsing.parse_use_statement(stmt))
+            self.assertEqual(util.parsing.parse_use_statement(stmt),results[i])
 if __name__ == '__main__':
     unittest.main() 

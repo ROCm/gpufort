@@ -1,0 +1,47 @@
+USE cublas
+use cudafor
+USE cudafor
+USE cusolverdn
+USE cusolverDn
+USE descriptors, ONLY : la_descriptor, descla_init, descla_local_dims
+use dspev_module
+USE dspev_module
+USE dspev_module, ONLY : pdsyevd_drv
+use dsyevd_gpu
+USE dsygvdx_gpu
+use eigsolve_vars
+use elpa
+use elpa1
+USE elpa1
+USE gbuffers, ONLY : dev=>dev_buf, pin=>pin_buf
+USE la_param, ONLY : DP
+USE LAXlib
+use laxlib_descriptor
+USE laxlib_descriptor
+USE laxlib_descriptor 
+USE laxlib_descriptor, ONLY: la_descriptor, descla_init, laxlib_desc_to_intarray
+USE laxlib_descriptor, ONLY : la_descriptor, laxlib_intarray_to_desc
+USE laxlib_parallel_include
+use laxlib_processors_grid
+use laxlib_processors_grid, ONLY : &
+use laxlib_processors_grid, ONLY: leg_ortho, np_ortho, me_ortho, ortho_comm, ortho_comm_id, ortho_cntx
+USE laxlib_processors_grid, ONLY : ortho_cntx, me_blacs, np_ortho, me_ortho, ortho_comm
+USE laxlib_processors_grid, ONLY : ortho_parent_comm
+USE laxlib_processors_grid, ONLY: ortho_parent_comm
+USE laxlib_ptoolkit
+USE mp_bands_util, ONLY : me_bgrp, root_bgrp, intra_bgrp_comm
+USE mp_diag, ONLY : ortho_parent_comm
+USE mpi
+USE MPI
+USE mp, ONLY : mp_barrier, mp_start, mp_end, mp_stop 
+USE mp, ONLY : mp_bcast
+USE mp, ONLY : mp_count_nodes
+USE mp_world, ONLY : mpime
+USE mp_world, ONLY : mpime, nproc, world_comm
+USE mp_world, ONLY : mp_world_start, mp_world_end, mpime, &
+use nvtx_inters
+USE tester
+USE test_io
+USE zhegvdx_gpu
+use zhpev_module
+USE zhpev_module, ONLY : pzheevd_drv

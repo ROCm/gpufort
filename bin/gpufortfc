@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: MIT                                                 
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+# check if required software installed
+GPUFORT_BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+# check if required python packages are installed
+requirements=$(grep -v "^\s*#" $GPUFORT_BIN_DIR/../python/requirements.txt | grep "^\w\+")
+declare -i requirements_missing 
+requirements_missing=0 # 0: 'false', >0: true
+for m in $requirements; do 
+  python3 -c "import $m" &> /dev/null
+  retval="$(echo $?)"
+  requirements_missing="$requirements_missing + $retval" 
+  if (( retval > 0 )); then
+    echo "ERROR: Could not find python3 module '$m'. Please install or add to path."
+  fi
+done
+if (( requirements_missing > 0 )); then
+  echo "Please install missing python3 packages e.g. via:"
+  echo "python3 -m pip install -r <gpufort_root>/python3-requirements.txt"
+  echo "(you might need to be root)"
+  exit 20
+fi
+
+# all dependencies are met and we can continue
+
+if [ -z ${USED_DEVELOPER_TOOL} ]; then
+  python3 $GPUFORT_BIN_DIR/../python/fc.hip.py --working-dir $(pwd) "${@}"
+fi

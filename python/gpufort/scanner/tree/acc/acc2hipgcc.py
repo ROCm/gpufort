@@ -2,8 +2,14 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 from gpufort import translator
 from gpufort import util
+
 from ... import opts
+
+from .. import nodes
+from .. import backends
+
 from . import accbackends
+from . import accnodes
 
 # init shutdown
 HIP_GCC_RT_ACC_INIT = "acc_init({devicetype})"
@@ -76,7 +82,7 @@ class Acc2HipGccRT(accbackends.AccBackendBase):
 
     def _create_mappings(self, parse_result, prefix=",mappings="):
         mappings = []
-        for clause in translator.find_all(parse_result,
+        for clause in translator.tree.find_all(parse_result,
                                           translator.tree.TTAccMappingClause):
             if clause.kind == "present":
                 mappings += [
@@ -271,9 +277,14 @@ def DeallocateHipGccRT(stdeallocate, index):
 
 
 def Acc2HipGccRTPostprocess(stree, index):
-    accbackends.add_runtime_module_use_statements("openacc_gomp")
+    accbackends.add_runtime_module_use_statements(stree,"openacc_gomp")
 
+dest_dialects = ["hipgcc"]
+accnodes.STAccDirective.register_backend(dest_dialects,Acc2HipGccRT()) # instance
+accnodes.STAccLoopNest.register_backend(dest_dialects,AccLoopNest2HipGccRT())
 
-accbackends.register_acc_backend("hip-gcc-rt", Acc2HipGccRT,
-                                 AccLoopNest2HipGccRT, Acc2HipGccRTPostprocess,
-                                 AllocateHipGccRT, DeallocateHipGccRT)
+nodes.STAllocate.register_backend("acc", dest_dialects, AllocateHipGccRT) # function
+nodes.STDeallocate.register_backend("acc", dest_dialects, DeallocateHipGccRT)
+
+backends.supported_destination_dialects.add("hipgcc")
+backends.register_postprocess_backend("acc", dest_dialects, Acc2HipGccRTPostprocess)

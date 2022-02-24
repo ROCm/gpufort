@@ -925,7 +925,7 @@ class TTBounds(base.TTNode):
             result = "1_8*" + result
         return result
 
-    def bound_variable_names(self, variable_name, converter=base.make_c_str):
+    def bound_var_names(self, variable_name, converter=base.make_c_str):
         """
         Used for function arguments and declarations
         """
@@ -939,7 +939,7 @@ class TTBounds(base.TTNode):
         ]
         return result
 
-    def bound_variable_assignments(self,
+    def bound_var_assignments(self,
                                    variable_name,
                                    converter=base.make_c_str):
         """
@@ -1065,7 +1065,7 @@ class TTDeclaredVariable(base.TTNode):
     Spawned from grammar:
     
     ```python
-    declaration_variable = grammar.Group( identifier + grammar.Optional(LPAR + dimension_list + RPAR,default=[]) + grammar.Optional(EQ + ( matrix_arithmetic_expression | complex_arithmetic_expression | arithmetic_expression ), default=None)) # ! emits [*,[*],*]
+    declaration_var = grammar.Group( identifier + grammar.Optional(LPAR + dimension_list + RPAR,default=[]) + grammar.Optional(EQ + ( matrix_arithmetic_expression | complex_arithmetic_expression | arithmetic_expression ), default=None)) # ! emits [*,[*],*]
     ```
     """
 
@@ -1134,12 +1134,12 @@ class TTDeclaration(base.TTNode, Attributed):
     """ 
     Spawned from grammar:
     ```python
-    declaration = datatype + grammar.Optional(COMMA + qualifier_list,default=[]) + COLONS + grammar.Group(delimitedList(declaration_variable))   # ! emits *,[*],[*]
+    declaration = datatype + grammar.Optional(COMMA + qualifier_list,default=[]) + COLONS + grammar.Group(delimitedList(declaration_var))   # ! emits *,[*],[*]
     ```
     """
 
     def _assign_fields(self, tokens):
-        #declaration = datatype + grammar.Optional(COMMA + attribute_list,default=[]) + COLONS + grammar.Group(delimitedList(declaration_variable))   # ! emits *,[*],[*]
+        #declaration = datatype + grammar.Optional(COMMA + attribute_list,default=[]) + COLONS + grammar.Group(delimitedList(declaration_var))   # ! emits *,[*],[*]
         self.type, self.kind, self.qualifiers, self._rhs = tokens
         self.ignore_list = []
 
@@ -1309,7 +1309,7 @@ grammar.bounds.setParseAction(TTBounds)
 grammar.matrix_ranges.setParseAction(TTBounds)
 grammar.dimension_qualifier.setParseAction(TTDimensionQualifier)
 grammar.intent_qualifier.setParseAction(TTIntentQualifier)
-grammar.declared_variable.setParseAction(TTDeclaredVariable)
+grammar.declared_var.setParseAction(TTDeclaredVariable)
 grammar.arithmetic_expression.setParseAction(TTArithmeticExpression)
 grammar.arithmetic_logical_expression.setParseAction(TTArithmeticExpression)
 grammar.complex_arithmetic_expression.setParseAction(

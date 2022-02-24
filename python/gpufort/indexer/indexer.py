@@ -53,7 +53,7 @@ class Node():
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def _intrnl_parse_statements(linemaps, file_path):
+def _parse_statements(linemaps, file_path):
     # Regex
     datatype_reg = Regex(
         r"\b(type\s*\(|character|integer|logical|real|complex|double\s+precision)\b"
@@ -62,20 +62,20 @@ def _intrnl_parse_statements(linemaps, file_path):
     index = []
 
     access_lock = threading.Lock()
-    util.logging.log_debug(opts.log_prefix,"_intrnl_parse_statements","create thread pool of size {} for process variable declarations".format(\
-      opts.parse_variable_declarations_worker_pool_size))
+    util.logging.log_debug(opts.log_prefix,"_parse_statements","create thread pool of size {} for process variable declarations".format(\
+      opts.parse_var_declarations_worker_pool_size))
     task_executor = concurrent.futures.ThreadPoolExecutor(\
-      max_workers=opts.parse_variable_declarations_worker_pool_size)
+      max_workers=opts.parse_var_declarations_worker_pool_size)
     # statistics
     total_num_tasks = 0
 
     def log_enter_job_or_task_(parent_node, msg):
-        util.logging.log_debug3(opts.log_prefix,"_intrnl_parse_statements","[thread-id={3}][parent-node={0}:{1}] {2}".format(\
+        util.logging.log_debug3(opts.log_prefix,"_parse_statements","[thread-id={3}][parent-node={0}:{1}] {2}".format(\
               parent_node._kind, parent_node._name, msg,\
               threading.get_ident()))
 
     def log_leave_job_or_task_(parent_node, msg):
-        util.logging.log_debug2(opts.log_prefix+"_intrnl_parse_statements","[thread-id={3}][parent-node={0}:{1}] {2}".format(\
+        util.logging.log_debug2(opts.log_prefix+"_parse_statements","[thread-id={3}][parent-node={0}:{1}] {2}".format(\
               parent_node._kind, parent_node._name, msg,\
               threading.get_ident()))
 
@@ -95,7 +95,7 @@ def _intrnl_parse_statements(linemaps, file_path):
         except Exception as e:
             util.logging.log_exception(
                 opts.log_prefix,
-                "_intrnl_parse_statements.ParseDeclarationTask_",
+                "_parse_statements.ParseDeclarationTask_",
                 "failed: " + str(e))
             sys.exit(2)
         access_lock.acquire()
@@ -154,22 +154,22 @@ def _intrnl_parse_statements(linemaps, file_path):
             parse_result = translator.tree.grammar.acc_declare.parseString(
                 self._input_text)[0]
             for var_context in self._parent_node._data["variables"]:
-                for var_name in parse_result.map_alloc_variables():
+                for var_name in parse_result.map_alloc_vars():
                     if var_context["name"] == var_name:
                         access_lock.acquire()
                         var_context["declare_on_target"] = "alloc"
                         access_lock.release()
-                for var_name in parse_result.map_to_variables():
+                for var_name in parse_result.map_to_vars():
                     if var_context["name"] == var_name:
                         access_lock.acquire()
                         var_context["declare_on_target"] = "to"
                         access_lock.release()
-                for var_name in parse_result.map_from_variables():
+                for var_name in parse_result.map_from_vars():
                     if var_context["name"] == var_name:
                         access_lock.acquire()
                         var_context["declare_on_target"] = "from"
                         access_lock.release()
-                for var_name in parse_result.map_tofrom_variables():
+                for var_name in parse_result.map_tofrom_vars():
                     if var_context["name"] == var_name:
                         access_lock.acquire()
                         var_context["declare_on_target"] = "tofrom"
@@ -189,14 +189,14 @@ def _intrnl_parse_statements(linemaps, file_path):
         #entry["file"]        = file_path
         entry["variables"] = []
         entry["types"] = []
-        entry["subprograms"] = []
+        entry["procedures"] = []
         entry["used_modules"] = []
         return entry
 
     def log_enter_node_():
         nonlocal current_node
         nonlocal current_statement
-        util.logging.log_debug(opts.log_prefix,"_intrnl_parse_statements","[current-node={0}:{1}] enter {2} '{3}' in statement: '{4}'".format(\
+        util.logging.log_debug(opts.log_prefix,"_parse_statements","[current-node={0}:{1}] enter {2} '{3}' in statement: '{4}'".format(\
           current_node._parent._kind,current_node._parent._name,
           current_node._kind,current_node._name,\
           current_statement))
@@ -204,14 +204,14 @@ def _intrnl_parse_statements(linemaps, file_path):
     def log_leave_node_():
         nonlocal current_node
         nonlocal current_statement
-        util.logging.log_debug(opts.log_prefix,"_intrnl_parse_statements","[current-node={0}:{1}] leave {0} '{1}' in statement: '{2}'".format(\
+        util.logging.log_debug(opts.log_prefix,"_parse_statements","[current-node={0}:{1}] leave {0} '{1}' in statement: '{2}'".format(\
           current_node._data["kind"],current_node._data["name"],\
           current_statement))
 
     def log_detection_(kind):
         nonlocal current_node
         nonlocal current_statement
-        util.logging.log_debug2(opts.log_prefix,"_intrnl_parse_statements","[current-node={}:{}] found {} in statement: '{}'".format(\
+        util.logging.log_debug2(opts.log_prefix,"_parse_statements","[current-node={}:{}] found {} in statement: '{}'".format(\
                 current_node._kind,current_node._name,kind,current_statement))
 
     # direct parsing
@@ -272,7 +272,7 @@ def _intrnl_parse_statements(linemaps, file_path):
             if current_node._kind == "root":
                 current_node._data.append(subroutine)
             else:
-                current_node._data["subprograms"].append(subroutine)
+                current_node._data["procedures"].append(subroutine)
             current_node = Node("subroutine",
                                 name,
                                 data=subroutine,
@@ -280,7 +280,7 @@ def _intrnl_parse_statements(linemaps, file_path):
             current_node._begin = (current_linemap_no, current_statement_no)
             log_enter_node_()
         else:
-            util.logging.log_warning(opts.log_prefix,"_intrnl_parse_statements","found subroutine in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
+            util.logging.log_warning(opts.log_prefix,"_parse_statements","found subroutine in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
               format(current_statement,current_node._kind))
 
     #host|device,name,[args],result
@@ -299,7 +299,7 @@ def _intrnl_parse_statements(linemaps, file_path):
             if current_node._kind == "root":
                 current_node._data.append(function)
             else:
-                current_node._data["subprograms"].append(function)
+                current_node._data["procedures"].append(function)
             current_node = Node("function",
                                 name,
                                 data=function,
@@ -307,7 +307,7 @@ def _intrnl_parse_statements(linemaps, file_path):
             current_node._begin = (current_linemap_no, current_statement_no)
             log_enter_node_()
         else:
-            util.logging.log_warning(opts.log_prefix,"_intrnl_parse_statements","found function in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
+            util.logging.log_warning(opts.log_prefix,"_parse_statements","found function in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
               format(current_statement,current_node._kind))
 
     def TypeStart(tokens):
@@ -334,7 +334,7 @@ def _intrnl_parse_statements(linemaps, file_path):
             current_node._begin = (current_linemap_no, current_statement_no)
             log_enter_node_()
         else:
-            util.logging.log_warning(opts.log_prefix,"_intrnl_parse_statements","found derived type in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
+            util.logging.log_warning(opts.log_prefix,"_parse_statements","found derived type in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
                     format(current_statement,current_node._kind))
 
     def Use(tokens):
@@ -438,11 +438,11 @@ def _intrnl_parse_statements(linemaps, file_path):
             return True
         except ParseBaseException as e:
             util.logging.log_debug3(
-                opts.log_prefix, "_intrnl_parse_statements",
+                opts.log_prefix, "_parse_statements",
                 "did not find expression '{}' in statement '{}'".format(
                     expression_name, current_statement))
             util.logging.log_debug4(opts.log_prefix,
-                                    "_intrnl_parse_statements", str(e))
+                                    "_parse_statements", str(e))
             return False
 
     def is_end_statement_(tokens, kind):
@@ -463,11 +463,11 @@ def _intrnl_parse_statements(linemaps, file_path):
                 current_statement = stmt["body"].lower().strip(" \t\n")
                 if not consider_statement(current_statement):
                     util.logging.log_debug3(
-                        opts.log_prefix, "_intrnl_collect_statements",
+                        opts.log_prefix, "_collect_statements",
                         "ignore statement '{}'".format(current_statement))
                 else:
                     util.logging.log_debug3(
-                        opts.log_prefix, "_intrnl_parse_statements",
+                        opts.log_prefix, "_parse_statements",
                         "process statement '{}'".format(current_statement))
                     current_tokens = re.split(
                         r"\s+|\t+",
@@ -519,14 +519,14 @@ def _intrnl_parse_statements(linemaps, file_path):
     # apply attributes and acc variable modifications
     num_post_parsing_jobs = len(post_parsing_jobs)
     if num_post_parsing_jobs > 0:
-        util.logging.log_debug(opts.log_prefix,"_intrnl_parse_statements","apply variable modifications (submit {} jobs to worker pool of size {})".format(\
-          num_post_parsing_jobs,opts.parse_variable_modification_statements_worker_pool_size))
+        util.logging.log_debug(opts.log_prefix,"_parse_statements","apply variable modifications (submit {} jobs to worker pool of size {})".format(\
+          num_post_parsing_jobs,opts.parse_var_modification_statements_worker_pool_size))
         with concurrent.futures.ThreadPoolExecutor(\
-            max_workers=opts.parse_variable_modification_statements_worker_pool_size)\
+            max_workers=opts.parse_var_modification_statements_worker_pool_size)\
                 as job_executor:
             for job in post_parsing_jobs:
                 job_executor.submit(job.run)
-        util.logging.log_debug(opts.log_prefix, "_intrnl_parse_statements",
+        util.logging.log_debug(opts.log_prefix, "_parse_statements",
                                "apply variable modifications --- done")
         post_parsing_jobs.clear()
 
@@ -534,7 +534,7 @@ def _intrnl_parse_statements(linemaps, file_path):
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def _intrnl_write_json_file(index, file_path):
+def _write_json_file(index, file_path):
     with open(file_path, "wb") as outfile:
         if opts.pretty_print_index_file:
             outfile.write(orjson.dumps(index, option=orjson.OPT_INDENT_2))
@@ -543,7 +543,7 @@ def _intrnl_write_json_file(index, file_path):
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def _intrnl_read_json_file(file_path):
+def _read_json_file(file_path):
     with open(file_path, "rb") as infile:
         return orjson.loads(infile.read())
 
@@ -553,17 +553,17 @@ def _intrnl_read_json_file(file_path):
 def scan_file(file_path, preproc_options, index):
     """Creates an index from a single file.
     """
-    filtered_statements = _intrnl_read_fortran_file(file_path, preproc_options)
+    filtered_statements = _read_fortran_file(file_path, preproc_options)
     util.logging.log_debug2(opts.log_prefix,"scan_file","extracted the following statements:\n>>>\n{}\n<<<".format(\
         "\n".join(filtered_statements)))
-    index += _intrnl_parse_statements(filtered_statements, file_path)
+    index += _parse_statements(filtered_statements, file_path)
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def update_index_from_linemaps(linemaps, index):
     """Updates index from a number of linemaps."""
     if len(linemaps):
-        index += _intrnl_parse_statements(linemaps,
+        index += _parse_statements(linemaps,
                                           file_path=linemaps[0]["file"])
 
 
@@ -583,14 +583,14 @@ def create_index_from_snippet(snippet, preproc_options=""):
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def search_derived_types(imodule, search_subprograms=True):
+def search_derived_types(imodule, search_procedures=True):
     """Search through a module (or program)
     and return derived type definition index entries.
     """
 
-    util.logging.log_enter_function(opts.log_prefix,"_intrnl_search_derived_types",\
+    util.logging.log_enter_function(opts.log_prefix,"_search_derived_types",\
       {"modulename": imodule.get("name",""),\
-       "search_subprograms": str(search_subprograms)})
+       "search_procedures": str(search_procedures)})
 
     itypes = {}
     prefix = ""
@@ -602,14 +602,14 @@ def search_derived_types(imodule, search_subprograms=True):
         for itype in irecord["types"]:
             ident = prefix + "_" + itype["name"]
             itypes[ident] = itype
-        if search_subprograms:
-            for isubprogram in irecord["subprograms"]:
-                collect_types_(isubprogram)
+        if search_procedures:
+            for iprocedure in irecord["procedures"]:
+                collect_types_(iprocedure)
 
     collect_types_(imodule)
 
     util.logging.log_leave_function(
-        opts.log_prefix, "_intrnl_search_derived_types",
+        opts.log_prefix, "_search_derived_types",
         {"typenames": str([itype["name"] for itype in itypes.values()])})
 
     return itypes
@@ -625,7 +625,7 @@ def write_gpufort_module_files(index, output_dir):
     """
     for mod in index:
         file_path = output_dir + "/" + mod["name"] + GPUFORT_MODULE_FILE_SUFFIX
-        _intrnl_write_json_file(mod, file_path)
+        _write_json_file(mod, file_path)
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
@@ -645,6 +645,6 @@ def load_gpufort_module_files(input_dirs, index):
                         module_already_exists = True
                         break
                 if not module_already_exists:
-                    mod_index = _intrnl_read_json_file(
+                    mod_index = _read_json_file(
                         os.path.join(input_dir, child))
                     index.append(mod_index)

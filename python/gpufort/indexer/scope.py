@@ -38,33 +38,33 @@ EMPTY_VARIABLE = {
 
 EMPTY_TYPE = {"name": __UNKNOWN, "variables": []}
 
-EMPTY_SUBPROGRAM = {
+EMPTY_PROCEDURE = {
     "kind": __UNKNOWN,
     "name": __UNKNOWN,
     "result_name": __UNKNOWN,
     "attributes": [],
     "dummy_args": [],
     "variables": [],
-    "subprograms": [],
+    "procedures": [],
     "used_modules": []
 }
 
-EMPTY_SCOPE = {"tag": "", "types": [], "variables": [], "subprograms": []}
+EMPTY_SCOPE = {"tag": "", "types": [], "variables": [], "procedures": []}
 
-__SCOPE_ENTRY_TYPES = ["subprograms", "variables", "types"]
+__SCOPE_ENTRY_TYPES = ["procedures", "variables", "types"]
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def _intrnl_resolve_dependencies(scope,
+def _resolve_dependencies(scope,
                                  index_record,
                                  index,
                                  error_handling=None):
     """
-    Include variable, type, and subprogram records from modules used
-    by the current record (module,program or subprogram).
+    Include variable, type, and procedure records from modules used
+    by the current record (module,program or procedure).
 
     :param dict scope: the scope that you updated with information from the used modules.
-    :param dict index_record: a module/program/subprogram index record
+    :param dict index_record: a module/program/procedure index record
     :param list index: list of module/program index records
 
     TODO must be recursive!!!
@@ -89,7 +89,7 @@ def _intrnl_resolve_dependencies(scope,
                     if include_all_entries: # simple include
                         util.logging.log_debug2(
                             opts.log_prefix,
-                            "_intrnl_resolve_dependencies.handle_use_statements",
+                            "_resolve_dependencies.handle_use_statements",
                             "use all definitions from module '{}'".format(
                                 imodule["name"]))
                         for entry_type in __SCOPE_ENTRY_TYPES:
@@ -100,7 +100,7 @@ def _intrnl_resolve_dependencies(scope,
                                 for entry in module[entry_type]:
                                     if entry["name"] == mapping["original"]:
                                         util.logging.log_debug2(opts.log_prefix,
-                                          "_intrnl_resolve_dependencies.handle_use_statements",\
+                                          "_resolve_dependencies.handle_use_statements",\
                                           "use {} '{}' as '{}' from module '{}'".format(\
                                           entry_type[0:-1],mapping["original"],mapping["renamed"],\
                                           imodule["name"]))
@@ -113,26 +113,26 @@ def _intrnl_resolve_dependencies(scope,
                     used_module["name"])
                 if opts.error_handling == "strict":
                     util.logging.log_error(opts.log_prefix,
-                                           "_intrnl_resolve_dependencies", msg)
+                                           "_resolve_dependencies", msg)
                     sys.exit(ERR_INDEXER_RESOLVE_DEPENDENCIES_FAILED)
                 elif opts.error_handling == "warn":
                     util.logging.log_warning(opts.log_prefix,
-                                             "_intrnl_resolve_dependencies",
+                                             "_resolve_dependencies",
                                              msg)
 
     handle_use_statements_(scope, index_record)
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def _intrnl_search_scope_for_type_or_subprogram(scope,
+def _search_scope_for_type_or_procedure(scope,
                                                 entry_name,
                                                 entry_type,
                                                 empty_record,
                                                 error_handling=None):
     """
-    :param str entry_type: either 'types' or 'subprograms'
+    :param str entry_type: either 'types' or 'procedures'
     """
-    util.logging.log_enter_function(opts.log_prefix,"_intrnl_search_scope_for_type_or_subprogram",\
+    util.logging.log_enter_function(opts.log_prefix,"_search_scope_for_type_or_procedure",\
       {"entry_name": entry_name,"entry_type": entry_type})
 
     # reverse access such that entries from the inner-most scope come first
@@ -147,38 +147,38 @@ def _intrnl_search_scope_for_type_or_subprogram(scope,
         msg = "no entry found for {} '{}'.".format(entry_type[:-1], entry_name)
         if opts.error_handling == "strict":
             util.logging.log_error(
-                opts.log_prefix, "_intrnl_search_scope_for_type_or_subprogram",
+                opts.log_prefix, "_search_scope_for_type_or_procedure",
                 msg)
             sys.exit(ERR_SCOPER_LOOKUP_FAILED)
         elif opts.error_handling == "warn":
             util.logging.log_warning(
-                opts.log_prefix, "_intrnl_search_scope_for_type_or_subprogram",
+                opts.log_prefix, "_search_scope_for_type_or_procedure",
                 msg)
         return empty_record, False
     else:
-        util.logging.log_debug2(opts.log_prefix,"_intrnl_search_scope_for_type_or_subprogram",\
+        util.logging.log_debug2(opts.log_prefix,"_search_scope_for_type_or_procedure",\
           "entry found for {} '{}'".format(entry_type[:-1],entry_name))
         util.logging.log_leave_function(
-            opts.log_prefix, "_intrnl_search_scope_for_type_or_subprogram")
+            opts.log_prefix, "_search_scope_for_type_or_procedure")
         return result, True
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def _intrnl_search_index_for_type_or_subprogram(index, parent_tag, entry_name,
+def _search_index_for_type_or_procedure(index, parent_tag, entry_name,
                                                 entry_type, empty_record):
     """
-    :param str entry_type: either 'types' or 'subprograms'
+    :param str entry_type: either 'types' or 'procedures'
     """
-    util.logging.log_enter_function(opts.log_prefix,"_intrnl_search_index_for_type_or_subprogram",\
+    util.logging.log_enter_function(opts.log_prefix,"_search_index_for_type_or_procedure",\
       {"parent_tag": parent_tag,"entry_name": entry_name,"entry_type": entry_type})
 
     if parent_tag is None:
         scope = dict(EMPTY_SCOPE) # top-level subroutine/function
-        scope["subprograms"] = [index_entry for index_entry in index\
+        scope["procedures"] = [index_entry for index_entry in index\
           if index_entry["name"]==entry_name and index_entry["kind"] in ["subroutine","function"]]
     else:
         scope = create_scope(index, parent_tag)
-    return _intrnl_search_scope_for_type_or_subprogram(scope, entry_name,
+    return _search_scope_for_type_or_procedure(scope, entry_name,
                                                        entry_type,
                                                        empty_record)
 
@@ -194,7 +194,7 @@ def create_index_search_tag_for_var(var_expr):
     A single identifer 'a' would be translated to the tag 'a'.
 
     :param str var_expr: a simple identifier such as 'a' or 'A_d' or a more complicated derived-type member variable expression such as 'a%b%c' or 'A%b(i)%c'.
-    :see: indexer.scope.search_index_for_variable
+    :see: indexer.scope.search_index_for_var
     """
     result = var_expr.lstrip("-+") # remove trailing minus sign
     if not "(" in result:
@@ -284,19 +284,19 @@ def create_scope(index, tag):
                                None)
             for l in range(1, nesting_level + 1):
                 base_record = next(
-                    (subprogram for subprogram in base_record["subprograms"]
-                     if subprogram["name"] == tag_tokens[l]), None)
-            current_record_list = base_record["subprograms"]
+                    (procedure for procedure in base_record["procedures"]
+                     if procedure["name"] == tag_tokens[l]), None)
+            current_record_list = base_record["procedures"]
         else:
             util.logging.log_debug(opts.log_prefix,"create_scope",\
               "create scope for tag '{}'".format(tag))
             current_record_list = index
-            # add top-level subprograms to scope of top-level entry
-            new_scope["subprograms"] += [index_entry for index_entry in index\
+            # add top-level procedures to scope of top-level entry
+            new_scope["procedures"] += [index_entry for index_entry in index\
                     if index_entry["kind"] in ["subroutine","function"] and\
                        index_entry["name"] != tag_tokens[0]]
             util.logging.log_debug(opts.log_prefix,"create_scope",\
-              "add {} top-level subprograms to scope".format(len(new_scope["subprograms"])))
+              "add {} top-level procedures to scope".format(len(new_scope["procedures"])))
         begin = nesting_level + 1 #
 
         for d in range(begin, len(tag_tokens)):
@@ -304,13 +304,13 @@ def create_scope(index, tag):
             for current_record in current_record_list:
                 if current_record["name"] == searched_name:
                     # 1. first include variables from included
-                    _intrnl_resolve_dependencies(new_scope, current_record,
+                    _resolve_dependencies(new_scope, current_record,
                                                  index)
                     # 2. now include the current record's
                     for entry_type in __SCOPE_ENTRY_TYPES:
                         if entry_type in current_record:
                             new_scope[entry_type] += current_record[entry_type]
-                    current_record_list = current_record["subprograms"]
+                    current_record_list = current_record["procedures"]
                     break
         opts.scopes.append(new_scope)
         util.logging.log_leave_function(opts.log_prefix, "create_scope")
@@ -318,14 +318,14 @@ def create_scope(index, tag):
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def search_scope_for_variable(scope,
+def search_scope_for_var(scope,
                               var_expr,
                               error_handling=None,
                               resolve=False):
     """
     %param str variable_tag% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c' or 'a%b(i,j)%c(a%i5)'.
     """
-    util.logging.log_enter_function(opts.log_prefix,"search_scope_for_variable",\
+    util.logging.log_enter_function(opts.log_prefix,"search_scope_for_var",\
       {"var_expr": var_expr})
 
     result = None
@@ -335,7 +335,7 @@ def search_scope_for_variable(scope,
     variable_tag = create_index_search_tag_for_var(var_expr)
     list_of_var_names = variable_tag.split("%")
 
-    def lookup_from_left_to_right_(scope_variables, pos=0):
+    def lookup_from_left_to_right_(scope_vars, pos=0):
         """:note: recursive"""
         nonlocal scope_types
         nonlocal list_of_var_names
@@ -343,12 +343,12 @@ def search_scope_for_variable(scope,
         var_name = list_of_var_names[pos]
         if pos == len(list_of_var_names) - 1:
             result = next(
-                (var for var in scope_variables if var["name"] == var_name),
+                (var for var in scope_vars if var["name"] == var_name),
                 None)
         else:
             try:
                 matching_type_var = next((
-                    var for var in scope_variables if var["name"] == var_name),
+                    var for var in scope_vars if var["name"] == var_name),
                                          None)
                 if matching_type_var != None:
                     matching_type = next(
@@ -371,11 +371,11 @@ def search_scope_for_variable(scope,
         msg = "no entry found for variable '{}'.".format(variable_tag)
         if error_handling == "strict":
             util.logging.log_error(opts.log_prefix,
-                                   "search_scope_for_variable", msg)
+                                   "search_scope_for_var", msg)
             sys.exit(ERR_SCOPER_LOOKUP_FAILED)
         elif error_handling == "warn":
             util.logging.log_warning(opts.log_prefix,
-                                     "search_scope_for_variable", msg)
+                                     "search_scope_for_var", msg)
         return EMPTY_VARIABLE, False
     else:
         # resolve
@@ -411,10 +411,10 @@ def search_scope_for_variable(scope,
                         pass
                     result[entry] = entry_value
 
-        util.logging.log_debug2(opts.log_prefix,"search_scope_for_variable",\
+        util.logging.log_debug2(opts.log_prefix,"search_scope_for_var",\
           "entry found for variable '{}'".format(variable_tag))
         util.logging.log_leave_function(opts.log_prefix,
-                                        "search_scope_for_variable")
+                                        "search_scope_for_var")
         return result, True
 
 
@@ -423,23 +423,23 @@ def search_scope_for_type(scope, type_name):
     """
     :param str type_name: lower case name of the searched type. Simple identifier such as 'mytype'.
     """
-    result = _intrnl_search_scope_for_type_or_subprogram(
+    result = _search_scope_for_type_or_procedure(
         scope, type_name, "types", EMPTY_TYPE)
     return result
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def search_scope_for_subprogram(scope, subprogram_name):
+def search_scope_for_procedure(scope, procedure_name):
     """
-    :param str subprogram_name: lower case name of the searched subprogram. Simple identifier such as 'mysubroutine'.
+    :param str procedure_name: lower case name of the searched procedure. Simple identifier such as 'mysubroutine'.
     """
-    result = _intrnl_search_scope_for_type_or_subprogram(
-        scope, subprogram_name, "subprograms", EMPTY_SUBPROGRAM)
+    result = _search_scope_for_type_or_procedure(
+        scope, procedure_name, "procedures", EMPTY_PROCEDURE)
     return result
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def search_index_for_variable(index,
+def search_index_for_var(index,
                               parent_tag,
                               var_expr,
                               error_handling=None,
@@ -448,11 +448,11 @@ def search_index_for_variable(index,
     :param str parent_tag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
     %param str var_expr% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c'. Note that all array indexing expressions must be stripped away.
     """
-    util.logging.log_enter_function(opts.log_prefix,"search_index_for_variable",\
+    util.logging.log_enter_function(opts.log_prefix,"search_index_for_var",\
       {"parent_tag": parent_tag,"var_expr": var_expr})
 
     scope = create_scope(index, parent_tag)
-    return search_scope_for_variable(scope, var_expr, error_handling, resolve)
+    return search_scope_for_var(scope, var_expr, error_handling, resolve)
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
@@ -463,22 +463,22 @@ def search_index_for_type(index, parent_tag, type_name):
     """
     util.logging.log_enter_function(opts.log_prefix,"search_index_for_type",\
       {"parent_tag": parent_tag,"type_name": type_name})
-    result = _intrnl_search_index_for_type_or_subprogram(
+    result = _search_index_for_type_or_procedure(
         index, parent_tag, type_name, "types", EMPTY_TYPE)
     util.logging.log_leave_function(opts.log_prefix, "search_index_for_type")
     return result
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def search_index_for_subprogram(index, parent_tag, subprogram_name):
+def search_index_for_procedure(index, parent_tag, procedure_name):
     """
     :param str parent_tag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
-    :param str subprogram_name: lower case name of the searched subprogram. Simple identifier such as 'mysubroutine'.
+    :param str procedure_name: lower case name of the searched procedure. Simple identifier such as 'mysubroutine'.
     """
-    util.logging.log_enter_function(opts.log_prefix,"search_index_for_subprogram",\
-      {"parent_tag": parent_tag,"subprogram_name": subprogram_name})
-    result = _intrnl_search_index_for_type_or_subprogram(
-        index, parent_tag, subprogram_name, "subprograms", EMPTY_SUBPROGRAM)
+    util.logging.log_enter_function(opts.log_prefix,"search_index_for_procedure",\
+      {"parent_tag": parent_tag,"procedure_name": procedure_name})
+    result = _search_index_for_type_or_procedure(
+        index, parent_tag, procedure_name, "procedures", EMPTY_PROCEDURE)
     util.logging.log_leave_function(opts.log_prefix,
-                                    "search_index_for_subprogram")
+                                    "search_index_for_procedure")
     return result

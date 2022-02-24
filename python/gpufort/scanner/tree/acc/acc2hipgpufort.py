@@ -1,9 +1,16 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-from gpufort import translator
 from gpufort import util
+from gpufort import translator
+from gpufort import indexer
+
 from ... import opts
+
+from .. import nodes
+from .. import backends
+
 from . import accbackends
+from . import accnodes
 
 ## DIRECTIVES
 # update
@@ -43,7 +50,6 @@ HIP_GPUFORT_RT_CLAUSES_OMP2ACC = {
     "tofrom": "copy"
 }
 
-
 def dev_var_name(var):
     #tokens = var.split("%")
     #tokens[-1] = ACC_DEV_PREFIX+tokens[-1]+ACC_DEV_SUFFIX
@@ -54,7 +60,7 @@ def dev_var_name(var):
     result = "".join(c for c in result if c.isalnum() or c in "_$")
     result = result.replace("$$", "")
     result = result.replace("$", "_")
-    return ACC_DEV_PREFIX + result + ACC_DEV_SUFFIX
+    return opts.acc_dev_prefix + result + opts.acc_dev_suffix
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
@@ -117,8 +123,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         return result, len(result), temp_vars
 
     def _handle_update(self):
-        """
-        Emits a acc_clause_update command for every variable in the list
+        """Emits a acc_clause_update command for every variable in the list
         """
         result = ""
         indent = self._stnode.first_line_indent()
@@ -364,19 +369,19 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
         return result, len(result)
 
 
-def AllocateHipGpufortRT(stallocate, index):
+def AllocateHipGpufortRT(stallocate, joined_statements, index):
     stcontainer = stallocate.parent
     parent_tag = stcontainer.tag()
-    scope = scope.create_scope(index, parent_tag)
+    scope = indexer.scope.create_scope(index, parent_tag)
     scope_vars = scope["variables"]
     indent = stallocate.first_line_indent()
-    local_var_names, dummy_arg_names = stcontainer.local_and_dummy_variable_names(
+    local_var_names, dummy_arg_names = stcontainer.local_and_dummy_var_names(
         index)
     acc_present_calls = []
     temp_vars = []
     implicit_region = False
     for var in stallocate.variable_names:
-        ivar, _ = scope.search_index_for_variable(index, parent_tag, var)
+        ivar, _ = indexer.scope.search_index_for_var(index, parent_tag, var)
         host_var = ivar["name"]
         dev_var = dev_var_name(host_var)
         is_local_var = host_var in local_var_names
@@ -399,20 +404,22 @@ def AllocateHipGpufortRT(stallocate, index):
         stcontainer.append_vars_to_decl_list(temp_vars)
         if implicit_region:
             add_implicit_region(stcontainer)
-    return acc_present_calls
+        for line in acc_present_calls:
+            stallocate.add_to_epilog(line)
+    return joined_statements, False
 
 
-def DeallocateHipGpufortRT(stdeallocate, index):
+def DeallocateHipGpufortRT(stdeallocate, joined_statements, index):
     stcontainer = stdeallocate.parent
     parent_tag = stcontainer.tag()
-    scope = scope.create_scope(index, parent_tag)
+    scope = indexer.scope.create_scope(index, parent_tag)
     scope_vars = scope["variables"]
     indent = stdeallocate.first_line_indent()
-    local_var_names, dummy_arg_names = stcontainer.local_and_dummy_variable_names(
+    local_var_names, dummy_arg_names = stcontainer.local_and_dummy_var_names(
         index)
     acc_delete_calls = []
     for var in stdeallocate.variable_names:
-        ivar, _ = scope.search_index_for_variable(index, parent_tag, var)
+        ivar, _ = indexer.scope.search_index_for_var(index, parent_tag, var)
         host_var = ivar["name"]
         dev_var = dev_var_name(host_var)
         is_local_var = host_var in local_var_names
@@ -426,27 +433,29 @@ def DeallocateHipGpufortRT(stdeallocate, index):
             acc_delete_calls.append(HIP_GPUFORT_RT_ACC_DELETE.format(\
               indent=indent,var=host_var,asyncr="",finalize="",\
               alloc=module_var,dev_var=dev_var))
-    return acc_delete_calls
+    for line in acc_delete_calls:
+        stdeallocate.add_to_prolog(line)
+    return joined_statements, False
 
 
 def Acc2HipGpufortRTPostprocess(stree, index):
     """:param stree: the full scanner tree
        :param staccdirectives: All acc directive tree accnodes."""
-    accbackends.add_runtime_module_use_statements("gpufort_acc_runtime")
+    accbackends.add_runtime_module_use_statements(stree,"gpufort_acc_runtime")
 
     # TODO check if there is any acc used in the
     # construct at all
     # TODO handle directly via directives; only variables occuring
     # in directives need to be available on device
     containers = stree.find_all(\
-      lambda node: type(node) in [STProgram,STProcedure],
+      lambda node: type(node) in [nodes.STProgram,nodes.STProcedure],
       recursively=True)
     for stcontainer in containers:
         last_decl_list_node = stcontainer.last_entry_in_decl_list()
         indent = last_decl_list_node.first_line_indent()
-        scope = scope.create_scope(index, stcontainer.tag())
+        scope = indexer.scope.create_scope(index, stcontainer.tag())
         scope_vars = scope["variables"]
-        local_var_names, dummy_arg_names = stcontainer.local_and_dummy_variable_names(
+        local_var_names, dummy_arg_names = stcontainer.local_and_dummy_var_names(
             index)
         # TODO also process type members
         acc_present_calls = ""
@@ -486,8 +495,12 @@ def Acc2HipGpufortRTPostprocess(stree, index):
                 add_implicit_region(stcontainer)
             last_decl_list_node.add_to_epilog(acc_present_calls)
 
+dest_dialects = ["hipgpufort"]
+accnodes.STAccDirective.register_backend(dest_dialects,Acc2HipGpufortRT()) # instance
+accnodes.STAccLoopNest.register_backend(dest_dialects,AccLoopNest2HipGpufortRT())
 
-accbackends.register_acc_backend("hip-gpufort-rt", Acc2HipGpufortRT,
-                                 AccLoopNest2HipGpufortRT,
-                                 Acc2HipGpufortRTPostprocess,
-                                 AllocateHipGpufortRT, DeallocateHipGpufortRT)
+nodes.STAllocate.register_backend("acc", dest_dialects, AllocateHipGpufortRT) # function
+nodes.STDeallocate.register_backend("acc", dest_dialects, DeallocateHipGpufortRT)
+
+backends.supported_destination_dialects.add("hipgpufort")
+backends.register_postprocess_backend("acc", dest_dialects, Acc2HipGpufortRTPostprocess)

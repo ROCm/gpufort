@@ -7,7 +7,8 @@ contains
    attributes(device) subroutine deviceFun(a,x,y,N)
      implicit none
      integer :: N
-     real :: x, y, a
+     real :: x, a
+     real,intent(inout) :: y
      y = y + a*x
    end subroutine
 

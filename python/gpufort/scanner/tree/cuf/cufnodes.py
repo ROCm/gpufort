@@ -2,21 +2,21 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 from gpufort import util
 from gpufort import translator
+from gpufort import indexer
+
 from .. import nodes
 from .. import opts
 from .. import grammar
-from . import cufbackends
-
 
 class STCufDirective(nodes.STDirective):
+
     """This class has the functionality of a kernel if the stored lines contain
     a cuf kernel directivity. 
     """
-
-    def __init__(self, lineno, lines, directive_no):
+    def __init__(self, first_linemap, first_linemap_first_statement, directive_no):
         nodes.STDirective.__init__(self,
-                                   lineno,
-                                   lines,
+                                   first_linemap,
+                                   first_linemap_first_statement,
                                    directive_no,
                                    sentinel="!$cuf")
         self._default_present_vars = []
@@ -28,30 +28,27 @@ class STCufDirective(nodes.STDirective):
                   index=[]):
         assert False, "Currently, there are only CUF parallel directives"
 
-
 class STCufLoopNest(STCufDirective, nodes.STLoopNest):
+    _backends = []
 
-    def __init__(self, lineno, lines, directive_no):
-        STCufDirective.__init__(self, lineno, lines, directive_no)
-        nodes.STLoopNest.__init__(self, lineno, lines)
+    @classmethod
+    def register_backend(cls, dest_dialects, func):
+        cls._backends.append((dest_dialects, func))
 
-    def transform(self,
-                  joined_lines,
-                  joined_statements,
-                  statements_fully_cover_lines,
-                  index=[],
-                  dest_dialect=""):
-        """
-        :param dest_dialect: allows to override default if this kernel
-                                   should be translated via another backend.
-        """
-        if dest_dialect in cufbackends.LOOP_KERNEL_BACKENDS:
-            return cufbackends.LOOP_KERNEL_BACKENDS[dest_dialect](
-                self).transform(joined_lines, joined_statements,
-                                statements_fully_cover_lines, index)
-        else:
-            return "", False
+    def __init__(self, first_linemap, first_linemap_first_statement, directive_no):
+        STCufDirective.__init__(self, first_linemap, first_linemap_first_statement, directive_no)
+        nodes.STLoopNest.__init__(self, first_linemap, first_linemap_first_statement)
+        self.dest_dialect = opts.destination_dialect
 
+    def transform(self,joined_lines,joined_statements,*args,**kwargs):
+        result = joined_statements
+        transformed = False
+        if "cuf" in opts.source_dialects:
+            for dest_dialects, func in self.__class__._backends:
+                if self.dest_dialect in dest_dialects:
+                    result, transformed1 = func(self, joined_lines, joined_statements, *args, **kwargs)
+                    transformed = transformed or transformed1
+        return result, transformed
 
 class STCufLibCall(nodes.STNode):
 
@@ -82,12 +79,12 @@ class STCufLibCall(nodes.STNode):
             def repl_memcpy(parse_result):
                 dest_name = parse_result.dest_name_f_str()
                 src_name = parse_result.src_name_f_str()
-                dest_indexed_var,_ = indexer.scope.search_index_for_variable(index,self.parent.tag(),\
+                dest_indexed_var,_ = indexer.scope.search_index_for_var(index,self.parent.tag(),\
                   dest_name)
-                src_indexed_var ,_ = indexer.scope.search_index_for_variable(index,self.parent.tag(),\
+                src_indexed_var ,_ = indexer.scope.search_index_for_var(index,self.parent.tag(),\
                   src_name)
-                dest_on_device = index_variable_is_on_device(dest_indexed_var)
-                src_on_device = index_variable_is_on_device(src_indexed_var)
+                dest_on_device = index_var_is_on_device(dest_indexed_var)
+                src_on_device = index_var_is_on_device(src_indexed_var)
                 subst = parse_result.hip_f_str(dest_on_device, src_on_device)
                 return (subst, True)
 
@@ -139,10 +136,10 @@ class STCufKernelCall(nodes.STNode):
             for ttexpr in parse_result._args:
                 # expand array arguments
                 max_rank = 0
-                for rvalue in translator.find_all(ttexpr,
-                                                  translator.tree.TTRValue):
-                    # TODO lookup the subprogram first
-                    ivar, discovered = indexer.scope.search_index_for_variable(index,self.parent.tag(),\
+                for rvalue in translator.tree.find_all(ttexpr,
+                                                       translator.tree.TTRValue):
+                    # TODO lookup the procedure first
+                    ivar, discovered = indexer.scope.search_index_for_var(index,self.parent.tag(),\
                        rvalue.name())
                     if discovered:
                         max_rank = max(max_rank, ivar["rank"])

@@ -10,8 +10,8 @@ GPUFORT_ACC_DIR = $(GPUFORT_DIR)/runtime/gpufort_acc_runtime
 all: | gpufort_templates gpufort_headers lib/$(LIBGPUFORT) lib/$(LIBGPUFORT_ACC) make_directories
 
 gpufort_templates:
-	make -C $(GPUFORT_DIR)/python/fort2x/templates
-	make -C $(GPUFORT_DIR)/python/fort2x/hip/templates
+	make -C $(GPUFORT_DIR)/python/gpufort/fort2x/templates
+	make -C $(GPUFORT_DIR)/python/gpufort/fort2x/hip/templates
 
 gpufort_headers:
 	make -C $(GPUFORT_DIR)/include all
@@ -42,6 +42,6 @@ make_directories:
 clean_all:
 	make -C $(GPUFORT_DIR)/include clean_all
 	make -C $(GPUFORT_DIR)/src     clean_all
-	make -C $(GPUFORT_DIR)/python/fort2x/templates clean_all
-	make -C $(GPUFORT_DIR)/python/fort2x/hip/templates clean_all
+	make -C $(GPUFORT_DIR)/python/gpufort/fort2x/templates clean_all
+	make -C $(GPUFORT_DIR)/python/gpufort/fort2x/hip/templates clean_all
 	rm -f lib/$(LIBGPUFORT) lib/$(LIBGPUFORT_ACC)

@@ -3,6 +3,7 @@
 import re
 import sys
 import hashlib
+import textwrap
 
 from gpufort import util
 from gpufort import linemapper
@@ -48,8 +49,6 @@ class STNode:
             self._linemaps.append(first_linemap)
         self._first_statement_index = first_statement_index
         self._last_statement_index = first_statement_index # inclusive
-        self._prolog = []
-        self._epilog = []
         # metadata
         self.parent = None
         self.children = []
@@ -216,14 +215,35 @@ class STNode:
             result.append(text[start:end])
         return result
 
-    def add_to_prolog(self, line, prepend=False):
-        """Add some prolog lines to the first linemap."""
-        line_preproc = line.rstrip()
+    def get_prolog(self):
+        """:return: the first statement's prolog or the
+        first linemap's prolog if the first statement is
+        the first statement in the first linemap.
+        """
         prolog = self._linemaps[0]["statements"][
             self._first_statement_index]["prolog"]
         if self._first_statement_index == 0:
             prolog = self._linemaps[0]["prolog"]
-        else:
+        return prolog
+          
+    def get_epilog(self):
+        """:return: the last statement's epilog or the
+        last linemap's epilog if the last statement is
+        the last statement in the last linemap.
+        """
+        epilog = self._linemaps[-1]["statements"][
+            self._last_statement_index]["epilog"]
+        have_last_in_last_linemap = self._last_statement_index  == -1 or\
+                                    self._last_statement_index  == len(self._linemaps[-1]["statements"])-1
+        if have_last_in_last_linemap:
+            epilog = self._linemaps[0]["epilog"]
+        return epilog
+
+    def add_to_prolog(self, line, prepend=False):
+        """Add some prolog lines to the first linemap."""
+        line_preproc = line.rstrip()
+        prolog = self.get_prolog() 
+        if self._first_statement_index > 0:
             self._linemaps[0]["modified"] = True
         if not line_preproc.lower() in map(str.lower, prolog):
             if prepend:
@@ -234,13 +254,10 @@ class STNode:
     def add_to_epilog(self, line, prepend=False):
         """Add some epilog lines to the first linemap."""
         line_preproc = line.rstrip()
-        epilog = self._linemaps[-1]["statements"][
-            self._last_statement_index]["epilog"]
+        epilog = self.get_epilog() 
         have_last_in_last_linemap = self._last_statement_index  == -1 or\
                                     self._last_statement_index  == len(self._linemaps[-1]["statements"])-1
-        if have_last_in_last_linemap:
-            epilog = self._linemaps[0]["epilog"]
-        else:
+        if not have_last_in_last_linemap:
             self._linemaps[0]["modified"] = True
         if not line_preproc.lower() in map(str.lower, epilog):
             if prepend:
@@ -331,7 +348,6 @@ class STNode:
             joined_statements = "\n".join(self.statements())
             joined_lines = "".join(self.lines())
             statements_fully_cover_lines = have_first_in_first_linemap and have_last_in_last_linemap
-            print(self.__class__)
             transformed_code, transformed = \
               self.transform(joined_lines,joined_statements,statements_fully_cover_lines,index)
             if transformed:
@@ -349,6 +365,19 @@ class STContainerBase(STNode):
         """:return: If the scanner tree node is member of the declaration list."""
         return isinstance(stnode, IDeclListEntry)
 
+    def add_use_statement(self,module,only=[]):
+        """Add a use statement to the top of
+        the module's declaration list.
+        :param str module: Module name
+        :param list only: 
+        """
+        indent_parent = self.first_line_indent()
+        indent = indent_parent + " "*2
+        statement = "{}use {}".format(indent,module)
+        if len(only):
+            statement += ", only: "+",".join(only)
+        self.add_to_epilog(statement,prepend=True)
+
     def first_entry_in_decl_list(self):
         result = self.find_first(filter=STContainerBase.decl_list_entry_filter)
         if result == None:
@@ -363,7 +392,7 @@ class STContainerBase(STNode):
 
     def return_or_end_statements(self):
         return self.find_all(
-            filter=lambda stnode: isinstance(stnode, STTEndOrReturn))
+            filter=lambda stnode: isinstance(stnode, STEndOrReturn))
 
     def end_statement(self):
         """:return: The child of type STEnd."""
@@ -418,7 +447,7 @@ class STContainerBase(STNode):
         recursive_parent_lookup(self.parent)
         return result
 
-    def local_and_dummy_variable_names(self, index):
+    def local_and_dummy_var_names(self, index):
         """:return: names of local variables (1st retval) and dummy variables (2nd retval)."""
         # TODO can also be realised by subclass
         scope = indexer.scope.create_scope(index, self.tag())
@@ -430,7 +459,7 @@ class STContainerBase(STNode):
             dummy_arg_names = []
         else:
             parent_tag = self.parent.tag()
-            irecord, _ = indexer.scope.search_index_for_subprogram(
+            irecord, _ = indexer.scope.search_index_for_procedure(
                 index, parent_tag, self.name)
             dummy_arg_names = irecord["dummy_args"]
         local_var_names = [
@@ -488,50 +517,11 @@ class STProgram(STContainerBase):
         self.name = name.lower()
         self.kind = "program"
 
-
-class STUseStatement(STNode, IDeclListEntry):
-
-    def __init__(self, first_linemap, first_linemap_first_statement):
-        STNode.__init__(self, first_linemap, first_linemap_first_statement)
-
-    def transform(self,
-                  joined_lines,
-                  joined_statements,
-                  statements_fully_cover_lines,
-                  index=[]):
-        # TODO clean
-        indent = self.first_line_indent()
-        snippet = joined_statements
-        use_cuda = False
-        for lib in grammar.HOST_MODULES:
-            lib_lower = lib.lower()
-            if lib_lower in snippet.lower():
-                use_cuda = True
-                if lib_lower == "cudafor":
-                    snippet = re.sub(r"\bcudafor\b", opts.hip_module_name,
-                                     snippet, re.IGNORECASE)
-                    snippet = snippet.rstrip(
-                        "\n") + "\n" + "{0}use hipfort_check".format(indent)
-                snippet = re.sub(
-                    r"\bcu(\w+)\b",
-                    "".join([opts.hip_math_module_prefix,
-                             r"hip\1"]), snippet, re.IGNORECASE)
-        return snippet, use_cuda
-
-
 class STContains(STNode):
-
-    def __init__(self, first_linemap, first_linemap_first_statement):
-        STNode.__init__(self, first_linemap, first_linemap_first_statement)
-        self.name = None
-
+    pass
 
 class STPlaceHolder(STNode, IDeclListEntry):
-
-    def __init__(self, first_linemap, first_linemap_first_statement):
-        STNode.__init__(self, first_linemap, first_linemap_first_statement)
-        self.name = None
-
+    pass
 
 class STProcedure(STContainerBase):
 
@@ -542,7 +532,7 @@ class STProcedure(STContainerBase):
         self.kind = kind
         self.code = []
         # check attributes
-        self.index_record, _ = indexer.scope.search_index_for_subprogram(
+        self.index_record, _ = indexer.scope.search_index_for_procedure(
             index, parent_tag, name)
         self.c_result_type = "void"
         self.parse_result = None
@@ -641,8 +631,8 @@ class STDirective(STNode):
 
 class STLoopNest(STNode):
 
-    def __init__(self, first_linemap, first_linemap_first_statement):
-        STNode.__init__(self, first_linemap, first_linemap_first_statement)
+    def __init__(self, *args, **kwargs):
+        STNode.__init__(self, *args, **kwargs)
         self.grid_f_str = None
         self.block_f_str = None
         self.sharedmem_f_str = "0" # set from extraction routine
@@ -680,7 +670,7 @@ class STLoopNest(STNode):
     def kernel_launcher_name(self):
         return "launch_{}".format(self.kernel_name())
 
-    def set_kernel_call_arguments(ivars):
+    def set_kernel_call_arguments(self,ivars):
         """Add a kernel argument to the list of kernel arguments.
         Subroutines may wrap the argument name 
         into additional code, e.g. code to obtain device
@@ -702,14 +692,14 @@ class STLoopNest(STNode):
         except:
             stream = self.stream_f_str
         if self.grid_f_str == None or self.block_f_str == None or opts.loop_kernel_default_launcher == "cpu": # use auto or cpu launcher
-            result="{indent}! extracted to HIP C++ file\n{indent}call {0}_{launcher}({1},{2},{3})".format(\
+            result="! extracted to HIP C++ file\ncall {0}_{launcher}({1},{2},{3})".format(\
               self.kernel_launcher_name(),self.sharedmem_f_str,stream,\
-                ",".join(self.kernel_arg_names),indent=indent,launcher=opts.loop_kernel_default_launcher)
+                ",".join(self.kernel_arg_names),launcher=opts.loop_kernel_default_launcher)
         else:
-            result="{indent}! extracted to HIP C++ file\n{indent}call {0}({1},{2},{3},{4},{5})".format(\
+            result="! extracted to HIP C++ file\ncall {0}({1},{2},{3},{4},{5})".format(\
               self.kernel_launcher_name(),self.grid_f_str,self.block_f_str,self.sharedmem_f_str,stream,\
-                ",".join(self.kernel_arg_names),indent=indent)
-        return result, True
+                ",".join(self.kernel_arg_names))
+        return textwrap.indent(result,indent), True
 
 
 class STDeclaration(STNode, IDeclListEntry):
@@ -719,8 +709,8 @@ class STDeclaration(STNode, IDeclListEntry):
     ```
     """
 
-    def __init__(self, first_linemap, first_linemap_first_statement):
-        STNode.__init__(self, first_linemap, first_linemap_first_statement)
+    def __init__(self, *args, **kwargs):
+        STNode.__init__(self, *args, **kwargs)
         self._ttdeclaration = translator.parse_declaration(
             self.first_statement())
         self._vars = [
@@ -757,9 +747,9 @@ class STDeclaration(STNode, IDeclListEntry):
             translator.tree.make_f_str(q).lower()
             for q in self._ttdeclaration.qualifiers
         ]
-        unchanged_variables = []
-        new_device_pointer_variables = []
-        new_host_pointer_variables = []
+        unchanged_vars = []
+        new_device_pointer_vars = []
+        new_host_pointer_vars = []
 
         indent = self.first_line_indent()
         # argument names if declared in procedure
@@ -769,7 +759,7 @@ class STDeclaration(STNode, IDeclListEntry):
             argnames = []
         result = ""
         for var_name in self._vars:
-            ivar,discovered = indexer.scope.search_index_for_variable(\
+            ivar,discovered = indexer.scope.search_index_for_var(\
               index,self.parent.tag(),\
                 var_name)
             rank = ivar["rank"]
@@ -789,35 +779,30 @@ class STDeclaration(STNode, IDeclListEntry):
             if rank > 0:
                 new_qualifiers.append("dimension(:" + ",:" * (rank-1) + ")")
             if has_device and rank > 0:
-                new_device_pointer_variables.append(var_name)
+                new_device_pointer_vars.append(var_name)
                 result += "\n" + indent + original_datatype + "," + ",".join(
                     new_qualifiers) + " :: " + var_name
             elif has_pinned:
-                new_host_pointer_variables.append(var_name)
+                new_host_pointer_vars.append(var_name)
                 result += "\n" + indent + original_datatype + "," + ",".join(
                     new_qualifiers) + " :: " + var_name
 
         # TODO handle side effects if no allocatable present
-        if len(new_device_pointer_variables) + len(
-                new_host_pointer_variables) < len(self._ttdeclaration._rhs):
-            result = indent + self._ttdeclaration.f_str(extra_ignore_list=new_device_pointer_variables+new_host_pointer_variables) +\
+        if len(new_device_pointer_vars) + len(
+                new_host_pointer_vars) < len(self._ttdeclaration._rhs):
+            result = indent + self._ttdeclaration.f_str(extra_ignore_list=new_device_pointer_vars+new_host_pointer_vars) +\
                      result
-        if len(new_device_pointer_variables) or len(
-                new_host_pointer_variables):
+        if len(new_device_pointer_vars) or len(
+                new_host_pointer_vars):
             return result.lstrip("\n"), True
         else:
             return "", False
 
 
 class STAttributes(STNode):
-    """
-    CUDA Fortran specific intrinsic that needs to be removed/commented out
+    """CUDA Fortran specific intrinsic that needs to be removed/commented out
     in any case.
     """
-
-    def __init__(self, first_linemap, first_linemap_first_statement):
-        STNode.__init__(self, first_linemap, first_linemap_first_statement)
-
     def transform(self,
                   joined_lines,
                   joined_statements,
@@ -826,7 +811,7 @@ class STAttributes(STNode):
         return "", True
 
 
-def index_variable_is_on_device(ivar):
+def index_var_is_on_device(ivar):
     return "device" in ivar["qualifiers"]
 
 
@@ -841,10 +826,7 @@ def pinned_or_on_device(ivar):
 
 
 class STNonZeroCheck(STNode):
-
-    def __init__(self, first_linemap, first_linemap_first_statement):
-        STNode.__init__(self, first_linemap, first_linemap_first_statement)
-
+    
     def transform(self,
                   joined_lines,
                   joined_statements,
@@ -856,9 +838,9 @@ class STNonZeroCheck(STNode):
                 result):
             parse_result = tokens[0]
             lhs_name = parse_result.lhs_f_str()
-            ivar,_  = indexer.scope.search_index_for_variable(index,self.parent.tag(),\
+            ivar,_  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
               lhs_name)
-            on_device = index_variable_is_on_device(ivar)
+            on_device = index_var_is_on_device(ivar)
             transformed |= on_device
             if on_device:
                 subst = parse_result.f_str() # TODO backend specific
@@ -868,9 +850,6 @@ class STNonZeroCheck(STNode):
 
 class STAllocated(STNode):
 
-    def __init__(self, first_linemap, first_linemap_first_statement):
-        STNode.__init__(self, first_linemap, first_linemap_first_statement)
-
     def transform(self,
                   joined_lines,
                   joined_statements,
@@ -879,9 +858,9 @@ class STAllocated(STNode):
 
         def repl(parse_result):
             var_name = parse_result.var_name()
-            ivar,_ = indexer.scope.search_index_for_variable(index,self.parent.tag(),\
+            ivar,_ = indexer.scope.search_index_for_var(index,self.parent.tag(),\
               var_name)
-            on_device = index_variable_is_on_device(ivar)
+            on_device = index_var_is_on_device(ivar)
             return (parse_result.f_str(), on_device) # TODO backend specific
 
         result, transformed = util.pyparsing.replace_all(
@@ -891,11 +870,9 @@ class STAllocated(STNode):
 
 
 class IWithBackend:
-    _backends = []
-
     @classmethod
-    def register_backend(cls, src_dialect, dest_dialect, func):
-        IWithBackend._backends.append((src_dialect, dest_dialect, func))
+    def register_backend(cls, src_dialect, dest_dialects, func):
+        cls._backends.append((src_dialect, dest_dialects, func))
 
     def transform(self,
                   joined_lines,
@@ -914,46 +891,53 @@ class IWithBackend:
                                                   statements at the begin of the first line or end of the last line.
         :return: A tuple of the transformed string and if it differs from the original.
         """
-        indent = self.first_line_indent()
         result = joined_statements
         transformed = False
-        for src_dialect, dest_dialect, func in IWithBackend._backends:
+        for src_dialect, dest_dialects, func in self.__class__._backends:
             if (src_dialect in opts.source_dialects and
-                    dest_dialect in opts.destination_dialect):
+                  opts.destination_dialect in dest_dialects):
                 result, transformed1 = func(self, result, index)
                 transformed = transformed or transformed1
         return result, transformed
 
+class STUseStatement(STNode, IDeclListEntry, IWithBackend):
+    _backends = []
+    
+    def __init__(self, *args, **kwargs):
+        STNode.__init__(self, *args, **kwargs)
+    
+    def transform(self,*args,**kwargs):
+        return IWithBackend.transform(self,*args,**kwargs)
 
 class STAllocate(STNode, IWithBackend):
+    _backends = []
 
     def __init__(self, first_linemap, first_linemap_first_statement):
         STNode.__init__(self, first_linemap, first_linemap_first_statement)
         self.parse_result = translator.tree.grammar.allocate.parseString(
             self.statements()[0])[0]
         self.variable_names = self.parse_result.variable_names()
-        #result1, transformed1 = cuf.handle_allocate_cuf(
-        #    self, joined_statements, index)
-        #result2, transformed2 = acc.handle_allocate_acc(self, result1, index)
+    
+    def transform(self,*args,**kwargs):
+        return IWithBackend.transform(self,*args,**kwargs)
 
 
 class STDeallocate(STNode, IWithBackend):
+    _backends = []
 
     def __init__(self, first_linemap, first_linemap_first_statement):
         STNode.__init__(self, first_linemap, first_linemap_first_statement)
         self.parse_result = translator.tree.grammar.deallocate.parseString(
             self.statements()[0])[0]
         self.variable_names = self.parse_result.variable_names()
-        #result1, transformed1 = cuf.handle_deallocate_cuf(
-        #    self, joined_statements, index)
-        #result2, transformed2 = acc.handle_deallocate_acc(self, result1, index)
-        #return result2, (transformed1 or transformed2)
-
+    
+    def transform(self,*args,**kwargs):
+        return IWithBackend.transform(self,*args,**kwargs)
 
 class STMemcpy(STNode):
 
-    def __init__(self, first_linemap, first_linemap_first_statement):
-        STNode.__init__(self, first_linemap, first_linemap_first_statement)
+    def __init__(self, *args, **kwargs):
+        STNode.__init__(self, *args, **kwargs)
         self._parse_result = translator.tree.grammar.memcpy.parseString(
             self.statements()[0])[0]
 
@@ -963,18 +947,19 @@ class STMemcpy(STNode):
                   statements_fully_cover_lines,
                   index=[]): # TODO
 
+        indent = self.first_line_indent()
         def repl_memcpy_(parse_result):
             dest_name = parse_result.dest_name_f_str()
             src_name = parse_result.src_name_f_str()
-            dest_indexed_var,_ = indexer.scope.search_index_for_variable(index,self.parent.tag(),\
+            dest_indexed_var,_ = indexer.scope.search_index_for_var(index,self.parent.tag(),\
               dest_name,error_handling="off")
-            src_indexed_var,_  = indexer.scope.search_index_for_variable(index,self.parent.tag(),\
+            src_indexed_var,_  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
               src_name,error_handling="off")
-            dest_on_device = index_variable_is_on_device(dest_indexed_var)
-            src_on_device = index_variable_is_on_device(src_indexed_var)
+            dest_on_device = index_var_is_on_device(dest_indexed_var)
+            src_on_device = index_var_is_on_device(src_indexed_var)
             if dest_on_device or src_on_device:
                 subst = parse_result.hip_f_str(dest_on_device, src_on_device)
-                return (subst, True)
+                return (textwrap.indent(subst,indent), True)
             else:
                 return ("", False) # no transformation; will not be considered
 

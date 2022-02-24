@@ -9,7 +9,7 @@ headers:
 	touch cudafor-fort2hip.hip.cpp
 
 modules:
-	gpufort -c cudafor.f90
+	gpufort --only-create-mod-files cudafor.f90
 
 clean_all:
 	for expr in "*.json" "*.mod" "*.gpufort_mod" "*-fort2hip.*" "*-gpufort.*" "*.h"; do find . -name "$$expr" -delete; done

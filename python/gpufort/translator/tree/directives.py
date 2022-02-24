@@ -11,9 +11,9 @@ from . import fortran
 from . import grammar
 
 
+#TODO exclude other annotations as well from this search
+#TODO improve
 def _search_values_in_subtree(ttnode, search_filter, scope, min_rank=-1):
-    #TODO exclude other annotations as well from this search
-    #TODO improve
     def find_all_matching_exclude_directives_(body,
                                               filter_expr=lambda x: True):
         """Find all nodes in tree of type 'searched_type'."""
@@ -39,9 +39,8 @@ def _search_values_in_subtree(ttnode, search_filter, scope, min_rank=-1):
     for ttvalue in find_all_matching_exclude_directives_(
             ttnode.body,
             search_filter): # includes the identifiers of the function calls
-        #tag = indexer.scope.create_index_search_tag_for_variable(ttvalue.f_str()) # TODO need to reintroduce this method
-        tag = ttvalue.f_str()
-        ivar, found_in_scope = indexer.scope.search_scope_for_variable(
+        tag = indexer.scope.create_index_search_tag_for_var(ttvalue.f_str()) # TODO 
+        ivar, found_in_scope = indexer.scope.search_scope_for_var(
             scope, tag)
         if found_in_scope and\
            ivar["rank"] >= min_rank and\
@@ -49,8 +48,7 @@ def _search_values_in_subtree(ttnode, search_filter, scope, min_rank=-1):
             tags.append(tag)
     return tags
 
-
-def _variables_in_subtree(ttnode, scope):
+def _vars_in_subtree(ttnode, scope):
     """:return: all identifiers of LValue and RValues in the body."""
 
     def search_filter(node):
@@ -83,7 +81,7 @@ def _flag_tensors(ttcontainer, scope):
     """Clarify types of function calls / tensor access that are not members of a struct."""
     for value in base.find_all(ttcontainer.body, fortran.IValue):
         if type(value._value) is fortran.TTFunctionCallOrTensorAccess:
-            _, discovered = indexer.scope.search_scope_for_variable(
+            _, discovered = indexer.scope.search_scope_for_var(
                 scope, value.f_str())
             if discovered:
                 value._value._is_tensor_access = base.True3
@@ -392,7 +390,7 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
             return identifier_names
 
     def vars_in_body(self):
-        return _variables_in_subtree(self, self.scope)
+        return _vars_in_subtree(self, self.scope)
 
     def arrays_in_body(self):
         return _arrays_in_subtree(self, self.scope)
@@ -424,7 +422,7 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
             lvalue = assignment._lhs._value
             lvalue_name = lvalue.f_str().lower()
             if type(lvalue) is fortran.TTIdentifier: # could still be a matrix
-                definition, found_in_scope = indexer.scope.search_scope_for_variable(
+                definition, found_in_scope = indexer.scope.search_scope_for_var(
                     scope, lvalue_name)
                 if not found_in_scope or definition["rank"] == 0 and\
                    not lvalue_name in scalars_read_so_far:
@@ -435,7 +433,7 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
                                             fortran.TTIdentifier)
             for ttidentifier in rhs_identifiers:
                 rvalue_name = ttidentifier.f_str().lower()
-                definition, found_in_scope = indexer.scope.search_scope_for_variable(
+                definition, found_in_scope = indexer.scope.search_scope_for_var(
                     scope, rvalue_name)
                 if (not found_in_scope or definition["rank"] == 0) and\
                    rvalue_name != lvalue_name: # do not include name of rhs if lhs appears in rhs
@@ -674,19 +672,19 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
                 if type(value._value) in [
                         fortran.TTDerivedTypeMember, fortran.TTIdentifier
                 ]:
-                    for op, reduced_variables in self.gang_team_reductions(
+                    for op, reduced_vars in self.gang_team_reductions(
                     ).items():
                         if value.name().lower() in [
-                                el.lower() for el in reduced_variables
+                                el.lower() for el in reduced_vars
                         ]:
                             value._reduction_index = tidx
             # TODO identify what operation is performed on the highest level to
             # identify reduction op
         reduction_preamble = ""
         # 2.1. Add init preamble for reduced variables
-        for kind, reduced_variables in self.gang_team_reductions(
+        for kind, reduced_vars in self.gang_team_reductions(
                 base.make_c_str).items():
-            for var in reduced_variables:
+            for var in reduced_vars:
                 reduction_preamble += "reduce_op_{kind}::init({var}[{tidx}]);\n".format(
                     kind=kind, var=var, tidx=tidx)
         # 3. collapse and transform do-loops
@@ -739,10 +737,9 @@ class TTProcedureBody(base.TTContainer):
         self.result_name = ""
 
     def vars_in_body(self):
+        """:return: all identifiers of LValue and RValues in the body.
         """
-        :return: all identifiers of LValue and RValues in the body.
-        """
-        return _variables_in_subtree(self, self.scope)
+        return _vars_in_subtree(self, self.scope)
 
     def arrays_in_body(self):
         return _arrays_in_subtree(self, self.scope)

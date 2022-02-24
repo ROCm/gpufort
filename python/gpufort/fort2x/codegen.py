@@ -77,7 +77,7 @@ class CodeGenerator():
         return stnode.tag().replace(":", "_")
 
     def _create_includes_from_used_modules(self, irecord):
-        """Create include statement for a module's/subprogram's used modules that are present in the self.index."""
+        """Create include statement for a module's/procedure's used modules that are present in the self.index."""
         used_modules = [irecord["name"] for irecord in irecord["used_modules"]]
         includes = []
         for imodule in self.index:

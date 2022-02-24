@@ -79,12 +79,12 @@ class STCufLibCall(nodes.STNode):
             def repl_memcpy(parse_result):
                 dest_name = parse_result.dest_name_f_str()
                 src_name = parse_result.src_name_f_str()
-                dest_indexed_var,_ = indexer.scope.search_index_for_variable(index,self.parent.tag(),\
+                dest_indexed_var,_ = indexer.scope.search_index_for_var(index,self.parent.tag(),\
                   dest_name)
-                src_indexed_var ,_ = indexer.scope.search_index_for_variable(index,self.parent.tag(),\
+                src_indexed_var ,_ = indexer.scope.search_index_for_var(index,self.parent.tag(),\
                   src_name)
-                dest_on_device = index_variable_is_on_device(dest_indexed_var)
-                src_on_device = index_variable_is_on_device(src_indexed_var)
+                dest_on_device = index_var_is_on_device(dest_indexed_var)
+                src_on_device = index_var_is_on_device(src_indexed_var)
                 subst = parse_result.hip_f_str(dest_on_device, src_on_device)
                 return (subst, True)
 
@@ -138,8 +138,8 @@ class STCufKernelCall(nodes.STNode):
                 max_rank = 0
                 for rvalue in translator.tree.find_all(ttexpr,
                                                        translator.tree.TTRValue):
-                    # TODO lookup the subprogram first
-                    ivar, discovered = indexer.scope.search_index_for_variable(index,self.parent.tag(),\
+                    # TODO lookup the procedure first
+                    ivar, discovered = indexer.scope.search_index_for_var(index,self.parent.tag(),\
                        rvalue.name())
                     if discovered:
                         max_rank = max(max_rank, ivar["rank"])

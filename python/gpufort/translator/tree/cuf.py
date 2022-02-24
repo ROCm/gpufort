@@ -251,9 +251,9 @@ class TTAllocateRValue(base.TTNode):
         """
         return converter(self._var)
 
-    def bound_variable_assignments(self, array_name):
+    def bound_var_assignments(self, array_name):
         if self._bounds != None:
-            return self._bounds.bound_variable_assignments(array_name)
+            return self._bounds.bound_var_assignments(array_name)
         else:
             # TODO(gpufort): Add Warning
             return "TODO(gpufort): UNKNOWN"
@@ -342,16 +342,16 @@ class TTCufPointerAssignment(base.TTNode):
     def rhs_f_str(self):
         return base.make_f_str(self._rhs)
 
-    def f_str(self, vars_are_c_ptrs=False, lhs_bound_variable_names=[]):
+    def f_str(self, vars_are_c_ptrs=False, lhs_bound_var_names=[]):
         if vars_are_c_ptrs:
             lhs_name = self.lhs_f_str()
             rhs_name = self.rhs_f_str()
-            bound_variable_assignments = "\n".join([
+            bound_var_assignments = "\n".join([
                 "{0} = {1}".format(el, el.replace(lhs_name, rhs_name))
-                for el in lhs_bound_variable_names
+                for el in lhs_bound_var_names
             ])
             return "{0} = {1}\n{2}".format(lhs_name, rhs_name,
-                                           bound_variable_assignments)
+                                           bound_var_assignments)
         else:
             return "{0} => {1}\n{2}".format(lhs_name, rhs_name)
 
@@ -415,7 +415,7 @@ class TTCufAllocate(base.TTNode): # TODO not specific to CUF
             if vars_are_c_ptrs and not array_qualifiers[i] in [
                     "pinned", "device"
             ]:
-                result += array.bound_variable_assignments(array.var_name())
+                result += array.bound_var_assignments(array.var_name())
         if len(other_arrays):
             line = "allocate({0})".format(",".join(other_arrays))
             result.append(line)

@@ -27,7 +27,7 @@ def handle_allocate_cuf(stallocate, joined_statements, index):
     bytes_per_element = []
     array_qualifiers = []
     for array_name in stallocate.parse_result.variable_names():
-        ivar,_  = indexer.scope.search_index_for_variable(index,stallocate.parent.tag(),\
+        ivar,_  = indexer.scope.search_index_for_var(index,stallocate.parent.tag(),\
           array_name)
         bytes_per_element.append(ivar["bytes_per_element"])
         qualifier, transformation_required = nodes.pinned_or_on_device(ivar)
@@ -43,9 +43,9 @@ def handle_deallocate_cuf(stdeallocate, joined_statements, index):
     transformed = False
     array_qualifiers = []
     for array_name in stdeallocate.parse_result.variable_names():
-        ivar,_  = indexer.scope.search_index_for_variable(index,stdeallocate.parent.tag(),\
+        ivar,_  = indexer.scope.search_index_for_var(index,stdeallocate.parent.tag(),\
           array_name)
-        on_device = nodes.index_variable_is_on_device(ivar)
+        on_device = nodes.index_var_is_on_device(ivar)
         qualifier, transformed1 = nodes.pinned_or_on_device(ivar)
         transformed |= transformed1
         array_qualifiers.append(qualifier)

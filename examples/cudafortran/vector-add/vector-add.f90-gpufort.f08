@@ -5,10 +5,9 @@
 ! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 #ifdef _GPUFORT
 program main
-  use hipfort_check
   use iso_c_binding
+  use hipfort_check
   use hipfort
-  use gpufort_array
 #else
 program main
   use cudafor
@@ -75,35 +74,4 @@ program main
 #define max_err(a) maxval(abs(a-4.0))
 
   write(*,*) 'Max error: ', max_err(y) 
-#ifdef _GPUFORT
-contains
-! BEGIN main_28 e28c45
-function main_28_cpu(&
-      sharedmem,stream,&
-      y_d,&
-      i,&
-      a,&
-      x_d,&
-      y_d) bind(c,name="main_28_cpu") &
-        result(ierr)
-    implicit none
-    integer(c_int),intent(in) :: sharedmem
-    type(c_ptr),intent(in)    :: stream,
-    type(gpufort_array1) :: y_d
-    integer :: i
-    real :: a
-    type(gpufort_array1) :: x_d
-    type(gpufort_array1) :: y_d
-    integer(kind(hipSuccess)) :: ierr
-    !
-      !$cuf kernel do(1) <<<grid, tBlock>>>
-      do i=1,size(y_d,1)
-        y_d(i) = y_d(i) + a*xi
-      end do
-  
-  end function
-! END main_28 e28c45
 end program main
-#else
-end program main
-#endif

@@ -386,16 +386,16 @@ class TTAccDeclare(TTAccDirectiveBase):
     There is '!$acc routine' for routines.
     """
 
-    def map_alloc_variables(self):
+    def map_alloc_vars(self):
         return self.handle_mapping_clause(["create"])
 
-    def map_to_variables(self):
+    def map_to_vars(self):
         return self.handle_mapping_clause(["copyin"])
 
-    def map_from_variables(self):
+    def map_from_vars(self):
         return self.handle_mapping_clause(["copyout"])
 
-    def map_tofrom_variables(self):
+    def map_tofrom_vars(self):
         return self.handle_mapping_clause(["copy"])
 
     def omp_f_str(self):

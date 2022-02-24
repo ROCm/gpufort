@@ -20,8 +20,7 @@ __global__ void  main_28(
     gpufort::array1<float> y_d,
     int i,
     float a,
-    gpufort::array1<float> x_d,
-    gpufort::array1<float> y_d
+    gpufort::array1<float> x_d
 ){
   int i = 1 + (1)*(threadIdx.x + blockIdx.x * blockDim.x);
   if (loop_cond(i,y_d_n1,1)) {
@@ -41,15 +40,9 @@ extern "C" hipError_t launch_main_28_hip_(
     gpufort::array1<float>& y_d,
     int& i,
     float& a,
-    gpufort::array1<float>& x_d,
-    gpufort::array1<float>& y_d) {
+    gpufort::array1<float>& x_d) {
   hipError_t ierr = hipSuccess;
-  #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_main_28)
-  std::cout << "main_28:gpu:in::args:in:";
-  GPUFORT_PRINT_ARGS(grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream,y_d,i,a,x_d,y_d);
-  #endif
-
-  hipLaunchKernelGGL((main_28), grid, block, sharedmem, stream, y_d,i,a,x_d,y_d);
+  hipLaunchKernelGGL((main_28), grid, block, sharedmem, stream, y_d,i,a,x_d);
   #if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_main_28)
   HIP_CHECK(hipStreamSynchronize(stream));
   #elif defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_main_28)
@@ -57,11 +50,6 @@ extern "C" hipError_t launch_main_28_hip_(
   #endif
   ierr = hipGetLastError();	
   if ( ierr != hipSuccess ) return ierr;
-  #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_main_28)
-  std::cout << "main_28:gpu:out::args:out:";
-  GPUFORT_PRINT_ARGS(grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream,y_d,i,a,x_d,y_d);
-  #endif
-
   return ierr;
 }
 
@@ -73,18 +61,12 @@ extern "C" hipError_t launch_main_28_hip_ps_(
     gpufort::array1<float>& y_d,
     int& i,
     float& a,
-    gpufort::array1<float>& x_d,
-    gpufort::array1<float>& y_d) {
+    gpufort::array1<float>& x_d) {
   hipError_t ierr = hipSuccess;
   dim3 grid(divideAndRoundUp(problem_size.x,block.x),
             divideAndRoundUp(problem_size.y,block.y),
             divideAndRoundUp(problem_size.z,block.z));   
-  #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_main_28)
-  std::cout << "main_28:gpu:in::args:in:";
-  GPUFORT_PRINT_ARGS(problem_size.x,problem_size.y,problem_size.y,grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream,y_d,i,a,x_d,y_d);
-  #endif
-
-  hipLaunchKernelGGL((main_28), grid, block, sharedmem, stream, y_d,i,a,x_d,y_d);
+  hipLaunchKernelGGL((main_28), grid, block, sharedmem, stream, y_d,i,a,x_d);
   #if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_main_28)
   HIP_CHECK(hipStreamSynchronize(stream));
   #elif defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_main_28)
@@ -92,44 +74,7 @@ extern "C" hipError_t launch_main_28_hip_ps_(
   #endif
   ierr = hipGetLastError();	
   if ( ierr != hipSuccess ) return ierr;
-  #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_main_28)
-  std::cout << "main_28:gpu:out::args:out:";
-  GPUFORT_PRINT_ARGS(problem_size.x,problem_size.y,problem_size.y,grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream,y_d,i,a,x_d,y_d);
-  #endif
-
   return ierr;
-}
-
-extern "C" hipError_t main_28_cpu(
-    const int& sharedmem,
-    const hipStream_t& stream,
-    gpufort::array1<float>& y_d,
-    int& i,
-    float& a,
-    gpufort::array1<float>& x_d,
-    gpufort::array1<float>& y_d);
-
-extern "C" hipError_t launch_main_28_cpu_(
-    const int& sharedmem,
-    const hipStream_t& stream,
-    gpufort::array1<float>& y_d,
-    int& i,
-    float& a,
-    gpufort::array1<float>& x_d,
-    gpufort::array1<float>& y_d) {
-  hipError_t ierr = hipSuccess;
-  #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_main_28)
-  std::cout << "main_28:cpu:in::args:in:";
-  GPUFORT_PRINT_ARGS(grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream,y_d,i,a,x_d,y_d);
-  #endif
-
-  main_28_cpu(sharedmem,stream,y_d,i,a,x_d,y_d);
-  #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_main_28)
-  std::cout << "main_28:cpu:out::args:out:";
-  GPUFORT_PRINT_ARGS(grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream,y_d,i,a,x_d,y_d);
-  #endif
-
-  return hipSuccess;
 }
 
 // END main_28 e28c45

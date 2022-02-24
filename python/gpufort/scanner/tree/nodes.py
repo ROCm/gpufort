@@ -447,7 +447,7 @@ class STContainerBase(STNode):
         recursive_parent_lookup(self.parent)
         return result
 
-    def local_and_dummy_variable_names(self, index):
+    def local_and_dummy_var_names(self, index):
         """:return: names of local variables (1st retval) and dummy variables (2nd retval)."""
         # TODO can also be realised by subclass
         scope = indexer.scope.create_scope(index, self.tag())
@@ -459,7 +459,7 @@ class STContainerBase(STNode):
             dummy_arg_names = []
         else:
             parent_tag = self.parent.tag()
-            irecord, _ = indexer.scope.search_index_for_subprogram(
+            irecord, _ = indexer.scope.search_index_for_procedure(
                 index, parent_tag, self.name)
             dummy_arg_names = irecord["dummy_args"]
         local_var_names = [
@@ -532,7 +532,7 @@ class STProcedure(STContainerBase):
         self.kind = kind
         self.code = []
         # check attributes
-        self.index_record, _ = indexer.scope.search_index_for_subprogram(
+        self.index_record, _ = indexer.scope.search_index_for_procedure(
             index, parent_tag, name)
         self.c_result_type = "void"
         self.parse_result = None
@@ -747,9 +747,9 @@ class STDeclaration(STNode, IDeclListEntry):
             translator.tree.make_f_str(q).lower()
             for q in self._ttdeclaration.qualifiers
         ]
-        unchanged_variables = []
-        new_device_pointer_variables = []
-        new_host_pointer_variables = []
+        unchanged_vars = []
+        new_device_pointer_vars = []
+        new_host_pointer_vars = []
 
         indent = self.first_line_indent()
         # argument names if declared in procedure
@@ -759,7 +759,7 @@ class STDeclaration(STNode, IDeclListEntry):
             argnames = []
         result = ""
         for var_name in self._vars:
-            ivar,discovered = indexer.scope.search_index_for_variable(\
+            ivar,discovered = indexer.scope.search_index_for_var(\
               index,self.parent.tag(),\
                 var_name)
             rank = ivar["rank"]
@@ -779,21 +779,21 @@ class STDeclaration(STNode, IDeclListEntry):
             if rank > 0:
                 new_qualifiers.append("dimension(:" + ",:" * (rank-1) + ")")
             if has_device and rank > 0:
-                new_device_pointer_variables.append(var_name)
+                new_device_pointer_vars.append(var_name)
                 result += "\n" + indent + original_datatype + "," + ",".join(
                     new_qualifiers) + " :: " + var_name
             elif has_pinned:
-                new_host_pointer_variables.append(var_name)
+                new_host_pointer_vars.append(var_name)
                 result += "\n" + indent + original_datatype + "," + ",".join(
                     new_qualifiers) + " :: " + var_name
 
         # TODO handle side effects if no allocatable present
-        if len(new_device_pointer_variables) + len(
-                new_host_pointer_variables) < len(self._ttdeclaration._rhs):
-            result = indent + self._ttdeclaration.f_str(extra_ignore_list=new_device_pointer_variables+new_host_pointer_variables) +\
+        if len(new_device_pointer_vars) + len(
+                new_host_pointer_vars) < len(self._ttdeclaration._rhs):
+            result = indent + self._ttdeclaration.f_str(extra_ignore_list=new_device_pointer_vars+new_host_pointer_vars) +\
                      result
-        if len(new_device_pointer_variables) or len(
-                new_host_pointer_variables):
+        if len(new_device_pointer_vars) or len(
+                new_host_pointer_vars):
             return result.lstrip("\n"), True
         else:
             return "", False
@@ -811,7 +811,7 @@ class STAttributes(STNode):
         return "", True
 
 
-def index_variable_is_on_device(ivar):
+def index_var_is_on_device(ivar):
     return "device" in ivar["qualifiers"]
 
 
@@ -838,9 +838,9 @@ class STNonZeroCheck(STNode):
                 result):
             parse_result = tokens[0]
             lhs_name = parse_result.lhs_f_str()
-            ivar,_  = indexer.scope.search_index_for_variable(index,self.parent.tag(),\
+            ivar,_  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
               lhs_name)
-            on_device = index_variable_is_on_device(ivar)
+            on_device = index_var_is_on_device(ivar)
             transformed |= on_device
             if on_device:
                 subst = parse_result.f_str() # TODO backend specific
@@ -858,9 +858,9 @@ class STAllocated(STNode):
 
         def repl(parse_result):
             var_name = parse_result.var_name()
-            ivar,_ = indexer.scope.search_index_for_variable(index,self.parent.tag(),\
+            ivar,_ = indexer.scope.search_index_for_var(index,self.parent.tag(),\
               var_name)
-            on_device = index_variable_is_on_device(ivar)
+            on_device = index_var_is_on_device(ivar)
             return (parse_result.f_str(), on_device) # TODO backend specific
 
         result, transformed = util.pyparsing.replace_all(
@@ -951,12 +951,12 @@ class STMemcpy(STNode):
         def repl_memcpy_(parse_result):
             dest_name = parse_result.dest_name_f_str()
             src_name = parse_result.src_name_f_str()
-            dest_indexed_var,_ = indexer.scope.search_index_for_variable(index,self.parent.tag(),\
+            dest_indexed_var,_ = indexer.scope.search_index_for_var(index,self.parent.tag(),\
               dest_name,error_handling="off")
-            src_indexed_var,_  = indexer.scope.search_index_for_variable(index,self.parent.tag(),\
+            src_indexed_var,_  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
               src_name,error_handling="off")
-            dest_on_device = index_variable_is_on_device(dest_indexed_var)
-            src_on_device = index_variable_is_on_device(src_indexed_var)
+            dest_on_device = index_var_is_on_device(dest_indexed_var)
+            src_on_device = index_var_is_on_device(src_indexed_var)
             if dest_on_device or src_on_device:
                 subst = parse_result.hip_f_str(dest_on_device, src_on_device)
                 return (textwrap.indent(subst,indent), True)

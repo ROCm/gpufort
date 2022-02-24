@@ -206,11 +206,11 @@ dimension_qualifier = Group(DIMENSION + bounds) # emits [*]
 intent_qualifier    = Group(INTENT + LPAR + (INOUT|IN|OUT) + RPAR)   # emits *
 qualifier           = intent_qualifier | dimension_qualifier | simple_attribute
 qualifier_list      = Group(delimitedList(qualifier))
-declared_variable   = Group( identifier + Optional(bounds,default=None) + Optional(( PEQ | EQ )  + ( matrix_arithmetic_expression | complex_arithmetic_expression | arithmetic_logical_expression ), default=None)) # ! emits [*,[*],*]
+declared_var   = Group( identifier + Optional(bounds,default=None) + Optional(( PEQ | EQ )  + ( matrix_arithmetic_expression | complex_arithmetic_expression | arithmetic_logical_expression ), default=None)) # ! emits [*,[*],*]
 declaration_lhs = datatype + Optional(COMMA + qualifier_list,default=[]) + COLONS
-fortran_declaration = declaration_lhs + Group(delimitedList(declared_variable))   # ! emits *,[*],[*]
-#precisiondeclared_variable = identifier + EQ + CASELESS_LITERAL("selected_kind").suppress() + LPAR + integer + COMMA + integer + RPAR # ! emits [*,[*],*]
-#precision_declaration      = integer_type + COMMA + qualifier_list + COLONS + Group(delimitedList(precisiondeclared_variable_variable))   # ! emits *,[*],[*]
+fortran_declaration = declaration_lhs + Group(delimitedList(declared_var))   # ! emits *,[*],[*]
+#precisiondeclared_var = identifier + EQ + CASELESS_LITERAL("selected_kind").suppress() + LPAR + integer + COMMA + integer + RPAR # ! emits [*,[*],*]
+#precision_declaration      = integer_type + COMMA + qualifier_list + COLONS + Group(delimitedList(precisiondeclared_var_var))   # ! emits *,[*],[*]
 
 # Define forward-declared block
 comment            = Combine(Literal("!") + ~(~White()+Literal("$")) + restOfLine())

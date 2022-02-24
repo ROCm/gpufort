@@ -375,13 +375,13 @@ def AllocateHipGpufortRT(stallocate, joined_statements, index):
     scope = indexer.scope.create_scope(index, parent_tag)
     scope_vars = scope["variables"]
     indent = stallocate.first_line_indent()
-    local_var_names, dummy_arg_names = stcontainer.local_and_dummy_variable_names(
+    local_var_names, dummy_arg_names = stcontainer.local_and_dummy_var_names(
         index)
     acc_present_calls = []
     temp_vars = []
     implicit_region = False
     for var in stallocate.variable_names:
-        ivar, _ = indexer.scope.search_index_for_variable(index, parent_tag, var)
+        ivar, _ = indexer.scope.search_index_for_var(index, parent_tag, var)
         host_var = ivar["name"]
         dev_var = dev_var_name(host_var)
         is_local_var = host_var in local_var_names
@@ -415,11 +415,11 @@ def DeallocateHipGpufortRT(stdeallocate, joined_statements, index):
     scope = indexer.scope.create_scope(index, parent_tag)
     scope_vars = scope["variables"]
     indent = stdeallocate.first_line_indent()
-    local_var_names, dummy_arg_names = stcontainer.local_and_dummy_variable_names(
+    local_var_names, dummy_arg_names = stcontainer.local_and_dummy_var_names(
         index)
     acc_delete_calls = []
     for var in stdeallocate.variable_names:
-        ivar, _ = indexer.scope.search_index_for_variable(index, parent_tag, var)
+        ivar, _ = indexer.scope.search_index_for_var(index, parent_tag, var)
         host_var = ivar["name"]
         dev_var = dev_var_name(host_var)
         is_local_var = host_var in local_var_names
@@ -455,7 +455,7 @@ def Acc2HipGpufortRTPostprocess(stree, index):
         indent = last_decl_list_node.first_line_indent()
         scope = indexer.scope.create_scope(index, stcontainer.tag())
         scope_vars = scope["variables"]
-        local_var_names, dummy_arg_names = stcontainer.local_and_dummy_variable_names(
+        local_var_names, dummy_arg_names = stcontainer.local_and_dummy_var_names(
             index)
         # TODO also process type members
         acc_present_calls = ""

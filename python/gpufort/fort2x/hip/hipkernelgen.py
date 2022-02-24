@@ -2,8 +2,11 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 from .. import kernelgen
 from . import render
-from gpufort import util
 
+from gpufort import util
+from gpufort import grammar
+
+from .. import opts
 
 class HipKernelGeneratorBase(kernelgen.KernelGeneratorBase):
     """Base class for constructing HIP kernel generators."""
@@ -134,7 +137,12 @@ class HipKernelGenerator4LoopNest(HipKernelGeneratorBase):
         self.c_body = ttloopnest.c_str()
         #
         self.kernel = self._create_kernel_context()
-
+        
+        util.logging.log_debug2(opts.log_prefix+".HipKernelGenerator4CufKernel","__init__","".join(
+            [
+              "all_vars=",str(self.all_vars),"global_reductions=",str(self.global_reductions),
+              ",","all_vars=",str(self.shared_vars),",","local_vars=",str(self.local_vars),
+            ]))
 
 class HipKernelGenerator4CufKernel(HipKernelGeneratorBase):
 
@@ -154,7 +162,8 @@ class HipKernelGenerator4CufKernel(HipKernelGeneratorBase):
         all_var_exprs = kernelgen.KernelGeneratorBase.strip_member_access(ttprocedure.vars_in_body(
         )) # in the body, there might be variables present from used modules
         self.all_vars = iprocedure["dummy_args"] + [
-            v for v in all_var_exprs if v not in iprocedure["dummy_args"]
+            v for v in all_var_exprs if (v not in iprocedure["dummy_args"] and
+                                         v not in grammar.DEVICE_PREDEFINED_VARIABLES)
         ]
         self.global_reductions = {}
         self.c_body = ttprocedure.c_str()

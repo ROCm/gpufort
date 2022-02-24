@@ -23,7 +23,7 @@ class KernelGeneratorBase:
            var expression from all_vars2 list."""
         ivars = []
         for var_expr in var_exprs:
-            ivar, _ = indexer.scope.search_scope_for_variable(
+            ivar, _ = indexer.scope.search_scope_for_var(
                 scope, var_expr, error_handling)
             ivars.append(ivar)
             consumed_var_exprs.append(var_expr)
@@ -74,7 +74,7 @@ class KernelGeneratorBase:
                     else:
                         pass # TOOD warn
                 else:
-                    ivar, _ = indexer.scope.search_scope_for_variable(
+                    ivar, _ = indexer.scope.search_scope_for_var(
                         scope, var_expr, error_handling)
                     rvar = copy.deepcopy(ivar)
                     rvar["op"] = reduction_op
@@ -84,7 +84,7 @@ class KernelGeneratorBase:
                 except:
                     pass # TODO error
         for var_expr in all_vars2:
-            ivar, _ = indexer.scope.search_scope_for_variable(
+            ivar, _ = indexer.scope.search_scope_for_var(
                 scope, var_expr, error_handling)
             iglobal_vars.append(ivar)
 

@@ -138,7 +138,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
     def _render_device_procedure(self, stprocedure, cpp_filegen, fortran_filegen):
         iprocedure = stprocedure.index_record
         kernel_name = iprocedure["name"]
-        scope = indexer.scope.create_scope(self.index, stprocedure.parent.tag())
+        scope = indexer.scope.create_scope(self.index, stprocedure.tag())
         if stprocedure.is_kernel_subroutine():
             mykernelgen = hipkernelgen.HipKernelGenerator4CufKernel(
                 stprocedure.parse_result, iprocedure, scope,

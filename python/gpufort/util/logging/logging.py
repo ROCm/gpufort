@@ -40,7 +40,7 @@ def init_logging(logfile_basename="log.log",
     __LOG_FORMAT = log_format
 
     # add custom log levels:
-    _intrnl_register_additional_debug_levels()
+    _register_additional_debug_levels()
     log_dir = opts.log_dir
     if not opts.log_dir_create and not os.path.exists(log_dir):
         msg = "directory for storing log files ('{}') does not exist".format(
@@ -79,7 +79,7 @@ def init_logging(logfile_basename="log.log",
     return __LOG_FILE_PATH
 
 
-def _intrnl_register_additional_debug_levels(max_level=5):
+def _register_additional_debug_levels(max_level=5):
     for debug_level in range(2, max_level + 1):
         label = "DEBUG" + str(debug_level)
         level = logging.DEBUG - debug_level + 1
@@ -96,11 +96,11 @@ def _intrnl_register_additional_debug_levels(max_level=5):
                 log_if_level_is_active_)
 
 
-def _intrnl_make_message(prefix, func_name, raw_msg):
+def _make_message(prefix, func_name, raw_msg):
     return prefix + "." + func_name + "(...):\t" + raw_msg
 
 
-def _intrnl_print_message(levelname, message):
+def _print_message(levelname, message):
     print(__LOG_FORMAT.replace("%(levelname)s",levelname).\
       replace("%(message)s",message),file=sys.stderr)
 
@@ -112,11 +112,11 @@ def log_info(prefix, func_name, raw_msg):
     if not __LOGGING_IS_INITIALIZED:
         init_logging()
 
-    msg = _intrnl_make_message(prefix, func_name, raw_msg)
+    msg = _make_message(prefix, func_name, raw_msg)
     if opts.log_filter == None or re.search(opts.log_filter, msg):
         logging.getLogger("").info(msg)
         if opts.verbose and __LOG_LEVEL_AS_INT <= getattr(logging, "INFO"):
-            _intrnl_print_message("INFO", msg)
+            _print_message("INFO", msg)
 
 
 def log_error(prefix, func_name, raw_msg):
@@ -125,12 +125,12 @@ def log_error(prefix, func_name, raw_msg):
     if not __LOGGING_IS_INITIALIZED:
         init_logging()
 
-    msg = _intrnl_make_message(prefix, func_name, raw_msg)
+    msg = _make_message(prefix, func_name, raw_msg)
     if opts.traceback:
         stack = "".join(traceback.format_stack()[:-1])
         msg += "\n\n error site:\n\n" + stack + "\n"
     logging.getLogger("").error(msg)
-    _intrnl_print_message("ERROR", msg)
+    _print_message("ERROR", msg)
 
 
 def log_exception(prefix, func_name, raw_msg):
@@ -139,7 +139,7 @@ def log_exception(prefix, func_name, raw_msg):
     if not __LOGGING_IS_INITIALIZED:
         init_logging()
 
-    msg = _intrnl_make_message(prefix, func_name, raw_msg)
+    msg = _make_message(prefix, func_name, raw_msg)
     if opts.traceback:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         exc_stack = "".join(traceback.format_tb(exc_traceback))
@@ -147,7 +147,7 @@ def log_exception(prefix, func_name, raw_msg):
         msg += "\n\n exception site:\n\n" + exc_stack + "\n"
         msg += " error site:\n\n" + error_stack + "\n"
     logging.getLogger("").error(msg)
-    _intrnl_print_message("ERROR", msg)
+    _print_message("ERROR", msg)
 
 
 def log_warning(prefix, func_name, raw_msg):
@@ -156,13 +156,13 @@ def log_warning(prefix, func_name, raw_msg):
     if not __LOGGING_IS_INITIALIZED:
         init_logging()
 
-    msg = _intrnl_make_message(prefix, func_name, raw_msg)
+    msg = _make_message(prefix, func_name, raw_msg)
     if opts.log_filter == None or re.search(opts.log_filter, msg):
         if opts.traceback:
             stack = "".join(traceback.format_stack()[:-1])
             msg += "\n\n warning site:\n\n" + stack + "\n"
         logging.getLogger("").warning(msg)
-        _intrnl_print_message("WARNING", msg)
+        _print_message("WARNING", msg)
 
 
 def log_debug(prefix, func_name, raw_msg, debug_level=1):
@@ -172,7 +172,7 @@ def log_debug(prefix, func_name, raw_msg, debug_level=1):
     if not __LOGGING_IS_INITIALIZED:
         init_logging()
 
-    msg = _intrnl_make_message(prefix, func_name, raw_msg)
+    msg = _make_message(prefix, func_name, raw_msg)
     if opts.log_filter == None or re.search(opts.log_filter, msg):
         if debug_level == 1:
             logging.getLogger("").debug(msg)
@@ -190,7 +190,7 @@ def log_debug(prefix, func_name, raw_msg, debug_level=1):
                 logging, "DEBUG") - debug_level + 1:
             levelname = "DEBUG" if (debug_level == 1) else ("DEBUG"
                                                             + str(debug_level))
-            _intrnl_print_message(levelname, msg)
+            _print_message(levelname, msg)
 
 
 def log_debug1(prefix, func_name, msg):

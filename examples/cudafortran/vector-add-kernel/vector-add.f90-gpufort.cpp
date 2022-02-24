@@ -25,9 +25,7 @@ __global__ void  hostdevicefun(
     float a,
     gpufort::array1<float> x,
     gpufort::array1<float> y,
-    int n,
-    gpufort::array1<float> y,
-    gpufort::array1<float> x
+    int n
 ){
   if ((i<n)) {
     y(i)=(y(i)+a*x(i));
@@ -58,12 +56,7 @@ __global__ void  gpukernel(
     float a,
     gpufort::array1<float> x,
     gpufort::array1<float> y,
-    int n,
-    dim3 threadidx,
-    dim3 blockidx,
-    dim3 blockdim,
-    gpufort::array1<float> x,
-    gpufort::array1<float> y
+    int n
 ){
   int i;
   i=((1+threadIdx.x)+((1+blockIdx.x)-1)*blockDim.x);
@@ -84,14 +77,9 @@ extern "C" hipError_t launch_gpukernel_hip_(
     float& a,
     gpufort::array1<float>& x,
     gpufort::array1<float>& y,
-    int& n,
-    dim3& threadidx,
-    dim3& blockidx,
-    dim3& blockdim,
-    gpufort::array1<float>& x,
-    gpufort::array1<float>& y) {
+    int& n) {
   hipError_t ierr = hipSuccess;
-  hipLaunchKernelGGL((gpukernel), grid, block, sharedmem, stream, a,x,y,n,threadidx,blockidx,blockdim,x,y);
+  hipLaunchKernelGGL((gpukernel), grid, block, sharedmem, stream, a,x,y,n);
   #if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_gpukernel)
   HIP_CHECK(hipStreamSynchronize(stream));
   #elif defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_gpukernel)
@@ -110,17 +98,12 @@ extern "C" hipError_t launch_gpukernel_hip_ps_(
     float& a,
     gpufort::array1<float>& x,
     gpufort::array1<float>& y,
-    int& n,
-    dim3& threadidx,
-    dim3& blockidx,
-    dim3& blockdim,
-    gpufort::array1<float>& x,
-    gpufort::array1<float>& y) {
+    int& n) {
   hipError_t ierr = hipSuccess;
   dim3 grid(divideAndRoundUp(problem_size.x,block.x),
             divideAndRoundUp(problem_size.y,block.y),
             divideAndRoundUp(problem_size.z,block.z));   
-  hipLaunchKernelGGL((gpukernel), grid, block, sharedmem, stream, a,x,y,n,threadidx,blockidx,blockdim,x,y);
+  hipLaunchKernelGGL((gpukernel), grid, block, sharedmem, stream, a,x,y,n);
   #if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_gpukernel)
   HIP_CHECK(hipStreamSynchronize(stream));
   #elif defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_gpukernel)

@@ -10,7 +10,7 @@ destination_dialect = "omp" # one of ["omp","hip-runtime-rt"]
 kernels_to_convert_to_hip = [
 ] # add line number here (might change if snippets are included included); check log to find actual line number
 
-loop_variables = "integer :: {}".format(",".join([
+loop_vars = "integer :: {}".format(",".join([
     "_" + chr(ord("a") + i) for i in range(0, 20)
 ])) # integer :: _a,_b,_c,_d,...
 

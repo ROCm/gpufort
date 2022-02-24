@@ -114,11 +114,11 @@ def next_tokens_till_open_bracket_is_closed(tokens, open_brackets=0):
     while criterion:
         tk = tokens[idx]
         result.append(tk)
-        idx += 1
         if tk == "(":
             open_brackets += 1
         elif tk == ")":
             open_brackets -= 1
+        idx += 1
         criterion = idx < len(tokens) and open_brackets > 0
     # TODO throw error if open_brackets still > 0
     return result
@@ -189,12 +189,11 @@ def parse_use_statement(statement):
     ("mod",{"var1":"var1","var2":"var3"])
     """
     tokens = tokenize(statement)
-    mod  = tokens[1]
     only = {}
-    if len(tokens) > 5 and tokens[2,3,4] == [",","only",":"]:
+    if len(tokens) > 5 and tokens[2:5] == [",","only",":"]:
         is_original_name = True
         last = tokens[5]
-        for tk in range(5,len(tokens)):
+        for tk in tokens[5:]:
             if tk == ",":
                 is_original_name = True
             elif tk == "=>":
@@ -206,9 +205,9 @@ def parse_use_statement(statement):
                 only[last] = tk
             else:
                 raise SyntaxError("could not parse 'use' statement")
-    elif len(tokens) > 1:
+    elif len(tokens) != 2:
         raise SyntaxError("could not parse 'use' statement")
-    return mod, only
+    return tokens[1], only
 
 def parse_declaration(fortran_statement):
     """Decomposes a Fortran declaration into its individual
@@ -227,58 +226,69 @@ def parse_declaration(fortran_statement):
     datatype = tokens[0]
     kind = None
     DOUBLE_COLON = "::"
-    if tokens[0] == "type":
-        # ex: type ( dim3 )
-        kind = tokens[2]
-        idx_last_consumed_token = 3
-    elif tokens[0:1 + 1] == ["double", "precision"]:
-        datatype = " ".join(tokens[0:1 + 1])
-        idx_last_consumed_token = 1
-    elif tokens[1] == "*":
-        # ex: integer * 4
-        # ex: integer * ( 4*2 )
-        kind_tokens = next_tokens_till_open_bracket_is_closed(
-            tokens[2:], open_brackets=0)
-        kind = "".join(kind_tokens)
-        idx_last_consumed_token = 2 + len(kind_tokens) - 1
-    elif tokens[1] == "(" and tokens[2] in ["kind","len"] and\
-         tokens[3] in ["=","("]:
-        # ex: integer ( kind = 4 )
-        # ex: integer ( kind ( 4 ) )
-        kind_tokens = next_tokens_till_open_bracket_is_closed(
-            tokens[3:], open_brackets=1)
-        kind = "".join(kind_tokens[:-1])
-        idx_last_consumed_token = 3 + len(kind_tokens) - 1
-    elif tokens[1] == "(":
-        # ex: integer ( 4 )
-        # ex: integer ( 4*2 )
-        kind_tokens = next_tokens_till_open_bracket_is_closed(
-            tokens[2:], open_brackets=1)
-        kind = "".join(kind_tokens[:-1])
-        idx_last_consumed_token = 2 + len(kind_tokens) - 1
-    elif tokens[1] in [",", DOUBLE_COLON] or tokens[1].isidentifier():
-        # ex: integer ,
-        # ex: integer ::
-        # ex: integer a
-        idx_last_consumed_token = 0
-    else:
+    try:
+        if tokens[0] == "type":
+            # ex: type ( dim3 )
+            kind = tokens[2]
+            idx_last_consumed_token = 3
+        elif tokens[0:1 + 1] == ["double", "precision"]:
+            datatype = " ".join(tokens[0:1 + 1])
+            idx_last_consumed_token = 1
+        elif tokens[1] == "*":
+            # ex: integer * 4
+            # ex: integer * ( 4*2 )
+            kind_tokens = next_tokens_till_open_bracket_is_closed(
+                tokens[2:], open_brackets=0)
+            kind = "".join(kind_tokens)
+            idx_last_consumed_token = 2 + len(kind_tokens) - 1
+        elif tokens[1:4] == ["(","kind","("]:
+            # ex: integer ( kind ( 4 ) )
+            kind_tokens = next_tokens_till_open_bracket_is_closed(
+                tokens[4:], open_brackets=1)
+            kind = "".join(tokens[2:4]+kind_tokens)
+            idx_last_consumed_token = 4 + len(kind_tokens)
+        elif (tokens[1:4] == ["(","kind","="] 
+             or tokens[1:4] == ["(","len","="]):
+            # ex: integer ( kind = 4 )
+            kind_tokens = next_tokens_till_open_bracket_is_closed(
+                tokens[4:], open_brackets=1)
+            kind = "".join(kind_tokens[:-1])
+            idx_last_consumed_token = 4 + len(kind_tokens)
+        elif tokens[1] == "(":
+            # ex: integer ( 4 )
+            # ex: integer ( 4*2 )
+            kind_tokens = next_tokens_till_open_bracket_is_closed(
+                tokens[2:], open_brackets=1)
+            kind = "".join(kind_tokens[:-1])
+            idx_last_consumed_token = 2 + len(kind_tokens) - 1
+        elif tokens[1] in [",", DOUBLE_COLON] or tokens[1].isidentifier():
+            # ex: integer ,
+            # ex: integer ::
+            # ex: integer a
+            idx_last_consumed_token = 0
+        else:
+            raise SyntaxError("could not parse datatype")
+    except IndexError:
         raise SyntaxError("could not parse datatype")
     # handle qualifiers
-    tokens = tokens[idx_last_consumed_token + 1:] # remove type part tokens
-    idx_last_consumed_token = None
-    if tokens[0] == "," and DOUBLE_COLON in tokens:
-        qualifiers = get_highest_level_arguments(tokens)
-        idx_last_consumed_token = tokens.index(DOUBLE_COLON)
-    elif tokens[0] == DOUBLE_COLON:
-        idx_last_consumed_token = 0
-    elif tokens[0] == ",":
-        raise SyntaxError("could not parse qualifier list")
-    qualifiers_raw = get_highest_level_arguments(tokens)
+    try:
+        tokens = tokens[idx_last_consumed_token + 1:] # remove type part tokens
+        idx_last_consumed_token = None
+        if tokens[0] == "," and DOUBLE_COLON in tokens:
+            qualifiers = get_highest_level_arguments(tokens)
+            idx_last_consumed_token = tokens.index(DOUBLE_COLON)
+        elif tokens[0] == DOUBLE_COLON:
+            idx_last_consumed_token = 0
+        elif tokens[0] == ",":
+            raise SyntaxError("could not parse qualifier list")
+        qualifiers_raw = get_highest_level_arguments(tokens)
 
-    # handle variables list
-    if idx_last_consumed_token != None:
-        tokens = tokens[idx_last_consumed_token+1:] # remove qualifier list tokens
-    variables_raw = get_highest_level_arguments(tokens)
+        # handle variables list
+        if idx_last_consumed_token != None:
+            tokens = tokens[idx_last_consumed_token+1:] # remove qualifier list tokens
+        variables_raw = get_highest_level_arguments(tokens)
+    except IndexError:
+        raise SyntaxError("could not parse qualifier list")
 
     # construct declaration tree node
     qualifiers = []
@@ -319,10 +329,10 @@ def parse_declaration(fortran_statement):
             if len(dimension_bounds):
                 raise SyntaxError("'dimension' and variable cannot be specified both")
             bounds_tokens = next_tokens_till_open_bracket_is_closed(var_tokens)
-            var_bounds = get_highest_level_arguments(bounds_tokens)
+            var_bounds = get_highest_level_arguments(bounds_tokens[1:-1])
             for i in range(0,len(bounds_tokens)):
                 var_tokens.pop(0)
-        if (len(var_tokens) > 2 and
+        if (len(var_tokens) > 1 and
            var_tokens[0] in ["=>","="]):
             var_tokens.pop(0)
             var_rhs = "".join(var_tokens)

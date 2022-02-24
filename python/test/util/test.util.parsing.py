@@ -128,5 +128,23 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_use_statement(stmt))
             self.assertEqual(util.parsing.parse_use_statement(stmt),results[i])
+    def test_5_parse_declaration(self):
+        statements = [
+          "integer,parameter :: a(1) = (/1/), b = 5*2**3",
+          "integer(kind(hipSuccess)),parameter :: ierr = hipSuccess",
+          "integer(kind=4),parameter :: mykind = 3",
+          "integer*4,pointer :: a(:) => null(), b => null()",
+          "integer*4,allocatable :: b(:,:,n,-1:5)",
+        ]
+        results = [
+          ('integer', None, ['parameter'], [('a', ['1'], '(/1/)'), ('b', [], '5*2**3')]),
+          ('integer', 'kind(hipsuccess)', ['parameter'], [('ierr', [], 'hipsuccess')]),
+          ('integer', '4', ['parameter'], [('parameter', [], '')]),
+          ('integer', '4', ['pointer'], [('a', [':'], 'null()'), ('b', [], 'null()')]),
+          ('integer', '4', ['allocatable'], [('b', [':', ':', 'n', '-1:5'], '')]),
+        ]
+        for i,stmt in enumerate(statements):
+            #print(util.parsing.parse_declaration(stmt))
+            self.assertEqual(util.parsing.parse_declaration(stmt),results[i])
 if __name__ == '__main__':
     unittest.main() 

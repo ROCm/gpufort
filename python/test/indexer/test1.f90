@@ -7,7 +7,7 @@ end subroutine
 
 program test1
  use simple
- use nested_subprograms, only: func2
+ use nested_procedures, only: func2
  use complex_types
  implicit none
  

@@ -42,30 +42,30 @@ class TestScoper(unittest.TestCase):
         else:
             indexer.update_index_from_linemaps(linemapper.read_file("test_modules.f90",gfortran_options),self.index)
             indexer.update_index_from_linemaps(linemapper.read_file("test1.f90",gfortran_options),self.index)
-    def test_2_scope_search_for_variables(self):
-        c   = indexer.scope.search_index_for_variable(index,"test1","c") # included from module 'simple'
+    def test_2_scope_search_for_vars(self):
+        c   = indexer.scope.search_index_for_var(index,"test1","c") # included from module 'simple'
         indexer.opts.scopes.clear()
-        t_b = indexer.scope.search_index_for_variable(index,"test1",\
+        t_b = indexer.scope.search_index_for_var(index,"test1",\
           "t%b") # type of t included from module 'simple'
         indexer.opts.scopes.clear()
-        tc_t1list_a = indexer.scope.search_index_for_variable(index,"test1","tc%t1list(i)%a") # type of t included from module 'simple'
+        tc_t1list_a = indexer.scope.search_index_for_var(index,"test1","tc%t1list(i)%a") # type of t included from module 'simple'
         indexer.opts.scopes.clear()
-        tc_t2list_t1list_a = indexer.scope.search_index_for_variable(index,"test1","tc%t2list(indexlist%j)%t1list(i)%a") 
+        tc_t2list_t1list_a = indexer.scope.search_index_for_var(index,"test1","tc%t2list(indexlist%j)%t1list(i)%a") 
         indexer.opts.scopes.clear()
-    def test_3_scope_search_for_variables_reuse_scope(self):
-        c   = indexer.scope.search_index_for_variable(index,"test1","c") # included from module 'simple'
-        t_b = indexer.scope.search_index_for_variable(index,"test1","t%b") # type of t included from module 'simple'
-        tc_t1list_a = indexer.scope.search_index_for_variable(index,"test1","tc%t1list(i)%a") # type of t included from module 'simple'
-        tc_t2list_t1list_a = indexer.scope.search_index_for_variable(index,"test1",\
+    def test_3_scope_search_for_vars_reuse_scope(self):
+        c   = indexer.scope.search_index_for_var(index,"test1","c") # included from module 'simple'
+        t_b = indexer.scope.search_index_for_var(index,"test1","t%b") # type of t included from module 'simple'
+        tc_t1list_a = indexer.scope.search_index_for_var(index,"test1","tc%t1list(i)%a") # type of t included from module 'simple'
+        tc_t2list_t1list_a = indexer.scope.search_index_for_var(index,"test1",\
           "tc%t2list(indexlist%j)%t1list(i)%a") 
         indexer.opts.scopes.clear()
-    def test_4_scope_search_for_subprograms(self):
-        func2 = indexer.scope.search_index_for_subprogram(index,"test1","func2")
-        func3 = indexer.scope.search_index_for_subprogram(index,"nested_subprograms:func2","func3")
+    def test_4_scope_search_for_procedures(self):
+        func2 = indexer.scope.search_index_for_procedure(index,"test1","func2")
+        func3 = indexer.scope.search_index_for_procedure(index,"nested_procedures:func2","func3")
         type1 = indexer.scope.search_index_for_type(index,"complex_types","type1")
         indexer.opts.scopes.clear()
-    def test_5_scope_search_for_top_level_subprograms(self):
-        func2 = indexer.scope.search_index_for_subprogram(index,"test1","top_level_subroutine")
+    def test_5_scope_search_for_top_level_procedures(self):
+        func2 = indexer.scope.search_index_for_procedure(index,"test1","top_level_subroutine")
         indexer.opts.scopes.clear()
 
 if __name__ == '__main__':

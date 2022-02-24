@@ -9,25 +9,25 @@ from gpufort import translator
 import addtoplevelpath
 from gpufort import grammar
 
-#print(translator.declared_variable.parseString("f_d ( : )")[0]._bounds._bounds[0].__dict__)
-#print(translator.declared_variable.parseString("f_d ( -5: )")[0]._bounds._bounds[0].__dict__)
-#print(translator.declared_variable.parseString("f_d ( :5 )")[0]._bounds._bounds[0].__dict__)
-#print(translator.declared_variable.parseString("f_d ( :5:2 )")[0]._bounds._bounds[0].__dict__)
-#print(translator.declared_variable.parseString("f_d ( 1:5:2 )")[0]._bounds._bounds[0].__dict__)
+#print(translator.declared_var.parseString("f_d ( : )")[0]._bounds._bounds[0].__dict__)
+#print(translator.declared_var.parseString("f_d ( -5: )")[0]._bounds._bounds[0].__dict__)
+#print(translator.declared_var.parseString("f_d ( :5 )")[0]._bounds._bounds[0].__dict__)
+#print(translator.declared_var.parseString("f_d ( :5:2 )")[0]._bounds._bounds[0].__dict__)
+#print(translator.declared_var.parseString("f_d ( 1:5:2 )")[0]._bounds._bounds[0].__dict__)
 
 #print(translator.arithmetic_expression.parseString("ldx * ldy * ldz")[0])
-#print(translator.declared_variable.parseString("f_d ( ldx )")[0].f_str())
-#print(translator.declared_variable.parseString("f_d ( ldx, ldy, ldz)")[0].f_str())
-#print(translator.declared_variable.parseString("f_d ( ldx * ldy * ldz )")[0])
+#print(translator.declared_var.parseString("f_d ( ldx )")[0].f_str())
+#print(translator.declared_var.parseString("f_d ( ldx, ldy, ldz)")[0].f_str())
+#print(translator.declared_var.parseString("f_d ( ldx * ldy * ldz )")[0])
 
 print("hallo")
-print(translator.declared_variable.parseString("f_d ( ldx * ldy * ldz )")[0]._bounds.specified_bounds())
+print(translator.declared_var.parseString("f_d ( ldx * ldy * ldz )")[0]._bounds.specified_bounds())
 print("hallo")
-print(translator.declared_variable.parseString("f_d ( -k:k, 5 )")[0]._bounds.index_str("f_d",True))
+print(translator.declared_var.parseString("f_d ( -k:k, 5 )")[0]._bounds.index_str("f_d",True))
 print("hallo")
-print(translator.declared_variable.parseString("f_d ( -k:k, 5 )")[0]._bounds.index_str("f_d"))
+print(translator.declared_var.parseString("f_d ( -k:k, 5 )")[0]._bounds.index_str("f_d"))
 
-print(translator.declared_variable.parseString("i, k, j, err, idir, ip,  ii, jj, istat")[0])
+print(translator.declared_var.parseString("i, k, j, err, idir, ip,  ii, jj, istat")[0])
 #print("THIS: "+str(translator.parse_declaration("INTEGER, INTENT(IN) :: isign, ldx, ldy, nx, ny, nzl")[3]))
 #print("THIS: "+str(translator.parse_declaration("INTEGER, INTENT(IN) :: isign")[3]))
 #print("THIS: "+str(translator.parse_declaration("INTEGER :: isign")[3]))

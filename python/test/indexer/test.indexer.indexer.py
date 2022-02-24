@@ -60,7 +60,7 @@ class TestIndexer(unittest.TestCase):
         indexer.load_gpufort_module_files(["./"],self.index)
     def test_4_indexer_check_modules_programs(self):
         self.assertEqual(len([mod for mod in self.index if mod["name"] == "simple"]),1, "Did not find module 'simple'")
-        self.assertEqual(len([mod for mod in self.index if mod["name"] == "nested_subprograms"]),1, "Did not find module 'nested_subprograms'")
+        self.assertEqual(len([mod for mod in self.index if mod["name"] == "nested_procedures"]),1, "Did not find module 'nested_procedures'")
         self.assertEqual(len([mod for mod in self.index if mod["name"] == "simple"]),1, "Did not find module 'simple'")
     def test_5_indexer_check_program_test1(self):
         test1 = next((mod for mod in self.index if mod["name"] == "test1"),None)
@@ -104,19 +104,19 @@ class TestIndexer(unittest.TestCase):
         self.assertEqual(b["rank"],1)
         self.assertEqual(b["counts"][0],"n")
         self.assertEqual(b["lbounds"][0],"1")
-    def test_7_indexer_check_module_nested_subprograms(self):
-        nested_subprograms = next((mod for mod in self.index if mod["name"] == "nested_subprograms"),None)
-        a = next((var for var in nested_subprograms["variables"] if var["name"] == "a".lower()),None)
+    def test_7_indexer_check_module_nested_procedures(self):
+        nested_procedures = next((mod for mod in self.index if mod["name"] == "nested_procedures"),None)
+        a = next((var for var in nested_procedures["variables"] if var["name"] == "a".lower()),None)
         self.assertIsNotNone(a)
         self.assertEqual(a["c_type"],"int")
         self.assertEqual(a["rank"],0)
-        n = next((var for var in nested_subprograms["variables"] if var["name"] == "n".lower()),None)
+        n = next((var for var in nested_procedures["variables"] if var["name"] == "n".lower()),None)
         self.assertIsNotNone(n)
         self.assertEqual(n["c_type"],"int")
         self.assertEqual(n["rank"],0)
         self.assertTrue("parameter" in n["qualifiers"])
         self.assertEqual(n["value"].replace("(","").replace(")",""),"1000")
-        e = next((var for var in nested_subprograms["variables"] if var["name"] == "e".lower()),None)
+        e = next((var for var in nested_procedures["variables"] if var["name"] == "e".lower()),None)
         self.assertIsNotNone(e)
         self.assertEqual(e["c_type"],"float")
         self.assertEqual(e["rank"],2)
@@ -126,7 +126,7 @@ class TestIndexer(unittest.TestCase):
         self.assertEqual(e["lbounds"][1],"-n")
         self.assertFalse("device" in e["qualifiers"])
         self.assertFalse(e["declare_on_target"])
-        mytype = next((typ for typ in nested_subprograms["types"] if typ["name"] == "mytype".lower()),None)
+        mytype = next((typ for typ in nested_procedures["types"] if typ["name"] == "mytype".lower()),None)
         self.assertIsNotNone(mytype)
         b = next((var for var in mytype["variables"] if var["name"] == "b".lower()),None) # mytype#b
         self.assertIsNotNone(b)
@@ -134,27 +134,27 @@ class TestIndexer(unittest.TestCase):
         self.assertEqual(b["rank"],1)
         self.assertEqual(b["counts"][0],"n")
         self.assertEqual(b["lbounds"][0],"1")
-        # subprograms
-        self.assertEqual(len(nested_subprograms["subprograms"]),2)
-        func = next((sub for sub in nested_subprograms["subprograms"] if sub["name"] == "func".lower()),None)
+        # procedures
+        self.assertEqual(len(nested_procedures["procedures"]),2)
+        func = next((sub for sub in nested_procedures["procedures"] if sub["name"] == "func".lower()),None)
         self.assertIsNotNone(func)
         self.assertEqual(func["kind"],"subroutine")
-        self.assertEqual(len(func["subprograms"]),0)
-        func2 = next((sub for sub in nested_subprograms["subprograms"] if sub["name"] == "func2".lower()),None)
+        self.assertEqual(len(func["procedures"]),0)
+        func2 = next((sub for sub in nested_procedures["procedures"] if sub["name"] == "func2".lower()),None)
         self.assertIsNotNone(func2)
         self.assertEqual(func2["kind"],"function")
         self.assertEqual(func2["result_name"],"res")
-        self.assertEqual(len(func2["subprograms"]),2)
-        # nested subprogram 1
-        func3 = next((sub for sub in func2["subprograms"] if sub["name"] == "func3".lower()),None)
+        self.assertEqual(len(func2["procedures"]),2)
+        # nested procedure 1
+        func3 = next((sub for sub in func2["procedures"] if sub["name"] == "func3".lower()),None)
         self.assertEqual(func3["kind"],"function")
         self.assertEqual(func3["result_name"],"func3")
-        self.assertEqual(len(func3["subprograms"]),0)
-        # nested subprogram 2
-        func4 = next((sub for sub in func2["subprograms"] if sub["name"] == "func4".lower()),None)
+        self.assertEqual(len(func3["procedures"]),0)
+        # nested procedure 2
+        func4 = next((sub for sub in func2["procedures"] if sub["name"] == "func4".lower()),None)
         self.assertEqual(func4["kind"],"function")
         self.assertEqual(func4["result_name"],"func4")
-        self.assertEqual(len(func4["subprograms"]),0)
+        self.assertEqual(len(func4["procedures"]),0)
         self.assertEqual(func4["attributes"],["host","device"])
       
 if __name__ == '__main__':

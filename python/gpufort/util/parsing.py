@@ -4,7 +4,6 @@ import re
 
 COMMENT_CHARS = "!cCdD*"
 
-
 def split_fortran_line(line):
     global COMMENT_CHARS
     """Decomposes a Fortran line into preceding whitespace,
@@ -177,23 +176,160 @@ def extract_function_calls(text, func_name):
 def parse_use_statement(statement):
     """Extracts module name and 'only' variables
     from the statement.
-    :return: A tuple of containing module name and a list of 'only' 
-    variables (in that order).
+    :return: A tuple of containing module name and a dict of 'only' 
+    mappings (in that order).
+    :raise SyntaxError: If the syntax of the expression is not as expected.
 
     :Example:
     
-    `import mod, only: var1, var2`
+    `import mod, only: var1, var2 => var3`
 
     will result in the tuple:
 
-    ("mod",["var1","var2"])
+    ("mod",{"var1":"var1","var2":"var3"])
     """
     tokens = tokenize(statement)
-    mod = tokens[1]
-    only = []
-    if len(tokens) > 5: # and tokens[2,3,4] == [",","only",":"]:
-        only += [tk for tk in range(5,len(tokens)) if tk != ","]
+    mod  = tokens[1]
+    only = {}
+    if len(tokens) > 5 and tokens[2,3,4] == [",","only",":"]:
+        is_original_name = True
+        last = tokens[5]
+        for tk in range(5,len(tokens)):
+            if tk == ",":
+                is_original_name = True
+            elif tk == "=>":
+                is_original_name = False
+            elif tk.isidentifier() and is_original_name:
+                only[tk] = tk           #
+                last = tk
+            elif tk.isidentifier() and not is_original_name:
+                only[last] = tk
+            else:
+                raise SyntaxError("could not parse 'use' statement")
+    elif len(tokens) > 1:
+        raise SyntaxError("could not parse 'use' statement")
     return mod, only
+
+def parse_declaration(fortran_statement):
+    """Decomposes a Fortran declaration into its individual
+    parts.
+
+    :return: A tuple (datatype, kind, qualifiers, var-list)
+             where var-list consists of triples (varname, bounds or [], right-hand-side or None)
+    :raise SyntaxError: If the syntax of the expression is not as expected.
+    """
+    orig_tokens = tokenize(fortran_statement.lower(),
+                                        padded_size=10)
+    tokens = orig_tokens
+
+    idx_last_consumed_token = None
+    # handle datatype
+    datatype = tokens[0]
+    kind = None
+    DOUBLE_COLON = "::"
+    if tokens[0] == "type":
+        # ex: type ( dim3 )
+        kind = tokens[2]
+        idx_last_consumed_token = 3
+    elif tokens[0:1 + 1] == ["double", "precision"]:
+        datatype = " ".join(tokens[0:1 + 1])
+        idx_last_consumed_token = 1
+    elif tokens[1] == "*":
+        # ex: integer * 4
+        # ex: integer * ( 4*2 )
+        kind_tokens = next_tokens_till_open_bracket_is_closed(
+            tokens[2:], open_brackets=0)
+        kind = "".join(kind_tokens)
+        idx_last_consumed_token = 2 + len(kind_tokens) - 1
+    elif tokens[1] == "(" and tokens[2] in ["kind","len"] and\
+         tokens[3] in ["=","("]:
+        # ex: integer ( kind = 4 )
+        # ex: integer ( kind ( 4 ) )
+        kind_tokens = next_tokens_till_open_bracket_is_closed(
+            tokens[3:], open_brackets=1)
+        kind = "".join(kind_tokens[:-1])
+        idx_last_consumed_token = 3 + len(kind_tokens) - 1
+    elif tokens[1] == "(":
+        # ex: integer ( 4 )
+        # ex: integer ( 4*2 )
+        kind_tokens = next_tokens_till_open_bracket_is_closed(
+            tokens[2:], open_brackets=1)
+        kind = "".join(kind_tokens[:-1])
+        idx_last_consumed_token = 2 + len(kind_tokens) - 1
+    elif tokens[1] in [",", DOUBLE_COLON] or tokens[1].isidentifier():
+        # ex: integer ,
+        # ex: integer ::
+        # ex: integer a
+        idx_last_consumed_token = 0
+    else:
+        raise SyntaxError("could not parse datatype")
+    # handle qualifiers
+    tokens = tokens[idx_last_consumed_token + 1:] # remove type part tokens
+    idx_last_consumed_token = None
+    if tokens[0] == "," and DOUBLE_COLON in tokens:
+        qualifiers = get_highest_level_arguments(tokens)
+        idx_last_consumed_token = tokens.index(DOUBLE_COLON)
+    elif tokens[0] == DOUBLE_COLON:
+        idx_last_consumed_token = 0
+    elif tokens[0] == ",":
+        raise SyntaxError("could not parse qualifier list")
+    qualifiers_raw = get_highest_level_arguments(tokens)
+
+    # handle variables list
+    if idx_last_consumed_token != None:
+        tokens = tokens[idx_last_consumed_token+1:] # remove qualifier list tokens
+    variables_raw = get_highest_level_arguments(tokens)
+
+    # construct declaration tree node
+    qualifiers = []
+    dimension_bounds = []
+    for qualifier in qualifiers_raw:
+        qualifier_tokens = tokenize(qualifier)
+        if qualifier_tokens[0] == "dimension":
+            # ex: dimension ( 1, 2, 1:n )
+            qualifier_tokens = tokenize(qualifier)
+            if (len(qualifier_tokens) < 4
+               or qualifier_tokens[0:2] != ["dimension","("]
+               or qualifier_tokens[-1] != [")"]):
+                raise SyntaxError("could not parse 'dimension' qualifier")
+            dimension_bounds = get_highest_level_arguments(qualifier_tokens[2:-1])
+        elif qualifier_tokens[0] == "intent":
+            # ex: intent ( inout )
+            qualifier_tokens = tokenize(qualifier)
+            if (len(qualifier_tokens) != 4 
+               or qualifier_tokens[0:2] != ["intent","("]
+               or qualifier_tokens[-1] != ")"
+               or qualifier_tokens[2] not in ["out","inout","in"]):
+                raise SyntaxError("could not parse 'intent' qualifier")
+            qualifiers.append("".join(qualifier_tokens))
+        elif len(qualifier_tokens)==1 and qualifier_tokens[0].isidentifier():
+            qualifiers.append(qualifier)
+        else:
+            raise SyntaxError("could not parse qualifier '{}'".format(qualifier))
+    variables = []
+    # 
+    for var in variables_raw:
+        var_tokens = tokenize(var)
+        var_name   = var_tokens.pop(0)
+        var_bounds = [] 
+        var_rhs    = ""
+        # handle bounds
+        if (len(var_tokens) > 3
+           and var_tokens[0] == "("):
+            if len(dimension_bounds):
+                raise SyntaxError("'dimension' and variable cannot be specified both")
+            bounds_tokens = next_tokens_till_open_bracket_is_closed(var_tokens)
+            var_bounds = get_highest_level_arguments(bounds_tokens)
+            for i in range(0,len(bounds_tokens)):
+                var_tokens.pop(0)
+        if (len(var_tokens) > 2 and
+           var_tokens[0] in ["=>","="]):
+            var_tokens.pop(0)
+            var_rhs = "".join(var_tokens)
+        elif len(var_tokens):
+            raise SyntaxError("could not parse '{}'".format(var_tokens))
+        variables.append((var_name,var_bounds+dimension_bounds,var_rhs))
+    return (datatype, kind, qualifiers, variables) 
 
 #def parse_allocate_statement(statement):
 #    """Parses:

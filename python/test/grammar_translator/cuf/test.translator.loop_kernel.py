@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import os,sys
+import addtoplevelpath
 from gpufort import translator
 
 print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.stderr)

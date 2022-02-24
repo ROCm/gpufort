@@ -22,8 +22,8 @@ module simple
 end module simple
 
 
-! 2. subprogram nesting
-module nested_subprograms
+! 2. procedure nesting
+module nested_procedures
   integer :: a
   integer, parameter :: n = 1000
   real :: e(-n:n,-n:n)
@@ -61,7 +61,7 @@ contains
     end function
   end function
   
-end module nested_subprograms
+end module nested_procedures
 
 
 ! 3. complex types

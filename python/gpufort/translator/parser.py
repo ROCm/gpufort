@@ -396,7 +396,6 @@ def parse_declaration(fortran_statement):
     result = tree.TTDeclaration(fortran_statement, 0, declaration_tokens)
     return result
 
-
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def create_index_records_from_declaration(ttdeclaration):
     """

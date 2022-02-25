@@ -33,7 +33,6 @@ def split_fortran_line(line):
     trailing_ws = line[len_line - len_trailing_ws:]
     return preceding_ws, statement.rstrip(" \t"), comment, trailing_ws
 
-
 def relocate_inline_comments(lines):
     """Move comments that follow after a line continuation char ('&')
     before the 
@@ -218,7 +217,7 @@ def parse_declaration(fortran_statement):
     :raise SyntaxError: If the syntax of the expression is not as expected.
     """
     orig_tokens = tokenize(fortran_statement.lower(),
-                                        padded_size=10)
+                           padded_size=10)
     tokens = orig_tokens
 
     idx_last_consumed_token = None
@@ -298,9 +297,10 @@ def parse_declaration(fortran_statement):
         if qualifier_tokens[0] == "dimension":
             # ex: dimension ( 1, 2, 1:n )
             qualifier_tokens = tokenize(qualifier)
+            print(qualifier_tokens)
             if (len(qualifier_tokens) < 4
                or qualifier_tokens[0:2] != ["dimension","("]
-               or qualifier_tokens[-1] != [")"]):
+               or qualifier_tokens[-1] != ")"):
                 raise SyntaxError("could not parse 'dimension' qualifier")
             dimension_bounds = get_highest_level_arguments(qualifier_tokens[2:-1])
         elif qualifier_tokens[0] == "intent":
@@ -324,7 +324,7 @@ def parse_declaration(fortran_statement):
         var_bounds = [] 
         var_rhs    = ""
         # handle bounds
-        if (len(var_tokens) > 3
+        if (len(var_tokens) > 2
            and var_tokens[0] == "("):
             if len(dimension_bounds):
                 raise SyntaxError("'dimension' and variable cannot be specified both")
@@ -341,6 +341,12 @@ def parse_declaration(fortran_statement):
         variables.append((var_name,var_bounds+dimension_bounds,var_rhs))
     return (datatype, kind, qualifiers, variables) 
 
+# def parse_implicit_statement(statement):
+# TODO
+#     pass
+# def parse_dimension_statement(statement):
+# TODO
+#     pass
 #def parse_allocate_statement(statement):
 #    """Parses:
 #  

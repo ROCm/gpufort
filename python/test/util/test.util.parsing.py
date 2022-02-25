@@ -135,6 +135,7 @@ class TestParsingUtils(unittest.TestCase):
           "integer(kind=4),parameter :: mykind = 3",
           "integer*4,pointer :: a(:) => null(), b => null()",
           "integer*4,allocatable :: b(:,:,n,-1:5)",
+          "integer,dimension(:,:) :: int_array2d",
         ]
         results = [
           ('integer', None, ['parameter'], [('a', ['1'], '(/1/)'), ('b', [], '5*2**3')]),
@@ -142,6 +143,7 @@ class TestParsingUtils(unittest.TestCase):
           ('integer', '4', ['parameter'], [('parameter', [], '')]),
           ('integer', '4', ['pointer'], [('a', [':'], 'null()'), ('b', [], 'null()')]),
           ('integer', '4', ['allocatable'], [('b', [':', ':', 'n', '-1:5'], '')]),
+          ('integer', None, [], [('int_array2d', [':', ':'], '')]),
         ]
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_declaration(stmt))

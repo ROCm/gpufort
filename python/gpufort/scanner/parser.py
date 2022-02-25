@@ -408,9 +408,9 @@ def _parse_file(linemaps, index):
         nonlocal current_statement
         log_detection_("assignment")
         if in_kernels_acc_region_and_not_recording():
-            parse_result = translator.assignment_begin.parseString(
+            parse_result = translator.tree.grammar.assignment_begin.parseString(
                 current_statement["body"])
-            lvalue = translator.find_first(parse_result, translator.TTLValue)
+            lvalue = translator.tree.find_first(parse_result, translator.tree.TTLValue)
             if not lvalue is None and lvalue.has_matrix_range_args():
                 new = tree.acc.STAccLoopNest(current_linemap,
                                              current_statement_no)

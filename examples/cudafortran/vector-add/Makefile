@@ -6,7 +6,7 @@ TEST_NAME = $(TEST_SRC:.f90=)
 .PHONY: build.hip build.omp codegen.hip codegen.omp clean
 
 codegen.hip:
-	gpufort $(TEST_SRC) --wrap --dest hip --config config.py --log-level DEBUG3 --emit-cpu-impl --emit-debug-code
+	gpufort $(TEST_SRC) --wrap --dest hip --config config.py --emit-cpu-impl --emit-debug-code
 	#gpufort -w vector-add.f90 -E hip --emit-debug-code --emit-cpu-impl
 codegen.omp:
 	gpufort $(TEST_SRC) --wrap --dest omp --config config.py

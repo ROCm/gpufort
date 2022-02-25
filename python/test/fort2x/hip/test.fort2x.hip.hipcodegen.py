@@ -70,9 +70,9 @@ class TestHipCodeGenerator(unittest.TestCase):
     def test_2_modify_file(self):
         global file_content
         print_(linemapper.modify_file(self.linemaps,
-                               file_content=file_content,
-                               ifdef_macro=None))
-                               #ifdef_macro="_GPUFORT"))
+               file_content=file_content,
+               ifdef_macro=None))
+               #ifdef_macro="_GPUFORT"))
     def test_3_generate_cpp_files(self):
         print_(self.codegen.cpp_filegen.generate_code())
         for path,filegen in self.codegen.cpp_filegens_per_module:

@@ -606,7 +606,6 @@ def translate_source(infile_path, stree, linemaps, index, preamble):
 
     # transform statements to 'linemaps'
     def transform_(stnode):
-        print(stnode)
         stnode.transform_statements(index)
         for child in stnode.children:
             transform_(child)

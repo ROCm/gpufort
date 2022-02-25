@@ -54,7 +54,7 @@ depend_todo = "TODO(gpufort) - specify depend inputs"
 fortran_2_c_type_map = {
     "character": {
         "": "char",
-        "c_char": "char"
+        "c_char": "char",
     },
     "complex": {
         "": "hipFloatComplex",
@@ -65,10 +65,10 @@ fortran_2_c_type_map = {
         "1": None,
         "c_float_complex": "hipFloatComplex",
         "c_double_complex": "hipDoubleComplex",
-        "c_long_double_complex": "long double _complex"
+        "c_long_double_complex": "long double _complex",
     },
     "doubleprecision": {
-        "": "double"
+        "": "double",
     },
     "real": {
         "": "float",
@@ -81,7 +81,7 @@ fortran_2_c_type_map = {
         "c_double": "double",
         "c_long_double": "long double",
         "c_float128": "__float128",
-        "c_float128_complex": "__float128 _complex"
+        "c_float128_complex": "__float128 _complex",
     },
     "integer": {
         "": "int",
@@ -112,12 +112,15 @@ fortran_2_c_type_map = {
         "c_int_fast128_t": "int_fast128_t",
         "c_intmax_t": "intmax_t",
         "c_intptr_t": "intptr_t",
-        "c_ptrdiff_t": "ptrdiff_t"
+        "c_ptrdiff_t": "ptrdiff_t",
     },
     "logical": {
         "": "bool",
-        "c_bool": "bool"
-    }
+        "c_bool": "bool",
+    },
+    "type": {
+      "dim3" : "dim3",
+    },
 }
 
 fortran_type_2_bytes_map = { # x86_64

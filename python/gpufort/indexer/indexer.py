@@ -4,7 +4,6 @@
 import os, sys, subprocess
 import copy
 import re
-import threading
 import concurrent.futures
 
 import orjson
@@ -23,7 +22,6 @@ exec(open(os.path.join(GRAMMAR_DIR, "grammar.py")).read())
 # configurable parameters
 p_filter = re.compile(opts.filter)
 p_continuation = re.compile(opts.continuation_filter)
-
 
 class Node():
 
@@ -51,6 +49,32 @@ class Node():
 
     __repr__ = __str__
 
+def _create_index_records_from_declaration(statement):
+    """:raise SyntaxError: If the syntax of the declaration statement is not
+                           as expected.
+    """
+    f_type, kind, qualifiers, variables = util.parsing.parse_declaration(statement)
+    context = []
+    for var in variables:
+        name, bounds, rhs = var
+        ivar = {}
+        # basic
+        ivar["name"]   = name
+        ivar["f_type"] = f_type
+        ivar["kind"]   = kind
+        # TODO bytes per element can be computed on the fly
+        ivar["bytes_per_element"] = translator.num_bytes(f_type, kind, default=None)
+        ivar["c_type"]            = translator.convert_to_c_type(f_type, kind, "TODO unknown")
+        ivar["qualifiers"] = qualifiers
+        # ACC/OMP
+        ivar["declare_on_target"] = False
+        # arrays
+        ivar["bounds"] = bounds
+        ivar["rank"]   = len(bounds)
+        # handle parameters
+        ivar["value"] = None # TODO parse rhs if necessary
+        context.append(ivar)
+    return context
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def _parse_statements(linemaps, file_path):
@@ -61,122 +85,17 @@ def _parse_statements(linemaps, file_path):
 
     index = []
 
-    access_lock = threading.Lock()
-    util.logging.log_debug(opts.log_prefix,"_parse_statements","create thread pool of size {} for process variable declarations".format(\
-      opts.parse_var_declarations_worker_pool_size))
-    task_executor = concurrent.futures.ThreadPoolExecutor(\
-      max_workers=opts.parse_var_declarations_worker_pool_size)
     # statistics
     total_num_tasks = 0
 
-    def log_enter_job_or_task_(parent_node, msg):
-        util.logging.log_debug3(opts.log_prefix,"_parse_statements","[thread-id={3}][parent-node={0}:{1}] {2}".format(\
-              parent_node._kind, parent_node._name, msg,\
-              threading.get_ident()))
+    def log_begin_task(parent_node, msg):
+        util.logging.log_debug3(opts.log_prefix,"_parse_statements","[parent-node={0}:{1}] {2}".format(
+              parent_node._kind, parent_node._name, msg))
 
-    def log_leave_job_or_task_(parent_node, msg):
-        util.logging.log_debug2(opts.log_prefix+"_parse_statements","[thread-id={3}][parent-node={0}:{1}] {2}".format(\
-              parent_node._kind, parent_node._name, msg,\
-              threading.get_ident()))
-
-    def ParseDeclarationTask_(parent_node, input_text):
-        """
-        :note: the term 'task' should highlight that this is a function
-        that is directly submitted to a thread in the worker pool.
-        """
-        nonlocal access_lock
-        msg = "begin to parse variable declaration '{}'".format(input_text)
-        log_enter_job_or_task_(parent_node, msg)
-        #
-        try:
-            ttdeclaration = translator.parse_declaration(input_text)
-            variables = translator.create_index_records_from_declaration(
-                ttdeclaration)
-        except Exception as e:
-            util.logging.log_exception(
-                opts.log_prefix,
-                "_parse_statements.ParseDeclarationTask_",
-                "failed: " + str(e))
-            sys.exit(2)
-        access_lock.acquire()
-        parent_node._data["variables"] += variables
-        access_lock.release()
-        #
-        msg = "parsed variable declaration '{}'".format(input_text)
-        log_leave_job_or_task_(parent_node, msg)
-
-    post_parsing_jobs = [
-    ] # jobs to run after the file was parsed statement by statement
-
-    class ParseAttributesJob_:
-        """
-        :note: the term 'job' should highlight that an object of this class
-        is put into a list that is submitted to a worker thread pool at the end of the parsing.
-        """
-
-        def __init__(self, parent_node, input_text):
-            self._parent_node = parent_node
-            self._input_text = input_text
-
-        def run(self):
-            nonlocal access_lock
-            msg = "begin to parse attributes statement '{}'".format(
-                self._input_text)
-            log_enter_job_or_task_(self._parent_node, msg)
-            #
-            attribute, modified_vars = \
-                translator.parse_attributes(translator.tree.grammar.attributes.parseString(self._input_text)[0])
-            for var_context in self._parent_node._data["variables"]:
-                if var_context["name"] in modified_vars:
-                    access_lock.acquire()
-                    var_context["qualifiers"].append(attribute)
-                    access_lock.release()
-            #
-            msg = "parsed attributes statement '{}'".format(self._input_text)
-            log_leave_job_or_task_(self._parent_node, msg)
-
-    class ParseAccDeclareJob_:
-        """
-        :note: the term 'job' should highlight that an object of this class
-        is put into a list that is submitted to a worker thread pool at the end of the parsing.
-        """
-
-        def __init__(self, parent_node, input_text):
-            self._parent_node = parent_node
-            self._input_text = input_text
-
-        def run(self):
-            nonlocal access_lock
-            msg = "begin to parse acc declare directive '{}'".format(
-                self._input_text)
-            log_enter_job_or_task_(self._parent_node, msg)
-            #
-            parse_result = translator.tree.grammar.acc_declare.parseString(
-                self._input_text)[0]
-            for var_context in self._parent_node._data["variables"]:
-                for var_name in parse_result.map_alloc_vars():
-                    if var_context["name"] == var_name:
-                        access_lock.acquire()
-                        var_context["declare_on_target"] = "alloc"
-                        access_lock.release()
-                for var_name in parse_result.map_to_vars():
-                    if var_context["name"] == var_name:
-                        access_lock.acquire()
-                        var_context["declare_on_target"] = "to"
-                        access_lock.release()
-                for var_name in parse_result.map_from_vars():
-                    if var_context["name"] == var_name:
-                        access_lock.acquire()
-                        var_context["declare_on_target"] = "from"
-                        access_lock.release()
-                for var_name in parse_result.map_tofrom_vars():
-                    if var_context["name"] == var_name:
-                        access_lock.acquire()
-                        var_context["declare_on_target"] = "tofrom"
-                        access_lock.release()
-            msg = "parsed acc declare directive '{}'".format(self._input_text)
-            log_leave_job_or_task_(self._parent_node, msg)
-
+    def log_end_task(parent_node, msg):
+        util.logging.log_debug2(opts.log_prefix,"_parse_statements","[parent-node={0}:{1}] {2}".format(
+              parent_node._kind, parent_node._name, msg))
+    
     # Parser events
     root = Node("root", "root", data=index, parent=None)
     current_node = root
@@ -360,14 +279,18 @@ def _parse_statements(linemaps, file_path):
         nonlocal root
         nonlocal current_node
         nonlocal current_statement
-        nonlocal task_executor
         nonlocal total_num_tasks
         #print(current_statement)
         log_detection_("declaration")
         if current_node != root:
             total_num_tasks += 1
-            task_executor.submit(ParseDeclarationTask_, current_node,
-                                 current_statement)
+            msg = "begin to parse declaration '{}'".format(
+                current_statement)
+            log_begin_task(current_node, msg)
+            variables = _create_index_records_from_declaration(current_statement)
+            current_node._data["variables"] += variables
+            msg = "finished to parse declaration '{}'".format(current_statement)
+            log_end_task(current_node, msg)
 
     def Attributes(tokens):
         """
@@ -380,8 +303,18 @@ def _parse_statements(linemaps, file_path):
         #print(current_statement)
         log_detection_("attributes statement")
         if current_node != root:
-            job = ParseAttributesJob_(current_node, current_statement)
-            post_parsing_jobs.append(job)
+            msg = "begin to parse attributes statement '{}'".format(
+                current_statement)
+            log_begin_task(current_node, msg)
+            #
+            attribute, modified_vars = \
+                translator.parse_attributes(translator.tree.grammar.attributes.parseString(current_statement)[0])
+            for var_context in current_node._data["variables"]:
+                if var_context["name"] in modified_vars:
+                    var_context["qualifiers"].append(attribute)
+            #
+            msg = "finished to parse attributes statement '{}'".format(current_statement)
+            log_end_task(current_node, msg)
 
     def AccDeclare():
         """
@@ -393,9 +326,27 @@ def _parse_statements(linemaps, file_path):
         nonlocal current_node
         nonlocal current_statement
         log_detection_("acc declare directive")
-        if current_node != root:
-            job = ParseAccDeclareJob_(current_node, current_statement)
-            post_parsing_jobs.append(job)
+        msg = "begin to parse acc declare directive '{}'".format(
+            current_statement)
+        log_begin_task(current_node, msg)
+        #
+        parse_result = translator.tree.grammar.acc_declare.parseString(
+            current_statement)[0]
+        for var_context in current_node._data["variables"]:
+            for var_name in parse_result.map_alloc_vars():
+                if var_context["name"] == var_name:
+                    var_context["declare_on_target"] = "alloc"
+            for var_name in parse_result.map_to_vars():
+                if var_context["name"] == var_name:
+                    var_context["declare_on_target"] = "to"
+            for var_name in parse_result.map_from_vars():
+                if var_context["name"] == var_name:
+                    var_context["declare_on_target"] = "from"
+            for var_name in parse_result.map_tofrom_vars():
+                if var_context["name"] == var_name:
+                    var_context["declare_on_target"] = "tofrom"
+        msg = "finished to parse acc declare directive '{}'".format(current_statement)
+        log_end_task(current_node, msg)
 
     def AccRoutine():
         """
@@ -408,6 +359,8 @@ def _parse_statements(linemaps, file_path):
         nonlocal current_statement
         log_detection_("acc routine directive")
         if current_node != root:
+            msg = "begin to parse acc routine directive '{}'".format(
+                current_statement)
             parse_result = translator.tree.grammar.acc_routine.parseString(
                 current_statement)[0]
             if parse_result.parallelism() == "seq":
@@ -418,6 +371,8 @@ def _parse_statements(linemaps, file_path):
                 current_node._data["attributes"] += ["host", "device:worker"]
             elif parse_result.parallelism() == "vector":
                 current_node._data["attributes"] += ["host", "device:vector"]
+            msg = "finished to parse acc routine directive '{}'".format(current_statement)
+            log_end_task(current_node, msg)
 
     module_start.setParseAction(ModuleStart)
     type_start.setParseAction(TypeStart)
@@ -513,23 +468,8 @@ def _parse_statements(linemaps, file_path):
                             break
                     #try_to_parse_string("declaration|type_start|use|attributes|module_start|program_start|function_start|subroutine_start",\
                     #  datatype_reg|type_start|use|attributes|module_start|program_start|function_start|subroutine_start)
-    task_executor.shutdown(
-        wait=True) # waits till all tasks have been completed
 
     # apply attributes and acc variable modifications
-    num_post_parsing_jobs = len(post_parsing_jobs)
-    if num_post_parsing_jobs > 0:
-        util.logging.log_debug(opts.log_prefix,"_parse_statements","apply variable modifications (submit {} jobs to worker pool of size {})".format(\
-          num_post_parsing_jobs,opts.parse_var_modification_statements_worker_pool_size))
-        with concurrent.futures.ThreadPoolExecutor(\
-            max_workers=opts.parse_var_modification_statements_worker_pool_size)\
-                as job_executor:
-            for job in post_parsing_jobs:
-                job_executor.submit(job.run)
-        util.logging.log_debug(opts.log_prefix, "_parse_statements",
-                               "apply variable modifications --- done")
-        post_parsing_jobs.clear()
-
     return index
 
 

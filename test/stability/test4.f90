@@ -1,7 +1,7 @@
 ! SPDX-License-Identifier: MIT
 ! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-program test1 
-  ! logical, parameter :: dosfcflx = .true.   ! not working
-  ! logical :: dosfcflx = .true.              ! not working
-  logical,parameter :: dosfcflx               ! works!
-end program test1
+program test4 
+  logical, parameter :: dosfcflx1 = .true.
+  logical :: dosfcflx2 = .true.           
+  logical,parameter :: dosfcflx3          
+end program test4

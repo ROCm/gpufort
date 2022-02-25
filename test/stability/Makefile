@@ -1,5 +1,5 @@
 CONV        = gpufort
-CONV_FLAGS ?= -w -E hip-gpufort-rt
+CONV_FLAGS ?= --wrap --dest hipgpufort
 
 SOURCES = $(shell find . -name "test*.f90")
 TESTS=$(SOURCES:.f90=.f90-gpufort.f08)
@@ -12,6 +12,4 @@ $(TESTS): %.f90-gpufort.f08 : %.f90
 	$(CONV) $(CONV_FLAGS) $^ 
 
 clean:
-	rm -rf *.f90-* *.gpufort_mod *-fort2hip.hip.cpp
-	
-	
+	rm -rf *.f90-* *.gpufort_mod *-fort2*.cpp

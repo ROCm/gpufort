@@ -652,6 +652,10 @@ def modify_file(linemaps, **kwargs):
                                            opts.line_grouping_ifdef_macro,
                                            **kwargs)
 
+    # TODO also offer variant where linemaps are not grouped in order
+    # to have direct mapping between original code lines and modified
+    # lines. Relevant for compiler app in order to link compiler backend
+    # errors to the lines in the original file.
     blocks = _group_modified_linemaps(linemaps, ifdef_macro != None)
 
     output = ""

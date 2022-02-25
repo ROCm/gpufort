@@ -49,10 +49,14 @@ class HipKernelGeneratorBase(kernelgen.KernelGeneratorBase):
         return (self.kernel["global_vars"]
                 + self.kernel["global_reduced_vars"])
 
-    def _create_kernel_context(self):
+    def _create_kernel_context(self,launch_bounds=None):
         kernel = self._create_kernel_base_context(self.kernel_name,
                                                   self.c_body)
         # '\' is required; cannot be omitted
+        kernel["attribute"] = "__global__"
+        kernel["return_type"] = "void"
+        kernel["launch_bounds"] =  "" if launch_bounds == None else launch_bounds
+
         kernel["global_vars"],\
         kernel["global_reduced_vars"],\
         kernel["shared_vars"],\
@@ -89,8 +93,8 @@ class HipKernelGeneratorBase(kernelgen.KernelGeneratorBase):
 
     def render_gpu_kernel_cpp(self):
         return [
-            render.render_hip_kernel_comment_cpp(self.fortran_snippet),
-            render.render_hip_kernel_cpp(self.kernel),
+            render.render_hip_device_routine_comment_cpp(self.fortran_snippet),
+            render.render_hip_device_routine_cpp(self.kernel),
         ]
 
     def render_begin_kernel_comment_cpp(self):
@@ -178,6 +182,11 @@ class HipKernelGenerator4CufKernel(HipKernelGeneratorBase):
 
 
 class HipKernelGenerator4AcceleratorRoutine(HipKernelGenerator4CufKernel):
+    def __init__(self, *args, **kwargs):
+        HipKernelGenerator4CufKernel.__init__(self, *args, **kwargs)
+        return_type, _ = util.kwargs.get_value("return_type", "void", **kwargs)
+        self.kernel["return_type"] = return_type
+        self.kernel["attribute"] = "__device__"
 
     def render_gpu_launcher_cpp(self, launcher):
         return []

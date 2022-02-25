@@ -92,13 +92,11 @@ class KernelGeneratorBase:
 
     def _create_kernel_base_context(self,
                                     kernel_name,
-                                    c_body,
-                                    launch_bounds=None):
+                                    c_body):
         #global GET_LAUNCH_BOUNDS
         #launch_bounds = GET_LAUNCH_BOUNDS(kernel_name)
         return {
             "name": kernel_name,
-            "launch_bounds": "" if launch_bounds == None else launch_bounds,
             "c_body": c_body,
             "global_vars": [],
             "global_reduced_vars": [],

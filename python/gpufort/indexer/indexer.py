@@ -72,7 +72,8 @@ def _create_index_records_from_declaration(statement):
         ivar["bounds"] = bounds
         ivar["rank"]   = len(bounds)
         # handle parameters
-        ivar["value"] = None # TODO parse rhs if necessary
+        #ivar["value"] = None # TODO parse rhs if necessary
+        ivar["rhs"] = rhs
         context.append(ivar)
     return context
 
@@ -293,8 +294,7 @@ def _parse_statements(linemaps, file_path):
             log_end_task(current_node, msg)
 
     def Attributes(tokens):
-        """
-        Add attributes to previously declared variables in same scope/declaration list.
+        """Add attributes to previously declared variables in same scope/declaration list.
         Does not modify scope of other variables.
         """
         nonlocal root
@@ -317,8 +317,7 @@ def _parse_statements(linemaps, file_path):
             log_end_task(current_node, msg)
 
     def AccDeclare():
-        """
-        Add attributes to previously declared variables in same scope.
+        """Add attributes to previously declared variables in same scope.
         Does not modify scope of other variables.
         """
         # TODO investigate if target of attribute must be in same scope or not!
@@ -349,8 +348,7 @@ def _parse_statements(linemaps, file_path):
         log_end_task(current_node, msg)
 
     def AccRoutine():
-        """
-        Add attributes to previously declared variables in same scope.
+        """Add attributes to previously declared variables in same scope.
         Does not modify scope of other variables.
         """
         # TODO investigate if target of attribute must be in same scope or not!

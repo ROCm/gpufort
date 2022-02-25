@@ -55,7 +55,7 @@ GPUFORT_PRINT_ARGS({% if have_problem_size %}problem_size.x,problem_size.y,probl
 {% endfor %}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_hip_kernel_comment(fortran_snippet) -%}
+{%- macro render_hip_device_routine_comment(fortran_snippet) -%}
 /**
    HIP C++ implementation of the function/loop body of:
 
@@ -63,31 +63,18 @@ GPUFORT_PRINT_ARGS({% if have_problem_size %}problem_size.x,problem_size.y,probl
 */
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_hip_kernel(kernel) -%}
-__global__ void {{kernel.launch_bounds}} {{kernel.name}}(
-{{ cm.render_all_global_param_decls(kernel.global_vars,kernel.global_reduced_vars,True) | indent(4,True) }}
-){
-{% if kernel.local_vars|length %}
-{{ cm.render_local_var_decls(kernel.local_vars) | indent(2,True) }}
-{% endif %}
-{% if kernel.shared_vars|length %}
-{{ cm.render_shared_var_decls(kernel.shared_vars) | indent(2,True) }}
-{% endif %}
-{{kernel.c_body | indent(2, True)}}
-}
-{%- endmacro -%}
-{########################################################################################}
 {%- macro render_hip_device_routine(routine) -%}
-/**
-   HIP C++ implementation of the function/loop body of:
-
-{{routine.f_body | indent(3, True)}}
-*/
-__device__ {{routine.return_type}} {{routine.name}}(
-{{ cm.render_global_param_decls(routine.global_vars,"","",",\n") | indent(4,True) }}
+{{routine.attribute}} {{routine.return_type}} {{routine.launch_bounds}} {{routine.name}}(
+{{ cm.render_all_global_param_decls(routine.global_vars,
+                                    routine.global_reduced_vars,
+                                    True,routine.attribute=="__global__") | indent(2,True) }}
 ){
-{{ render_local_var_decls(routine.local_vars) | indent(2,True) }}
-{{ render_shared_var_decls(routine.shared_vars) | indent(2,True) }}
+{% if routine.local_vars|length %}
+{{ cm.render_local_var_decls(routine.local_vars) | indent(2,True) }}
+{% endif %}
+{% if routine.shared_vars|length %}
+{{ cm.render_shared_var_decls(routine.shared_vars) | indent(2,True) }}
+{% endif %}
 {{routine.c_body | indent(2, True)}}
 }
 {%- endmacro -%}

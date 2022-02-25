@@ -297,7 +297,6 @@ def parse_declaration(fortran_statement):
         if qualifier_tokens[0] == "dimension":
             # ex: dimension ( 1, 2, 1:n )
             qualifier_tokens = tokenize(qualifier)
-            print(qualifier_tokens)
             if (len(qualifier_tokens) < 4
                or qualifier_tokens[0:2] != ["dimension","("]
                or qualifier_tokens[-1] != ")"):

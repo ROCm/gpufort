@@ -13,9 +13,9 @@ macro_files = [
 ]
 macro_filters = [
     re.compile("|".join(r"""render_hip_kernel\b
-render_hip_kernel_comment
-render_hip_launcher
 render_hip_device_routine
+render_hip_device_routine_comment
+render_hip_launcher
 render_launcher\b
 render_cpu_routine
 render_cpu_launcher""".splitlines()))

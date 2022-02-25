@@ -20,12 +20,12 @@
 
 */
 
-__global__ void  hostdevicefun(
-    int i,
-    float a,
-    gpufort::array1<float> x,
-    gpufort::array1<float> y,
-    int n
+__device__ void  hostdevicefun(
+  int i,
+  float a,
+  gpufort::array1<float>& x,
+  gpufort::array1<float>& y,
+  int n
 ){
   if ((i<n)) {
     y(i)=(y(i)+a*x(i));
@@ -53,10 +53,10 @@ __global__ void  hostdevicefun(
 */
 
 __global__ void  gpukernel(
-    float a,
-    gpufort::array1<float> x,
-    gpufort::array1<float> y,
-    int n
+  float a,
+  gpufort::array1<float> x,
+  gpufort::array1<float> y,
+  int n
 ){
   int i;
   i=((1+threadIdx.x)+((1+blockIdx.x)-1)*blockDim.x);

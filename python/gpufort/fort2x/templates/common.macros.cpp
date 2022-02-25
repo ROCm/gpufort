@@ -1,11 +1,14 @@
 {#- SPDX-License-Identifier: MIT                                        -#}
 {#- Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.-#}
 {########################################################################################}
-{%- macro render_global_param_decl(ivar,device_routine=False) -%}
+{%- macro render_global_param_decl(ivar,is_device_routine=False,is_kernel=False) -%}
 {%- set c_type = ivar.kind if ivar.f_type=="type" else ivar.c_type -%}
-{%- set suffix = "&" if (not device_routine 
-                        or "intent(out)" in ivar.qualifiers
-                        or "intent(inout)" in ivar.qualifiers) else "" -%}
+{%- set suffix = "&" if (not is_device_routine
+                        or not is_kernel 
+                        and (ivar.rank > 0
+                            or ivar.f_type == "type"
+                            or "intent(out)" in ivar.qualifiers
+                            or "intent(inout)" in ivar.qualifiers)) else "" -%}
 {%- if ivar.rank > 0 -%}
 gpufort::array{{ivar.rank}}<{{c_type}}>{{suffix}} {{ivar.name}}
 {%- else -%}
@@ -13,29 +16,35 @@ gpufort::array{{ivar.rank}}<{{c_type}}>{{suffix}} {{ivar.name}}
 {%- endif -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_global_param_decls(ivars,sep,device_routine=False) -%}
-{%- for ivar in ivars -%}{{render_global_param_decl(ivar,device_routine)}}{{sep if not loop.last}}{% endfor -%}
+{%- macro render_global_param_decls(ivars,sep,is_device_routine=False,is_kernel=False) -%}
+{%- for ivar in ivars -%}{{render_global_param_decl(ivar,is_device_routine,is_kernel)}}{{sep if not loop.last}}{% endfor -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_global_reduced_param_decl(rvar,device_routine=False) -%}
+{%- macro render_global_reduced_param_decl(rvar,is_device_routine=False,is_kernel=False) -%}
 {%- set c_type = rvar.kind if rvar.f_type=="type" else rvar.c_type -%}
-{%- if device_routine -%}
-gpufort::array{{rvar.rank+1}}<{{c_type}}> {{rvar.name}}
+{%- set suffix = "&" if (not is_device_routine
+                        or not is_kernel 
+                        and (ivar.rank > 0
+                            or ivar.f_type == "type"
+                            or "intent(out)" in ivar.qualifiers
+                            or "intent(inout)" in ivar.qualifiers)) else "" -%}
+{%- if is_device_routine -%}
+gpufort::array{{rvar.rank+1}}<{{c_type}}>{{suffix}} {{rvar.name}}
 {%- else -%}
-{{c_type}}& {{rvar.name}}
+{{c_type}}{{suffix}} {{rvar.name}}
 {%- endif -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_global_reduced_param_decls(rvars,sep,device_routine=False) -%}
-{%- for rvar in rvars -%}{{render_global_reduced_param_decl(rvar,device_routine)}}{{sep if not loop.last}}{% endfor -%}
+{%- macro render_global_reduced_param_decls(rvars,sep,is_device_routine=False,is_kernel=False) -%}
+{%- for rvar in rvars -%}{{render_global_reduced_param_decl(rvar,is_device_routine,is_kernel)}}{{sep if not loop.last}}{% endfor -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_all_global_param_decls(ivars,rvars,device_routine=False) -%}
+{%- macro render_all_global_param_decls(ivars,rvars,is_device_routine=False,is_kernel=False) -%}
 {%- if ivars|length > 0 -%}
-{{ render_global_param_decls(ivars,",\n",device_routine)}}{{ ",\n" if rvars|length }}
+{{ render_global_param_decls(ivars,",\n",is_device_routine,is_kernel)}}{{ ",\n" if rvars|length }}
 {%- endif -%}
 {%- if rvars|length > 0 -%}
-{{ render_global_reduced_param_decls(rvars,"\n",device_routine) }}
+{{ render_global_reduced_param_decls(rvars,"\n",is_device_routine,is_kernel) }}
 {%- endif -%}
 {%- endmacro -%}
 {########################################################################################}
@@ -43,20 +52,20 @@ gpufort::array{{rvar.rank+1}}<{{c_type}}> {{rvar.name}}
 {%- for ivar in ivars -%}{{ivar.name}}{{"," if not loop.last}}{% endfor -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_global_reduced_params(rvars,device_routine=False) -%}
-{%- if device_routine -%}
+{%- macro render_global_reduced_params(rvars,is_device_routine=False) -%}
+{%- if is_device_routine -%}
 {%- for rvar in rvars -%}{%- set rvar_buffer = rvar.name + "_buf" -%}{{rvar_buffer}}{{"," if not loop.last}}{% endfor -%}
 {%- else -%}
 {%- for rvar in rvars -%}{{rvar.name}}{{"," if not loop.last}}{% endfor -%}
 {%- endif -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_all_global_params(ivars,rvars,device_routine=False) -%}
+{%- macro render_all_global_params(ivars,rvars,is_device_routine=False) -%}
 {%- if ivars|length > 0 -%}
 {{ render_global_params(ivars)}}{{ "," if rvars|length }}
 {%- endif -%}
 {%- if rvars|length > 0 -%}
-{{ render_global_reduced_params(rvars,device_routine) }}
+{{ render_global_reduced_params(rvars,is_device_routine) }}
 {%- endif -%}
 {%- endmacro -%}
 {########################################################################################}

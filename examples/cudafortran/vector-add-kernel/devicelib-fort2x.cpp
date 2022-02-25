@@ -21,11 +21,11 @@
 
 */
 
-__global__ void  devicefun(
-    float a,
-    float x,
-    float& y,
-    int n
+__device__ void  devicefun(
+  float a,
+  float x,
+  float& y,
+  int n
 ){
   y=(y+a*x);
 

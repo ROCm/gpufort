@@ -150,6 +150,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
                 stprocedure.parse_result, iprocedure, scope,
                 kernel_name = iprocedure["name"],
                 kernel_hash = "", 
+                return_type = stprocedure.c_result_type,
                 fortran_snippet = "".join(stprocedure.lines()))
 
         self.__render_kernel(mykernelgen,

@@ -35,6 +35,7 @@ class KernelGeneratorBase:
                                                      reductions,
                                                      shared_vars,
                                                      local_vars,
+                                                     loop_vars,
                                                      error_handling=None):
         """Lookup index variables
         :param list all_vars: List of all variable expressions (var)
@@ -60,7 +61,7 @@ class KernelGeneratorBase:
             KernelGeneratorBase.strip_member_access(shared_vars), consumed)
         all_vars2 = [
             v for v in KernelGeneratorBase.strip_member_access(all_vars)
-            if not v in consumed
+            if not v in consumed and v not in loop_vars
         ]
 
         rglobal_reduced_vars = []

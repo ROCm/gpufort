@@ -39,6 +39,7 @@ class HipKernelGeneratorBase(kernelgen.KernelGeneratorBase):
         self.global_reductions = {}
         self.shared_vars = []
         self.local_vars = []
+        self.loop_vars = []
         #
         self.kernel = None
 
@@ -65,6 +66,7 @@ class HipKernelGeneratorBase(kernelgen.KernelGeneratorBase):
                                                                                                           self.global_reductions,
                                                                                                           self.shared_vars,
                                                                                                           self.local_vars,
+                                                                                                          self.loop_vars,
                                                                                                           self.error_handling)
         return kernel
 
@@ -138,6 +140,7 @@ class HipKernelGenerator4LoopNest(HipKernelGeneratorBase):
         self.global_reductions = ttloopnest.gang_team_reductions()
         self.shared_vars = ttloopnest.gang_team_shared_vars()
         self.local_vars = ttloopnest.local_scalars()
+        self.loop_vars = ttloopnest.loop_vars()
         self.c_body = ttloopnest.c_str()
         #
         self.kernel = self._create_kernel_context()

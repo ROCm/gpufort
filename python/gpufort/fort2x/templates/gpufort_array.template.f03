@@ -31,8 +31,8 @@ module gpufort_array
 {% set rank_ub = rank+1 %}
   ! {{rank}}-dimensional array
   type, bind(c) :: gpufort_array_descr{{rank}}
-    type(c_ptr)    :: data_host    = c_null_ptr
-    type(c_ptr)    :: data_dev     = c_null_ptr
+    type(c_ptr) :: data_host    = c_null_ptr
+    type(c_ptr) :: data_dev     = c_null_ptr
     integer(c_int) :: num_elements = 0  !> Number of elements represented by this array.
     integer(c_int) :: index_offset = -1 !> Offset for index calculation; scalar product of negative lower bounds and strides.
 {% for d in range(1,rank_ub) %}
@@ -41,10 +41,10 @@ module gpufort_array
   end type
 
   type, bind(c) :: gpufort_array{{rank}}
-    type(gpufort_array_descr{{rank}})    :: data
+    type(gpufort_array_descr{{rank}}) :: data
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: alloc_mode = gpufort_array_wrap_host_alloc_device  !> Data allocation strategy. Default: 
                                                                                                              !> wrap the host and allocate device data
-    integer(kind(gpufort_array_sync_none))             :: sync_mode  = gpufort_array_sync_none               !> How data should be synchronized
+    integer(kind(gpufort_array_sync_none)) :: sync_mode  = gpufort_array_sync_none               !> How data should be synchronized
                                                                                                              !> during the initialization and destruction of this GPUFORT array.
     integer(c_int) :: num_refs          = 0  !> Number of references.
     integer(c_int) :: bytes_per_element = -1 !> Bytes per data element. 

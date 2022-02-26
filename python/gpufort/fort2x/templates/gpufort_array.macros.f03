@@ -93,7 +93,7 @@ subroutine {{binding}}_{{tuple.f_kind}}(&
   use iso_c_binding
   use hipfort_enums
   implicit none
-  type({{f_array}}),intent(in)        :: array
+  type({{f_array}}),intent(in) :: array
   {{tuple.f_type}},intent(inout),pointer,dimension(:{% for i in range(1,rank) %},:{% endfor %}) :: data_{{loc}} 
   !
   integer(c_int) :: offset_remainder
@@ -144,19 +144,19 @@ function {{binding}}{{async_suffix}}_host(&
   use iso_c_binding
   use hipfort_enums
   implicit none
-  type({{f_array}}),intent(inout)        :: array
-  integer(c_int){{size_dims}},intent(in)          :: sizes
+  type({{f_array}}),intent(inout) :: array
+  integer(c_int){{size_dims}},intent(in) :: sizes
   integer(c_int){{size_dims}},intent(in),optional :: lbounds{{"
-  type(c_ptr),intent(in)                                                 :: stream" if is_async}}
-  integer(c_int),intent(in)                                              :: bytes_per_element
+  type(c_ptr),intent(in) :: stream" if is_async}}
+  integer(c_int),intent(in) :: bytes_per_element
   integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-  integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+  integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
   !
   integer(kind(hipSuccess)) :: ierr
   !
-  integer(c_int),dimension({{rank}})                 :: opt_lbounds
+  integer(c_int),dimension({{rank}}) :: opt_lbounds
   integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-  integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+  integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
   !
   opt_lbounds    = 1
   opt_alloc_mode = gpufort_array_alloc_host_alloc_device ! allocate both by default
@@ -179,20 +179,20 @@ function {{binding}}{{async_suffix}}_{{tuple.f_kind}}(&
   use iso_c_binding
   use hipfort_enums
   implicit none
-  type({{f_array}}),intent(inout)        :: array
+  type({{f_array}}),intent(inout) :: array
   {{tuple.f_type}},intent(in),target,dimension(:{% for i in range(1,rank) %},:{% endfor %}) :: data_host 
   integer(c_int){{size_dims}},intent(in),optional :: lbounds{{"
-  type(c_ptr),intent(in)                                                 :: stream" if is_async}}
-  type(c_ptr),intent(in),optional                                        :: data_dev
+  type(c_ptr),intent(in) :: stream" if is_async}}
+  type(c_ptr),intent(in),optional :: data_dev
   integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-  integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+  integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
   !
-  integer(kind(hipSuccess))                                              :: ierr
+  integer(kind(hipSuccess)) :: ierr
   !
   integer(c_int),dimension({{rank}}) :: opt_lbounds
-  type(c_ptr)                                        :: opt_data_dev
+  type(c_ptr) :: opt_data_dev
   integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-  integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+  integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
   !
   opt_lbounds    = 1
   opt_data_dev   = c_null_ptr
@@ -235,8 +235,8 @@ end function
     type({{f_array}}),intent(inout) :: array
     {{tuple.f_type}},intent(in),target,dimension(:{% for i in range(1,rank) %},:{% endfor %}) :: buffer 
     integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind{{"
-    type(c_ptr),value,intent(in)                          :: stream" if is_async}}
-    integer(kind(hipSuccess))                             :: ierr
+    type(c_ptr),value,intent(in) :: stream" if is_async}}
+    integer(kind(hipSuccess)) :: ierr
     !
     ierr = {{binding}}{{async_suffix}}(&
       array,c_loc(buffer),memcpy_kind{{",stream" if is_async}})
@@ -269,13 +269,13 @@ end function
     {{tuple.f_type}},intent(inout),pointer,dimension(:{% for i in range(1,rank) %},:{% endfor %}) :: buffer 
 {%     if is_host %}
     logical(c_bool),value,optional,intent(in) :: pinned
-    integer(c_int),value,optional,intent(in)  :: flags
+    integer(c_int),value,optional,intent(in) :: flags
 {%     endif %}
     integer(kind(hipSuccess)) :: ierr
 {%     if is_host %}
     !
     logical(c_bool) :: opt_pinned
-    integer(c_int)  :: opt_flags
+    integer(c_int) :: opt_flags
 {%     endif %}
 {%     if is_host %}
     !
@@ -345,14 +345,14 @@ end function
 {% set prefix = "gpufort_array" %}
 {% set max_rank_ub = max_rank+1 %}
 {% for rank in range(1,max_rank_ub) %}
-{% set f_array  = prefix+rank|string %}
-{% set routine = "init" %}
-{% set binding  = f_array+"_"+routine %}
-{% set size_dims = ",dimension("+rank|string+")" %}
-{% for tuple in datatypes %}
-{% for dev in ["","_cptr"] %} 
-{% for async_suffix in ["_async",""] %}
-{% set is_async = async_suffix == "_async" %}
+{%   set f_array  = prefix+rank|string %}
+{%   set routine = "init" %}
+{%   set binding  = f_array+"_"+routine %}
+{%   set size_dims = ",dimension("+rank|string+")" %}
+{%   for tuple in datatypes %}
+{%     for dev in ["","_cptr"] %} 
+{%       for async_suffix in ["_async",""] %}
+{%         set is_async = async_suffix == "_async" %}
 function {{f_array}}_wrap{{async_suffix}}_{{tuple.f_kind}}{{dev}}(&
     data_host,data_dev,lbounds,&
     {{"stream," if is_async}}sync_mode,ierr) result(array)
@@ -360,31 +360,31 @@ function {{f_array}}_wrap{{async_suffix}}_{{tuple.f_kind}}{{dev}}(&
   use hipfort_enums
   implicit none
   {{tuple.f_type}},intent(in),target,dimension(:{% for i in range(1,rank) %},:{% endfor %}) :: data_host 
-{% if dev == "_cptr" %}
+{%         if dev == "_cptr" %}
   type(c_ptr),intent(in) :: data_dev
-{% else %}
+{%         else %}
   {{tuple.f_type}},intent(in),target,dimension(:{% for i in range(1,rank) %},:{% endfor %}) :: data_dev 
-{% endif %}
-  integer(c_int){{size_dims}},intent(in),optional            :: lbounds{{" 
-  type(c_ptr),intent(in)                                     :: stream" if is_async}}
+{%         endif %}
+  integer(c_int){{size_dims}},intent(in),optional :: lbounds{{" 
+  type(c_ptr),intent(in) :: stream" if is_async}}
   integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-  integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+  integer(kind(hipSuccess)),intent(inout),optional :: ierr
   !
-  type({{f_array}})         :: array
+  type({{f_array}}) :: array
   !
-  integer(c_int),dimension({{rank}})     :: opt_lbounds
+  integer(c_int),dimension({{rank}}) :: opt_lbounds
   integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-  integer(kind(hipSuccess))              :: opt_ierr
+  integer(kind(hipSuccess)) :: opt_ierr
   !
   opt_lbounds    = 1
   opt_sync_mode  = gpufort_array_sync_none
   if ( present(lbounds) )   opt_lbounds    = lbounds             
   if ( present(sync_mode) ) opt_sync_mode  = sync_mode 
-{% if dev == "_cptr" %}
-{% set data_dev_arg = "data_dev" %}
-{% else %}
-{% set data_dev_arg = "c_loc(data_dev)" %}
-{% endif %}
+{%         if dev == "_cptr" %}
+{%           set data_dev_arg = "data_dev" %}
+{%         else %}
+{%           set data_dev_arg = "c_loc(data_dev)" %}
+{%         endif %}
   opt_ierr = {{binding}}{{async_suffix}}(&
     array,&
     int({{tuple.bytes}}, c_int),&
@@ -394,42 +394,70 @@ function {{f_array}}_wrap{{async_suffix}}_{{tuple.f_kind}}{{dev}}(&
     opt_sync_mode)
   if ( present(ierr) ) ierr = opt_ierr
 end function
-{% endfor %}{# async #}
-{% endfor %}
-{% endfor %}
-{% set routine = "init" %}
-{% set binding  = f_array+"_"+routine %}
-{% set size_dims = ",dimension("+rank|string+")" %}
-{% for tuple in datatypes %}
-function {{f_array}}_wrap_device_ptr_{{tuple.f_kind}}(&
-    data_dev,lbounds,ierr) result(array)
+{%         endfor %}{# async #}
+{%       endfor %}{# dev #}
+{%     endfor %}{# datatypes #}
+{%     set routine = "init" %}
+{%     set binding  = f_array+"_"+routine %}
+{%     set size_dims = ",dimension("+rank|string+")" %}
+function {{f_array}}_wrap_device_ptr_cptr(&
+    data_dev,sizes,lbounds,bytes_per_element) result(array)
   use iso_c_binding
   use hipfort_enums
   implicit none
-  {{tuple.f_type}},intent(in),pointer,dimension(:{% for i in range(1,rank) %},:{% endfor %}) :: data_dev 
-  integer(c_int){{size_dims}},intent(in),optional  :: lbounds
-  integer(kind(hipSuccess)),intent(inout),optional :: ierr
+  type(c_ptr),intent(in) :: data_dev 
+  integer(c_int){{size_dims}},intent(in) :: sizes
+  integer(c_int){{size_dims}},intent(in),optional :: lbounds
+  integer(c_int),intent(in),optional :: bytes_per_element
   !
   type({{f_array}}) :: array
   !
   integer(c_int),dimension({{rank}}) :: opt_lbounds
-  integer(kind(hipSuccess))          :: opt_ierr
+  integer(c_int) :: opt_bytes_per_element
+  !
+  integer(kind(hipSuccess)) :: ierr
+  !
+  opt_lbounds = 1
+  opt_bytes_per_element = 1
+  if ( present(lbounds) ) opt_lbounds = lbounds             
+  if ( present(bytes_per_element) ) opt_bytes_per_element = bytes_per_element             
+  ierr = {{binding}}(&
+    array,&
+    opt_bytes_per_element,&
+    c_null_ptr,data_dev,&
+    sizes, opt_lbounds,&
+    gpufort_array_wrap_host_wrap_device,&
+    gpufort_array_sync_none)
+end function
+{%     for tuple in datatypes %}
+function {{f_array}}_wrap_device_ptr_{{tuple.f_kind}}(&
+    data_dev,lbounds) result(array)
+  use iso_c_binding
+  use hipfort_enums
+  implicit none
+  {{tuple.f_type}},intent(in),pointer,dimension(:{% for i in range(1,rank) %},:{% endfor %}) :: data_dev 
+  integer(c_int){{size_dims}},intent(in),optional :: lbounds
+  !
+  type({{f_array}}) :: array
+  !
+  integer(c_int),dimension({{rank}}) :: opt_lbounds
+  !
+  integer(kind(hipSuccess)) :: ierr
   !
   opt_lbounds    = 1
-  if ( present(lbounds) )   opt_lbounds    = lbounds             
-  opt_ierr = {{binding}}(&
+  if ( present(lbounds) ) opt_lbounds = lbounds             
+  ierr = {{binding}}(&
     array,&
     int({{tuple.bytes}}, c_int),&
     c_null_ptr,c_loc(data_dev),&
     shape(data_dev), opt_lbounds,&
     gpufort_array_wrap_host_wrap_device,&
     gpufort_array_sync_none)
-  if ( present(ierr) ) ierr = opt_ierr
 end function
+{%   endfor %}{# datatypes #}
 {% endfor %}
-{% endfor %}
-{########################################################################################}
 {%- endmacro -%}
+{########################################################################################}
 {%- macro render_gpufort_array_interfaces(datatypes,max_rank) -%}
 {% set max_rank_ub = max_rank+1 %}
 {% set prefix = "gpufort_array" %}
@@ -458,13 +486,13 @@ interface {{iface}}{{async_suffix}}
     import gpufort_array_wrap_host_wrap_device
     import gpufort_array_sync_none
     implicit none
-    type({{f_array}}),intent(inout)                                     :: array
-    integer(c_int),intent(in),value                                     :: bytes_per_element
-    type(c_ptr),intent(in),value                                        :: data_host, data_dev
-    integer(c_int){{size_dims}},intent(in)                              :: sizes, lbounds
+    type({{f_array}}),intent(inout) :: array
+    integer(c_int),intent(in),value :: bytes_per_element
+    type(c_ptr),intent(in),value :: data_host, data_dev
+    integer(c_int){{size_dims}},intent(in) :: sizes, lbounds
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),value :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),value             :: sync_mode{{"
-    type(c_ptr),intent(in),value                                        :: stream" if is_async}}
+    integer(kind(gpufort_array_sync_none)),intent(in),value :: sync_mode{{"
+    type(c_ptr),intent(in),value :: stream" if is_async}}
     !
     integer(kind(hipSuccess)) :: ierr
   end function
@@ -540,8 +568,8 @@ interface {{iface}}{{async_suffix}}
     import {{f_array}}
     implicit none
     type({{f_array}}),intent(inout) :: array{{"
-    type(c_ptr),value,intent(in)    :: stream" if is_async}}
-    integer(kind(hipSuccess))       :: ierr
+    type(c_ptr),value,intent(in) :: stream" if is_async}}
+    integer(kind(hipSuccess)) :: ierr
   end function
 {%     endfor %}
 end interface
@@ -570,10 +598,10 @@ interface {{iface}}{{async_suffix}}
     import {{f_array}}
     implicit none
     type({{f_array}}),intent(inout) :: array
-    type(c_ptr),value,intent(in)                          :: buffer
+    type(c_ptr),value,intent(in) :: buffer
     integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind{{"
-    type(c_ptr),value,intent(in)                          :: stream" if is_async}}
-    integer(kind(hipSuccess))                             :: ierr
+    type(c_ptr),value,intent(in) :: stream" if is_async}}
+    integer(kind(hipSuccess)) :: ierr
   end function
 {%     endfor %}
 {{ render_module_procedure(prefix,
@@ -599,9 +627,9 @@ interface {{iface}}{{async_suffix}}
     import {{f_array}}
     implicit none
     type({{f_array}}),intent(inout) :: array{{"
-    type(c_ptr),value,intent(in)     :: stream" if is_async}}
+    type(c_ptr),value,intent(in) :: stream" if is_async}}
     logical(c_bool),intent(in),value :: destroy_if_zero_refs
-    integer(kind(hipSuccess))        :: ierr
+    integer(kind(hipSuccess)) :: ierr
   end function
 {%   endfor %}
 end interface
@@ -636,7 +664,7 @@ interface {{iface}}
     type(c_ptr),intent(in) :: buffer
 {%     if is_host %}
     logical(c_bool),value :: pinned
-    integer(c_int),value ::  flags
+    integer(c_int),value :: flags
 {%     endif %}
     integer(kind(hipSuccess)) :: ierr
   end function
@@ -700,7 +728,7 @@ interface {{iface}}
     import {{f_array}}
     implicit none
     type({{f_array}}),intent(inout) :: array
-    integer(kind(hipSuccess))       :: ierr
+    integer(kind(hipSuccess)) :: ierr
   end function
 {% endfor %}
 end interface
@@ -750,7 +778,7 @@ interface {{iface}}
     import {{f_array_collapsed}}
     implicit none
     type({{f_array_collapsed}}),intent(inout) :: collapsed_array
-    type({{f_array}}),intent(in)              :: array
+    type({{f_array}}),intent(in) :: array
     integer(c_int),value,intent(in) :: &
 {{"" | indent(6,True)}}{% for e in range(d+1,rank_ub) %}i{{e}}{{"," if not loop.last else "\n"}}{%- endfor %}
   end subroutine

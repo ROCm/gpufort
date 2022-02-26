@@ -26,18 +26,18 @@ module gpufort_array
   ! gpufort C/C++ structs.
   ! 1-dimensional array
   type, bind(c) :: gpufort_array_descr1
-    type(c_ptr)    :: data_host    = c_null_ptr
-    type(c_ptr)    :: data_dev     = c_null_ptr
+    type(c_ptr) :: data_host    = c_null_ptr
+    type(c_ptr) :: data_dev     = c_null_ptr
     integer(c_int) :: num_elements = 0  !> Number of elements represented by this array.
     integer(c_int) :: index_offset = -1 !> Offset for index calculation; scalar product of negative lower bounds and strides.
     integer(c_int) :: stride1  = -1 !> Stride for dimension 1
   end type
 
   type, bind(c) :: gpufort_array1
-    type(gpufort_array_descr1)    :: data
+    type(gpufort_array_descr1) :: data
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: alloc_mode = gpufort_array_wrap_host_alloc_device  !> Data allocation strategy. Default: 
                                                                                                              !> wrap the host and allocate device data
-    integer(kind(gpufort_array_sync_none))             :: sync_mode  = gpufort_array_sync_none               !> How data should be synchronized
+    integer(kind(gpufort_array_sync_none)) :: sync_mode  = gpufort_array_sync_none               !> How data should be synchronized
                                                                                                              !> during the initialization and destruction of this GPUFORT array.
     integer(c_int) :: num_refs          = 0  !> Number of references.
     integer(c_int) :: bytes_per_element = -1 !> Bytes per data element. 
@@ -45,8 +45,8 @@ module gpufort_array
 
   ! 2-dimensional array
   type, bind(c) :: gpufort_array_descr2
-    type(c_ptr)    :: data_host    = c_null_ptr
-    type(c_ptr)    :: data_dev     = c_null_ptr
+    type(c_ptr) :: data_host    = c_null_ptr
+    type(c_ptr) :: data_dev     = c_null_ptr
     integer(c_int) :: num_elements = 0  !> Number of elements represented by this array.
     integer(c_int) :: index_offset = -1 !> Offset for index calculation; scalar product of negative lower bounds and strides.
     integer(c_int) :: stride1  = -1 !> Stride for dimension 1
@@ -54,10 +54,10 @@ module gpufort_array
   end type
 
   type, bind(c) :: gpufort_array2
-    type(gpufort_array_descr2)    :: data
+    type(gpufort_array_descr2) :: data
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: alloc_mode = gpufort_array_wrap_host_alloc_device  !> Data allocation strategy. Default: 
                                                                                                              !> wrap the host and allocate device data
-    integer(kind(gpufort_array_sync_none))             :: sync_mode  = gpufort_array_sync_none               !> How data should be synchronized
+    integer(kind(gpufort_array_sync_none)) :: sync_mode  = gpufort_array_sync_none               !> How data should be synchronized
                                                                                                              !> during the initialization and destruction of this GPUFORT array.
     integer(c_int) :: num_refs          = 0  !> Number of references.
     integer(c_int) :: bytes_per_element = -1 !> Bytes per data element. 
@@ -65,8 +65,8 @@ module gpufort_array
 
   ! 3-dimensional array
   type, bind(c) :: gpufort_array_descr3
-    type(c_ptr)    :: data_host    = c_null_ptr
-    type(c_ptr)    :: data_dev     = c_null_ptr
+    type(c_ptr) :: data_host    = c_null_ptr
+    type(c_ptr) :: data_dev     = c_null_ptr
     integer(c_int) :: num_elements = 0  !> Number of elements represented by this array.
     integer(c_int) :: index_offset = -1 !> Offset for index calculation; scalar product of negative lower bounds and strides.
     integer(c_int) :: stride1  = -1 !> Stride for dimension 1
@@ -75,10 +75,10 @@ module gpufort_array
   end type
 
   type, bind(c) :: gpufort_array3
-    type(gpufort_array_descr3)    :: data
+    type(gpufort_array_descr3) :: data
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: alloc_mode = gpufort_array_wrap_host_alloc_device  !> Data allocation strategy. Default: 
                                                                                                              !> wrap the host and allocate device data
-    integer(kind(gpufort_array_sync_none))             :: sync_mode  = gpufort_array_sync_none               !> How data should be synchronized
+    integer(kind(gpufort_array_sync_none)) :: sync_mode  = gpufort_array_sync_none               !> How data should be synchronized
                                                                                                              !> during the initialization and destruction of this GPUFORT array.
     integer(c_int) :: num_refs          = 0  !> Number of references.
     integer(c_int) :: bytes_per_element = -1 !> Bytes per data element. 
@@ -86,8 +86,8 @@ module gpufort_array
 
   ! 4-dimensional array
   type, bind(c) :: gpufort_array_descr4
-    type(c_ptr)    :: data_host    = c_null_ptr
-    type(c_ptr)    :: data_dev     = c_null_ptr
+    type(c_ptr) :: data_host    = c_null_ptr
+    type(c_ptr) :: data_dev     = c_null_ptr
     integer(c_int) :: num_elements = 0  !> Number of elements represented by this array.
     integer(c_int) :: index_offset = -1 !> Offset for index calculation; scalar product of negative lower bounds and strides.
     integer(c_int) :: stride1  = -1 !> Stride for dimension 1
@@ -97,10 +97,10 @@ module gpufort_array
   end type
 
   type, bind(c) :: gpufort_array4
-    type(gpufort_array_descr4)    :: data
+    type(gpufort_array_descr4) :: data
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: alloc_mode = gpufort_array_wrap_host_alloc_device  !> Data allocation strategy. Default: 
                                                                                                              !> wrap the host and allocate device data
-    integer(kind(gpufort_array_sync_none))             :: sync_mode  = gpufort_array_sync_none               !> How data should be synchronized
+    integer(kind(gpufort_array_sync_none)) :: sync_mode  = gpufort_array_sync_none               !> How data should be synchronized
                                                                                                              !> during the initialization and destruction of this GPUFORT array.
     integer(c_int) :: num_refs          = 0  !> Number of references.
     integer(c_int) :: bytes_per_element = -1 !> Bytes per data element. 
@@ -108,8 +108,8 @@ module gpufort_array
 
   ! 5-dimensional array
   type, bind(c) :: gpufort_array_descr5
-    type(c_ptr)    :: data_host    = c_null_ptr
-    type(c_ptr)    :: data_dev     = c_null_ptr
+    type(c_ptr) :: data_host    = c_null_ptr
+    type(c_ptr) :: data_dev     = c_null_ptr
     integer(c_int) :: num_elements = 0  !> Number of elements represented by this array.
     integer(c_int) :: index_offset = -1 !> Offset for index calculation; scalar product of negative lower bounds and strides.
     integer(c_int) :: stride1  = -1 !> Stride for dimension 1
@@ -120,10 +120,10 @@ module gpufort_array
   end type
 
   type, bind(c) :: gpufort_array5
-    type(gpufort_array_descr5)    :: data
+    type(gpufort_array_descr5) :: data
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: alloc_mode = gpufort_array_wrap_host_alloc_device  !> Data allocation strategy. Default: 
                                                                                                              !> wrap the host and allocate device data
-    integer(kind(gpufort_array_sync_none))             :: sync_mode  = gpufort_array_sync_none               !> How data should be synchronized
+    integer(kind(gpufort_array_sync_none)) :: sync_mode  = gpufort_array_sync_none               !> How data should be synchronized
                                                                                                              !> during the initialization and destruction of this GPUFORT array.
     integer(c_int) :: num_refs          = 0  !> Number of references.
     integer(c_int) :: bytes_per_element = -1 !> Bytes per data element. 
@@ -131,8 +131,8 @@ module gpufort_array
 
   ! 6-dimensional array
   type, bind(c) :: gpufort_array_descr6
-    type(c_ptr)    :: data_host    = c_null_ptr
-    type(c_ptr)    :: data_dev     = c_null_ptr
+    type(c_ptr) :: data_host    = c_null_ptr
+    type(c_ptr) :: data_dev     = c_null_ptr
     integer(c_int) :: num_elements = 0  !> Number of elements represented by this array.
     integer(c_int) :: index_offset = -1 !> Offset for index calculation; scalar product of negative lower bounds and strides.
     integer(c_int) :: stride1  = -1 !> Stride for dimension 1
@@ -144,10 +144,10 @@ module gpufort_array
   end type
 
   type, bind(c) :: gpufort_array6
-    type(gpufort_array_descr6)    :: data
+    type(gpufort_array_descr6) :: data
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: alloc_mode = gpufort_array_wrap_host_alloc_device  !> Data allocation strategy. Default: 
                                                                                                              !> wrap the host and allocate device data
-    integer(kind(gpufort_array_sync_none))             :: sync_mode  = gpufort_array_sync_none               !> How data should be synchronized
+    integer(kind(gpufort_array_sync_none)) :: sync_mode  = gpufort_array_sync_none               !> How data should be synchronized
                                                                                                              !> during the initialization and destruction of this GPUFORT array.
     integer(c_int) :: num_refs          = 0  !> Number of references.
     integer(c_int) :: bytes_per_element = -1 !> Bytes per data element. 
@@ -155,8 +155,8 @@ module gpufort_array
 
   ! 7-dimensional array
   type, bind(c) :: gpufort_array_descr7
-    type(c_ptr)    :: data_host    = c_null_ptr
-    type(c_ptr)    :: data_dev     = c_null_ptr
+    type(c_ptr) :: data_host    = c_null_ptr
+    type(c_ptr) :: data_dev     = c_null_ptr
     integer(c_int) :: num_elements = 0  !> Number of elements represented by this array.
     integer(c_int) :: index_offset = -1 !> Offset for index calculation; scalar product of negative lower bounds and strides.
     integer(c_int) :: stride1  = -1 !> Stride for dimension 1
@@ -169,10 +169,10 @@ module gpufort_array
   end type
 
   type, bind(c) :: gpufort_array7
-    type(gpufort_array_descr7)    :: data
+    type(gpufort_array_descr7) :: data
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: alloc_mode = gpufort_array_wrap_host_alloc_device  !> Data allocation strategy. Default: 
                                                                                                              !> wrap the host and allocate device data
-    integer(kind(gpufort_array_sync_none))             :: sync_mode  = gpufort_array_sync_none               !> How data should be synchronized
+    integer(kind(gpufort_array_sync_none)) :: sync_mode  = gpufort_array_sync_none               !> How data should be synchronized
                                                                                                              !> during the initialization and destruction of this GPUFORT array.
     integer(c_int) :: num_refs          = 0  !> Number of references.
     integer(c_int) :: bytes_per_element = -1 !> Bytes per data element. 
@@ -195,13 +195,13 @@ module gpufort_array
       import gpufort_array_wrap_host_wrap_device
       import gpufort_array_sync_none
       implicit none
-      type(gpufort_array1),intent(inout)                                     :: array
-      integer(c_int),intent(in),value                                     :: bytes_per_element
-      type(c_ptr),intent(in),value                                        :: data_host, data_dev
-      integer(c_int),dimension(1),intent(in)                              :: sizes, lbounds
+      type(gpufort_array1),intent(inout) :: array
+      integer(c_int),intent(in),value :: bytes_per_element
+      type(c_ptr),intent(in),value :: data_host, data_dev
+      integer(c_int),dimension(1),intent(in) :: sizes, lbounds
       integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),value :: alloc_mode 
-      integer(kind(gpufort_array_sync_none)),intent(in),value             :: sync_mode
-      type(c_ptr),intent(in),value                                        :: stream
+      integer(kind(gpufort_array_sync_none)),intent(in),value :: sync_mode
+      type(c_ptr),intent(in),value :: stream
       !
       integer(kind(hipSuccess)) :: ierr
     end function
@@ -219,13 +219,13 @@ module gpufort_array
       import gpufort_array_wrap_host_wrap_device
       import gpufort_array_sync_none
       implicit none
-      type(gpufort_array2),intent(inout)                                     :: array
-      integer(c_int),intent(in),value                                     :: bytes_per_element
-      type(c_ptr),intent(in),value                                        :: data_host, data_dev
-      integer(c_int),dimension(2),intent(in)                              :: sizes, lbounds
+      type(gpufort_array2),intent(inout) :: array
+      integer(c_int),intent(in),value :: bytes_per_element
+      type(c_ptr),intent(in),value :: data_host, data_dev
+      integer(c_int),dimension(2),intent(in) :: sizes, lbounds
       integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),value :: alloc_mode 
-      integer(kind(gpufort_array_sync_none)),intent(in),value             :: sync_mode
-      type(c_ptr),intent(in),value                                        :: stream
+      integer(kind(gpufort_array_sync_none)),intent(in),value :: sync_mode
+      type(c_ptr),intent(in),value :: stream
       !
       integer(kind(hipSuccess)) :: ierr
     end function
@@ -243,13 +243,13 @@ module gpufort_array
       import gpufort_array_wrap_host_wrap_device
       import gpufort_array_sync_none
       implicit none
-      type(gpufort_array3),intent(inout)                                     :: array
-      integer(c_int),intent(in),value                                     :: bytes_per_element
-      type(c_ptr),intent(in),value                                        :: data_host, data_dev
-      integer(c_int),dimension(3),intent(in)                              :: sizes, lbounds
+      type(gpufort_array3),intent(inout) :: array
+      integer(c_int),intent(in),value :: bytes_per_element
+      type(c_ptr),intent(in),value :: data_host, data_dev
+      integer(c_int),dimension(3),intent(in) :: sizes, lbounds
       integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),value :: alloc_mode 
-      integer(kind(gpufort_array_sync_none)),intent(in),value             :: sync_mode
-      type(c_ptr),intent(in),value                                        :: stream
+      integer(kind(gpufort_array_sync_none)),intent(in),value :: sync_mode
+      type(c_ptr),intent(in),value :: stream
       !
       integer(kind(hipSuccess)) :: ierr
     end function
@@ -267,13 +267,13 @@ module gpufort_array
       import gpufort_array_wrap_host_wrap_device
       import gpufort_array_sync_none
       implicit none
-      type(gpufort_array4),intent(inout)                                     :: array
-      integer(c_int),intent(in),value                                     :: bytes_per_element
-      type(c_ptr),intent(in),value                                        :: data_host, data_dev
-      integer(c_int),dimension(4),intent(in)                              :: sizes, lbounds
+      type(gpufort_array4),intent(inout) :: array
+      integer(c_int),intent(in),value :: bytes_per_element
+      type(c_ptr),intent(in),value :: data_host, data_dev
+      integer(c_int),dimension(4),intent(in) :: sizes, lbounds
       integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),value :: alloc_mode 
-      integer(kind(gpufort_array_sync_none)),intent(in),value             :: sync_mode
-      type(c_ptr),intent(in),value                                        :: stream
+      integer(kind(gpufort_array_sync_none)),intent(in),value :: sync_mode
+      type(c_ptr),intent(in),value :: stream
       !
       integer(kind(hipSuccess)) :: ierr
     end function
@@ -291,13 +291,13 @@ module gpufort_array
       import gpufort_array_wrap_host_wrap_device
       import gpufort_array_sync_none
       implicit none
-      type(gpufort_array5),intent(inout)                                     :: array
-      integer(c_int),intent(in),value                                     :: bytes_per_element
-      type(c_ptr),intent(in),value                                        :: data_host, data_dev
-      integer(c_int),dimension(5),intent(in)                              :: sizes, lbounds
+      type(gpufort_array5),intent(inout) :: array
+      integer(c_int),intent(in),value :: bytes_per_element
+      type(c_ptr),intent(in),value :: data_host, data_dev
+      integer(c_int),dimension(5),intent(in) :: sizes, lbounds
       integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),value :: alloc_mode 
-      integer(kind(gpufort_array_sync_none)),intent(in),value             :: sync_mode
-      type(c_ptr),intent(in),value                                        :: stream
+      integer(kind(gpufort_array_sync_none)),intent(in),value :: sync_mode
+      type(c_ptr),intent(in),value :: stream
       !
       integer(kind(hipSuccess)) :: ierr
     end function
@@ -315,13 +315,13 @@ module gpufort_array
       import gpufort_array_wrap_host_wrap_device
       import gpufort_array_sync_none
       implicit none
-      type(gpufort_array6),intent(inout)                                     :: array
-      integer(c_int),intent(in),value                                     :: bytes_per_element
-      type(c_ptr),intent(in),value                                        :: data_host, data_dev
-      integer(c_int),dimension(6),intent(in)                              :: sizes, lbounds
+      type(gpufort_array6),intent(inout) :: array
+      integer(c_int),intent(in),value :: bytes_per_element
+      type(c_ptr),intent(in),value :: data_host, data_dev
+      integer(c_int),dimension(6),intent(in) :: sizes, lbounds
       integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),value :: alloc_mode 
-      integer(kind(gpufort_array_sync_none)),intent(in),value             :: sync_mode
-      type(c_ptr),intent(in),value                                        :: stream
+      integer(kind(gpufort_array_sync_none)),intent(in),value :: sync_mode
+      type(c_ptr),intent(in),value :: stream
       !
       integer(kind(hipSuccess)) :: ierr
     end function
@@ -339,13 +339,13 @@ module gpufort_array
       import gpufort_array_wrap_host_wrap_device
       import gpufort_array_sync_none
       implicit none
-      type(gpufort_array7),intent(inout)                                     :: array
-      integer(c_int),intent(in),value                                     :: bytes_per_element
-      type(c_ptr),intent(in),value                                        :: data_host, data_dev
-      integer(c_int),dimension(7),intent(in)                              :: sizes, lbounds
+      type(gpufort_array7),intent(inout) :: array
+      integer(c_int),intent(in),value :: bytes_per_element
+      type(c_ptr),intent(in),value :: data_host, data_dev
+      integer(c_int),dimension(7),intent(in) :: sizes, lbounds
       integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),value :: alloc_mode 
-      integer(kind(gpufort_array_sync_none)),intent(in),value             :: sync_mode
-      type(c_ptr),intent(in),value                                        :: stream
+      integer(kind(gpufort_array_sync_none)),intent(in),value :: sync_mode
+      type(c_ptr),intent(in),value :: stream
       !
       integer(kind(hipSuccess)) :: ierr
     end function
@@ -429,12 +429,12 @@ module gpufort_array
       import gpufort_array_wrap_host_wrap_device
       import gpufort_array_sync_none
       implicit none
-      type(gpufort_array1),intent(inout)                                     :: array
-      integer(c_int),intent(in),value                                     :: bytes_per_element
-      type(c_ptr),intent(in),value                                        :: data_host, data_dev
-      integer(c_int),dimension(1),intent(in)                              :: sizes, lbounds
+      type(gpufort_array1),intent(inout) :: array
+      integer(c_int),intent(in),value :: bytes_per_element
+      type(c_ptr),intent(in),value :: data_host, data_dev
+      integer(c_int),dimension(1),intent(in) :: sizes, lbounds
       integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),value :: alloc_mode 
-      integer(kind(gpufort_array_sync_none)),intent(in),value             :: sync_mode
+      integer(kind(gpufort_array_sync_none)),intent(in),value :: sync_mode
       !
       integer(kind(hipSuccess)) :: ierr
     end function
@@ -452,12 +452,12 @@ module gpufort_array
       import gpufort_array_wrap_host_wrap_device
       import gpufort_array_sync_none
       implicit none
-      type(gpufort_array2),intent(inout)                                     :: array
-      integer(c_int),intent(in),value                                     :: bytes_per_element
-      type(c_ptr),intent(in),value                                        :: data_host, data_dev
-      integer(c_int),dimension(2),intent(in)                              :: sizes, lbounds
+      type(gpufort_array2),intent(inout) :: array
+      integer(c_int),intent(in),value :: bytes_per_element
+      type(c_ptr),intent(in),value :: data_host, data_dev
+      integer(c_int),dimension(2),intent(in) :: sizes, lbounds
       integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),value :: alloc_mode 
-      integer(kind(gpufort_array_sync_none)),intent(in),value             :: sync_mode
+      integer(kind(gpufort_array_sync_none)),intent(in),value :: sync_mode
       !
       integer(kind(hipSuccess)) :: ierr
     end function
@@ -475,12 +475,12 @@ module gpufort_array
       import gpufort_array_wrap_host_wrap_device
       import gpufort_array_sync_none
       implicit none
-      type(gpufort_array3),intent(inout)                                     :: array
-      integer(c_int),intent(in),value                                     :: bytes_per_element
-      type(c_ptr),intent(in),value                                        :: data_host, data_dev
-      integer(c_int),dimension(3),intent(in)                              :: sizes, lbounds
+      type(gpufort_array3),intent(inout) :: array
+      integer(c_int),intent(in),value :: bytes_per_element
+      type(c_ptr),intent(in),value :: data_host, data_dev
+      integer(c_int),dimension(3),intent(in) :: sizes, lbounds
       integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),value :: alloc_mode 
-      integer(kind(gpufort_array_sync_none)),intent(in),value             :: sync_mode
+      integer(kind(gpufort_array_sync_none)),intent(in),value :: sync_mode
       !
       integer(kind(hipSuccess)) :: ierr
     end function
@@ -498,12 +498,12 @@ module gpufort_array
       import gpufort_array_wrap_host_wrap_device
       import gpufort_array_sync_none
       implicit none
-      type(gpufort_array4),intent(inout)                                     :: array
-      integer(c_int),intent(in),value                                     :: bytes_per_element
-      type(c_ptr),intent(in),value                                        :: data_host, data_dev
-      integer(c_int),dimension(4),intent(in)                              :: sizes, lbounds
+      type(gpufort_array4),intent(inout) :: array
+      integer(c_int),intent(in),value :: bytes_per_element
+      type(c_ptr),intent(in),value :: data_host, data_dev
+      integer(c_int),dimension(4),intent(in) :: sizes, lbounds
       integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),value :: alloc_mode 
-      integer(kind(gpufort_array_sync_none)),intent(in),value             :: sync_mode
+      integer(kind(gpufort_array_sync_none)),intent(in),value :: sync_mode
       !
       integer(kind(hipSuccess)) :: ierr
     end function
@@ -521,12 +521,12 @@ module gpufort_array
       import gpufort_array_wrap_host_wrap_device
       import gpufort_array_sync_none
       implicit none
-      type(gpufort_array5),intent(inout)                                     :: array
-      integer(c_int),intent(in),value                                     :: bytes_per_element
-      type(c_ptr),intent(in),value                                        :: data_host, data_dev
-      integer(c_int),dimension(5),intent(in)                              :: sizes, lbounds
+      type(gpufort_array5),intent(inout) :: array
+      integer(c_int),intent(in),value :: bytes_per_element
+      type(c_ptr),intent(in),value :: data_host, data_dev
+      integer(c_int),dimension(5),intent(in) :: sizes, lbounds
       integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),value :: alloc_mode 
-      integer(kind(gpufort_array_sync_none)),intent(in),value             :: sync_mode
+      integer(kind(gpufort_array_sync_none)),intent(in),value :: sync_mode
       !
       integer(kind(hipSuccess)) :: ierr
     end function
@@ -544,12 +544,12 @@ module gpufort_array
       import gpufort_array_wrap_host_wrap_device
       import gpufort_array_sync_none
       implicit none
-      type(gpufort_array6),intent(inout)                                     :: array
-      integer(c_int),intent(in),value                                     :: bytes_per_element
-      type(c_ptr),intent(in),value                                        :: data_host, data_dev
-      integer(c_int),dimension(6),intent(in)                              :: sizes, lbounds
+      type(gpufort_array6),intent(inout) :: array
+      integer(c_int),intent(in),value :: bytes_per_element
+      type(c_ptr),intent(in),value :: data_host, data_dev
+      integer(c_int),dimension(6),intent(in) :: sizes, lbounds
       integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),value :: alloc_mode 
-      integer(kind(gpufort_array_sync_none)),intent(in),value             :: sync_mode
+      integer(kind(gpufort_array_sync_none)),intent(in),value :: sync_mode
       !
       integer(kind(hipSuccess)) :: ierr
     end function
@@ -567,12 +567,12 @@ module gpufort_array
       import gpufort_array_wrap_host_wrap_device
       import gpufort_array_sync_none
       implicit none
-      type(gpufort_array7),intent(inout)                                     :: array
-      integer(c_int),intent(in),value                                     :: bytes_per_element
-      type(c_ptr),intent(in),value                                        :: data_host, data_dev
-      integer(c_int),dimension(7),intent(in)                              :: sizes, lbounds
+      type(gpufort_array7),intent(inout) :: array
+      integer(c_int),intent(in),value :: bytes_per_element
+      type(c_ptr),intent(in),value :: data_host, data_dev
+      integer(c_int),dimension(7),intent(in) :: sizes, lbounds
       integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),value :: alloc_mode 
-      integer(kind(gpufort_array_sync_none)),intent(in),value             :: sync_mode
+      integer(kind(gpufort_array_sync_none)),intent(in),value :: sync_mode
       !
       integer(kind(hipSuccess)) :: ierr
     end function
@@ -955,8 +955,8 @@ module gpufort_array
       import gpufort_array1
       implicit none
       type(gpufort_array1),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array2_destroy_async(array,stream) &
           bind(c,name="gpufort_array2_destroy") &
@@ -966,8 +966,8 @@ module gpufort_array
       import gpufort_array2
       implicit none
       type(gpufort_array2),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array3_destroy_async(array,stream) &
           bind(c,name="gpufort_array3_destroy") &
@@ -977,8 +977,8 @@ module gpufort_array
       import gpufort_array3
       implicit none
       type(gpufort_array3),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array4_destroy_async(array,stream) &
           bind(c,name="gpufort_array4_destroy") &
@@ -988,8 +988,8 @@ module gpufort_array
       import gpufort_array4
       implicit none
       type(gpufort_array4),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array5_destroy_async(array,stream) &
           bind(c,name="gpufort_array5_destroy") &
@@ -999,8 +999,8 @@ module gpufort_array
       import gpufort_array5
       implicit none
       type(gpufort_array5),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array6_destroy_async(array,stream) &
           bind(c,name="gpufort_array6_destroy") &
@@ -1010,8 +1010,8 @@ module gpufort_array
       import gpufort_array6
       implicit none
       type(gpufort_array6),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array7_destroy_async(array,stream) &
           bind(c,name="gpufort_array7_destroy") &
@@ -1021,8 +1021,8 @@ module gpufort_array
       import gpufort_array7
       implicit none
       type(gpufort_array7),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
   end interface
   interface gpufort_array_copy_to_host_async
@@ -1034,8 +1034,8 @@ module gpufort_array
       import gpufort_array1
       implicit none
       type(gpufort_array1),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array2_copy_to_host_async(array,stream) &
           bind(c,name="gpufort_array2_copy_to_host") &
@@ -1045,8 +1045,8 @@ module gpufort_array
       import gpufort_array2
       implicit none
       type(gpufort_array2),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array3_copy_to_host_async(array,stream) &
           bind(c,name="gpufort_array3_copy_to_host") &
@@ -1056,8 +1056,8 @@ module gpufort_array
       import gpufort_array3
       implicit none
       type(gpufort_array3),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array4_copy_to_host_async(array,stream) &
           bind(c,name="gpufort_array4_copy_to_host") &
@@ -1067,8 +1067,8 @@ module gpufort_array
       import gpufort_array4
       implicit none
       type(gpufort_array4),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array5_copy_to_host_async(array,stream) &
           bind(c,name="gpufort_array5_copy_to_host") &
@@ -1078,8 +1078,8 @@ module gpufort_array
       import gpufort_array5
       implicit none
       type(gpufort_array5),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array6_copy_to_host_async(array,stream) &
           bind(c,name="gpufort_array6_copy_to_host") &
@@ -1089,8 +1089,8 @@ module gpufort_array
       import gpufort_array6
       implicit none
       type(gpufort_array6),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array7_copy_to_host_async(array,stream) &
           bind(c,name="gpufort_array7_copy_to_host") &
@@ -1100,8 +1100,8 @@ module gpufort_array
       import gpufort_array7
       implicit none
       type(gpufort_array7),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
   end interface
   interface gpufort_array_copy_to_device_async
@@ -1113,8 +1113,8 @@ module gpufort_array
       import gpufort_array1
       implicit none
       type(gpufort_array1),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array2_copy_to_device_async(array,stream) &
           bind(c,name="gpufort_array2_copy_to_device") &
@@ -1124,8 +1124,8 @@ module gpufort_array
       import gpufort_array2
       implicit none
       type(gpufort_array2),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array3_copy_to_device_async(array,stream) &
           bind(c,name="gpufort_array3_copy_to_device") &
@@ -1135,8 +1135,8 @@ module gpufort_array
       import gpufort_array3
       implicit none
       type(gpufort_array3),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array4_copy_to_device_async(array,stream) &
           bind(c,name="gpufort_array4_copy_to_device") &
@@ -1146,8 +1146,8 @@ module gpufort_array
       import gpufort_array4
       implicit none
       type(gpufort_array4),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array5_copy_to_device_async(array,stream) &
           bind(c,name="gpufort_array5_copy_to_device") &
@@ -1157,8 +1157,8 @@ module gpufort_array
       import gpufort_array5
       implicit none
       type(gpufort_array5),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array6_copy_to_device_async(array,stream) &
           bind(c,name="gpufort_array6_copy_to_device") &
@@ -1168,8 +1168,8 @@ module gpufort_array
       import gpufort_array6
       implicit none
       type(gpufort_array6),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array7_copy_to_device_async(array,stream) &
           bind(c,name="gpufort_array7_copy_to_device") &
@@ -1179,8 +1179,8 @@ module gpufort_array
       import gpufort_array7
       implicit none
       type(gpufort_array7),intent(inout) :: array
-      type(c_ptr),value,intent(in)    :: stream
-      integer(kind(hipSuccess))       :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
   end interface
   !>
@@ -1197,10 +1197,10 @@ module gpufort_array
       import gpufort_array1
       implicit none
       type(gpufort_array1),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array2_copy_from_buffer_async(&
       array,buffer,memcpy_kind,&
@@ -1212,10 +1212,10 @@ module gpufort_array
       import gpufort_array2
       implicit none
       type(gpufort_array2),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array3_copy_from_buffer_async(&
       array,buffer,memcpy_kind,&
@@ -1227,10 +1227,10 @@ module gpufort_array
       import gpufort_array3
       implicit none
       type(gpufort_array3),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array4_copy_from_buffer_async(&
       array,buffer,memcpy_kind,&
@@ -1242,10 +1242,10 @@ module gpufort_array
       import gpufort_array4
       implicit none
       type(gpufort_array4),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array5_copy_from_buffer_async(&
       array,buffer,memcpy_kind,&
@@ -1257,10 +1257,10 @@ module gpufort_array
       import gpufort_array5
       implicit none
       type(gpufort_array5),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array6_copy_from_buffer_async(&
       array,buffer,memcpy_kind,&
@@ -1272,10 +1272,10 @@ module gpufort_array
       import gpufort_array6
       implicit none
       type(gpufort_array6),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array7_copy_from_buffer_async(&
       array,buffer,memcpy_kind,&
@@ -1287,10 +1287,10 @@ module gpufort_array
       import gpufort_array7
       implicit none
       type(gpufort_array7),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     module procedure :: &
         gpufort_array1_copy_from_buffer_c_bool,&
@@ -1364,10 +1364,10 @@ module gpufort_array
       import gpufort_array1
       implicit none
       type(gpufort_array1),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array2_copy_to_buffer_async(&
       array,buffer,memcpy_kind,&
@@ -1379,10 +1379,10 @@ module gpufort_array
       import gpufort_array2
       implicit none
       type(gpufort_array2),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array3_copy_to_buffer_async(&
       array,buffer,memcpy_kind,&
@@ -1394,10 +1394,10 @@ module gpufort_array
       import gpufort_array3
       implicit none
       type(gpufort_array3),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array4_copy_to_buffer_async(&
       array,buffer,memcpy_kind,&
@@ -1409,10 +1409,10 @@ module gpufort_array
       import gpufort_array4
       implicit none
       type(gpufort_array4),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array5_copy_to_buffer_async(&
       array,buffer,memcpy_kind,&
@@ -1424,10 +1424,10 @@ module gpufort_array
       import gpufort_array5
       implicit none
       type(gpufort_array5),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array6_copy_to_buffer_async(&
       array,buffer,memcpy_kind,&
@@ -1439,10 +1439,10 @@ module gpufort_array
       import gpufort_array6
       implicit none
       type(gpufort_array6),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array7_copy_to_buffer_async(&
       array,buffer,memcpy_kind,&
@@ -1454,10 +1454,10 @@ module gpufort_array
       import gpufort_array7
       implicit none
       type(gpufort_array7),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
     end function
     module procedure :: &
         gpufort_array1_copy_to_buffer_c_bool,&
@@ -1528,9 +1528,9 @@ module gpufort_array
       import gpufort_array1
       implicit none
       type(gpufort_array1),intent(inout) :: array
-      type(c_ptr),value,intent(in)     :: stream
+      type(c_ptr),value,intent(in) :: stream
       logical(c_bool),intent(in),value :: destroy_if_zero_refs
-      integer(kind(hipSuccess))        :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array2_dec_num_refs_async(&
       array,destroy_if_zero_refs,&
@@ -1542,9 +1542,9 @@ module gpufort_array
       import gpufort_array2
       implicit none
       type(gpufort_array2),intent(inout) :: array
-      type(c_ptr),value,intent(in)     :: stream
+      type(c_ptr),value,intent(in) :: stream
       logical(c_bool),intent(in),value :: destroy_if_zero_refs
-      integer(kind(hipSuccess))        :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array3_dec_num_refs_async(&
       array,destroy_if_zero_refs,&
@@ -1556,9 +1556,9 @@ module gpufort_array
       import gpufort_array3
       implicit none
       type(gpufort_array3),intent(inout) :: array
-      type(c_ptr),value,intent(in)     :: stream
+      type(c_ptr),value,intent(in) :: stream
       logical(c_bool),intent(in),value :: destroy_if_zero_refs
-      integer(kind(hipSuccess))        :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array4_dec_num_refs_async(&
       array,destroy_if_zero_refs,&
@@ -1570,9 +1570,9 @@ module gpufort_array
       import gpufort_array4
       implicit none
       type(gpufort_array4),intent(inout) :: array
-      type(c_ptr),value,intent(in)     :: stream
+      type(c_ptr),value,intent(in) :: stream
       logical(c_bool),intent(in),value :: destroy_if_zero_refs
-      integer(kind(hipSuccess))        :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array5_dec_num_refs_async(&
       array,destroy_if_zero_refs,&
@@ -1584,9 +1584,9 @@ module gpufort_array
       import gpufort_array5
       implicit none
       type(gpufort_array5),intent(inout) :: array
-      type(c_ptr),value,intent(in)     :: stream
+      type(c_ptr),value,intent(in) :: stream
       logical(c_bool),intent(in),value :: destroy_if_zero_refs
-      integer(kind(hipSuccess))        :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array6_dec_num_refs_async(&
       array,destroy_if_zero_refs,&
@@ -1598,9 +1598,9 @@ module gpufort_array
       import gpufort_array6
       implicit none
       type(gpufort_array6),intent(inout) :: array
-      type(c_ptr),value,intent(in)     :: stream
+      type(c_ptr),value,intent(in) :: stream
       logical(c_bool),intent(in),value :: destroy_if_zero_refs
-      integer(kind(hipSuccess))        :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array7_dec_num_refs_async(&
       array,destroy_if_zero_refs,&
@@ -1612,9 +1612,9 @@ module gpufort_array
       import gpufort_array7
       implicit none
       type(gpufort_array7),intent(inout) :: array
-      type(c_ptr),value,intent(in)     :: stream
+      type(c_ptr),value,intent(in) :: stream
       logical(c_bool),intent(in),value :: destroy_if_zero_refs
-      integer(kind(hipSuccess))        :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
   end interface
   interface gpufort_array_destroy
@@ -1626,7 +1626,7 @@ module gpufort_array
       import gpufort_array1
       implicit none
       type(gpufort_array1),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array2_destroy(array) &
           bind(c,name="gpufort_array2_destroy") &
@@ -1636,7 +1636,7 @@ module gpufort_array
       import gpufort_array2
       implicit none
       type(gpufort_array2),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array3_destroy(array) &
           bind(c,name="gpufort_array3_destroy") &
@@ -1646,7 +1646,7 @@ module gpufort_array
       import gpufort_array3
       implicit none
       type(gpufort_array3),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array4_destroy(array) &
           bind(c,name="gpufort_array4_destroy") &
@@ -1656,7 +1656,7 @@ module gpufort_array
       import gpufort_array4
       implicit none
       type(gpufort_array4),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array5_destroy(array) &
           bind(c,name="gpufort_array5_destroy") &
@@ -1666,7 +1666,7 @@ module gpufort_array
       import gpufort_array5
       implicit none
       type(gpufort_array5),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array6_destroy(array) &
           bind(c,name="gpufort_array6_destroy") &
@@ -1676,7 +1676,7 @@ module gpufort_array
       import gpufort_array6
       implicit none
       type(gpufort_array6),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array7_destroy(array) &
           bind(c,name="gpufort_array7_destroy") &
@@ -1686,7 +1686,7 @@ module gpufort_array
       import gpufort_array7
       implicit none
       type(gpufort_array7),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
   end interface
   interface gpufort_array_copy_to_host
@@ -1698,7 +1698,7 @@ module gpufort_array
       import gpufort_array1
       implicit none
       type(gpufort_array1),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array2_copy_to_host(array) &
           bind(c,name="gpufort_array2_copy_to_host") &
@@ -1708,7 +1708,7 @@ module gpufort_array
       import gpufort_array2
       implicit none
       type(gpufort_array2),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array3_copy_to_host(array) &
           bind(c,name="gpufort_array3_copy_to_host") &
@@ -1718,7 +1718,7 @@ module gpufort_array
       import gpufort_array3
       implicit none
       type(gpufort_array3),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array4_copy_to_host(array) &
           bind(c,name="gpufort_array4_copy_to_host") &
@@ -1728,7 +1728,7 @@ module gpufort_array
       import gpufort_array4
       implicit none
       type(gpufort_array4),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array5_copy_to_host(array) &
           bind(c,name="gpufort_array5_copy_to_host") &
@@ -1738,7 +1738,7 @@ module gpufort_array
       import gpufort_array5
       implicit none
       type(gpufort_array5),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array6_copy_to_host(array) &
           bind(c,name="gpufort_array6_copy_to_host") &
@@ -1748,7 +1748,7 @@ module gpufort_array
       import gpufort_array6
       implicit none
       type(gpufort_array6),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array7_copy_to_host(array) &
           bind(c,name="gpufort_array7_copy_to_host") &
@@ -1758,7 +1758,7 @@ module gpufort_array
       import gpufort_array7
       implicit none
       type(gpufort_array7),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
   end interface
   interface gpufort_array_copy_to_device
@@ -1770,7 +1770,7 @@ module gpufort_array
       import gpufort_array1
       implicit none
       type(gpufort_array1),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array2_copy_to_device(array) &
           bind(c,name="gpufort_array2_copy_to_device") &
@@ -1780,7 +1780,7 @@ module gpufort_array
       import gpufort_array2
       implicit none
       type(gpufort_array2),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array3_copy_to_device(array) &
           bind(c,name="gpufort_array3_copy_to_device") &
@@ -1790,7 +1790,7 @@ module gpufort_array
       import gpufort_array3
       implicit none
       type(gpufort_array3),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array4_copy_to_device(array) &
           bind(c,name="gpufort_array4_copy_to_device") &
@@ -1800,7 +1800,7 @@ module gpufort_array
       import gpufort_array4
       implicit none
       type(gpufort_array4),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array5_copy_to_device(array) &
           bind(c,name="gpufort_array5_copy_to_device") &
@@ -1810,7 +1810,7 @@ module gpufort_array
       import gpufort_array5
       implicit none
       type(gpufort_array5),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array6_copy_to_device(array) &
           bind(c,name="gpufort_array6_copy_to_device") &
@@ -1820,7 +1820,7 @@ module gpufort_array
       import gpufort_array6
       implicit none
       type(gpufort_array6),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array7_copy_to_device(array) &
           bind(c,name="gpufort_array7_copy_to_device") &
@@ -1830,7 +1830,7 @@ module gpufort_array
       import gpufort_array7
       implicit none
       type(gpufort_array7),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
   end interface
   !>
@@ -1846,9 +1846,9 @@ module gpufort_array
       import gpufort_array1
       implicit none
       type(gpufort_array1),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array2_copy_from_buffer(&
       array,buffer,memcpy_kind) &
@@ -1859,9 +1859,9 @@ module gpufort_array
       import gpufort_array2
       implicit none
       type(gpufort_array2),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array3_copy_from_buffer(&
       array,buffer,memcpy_kind) &
@@ -1872,9 +1872,9 @@ module gpufort_array
       import gpufort_array3
       implicit none
       type(gpufort_array3),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array4_copy_from_buffer(&
       array,buffer,memcpy_kind) &
@@ -1885,9 +1885,9 @@ module gpufort_array
       import gpufort_array4
       implicit none
       type(gpufort_array4),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array5_copy_from_buffer(&
       array,buffer,memcpy_kind) &
@@ -1898,9 +1898,9 @@ module gpufort_array
       import gpufort_array5
       implicit none
       type(gpufort_array5),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array6_copy_from_buffer(&
       array,buffer,memcpy_kind) &
@@ -1911,9 +1911,9 @@ module gpufort_array
       import gpufort_array6
       implicit none
       type(gpufort_array6),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array7_copy_from_buffer(&
       array,buffer,memcpy_kind) &
@@ -1924,9 +1924,9 @@ module gpufort_array
       import gpufort_array7
       implicit none
       type(gpufort_array7),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     module procedure :: &
         gpufort_array1_copy_from_buffer_c_bool,&
@@ -1999,9 +1999,9 @@ module gpufort_array
       import gpufort_array1
       implicit none
       type(gpufort_array1),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array2_copy_to_buffer(&
       array,buffer,memcpy_kind) &
@@ -2012,9 +2012,9 @@ module gpufort_array
       import gpufort_array2
       implicit none
       type(gpufort_array2),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array3_copy_to_buffer(&
       array,buffer,memcpy_kind) &
@@ -2025,9 +2025,9 @@ module gpufort_array
       import gpufort_array3
       implicit none
       type(gpufort_array3),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array4_copy_to_buffer(&
       array,buffer,memcpy_kind) &
@@ -2038,9 +2038,9 @@ module gpufort_array
       import gpufort_array4
       implicit none
       type(gpufort_array4),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array5_copy_to_buffer(&
       array,buffer,memcpy_kind) &
@@ -2051,9 +2051,9 @@ module gpufort_array
       import gpufort_array5
       implicit none
       type(gpufort_array5),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array6_copy_to_buffer(&
       array,buffer,memcpy_kind) &
@@ -2064,9 +2064,9 @@ module gpufort_array
       import gpufort_array6
       implicit none
       type(gpufort_array6),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array7_copy_to_buffer(&
       array,buffer,memcpy_kind) &
@@ -2077,9 +2077,9 @@ module gpufort_array
       import gpufort_array7
       implicit none
       type(gpufort_array7),intent(inout) :: array
-      type(c_ptr),value,intent(in)                          :: buffer
+      type(c_ptr),value,intent(in) :: buffer
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     module procedure :: &
         gpufort_array1_copy_to_buffer_c_bool,&
@@ -2150,7 +2150,7 @@ module gpufort_array
       implicit none
       type(gpufort_array1),intent(inout) :: array
       logical(c_bool),intent(in),value :: destroy_if_zero_refs
-      integer(kind(hipSuccess))        :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array2_dec_num_refs(&
       array,destroy_if_zero_refs) &
@@ -2162,7 +2162,7 @@ module gpufort_array
       implicit none
       type(gpufort_array2),intent(inout) :: array
       logical(c_bool),intent(in),value :: destroy_if_zero_refs
-      integer(kind(hipSuccess))        :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array3_dec_num_refs(&
       array,destroy_if_zero_refs) &
@@ -2174,7 +2174,7 @@ module gpufort_array
       implicit none
       type(gpufort_array3),intent(inout) :: array
       logical(c_bool),intent(in),value :: destroy_if_zero_refs
-      integer(kind(hipSuccess))        :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array4_dec_num_refs(&
       array,destroy_if_zero_refs) &
@@ -2186,7 +2186,7 @@ module gpufort_array
       implicit none
       type(gpufort_array4),intent(inout) :: array
       logical(c_bool),intent(in),value :: destroy_if_zero_refs
-      integer(kind(hipSuccess))        :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array5_dec_num_refs(&
       array,destroy_if_zero_refs) &
@@ -2198,7 +2198,7 @@ module gpufort_array
       implicit none
       type(gpufort_array5),intent(inout) :: array
       logical(c_bool),intent(in),value :: destroy_if_zero_refs
-      integer(kind(hipSuccess))        :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array6_dec_num_refs(&
       array,destroy_if_zero_refs) &
@@ -2210,7 +2210,7 @@ module gpufort_array
       implicit none
       type(gpufort_array6),intent(inout) :: array
       logical(c_bool),intent(in),value :: destroy_if_zero_refs
-      integer(kind(hipSuccess))        :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array7_dec_num_refs(&
       array,destroy_if_zero_refs) &
@@ -2222,7 +2222,7 @@ module gpufort_array
       implicit none
       type(gpufort_array7),intent(inout) :: array
       logical(c_bool),intent(in),value :: destroy_if_zero_refs
-      integer(kind(hipSuccess))        :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
   end interface
   !> Allocate a host buffer with
@@ -2244,7 +2244,7 @@ module gpufort_array
       type(gpufort_array1),intent(in) :: array
       type(c_ptr),intent(in) :: buffer
       logical(c_bool),value :: pinned
-      integer(c_int),value ::  flags
+      integer(c_int),value :: flags
       integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array2_allocate_host_buffer(&
@@ -2258,7 +2258,7 @@ module gpufort_array
       type(gpufort_array2),intent(in) :: array
       type(c_ptr),intent(in) :: buffer
       logical(c_bool),value :: pinned
-      integer(c_int),value ::  flags
+      integer(c_int),value :: flags
       integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array3_allocate_host_buffer(&
@@ -2272,7 +2272,7 @@ module gpufort_array
       type(gpufort_array3),intent(in) :: array
       type(c_ptr),intent(in) :: buffer
       logical(c_bool),value :: pinned
-      integer(c_int),value ::  flags
+      integer(c_int),value :: flags
       integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array4_allocate_host_buffer(&
@@ -2286,7 +2286,7 @@ module gpufort_array
       type(gpufort_array4),intent(in) :: array
       type(c_ptr),intent(in) :: buffer
       logical(c_bool),value :: pinned
-      integer(c_int),value ::  flags
+      integer(c_int),value :: flags
       integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array5_allocate_host_buffer(&
@@ -2300,7 +2300,7 @@ module gpufort_array
       type(gpufort_array5),intent(in) :: array
       type(c_ptr),intent(in) :: buffer
       logical(c_bool),value :: pinned
-      integer(c_int),value ::  flags
+      integer(c_int),value :: flags
       integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array6_allocate_host_buffer(&
@@ -2314,7 +2314,7 @@ module gpufort_array
       type(gpufort_array6),intent(in) :: array
       type(c_ptr),intent(in) :: buffer
       logical(c_bool),value :: pinned
-      integer(c_int),value ::  flags
+      integer(c_int),value :: flags
       integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array7_allocate_host_buffer(&
@@ -2328,7 +2328,7 @@ module gpufort_array
       type(gpufort_array7),intent(in) :: array
       type(c_ptr),intent(in) :: buffer
       logical(c_bool),value :: pinned
-      integer(c_int),value ::  flags
+      integer(c_int),value :: flags
       integer(kind(hipSuccess)) :: ierr
     end function
     module procedure :: &
@@ -2848,7 +2848,7 @@ module gpufort_array
       import gpufort_array1
       implicit none
       type(gpufort_array1),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array2_inc_num_refs(array) &
           bind(c,name="gpufort_array2_inc_num_refs") &
@@ -2858,7 +2858,7 @@ module gpufort_array
       import gpufort_array2
       implicit none
       type(gpufort_array2),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array3_inc_num_refs(array) &
           bind(c,name="gpufort_array3_inc_num_refs") &
@@ -2868,7 +2868,7 @@ module gpufort_array
       import gpufort_array3
       implicit none
       type(gpufort_array3),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array4_inc_num_refs(array) &
           bind(c,name="gpufort_array4_inc_num_refs") &
@@ -2878,7 +2878,7 @@ module gpufort_array
       import gpufort_array4
       implicit none
       type(gpufort_array4),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array5_inc_num_refs(array) &
           bind(c,name="gpufort_array5_inc_num_refs") &
@@ -2888,7 +2888,7 @@ module gpufort_array
       import gpufort_array5
       implicit none
       type(gpufort_array5),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array6_inc_num_refs(array) &
           bind(c,name="gpufort_array6_inc_num_refs") &
@@ -2898,7 +2898,7 @@ module gpufort_array
       import gpufort_array6
       implicit none
       type(gpufort_array6),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
     function gpufort_array7_inc_num_refs(array) &
           bind(c,name="gpufort_array7_inc_num_refs") &
@@ -2908,7 +2908,7 @@ module gpufort_array
       import gpufort_array7
       implicit none
       type(gpufort_array7),intent(inout) :: array
-      integer(kind(hipSuccess))       :: ierr
+      integer(kind(hipSuccess)) :: ierr
     end function
   end interface
   interface gpufort_array_size
@@ -3184,7 +3184,7 @@ module gpufort_array
       import gpufort_array1
       implicit none
       type(gpufort_array1),intent(inout) :: collapsed_array
-      type(gpufort_array2),intent(in)              :: array
+      type(gpufort_array2),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i2
     end subroutine
@@ -3197,7 +3197,7 @@ module gpufort_array
       import gpufort_array2
       implicit none
       type(gpufort_array2),intent(inout) :: collapsed_array
-      type(gpufort_array3),intent(in)              :: array
+      type(gpufort_array3),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i3
     end subroutine
@@ -3210,7 +3210,7 @@ module gpufort_array
       import gpufort_array1
       implicit none
       type(gpufort_array1),intent(inout) :: collapsed_array
-      type(gpufort_array3),intent(in)              :: array
+      type(gpufort_array3),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i2,i3
     end subroutine
@@ -3223,7 +3223,7 @@ module gpufort_array
       import gpufort_array3
       implicit none
       type(gpufort_array3),intent(inout) :: collapsed_array
-      type(gpufort_array4),intent(in)              :: array
+      type(gpufort_array4),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i4
     end subroutine
@@ -3236,7 +3236,7 @@ module gpufort_array
       import gpufort_array2
       implicit none
       type(gpufort_array2),intent(inout) :: collapsed_array
-      type(gpufort_array4),intent(in)              :: array
+      type(gpufort_array4),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i3,i4
     end subroutine
@@ -3249,7 +3249,7 @@ module gpufort_array
       import gpufort_array1
       implicit none
       type(gpufort_array1),intent(inout) :: collapsed_array
-      type(gpufort_array4),intent(in)              :: array
+      type(gpufort_array4),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i2,i3,i4
     end subroutine
@@ -3262,7 +3262,7 @@ module gpufort_array
       import gpufort_array4
       implicit none
       type(gpufort_array4),intent(inout) :: collapsed_array
-      type(gpufort_array5),intent(in)              :: array
+      type(gpufort_array5),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i5
     end subroutine
@@ -3275,7 +3275,7 @@ module gpufort_array
       import gpufort_array3
       implicit none
       type(gpufort_array3),intent(inout) :: collapsed_array
-      type(gpufort_array5),intent(in)              :: array
+      type(gpufort_array5),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i4,i5
     end subroutine
@@ -3288,7 +3288,7 @@ module gpufort_array
       import gpufort_array2
       implicit none
       type(gpufort_array2),intent(inout) :: collapsed_array
-      type(gpufort_array5),intent(in)              :: array
+      type(gpufort_array5),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i3,i4,i5
     end subroutine
@@ -3301,7 +3301,7 @@ module gpufort_array
       import gpufort_array1
       implicit none
       type(gpufort_array1),intent(inout) :: collapsed_array
-      type(gpufort_array5),intent(in)              :: array
+      type(gpufort_array5),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i2,i3,i4,i5
     end subroutine
@@ -3314,7 +3314,7 @@ module gpufort_array
       import gpufort_array5
       implicit none
       type(gpufort_array5),intent(inout) :: collapsed_array
-      type(gpufort_array6),intent(in)              :: array
+      type(gpufort_array6),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i6
     end subroutine
@@ -3327,7 +3327,7 @@ module gpufort_array
       import gpufort_array4
       implicit none
       type(gpufort_array4),intent(inout) :: collapsed_array
-      type(gpufort_array6),intent(in)              :: array
+      type(gpufort_array6),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i5,i6
     end subroutine
@@ -3340,7 +3340,7 @@ module gpufort_array
       import gpufort_array3
       implicit none
       type(gpufort_array3),intent(inout) :: collapsed_array
-      type(gpufort_array6),intent(in)              :: array
+      type(gpufort_array6),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i4,i5,i6
     end subroutine
@@ -3353,7 +3353,7 @@ module gpufort_array
       import gpufort_array2
       implicit none
       type(gpufort_array2),intent(inout) :: collapsed_array
-      type(gpufort_array6),intent(in)              :: array
+      type(gpufort_array6),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i3,i4,i5,i6
     end subroutine
@@ -3366,7 +3366,7 @@ module gpufort_array
       import gpufort_array1
       implicit none
       type(gpufort_array1),intent(inout) :: collapsed_array
-      type(gpufort_array6),intent(in)              :: array
+      type(gpufort_array6),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i2,i3,i4,i5,i6
     end subroutine
@@ -3379,7 +3379,7 @@ module gpufort_array
       import gpufort_array6
       implicit none
       type(gpufort_array6),intent(inout) :: collapsed_array
-      type(gpufort_array7),intent(in)              :: array
+      type(gpufort_array7),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i7
     end subroutine
@@ -3392,7 +3392,7 @@ module gpufort_array
       import gpufort_array5
       implicit none
       type(gpufort_array5),intent(inout) :: collapsed_array
-      type(gpufort_array7),intent(in)              :: array
+      type(gpufort_array7),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i6,i7
     end subroutine
@@ -3405,7 +3405,7 @@ module gpufort_array
       import gpufort_array4
       implicit none
       type(gpufort_array4),intent(inout) :: collapsed_array
-      type(gpufort_array7),intent(in)              :: array
+      type(gpufort_array7),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i5,i6,i7
     end subroutine
@@ -3418,7 +3418,7 @@ module gpufort_array
       import gpufort_array3
       implicit none
       type(gpufort_array3),intent(inout) :: collapsed_array
-      type(gpufort_array7),intent(in)              :: array
+      type(gpufort_array7),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i4,i5,i6,i7
     end subroutine
@@ -3431,7 +3431,7 @@ module gpufort_array
       import gpufort_array2
       implicit none
       type(gpufort_array2),intent(inout) :: collapsed_array
-      type(gpufort_array7),intent(in)              :: array
+      type(gpufort_array7),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i3,i4,i5,i6,i7
     end subroutine
@@ -3444,7 +3444,7 @@ module gpufort_array
       import gpufort_array1
       implicit none
       type(gpufort_array1),intent(inout) :: collapsed_array
-      type(gpufort_array7),intent(in)              :: array
+      type(gpufort_array7),intent(in) :: array
       integer(c_int),value,intent(in) :: &
         i2,i3,i4,i5,i6,i7
     end subroutine
@@ -3614,19 +3614,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(inout)        :: array
-    integer(c_int),dimension(1),intent(in)          :: sizes
+    type(gpufort_array1),intent(inout) :: array
+    integer(c_int),dimension(1),intent(in) :: sizes
     integer(c_int),dimension(1),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    integer(c_int),intent(in)                                              :: bytes_per_element
+    type(c_ptr),intent(in) :: stream
+    integer(c_int),intent(in) :: bytes_per_element
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
     integer(kind(hipSuccess)) :: ierr
     !
-    integer(c_int),dimension(1)                 :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_alloc_mode = gpufort_array_alloc_host_alloc_device ! allocate both by default
@@ -3648,20 +3648,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(inout)        :: array
+    type(gpufort_array1),intent(inout) :: array
     logical(c_bool),intent(in),target,dimension(:) :: data_host 
     integer(c_int),dimension(1),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -3685,20 +3685,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(inout)        :: array
+    type(gpufort_array1),intent(inout) :: array
     integer(c_short),intent(in),target,dimension(:) :: data_host 
     integer(c_int),dimension(1),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -3722,20 +3722,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(inout)        :: array
+    type(gpufort_array1),intent(inout) :: array
     integer(c_int),intent(in),target,dimension(:) :: data_host 
     integer(c_int),dimension(1),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -3759,20 +3759,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(inout)        :: array
+    type(gpufort_array1),intent(inout) :: array
     integer(c_long),intent(in),target,dimension(:) :: data_host 
     integer(c_int),dimension(1),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -3796,20 +3796,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(inout)        :: array
+    type(gpufort_array1),intent(inout) :: array
     real(c_float),intent(in),target,dimension(:) :: data_host 
     integer(c_int),dimension(1),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -3833,20 +3833,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(inout)        :: array
+    type(gpufort_array1),intent(inout) :: array
     real(c_double),intent(in),target,dimension(:) :: data_host 
     integer(c_int),dimension(1),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -3870,20 +3870,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(inout)        :: array
+    type(gpufort_array1),intent(inout) :: array
     complex(c_float_complex),intent(in),target,dimension(:) :: data_host 
     integer(c_int),dimension(1),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -3907,20 +3907,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(inout)        :: array
+    type(gpufort_array1),intent(inout) :: array
     complex(c_double_complex),intent(in),target,dimension(:) :: data_host 
     integer(c_int),dimension(1),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -3945,18 +3945,18 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(inout)        :: array
-    integer(c_int),dimension(1),intent(in)          :: sizes
+    type(gpufort_array1),intent(inout) :: array
+    integer(c_int),dimension(1),intent(in) :: sizes
     integer(c_int),dimension(1),intent(in),optional :: lbounds
-    integer(c_int),intent(in)                                              :: bytes_per_element
+    integer(c_int),intent(in) :: bytes_per_element
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
     integer(kind(hipSuccess)) :: ierr
     !
-    integer(c_int),dimension(1)                 :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_alloc_mode = gpufort_array_alloc_host_alloc_device ! allocate both by default
@@ -3978,19 +3978,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(inout)        :: array
+    type(gpufort_array1),intent(inout) :: array
     logical(c_bool),intent(in),target,dimension(:) :: data_host 
     integer(c_int),dimension(1),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4014,19 +4014,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(inout)        :: array
+    type(gpufort_array1),intent(inout) :: array
     integer(c_short),intent(in),target,dimension(:) :: data_host 
     integer(c_int),dimension(1),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4050,19 +4050,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(inout)        :: array
+    type(gpufort_array1),intent(inout) :: array
     integer(c_int),intent(in),target,dimension(:) :: data_host 
     integer(c_int),dimension(1),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4086,19 +4086,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(inout)        :: array
+    type(gpufort_array1),intent(inout) :: array
     integer(c_long),intent(in),target,dimension(:) :: data_host 
     integer(c_int),dimension(1),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4122,19 +4122,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(inout)        :: array
+    type(gpufort_array1),intent(inout) :: array
     real(c_float),intent(in),target,dimension(:) :: data_host 
     integer(c_int),dimension(1),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4158,19 +4158,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(inout)        :: array
+    type(gpufort_array1),intent(inout) :: array
     real(c_double),intent(in),target,dimension(:) :: data_host 
     integer(c_int),dimension(1),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4194,19 +4194,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(inout)        :: array
+    type(gpufort_array1),intent(inout) :: array
     complex(c_float_complex),intent(in),target,dimension(:) :: data_host 
     integer(c_int),dimension(1),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4230,19 +4230,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(inout)        :: array
+    type(gpufort_array1),intent(inout) :: array
     complex(c_double_complex),intent(in),target,dimension(:) :: data_host 
     integer(c_int),dimension(1),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4267,19 +4267,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(inout)        :: array
-    integer(c_int),dimension(2),intent(in)          :: sizes
+    type(gpufort_array2),intent(inout) :: array
+    integer(c_int),dimension(2),intent(in) :: sizes
     integer(c_int),dimension(2),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    integer(c_int),intent(in)                                              :: bytes_per_element
+    type(c_ptr),intent(in) :: stream
+    integer(c_int),intent(in) :: bytes_per_element
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
     integer(kind(hipSuccess)) :: ierr
     !
-    integer(c_int),dimension(2)                 :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_alloc_mode = gpufort_array_alloc_host_alloc_device ! allocate both by default
@@ -4301,20 +4301,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(inout)        :: array
+    type(gpufort_array2),intent(inout) :: array
     logical(c_bool),intent(in),target,dimension(:,:) :: data_host 
     integer(c_int),dimension(2),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4338,20 +4338,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(inout)        :: array
+    type(gpufort_array2),intent(inout) :: array
     integer(c_short),intent(in),target,dimension(:,:) :: data_host 
     integer(c_int),dimension(2),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4375,20 +4375,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(inout)        :: array
+    type(gpufort_array2),intent(inout) :: array
     integer(c_int),intent(in),target,dimension(:,:) :: data_host 
     integer(c_int),dimension(2),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4412,20 +4412,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(inout)        :: array
+    type(gpufort_array2),intent(inout) :: array
     integer(c_long),intent(in),target,dimension(:,:) :: data_host 
     integer(c_int),dimension(2),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4449,20 +4449,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(inout)        :: array
+    type(gpufort_array2),intent(inout) :: array
     real(c_float),intent(in),target,dimension(:,:) :: data_host 
     integer(c_int),dimension(2),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4486,20 +4486,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(inout)        :: array
+    type(gpufort_array2),intent(inout) :: array
     real(c_double),intent(in),target,dimension(:,:) :: data_host 
     integer(c_int),dimension(2),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4523,20 +4523,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(inout)        :: array
+    type(gpufort_array2),intent(inout) :: array
     complex(c_float_complex),intent(in),target,dimension(:,:) :: data_host 
     integer(c_int),dimension(2),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4560,20 +4560,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(inout)        :: array
+    type(gpufort_array2),intent(inout) :: array
     complex(c_double_complex),intent(in),target,dimension(:,:) :: data_host 
     integer(c_int),dimension(2),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4598,18 +4598,18 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(inout)        :: array
-    integer(c_int),dimension(2),intent(in)          :: sizes
+    type(gpufort_array2),intent(inout) :: array
+    integer(c_int),dimension(2),intent(in) :: sizes
     integer(c_int),dimension(2),intent(in),optional :: lbounds
-    integer(c_int),intent(in)                                              :: bytes_per_element
+    integer(c_int),intent(in) :: bytes_per_element
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
     integer(kind(hipSuccess)) :: ierr
     !
-    integer(c_int),dimension(2)                 :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_alloc_mode = gpufort_array_alloc_host_alloc_device ! allocate both by default
@@ -4631,19 +4631,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(inout)        :: array
+    type(gpufort_array2),intent(inout) :: array
     logical(c_bool),intent(in),target,dimension(:,:) :: data_host 
     integer(c_int),dimension(2),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4667,19 +4667,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(inout)        :: array
+    type(gpufort_array2),intent(inout) :: array
     integer(c_short),intent(in),target,dimension(:,:) :: data_host 
     integer(c_int),dimension(2),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4703,19 +4703,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(inout)        :: array
+    type(gpufort_array2),intent(inout) :: array
     integer(c_int),intent(in),target,dimension(:,:) :: data_host 
     integer(c_int),dimension(2),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4739,19 +4739,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(inout)        :: array
+    type(gpufort_array2),intent(inout) :: array
     integer(c_long),intent(in),target,dimension(:,:) :: data_host 
     integer(c_int),dimension(2),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4775,19 +4775,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(inout)        :: array
+    type(gpufort_array2),intent(inout) :: array
     real(c_float),intent(in),target,dimension(:,:) :: data_host 
     integer(c_int),dimension(2),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4811,19 +4811,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(inout)        :: array
+    type(gpufort_array2),intent(inout) :: array
     real(c_double),intent(in),target,dimension(:,:) :: data_host 
     integer(c_int),dimension(2),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4847,19 +4847,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(inout)        :: array
+    type(gpufort_array2),intent(inout) :: array
     complex(c_float_complex),intent(in),target,dimension(:,:) :: data_host 
     integer(c_int),dimension(2),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4883,19 +4883,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(inout)        :: array
+    type(gpufort_array2),intent(inout) :: array
     complex(c_double_complex),intent(in),target,dimension(:,:) :: data_host 
     integer(c_int),dimension(2),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4920,19 +4920,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(inout)        :: array
-    integer(c_int),dimension(3),intent(in)          :: sizes
+    type(gpufort_array3),intent(inout) :: array
+    integer(c_int),dimension(3),intent(in) :: sizes
     integer(c_int),dimension(3),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    integer(c_int),intent(in)                                              :: bytes_per_element
+    type(c_ptr),intent(in) :: stream
+    integer(c_int),intent(in) :: bytes_per_element
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
     integer(kind(hipSuccess)) :: ierr
     !
-    integer(c_int),dimension(3)                 :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_alloc_mode = gpufort_array_alloc_host_alloc_device ! allocate both by default
@@ -4954,20 +4954,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(inout)        :: array
+    type(gpufort_array3),intent(inout) :: array
     logical(c_bool),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_int),dimension(3),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -4991,20 +4991,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(inout)        :: array
+    type(gpufort_array3),intent(inout) :: array
     integer(c_short),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_int),dimension(3),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5028,20 +5028,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(inout)        :: array
+    type(gpufort_array3),intent(inout) :: array
     integer(c_int),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_int),dimension(3),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5065,20 +5065,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(inout)        :: array
+    type(gpufort_array3),intent(inout) :: array
     integer(c_long),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_int),dimension(3),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5102,20 +5102,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(inout)        :: array
+    type(gpufort_array3),intent(inout) :: array
     real(c_float),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_int),dimension(3),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5139,20 +5139,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(inout)        :: array
+    type(gpufort_array3),intent(inout) :: array
     real(c_double),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_int),dimension(3),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5176,20 +5176,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(inout)        :: array
+    type(gpufort_array3),intent(inout) :: array
     complex(c_float_complex),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_int),dimension(3),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5213,20 +5213,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(inout)        :: array
+    type(gpufort_array3),intent(inout) :: array
     complex(c_double_complex),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_int),dimension(3),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5251,18 +5251,18 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(inout)        :: array
-    integer(c_int),dimension(3),intent(in)          :: sizes
+    type(gpufort_array3),intent(inout) :: array
+    integer(c_int),dimension(3),intent(in) :: sizes
     integer(c_int),dimension(3),intent(in),optional :: lbounds
-    integer(c_int),intent(in)                                              :: bytes_per_element
+    integer(c_int),intent(in) :: bytes_per_element
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
     integer(kind(hipSuccess)) :: ierr
     !
-    integer(c_int),dimension(3)                 :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_alloc_mode = gpufort_array_alloc_host_alloc_device ! allocate both by default
@@ -5284,19 +5284,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(inout)        :: array
+    type(gpufort_array3),intent(inout) :: array
     logical(c_bool),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_int),dimension(3),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5320,19 +5320,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(inout)        :: array
+    type(gpufort_array3),intent(inout) :: array
     integer(c_short),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_int),dimension(3),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5356,19 +5356,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(inout)        :: array
+    type(gpufort_array3),intent(inout) :: array
     integer(c_int),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_int),dimension(3),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5392,19 +5392,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(inout)        :: array
+    type(gpufort_array3),intent(inout) :: array
     integer(c_long),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_int),dimension(3),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5428,19 +5428,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(inout)        :: array
+    type(gpufort_array3),intent(inout) :: array
     real(c_float),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_int),dimension(3),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5464,19 +5464,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(inout)        :: array
+    type(gpufort_array3),intent(inout) :: array
     real(c_double),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_int),dimension(3),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5500,19 +5500,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(inout)        :: array
+    type(gpufort_array3),intent(inout) :: array
     complex(c_float_complex),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_int),dimension(3),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5536,19 +5536,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(inout)        :: array
+    type(gpufort_array3),intent(inout) :: array
     complex(c_double_complex),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_int),dimension(3),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5573,19 +5573,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(inout)        :: array
-    integer(c_int),dimension(4),intent(in)          :: sizes
+    type(gpufort_array4),intent(inout) :: array
+    integer(c_int),dimension(4),intent(in) :: sizes
     integer(c_int),dimension(4),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    integer(c_int),intent(in)                                              :: bytes_per_element
+    type(c_ptr),intent(in) :: stream
+    integer(c_int),intent(in) :: bytes_per_element
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
     integer(kind(hipSuccess)) :: ierr
     !
-    integer(c_int),dimension(4)                 :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_alloc_mode = gpufort_array_alloc_host_alloc_device ! allocate both by default
@@ -5607,20 +5607,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(inout)        :: array
+    type(gpufort_array4),intent(inout) :: array
     logical(c_bool),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_int),dimension(4),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5644,20 +5644,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(inout)        :: array
+    type(gpufort_array4),intent(inout) :: array
     integer(c_short),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_int),dimension(4),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5681,20 +5681,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(inout)        :: array
+    type(gpufort_array4),intent(inout) :: array
     integer(c_int),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_int),dimension(4),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5718,20 +5718,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(inout)        :: array
+    type(gpufort_array4),intent(inout) :: array
     integer(c_long),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_int),dimension(4),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5755,20 +5755,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(inout)        :: array
+    type(gpufort_array4),intent(inout) :: array
     real(c_float),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_int),dimension(4),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5792,20 +5792,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(inout)        :: array
+    type(gpufort_array4),intent(inout) :: array
     real(c_double),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_int),dimension(4),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5829,20 +5829,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(inout)        :: array
+    type(gpufort_array4),intent(inout) :: array
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_int),dimension(4),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5866,20 +5866,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(inout)        :: array
+    type(gpufort_array4),intent(inout) :: array
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_int),dimension(4),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5904,18 +5904,18 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(inout)        :: array
-    integer(c_int),dimension(4),intent(in)          :: sizes
+    type(gpufort_array4),intent(inout) :: array
+    integer(c_int),dimension(4),intent(in) :: sizes
     integer(c_int),dimension(4),intent(in),optional :: lbounds
-    integer(c_int),intent(in)                                              :: bytes_per_element
+    integer(c_int),intent(in) :: bytes_per_element
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
     integer(kind(hipSuccess)) :: ierr
     !
-    integer(c_int),dimension(4)                 :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_alloc_mode = gpufort_array_alloc_host_alloc_device ! allocate both by default
@@ -5937,19 +5937,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(inout)        :: array
+    type(gpufort_array4),intent(inout) :: array
     logical(c_bool),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_int),dimension(4),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -5973,19 +5973,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(inout)        :: array
+    type(gpufort_array4),intent(inout) :: array
     integer(c_short),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_int),dimension(4),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6009,19 +6009,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(inout)        :: array
+    type(gpufort_array4),intent(inout) :: array
     integer(c_int),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_int),dimension(4),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6045,19 +6045,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(inout)        :: array
+    type(gpufort_array4),intent(inout) :: array
     integer(c_long),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_int),dimension(4),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6081,19 +6081,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(inout)        :: array
+    type(gpufort_array4),intent(inout) :: array
     real(c_float),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_int),dimension(4),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6117,19 +6117,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(inout)        :: array
+    type(gpufort_array4),intent(inout) :: array
     real(c_double),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_int),dimension(4),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6153,19 +6153,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(inout)        :: array
+    type(gpufort_array4),intent(inout) :: array
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_int),dimension(4),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6189,19 +6189,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(inout)        :: array
+    type(gpufort_array4),intent(inout) :: array
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_int),dimension(4),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6226,19 +6226,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(inout)        :: array
-    integer(c_int),dimension(5),intent(in)          :: sizes
+    type(gpufort_array5),intent(inout) :: array
+    integer(c_int),dimension(5),intent(in) :: sizes
     integer(c_int),dimension(5),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    integer(c_int),intent(in)                                              :: bytes_per_element
+    type(c_ptr),intent(in) :: stream
+    integer(c_int),intent(in) :: bytes_per_element
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
     integer(kind(hipSuccess)) :: ierr
     !
-    integer(c_int),dimension(5)                 :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_alloc_mode = gpufort_array_alloc_host_alloc_device ! allocate both by default
@@ -6260,20 +6260,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(inout)        :: array
+    type(gpufort_array5),intent(inout) :: array
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_int),dimension(5),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6297,20 +6297,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(inout)        :: array
+    type(gpufort_array5),intent(inout) :: array
     integer(c_short),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_int),dimension(5),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6334,20 +6334,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(inout)        :: array
+    type(gpufort_array5),intent(inout) :: array
     integer(c_int),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_int),dimension(5),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6371,20 +6371,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(inout)        :: array
+    type(gpufort_array5),intent(inout) :: array
     integer(c_long),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_int),dimension(5),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6408,20 +6408,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(inout)        :: array
+    type(gpufort_array5),intent(inout) :: array
     real(c_float),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_int),dimension(5),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6445,20 +6445,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(inout)        :: array
+    type(gpufort_array5),intent(inout) :: array
     real(c_double),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_int),dimension(5),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6482,20 +6482,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(inout)        :: array
+    type(gpufort_array5),intent(inout) :: array
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_int),dimension(5),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6519,20 +6519,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(inout)        :: array
+    type(gpufort_array5),intent(inout) :: array
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_int),dimension(5),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6557,18 +6557,18 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(inout)        :: array
-    integer(c_int),dimension(5),intent(in)          :: sizes
+    type(gpufort_array5),intent(inout) :: array
+    integer(c_int),dimension(5),intent(in) :: sizes
     integer(c_int),dimension(5),intent(in),optional :: lbounds
-    integer(c_int),intent(in)                                              :: bytes_per_element
+    integer(c_int),intent(in) :: bytes_per_element
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
     integer(kind(hipSuccess)) :: ierr
     !
-    integer(c_int),dimension(5)                 :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_alloc_mode = gpufort_array_alloc_host_alloc_device ! allocate both by default
@@ -6590,19 +6590,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(inout)        :: array
+    type(gpufort_array5),intent(inout) :: array
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_int),dimension(5),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6626,19 +6626,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(inout)        :: array
+    type(gpufort_array5),intent(inout) :: array
     integer(c_short),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_int),dimension(5),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6662,19 +6662,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(inout)        :: array
+    type(gpufort_array5),intent(inout) :: array
     integer(c_int),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_int),dimension(5),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6698,19 +6698,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(inout)        :: array
+    type(gpufort_array5),intent(inout) :: array
     integer(c_long),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_int),dimension(5),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6734,19 +6734,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(inout)        :: array
+    type(gpufort_array5),intent(inout) :: array
     real(c_float),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_int),dimension(5),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6770,19 +6770,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(inout)        :: array
+    type(gpufort_array5),intent(inout) :: array
     real(c_double),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_int),dimension(5),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6806,19 +6806,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(inout)        :: array
+    type(gpufort_array5),intent(inout) :: array
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_int),dimension(5),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6842,19 +6842,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(inout)        :: array
+    type(gpufort_array5),intent(inout) :: array
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_int),dimension(5),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6879,19 +6879,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(inout)        :: array
-    integer(c_int),dimension(6),intent(in)          :: sizes
+    type(gpufort_array6),intent(inout) :: array
+    integer(c_int),dimension(6),intent(in) :: sizes
     integer(c_int),dimension(6),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    integer(c_int),intent(in)                                              :: bytes_per_element
+    type(c_ptr),intent(in) :: stream
+    integer(c_int),intent(in) :: bytes_per_element
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
     integer(kind(hipSuccess)) :: ierr
     !
-    integer(c_int),dimension(6)                 :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_alloc_mode = gpufort_array_alloc_host_alloc_device ! allocate both by default
@@ -6913,20 +6913,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(inout)        :: array
+    type(gpufort_array6),intent(inout) :: array
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(6),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6950,20 +6950,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(inout)        :: array
+    type(gpufort_array6),intent(inout) :: array
     integer(c_short),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(6),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -6987,20 +6987,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(inout)        :: array
+    type(gpufort_array6),intent(inout) :: array
     integer(c_int),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(6),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7024,20 +7024,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(inout)        :: array
+    type(gpufort_array6),intent(inout) :: array
     integer(c_long),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(6),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7061,20 +7061,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(inout)        :: array
+    type(gpufort_array6),intent(inout) :: array
     real(c_float),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(6),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7098,20 +7098,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(inout)        :: array
+    type(gpufort_array6),intent(inout) :: array
     real(c_double),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(6),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7135,20 +7135,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(inout)        :: array
+    type(gpufort_array6),intent(inout) :: array
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(6),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7172,20 +7172,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(inout)        :: array
+    type(gpufort_array6),intent(inout) :: array
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(6),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7210,18 +7210,18 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(inout)        :: array
-    integer(c_int),dimension(6),intent(in)          :: sizes
+    type(gpufort_array6),intent(inout) :: array
+    integer(c_int),dimension(6),intent(in) :: sizes
     integer(c_int),dimension(6),intent(in),optional :: lbounds
-    integer(c_int),intent(in)                                              :: bytes_per_element
+    integer(c_int),intent(in) :: bytes_per_element
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
     integer(kind(hipSuccess)) :: ierr
     !
-    integer(c_int),dimension(6)                 :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_alloc_mode = gpufort_array_alloc_host_alloc_device ! allocate both by default
@@ -7243,19 +7243,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(inout)        :: array
+    type(gpufort_array6),intent(inout) :: array
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(6),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7279,19 +7279,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(inout)        :: array
+    type(gpufort_array6),intent(inout) :: array
     integer(c_short),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(6),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7315,19 +7315,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(inout)        :: array
+    type(gpufort_array6),intent(inout) :: array
     integer(c_int),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(6),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7351,19 +7351,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(inout)        :: array
+    type(gpufort_array6),intent(inout) :: array
     integer(c_long),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(6),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7387,19 +7387,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(inout)        :: array
+    type(gpufort_array6),intent(inout) :: array
     real(c_float),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(6),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7423,19 +7423,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(inout)        :: array
+    type(gpufort_array6),intent(inout) :: array
     real(c_double),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(6),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7459,19 +7459,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(inout)        :: array
+    type(gpufort_array6),intent(inout) :: array
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(6),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7495,19 +7495,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(inout)        :: array
+    type(gpufort_array6),intent(inout) :: array
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(6),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7532,19 +7532,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(inout)        :: array
-    integer(c_int),dimension(7),intent(in)          :: sizes
+    type(gpufort_array7),intent(inout) :: array
+    integer(c_int),dimension(7),intent(in) :: sizes
     integer(c_int),dimension(7),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    integer(c_int),intent(in)                                              :: bytes_per_element
+    type(c_ptr),intent(in) :: stream
+    integer(c_int),intent(in) :: bytes_per_element
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
     integer(kind(hipSuccess)) :: ierr
     !
-    integer(c_int),dimension(7)                 :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_alloc_mode = gpufort_array_alloc_host_alloc_device ! allocate both by default
@@ -7566,20 +7566,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(inout)        :: array
+    type(gpufort_array7),intent(inout) :: array
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(7),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7603,20 +7603,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(inout)        :: array
+    type(gpufort_array7),intent(inout) :: array
     integer(c_short),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(7),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7640,20 +7640,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(inout)        :: array
+    type(gpufort_array7),intent(inout) :: array
     integer(c_int),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(7),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7677,20 +7677,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(inout)        :: array
+    type(gpufort_array7),intent(inout) :: array
     integer(c_long),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(7),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7714,20 +7714,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(inout)        :: array
+    type(gpufort_array7),intent(inout) :: array
     real(c_float),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(7),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7751,20 +7751,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(inout)        :: array
+    type(gpufort_array7),intent(inout) :: array
     real(c_double),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(7),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7788,20 +7788,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(inout)        :: array
+    type(gpufort_array7),intent(inout) :: array
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(7),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7825,20 +7825,20 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(inout)        :: array
+    type(gpufort_array7),intent(inout) :: array
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(7),intent(in),optional :: lbounds
-    type(c_ptr),intent(in)                                                 :: stream
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in) :: stream
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7863,18 +7863,18 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(inout)        :: array
-    integer(c_int),dimension(7),intent(in)          :: sizes
+    type(gpufort_array7),intent(inout) :: array
+    integer(c_int),dimension(7),intent(in) :: sizes
     integer(c_int),dimension(7),intent(in),optional :: lbounds
-    integer(c_int),intent(in)                                              :: bytes_per_element
+    integer(c_int),intent(in) :: bytes_per_element
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
     integer(kind(hipSuccess)) :: ierr
     !
-    integer(c_int),dimension(7)                 :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_alloc_mode = gpufort_array_alloc_host_alloc_device ! allocate both by default
@@ -7896,19 +7896,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(inout)        :: array
+    type(gpufort_array7),intent(inout) :: array
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(7),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7932,19 +7932,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(inout)        :: array
+    type(gpufort_array7),intent(inout) :: array
     integer(c_short),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(7),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -7968,19 +7968,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(inout)        :: array
+    type(gpufort_array7),intent(inout) :: array
     integer(c_int),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(7),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -8004,19 +8004,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(inout)        :: array
+    type(gpufort_array7),intent(inout) :: array
     integer(c_long),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(7),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -8040,19 +8040,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(inout)        :: array
+    type(gpufort_array7),intent(inout) :: array
     real(c_float),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(7),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -8076,19 +8076,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(inout)        :: array
+    type(gpufort_array7),intent(inout) :: array
     real(c_double),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(7),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -8112,19 +8112,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(inout)        :: array
+    type(gpufort_array7),intent(inout) :: array
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(7),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -8148,19 +8148,19 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(inout)        :: array
+    type(gpufort_array7),intent(inout) :: array
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_int),dimension(7),intent(in),optional :: lbounds
-    type(c_ptr),intent(in),optional                                        :: data_dev
+    type(c_ptr),intent(in),optional :: data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)),intent(in),optional :: alloc_mode 
-    integer(kind(gpufort_array_sync_none)),intent(in),optional             :: sync_mode 
+    integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode 
     !
-    integer(kind(hipSuccess))                                              :: ierr
+    integer(kind(hipSuccess)) :: ierr
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    type(c_ptr)                                        :: opt_data_dev
+    type(c_ptr) :: opt_data_dev
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: opt_alloc_mode 
-    integer(kind(gpufort_array_sync_none))             :: opt_sync_mode 
+    integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
     !
     opt_lbounds    = 1
     opt_data_dev   = c_null_ptr
@@ -8187,16 +8187,16 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:) :: data_host 
     logical(c_bool),intent(in),target,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(1),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8219,15 +8219,15 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:) :: data_host 
     logical(c_bool),intent(in),target,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8251,16 +8251,16 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(1),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8283,15 +8283,15 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8315,16 +8315,16 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:) :: data_host 
     integer(c_short),intent(in),target,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(1),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8347,15 +8347,15 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:) :: data_host 
     integer(c_short),intent(in),target,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8379,16 +8379,16 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(1),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8411,15 +8411,15 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8443,16 +8443,16 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:) :: data_host 
     integer(c_int),intent(in),target,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(1),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8475,15 +8475,15 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:) :: data_host 
     integer(c_int),intent(in),target,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8507,16 +8507,16 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(1),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8539,15 +8539,15 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8571,16 +8571,16 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:) :: data_host 
     integer(c_long),intent(in),target,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(1),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8603,15 +8603,15 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:) :: data_host 
     integer(c_long),intent(in),target,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8635,16 +8635,16 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(1),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8667,15 +8667,15 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8699,16 +8699,16 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:) :: data_host 
     real(c_float),intent(in),target,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(1),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8731,15 +8731,15 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:) :: data_host 
     real(c_float),intent(in),target,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8763,16 +8763,16 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(1),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8795,15 +8795,15 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8827,16 +8827,16 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:) :: data_host 
     real(c_double),intent(in),target,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(1),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8859,15 +8859,15 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:) :: data_host 
     real(c_double),intent(in),target,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8891,16 +8891,16 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(1),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8923,15 +8923,15 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8955,16 +8955,16 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:) :: data_host 
     complex(c_float_complex),intent(in),target,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(1),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -8987,15 +8987,15 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:) :: data_host 
     complex(c_float_complex),intent(in),target,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9019,16 +9019,16 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(1),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9051,15 +9051,15 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9083,16 +9083,16 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:) :: data_host 
     complex(c_double_complex),intent(in),target,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(1),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9115,15 +9115,15 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:) :: data_host 
     complex(c_double_complex),intent(in),target,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9147,16 +9147,16 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(1),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9179,15 +9179,15 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(1),intent(in),optional            :: lbounds
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array1)         :: array
+    type(gpufort_array1) :: array
     !
-    integer(c_int),dimension(1)     :: opt_lbounds
+    integer(c_int),dimension(1) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9202,205 +9202,226 @@ contains
       opt_sync_mode)
     if ( present(ierr) ) ierr = opt_ierr
   end function
-  function gpufort_array1_wrap_device_ptr_c_bool(&
-      data_dev,lbounds,ierr) result(array)
+  function gpufort_array1_wrap_device_ptr_cptr(&
+      data_dev,sizes,lbounds,bytes_per_element) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
-    logical(c_bool),intent(in),pointer,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    type(c_ptr),intent(in) :: data_dev 
+    integer(c_int),dimension(1),intent(in) :: sizes
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
+    integer(c_int),intent(in),optional :: bytes_per_element
     !
     type(gpufort_array1) :: array
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    integer(c_int) :: opt_bytes_per_element
+    !
+    integer(kind(hipSuccess)) :: ierr
+    !
+    opt_lbounds = 1
+    opt_bytes_per_element = 1
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    if ( present(bytes_per_element) ) opt_bytes_per_element = bytes_per_element             
+    ierr = gpufort_array1_init(&
+      array,&
+      opt_bytes_per_element,&
+      c_null_ptr,data_dev,&
+      sizes, opt_lbounds,&
+      gpufort_array_wrap_host_wrap_device,&
+      gpufort_array_sync_none)
+  end function
+  function gpufort_array1_wrap_device_ptr_c_bool(&
+      data_dev,lbounds) result(array)
+    use iso_c_binding
+    use hipfort_enums
+    implicit none
+    logical(c_bool),intent(in),pointer,dimension(:) :: data_dev 
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
+    !
+    type(gpufort_array1) :: array
+    !
+    integer(c_int),dimension(1) :: opt_lbounds
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array1_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array1_init(&
       array,&
       int(c_bool, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array1_wrap_device_ptr_c_short(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_short),intent(in),pointer,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     !
     type(gpufort_array1) :: array
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array1_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array1_init(&
       array,&
       int(c_short, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array1_wrap_device_ptr_c_int(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_int),intent(in),pointer,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     !
     type(gpufort_array1) :: array
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array1_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array1_init(&
       array,&
       int(c_int, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array1_wrap_device_ptr_c_long(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_long),intent(in),pointer,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     !
     type(gpufort_array1) :: array
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array1_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array1_init(&
       array,&
       int(c_long, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array1_wrap_device_ptr_c_float(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     real(c_float),intent(in),pointer,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     !
     type(gpufort_array1) :: array
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array1_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array1_init(&
       array,&
       int(c_float, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array1_wrap_device_ptr_c_double(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     real(c_double),intent(in),pointer,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     !
     type(gpufort_array1) :: array
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array1_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array1_init(&
       array,&
       int(c_double, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array1_wrap_device_ptr_c_float_complex(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     complex(c_float_complex),intent(in),pointer,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     !
     type(gpufort_array1) :: array
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array1_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array1_init(&
       array,&
       int(2*c_float_complex, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array1_wrap_device_ptr_c_double_complex(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     complex(c_double_complex),intent(in),pointer,dimension(:) :: data_dev 
-    integer(c_int),dimension(1),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(1),intent(in),optional :: lbounds
     !
     type(gpufort_array1) :: array
     !
     integer(c_int),dimension(1) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array1_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array1_init(&
       array,&
       int(2*c_double_complex, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
    
   function gpufort_array2_wrap_async_c_bool(&
@@ -9411,16 +9432,16 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:) :: data_host 
     logical(c_bool),intent(in),target,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(2),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9443,15 +9464,15 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:) :: data_host 
     logical(c_bool),intent(in),target,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9475,16 +9496,16 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(2),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9507,15 +9528,15 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9539,16 +9560,16 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:) :: data_host 
     integer(c_short),intent(in),target,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(2),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9571,15 +9592,15 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:) :: data_host 
     integer(c_short),intent(in),target,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9603,16 +9624,16 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(2),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9635,15 +9656,15 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9667,16 +9688,16 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:) :: data_host 
     integer(c_int),intent(in),target,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(2),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9699,15 +9720,15 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:) :: data_host 
     integer(c_int),intent(in),target,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9731,16 +9752,16 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(2),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9763,15 +9784,15 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9795,16 +9816,16 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:) :: data_host 
     integer(c_long),intent(in),target,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(2),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9827,15 +9848,15 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:) :: data_host 
     integer(c_long),intent(in),target,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9859,16 +9880,16 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(2),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9891,15 +9912,15 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9923,16 +9944,16 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:) :: data_host 
     real(c_float),intent(in),target,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(2),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9955,15 +9976,15 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:) :: data_host 
     real(c_float),intent(in),target,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -9987,16 +10008,16 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(2),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10019,15 +10040,15 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10051,16 +10072,16 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:) :: data_host 
     real(c_double),intent(in),target,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(2),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10083,15 +10104,15 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:) :: data_host 
     real(c_double),intent(in),target,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10115,16 +10136,16 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(2),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10147,15 +10168,15 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10179,16 +10200,16 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:) :: data_host 
     complex(c_float_complex),intent(in),target,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(2),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10211,15 +10232,15 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:) :: data_host 
     complex(c_float_complex),intent(in),target,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10243,16 +10264,16 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(2),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10275,15 +10296,15 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10307,16 +10328,16 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:) :: data_host 
     complex(c_double_complex),intent(in),target,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(2),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10339,15 +10360,15 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:) :: data_host 
     complex(c_double_complex),intent(in),target,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10371,16 +10392,16 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(2),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10403,15 +10424,15 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(2),intent(in),optional            :: lbounds
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array2)         :: array
+    type(gpufort_array2) :: array
     !
-    integer(c_int),dimension(2)     :: opt_lbounds
+    integer(c_int),dimension(2) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10426,205 +10447,226 @@ contains
       opt_sync_mode)
     if ( present(ierr) ) ierr = opt_ierr
   end function
-  function gpufort_array2_wrap_device_ptr_c_bool(&
-      data_dev,lbounds,ierr) result(array)
+  function gpufort_array2_wrap_device_ptr_cptr(&
+      data_dev,sizes,lbounds,bytes_per_element) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
-    logical(c_bool),intent(in),pointer,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    type(c_ptr),intent(in) :: data_dev 
+    integer(c_int),dimension(2),intent(in) :: sizes
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
+    integer(c_int),intent(in),optional :: bytes_per_element
     !
     type(gpufort_array2) :: array
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    integer(c_int) :: opt_bytes_per_element
+    !
+    integer(kind(hipSuccess)) :: ierr
+    !
+    opt_lbounds = 1
+    opt_bytes_per_element = 1
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    if ( present(bytes_per_element) ) opt_bytes_per_element = bytes_per_element             
+    ierr = gpufort_array2_init(&
+      array,&
+      opt_bytes_per_element,&
+      c_null_ptr,data_dev,&
+      sizes, opt_lbounds,&
+      gpufort_array_wrap_host_wrap_device,&
+      gpufort_array_sync_none)
+  end function
+  function gpufort_array2_wrap_device_ptr_c_bool(&
+      data_dev,lbounds) result(array)
+    use iso_c_binding
+    use hipfort_enums
+    implicit none
+    logical(c_bool),intent(in),pointer,dimension(:,:) :: data_dev 
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
+    !
+    type(gpufort_array2) :: array
+    !
+    integer(c_int),dimension(2) :: opt_lbounds
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array2_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array2_init(&
       array,&
       int(c_bool, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array2_wrap_device_ptr_c_short(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_short),intent(in),pointer,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     !
     type(gpufort_array2) :: array
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array2_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array2_init(&
       array,&
       int(c_short, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array2_wrap_device_ptr_c_int(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_int),intent(in),pointer,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     !
     type(gpufort_array2) :: array
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array2_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array2_init(&
       array,&
       int(c_int, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array2_wrap_device_ptr_c_long(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_long),intent(in),pointer,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     !
     type(gpufort_array2) :: array
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array2_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array2_init(&
       array,&
       int(c_long, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array2_wrap_device_ptr_c_float(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     real(c_float),intent(in),pointer,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     !
     type(gpufort_array2) :: array
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array2_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array2_init(&
       array,&
       int(c_float, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array2_wrap_device_ptr_c_double(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     real(c_double),intent(in),pointer,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     !
     type(gpufort_array2) :: array
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array2_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array2_init(&
       array,&
       int(c_double, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array2_wrap_device_ptr_c_float_complex(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     complex(c_float_complex),intent(in),pointer,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     !
     type(gpufort_array2) :: array
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array2_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array2_init(&
       array,&
       int(2*c_float_complex, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array2_wrap_device_ptr_c_double_complex(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     complex(c_double_complex),intent(in),pointer,dimension(:,:) :: data_dev 
-    integer(c_int),dimension(2),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(2),intent(in),optional :: lbounds
     !
     type(gpufort_array2) :: array
     !
     integer(c_int),dimension(2) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array2_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array2_init(&
       array,&
       int(2*c_double_complex, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
    
   function gpufort_array3_wrap_async_c_bool(&
@@ -10635,16 +10677,16 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:) :: data_host 
     logical(c_bool),intent(in),target,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(3),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10667,15 +10709,15 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:) :: data_host 
     logical(c_bool),intent(in),target,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10699,16 +10741,16 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(3),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10731,15 +10773,15 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10763,16 +10805,16 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_short),intent(in),target,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(3),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10795,15 +10837,15 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_short),intent(in),target,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10827,16 +10869,16 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(3),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10859,15 +10901,15 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10891,16 +10933,16 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_int),intent(in),target,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(3),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10923,15 +10965,15 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_int),intent(in),target,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10955,16 +10997,16 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(3),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -10987,15 +11029,15 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11019,16 +11061,16 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_long),intent(in),target,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(3),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11051,15 +11093,15 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:) :: data_host 
     integer(c_long),intent(in),target,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11083,16 +11125,16 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(3),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11115,15 +11157,15 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11147,16 +11189,16 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:) :: data_host 
     real(c_float),intent(in),target,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(3),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11179,15 +11221,15 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:) :: data_host 
     real(c_float),intent(in),target,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11211,16 +11253,16 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(3),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11243,15 +11285,15 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11275,16 +11317,16 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:) :: data_host 
     real(c_double),intent(in),target,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(3),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11307,15 +11349,15 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:) :: data_host 
     real(c_double),intent(in),target,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11339,16 +11381,16 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(3),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11371,15 +11413,15 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11403,16 +11445,16 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:) :: data_host 
     complex(c_float_complex),intent(in),target,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(3),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11435,15 +11477,15 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:) :: data_host 
     complex(c_float_complex),intent(in),target,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11467,16 +11509,16 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(3),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11499,15 +11541,15 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11531,16 +11573,16 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:) :: data_host 
     complex(c_double_complex),intent(in),target,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(3),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11563,15 +11605,15 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:) :: data_host 
     complex(c_double_complex),intent(in),target,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11595,16 +11637,16 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(3),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11627,15 +11669,15 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(3),intent(in),optional            :: lbounds
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array3)         :: array
+    type(gpufort_array3) :: array
     !
-    integer(c_int),dimension(3)     :: opt_lbounds
+    integer(c_int),dimension(3) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11650,205 +11692,226 @@ contains
       opt_sync_mode)
     if ( present(ierr) ) ierr = opt_ierr
   end function
-  function gpufort_array3_wrap_device_ptr_c_bool(&
-      data_dev,lbounds,ierr) result(array)
+  function gpufort_array3_wrap_device_ptr_cptr(&
+      data_dev,sizes,lbounds,bytes_per_element) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
-    logical(c_bool),intent(in),pointer,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    type(c_ptr),intent(in) :: data_dev 
+    integer(c_int),dimension(3),intent(in) :: sizes
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
+    integer(c_int),intent(in),optional :: bytes_per_element
     !
     type(gpufort_array3) :: array
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    integer(c_int) :: opt_bytes_per_element
+    !
+    integer(kind(hipSuccess)) :: ierr
+    !
+    opt_lbounds = 1
+    opt_bytes_per_element = 1
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    if ( present(bytes_per_element) ) opt_bytes_per_element = bytes_per_element             
+    ierr = gpufort_array3_init(&
+      array,&
+      opt_bytes_per_element,&
+      c_null_ptr,data_dev,&
+      sizes, opt_lbounds,&
+      gpufort_array_wrap_host_wrap_device,&
+      gpufort_array_sync_none)
+  end function
+  function gpufort_array3_wrap_device_ptr_c_bool(&
+      data_dev,lbounds) result(array)
+    use iso_c_binding
+    use hipfort_enums
+    implicit none
+    logical(c_bool),intent(in),pointer,dimension(:,:,:) :: data_dev 
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
+    !
+    type(gpufort_array3) :: array
+    !
+    integer(c_int),dimension(3) :: opt_lbounds
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array3_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array3_init(&
       array,&
       int(c_bool, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array3_wrap_device_ptr_c_short(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_short),intent(in),pointer,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     !
     type(gpufort_array3) :: array
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array3_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array3_init(&
       array,&
       int(c_short, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array3_wrap_device_ptr_c_int(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_int),intent(in),pointer,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     !
     type(gpufort_array3) :: array
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array3_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array3_init(&
       array,&
       int(c_int, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array3_wrap_device_ptr_c_long(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_long),intent(in),pointer,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     !
     type(gpufort_array3) :: array
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array3_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array3_init(&
       array,&
       int(c_long, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array3_wrap_device_ptr_c_float(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     real(c_float),intent(in),pointer,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     !
     type(gpufort_array3) :: array
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array3_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array3_init(&
       array,&
       int(c_float, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array3_wrap_device_ptr_c_double(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     real(c_double),intent(in),pointer,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     !
     type(gpufort_array3) :: array
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array3_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array3_init(&
       array,&
       int(c_double, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array3_wrap_device_ptr_c_float_complex(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     complex(c_float_complex),intent(in),pointer,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     !
     type(gpufort_array3) :: array
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array3_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array3_init(&
       array,&
       int(2*c_float_complex, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array3_wrap_device_ptr_c_double_complex(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     complex(c_double_complex),intent(in),pointer,dimension(:,:,:) :: data_dev 
-    integer(c_int),dimension(3),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(3),intent(in),optional :: lbounds
     !
     type(gpufort_array3) :: array
     !
     integer(c_int),dimension(3) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array3_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array3_init(&
       array,&
       int(2*c_double_complex, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
    
   function gpufort_array4_wrap_async_c_bool(&
@@ -11859,16 +11922,16 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:,:) :: data_host 
     logical(c_bool),intent(in),target,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(4),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11891,15 +11954,15 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:,:) :: data_host 
     logical(c_bool),intent(in),target,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11923,16 +11986,16 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(4),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11955,15 +12018,15 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -11987,16 +12050,16 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_short),intent(in),target,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(4),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12019,15 +12082,15 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_short),intent(in),target,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12051,16 +12114,16 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(4),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12083,15 +12146,15 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12115,16 +12178,16 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_int),intent(in),target,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(4),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12147,15 +12210,15 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_int),intent(in),target,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12179,16 +12242,16 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(4),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12211,15 +12274,15 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12243,16 +12306,16 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_long),intent(in),target,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(4),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12275,15 +12338,15 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:,:) :: data_host 
     integer(c_long),intent(in),target,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12307,16 +12370,16 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(4),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12339,15 +12402,15 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12371,16 +12434,16 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:,:) :: data_host 
     real(c_float),intent(in),target,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(4),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12403,15 +12466,15 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:,:) :: data_host 
     real(c_float),intent(in),target,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12435,16 +12498,16 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(4),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12467,15 +12530,15 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12499,16 +12562,16 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:,:) :: data_host 
     real(c_double),intent(in),target,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(4),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12531,15 +12594,15 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:,:) :: data_host 
     real(c_double),intent(in),target,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12563,16 +12626,16 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(4),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12595,15 +12658,15 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12627,16 +12690,16 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:) :: data_host 
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(4),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12659,15 +12722,15 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:) :: data_host 
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12691,16 +12754,16 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(4),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12723,15 +12786,15 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12755,16 +12818,16 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:) :: data_host 
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(4),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12787,15 +12850,15 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:) :: data_host 
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12819,16 +12882,16 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(4),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12851,15 +12914,15 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(4),intent(in),optional            :: lbounds
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array4)         :: array
+    type(gpufort_array4) :: array
     !
-    integer(c_int),dimension(4)     :: opt_lbounds
+    integer(c_int),dimension(4) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -12874,205 +12937,226 @@ contains
       opt_sync_mode)
     if ( present(ierr) ) ierr = opt_ierr
   end function
-  function gpufort_array4_wrap_device_ptr_c_bool(&
-      data_dev,lbounds,ierr) result(array)
+  function gpufort_array4_wrap_device_ptr_cptr(&
+      data_dev,sizes,lbounds,bytes_per_element) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
-    logical(c_bool),intent(in),pointer,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    type(c_ptr),intent(in) :: data_dev 
+    integer(c_int),dimension(4),intent(in) :: sizes
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
+    integer(c_int),intent(in),optional :: bytes_per_element
     !
     type(gpufort_array4) :: array
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    integer(c_int) :: opt_bytes_per_element
+    !
+    integer(kind(hipSuccess)) :: ierr
+    !
+    opt_lbounds = 1
+    opt_bytes_per_element = 1
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    if ( present(bytes_per_element) ) opt_bytes_per_element = bytes_per_element             
+    ierr = gpufort_array4_init(&
+      array,&
+      opt_bytes_per_element,&
+      c_null_ptr,data_dev,&
+      sizes, opt_lbounds,&
+      gpufort_array_wrap_host_wrap_device,&
+      gpufort_array_sync_none)
+  end function
+  function gpufort_array4_wrap_device_ptr_c_bool(&
+      data_dev,lbounds) result(array)
+    use iso_c_binding
+    use hipfort_enums
+    implicit none
+    logical(c_bool),intent(in),pointer,dimension(:,:,:,:) :: data_dev 
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
+    !
+    type(gpufort_array4) :: array
+    !
+    integer(c_int),dimension(4) :: opt_lbounds
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array4_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array4_init(&
       array,&
       int(c_bool, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array4_wrap_device_ptr_c_short(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_short),intent(in),pointer,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     !
     type(gpufort_array4) :: array
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array4_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array4_init(&
       array,&
       int(c_short, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array4_wrap_device_ptr_c_int(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_int),intent(in),pointer,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     !
     type(gpufort_array4) :: array
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array4_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array4_init(&
       array,&
       int(c_int, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array4_wrap_device_ptr_c_long(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_long),intent(in),pointer,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     !
     type(gpufort_array4) :: array
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array4_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array4_init(&
       array,&
       int(c_long, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array4_wrap_device_ptr_c_float(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     real(c_float),intent(in),pointer,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     !
     type(gpufort_array4) :: array
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array4_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array4_init(&
       array,&
       int(c_float, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array4_wrap_device_ptr_c_double(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     real(c_double),intent(in),pointer,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     !
     type(gpufort_array4) :: array
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array4_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array4_init(&
       array,&
       int(c_double, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array4_wrap_device_ptr_c_float_complex(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     complex(c_float_complex),intent(in),pointer,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     !
     type(gpufort_array4) :: array
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array4_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array4_init(&
       array,&
       int(2*c_float_complex, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array4_wrap_device_ptr_c_double_complex(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     complex(c_double_complex),intent(in),pointer,dimension(:,:,:,:) :: data_dev 
-    integer(c_int),dimension(4),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(4),intent(in),optional :: lbounds
     !
     type(gpufort_array4) :: array
     !
     integer(c_int),dimension(4) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array4_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array4_init(&
       array,&
       int(2*c_double_complex, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
    
   function gpufort_array5_wrap_async_c_bool(&
@@ -13083,16 +13167,16 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(5),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13115,15 +13199,15 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13147,16 +13231,16 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(5),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13179,15 +13263,15 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13211,16 +13295,16 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_short),intent(in),target,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(5),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13243,15 +13327,15 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_short),intent(in),target,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13275,16 +13359,16 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(5),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13307,15 +13391,15 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13339,16 +13423,16 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_int),intent(in),target,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(5),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13371,15 +13455,15 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_int),intent(in),target,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13403,16 +13487,16 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(5),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13435,15 +13519,15 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13467,16 +13551,16 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_long),intent(in),target,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(5),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13499,15 +13583,15 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     integer(c_long),intent(in),target,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13531,16 +13615,16 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(5),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13563,15 +13647,15 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13595,16 +13679,16 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     real(c_float),intent(in),target,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(5),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13627,15 +13711,15 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     real(c_float),intent(in),target,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13659,16 +13743,16 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(5),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13691,15 +13775,15 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13723,16 +13807,16 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     real(c_double),intent(in),target,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(5),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13755,15 +13839,15 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     real(c_double),intent(in),target,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13787,16 +13871,16 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(5),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13819,15 +13903,15 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13851,16 +13935,16 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(5),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13883,15 +13967,15 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13915,16 +13999,16 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(5),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13947,15 +14031,15 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -13979,16 +14063,16 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(5),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14011,15 +14095,15 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14043,16 +14127,16 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(5),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14075,15 +14159,15 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(5),intent(in),optional            :: lbounds
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array5)         :: array
+    type(gpufort_array5) :: array
     !
-    integer(c_int),dimension(5)     :: opt_lbounds
+    integer(c_int),dimension(5) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14098,205 +14182,226 @@ contains
       opt_sync_mode)
     if ( present(ierr) ) ierr = opt_ierr
   end function
-  function gpufort_array5_wrap_device_ptr_c_bool(&
-      data_dev,lbounds,ierr) result(array)
+  function gpufort_array5_wrap_device_ptr_cptr(&
+      data_dev,sizes,lbounds,bytes_per_element) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
-    logical(c_bool),intent(in),pointer,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    type(c_ptr),intent(in) :: data_dev 
+    integer(c_int),dimension(5),intent(in) :: sizes
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
+    integer(c_int),intent(in),optional :: bytes_per_element
     !
     type(gpufort_array5) :: array
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    integer(c_int) :: opt_bytes_per_element
+    !
+    integer(kind(hipSuccess)) :: ierr
+    !
+    opt_lbounds = 1
+    opt_bytes_per_element = 1
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    if ( present(bytes_per_element) ) opt_bytes_per_element = bytes_per_element             
+    ierr = gpufort_array5_init(&
+      array,&
+      opt_bytes_per_element,&
+      c_null_ptr,data_dev,&
+      sizes, opt_lbounds,&
+      gpufort_array_wrap_host_wrap_device,&
+      gpufort_array_sync_none)
+  end function
+  function gpufort_array5_wrap_device_ptr_c_bool(&
+      data_dev,lbounds) result(array)
+    use iso_c_binding
+    use hipfort_enums
+    implicit none
+    logical(c_bool),intent(in),pointer,dimension(:,:,:,:,:) :: data_dev 
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
+    !
+    type(gpufort_array5) :: array
+    !
+    integer(c_int),dimension(5) :: opt_lbounds
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array5_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array5_init(&
       array,&
       int(c_bool, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array5_wrap_device_ptr_c_short(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_short),intent(in),pointer,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     !
     type(gpufort_array5) :: array
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array5_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array5_init(&
       array,&
       int(c_short, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array5_wrap_device_ptr_c_int(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_int),intent(in),pointer,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     !
     type(gpufort_array5) :: array
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array5_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array5_init(&
       array,&
       int(c_int, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array5_wrap_device_ptr_c_long(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_long),intent(in),pointer,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     !
     type(gpufort_array5) :: array
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array5_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array5_init(&
       array,&
       int(c_long, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array5_wrap_device_ptr_c_float(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     real(c_float),intent(in),pointer,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     !
     type(gpufort_array5) :: array
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array5_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array5_init(&
       array,&
       int(c_float, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array5_wrap_device_ptr_c_double(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     real(c_double),intent(in),pointer,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     !
     type(gpufort_array5) :: array
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array5_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array5_init(&
       array,&
       int(c_double, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array5_wrap_device_ptr_c_float_complex(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     complex(c_float_complex),intent(in),pointer,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     !
     type(gpufort_array5) :: array
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array5_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array5_init(&
       array,&
       int(2*c_float_complex, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array5_wrap_device_ptr_c_double_complex(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     complex(c_double_complex),intent(in),pointer,dimension(:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(5),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(5),intent(in),optional :: lbounds
     !
     type(gpufort_array5) :: array
     !
     integer(c_int),dimension(5) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array5_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array5_init(&
       array,&
       int(2*c_double_complex, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
    
   function gpufort_array6_wrap_async_c_bool(&
@@ -14307,16 +14412,16 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(6),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14339,15 +14444,15 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14371,16 +14476,16 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(6),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14403,15 +14508,15 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14435,16 +14540,16 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_short),intent(in),target,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(6),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14467,15 +14572,15 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_short),intent(in),target,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14499,16 +14604,16 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(6),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14531,15 +14636,15 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14563,16 +14668,16 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_int),intent(in),target,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(6),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14595,15 +14700,15 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_int),intent(in),target,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14627,16 +14732,16 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(6),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14659,15 +14764,15 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14691,16 +14796,16 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_long),intent(in),target,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(6),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14723,15 +14828,15 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     integer(c_long),intent(in),target,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14755,16 +14860,16 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(6),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14787,15 +14892,15 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14819,16 +14924,16 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     real(c_float),intent(in),target,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(6),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14851,15 +14956,15 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     real(c_float),intent(in),target,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14883,16 +14988,16 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(6),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14915,15 +15020,15 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14947,16 +15052,16 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     real(c_double),intent(in),target,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(6),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -14979,15 +15084,15 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     real(c_double),intent(in),target,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15011,16 +15116,16 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(6),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15043,15 +15148,15 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15075,16 +15180,16 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(6),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15107,15 +15212,15 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15139,16 +15244,16 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(6),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15171,15 +15276,15 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15203,16 +15308,16 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(6),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15235,15 +15340,15 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15267,16 +15372,16 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(6),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15299,15 +15404,15 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(6),intent(in),optional            :: lbounds
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array6)         :: array
+    type(gpufort_array6) :: array
     !
-    integer(c_int),dimension(6)     :: opt_lbounds
+    integer(c_int),dimension(6) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15322,205 +15427,226 @@ contains
       opt_sync_mode)
     if ( present(ierr) ) ierr = opt_ierr
   end function
-  function gpufort_array6_wrap_device_ptr_c_bool(&
-      data_dev,lbounds,ierr) result(array)
+  function gpufort_array6_wrap_device_ptr_cptr(&
+      data_dev,sizes,lbounds,bytes_per_element) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
-    logical(c_bool),intent(in),pointer,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    type(c_ptr),intent(in) :: data_dev 
+    integer(c_int),dimension(6),intent(in) :: sizes
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
+    integer(c_int),intent(in),optional :: bytes_per_element
     !
     type(gpufort_array6) :: array
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    integer(c_int) :: opt_bytes_per_element
+    !
+    integer(kind(hipSuccess)) :: ierr
+    !
+    opt_lbounds = 1
+    opt_bytes_per_element = 1
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    if ( present(bytes_per_element) ) opt_bytes_per_element = bytes_per_element             
+    ierr = gpufort_array6_init(&
+      array,&
+      opt_bytes_per_element,&
+      c_null_ptr,data_dev,&
+      sizes, opt_lbounds,&
+      gpufort_array_wrap_host_wrap_device,&
+      gpufort_array_sync_none)
+  end function
+  function gpufort_array6_wrap_device_ptr_c_bool(&
+      data_dev,lbounds) result(array)
+    use iso_c_binding
+    use hipfort_enums
+    implicit none
+    logical(c_bool),intent(in),pointer,dimension(:,:,:,:,:,:) :: data_dev 
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
+    !
+    type(gpufort_array6) :: array
+    !
+    integer(c_int),dimension(6) :: opt_lbounds
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array6_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array6_init(&
       array,&
       int(c_bool, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array6_wrap_device_ptr_c_short(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_short),intent(in),pointer,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     !
     type(gpufort_array6) :: array
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array6_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array6_init(&
       array,&
       int(c_short, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array6_wrap_device_ptr_c_int(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_int),intent(in),pointer,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     !
     type(gpufort_array6) :: array
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array6_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array6_init(&
       array,&
       int(c_int, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array6_wrap_device_ptr_c_long(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_long),intent(in),pointer,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     !
     type(gpufort_array6) :: array
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array6_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array6_init(&
       array,&
       int(c_long, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array6_wrap_device_ptr_c_float(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     real(c_float),intent(in),pointer,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     !
     type(gpufort_array6) :: array
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array6_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array6_init(&
       array,&
       int(c_float, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array6_wrap_device_ptr_c_double(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     real(c_double),intent(in),pointer,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     !
     type(gpufort_array6) :: array
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array6_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array6_init(&
       array,&
       int(c_double, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array6_wrap_device_ptr_c_float_complex(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     complex(c_float_complex),intent(in),pointer,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     !
     type(gpufort_array6) :: array
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array6_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array6_init(&
       array,&
       int(2*c_float_complex, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array6_wrap_device_ptr_c_double_complex(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     complex(c_double_complex),intent(in),pointer,dimension(:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(6),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(6),intent(in),optional :: lbounds
     !
     type(gpufort_array6) :: array
     !
     integer(c_int),dimension(6) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array6_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array6_init(&
       array,&
       int(2*c_double_complex, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
    
   function gpufort_array7_wrap_async_c_bool(&
@@ -15531,16 +15657,16 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(7),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15563,15 +15689,15 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15595,16 +15721,16 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(7),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15627,15 +15753,15 @@ contains
     implicit none
     logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15659,16 +15785,16 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_short),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(7),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15691,15 +15817,15 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_short),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15723,16 +15849,16 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(7),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15755,15 +15881,15 @@ contains
     implicit none
     integer(c_short),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15787,16 +15913,16 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_int),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(7),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15819,15 +15945,15 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_int),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15851,16 +15977,16 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(7),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15883,15 +16009,15 @@ contains
     implicit none
     integer(c_int),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15915,16 +16041,16 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_long),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(7),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15947,15 +16073,15 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     integer(c_long),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -15979,16 +16105,16 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(7),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -16011,15 +16137,15 @@ contains
     implicit none
     integer(c_long),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -16043,16 +16169,16 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     real(c_float),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(7),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -16075,15 +16201,15 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     real(c_float),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -16107,16 +16233,16 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(7),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -16139,15 +16265,15 @@ contains
     implicit none
     real(c_float),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -16171,16 +16297,16 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     real(c_double),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(7),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -16203,15 +16329,15 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     real(c_double),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -16235,16 +16361,16 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(7),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -16267,15 +16393,15 @@ contains
     implicit none
     real(c_double),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -16299,16 +16425,16 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(7),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -16331,15 +16457,15 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -16363,16 +16489,16 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(7),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -16395,15 +16521,15 @@ contains
     implicit none
     complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -16427,16 +16553,16 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(7),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -16459,15 +16585,15 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -16491,16 +16617,16 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds 
-    type(c_ptr),intent(in)                                     :: stream
+    integer(c_int),dimension(7),intent(in),optional :: lbounds 
+    type(c_ptr),intent(in) :: stream
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -16523,15 +16649,15 @@ contains
     implicit none
     complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: data_host 
     type(c_ptr),intent(in) :: data_dev
-    integer(c_int),dimension(7),intent(in),optional            :: lbounds
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     integer(kind(gpufort_array_sync_none)),intent(in),optional :: sync_mode
-    integer(kind(hipSuccess)),intent(inout),optional           :: ierr
+    integer(kind(hipSuccess)),intent(inout),optional :: ierr
     !
-    type(gpufort_array7)         :: array
+    type(gpufort_array7) :: array
     !
-    integer(c_int),dimension(7)     :: opt_lbounds
+    integer(c_int),dimension(7) :: opt_lbounds
     integer(kind(gpufort_array_sync_none)) :: opt_sync_mode 
-    integer(kind(hipSuccess))              :: opt_ierr
+    integer(kind(hipSuccess)) :: opt_ierr
     !
     opt_lbounds    = 1
     opt_sync_mode  = gpufort_array_sync_none
@@ -16546,205 +16672,226 @@ contains
       opt_sync_mode)
     if ( present(ierr) ) ierr = opt_ierr
   end function
-  function gpufort_array7_wrap_device_ptr_c_bool(&
-      data_dev,lbounds,ierr) result(array)
+  function gpufort_array7_wrap_device_ptr_cptr(&
+      data_dev,sizes,lbounds,bytes_per_element) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
-    logical(c_bool),intent(in),pointer,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    type(c_ptr),intent(in) :: data_dev 
+    integer(c_int),dimension(7),intent(in) :: sizes
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
+    integer(c_int),intent(in),optional :: bytes_per_element
     !
     type(gpufort_array7) :: array
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    integer(c_int) :: opt_bytes_per_element
+    !
+    integer(kind(hipSuccess)) :: ierr
+    !
+    opt_lbounds = 1
+    opt_bytes_per_element = 1
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    if ( present(bytes_per_element) ) opt_bytes_per_element = bytes_per_element             
+    ierr = gpufort_array7_init(&
+      array,&
+      opt_bytes_per_element,&
+      c_null_ptr,data_dev,&
+      sizes, opt_lbounds,&
+      gpufort_array_wrap_host_wrap_device,&
+      gpufort_array_sync_none)
+  end function
+  function gpufort_array7_wrap_device_ptr_c_bool(&
+      data_dev,lbounds) result(array)
+    use iso_c_binding
+    use hipfort_enums
+    implicit none
+    logical(c_bool),intent(in),pointer,dimension(:,:,:,:,:,:,:) :: data_dev 
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
+    !
+    type(gpufort_array7) :: array
+    !
+    integer(c_int),dimension(7) :: opt_lbounds
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array7_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array7_init(&
       array,&
       int(c_bool, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array7_wrap_device_ptr_c_short(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_short),intent(in),pointer,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     !
     type(gpufort_array7) :: array
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array7_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array7_init(&
       array,&
       int(c_short, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array7_wrap_device_ptr_c_int(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_int),intent(in),pointer,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     !
     type(gpufort_array7) :: array
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array7_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array7_init(&
       array,&
       int(c_int, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array7_wrap_device_ptr_c_long(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     integer(c_long),intent(in),pointer,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     !
     type(gpufort_array7) :: array
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array7_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array7_init(&
       array,&
       int(c_long, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array7_wrap_device_ptr_c_float(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     real(c_float),intent(in),pointer,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     !
     type(gpufort_array7) :: array
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array7_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array7_init(&
       array,&
       int(c_float, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array7_wrap_device_ptr_c_double(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     real(c_double),intent(in),pointer,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     !
     type(gpufort_array7) :: array
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array7_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array7_init(&
       array,&
       int(c_double, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array7_wrap_device_ptr_c_float_complex(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     complex(c_float_complex),intent(in),pointer,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     !
     type(gpufort_array7) :: array
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array7_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array7_init(&
       array,&
       int(2*c_float_complex, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
   function gpufort_array7_wrap_device_ptr_c_double_complex(&
-      data_dev,lbounds,ierr) result(array)
+      data_dev,lbounds) result(array)
     use iso_c_binding
     use hipfort_enums
     implicit none
     complex(c_double_complex),intent(in),pointer,dimension(:,:,:,:,:,:,:) :: data_dev 
-    integer(c_int),dimension(7),intent(in),optional  :: lbounds
-    integer(kind(hipSuccess)),intent(inout),optional :: ierr
+    integer(c_int),dimension(7),intent(in),optional :: lbounds
     !
     type(gpufort_array7) :: array
     !
     integer(c_int),dimension(7) :: opt_lbounds
-    integer(kind(hipSuccess))          :: opt_ierr
+    !
+    integer(kind(hipSuccess)) :: ierr
     !
     opt_lbounds    = 1
-    if ( present(lbounds) )   opt_lbounds    = lbounds             
-    opt_ierr = gpufort_array7_init(&
+    if ( present(lbounds) ) opt_lbounds = lbounds             
+    ierr = gpufort_array7_init(&
       array,&
       int(2*c_double_complex, c_int),&
       c_null_ptr,c_loc(data_dev),&
       shape(data_dev), opt_lbounds,&
       gpufort_array_wrap_host_wrap_device,&
       gpufort_array_sync_none)
-    if ( present(ierr) ) ierr = opt_ierr
   end function
 
   function gpufort_array1_num_data_bytes(array) result(retval)
@@ -16859,7 +17006,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(in)        :: array
+    type(gpufort_array1),intent(in) :: array
     logical(c_bool),intent(inout),pointer,dimension(:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -16888,7 +17035,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(in)        :: array
+    type(gpufort_array1),intent(in) :: array
     integer(c_short),intent(inout),pointer,dimension(:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -16917,7 +17064,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(in)        :: array
+    type(gpufort_array1),intent(in) :: array
     integer(c_int),intent(inout),pointer,dimension(:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -16946,7 +17093,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(in)        :: array
+    type(gpufort_array1),intent(in) :: array
     integer(c_long),intent(inout),pointer,dimension(:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -16975,7 +17122,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(in)        :: array
+    type(gpufort_array1),intent(in) :: array
     real(c_float),intent(inout),pointer,dimension(:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17004,7 +17151,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(in)        :: array
+    type(gpufort_array1),intent(in) :: array
     real(c_double),intent(inout),pointer,dimension(:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17033,7 +17180,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(in)        :: array
+    type(gpufort_array1),intent(in) :: array
     complex(c_float_complex),intent(inout),pointer,dimension(:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17062,7 +17209,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(in)        :: array
+    type(gpufort_array1),intent(in) :: array
     complex(c_double_complex),intent(inout),pointer,dimension(:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17091,7 +17238,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(in)        :: array
+    type(gpufort_array2),intent(in) :: array
     logical(c_bool),intent(inout),pointer,dimension(:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17123,7 +17270,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(in)        :: array
+    type(gpufort_array2),intent(in) :: array
     integer(c_short),intent(inout),pointer,dimension(:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17155,7 +17302,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(in)        :: array
+    type(gpufort_array2),intent(in) :: array
     integer(c_int),intent(inout),pointer,dimension(:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17187,7 +17334,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(in)        :: array
+    type(gpufort_array2),intent(in) :: array
     integer(c_long),intent(inout),pointer,dimension(:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17219,7 +17366,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(in)        :: array
+    type(gpufort_array2),intent(in) :: array
     real(c_float),intent(inout),pointer,dimension(:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17251,7 +17398,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(in)        :: array
+    type(gpufort_array2),intent(in) :: array
     real(c_double),intent(inout),pointer,dimension(:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17283,7 +17430,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(in)        :: array
+    type(gpufort_array2),intent(in) :: array
     complex(c_float_complex),intent(inout),pointer,dimension(:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17315,7 +17462,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(in)        :: array
+    type(gpufort_array2),intent(in) :: array
     complex(c_double_complex),intent(inout),pointer,dimension(:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17347,7 +17494,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(in)        :: array
+    type(gpufort_array3),intent(in) :: array
     logical(c_bool),intent(inout),pointer,dimension(:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17382,7 +17529,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(in)        :: array
+    type(gpufort_array3),intent(in) :: array
     integer(c_short),intent(inout),pointer,dimension(:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17417,7 +17564,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(in)        :: array
+    type(gpufort_array3),intent(in) :: array
     integer(c_int),intent(inout),pointer,dimension(:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17452,7 +17599,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(in)        :: array
+    type(gpufort_array3),intent(in) :: array
     integer(c_long),intent(inout),pointer,dimension(:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17487,7 +17634,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(in)        :: array
+    type(gpufort_array3),intent(in) :: array
     real(c_float),intent(inout),pointer,dimension(:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17522,7 +17669,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(in)        :: array
+    type(gpufort_array3),intent(in) :: array
     real(c_double),intent(inout),pointer,dimension(:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17557,7 +17704,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(in)        :: array
+    type(gpufort_array3),intent(in) :: array
     complex(c_float_complex),intent(inout),pointer,dimension(:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17592,7 +17739,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(in)        :: array
+    type(gpufort_array3),intent(in) :: array
     complex(c_double_complex),intent(inout),pointer,dimension(:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17627,7 +17774,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(in)        :: array
+    type(gpufort_array4),intent(in) :: array
     logical(c_bool),intent(inout),pointer,dimension(:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17665,7 +17812,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(in)        :: array
+    type(gpufort_array4),intent(in) :: array
     integer(c_short),intent(inout),pointer,dimension(:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17703,7 +17850,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(in)        :: array
+    type(gpufort_array4),intent(in) :: array
     integer(c_int),intent(inout),pointer,dimension(:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17741,7 +17888,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(in)        :: array
+    type(gpufort_array4),intent(in) :: array
     integer(c_long),intent(inout),pointer,dimension(:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17779,7 +17926,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(in)        :: array
+    type(gpufort_array4),intent(in) :: array
     real(c_float),intent(inout),pointer,dimension(:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17817,7 +17964,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(in)        :: array
+    type(gpufort_array4),intent(in) :: array
     real(c_double),intent(inout),pointer,dimension(:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17855,7 +18002,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(in)        :: array
+    type(gpufort_array4),intent(in) :: array
     complex(c_float_complex),intent(inout),pointer,dimension(:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17893,7 +18040,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(in)        :: array
+    type(gpufort_array4),intent(in) :: array
     complex(c_double_complex),intent(inout),pointer,dimension(:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17931,7 +18078,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(in)        :: array
+    type(gpufort_array5),intent(in) :: array
     logical(c_bool),intent(inout),pointer,dimension(:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -17972,7 +18119,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(in)        :: array
+    type(gpufort_array5),intent(in) :: array
     integer(c_short),intent(inout),pointer,dimension(:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18013,7 +18160,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(in)        :: array
+    type(gpufort_array5),intent(in) :: array
     integer(c_int),intent(inout),pointer,dimension(:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18054,7 +18201,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(in)        :: array
+    type(gpufort_array5),intent(in) :: array
     integer(c_long),intent(inout),pointer,dimension(:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18095,7 +18242,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(in)        :: array
+    type(gpufort_array5),intent(in) :: array
     real(c_float),intent(inout),pointer,dimension(:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18136,7 +18283,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(in)        :: array
+    type(gpufort_array5),intent(in) :: array
     real(c_double),intent(inout),pointer,dimension(:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18177,7 +18324,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(in)        :: array
+    type(gpufort_array5),intent(in) :: array
     complex(c_float_complex),intent(inout),pointer,dimension(:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18218,7 +18365,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(in)        :: array
+    type(gpufort_array5),intent(in) :: array
     complex(c_double_complex),intent(inout),pointer,dimension(:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18259,7 +18406,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(in)        :: array
+    type(gpufort_array6),intent(in) :: array
     logical(c_bool),intent(inout),pointer,dimension(:,:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18303,7 +18450,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(in)        :: array
+    type(gpufort_array6),intent(in) :: array
     integer(c_short),intent(inout),pointer,dimension(:,:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18347,7 +18494,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(in)        :: array
+    type(gpufort_array6),intent(in) :: array
     integer(c_int),intent(inout),pointer,dimension(:,:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18391,7 +18538,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(in)        :: array
+    type(gpufort_array6),intent(in) :: array
     integer(c_long),intent(inout),pointer,dimension(:,:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18435,7 +18582,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(in)        :: array
+    type(gpufort_array6),intent(in) :: array
     real(c_float),intent(inout),pointer,dimension(:,:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18479,7 +18626,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(in)        :: array
+    type(gpufort_array6),intent(in) :: array
     real(c_double),intent(inout),pointer,dimension(:,:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18523,7 +18670,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(in)        :: array
+    type(gpufort_array6),intent(in) :: array
     complex(c_float_complex),intent(inout),pointer,dimension(:,:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18567,7 +18714,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(in)        :: array
+    type(gpufort_array6),intent(in) :: array
     complex(c_double_complex),intent(inout),pointer,dimension(:,:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18611,7 +18758,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(in)        :: array
+    type(gpufort_array7),intent(in) :: array
     logical(c_bool),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18658,7 +18805,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(in)        :: array
+    type(gpufort_array7),intent(in) :: array
     integer(c_short),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18705,7 +18852,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(in)        :: array
+    type(gpufort_array7),intent(in) :: array
     integer(c_int),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18752,7 +18899,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(in)        :: array
+    type(gpufort_array7),intent(in) :: array
     integer(c_long),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18799,7 +18946,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(in)        :: array
+    type(gpufort_array7),intent(in) :: array
     real(c_float),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18846,7 +18993,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(in)        :: array
+    type(gpufort_array7),intent(in) :: array
     real(c_double),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18893,7 +19040,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(in)        :: array
+    type(gpufort_array7),intent(in) :: array
     complex(c_float_complex),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18940,7 +19087,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(in)        :: array
+    type(gpufort_array7),intent(in) :: array
     complex(c_double_complex),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: data_host 
     !
     integer(c_int) :: offset_remainder
@@ -18987,7 +19134,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(in)        :: array
+    type(gpufort_array1),intent(in) :: array
     logical(c_bool),intent(inout),pointer,dimension(:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19016,7 +19163,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(in)        :: array
+    type(gpufort_array1),intent(in) :: array
     integer(c_short),intent(inout),pointer,dimension(:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19045,7 +19192,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(in)        :: array
+    type(gpufort_array1),intent(in) :: array
     integer(c_int),intent(inout),pointer,dimension(:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19074,7 +19221,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(in)        :: array
+    type(gpufort_array1),intent(in) :: array
     integer(c_long),intent(inout),pointer,dimension(:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19103,7 +19250,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(in)        :: array
+    type(gpufort_array1),intent(in) :: array
     real(c_float),intent(inout),pointer,dimension(:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19132,7 +19279,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(in)        :: array
+    type(gpufort_array1),intent(in) :: array
     real(c_double),intent(inout),pointer,dimension(:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19161,7 +19308,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(in)        :: array
+    type(gpufort_array1),intent(in) :: array
     complex(c_float_complex),intent(inout),pointer,dimension(:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19190,7 +19337,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array1),intent(in)        :: array
+    type(gpufort_array1),intent(in) :: array
     complex(c_double_complex),intent(inout),pointer,dimension(:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19219,7 +19366,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(in)        :: array
+    type(gpufort_array2),intent(in) :: array
     logical(c_bool),intent(inout),pointer,dimension(:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19251,7 +19398,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(in)        :: array
+    type(gpufort_array2),intent(in) :: array
     integer(c_short),intent(inout),pointer,dimension(:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19283,7 +19430,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(in)        :: array
+    type(gpufort_array2),intent(in) :: array
     integer(c_int),intent(inout),pointer,dimension(:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19315,7 +19462,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(in)        :: array
+    type(gpufort_array2),intent(in) :: array
     integer(c_long),intent(inout),pointer,dimension(:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19347,7 +19494,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(in)        :: array
+    type(gpufort_array2),intent(in) :: array
     real(c_float),intent(inout),pointer,dimension(:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19379,7 +19526,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(in)        :: array
+    type(gpufort_array2),intent(in) :: array
     real(c_double),intent(inout),pointer,dimension(:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19411,7 +19558,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(in)        :: array
+    type(gpufort_array2),intent(in) :: array
     complex(c_float_complex),intent(inout),pointer,dimension(:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19443,7 +19590,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array2),intent(in)        :: array
+    type(gpufort_array2),intent(in) :: array
     complex(c_double_complex),intent(inout),pointer,dimension(:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19475,7 +19622,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(in)        :: array
+    type(gpufort_array3),intent(in) :: array
     logical(c_bool),intent(inout),pointer,dimension(:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19510,7 +19657,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(in)        :: array
+    type(gpufort_array3),intent(in) :: array
     integer(c_short),intent(inout),pointer,dimension(:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19545,7 +19692,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(in)        :: array
+    type(gpufort_array3),intent(in) :: array
     integer(c_int),intent(inout),pointer,dimension(:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19580,7 +19727,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(in)        :: array
+    type(gpufort_array3),intent(in) :: array
     integer(c_long),intent(inout),pointer,dimension(:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19615,7 +19762,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(in)        :: array
+    type(gpufort_array3),intent(in) :: array
     real(c_float),intent(inout),pointer,dimension(:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19650,7 +19797,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(in)        :: array
+    type(gpufort_array3),intent(in) :: array
     real(c_double),intent(inout),pointer,dimension(:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19685,7 +19832,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(in)        :: array
+    type(gpufort_array3),intent(in) :: array
     complex(c_float_complex),intent(inout),pointer,dimension(:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19720,7 +19867,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array3),intent(in)        :: array
+    type(gpufort_array3),intent(in) :: array
     complex(c_double_complex),intent(inout),pointer,dimension(:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19755,7 +19902,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(in)        :: array
+    type(gpufort_array4),intent(in) :: array
     logical(c_bool),intent(inout),pointer,dimension(:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19793,7 +19940,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(in)        :: array
+    type(gpufort_array4),intent(in) :: array
     integer(c_short),intent(inout),pointer,dimension(:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19831,7 +19978,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(in)        :: array
+    type(gpufort_array4),intent(in) :: array
     integer(c_int),intent(inout),pointer,dimension(:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19869,7 +20016,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(in)        :: array
+    type(gpufort_array4),intent(in) :: array
     integer(c_long),intent(inout),pointer,dimension(:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19907,7 +20054,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(in)        :: array
+    type(gpufort_array4),intent(in) :: array
     real(c_float),intent(inout),pointer,dimension(:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19945,7 +20092,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(in)        :: array
+    type(gpufort_array4),intent(in) :: array
     real(c_double),intent(inout),pointer,dimension(:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -19983,7 +20130,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(in)        :: array
+    type(gpufort_array4),intent(in) :: array
     complex(c_float_complex),intent(inout),pointer,dimension(:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20021,7 +20168,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array4),intent(in)        :: array
+    type(gpufort_array4),intent(in) :: array
     complex(c_double_complex),intent(inout),pointer,dimension(:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20059,7 +20206,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(in)        :: array
+    type(gpufort_array5),intent(in) :: array
     logical(c_bool),intent(inout),pointer,dimension(:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20100,7 +20247,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(in)        :: array
+    type(gpufort_array5),intent(in) :: array
     integer(c_short),intent(inout),pointer,dimension(:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20141,7 +20288,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(in)        :: array
+    type(gpufort_array5),intent(in) :: array
     integer(c_int),intent(inout),pointer,dimension(:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20182,7 +20329,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(in)        :: array
+    type(gpufort_array5),intent(in) :: array
     integer(c_long),intent(inout),pointer,dimension(:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20223,7 +20370,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(in)        :: array
+    type(gpufort_array5),intent(in) :: array
     real(c_float),intent(inout),pointer,dimension(:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20264,7 +20411,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(in)        :: array
+    type(gpufort_array5),intent(in) :: array
     real(c_double),intent(inout),pointer,dimension(:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20305,7 +20452,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(in)        :: array
+    type(gpufort_array5),intent(in) :: array
     complex(c_float_complex),intent(inout),pointer,dimension(:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20346,7 +20493,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array5),intent(in)        :: array
+    type(gpufort_array5),intent(in) :: array
     complex(c_double_complex),intent(inout),pointer,dimension(:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20387,7 +20534,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(in)        :: array
+    type(gpufort_array6),intent(in) :: array
     logical(c_bool),intent(inout),pointer,dimension(:,:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20431,7 +20578,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(in)        :: array
+    type(gpufort_array6),intent(in) :: array
     integer(c_short),intent(inout),pointer,dimension(:,:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20475,7 +20622,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(in)        :: array
+    type(gpufort_array6),intent(in) :: array
     integer(c_int),intent(inout),pointer,dimension(:,:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20519,7 +20666,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(in)        :: array
+    type(gpufort_array6),intent(in) :: array
     integer(c_long),intent(inout),pointer,dimension(:,:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20563,7 +20710,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(in)        :: array
+    type(gpufort_array6),intent(in) :: array
     real(c_float),intent(inout),pointer,dimension(:,:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20607,7 +20754,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(in)        :: array
+    type(gpufort_array6),intent(in) :: array
     real(c_double),intent(inout),pointer,dimension(:,:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20651,7 +20798,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(in)        :: array
+    type(gpufort_array6),intent(in) :: array
     complex(c_float_complex),intent(inout),pointer,dimension(:,:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20695,7 +20842,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array6),intent(in)        :: array
+    type(gpufort_array6),intent(in) :: array
     complex(c_double_complex),intent(inout),pointer,dimension(:,:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20739,7 +20886,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(in)        :: array
+    type(gpufort_array7),intent(in) :: array
     logical(c_bool),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20786,7 +20933,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(in)        :: array
+    type(gpufort_array7),intent(in) :: array
     integer(c_short),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20833,7 +20980,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(in)        :: array
+    type(gpufort_array7),intent(in) :: array
     integer(c_int),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20880,7 +21027,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(in)        :: array
+    type(gpufort_array7),intent(in) :: array
     integer(c_long),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20927,7 +21074,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(in)        :: array
+    type(gpufort_array7),intent(in) :: array
     real(c_float),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -20974,7 +21121,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(in)        :: array
+    type(gpufort_array7),intent(in) :: array
     real(c_double),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -21021,7 +21168,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(in)        :: array
+    type(gpufort_array7),intent(in) :: array
     complex(c_float_complex),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -21068,7 +21215,7 @@ contains
     use iso_c_binding
     use hipfort_enums
     implicit none
-    type(gpufort_array7),intent(in)        :: array
+    type(gpufort_array7),intent(in) :: array
     complex(c_double_complex),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: data_dev 
     !
     integer(c_int) :: offset_remainder
@@ -21120,11 +21267,11 @@ contains
       type(gpufort_array1),intent(in) :: array
       logical(c_bool),intent(inout),pointer,dimension(:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21147,11 +21294,11 @@ contains
       type(gpufort_array1),intent(in) :: array
       integer(c_short),intent(inout),pointer,dimension(:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21174,11 +21321,11 @@ contains
       type(gpufort_array1),intent(in) :: array
       integer(c_int),intent(inout),pointer,dimension(:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21201,11 +21348,11 @@ contains
       type(gpufort_array1),intent(in) :: array
       integer(c_long),intent(inout),pointer,dimension(:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21228,11 +21375,11 @@ contains
       type(gpufort_array1),intent(in) :: array
       real(c_float),intent(inout),pointer,dimension(:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21255,11 +21402,11 @@ contains
       type(gpufort_array1),intent(in) :: array
       real(c_double),intent(inout),pointer,dimension(:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21282,11 +21429,11 @@ contains
       type(gpufort_array1),intent(in) :: array
       complex(c_float_complex),intent(inout),pointer,dimension(:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21309,11 +21456,11 @@ contains
       type(gpufort_array1),intent(in) :: array
       complex(c_double_complex),intent(inout),pointer,dimension(:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21336,11 +21483,11 @@ contains
       type(gpufort_array2),intent(in) :: array
       logical(c_bool),intent(inout),pointer,dimension(:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21364,11 +21511,11 @@ contains
       type(gpufort_array2),intent(in) :: array
       integer(c_short),intent(inout),pointer,dimension(:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21392,11 +21539,11 @@ contains
       type(gpufort_array2),intent(in) :: array
       integer(c_int),intent(inout),pointer,dimension(:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21420,11 +21567,11 @@ contains
       type(gpufort_array2),intent(in) :: array
       integer(c_long),intent(inout),pointer,dimension(:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21448,11 +21595,11 @@ contains
       type(gpufort_array2),intent(in) :: array
       real(c_float),intent(inout),pointer,dimension(:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21476,11 +21623,11 @@ contains
       type(gpufort_array2),intent(in) :: array
       real(c_double),intent(inout),pointer,dimension(:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21504,11 +21651,11 @@ contains
       type(gpufort_array2),intent(in) :: array
       complex(c_float_complex),intent(inout),pointer,dimension(:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21532,11 +21679,11 @@ contains
       type(gpufort_array2),intent(in) :: array
       complex(c_double_complex),intent(inout),pointer,dimension(:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21560,11 +21707,11 @@ contains
       type(gpufort_array3),intent(in) :: array
       logical(c_bool),intent(inout),pointer,dimension(:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21589,11 +21736,11 @@ contains
       type(gpufort_array3),intent(in) :: array
       integer(c_short),intent(inout),pointer,dimension(:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21618,11 +21765,11 @@ contains
       type(gpufort_array3),intent(in) :: array
       integer(c_int),intent(inout),pointer,dimension(:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21647,11 +21794,11 @@ contains
       type(gpufort_array3),intent(in) :: array
       integer(c_long),intent(inout),pointer,dimension(:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21676,11 +21823,11 @@ contains
       type(gpufort_array3),intent(in) :: array
       real(c_float),intent(inout),pointer,dimension(:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21705,11 +21852,11 @@ contains
       type(gpufort_array3),intent(in) :: array
       real(c_double),intent(inout),pointer,dimension(:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21734,11 +21881,11 @@ contains
       type(gpufort_array3),intent(in) :: array
       complex(c_float_complex),intent(inout),pointer,dimension(:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21763,11 +21910,11 @@ contains
       type(gpufort_array3),intent(in) :: array
       complex(c_double_complex),intent(inout),pointer,dimension(:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21792,11 +21939,11 @@ contains
       type(gpufort_array4),intent(in) :: array
       logical(c_bool),intent(inout),pointer,dimension(:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21822,11 +21969,11 @@ contains
       type(gpufort_array4),intent(in) :: array
       integer(c_short),intent(inout),pointer,dimension(:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21852,11 +21999,11 @@ contains
       type(gpufort_array4),intent(in) :: array
       integer(c_int),intent(inout),pointer,dimension(:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21882,11 +22029,11 @@ contains
       type(gpufort_array4),intent(in) :: array
       integer(c_long),intent(inout),pointer,dimension(:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21912,11 +22059,11 @@ contains
       type(gpufort_array4),intent(in) :: array
       real(c_float),intent(inout),pointer,dimension(:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21942,11 +22089,11 @@ contains
       type(gpufort_array4),intent(in) :: array
       real(c_double),intent(inout),pointer,dimension(:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -21972,11 +22119,11 @@ contains
       type(gpufort_array4),intent(in) :: array
       complex(c_float_complex),intent(inout),pointer,dimension(:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22002,11 +22149,11 @@ contains
       type(gpufort_array4),intent(in) :: array
       complex(c_double_complex),intent(inout),pointer,dimension(:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22032,11 +22179,11 @@ contains
       type(gpufort_array5),intent(in) :: array
       logical(c_bool),intent(inout),pointer,dimension(:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22063,11 +22210,11 @@ contains
       type(gpufort_array5),intent(in) :: array
       integer(c_short),intent(inout),pointer,dimension(:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22094,11 +22241,11 @@ contains
       type(gpufort_array5),intent(in) :: array
       integer(c_int),intent(inout),pointer,dimension(:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22125,11 +22272,11 @@ contains
       type(gpufort_array5),intent(in) :: array
       integer(c_long),intent(inout),pointer,dimension(:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22156,11 +22303,11 @@ contains
       type(gpufort_array5),intent(in) :: array
       real(c_float),intent(inout),pointer,dimension(:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22187,11 +22334,11 @@ contains
       type(gpufort_array5),intent(in) :: array
       real(c_double),intent(inout),pointer,dimension(:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22218,11 +22365,11 @@ contains
       type(gpufort_array5),intent(in) :: array
       complex(c_float_complex),intent(inout),pointer,dimension(:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22249,11 +22396,11 @@ contains
       type(gpufort_array5),intent(in) :: array
       complex(c_double_complex),intent(inout),pointer,dimension(:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22280,11 +22427,11 @@ contains
       type(gpufort_array6),intent(in) :: array
       logical(c_bool),intent(inout),pointer,dimension(:,:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22312,11 +22459,11 @@ contains
       type(gpufort_array6),intent(in) :: array
       integer(c_short),intent(inout),pointer,dimension(:,:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22344,11 +22491,11 @@ contains
       type(gpufort_array6),intent(in) :: array
       integer(c_int),intent(inout),pointer,dimension(:,:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22376,11 +22523,11 @@ contains
       type(gpufort_array6),intent(in) :: array
       integer(c_long),intent(inout),pointer,dimension(:,:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22408,11 +22555,11 @@ contains
       type(gpufort_array6),intent(in) :: array
       real(c_float),intent(inout),pointer,dimension(:,:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22440,11 +22587,11 @@ contains
       type(gpufort_array6),intent(in) :: array
       real(c_double),intent(inout),pointer,dimension(:,:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22472,11 +22619,11 @@ contains
       type(gpufort_array6),intent(in) :: array
       complex(c_float_complex),intent(inout),pointer,dimension(:,:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22504,11 +22651,11 @@ contains
       type(gpufort_array6),intent(in) :: array
       complex(c_double_complex),intent(inout),pointer,dimension(:,:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22536,11 +22683,11 @@ contains
       type(gpufort_array7),intent(in) :: array
       logical(c_bool),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22569,11 +22716,11 @@ contains
       type(gpufort_array7),intent(in) :: array
       integer(c_short),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22602,11 +22749,11 @@ contains
       type(gpufort_array7),intent(in) :: array
       integer(c_int),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22635,11 +22782,11 @@ contains
       type(gpufort_array7),intent(in) :: array
       integer(c_long),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22668,11 +22815,11 @@ contains
       type(gpufort_array7),intent(in) :: array
       real(c_float),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22701,11 +22848,11 @@ contains
       type(gpufort_array7),intent(in) :: array
       real(c_double),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22734,11 +22881,11 @@ contains
       type(gpufort_array7),intent(in) :: array
       complex(c_float_complex),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -22767,11 +22914,11 @@ contains
       type(gpufort_array7),intent(in) :: array
       complex(c_double_complex),intent(inout),pointer,dimension(:,:,:,:,:,:,:) :: buffer 
       logical(c_bool),value,optional,intent(in) :: pinned
-      integer(c_int),value,optional,intent(in)  :: flags
+      integer(c_int),value,optional,intent(in) :: flags
       integer(kind(hipSuccess)) :: ierr
       !
       logical(c_bool) :: opt_pinned
-      integer(c_int)  :: opt_flags
+      integer(c_int) :: opt_flags
       !
       opt_pinned = .true.
       opt_flags  = 0
@@ -25714,8 +25861,8 @@ contains
       type(gpufort_array1),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -25729,7 +25876,7 @@ contains
       type(gpufort_array1),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -25744,8 +25891,8 @@ contains
       type(gpufort_array1),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -25759,7 +25906,7 @@ contains
       type(gpufort_array1),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -25774,8 +25921,8 @@ contains
       type(gpufort_array1),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -25789,7 +25936,7 @@ contains
       type(gpufort_array1),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -25804,8 +25951,8 @@ contains
       type(gpufort_array1),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -25819,7 +25966,7 @@ contains
       type(gpufort_array1),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -25834,8 +25981,8 @@ contains
       type(gpufort_array1),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -25849,7 +25996,7 @@ contains
       type(gpufort_array1),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -25864,8 +26011,8 @@ contains
       type(gpufort_array1),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -25879,7 +26026,7 @@ contains
       type(gpufort_array1),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -25894,8 +26041,8 @@ contains
       type(gpufort_array1),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -25909,7 +26056,7 @@ contains
       type(gpufort_array1),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -25924,8 +26071,8 @@ contains
       type(gpufort_array1),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -25939,7 +26086,7 @@ contains
       type(gpufort_array1),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -25954,8 +26101,8 @@ contains
       type(gpufort_array1),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -25969,7 +26116,7 @@ contains
       type(gpufort_array1),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -25984,8 +26131,8 @@ contains
       type(gpufort_array1),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -25999,7 +26146,7 @@ contains
       type(gpufort_array1),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26014,8 +26161,8 @@ contains
       type(gpufort_array1),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26029,7 +26176,7 @@ contains
       type(gpufort_array1),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26044,8 +26191,8 @@ contains
       type(gpufort_array1),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26059,7 +26206,7 @@ contains
       type(gpufort_array1),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26074,8 +26221,8 @@ contains
       type(gpufort_array1),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26089,7 +26236,7 @@ contains
       type(gpufort_array1),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26104,8 +26251,8 @@ contains
       type(gpufort_array1),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26119,7 +26266,7 @@ contains
       type(gpufort_array1),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26134,8 +26281,8 @@ contains
       type(gpufort_array1),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26149,7 +26296,7 @@ contains
       type(gpufort_array1),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26164,8 +26311,8 @@ contains
       type(gpufort_array1),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26179,7 +26326,7 @@ contains
       type(gpufort_array1),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array1_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26194,8 +26341,8 @@ contains
       type(gpufort_array2),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26209,7 +26356,7 @@ contains
       type(gpufort_array2),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26224,8 +26371,8 @@ contains
       type(gpufort_array2),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26239,7 +26386,7 @@ contains
       type(gpufort_array2),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26254,8 +26401,8 @@ contains
       type(gpufort_array2),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26269,7 +26416,7 @@ contains
       type(gpufort_array2),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26284,8 +26431,8 @@ contains
       type(gpufort_array2),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26299,7 +26446,7 @@ contains
       type(gpufort_array2),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26314,8 +26461,8 @@ contains
       type(gpufort_array2),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26329,7 +26476,7 @@ contains
       type(gpufort_array2),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26344,8 +26491,8 @@ contains
       type(gpufort_array2),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26359,7 +26506,7 @@ contains
       type(gpufort_array2),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26374,8 +26521,8 @@ contains
       type(gpufort_array2),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26389,7 +26536,7 @@ contains
       type(gpufort_array2),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26404,8 +26551,8 @@ contains
       type(gpufort_array2),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26419,7 +26566,7 @@ contains
       type(gpufort_array2),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26434,8 +26581,8 @@ contains
       type(gpufort_array2),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26449,7 +26596,7 @@ contains
       type(gpufort_array2),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26464,8 +26611,8 @@ contains
       type(gpufort_array2),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26479,7 +26626,7 @@ contains
       type(gpufort_array2),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26494,8 +26641,8 @@ contains
       type(gpufort_array2),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26509,7 +26656,7 @@ contains
       type(gpufort_array2),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26524,8 +26671,8 @@ contains
       type(gpufort_array2),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26539,7 +26686,7 @@ contains
       type(gpufort_array2),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26554,8 +26701,8 @@ contains
       type(gpufort_array2),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26569,7 +26716,7 @@ contains
       type(gpufort_array2),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26584,8 +26731,8 @@ contains
       type(gpufort_array2),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26599,7 +26746,7 @@ contains
       type(gpufort_array2),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26614,8 +26761,8 @@ contains
       type(gpufort_array2),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26629,7 +26776,7 @@ contains
       type(gpufort_array2),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26644,8 +26791,8 @@ contains
       type(gpufort_array2),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26659,7 +26806,7 @@ contains
       type(gpufort_array2),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array2_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26674,8 +26821,8 @@ contains
       type(gpufort_array3),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26689,7 +26836,7 @@ contains
       type(gpufort_array3),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26704,8 +26851,8 @@ contains
       type(gpufort_array3),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26719,7 +26866,7 @@ contains
       type(gpufort_array3),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26734,8 +26881,8 @@ contains
       type(gpufort_array3),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26749,7 +26896,7 @@ contains
       type(gpufort_array3),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26764,8 +26911,8 @@ contains
       type(gpufort_array3),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26779,7 +26926,7 @@ contains
       type(gpufort_array3),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26794,8 +26941,8 @@ contains
       type(gpufort_array3),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26809,7 +26956,7 @@ contains
       type(gpufort_array3),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26824,8 +26971,8 @@ contains
       type(gpufort_array3),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26839,7 +26986,7 @@ contains
       type(gpufort_array3),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26854,8 +27001,8 @@ contains
       type(gpufort_array3),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26869,7 +27016,7 @@ contains
       type(gpufort_array3),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26884,8 +27031,8 @@ contains
       type(gpufort_array3),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26899,7 +27046,7 @@ contains
       type(gpufort_array3),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26914,8 +27061,8 @@ contains
       type(gpufort_array3),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26929,7 +27076,7 @@ contains
       type(gpufort_array3),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26944,8 +27091,8 @@ contains
       type(gpufort_array3),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26959,7 +27106,7 @@ contains
       type(gpufort_array3),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -26974,8 +27121,8 @@ contains
       type(gpufort_array3),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -26989,7 +27136,7 @@ contains
       type(gpufort_array3),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27004,8 +27151,8 @@ contains
       type(gpufort_array3),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27019,7 +27166,7 @@ contains
       type(gpufort_array3),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27034,8 +27181,8 @@ contains
       type(gpufort_array3),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27049,7 +27196,7 @@ contains
       type(gpufort_array3),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27064,8 +27211,8 @@ contains
       type(gpufort_array3),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27079,7 +27226,7 @@ contains
       type(gpufort_array3),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27094,8 +27241,8 @@ contains
       type(gpufort_array3),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27109,7 +27256,7 @@ contains
       type(gpufort_array3),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27124,8 +27271,8 @@ contains
       type(gpufort_array3),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27139,7 +27286,7 @@ contains
       type(gpufort_array3),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array3_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27154,8 +27301,8 @@ contains
       type(gpufort_array4),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27169,7 +27316,7 @@ contains
       type(gpufort_array4),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27184,8 +27331,8 @@ contains
       type(gpufort_array4),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27199,7 +27346,7 @@ contains
       type(gpufort_array4),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27214,8 +27361,8 @@ contains
       type(gpufort_array4),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27229,7 +27376,7 @@ contains
       type(gpufort_array4),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27244,8 +27391,8 @@ contains
       type(gpufort_array4),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27259,7 +27406,7 @@ contains
       type(gpufort_array4),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27274,8 +27421,8 @@ contains
       type(gpufort_array4),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27289,7 +27436,7 @@ contains
       type(gpufort_array4),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27304,8 +27451,8 @@ contains
       type(gpufort_array4),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27319,7 +27466,7 @@ contains
       type(gpufort_array4),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27334,8 +27481,8 @@ contains
       type(gpufort_array4),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27349,7 +27496,7 @@ contains
       type(gpufort_array4),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27364,8 +27511,8 @@ contains
       type(gpufort_array4),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27379,7 +27526,7 @@ contains
       type(gpufort_array4),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27394,8 +27541,8 @@ contains
       type(gpufort_array4),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27409,7 +27556,7 @@ contains
       type(gpufort_array4),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27424,8 +27571,8 @@ contains
       type(gpufort_array4),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27439,7 +27586,7 @@ contains
       type(gpufort_array4),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27454,8 +27601,8 @@ contains
       type(gpufort_array4),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27469,7 +27616,7 @@ contains
       type(gpufort_array4),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27484,8 +27631,8 @@ contains
       type(gpufort_array4),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27499,7 +27646,7 @@ contains
       type(gpufort_array4),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27514,8 +27661,8 @@ contains
       type(gpufort_array4),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27529,7 +27676,7 @@ contains
       type(gpufort_array4),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27544,8 +27691,8 @@ contains
       type(gpufort_array4),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27559,7 +27706,7 @@ contains
       type(gpufort_array4),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27574,8 +27721,8 @@ contains
       type(gpufort_array4),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27589,7 +27736,7 @@ contains
       type(gpufort_array4),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27604,8 +27751,8 @@ contains
       type(gpufort_array4),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27619,7 +27766,7 @@ contains
       type(gpufort_array4),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array4_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27634,8 +27781,8 @@ contains
       type(gpufort_array5),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27649,7 +27796,7 @@ contains
       type(gpufort_array5),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27664,8 +27811,8 @@ contains
       type(gpufort_array5),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27679,7 +27826,7 @@ contains
       type(gpufort_array5),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27694,8 +27841,8 @@ contains
       type(gpufort_array5),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27709,7 +27856,7 @@ contains
       type(gpufort_array5),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27724,8 +27871,8 @@ contains
       type(gpufort_array5),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27739,7 +27886,7 @@ contains
       type(gpufort_array5),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27754,8 +27901,8 @@ contains
       type(gpufort_array5),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27769,7 +27916,7 @@ contains
       type(gpufort_array5),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27784,8 +27931,8 @@ contains
       type(gpufort_array5),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27799,7 +27946,7 @@ contains
       type(gpufort_array5),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27814,8 +27961,8 @@ contains
       type(gpufort_array5),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27829,7 +27976,7 @@ contains
       type(gpufort_array5),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27844,8 +27991,8 @@ contains
       type(gpufort_array5),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27859,7 +28006,7 @@ contains
       type(gpufort_array5),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27874,8 +28021,8 @@ contains
       type(gpufort_array5),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27889,7 +28036,7 @@ contains
       type(gpufort_array5),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27904,8 +28051,8 @@ contains
       type(gpufort_array5),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27919,7 +28066,7 @@ contains
       type(gpufort_array5),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27934,8 +28081,8 @@ contains
       type(gpufort_array5),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27949,7 +28096,7 @@ contains
       type(gpufort_array5),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27964,8 +28111,8 @@ contains
       type(gpufort_array5),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -27979,7 +28126,7 @@ contains
       type(gpufort_array5),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -27994,8 +28141,8 @@ contains
       type(gpufort_array5),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28009,7 +28156,7 @@ contains
       type(gpufort_array5),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28024,8 +28171,8 @@ contains
       type(gpufort_array5),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28039,7 +28186,7 @@ contains
       type(gpufort_array5),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28054,8 +28201,8 @@ contains
       type(gpufort_array5),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28069,7 +28216,7 @@ contains
       type(gpufort_array5),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28084,8 +28231,8 @@ contains
       type(gpufort_array5),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28099,7 +28246,7 @@ contains
       type(gpufort_array5),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array5_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28114,8 +28261,8 @@ contains
       type(gpufort_array6),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28129,7 +28276,7 @@ contains
       type(gpufort_array6),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28144,8 +28291,8 @@ contains
       type(gpufort_array6),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28159,7 +28306,7 @@ contains
       type(gpufort_array6),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28174,8 +28321,8 @@ contains
       type(gpufort_array6),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28189,7 +28336,7 @@ contains
       type(gpufort_array6),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28204,8 +28351,8 @@ contains
       type(gpufort_array6),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28219,7 +28366,7 @@ contains
       type(gpufort_array6),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28234,8 +28381,8 @@ contains
       type(gpufort_array6),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28249,7 +28396,7 @@ contains
       type(gpufort_array6),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28264,8 +28411,8 @@ contains
       type(gpufort_array6),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28279,7 +28426,7 @@ contains
       type(gpufort_array6),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28294,8 +28441,8 @@ contains
       type(gpufort_array6),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28309,7 +28456,7 @@ contains
       type(gpufort_array6),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28324,8 +28471,8 @@ contains
       type(gpufort_array6),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28339,7 +28486,7 @@ contains
       type(gpufort_array6),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28354,8 +28501,8 @@ contains
       type(gpufort_array6),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28369,7 +28516,7 @@ contains
       type(gpufort_array6),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28384,8 +28531,8 @@ contains
       type(gpufort_array6),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28399,7 +28546,7 @@ contains
       type(gpufort_array6),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28414,8 +28561,8 @@ contains
       type(gpufort_array6),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28429,7 +28576,7 @@ contains
       type(gpufort_array6),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28444,8 +28591,8 @@ contains
       type(gpufort_array6),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28459,7 +28606,7 @@ contains
       type(gpufort_array6),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28474,8 +28621,8 @@ contains
       type(gpufort_array6),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28489,7 +28636,7 @@ contains
       type(gpufort_array6),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28504,8 +28651,8 @@ contains
       type(gpufort_array6),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28519,7 +28666,7 @@ contains
       type(gpufort_array6),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28534,8 +28681,8 @@ contains
       type(gpufort_array6),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28549,7 +28696,7 @@ contains
       type(gpufort_array6),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28564,8 +28711,8 @@ contains
       type(gpufort_array6),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28579,7 +28726,7 @@ contains
       type(gpufort_array6),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array6_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28594,8 +28741,8 @@ contains
       type(gpufort_array7),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28609,7 +28756,7 @@ contains
       type(gpufort_array7),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28624,8 +28771,8 @@ contains
       type(gpufort_array7),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28639,7 +28786,7 @@ contains
       type(gpufort_array7),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28654,8 +28801,8 @@ contains
       type(gpufort_array7),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28669,7 +28816,7 @@ contains
       type(gpufort_array7),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28684,8 +28831,8 @@ contains
       type(gpufort_array7),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28699,7 +28846,7 @@ contains
       type(gpufort_array7),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28714,8 +28861,8 @@ contains
       type(gpufort_array7),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28729,7 +28876,7 @@ contains
       type(gpufort_array7),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28744,8 +28891,8 @@ contains
       type(gpufort_array7),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28759,7 +28906,7 @@ contains
       type(gpufort_array7),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28774,8 +28921,8 @@ contains
       type(gpufort_array7),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28789,7 +28936,7 @@ contains
       type(gpufort_array7),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28804,8 +28951,8 @@ contains
       type(gpufort_array7),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_from_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28819,7 +28966,7 @@ contains
       type(gpufort_array7),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_from_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28834,8 +28981,8 @@ contains
       type(gpufort_array7),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28849,7 +28996,7 @@ contains
       type(gpufort_array7),intent(inout) :: array
       logical(c_bool),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28864,8 +29011,8 @@ contains
       type(gpufort_array7),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28879,7 +29026,7 @@ contains
       type(gpufort_array7),intent(inout) :: array
       integer(c_short),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28894,8 +29041,8 @@ contains
       type(gpufort_array7),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28909,7 +29056,7 @@ contains
       type(gpufort_array7),intent(inout) :: array
       integer(c_int),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28924,8 +29071,8 @@ contains
       type(gpufort_array7),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28939,7 +29086,7 @@ contains
       type(gpufort_array7),intent(inout) :: array
       integer(c_long),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28954,8 +29101,8 @@ contains
       type(gpufort_array7),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28969,7 +29116,7 @@ contains
       type(gpufort_array7),intent(inout) :: array
       real(c_float),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -28984,8 +29131,8 @@ contains
       type(gpufort_array7),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -28999,7 +29146,7 @@ contains
       type(gpufort_array7),intent(inout) :: array
       real(c_double),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -29014,8 +29161,8 @@ contains
       type(gpufort_array7),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -29029,7 +29176,7 @@ contains
       type(gpufort_array7),intent(inout) :: array
       complex(c_float_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)
@@ -29044,8 +29191,8 @@ contains
       type(gpufort_array7),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      type(c_ptr),value,intent(in)                          :: stream
-      integer(kind(hipSuccess))                             :: ierr
+      type(c_ptr),value,intent(in) :: stream
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_to_buffer_async(&
         array,c_loc(buffer),memcpy_kind,stream)
@@ -29059,7 +29206,7 @@ contains
       type(gpufort_array7),intent(inout) :: array
       complex(c_double_complex),intent(in),target,dimension(:,:,:,:,:,:,:) :: buffer 
       integer(kind(hipMemcpyHostToDevice)),intent(in),value :: memcpy_kind
-      integer(kind(hipSuccess))                             :: ierr
+      integer(kind(hipSuccess)) :: ierr
       !
       ierr = gpufort_array7_copy_to_buffer(&
         array,c_loc(buffer),memcpy_kind)

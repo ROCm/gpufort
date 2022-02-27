@@ -32,10 +32,10 @@ kernelgen = fort2x.hip.create_kernel_generator_from_loop_nest(
 
 print("\n".join(kernelgen.render_gpu_kernel_cpp()))
 launcher = kernelgen.create_launcher_context(kind="hip",
-                                             debug_output=False,
+                                             debug_code=False,
                                              used_modules=[])
 print("\n".join(kernelgen.render_gpu_launcher_cpp(launcher)))
 launcher = kernelgen.create_launcher_context(kind="hip_ps",
-                                             debug_output=False,
+                                             debug_code=False,
                                              used_modules=[])
 print("\n".join(kernelgen.render_gpu_launcher_cpp(launcher)))

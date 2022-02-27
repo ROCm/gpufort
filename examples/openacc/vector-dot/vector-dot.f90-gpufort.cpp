@@ -18,7 +18,6 @@
 
 __global__ void  main_11(
     gpufort::array1<int> x,
-    int i,
     gpufort::array1<int> y,
     int n
 ){
@@ -45,7 +44,6 @@ __global__ void  main_11(
 
 __global__ void  main_18(
     gpufort::array1<int> x,
-    int i,
     gpufort::array1<int> y,
     int n,
     gpufort::array1<int> res
@@ -67,11 +65,10 @@ extern "C" hipError_t launch_main_11_hip_(
     const int& sharedmem,
     hipStream_t& stream,
     gpufort::array1<int>& x,
-    int& i,
     gpufort::array1<int>& y,
     int& n) {
   hipError_t ierr = hipSuccess;
-  hipLaunchKernelGGL((main_11), grid, block, sharedmem, stream, x,i,y,n);
+  hipLaunchKernelGGL((main_11), grid, block, sharedmem, stream, x,y,n);
   #if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_main_11)
   HIP_CHECK(hipStreamSynchronize(stream));
   #elif defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_main_11)
@@ -88,14 +85,13 @@ extern "C" hipError_t launch_main_11_hip_ps_(
     const int& sharedmem,
     hipStream_t& stream,
     gpufort::array1<int>& x,
-    int& i,
     gpufort::array1<int>& y,
     int& n) {
   hipError_t ierr = hipSuccess;
   dim3 grid(divideAndRoundUp(problem_size.x,block.x),
             divideAndRoundUp(problem_size.y,block.y),
             divideAndRoundUp(problem_size.z,block.z));   
-  hipLaunchKernelGGL((main_11), grid, block, sharedmem, stream, x,i,y,n);
+  hipLaunchKernelGGL((main_11), grid, block, sharedmem, stream, x,y,n);
   #if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_main_11)
   HIP_CHECK(hipStreamSynchronize(stream));
   #elif defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_main_11)
@@ -116,7 +112,6 @@ extern "C" hipError_t launch_main_18_hip_(
     const int& sharedmem,
     hipStream_t& stream,
     gpufort::array1<int>& x,
-    int& i,
     gpufort::array1<int>& y,
     int& n,
     int& res) {
@@ -125,7 +120,7 @@ extern "C" hipError_t launch_main_18_hip_(
   res_buf.init(sizeof(int)/*bytes per element*/,nullptr/*hostptr*/,nullptr/*deviceptr*/,
     __total_threads(grid,block)/*#elements*/,0/*lower bound*/,AllocMode::WrapHostAllocDevice);
 
-  hipLaunchKernelGGL((main_18), grid, block, sharedmem, stream, x,i,y,n,res_buf);
+  hipLaunchKernelGGL((main_18), grid, block, sharedmem, stream, x,y,n,res_buf);
   #if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_main_18)
   HIP_CHECK(hipStreamSynchronize(stream));
   #elif defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_main_18)
@@ -145,7 +140,6 @@ extern "C" hipError_t launch_main_18_hip_ps_(
     const int& sharedmem,
     hipStream_t& stream,
     gpufort::array1<int>& x,
-    int& i,
     gpufort::array1<int>& y,
     int& n,
     int& res) {
@@ -157,7 +151,7 @@ extern "C" hipError_t launch_main_18_hip_ps_(
   res_buf.init(sizeof(int)/*bytes per element*/,nullptr/*hostptr*/,nullptr/*deviceptr*/,
     __total_threads(grid,block)/*#elements*/,0/*lower bound*/,AllocMode::WrapHostAllocDevice);
 
-  hipLaunchKernelGGL((main_18), grid, block, sharedmem, stream, x,i,y,n,res_buf);
+  hipLaunchKernelGGL((main_18), grid, block, sharedmem, stream, x,y,n,res_buf);
   #if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_main_18)
   HIP_CHECK(hipStreamSynchronize(stream));
   #elif defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_main_18)

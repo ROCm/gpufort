@@ -1,4 +1,4 @@
-.PHONY: clean_all gpufort_headers gpufort_sources lib/$(LIBGPUFORT) lib/$(LIBGPUFORT_ACC)
+.PHONY: clean_all gpufort_headers gpufort_sources share/gpufort_sources lib/$(LIBGPUFORT) lib/$(LIBGPUFORT_ACC)
 
 SUFFIX         = $(if $(HIP_PLATFORM),$(HIP_PLATFORM),amd)
 LIBGPUFORT     = libgpufort_$(SUFFIX).a
@@ -18,6 +18,13 @@ gpufort_headers:
 
 gpufort_sources:
 	make -C $(GPUFORT_DIR)/src gpufort_sources
+
+share/gpufort_sources: gpufort_headers gpufort_sources
+	mv src/gpufort_array.cpp share/gpufort_sources
+	mv src/gpufort_array.f03 share/gpufort_sources
+	mv include/gpufort.h share/gpufort_sources
+	mv include/gpufort_array.h share/gpufort_sources
+	mv include/gpufort_reduction.h share/gpufort_sources
 
 lib/$(LIBGPUFORT): | gpufort_headers gpufort_sources make_directories
 	make -C $(GPUFORT_DIR)/src $(LIBGPUFORT)

@@ -534,6 +534,7 @@ class STProcedure(STContainerBase):
         # check attributes
         self.index_record, _ = indexer.scope.search_index_for_procedure(
             index, parent_tag, name)
+        self.kernel_args_ivars = []
         self.c_result_type = "void"
         self.parse_result = None
 
@@ -637,7 +638,8 @@ class STLoopNest(STNode):
         self.block_f_str = None
         self.sharedmem_f_str = "0" # set from extraction routine
         self.stream_f_str = "c_null_ptr" # set from extraction routine
-        self.kernel_arg_names = [] # set from extraction routine
+        self.kernel_args_ivars = []
+        self.kernel_args_names = [] # set from extraction routine
         self.code = []
         self.parse_result = None
         self._do_loop_ctr_memorised = -1
@@ -694,11 +696,11 @@ class STLoopNest(STNode):
         if self.grid_f_str == None or self.block_f_str == None or opts.loop_kernel_default_launcher == "cpu": # use auto or cpu launcher
             result="! extracted to HIP C++ file\ncall {0}_{launcher}({1},{2},{3})".format(\
               self.kernel_launcher_name(),self.sharedmem_f_str,stream,\
-                ",".join(self.kernel_arg_names),launcher=opts.loop_kernel_default_launcher)
+                ",".join(self.kernel_args_names),launcher=opts.loop_kernel_default_launcher)
         else:
             result="! extracted to HIP C++ file\ncall {0}({1},{2},{3},{4},{5})".format(\
               self.kernel_launcher_name(),self.grid_f_str,self.block_f_str,self.sharedmem_f_str,stream,\
-                ",".join(self.kernel_arg_names))
+                ",".join(self.kernel_args_names))
         return textwrap.indent(result,indent), True
 
 

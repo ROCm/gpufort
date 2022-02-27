@@ -78,37 +78,37 @@ class TestHipKernelGenerator4LoopNest(unittest.TestCase):
         print_("\n".join(self.kernelgen.render_end_kernel_comment_f03()))
     def test_06_render_hip_launcher_cpp(self):
         launcher = self.kernelgen.create_launcher_context(kind="hip",
-                                                          debug_output=False,
+                                                          debug_code=False,
                                                           used_modules=[])
         print_("\n".join(self.kernelgen.render_gpu_launcher_cpp(launcher)))
     def test_07_render_hip_ps_launcher_cpp(self):
         launcher = self.kernelgen.create_launcher_context(kind="hip_ps",
-                                                          debug_output=False,
+                                                          debug_code=False,
                                                           used_modules=[])
         print_("\n".join(self.kernelgen.render_gpu_launcher_cpp(launcher)))
     def test_08_render_hip_launcher_f03(self):
         launcher = self.kernelgen.create_launcher_context(kind="hip",
-                                                          debug_output=False,
+                                                          debug_code=False,
                                                           used_modules=[])
         print_("\n".join(self.kernelgen.render_launcher_interface_f03(launcher)))
     def test_09_render_hip_ps_launcher_f03(self):
         launcher = self.kernelgen.create_launcher_context(kind="hip_ps",
-                                                          debug_output=False,
+                                                          debug_code=False,
                                                           used_modules=[])
         print_("\n".join(self.kernelgen.render_launcher_interface_f03(launcher)))
     def test_10_render_cpu_launcher_cpp(self):
         launcher = self.kernelgen.create_launcher_context(kind="cpu",
-                                                          debug_output=False,
+                                                          debug_code=False,
                                                           used_modules=[])
         print_("\n".join(self.kernelgen.render_cpu_launcher_cpp(launcher)))
     def test_11_render_cpu_launcher_f03(self):
         launcher = self.kernelgen.create_launcher_context(kind="cpu",
-                                                          debug_output=False,
+                                                          debug_code=False,
                                                           used_modules=[])
         print_("\n".join(self.kernelgen.render_launcher_interface_f03(launcher)))
     def test_12_render_cpu_routine_f03(self):
         launcher = self.kernelgen.create_launcher_context(kind="cpu",
-                                                          debug_output=False,
+                                                          debug_code=False,
                                                           used_modules=[])
         print_("\n".join(self.kernelgen.render_cpu_routine_f03(launcher)))
 

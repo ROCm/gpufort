@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-from .. import kernelgen
-from . import render
-
 from gpufort import util
 from gpufort import grammar
+from gpufort import translator
 
+from .. import kernelgen
 from .. import opts
+from . import render
 
 class HipKernelGeneratorBase(kernelgen.KernelGeneratorBase):
     """Base class for constructing HIP kernel generators."""
@@ -35,20 +35,19 @@ class HipKernelGeneratorBase(kernelgen.KernelGeneratorBase):
         self.scope = scope
         # to be set by subclass:
         self.c_body = ""
-        self.all_vars = []
-        self.global_reductions = {}
-        self.shared_vars = []
-        self.local_vars = []
-        self.loop_vars = []
         #
         self.kernel = None
 
     def get_kernel_arguments(self):
         """:return: index records for the variables
                     that must be passed as kernel arguments.
+        :note: Shared_vars and local_vars must be passed as kernel argument
+               as well if the respective variable is an array. 
         """
         return (self.kernel["global_vars"]
-                + self.kernel["global_reduced_vars"])
+                + self.kernel["global_reduced_vars"]
+                + [ivar for ivar in self.kernel["shared_vars"] if ivar["rank"] > 0]
+                + [ivar for ivar in self.kernel["local_vars"] if ivar["rank"] > 0])
 
     def _create_kernel_context(self,launch_bounds=None):
         kernel = self._create_kernel_base_context(self.kernel_name,
@@ -57,22 +56,16 @@ class HipKernelGeneratorBase(kernelgen.KernelGeneratorBase):
         kernel["attribute"] = "__global__"
         kernel["return_type"] = "void"
         kernel["launch_bounds"] =  "" if launch_bounds == None else launch_bounds
-
-        kernel["global_vars"],\
-        kernel["global_reduced_vars"],\
-        kernel["shared_vars"],\
-        kernel["local_vars"] = kernelgen.KernelGeneratorBase.lookup_index_entries_for_vars_in_kernel_body(self.scope,
-                                                                                                          self.all_vars,
-                                                                                                          self.global_reductions,
-                                                                                                          self.shared_vars,
-                                                                                                          self.local_vars,
-                                                                                                          self.loop_vars,
-                                                                                                          self.error_handling)
+        kernel["global_vars"] = []
+        kernel["global_reduced_vars"] = []
+        kernel["shared_vars"] = []
+        kernel["local_vars"] = []
+        kernel["shared_and_local_array_vars"] = []
         return kernel
 
     def __create_launcher_base_context(self,
                                        kind,
-                                       debug_output,
+                                       debug_code,
                                        used_modules=[]):
         """Create base context for kernel launcher code generation.
         :param str kind:one of 'hip', 'hip_ps', or 'cpu'.
@@ -82,14 +75,18 @@ class HipKernelGeneratorBase(kernelgen.KernelGeneratorBase):
             "kind": kind,
             "name": "_".join(launcher_name_tokens),
             "used_modules": used_modules,
-            "debug_output": debug_output,
+            "debug_code": debug_code,
         }
 
-    def create_launcher_context(self, kind, debug_output, used_modules=[]):
+    def _create_shared_and_local_array_vars(self):
+        self.kernel["shared_and_local_array_vars"] = [ivar for ivar in (self.kernel["shared_vars"]+self.kernel["local_vars"]) 
+                                                      if ivar["rank"] > 0]
+
+    def create_launcher_context(self, kind, debug_code, used_modules=[]):
         """Create context for HIP kernel launcher code generation.
         :param str kind:one of 'hip', 'hip_ps', or 'cpu'.
         """
-        launcher = self.__create_launcher_base_context(kind, debug_output,
+        launcher = self.__create_launcher_base_context(kind, debug_code,
                                                        used_modules)
         return launcher
 
@@ -135,54 +132,45 @@ class HipKernelGenerator4LoopNest(HipKernelGeneratorBase):
 
     def __init__(self, ttloopnest, scope, **kwargs):
         HipKernelGeneratorBase.__init__(self, scope, **kwargs)
-        #
-        self.all_vars = ttloopnest.vars_in_body()
-        self.global_reductions = ttloopnest.gang_team_reductions()
-        self.shared_vars = ttloopnest.gang_team_shared_vars()
-        self.local_vars = ttloopnest.local_scalars()
-        self.loop_vars = ttloopnest.loop_vars()
         self.c_body = ttloopnest.c_str()
-        #
         self.kernel = self._create_kernel_context()
-        
-        util.logging.log_debug2(opts.log_prefix+".HipKernelGenerator4CufKernel","__init__","".join(
-            [
-              "all_vars=",str(self.all_vars),"global_reductions=",str(self.global_reductions),
-              ",","all_vars=",str(self.shared_vars),",","local_vars=",str(self.local_vars),
-            ]))
+       
+        self.kernel["global_vars"],\
+        self.kernel["global_reduced_vars"],\
+        self.kernel["shared_vars"],\
+        self.kernel["local_vars"] = translator.analysis.lookup_index_entries_for_vars_in_loopnest(self.scope,
+                                                                                       ttloopnest,
+                                                                                       self.error_handling)
+        self._create_shared_and_local_array_vars()
+ 
+        #util.logging.log_debug2(opts.log_prefix+".HipKernelGenerator4CufKernel","__init__","".join(
+        #    [
+        #      "all_vars=",str(self.all_vars),"global_reductions=",str(self.global_reductions),
+        #      ",","all_vars=",str(self.shared_vars),",","local_vars=",str(self.local_vars),
+        #    ]))
 
 class HipKernelGenerator4CufKernel(HipKernelGeneratorBase):
 
     def __init__(self, ttprocedure, iprocedure, scope, **kwargs):
         HipKernelGeneratorBase.__init__(self, scope, **kwargs)
         #
-        self.shared_vars = [
-            ivar["name"]
-            for ivar in iprocedure["variables"]
-            if "shared" in ivar["qualifiers"]
-        ]
-        self.local_vars = [
-            ivar["name"]
-            for ivar in iprocedure["variables"]
-            if ivar["name"] not in iprocedure["dummy_args"]
-        ]
-        all_var_exprs = kernelgen.KernelGeneratorBase.strip_member_access(ttprocedure.vars_in_body(
-        )) # in the body, there might be variables present from used modules
-        self.all_vars = iprocedure["dummy_args"] + [
-            v for v in all_var_exprs if (v not in iprocedure["dummy_args"] and
-                                         v not in grammar.DEVICE_PREDEFINED_VARIABLES)
-        ]
-        self.global_reductions = {}
         self.c_body = ttprocedure.c_str()
-        #
         self.kernel = self._create_kernel_context()
+        
+        self.kernel["global_vars"],\
+        self.kernel["global_reduced_vars"],\
+        self.kernel["shared_vars"],\
+        self.kernel["local_vars"] = translator.analysis.lookup_index_entries_for_vars_in_procedure_body(self.scope,
+                                                                                                        ttprocedure,
+                                                                                                        iprocedure,
+                                                                                                        self.error_handling)
+        self._create_shared_and_local_array_vars()
 
     def render_cpu_routine_f03(self, launcher):
         return []
 
     def render_cpu_launcher_cpp(self):
         return []
-
 
 class HipKernelGenerator4AcceleratorRoutine(HipKernelGenerator4CufKernel):
     def __init__(self, *args, **kwargs):

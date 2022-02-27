@@ -2,6 +2,7 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import os
 import copy
+import textwrap
 
 from gpufort import translator
 from gpufort import indexer
@@ -59,10 +60,6 @@ class CodeGenerator():
         self.cpp_filegens_per_module = []
         self.fortran_modulegens = []
         self._traversed = False
-
-    @staticmethod
-    def _indent(text, indent):
-        return "\n".join([indent + line for line in text.splitlines()])
 
     @staticmethod
     def _create_cpp_guard(cpp_file_name):
@@ -134,18 +131,18 @@ class CodeGenerator():
         # types and interfaces
         stlastdeclnode = stcontainer.last_entry_in_decl_list()
         for snippet in fortran_modulegen.rendered_types:
-            stlastdeclnode.add_to_epilog(CodeGenerator._indent(
+            stlastdeclnode.add_to_epilog(textwrap.indent(
                 snippet, indent))
         for snippet in fortran_modulegen.rendered_interfaces:
-            stlastdeclnode.add_to_epilog(CodeGenerator._indent(
+            stlastdeclnode.add_to_epilog(textwrap.indent(
                 snippet, indent))
         # routines
         if len(fortran_modulegen.rendered_routines):
             stend = stcontainer.end_statement()
             for snippet in fortran_modulegen.rendered_routines:
-                stend.add_to_prolog(CodeGenerator._indent(snippet, indent))
+                stend.add_to_prolog(textwrap.indent(snippet, indent))
             if not stcontainer.has_contains_statement():
-                stend.add_to_prolog(CodeGenerator._indent("contains",indent_parent),
+                stend.add_to_prolog(textwrap.indent("contains",indent_parent),
                                     prepend=True)
 
     @util.logging.log_entry_and_exit(opts.log_prefix+".CodeGenerator")

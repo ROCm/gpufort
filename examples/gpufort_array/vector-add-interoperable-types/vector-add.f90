@@ -53,8 +53,8 @@ contains
       c_float,sizes=[N],lbounds=[1],&
       alloc_mode=gpufort_array_alloc_pinned_host_alloc_device)) 
     call gpufort_array_hostptr(mesh%y,mesh_t_y) ! Get Fortran pointer to host data (overloaded routine exists for basic datatypes.
-    ! 
-    mesh_t_y(:) = 2.0                            ! Also sets lower bounds.
+                                                ! Also sets lower bounds.
+    mesh_t_y(:) = 2.0
     call hipCheck(gpufort_array_copy_to_device(mesh%y))
     
     ! Init struct member.  

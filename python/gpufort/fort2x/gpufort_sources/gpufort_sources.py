@@ -53,7 +53,7 @@ def generate_gpufort_sources(output_dir):
         "datatypes": opts.datatypes,
     }
     gpufort_array_source_file_path = os.path.join(output_dir,
-                                                  "gpufort_array.hip.cpp")
+                                                  "gpufort_array.cpp")
     render.render_gpufort_array_source_file(gpufort_array_source_file_path,\
       context=gpufort_array_context)
     msg = "".join([

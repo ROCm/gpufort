@@ -3,3 +3,4 @@
 from .parser import *
 from .conv import *
 from . import tree
+from . import analysis

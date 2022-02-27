@@ -1,4 +1,4 @@
-HIP_TEST_SRC = test_compile_headers.hip.cpp test_gpufort_array.hip.cpp
+HIP_TEST_SRC = test_compile_headers.cpp test_gpufort_array.cpp
 HIP_TEST_APP = $(HIP_TEST_SRC:.hip.cpp=.x)
 
 FORT_TEST_SRC  = test_gpufort_array_interop.f03

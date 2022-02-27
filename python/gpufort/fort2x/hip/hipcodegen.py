@@ -131,8 +131,8 @@ class HipCodeGenerator(codegen.CodeGenerator):
                              cpp_filegen,
                              fortran_filegen,
                              is_loopnest=True)
-
-        # stloopnest.set_kernel_arguments(mykernelgen.get_kernel_arguments)
+        
+        stloopnest.kernel_args_ivars = mykernelgen.get_kernel_arguments()
 
     @util.logging.log_entry_and_exit(opts.log_prefix+".HipCodeGenerator")
     def _render_device_procedure(self, stprocedure, cpp_filegen, fortran_filegen):
@@ -157,8 +157,8 @@ class HipCodeGenerator(codegen.CodeGenerator):
                              cpp_filegen,
                              fortran_filegen,
                              is_loopnest=False)
-
-        # stloopnest.set_kernel_arguments(mykernelgen.get_kernel_arguments)
+        
+        stprocedure.kernel_args_ivars = mykernelgen.get_kernel_arguments()
 
         util.logging.log_leave_function(opts.log_prefix, "self._render_loop_nest")
 

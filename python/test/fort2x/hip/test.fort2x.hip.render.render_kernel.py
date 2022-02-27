@@ -93,7 +93,7 @@ class TestRenderKernel(unittest.TestCase):
         return kernel
     def create_hip_launcher_context(self,
                                     kernel_name,kind="hip_ps",
-                                    debug_output=True):
+                                    debug_code=True):
         launcher = {}
         # for launcher interface
         launcher["kind"]         = kind
@@ -101,7 +101,7 @@ class TestRenderKernel(unittest.TestCase):
             launcher["name"]     = "_".join(["launch",kernel_name,kind])
         else:
             launcher["name"]     = "_".join(["launch",kernel_name])
-        launcher["debug_output"] = True
+        launcher["debug_code"] = True
         launcher["used_modules"]  = []
         return launcher
     def create_cpu_launcher_context(self,
@@ -109,7 +109,7 @@ class TestRenderKernel(unittest.TestCase):
         # for launcher interface
         launcher = {}
         launcher["name"] = "_".join(["launch",kernel_name,"cpu"])
-        launcher["debug_output"]  = True
+        launcher["debug_code"]  = True
         launcher["kind"]          = "cpu"
         launcher["used_modules"]  = []
         return launcher

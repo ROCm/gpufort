@@ -13,18 +13,16 @@ program main
   integer :: i
 #ifdef _GPUFORT
   integer(4) :: x(N), y(N), res
-  type(c_ptr) :: dev_y_i_
-  type(c_ptr) :: dev_x_i_
-  type(c_ptr) :: dev_y
   type(c_ptr) :: dev_x
+  type(c_ptr) :: dev_y
 
   call gpufort_acc_enter_region()
   dev_x = gpufort_acc_copy(x(1:N))
   dev_y = gpufort_acc_copy(y(1:N))
   
   call gpufort_acc_enter_region()
-  dev_x_i_ = gpufort_acc_present(x(i),or=gpufort_acc_event_copy)
-  dev_y_i_ = gpufort_acc_present(y(i),or=gpufort_acc_event_copy)
+  dev_x = gpufort_acc_present(x,or=gpufort_acc_event_copy)
+  dev_y = gpufort_acc_present(y,or=gpufort_acc_event_copy)
   ! extracted to HIP C++ file
   call launch_main_11_auto(0,c_null_ptr,)
   call gpufort_acc_wait()
@@ -44,8 +42,8 @@ program main
   res = 0
 #ifdef _GPUFORT
   call gpufort_acc_enter_region()
-  dev_x_i_ = gpufort_acc_present(x(i),or=gpufort_acc_event_copy)
-  dev_y_i_ = gpufort_acc_present(y(i),or=gpufort_acc_event_copy)
+  dev_x = gpufort_acc_present(x,or=gpufort_acc_event_copy)
+  dev_y = gpufort_acc_present(y,or=gpufort_acc_event_copy)
   ! extracted to HIP C++ file
   call launch_main_18_auto(0,c_null_ptr,)
   call gpufort_acc_wait()

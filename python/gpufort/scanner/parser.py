@@ -12,14 +12,13 @@ import importlib
 import re
 import pyparsing
 
-# local includes
 from gpufort import util
 from gpufort import linemapper
 from gpufort import translator
 from gpufort import indexer
+
 from . import tree
 from . import opts
-
 
 # Pyparsing actions that create scanner tree (ST)
 @util.logging.log_entry_and_exit(opts.log_prefix)

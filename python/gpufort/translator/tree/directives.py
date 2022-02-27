@@ -163,8 +163,8 @@ class TTDo(base.TTContainer):
         begin = base.make_c_str(
             self._begin._rhs) # array indexing is corrected in index macro
         step = base.make_c_str(self._step)
-        return "{indent}int {var} = {begin} + ({step})*(threadIdx.{idx} + blockIdx.{idx} * blockDim.{idx});\n".format(\
-                indent=self.indent,var=ivar,begin=begin,idx=self._thread_index,step=step)
+        return "int {var} = {begin} + ({step})*(threadIdx.{idx} + blockIdx.{idx} * blockDim.{idx});\n".format(\
+                var=ivar,begin=begin,idx=self._thread_index,step=step)
 
     def collapsed_loop_index_c_str(self, denominator):
         ivar = self.loop_var()
@@ -174,8 +174,8 @@ class TTDo(base.TTContainer):
         size = self.problem_size()
         step = base.make_c_str(self._step)
         # int i<n> = begin<n> + step<n>*(i<denominator<n>> % size<n>)
-        return "{indent}int {var} = {begin} + ({step})*({tid}{denom} % {size});\n".format(\
-                indent=self.indent,var=ivar,begin=begin,tid=tid,denom=denominator,size=size,step=step)
+        return "int {var} = {begin} + ({step})*({tid}{denom} % {size});\n".format(\
+                var=ivar,begin=begin,tid=tid,denom=denominator,size=size,step=step)
 
     def problem_size(self, converter=base.make_c_str):
         if self._step == "1":
@@ -203,8 +203,8 @@ class TTDo(base.TTContainer):
         step = base.make_c_str(self._step)
         body_content = base.TTContainer.c_str(self)
         if self._thread_index == None:
-            return "{indent}for ({0}={1}; {0} <= {2}; {0} += {3}) {{\n{4}\n}}".format(\
-                    ivar, begin, end, step, body_content,indent=self.indent)
+            return "for ({0}={1}; {0} <= {2}; {0} += {3}) {{\n{4}\n}}".format(\
+                    ivar, begin, end, step, body_content)
         else:
             return body_content
 

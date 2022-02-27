@@ -1,20 +1,22 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-# Ternary state
+import textwrap
+
+from gpufort import util
+
 from .. import opts
 from . import grammar
 
 import pyparsing
 
+# Ternary state
 False3, Unknown3, True3 = -1, 0, 1
-
 
 class TTNode(object):
 
     def __init__(self, s, loc, tokens):
         self._input = s
         self._location = loc
-        self.indent = ""
         self.parent = None
         self._assign_fields(tokens)
 
@@ -37,18 +39,16 @@ class TTNode(object):
 
     #__repr__ = __str__
 class TTContainer(TTNode):
+    """Container node for manual parser construction.
     """
-    Container node for manual parser construction.
-    """
-
     def __init__(self, s="", loc=0, tokens=[]):
         self._input = s
         self._location = loc
-        self.indent = ""
         self.parent = None
-        self.body = []
+        self.body   = []
+        self.indent = opts.indent 
         self._assign_fields(tokens)
-
+    
     def append(self, node):
         self.body.append(node)
 
@@ -59,8 +59,7 @@ class TTContainer(TTNode):
         result = ""
         for child in self.body:
             result += make_c_str(child).rstrip() + "\n"
-        return result.rstrip()
-
+        return textwrap.indent(result.rstrip(),self.indent)
 
 class TTRoot(TTContainer):
     pass

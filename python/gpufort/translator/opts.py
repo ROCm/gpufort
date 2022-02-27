@@ -10,7 +10,8 @@ fortran_style_tensor_access = True
 # of C++ classes such as those of the gpufort::array type
 # that are equipped with an overloaded () operator.
 keyword_case = "lower" # one of ["lower","upper","camel"]
-
+indent="  "
+# Default indent.
 character_format = "{type}({len})"
 # Format to use when generating Fortran character datatype
 derived_type_format = "{type}({kind})"

@@ -543,7 +543,7 @@ class TTSubroutineCall(base.TTNode):
 
     def c_str(self):
         self._subroutine._is_tensor_access = base.False3
-        return self.indent + self._subroutine.c_str() + ";"
+        return self._subroutine.c_str() + ";"
 
 
 class TTOperator(base.TTNode):
@@ -690,10 +690,10 @@ class TTAssignment(base.TTNode):
         matrix ranges ([...]:[...]) are found.
         """
         if unpack:
-            return self.indent + self.convert_to_do_loop_nest_if_necessary(
+            return self.convert_to_do_loop_nest_if_necessary(
             ).c_str()
         else:
-            return self.indent + self._lhs.c_str(
+            return  self._lhs.c_str(
             ) + "=" + flatten_arithmetic_expression(self._rhs) + ";\n"
 
     def f_str(self, unpack=False):
@@ -1238,8 +1238,8 @@ class TTStatement(base.TTNode):
 
 
 class TTIfElseBlock(base.TTContainer):
-    pass
-
+    def _assign_fields(self, tokens):
+        self.indent = "" # container of if/elseif/else branches, so no indent
 
 class TTIfElseIf(base.TTContainer):
 
@@ -1251,16 +1251,16 @@ class TTIfElseIf(base.TTContainer):
 
     def c_str(self):
         body_content = base.TTContainer.c_str(self)
-        return "{0}{1}if ({2}) {{\n{3}\n{0}}}".format(\
-            self.indent,self._else,base.make_c_str(self._condition),body_content)
+        return "{0}if ({1}) {{\n{2}\n}}".format(\
+            self._else,base.make_c_str(self._condition),body_content)
 
 
 class TTElse(base.TTContainer):
 
     def c_str(self):
         body_content = base.TTContainer.c_str(self)
-        return "{0}else {{\n{1}\n{0}}}".format(\
-            self.indent,body_content)
+        return "else {{\n{0}\n}}".format(\
+            body_content)
 
 
 class TTDoWhile(base.TTContainer):
@@ -1274,8 +1274,8 @@ class TTDoWhile(base.TTContainer):
     def c_str(self):
         body_content = base.TTContainer.c_str(self)
         condition_content = base.make_c_str(self._condition)
-        c_str = "{0}while ({1}) {{\n{0}{2}\n{0}}}".format(\
-          self.indent,condition_content,body_content)
+        c_str = "while ({0}) {{\n{1}\n}}".format(\
+          condition_content,body_content)
         return c_str
 
 

@@ -41,7 +41,6 @@ def _parse_fortran_code(statements, scope=None):
         nonlocal level
         if isinstance(node, tree.TTNode):
             node.parent = curr
-            node.indent = "  " * level
         curr.body.append(node)
         if kind != None:
             util.logging.log_debug2(

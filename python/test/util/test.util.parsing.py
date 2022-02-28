@@ -148,5 +148,41 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_declaration(stmt))
             self.assertEqual(util.parsing.parse_declaration(stmt),results[i])
+    def test_6_strip_array_indexing(self):
+        expressions = [
+          "a",
+          "a(1)",
+          "a(:,5)",
+          "a(:,5)%b",
+          "A(:,5)%b(c(5,2))%c",
+        ]
+        results = [
+          "a",
+          "a",
+          "a",
+          "a%b",
+          "A%b%c",
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing.strip_array_indexing(expr))
+            self.assertEqual(util.parsing.strip_array_indexing(expr),results[i])
+    def test_7_derived_type_parents(self):
+        expressions = [
+          "a",
+          "a(1)",
+          "a(:,5)",
+          "a(:,5)%b",
+          "A(:,5)%b(c(5,2))%c",
+        ]
+        results = [
+          [],
+          [],
+          [],
+          ['a'],
+          ['A', 'A%b'],
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing.derived_type_parents(expr))
+            self.assertEqual(util.parsing.derived_type_parents(expr),results[i])
 if __name__ == '__main__':
     unittest.main() 

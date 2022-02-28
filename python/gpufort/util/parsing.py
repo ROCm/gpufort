@@ -4,6 +4,52 @@ import re
 
 COMMENT_CHARS = "!cCdD*"
 
+def derived_type_parents(var_expr):
+    """:return: the derived type parents of a 
+    variable if the variable is member of a derived type,
+    indicated by the `%` symbol.
+    
+    :Example: 
+    
+    Given the expression `A%b(i)%c`, this function
+    will return a list ["b","A%b"].
+    """
+    parts = strip_array_indexing(var_expr).split("%")
+    result = []
+    current = ""
+    for i,_ in enumerate(parts[:-1]): # do not take last part into account
+        result.append("%".join(parts[0:i+1]))
+    return result
+
+def strip_array_indexing(var_expr):
+    """Removes array indexing expressions from variable expressions such as 'A%b(i)%c'.
+    The example 'A%b(i)%c' is translated to 'A%b%c'.
+    All array indexing expressions are stripped away.
+
+    :param str var_expr: a simple identifier such as 'a' or 'A_d', an array access expression suhc as 'B(i,j)' or a more complicated derived-type member variable expression such as 'a%b%c' or 'A%b(i)%c'.
+    :see: indexer.scope.search_index_for_var
+    """
+    result = var_expr.lstrip("-+") # remove trailing minus sign
+    if not "(" in result:
+        return result
+    else:
+        parts = re.split("([()%,])",result)
+        open_brackets = 0
+        result = []
+        curr = ""
+        for part in parts:
+            if part == "(":
+                open_brackets += 1
+            elif part == ")":
+                open_brackets -= 1
+            elif part == "%" and open_brackets == 0:
+                result.append(curr)
+                curr = ""
+            elif open_brackets == 0:
+                curr += part
+        result.append(curr)
+        return "%".join(result)
+
 def split_fortran_line(line):
     global COMMENT_CHARS
     """Decomposes a Fortran line into preceding whitespace,

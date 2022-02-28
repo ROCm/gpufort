@@ -1,7 +1,19 @@
 {# SPDX-License-Identifier: MIT                                                 #}
 {# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved. #}
+{########################################################################################}
 {% import "gpufort.macros.h" as gm %}
 {% import "gpufort_array.macros.h" as gam %}
+{########################################################################################}
+{%- macro this_stride(r,array_rank) -%}
+{%- if r == 1 -%}
+1
+{%- elif r == array_rank+1 -%}
+this->num_elements
+{%- else -%}
+this->stride{{r}}
+{%- endif -%}
+{%- endmacro -%}
+{########################################################################################}
 // This file was generated from a template via gpufort --gpufort-create-headers
 #ifndef _GPUFORT_ARRAYS_H_
 #  define _GPUFORT_ARRAYS_H_
@@ -64,11 +76,11 @@ namespace gpufort {
    */
   template<typename T>
   struct array_descr{{rank}} {
-    T*     data_host    = nullptr;
-    T*     data_dev     = nullptr;
-    int num_elements    = 0;     //> Number of elements represented by this array.
-    int    index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
-{% for d in range(1,rank_ub) %}
+    T*     data_host = nullptr;
+    T*     data_dev  = nullptr;
+    int num_elements = 0;     //> Number of elements represented by this array.
+    int index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
+{% for d in range(2,rank_ub) %}
     int    stride{{d}}  = -1;    //> Stride {{d}} for linearizing {{rank}}-dimensional index.
 {% endfor %}
  
@@ -89,14 +101,13 @@ namespace gpufort {
        this->data_host = data_host;
        this->data_dev  = data_dev;
        // column-major access
-       this->stride1 = 1;
 {% for d in range(2,rank_ub) %}
-       this->stride{{d}} = this->stride{{d-1}}*n{{d-1}};
+       {{ this_stride(d,rank) }} = {{ this_stride(d-1,rank) }}*n{{d-1}};
 {% endfor %}
-       this->num_elements = this->stride{{rank}}*n{{rank}};
+       this->num_elements = {{ this_stride(rank,rank) }}*n{{rank}};
        this->index_offset =
 {% for d in range(1,rank_ub) %}
-         -lb{{d}}*this->stride{{d}}{{";" if loop.last}}
+         -lb{{d}}*{{ this_stride(d,rank) }}{{";" if loop.last}}
 {% endfor %}
     }
     
@@ -110,7 +121,7 @@ namespace gpufort {
     ) const {
       return this->index_offset
 {% for d in range(1,rank_ub) %}
-          + i{{d}}*this->stride{{d}}{{";" if loop.last}}
+          + i{{d}}*{{ this_stride(d,rank) }}{{";" if loop.last}}
 {% endfor %}
     }
     
@@ -166,11 +177,9 @@ namespace gpufort {
       assert(dim <= {{rank}});
       #endif
       switch(dim) {
-       case {{rank}}:
-	  return this->num_elements / this->stride{{rank}};
-{% for r in range(rank-1,0,-1) %}
+{% for r in range(rank,0,-1) %}
        case {{r}}:
-	  return this->stride{{r+1}} / this->stride{{r}};
+	        return {{ this_stride(r+1,rank) }} / {{ this_stride(r,rank) }};
 {% endfor %}
        default:
           #ifndef __HIP_DEVICE_COMPILE__
@@ -193,16 +202,16 @@ namespace gpufort {
       #endif
       int offset_remainder = this->index_offset;
 {% for r in range(rank,0,-1) %}
-      {{"int " if r == rank}}lb = -offset_remainder / this->stride{{r}};
+      {{"int " if r == rank}}lb = -offset_remainder / {{ this_stride(r,rank) }};
 {% if r == 1 %}
       #ifndef __HIP_DEVICE_COMPILE__
-      offset_remainder = offset_remainder + lb*this->stride{{r}};
+      offset_remainder = offset_remainder + lb*{{ this_stride(r,rank) }};
       assert(offset_remainder == 0);
       #endif
       return lb;
 {% else %}
       if ( dim == {{r}} ) return lb;
-      offset_remainder = offset_remainder + lb*this->stride{{r}};
+      offset_remainder = offset_remainder + lb*{{ this_stride(r,rank) }};
 {% endif %}
 {% endfor %}
     }

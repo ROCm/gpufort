@@ -30,7 +30,6 @@ module gpufort_array
     type(c_ptr) :: data_dev     = c_null_ptr
     integer(c_int) :: num_elements = 0  !> Number of elements represented by this array.
     integer(c_int) :: index_offset = -1 !> Offset for index calculation; scalar product of negative lower bounds and strides.
-    integer(c_int) :: stride1  = -1 !> Stride for dimension 1
   end type
 
   type, bind(c) :: gpufort_array1
@@ -49,7 +48,6 @@ module gpufort_array
     type(c_ptr) :: data_dev     = c_null_ptr
     integer(c_int) :: num_elements = 0  !> Number of elements represented by this array.
     integer(c_int) :: index_offset = -1 !> Offset for index calculation; scalar product of negative lower bounds and strides.
-    integer(c_int) :: stride1  = -1 !> Stride for dimension 1
     integer(c_int) :: stride2  = -1 !> Stride for dimension 2
   end type
 
@@ -69,7 +67,6 @@ module gpufort_array
     type(c_ptr) :: data_dev     = c_null_ptr
     integer(c_int) :: num_elements = 0  !> Number of elements represented by this array.
     integer(c_int) :: index_offset = -1 !> Offset for index calculation; scalar product of negative lower bounds and strides.
-    integer(c_int) :: stride1  = -1 !> Stride for dimension 1
     integer(c_int) :: stride2  = -1 !> Stride for dimension 2
     integer(c_int) :: stride3  = -1 !> Stride for dimension 3
   end type
@@ -90,7 +87,6 @@ module gpufort_array
     type(c_ptr) :: data_dev     = c_null_ptr
     integer(c_int) :: num_elements = 0  !> Number of elements represented by this array.
     integer(c_int) :: index_offset = -1 !> Offset for index calculation; scalar product of negative lower bounds and strides.
-    integer(c_int) :: stride1  = -1 !> Stride for dimension 1
     integer(c_int) :: stride2  = -1 !> Stride for dimension 2
     integer(c_int) :: stride3  = -1 !> Stride for dimension 3
     integer(c_int) :: stride4  = -1 !> Stride for dimension 4
@@ -112,7 +108,6 @@ module gpufort_array
     type(c_ptr) :: data_dev     = c_null_ptr
     integer(c_int) :: num_elements = 0  !> Number of elements represented by this array.
     integer(c_int) :: index_offset = -1 !> Offset for index calculation; scalar product of negative lower bounds and strides.
-    integer(c_int) :: stride1  = -1 !> Stride for dimension 1
     integer(c_int) :: stride2  = -1 !> Stride for dimension 2
     integer(c_int) :: stride3  = -1 !> Stride for dimension 3
     integer(c_int) :: stride4  = -1 !> Stride for dimension 4
@@ -135,7 +130,6 @@ module gpufort_array
     type(c_ptr) :: data_dev     = c_null_ptr
     integer(c_int) :: num_elements = 0  !> Number of elements represented by this array.
     integer(c_int) :: index_offset = -1 !> Offset for index calculation; scalar product of negative lower bounds and strides.
-    integer(c_int) :: stride1  = -1 !> Stride for dimension 1
     integer(c_int) :: stride2  = -1 !> Stride for dimension 2
     integer(c_int) :: stride3  = -1 !> Stride for dimension 3
     integer(c_int) :: stride4  = -1 !> Stride for dimension 4
@@ -159,7 +153,6 @@ module gpufort_array
     type(c_ptr) :: data_dev     = c_null_ptr
     integer(c_int) :: num_elements = 0  !> Number of elements represented by this array.
     integer(c_int) :: index_offset = -1 !> Offset for index calculation; scalar product of negative lower bounds and strides.
-    integer(c_int) :: stride1  = -1 !> Stride for dimension 1
     integer(c_int) :: stride2  = -1 !> Stride for dimension 2
     integer(c_int) :: stride3  = -1 !> Stride for dimension 3
     integer(c_int) :: stride4  = -1 !> Stride for dimension 4
@@ -16899,13 +16892,13 @@ contains
     type(gpufort_array1),intent(in) :: array
     integer(c_size_t) :: retval 
     !
-    retval = array%data%num_elements*array%bytes_per_element
+    retval = int(array%data%num_elements,c_size_t)*int(array%bytes_per_element,c_size_t)
   end function
 
   function gpufort_array1_num_elements(array) result(retval)
     implicit none
     type(gpufort_array1),intent(in) :: array
-    integer(c_size_t) :: retval 
+    integer(c_int) :: retval 
     !
     retval = array%data%num_elements
   end function
@@ -16914,13 +16907,13 @@ contains
     type(gpufort_array2),intent(in) :: array
     integer(c_size_t) :: retval 
     !
-    retval = array%data%num_elements*array%bytes_per_element
+    retval = int(array%data%num_elements,c_size_t)*int(array%bytes_per_element,c_size_t)
   end function
 
   function gpufort_array2_num_elements(array) result(retval)
     implicit none
     type(gpufort_array2),intent(in) :: array
-    integer(c_size_t) :: retval 
+    integer(c_int) :: retval 
     !
     retval = array%data%num_elements
   end function
@@ -16929,13 +16922,13 @@ contains
     type(gpufort_array3),intent(in) :: array
     integer(c_size_t) :: retval 
     !
-    retval = array%data%num_elements*array%bytes_per_element
+    retval = int(array%data%num_elements,c_size_t)*int(array%bytes_per_element,c_size_t)
   end function
 
   function gpufort_array3_num_elements(array) result(retval)
     implicit none
     type(gpufort_array3),intent(in) :: array
-    integer(c_size_t) :: retval 
+    integer(c_int) :: retval 
     !
     retval = array%data%num_elements
   end function
@@ -16944,13 +16937,13 @@ contains
     type(gpufort_array4),intent(in) :: array
     integer(c_size_t) :: retval 
     !
-    retval = array%data%num_elements*array%bytes_per_element
+    retval = int(array%data%num_elements,c_size_t)*int(array%bytes_per_element,c_size_t)
   end function
 
   function gpufort_array4_num_elements(array) result(retval)
     implicit none
     type(gpufort_array4),intent(in) :: array
-    integer(c_size_t) :: retval 
+    integer(c_int) :: retval 
     !
     retval = array%data%num_elements
   end function
@@ -16959,13 +16952,13 @@ contains
     type(gpufort_array5),intent(in) :: array
     integer(c_size_t) :: retval 
     !
-    retval = array%data%num_elements*array%bytes_per_element
+    retval = int(array%data%num_elements,c_size_t)*int(array%bytes_per_element,c_size_t)
   end function
 
   function gpufort_array5_num_elements(array) result(retval)
     implicit none
     type(gpufort_array5),intent(in) :: array
-    integer(c_size_t) :: retval 
+    integer(c_int) :: retval 
     !
     retval = array%data%num_elements
   end function
@@ -16974,13 +16967,13 @@ contains
     type(gpufort_array6),intent(in) :: array
     integer(c_size_t) :: retval 
     !
-    retval = array%data%num_elements*array%bytes_per_element
+    retval = int(array%data%num_elements,c_size_t)*int(array%bytes_per_element,c_size_t)
   end function
 
   function gpufort_array6_num_elements(array) result(retval)
     implicit none
     type(gpufort_array6),intent(in) :: array
-    integer(c_size_t) :: retval 
+    integer(c_int) :: retval 
     !
     retval = array%data%num_elements
   end function
@@ -16989,13 +16982,13 @@ contains
     type(gpufort_array7),intent(in) :: array
     integer(c_size_t) :: retval 
     !
-    retval = array%data%num_elements*array%bytes_per_element
+    retval = int(array%data%num_elements,c_size_t)*int(array%bytes_per_element,c_size_t)
   end function
 
   function gpufort_array7_num_elements(array) result(retval)
     implicit none
     type(gpufort_array7),intent(in) :: array
-    integer(c_size_t) :: retval 
+    integer(c_int) :: retval 
     !
     retval = array%data%num_elements
   end function
@@ -17018,14 +17011,13 @@ contains
     n1 = 1
     lb1 = 1
     ! 
-    n1 = int(array%data%num_elements / int(array%data%stride1,&
-                 c_size_t),c_int)
+    n1 = array%data%num_elements / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1])
     !
     offset_remainder = array%data%index_offset
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:) => tmp
   end subroutine
@@ -17047,14 +17039,13 @@ contains
     n1 = 1
     lb1 = 1
     ! 
-    n1 = int(array%data%num_elements / int(array%data%stride1,&
-                 c_size_t),c_int)
+    n1 = array%data%num_elements / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1])
     !
     offset_remainder = array%data%index_offset
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:) => tmp
   end subroutine
@@ -17076,14 +17067,13 @@ contains
     n1 = 1
     lb1 = 1
     ! 
-    n1 = int(array%data%num_elements / int(array%data%stride1,&
-                 c_size_t),c_int)
+    n1 = array%data%num_elements / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1])
     !
     offset_remainder = array%data%index_offset
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:) => tmp
   end subroutine
@@ -17105,14 +17095,13 @@ contains
     n1 = 1
     lb1 = 1
     ! 
-    n1 = int(array%data%num_elements / int(array%data%stride1,&
-                 c_size_t),c_int)
+    n1 = array%data%num_elements / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1])
     !
     offset_remainder = array%data%index_offset
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:) => tmp
   end subroutine
@@ -17134,14 +17123,13 @@ contains
     n1 = 1
     lb1 = 1
     ! 
-    n1 = int(array%data%num_elements / int(array%data%stride1,&
-                 c_size_t),c_int)
+    n1 = array%data%num_elements / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1])
     !
     offset_remainder = array%data%index_offset
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:) => tmp
   end subroutine
@@ -17163,14 +17151,13 @@ contains
     n1 = 1
     lb1 = 1
     ! 
-    n1 = int(array%data%num_elements / int(array%data%stride1,&
-                 c_size_t),c_int)
+    n1 = array%data%num_elements / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1])
     !
     offset_remainder = array%data%index_offset
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:) => tmp
   end subroutine
@@ -17192,14 +17179,13 @@ contains
     n1 = 1
     lb1 = 1
     ! 
-    n1 = int(array%data%num_elements / int(array%data%stride1,&
-                 c_size_t),c_int)
+    n1 = array%data%num_elements / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1])
     !
     offset_remainder = array%data%index_offset
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:) => tmp
   end subroutine
@@ -17221,14 +17207,13 @@ contains
     n1 = 1
     lb1 = 1
     ! 
-    n1 = int(array%data%num_elements / int(array%data%stride1,&
-                 c_size_t),c_int)
+    n1 = array%data%num_elements / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1])
     !
     offset_remainder = array%data%index_offset
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:) => tmp
   end subroutine
@@ -17250,17 +17235,16 @@ contains
     n1 = 1; n2 = 1
     lb1 = 1; lb2 = 1
     ! 
-    n2 = int(array%data%num_elements / int(array%data%stride2,&
-                 c_size_t),c_int)
-    n1 = array%data%stride2 / array%data%stride1
+    n2 = array%data%num_elements / array%data%stride2
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2])
     !
     offset_remainder = array%data%index_offset
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:) => tmp
   end subroutine
@@ -17282,17 +17266,16 @@ contains
     n1 = 1; n2 = 1
     lb1 = 1; lb2 = 1
     ! 
-    n2 = int(array%data%num_elements / int(array%data%stride2,&
-                 c_size_t),c_int)
-    n1 = array%data%stride2 / array%data%stride1
+    n2 = array%data%num_elements / array%data%stride2
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2])
     !
     offset_remainder = array%data%index_offset
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:) => tmp
   end subroutine
@@ -17314,17 +17297,16 @@ contains
     n1 = 1; n2 = 1
     lb1 = 1; lb2 = 1
     ! 
-    n2 = int(array%data%num_elements / int(array%data%stride2,&
-                 c_size_t),c_int)
-    n1 = array%data%stride2 / array%data%stride1
+    n2 = array%data%num_elements / array%data%stride2
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2])
     !
     offset_remainder = array%data%index_offset
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:) => tmp
   end subroutine
@@ -17346,17 +17328,16 @@ contains
     n1 = 1; n2 = 1
     lb1 = 1; lb2 = 1
     ! 
-    n2 = int(array%data%num_elements / int(array%data%stride2,&
-                 c_size_t),c_int)
-    n1 = array%data%stride2 / array%data%stride1
+    n2 = array%data%num_elements / array%data%stride2
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2])
     !
     offset_remainder = array%data%index_offset
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:) => tmp
   end subroutine
@@ -17378,17 +17359,16 @@ contains
     n1 = 1; n2 = 1
     lb1 = 1; lb2 = 1
     ! 
-    n2 = int(array%data%num_elements / int(array%data%stride2,&
-                 c_size_t),c_int)
-    n1 = array%data%stride2 / array%data%stride1
+    n2 = array%data%num_elements / array%data%stride2
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2])
     !
     offset_remainder = array%data%index_offset
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:) => tmp
   end subroutine
@@ -17410,17 +17390,16 @@ contains
     n1 = 1; n2 = 1
     lb1 = 1; lb2 = 1
     ! 
-    n2 = int(array%data%num_elements / int(array%data%stride2,&
-                 c_size_t),c_int)
-    n1 = array%data%stride2 / array%data%stride1
+    n2 = array%data%num_elements / array%data%stride2
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2])
     !
     offset_remainder = array%data%index_offset
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:) => tmp
   end subroutine
@@ -17442,17 +17421,16 @@ contains
     n1 = 1; n2 = 1
     lb1 = 1; lb2 = 1
     ! 
-    n2 = int(array%data%num_elements / int(array%data%stride2,&
-                 c_size_t),c_int)
-    n1 = array%data%stride2 / array%data%stride1
+    n2 = array%data%num_elements / array%data%stride2
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2])
     !
     offset_remainder = array%data%index_offset
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:) => tmp
   end subroutine
@@ -17474,17 +17452,16 @@ contains
     n1 = 1; n2 = 1
     lb1 = 1; lb2 = 1
     ! 
-    n2 = int(array%data%num_elements / int(array%data%stride2,&
-                 c_size_t),c_int)
-    n1 = array%data%stride2 / array%data%stride1
+    n2 = array%data%num_elements / array%data%stride2
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2])
     !
     offset_remainder = array%data%index_offset
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:) => tmp
   end subroutine
@@ -17506,10 +17483,9 @@ contains
     n1 = 1; n2 = 1; n3 = 1
     lb1 = 1; lb2 = 1; lb3 = 1
     ! 
-    n3 = int(array%data%num_elements / int(array%data%stride3,&
-                 c_size_t),c_int)
+    n3 = array%data%num_elements / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3])
     !
@@ -17518,8 +17494,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:) => tmp
   end subroutine
@@ -17541,10 +17517,9 @@ contains
     n1 = 1; n2 = 1; n3 = 1
     lb1 = 1; lb2 = 1; lb3 = 1
     ! 
-    n3 = int(array%data%num_elements / int(array%data%stride3,&
-                 c_size_t),c_int)
+    n3 = array%data%num_elements / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3])
     !
@@ -17553,8 +17528,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:) => tmp
   end subroutine
@@ -17576,10 +17551,9 @@ contains
     n1 = 1; n2 = 1; n3 = 1
     lb1 = 1; lb2 = 1; lb3 = 1
     ! 
-    n3 = int(array%data%num_elements / int(array%data%stride3,&
-                 c_size_t),c_int)
+    n3 = array%data%num_elements / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3])
     !
@@ -17588,8 +17562,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:) => tmp
   end subroutine
@@ -17611,10 +17585,9 @@ contains
     n1 = 1; n2 = 1; n3 = 1
     lb1 = 1; lb2 = 1; lb3 = 1
     ! 
-    n3 = int(array%data%num_elements / int(array%data%stride3,&
-                 c_size_t),c_int)
+    n3 = array%data%num_elements / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3])
     !
@@ -17623,8 +17596,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:) => tmp
   end subroutine
@@ -17646,10 +17619,9 @@ contains
     n1 = 1; n2 = 1; n3 = 1
     lb1 = 1; lb2 = 1; lb3 = 1
     ! 
-    n3 = int(array%data%num_elements / int(array%data%stride3,&
-                 c_size_t),c_int)
+    n3 = array%data%num_elements / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3])
     !
@@ -17658,8 +17630,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:) => tmp
   end subroutine
@@ -17681,10 +17653,9 @@ contains
     n1 = 1; n2 = 1; n3 = 1
     lb1 = 1; lb2 = 1; lb3 = 1
     ! 
-    n3 = int(array%data%num_elements / int(array%data%stride3,&
-                 c_size_t),c_int)
+    n3 = array%data%num_elements / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3])
     !
@@ -17693,8 +17664,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:) => tmp
   end subroutine
@@ -17716,10 +17687,9 @@ contains
     n1 = 1; n2 = 1; n3 = 1
     lb1 = 1; lb2 = 1; lb3 = 1
     ! 
-    n3 = int(array%data%num_elements / int(array%data%stride3,&
-                 c_size_t),c_int)
+    n3 = array%data%num_elements / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3])
     !
@@ -17728,8 +17698,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:) => tmp
   end subroutine
@@ -17751,10 +17721,9 @@ contains
     n1 = 1; n2 = 1; n3 = 1
     lb1 = 1; lb2 = 1; lb3 = 1
     ! 
-    n3 = int(array%data%num_elements / int(array%data%stride3,&
-                 c_size_t),c_int)
+    n3 = array%data%num_elements / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3])
     !
@@ -17763,8 +17732,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:) => tmp
   end subroutine
@@ -17786,11 +17755,10 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1
     ! 
-    n4 = int(array%data%num_elements / int(array%data%stride4,&
-                 c_size_t),c_int)
+    n4 = array%data%num_elements / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4])
     !
@@ -17801,8 +17769,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:) => tmp
   end subroutine
@@ -17824,11 +17792,10 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1
     ! 
-    n4 = int(array%data%num_elements / int(array%data%stride4,&
-                 c_size_t),c_int)
+    n4 = array%data%num_elements / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4])
     !
@@ -17839,8 +17806,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:) => tmp
   end subroutine
@@ -17862,11 +17829,10 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1
     ! 
-    n4 = int(array%data%num_elements / int(array%data%stride4,&
-                 c_size_t),c_int)
+    n4 = array%data%num_elements / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4])
     !
@@ -17877,8 +17843,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:) => tmp
   end subroutine
@@ -17900,11 +17866,10 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1
     ! 
-    n4 = int(array%data%num_elements / int(array%data%stride4,&
-                 c_size_t),c_int)
+    n4 = array%data%num_elements / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4])
     !
@@ -17915,8 +17880,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:) => tmp
   end subroutine
@@ -17938,11 +17903,10 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1
     ! 
-    n4 = int(array%data%num_elements / int(array%data%stride4,&
-                 c_size_t),c_int)
+    n4 = array%data%num_elements / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4])
     !
@@ -17953,8 +17917,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:) => tmp
   end subroutine
@@ -17976,11 +17940,10 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1
     ! 
-    n4 = int(array%data%num_elements / int(array%data%stride4,&
-                 c_size_t),c_int)
+    n4 = array%data%num_elements / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4])
     !
@@ -17991,8 +17954,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:) => tmp
   end subroutine
@@ -18014,11 +17977,10 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1
     ! 
-    n4 = int(array%data%num_elements / int(array%data%stride4,&
-                 c_size_t),c_int)
+    n4 = array%data%num_elements / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4])
     !
@@ -18029,8 +17991,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:) => tmp
   end subroutine
@@ -18052,11 +18014,10 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1
     ! 
-    n4 = int(array%data%num_elements / int(array%data%stride4,&
-                 c_size_t),c_int)
+    n4 = array%data%num_elements / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4])
     !
@@ -18067,8 +18028,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:) => tmp
   end subroutine
@@ -18090,12 +18051,11 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1
     ! 
-    n5 = int(array%data%num_elements / int(array%data%stride5,&
-                 c_size_t),c_int)
+    n5 = array%data%num_elements / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5])
     !
@@ -18108,8 +18068,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:) => tmp
   end subroutine
@@ -18131,12 +18091,11 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1
     ! 
-    n5 = int(array%data%num_elements / int(array%data%stride5,&
-                 c_size_t),c_int)
+    n5 = array%data%num_elements / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5])
     !
@@ -18149,8 +18108,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:) => tmp
   end subroutine
@@ -18172,12 +18131,11 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1
     ! 
-    n5 = int(array%data%num_elements / int(array%data%stride5,&
-                 c_size_t),c_int)
+    n5 = array%data%num_elements / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5])
     !
@@ -18190,8 +18148,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:) => tmp
   end subroutine
@@ -18213,12 +18171,11 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1
     ! 
-    n5 = int(array%data%num_elements / int(array%data%stride5,&
-                 c_size_t),c_int)
+    n5 = array%data%num_elements / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5])
     !
@@ -18231,8 +18188,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:) => tmp
   end subroutine
@@ -18254,12 +18211,11 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1
     ! 
-    n5 = int(array%data%num_elements / int(array%data%stride5,&
-                 c_size_t),c_int)
+    n5 = array%data%num_elements / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5])
     !
@@ -18272,8 +18228,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:) => tmp
   end subroutine
@@ -18295,12 +18251,11 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1
     ! 
-    n5 = int(array%data%num_elements / int(array%data%stride5,&
-                 c_size_t),c_int)
+    n5 = array%data%num_elements / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5])
     !
@@ -18313,8 +18268,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:) => tmp
   end subroutine
@@ -18336,12 +18291,11 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1
     ! 
-    n5 = int(array%data%num_elements / int(array%data%stride5,&
-                 c_size_t),c_int)
+    n5 = array%data%num_elements / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5])
     !
@@ -18354,8 +18308,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:) => tmp
   end subroutine
@@ -18377,12 +18331,11 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1
     ! 
-    n5 = int(array%data%num_elements / int(array%data%stride5,&
-                 c_size_t),c_int)
+    n5 = array%data%num_elements / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5])
     !
@@ -18395,8 +18348,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:) => tmp
   end subroutine
@@ -18418,13 +18371,12 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1
     ! 
-    n6 = int(array%data%num_elements / int(array%data%stride6,&
-                 c_size_t),c_int)
+    n6 = array%data%num_elements / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5,n6])
     !
@@ -18439,8 +18391,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:) => tmp
   end subroutine
@@ -18462,13 +18414,12 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1
     ! 
-    n6 = int(array%data%num_elements / int(array%data%stride6,&
-                 c_size_t),c_int)
+    n6 = array%data%num_elements / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5,n6])
     !
@@ -18483,8 +18434,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:) => tmp
   end subroutine
@@ -18506,13 +18457,12 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1
     ! 
-    n6 = int(array%data%num_elements / int(array%data%stride6,&
-                 c_size_t),c_int)
+    n6 = array%data%num_elements / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5,n6])
     !
@@ -18527,8 +18477,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:) => tmp
   end subroutine
@@ -18550,13 +18500,12 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1
     ! 
-    n6 = int(array%data%num_elements / int(array%data%stride6,&
-                 c_size_t),c_int)
+    n6 = array%data%num_elements / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5,n6])
     !
@@ -18571,8 +18520,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:) => tmp
   end subroutine
@@ -18594,13 +18543,12 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1
     ! 
-    n6 = int(array%data%num_elements / int(array%data%stride6,&
-                 c_size_t),c_int)
+    n6 = array%data%num_elements / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5,n6])
     !
@@ -18615,8 +18563,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:) => tmp
   end subroutine
@@ -18638,13 +18586,12 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1
     ! 
-    n6 = int(array%data%num_elements / int(array%data%stride6,&
-                 c_size_t),c_int)
+    n6 = array%data%num_elements / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5,n6])
     !
@@ -18659,8 +18606,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:) => tmp
   end subroutine
@@ -18682,13 +18629,12 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1
     ! 
-    n6 = int(array%data%num_elements / int(array%data%stride6,&
-                 c_size_t),c_int)
+    n6 = array%data%num_elements / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5,n6])
     !
@@ -18703,8 +18649,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:) => tmp
   end subroutine
@@ -18726,13 +18672,12 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1
     ! 
-    n6 = int(array%data%num_elements / int(array%data%stride6,&
-                 c_size_t),c_int)
+    n6 = array%data%num_elements / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5,n6])
     !
@@ -18747,8 +18692,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:) => tmp
   end subroutine
@@ -18770,14 +18715,13 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1; n7 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1; lb7 = 1
     ! 
-    n7 = int(array%data%num_elements / int(array%data%stride7,&
-                 c_size_t),c_int)
+    n7 = array%data%num_elements / array%data%stride7
     n6 = array%data%stride7 / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5,n6,n7])
     !
@@ -18794,8 +18738,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:,lb7:) => tmp
   end subroutine
@@ -18817,14 +18761,13 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1; n7 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1; lb7 = 1
     ! 
-    n7 = int(array%data%num_elements / int(array%data%stride7,&
-                 c_size_t),c_int)
+    n7 = array%data%num_elements / array%data%stride7
     n6 = array%data%stride7 / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5,n6,n7])
     !
@@ -18841,8 +18784,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:,lb7:) => tmp
   end subroutine
@@ -18864,14 +18807,13 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1; n7 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1; lb7 = 1
     ! 
-    n7 = int(array%data%num_elements / int(array%data%stride7,&
-                 c_size_t),c_int)
+    n7 = array%data%num_elements / array%data%stride7
     n6 = array%data%stride7 / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5,n6,n7])
     !
@@ -18888,8 +18830,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:,lb7:) => tmp
   end subroutine
@@ -18911,14 +18853,13 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1; n7 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1; lb7 = 1
     ! 
-    n7 = int(array%data%num_elements / int(array%data%stride7,&
-                 c_size_t),c_int)
+    n7 = array%data%num_elements / array%data%stride7
     n6 = array%data%stride7 / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5,n6,n7])
     !
@@ -18935,8 +18876,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:,lb7:) => tmp
   end subroutine
@@ -18958,14 +18899,13 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1; n7 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1; lb7 = 1
     ! 
-    n7 = int(array%data%num_elements / int(array%data%stride7,&
-                 c_size_t),c_int)
+    n7 = array%data%num_elements / array%data%stride7
     n6 = array%data%stride7 / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5,n6,n7])
     !
@@ -18982,8 +18922,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:,lb7:) => tmp
   end subroutine
@@ -19005,14 +18945,13 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1; n7 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1; lb7 = 1
     ! 
-    n7 = int(array%data%num_elements / int(array%data%stride7,&
-                 c_size_t),c_int)
+    n7 = array%data%num_elements / array%data%stride7
     n6 = array%data%stride7 / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5,n6,n7])
     !
@@ -19029,8 +18968,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:,lb7:) => tmp
   end subroutine
@@ -19052,14 +18991,13 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1; n7 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1; lb7 = 1
     ! 
-    n7 = int(array%data%num_elements / int(array%data%stride7,&
-                 c_size_t),c_int)
+    n7 = array%data%num_elements / array%data%stride7
     n6 = array%data%stride7 / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5,n6,n7])
     !
@@ -19076,8 +19014,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:,lb7:) => tmp
   end subroutine
@@ -19099,14 +19037,13 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1; n7 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1; lb7 = 1
     ! 
-    n7 = int(array%data%num_elements / int(array%data%stride7,&
-                 c_size_t),c_int)
+    n7 = array%data%num_elements / array%data%stride7
     n6 = array%data%stride7 / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_host,tmp,SHAPE=[n1,n2,n3,n4,n5,n6,n7])
     !
@@ -19123,8 +19060,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_host(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:,lb7:) => tmp
   end subroutine
@@ -19146,14 +19083,13 @@ contains
     n1 = 1
     lb1 = 1
     ! 
-    n1 = int(array%data%num_elements / int(array%data%stride1,&
-                 c_size_t),c_int)
+    n1 = array%data%num_elements / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1])
     !
     offset_remainder = array%data%index_offset
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:) => tmp
   end subroutine
@@ -19175,14 +19111,13 @@ contains
     n1 = 1
     lb1 = 1
     ! 
-    n1 = int(array%data%num_elements / int(array%data%stride1,&
-                 c_size_t),c_int)
+    n1 = array%data%num_elements / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1])
     !
     offset_remainder = array%data%index_offset
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:) => tmp
   end subroutine
@@ -19204,14 +19139,13 @@ contains
     n1 = 1
     lb1 = 1
     ! 
-    n1 = int(array%data%num_elements / int(array%data%stride1,&
-                 c_size_t),c_int)
+    n1 = array%data%num_elements / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1])
     !
     offset_remainder = array%data%index_offset
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:) => tmp
   end subroutine
@@ -19233,14 +19167,13 @@ contains
     n1 = 1
     lb1 = 1
     ! 
-    n1 = int(array%data%num_elements / int(array%data%stride1,&
-                 c_size_t),c_int)
+    n1 = array%data%num_elements / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1])
     !
     offset_remainder = array%data%index_offset
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:) => tmp
   end subroutine
@@ -19262,14 +19195,13 @@ contains
     n1 = 1
     lb1 = 1
     ! 
-    n1 = int(array%data%num_elements / int(array%data%stride1,&
-                 c_size_t),c_int)
+    n1 = array%data%num_elements / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1])
     !
     offset_remainder = array%data%index_offset
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:) => tmp
   end subroutine
@@ -19291,14 +19223,13 @@ contains
     n1 = 1
     lb1 = 1
     ! 
-    n1 = int(array%data%num_elements / int(array%data%stride1,&
-                 c_size_t),c_int)
+    n1 = array%data%num_elements / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1])
     !
     offset_remainder = array%data%index_offset
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:) => tmp
   end subroutine
@@ -19320,14 +19251,13 @@ contains
     n1 = 1
     lb1 = 1
     ! 
-    n1 = int(array%data%num_elements / int(array%data%stride1,&
-                 c_size_t),c_int)
+    n1 = array%data%num_elements / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1])
     !
     offset_remainder = array%data%index_offset
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:) => tmp
   end subroutine
@@ -19349,14 +19279,13 @@ contains
     n1 = 1
     lb1 = 1
     ! 
-    n1 = int(array%data%num_elements / int(array%data%stride1,&
-                 c_size_t),c_int)
+    n1 = array%data%num_elements / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1])
     !
     offset_remainder = array%data%index_offset
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:) => tmp
   end subroutine
@@ -19378,17 +19307,16 @@ contains
     n1 = 1; n2 = 1
     lb1 = 1; lb2 = 1
     ! 
-    n2 = int(array%data%num_elements / int(array%data%stride2,&
-                 c_size_t),c_int)
-    n1 = array%data%stride2 / array%data%stride1
+    n2 = array%data%num_elements / array%data%stride2
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2])
     !
     offset_remainder = array%data%index_offset
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:) => tmp
   end subroutine
@@ -19410,17 +19338,16 @@ contains
     n1 = 1; n2 = 1
     lb1 = 1; lb2 = 1
     ! 
-    n2 = int(array%data%num_elements / int(array%data%stride2,&
-                 c_size_t),c_int)
-    n1 = array%data%stride2 / array%data%stride1
+    n2 = array%data%num_elements / array%data%stride2
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2])
     !
     offset_remainder = array%data%index_offset
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:) => tmp
   end subroutine
@@ -19442,17 +19369,16 @@ contains
     n1 = 1; n2 = 1
     lb1 = 1; lb2 = 1
     ! 
-    n2 = int(array%data%num_elements / int(array%data%stride2,&
-                 c_size_t),c_int)
-    n1 = array%data%stride2 / array%data%stride1
+    n2 = array%data%num_elements / array%data%stride2
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2])
     !
     offset_remainder = array%data%index_offset
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:) => tmp
   end subroutine
@@ -19474,17 +19400,16 @@ contains
     n1 = 1; n2 = 1
     lb1 = 1; lb2 = 1
     ! 
-    n2 = int(array%data%num_elements / int(array%data%stride2,&
-                 c_size_t),c_int)
-    n1 = array%data%stride2 / array%data%stride1
+    n2 = array%data%num_elements / array%data%stride2
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2])
     !
     offset_remainder = array%data%index_offset
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:) => tmp
   end subroutine
@@ -19506,17 +19431,16 @@ contains
     n1 = 1; n2 = 1
     lb1 = 1; lb2 = 1
     ! 
-    n2 = int(array%data%num_elements / int(array%data%stride2,&
-                 c_size_t),c_int)
-    n1 = array%data%stride2 / array%data%stride1
+    n2 = array%data%num_elements / array%data%stride2
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2])
     !
     offset_remainder = array%data%index_offset
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:) => tmp
   end subroutine
@@ -19538,17 +19462,16 @@ contains
     n1 = 1; n2 = 1
     lb1 = 1; lb2 = 1
     ! 
-    n2 = int(array%data%num_elements / int(array%data%stride2,&
-                 c_size_t),c_int)
-    n1 = array%data%stride2 / array%data%stride1
+    n2 = array%data%num_elements / array%data%stride2
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2])
     !
     offset_remainder = array%data%index_offset
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:) => tmp
   end subroutine
@@ -19570,17 +19493,16 @@ contains
     n1 = 1; n2 = 1
     lb1 = 1; lb2 = 1
     ! 
-    n2 = int(array%data%num_elements / int(array%data%stride2,&
-                 c_size_t),c_int)
-    n1 = array%data%stride2 / array%data%stride1
+    n2 = array%data%num_elements / array%data%stride2
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2])
     !
     offset_remainder = array%data%index_offset
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:) => tmp
   end subroutine
@@ -19602,17 +19524,16 @@ contains
     n1 = 1; n2 = 1
     lb1 = 1; lb2 = 1
     ! 
-    n2 = int(array%data%num_elements / int(array%data%stride2,&
-                 c_size_t),c_int)
-    n1 = array%data%stride2 / array%data%stride1
+    n2 = array%data%num_elements / array%data%stride2
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2])
     !
     offset_remainder = array%data%index_offset
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:) => tmp
   end subroutine
@@ -19634,10 +19555,9 @@ contains
     n1 = 1; n2 = 1; n3 = 1
     lb1 = 1; lb2 = 1; lb3 = 1
     ! 
-    n3 = int(array%data%num_elements / int(array%data%stride3,&
-                 c_size_t),c_int)
+    n3 = array%data%num_elements / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3])
     !
@@ -19646,8 +19566,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:) => tmp
   end subroutine
@@ -19669,10 +19589,9 @@ contains
     n1 = 1; n2 = 1; n3 = 1
     lb1 = 1; lb2 = 1; lb3 = 1
     ! 
-    n3 = int(array%data%num_elements / int(array%data%stride3,&
-                 c_size_t),c_int)
+    n3 = array%data%num_elements / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3])
     !
@@ -19681,8 +19600,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:) => tmp
   end subroutine
@@ -19704,10 +19623,9 @@ contains
     n1 = 1; n2 = 1; n3 = 1
     lb1 = 1; lb2 = 1; lb3 = 1
     ! 
-    n3 = int(array%data%num_elements / int(array%data%stride3,&
-                 c_size_t),c_int)
+    n3 = array%data%num_elements / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3])
     !
@@ -19716,8 +19634,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:) => tmp
   end subroutine
@@ -19739,10 +19657,9 @@ contains
     n1 = 1; n2 = 1; n3 = 1
     lb1 = 1; lb2 = 1; lb3 = 1
     ! 
-    n3 = int(array%data%num_elements / int(array%data%stride3,&
-                 c_size_t),c_int)
+    n3 = array%data%num_elements / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3])
     !
@@ -19751,8 +19668,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:) => tmp
   end subroutine
@@ -19774,10 +19691,9 @@ contains
     n1 = 1; n2 = 1; n3 = 1
     lb1 = 1; lb2 = 1; lb3 = 1
     ! 
-    n3 = int(array%data%num_elements / int(array%data%stride3,&
-                 c_size_t),c_int)
+    n3 = array%data%num_elements / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3])
     !
@@ -19786,8 +19702,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:) => tmp
   end subroutine
@@ -19809,10 +19725,9 @@ contains
     n1 = 1; n2 = 1; n3 = 1
     lb1 = 1; lb2 = 1; lb3 = 1
     ! 
-    n3 = int(array%data%num_elements / int(array%data%stride3,&
-                 c_size_t),c_int)
+    n3 = array%data%num_elements / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3])
     !
@@ -19821,8 +19736,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:) => tmp
   end subroutine
@@ -19844,10 +19759,9 @@ contains
     n1 = 1; n2 = 1; n3 = 1
     lb1 = 1; lb2 = 1; lb3 = 1
     ! 
-    n3 = int(array%data%num_elements / int(array%data%stride3,&
-                 c_size_t),c_int)
+    n3 = array%data%num_elements / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3])
     !
@@ -19856,8 +19770,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:) => tmp
   end subroutine
@@ -19879,10 +19793,9 @@ contains
     n1 = 1; n2 = 1; n3 = 1
     lb1 = 1; lb2 = 1; lb3 = 1
     ! 
-    n3 = int(array%data%num_elements / int(array%data%stride3,&
-                 c_size_t),c_int)
+    n3 = array%data%num_elements / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3])
     !
@@ -19891,8 +19804,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:) => tmp
   end subroutine
@@ -19914,11 +19827,10 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1
     ! 
-    n4 = int(array%data%num_elements / int(array%data%stride4,&
-                 c_size_t),c_int)
+    n4 = array%data%num_elements / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4])
     !
@@ -19929,8 +19841,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:) => tmp
   end subroutine
@@ -19952,11 +19864,10 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1
     ! 
-    n4 = int(array%data%num_elements / int(array%data%stride4,&
-                 c_size_t),c_int)
+    n4 = array%data%num_elements / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4])
     !
@@ -19967,8 +19878,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:) => tmp
   end subroutine
@@ -19990,11 +19901,10 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1
     ! 
-    n4 = int(array%data%num_elements / int(array%data%stride4,&
-                 c_size_t),c_int)
+    n4 = array%data%num_elements / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4])
     !
@@ -20005,8 +19915,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:) => tmp
   end subroutine
@@ -20028,11 +19938,10 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1
     ! 
-    n4 = int(array%data%num_elements / int(array%data%stride4,&
-                 c_size_t),c_int)
+    n4 = array%data%num_elements / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4])
     !
@@ -20043,8 +19952,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:) => tmp
   end subroutine
@@ -20066,11 +19975,10 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1
     ! 
-    n4 = int(array%data%num_elements / int(array%data%stride4,&
-                 c_size_t),c_int)
+    n4 = array%data%num_elements / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4])
     !
@@ -20081,8 +19989,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:) => tmp
   end subroutine
@@ -20104,11 +20012,10 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1
     ! 
-    n4 = int(array%data%num_elements / int(array%data%stride4,&
-                 c_size_t),c_int)
+    n4 = array%data%num_elements / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4])
     !
@@ -20119,8 +20026,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:) => tmp
   end subroutine
@@ -20142,11 +20049,10 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1
     ! 
-    n4 = int(array%data%num_elements / int(array%data%stride4,&
-                 c_size_t),c_int)
+    n4 = array%data%num_elements / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4])
     !
@@ -20157,8 +20063,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:) => tmp
   end subroutine
@@ -20180,11 +20086,10 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1
     ! 
-    n4 = int(array%data%num_elements / int(array%data%stride4,&
-                 c_size_t),c_int)
+    n4 = array%data%num_elements / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4])
     !
@@ -20195,8 +20100,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:) => tmp
   end subroutine
@@ -20218,12 +20123,11 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1
     ! 
-    n5 = int(array%data%num_elements / int(array%data%stride5,&
-                 c_size_t),c_int)
+    n5 = array%data%num_elements / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5])
     !
@@ -20236,8 +20140,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:) => tmp
   end subroutine
@@ -20259,12 +20163,11 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1
     ! 
-    n5 = int(array%data%num_elements / int(array%data%stride5,&
-                 c_size_t),c_int)
+    n5 = array%data%num_elements / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5])
     !
@@ -20277,8 +20180,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:) => tmp
   end subroutine
@@ -20300,12 +20203,11 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1
     ! 
-    n5 = int(array%data%num_elements / int(array%data%stride5,&
-                 c_size_t),c_int)
+    n5 = array%data%num_elements / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5])
     !
@@ -20318,8 +20220,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:) => tmp
   end subroutine
@@ -20341,12 +20243,11 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1
     ! 
-    n5 = int(array%data%num_elements / int(array%data%stride5,&
-                 c_size_t),c_int)
+    n5 = array%data%num_elements / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5])
     !
@@ -20359,8 +20260,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:) => tmp
   end subroutine
@@ -20382,12 +20283,11 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1
     ! 
-    n5 = int(array%data%num_elements / int(array%data%stride5,&
-                 c_size_t),c_int)
+    n5 = array%data%num_elements / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5])
     !
@@ -20400,8 +20300,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:) => tmp
   end subroutine
@@ -20423,12 +20323,11 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1
     ! 
-    n5 = int(array%data%num_elements / int(array%data%stride5,&
-                 c_size_t),c_int)
+    n5 = array%data%num_elements / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5])
     !
@@ -20441,8 +20340,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:) => tmp
   end subroutine
@@ -20464,12 +20363,11 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1
     ! 
-    n5 = int(array%data%num_elements / int(array%data%stride5,&
-                 c_size_t),c_int)
+    n5 = array%data%num_elements / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5])
     !
@@ -20482,8 +20380,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:) => tmp
   end subroutine
@@ -20505,12 +20403,11 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1
     ! 
-    n5 = int(array%data%num_elements / int(array%data%stride5,&
-                 c_size_t),c_int)
+    n5 = array%data%num_elements / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5])
     !
@@ -20523,8 +20420,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:) => tmp
   end subroutine
@@ -20546,13 +20443,12 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1
     ! 
-    n6 = int(array%data%num_elements / int(array%data%stride6,&
-                 c_size_t),c_int)
+    n6 = array%data%num_elements / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5,n6])
     !
@@ -20567,8 +20463,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:) => tmp
   end subroutine
@@ -20590,13 +20486,12 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1
     ! 
-    n6 = int(array%data%num_elements / int(array%data%stride6,&
-                 c_size_t),c_int)
+    n6 = array%data%num_elements / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5,n6])
     !
@@ -20611,8 +20506,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:) => tmp
   end subroutine
@@ -20634,13 +20529,12 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1
     ! 
-    n6 = int(array%data%num_elements / int(array%data%stride6,&
-                 c_size_t),c_int)
+    n6 = array%data%num_elements / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5,n6])
     !
@@ -20655,8 +20549,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:) => tmp
   end subroutine
@@ -20678,13 +20572,12 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1
     ! 
-    n6 = int(array%data%num_elements / int(array%data%stride6,&
-                 c_size_t),c_int)
+    n6 = array%data%num_elements / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5,n6])
     !
@@ -20699,8 +20592,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:) => tmp
   end subroutine
@@ -20722,13 +20615,12 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1
     ! 
-    n6 = int(array%data%num_elements / int(array%data%stride6,&
-                 c_size_t),c_int)
+    n6 = array%data%num_elements / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5,n6])
     !
@@ -20743,8 +20635,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:) => tmp
   end subroutine
@@ -20766,13 +20658,12 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1
     ! 
-    n6 = int(array%data%num_elements / int(array%data%stride6,&
-                 c_size_t),c_int)
+    n6 = array%data%num_elements / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5,n6])
     !
@@ -20787,8 +20678,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:) => tmp
   end subroutine
@@ -20810,13 +20701,12 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1
     ! 
-    n6 = int(array%data%num_elements / int(array%data%stride6,&
-                 c_size_t),c_int)
+    n6 = array%data%num_elements / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5,n6])
     !
@@ -20831,8 +20721,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:) => tmp
   end subroutine
@@ -20854,13 +20744,12 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1
     ! 
-    n6 = int(array%data%num_elements / int(array%data%stride6,&
-                 c_size_t),c_int)
+    n6 = array%data%num_elements / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5,n6])
     !
@@ -20875,8 +20764,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:) => tmp
   end subroutine
@@ -20898,14 +20787,13 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1; n7 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1; lb7 = 1
     ! 
-    n7 = int(array%data%num_elements / int(array%data%stride7,&
-                 c_size_t),c_int)
+    n7 = array%data%num_elements / array%data%stride7
     n6 = array%data%stride7 / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5,n6,n7])
     !
@@ -20922,8 +20810,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:,lb7:) => tmp
   end subroutine
@@ -20945,14 +20833,13 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1; n7 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1; lb7 = 1
     ! 
-    n7 = int(array%data%num_elements / int(array%data%stride7,&
-                 c_size_t),c_int)
+    n7 = array%data%num_elements / array%data%stride7
     n6 = array%data%stride7 / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5,n6,n7])
     !
@@ -20969,8 +20856,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:,lb7:) => tmp
   end subroutine
@@ -20992,14 +20879,13 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1; n7 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1; lb7 = 1
     ! 
-    n7 = int(array%data%num_elements / int(array%data%stride7,&
-                 c_size_t),c_int)
+    n7 = array%data%num_elements / array%data%stride7
     n6 = array%data%stride7 / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5,n6,n7])
     !
@@ -21016,8 +20902,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:,lb7:) => tmp
   end subroutine
@@ -21039,14 +20925,13 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1; n7 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1; lb7 = 1
     ! 
-    n7 = int(array%data%num_elements / int(array%data%stride7,&
-                 c_size_t),c_int)
+    n7 = array%data%num_elements / array%data%stride7
     n6 = array%data%stride7 / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5,n6,n7])
     !
@@ -21063,8 +20948,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:,lb7:) => tmp
   end subroutine
@@ -21086,14 +20971,13 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1; n7 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1; lb7 = 1
     ! 
-    n7 = int(array%data%num_elements / int(array%data%stride7,&
-                 c_size_t),c_int)
+    n7 = array%data%num_elements / array%data%stride7
     n6 = array%data%stride7 / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5,n6,n7])
     !
@@ -21110,8 +20994,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:,lb7:) => tmp
   end subroutine
@@ -21133,14 +21017,13 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1; n7 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1; lb7 = 1
     ! 
-    n7 = int(array%data%num_elements / int(array%data%stride7,&
-                 c_size_t),c_int)
+    n7 = array%data%num_elements / array%data%stride7
     n6 = array%data%stride7 / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5,n6,n7])
     !
@@ -21157,8 +21040,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:,lb7:) => tmp
   end subroutine
@@ -21180,14 +21063,13 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1; n7 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1; lb7 = 1
     ! 
-    n7 = int(array%data%num_elements / int(array%data%stride7,&
-                 c_size_t),c_int)
+    n7 = array%data%num_elements / array%data%stride7
     n6 = array%data%stride7 / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5,n6,n7])
     !
@@ -21204,8 +21086,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:,lb7:) => tmp
   end subroutine
@@ -21227,14 +21109,13 @@ contains
     n1 = 1; n2 = 1; n3 = 1; n4 = 1; n5 = 1; n6 = 1; n7 = 1
     lb1 = 1; lb2 = 1; lb3 = 1; lb4 = 1; lb5 = 1; lb6 = 1; lb7 = 1
     ! 
-    n7 = int(array%data%num_elements / int(array%data%stride7,&
-                 c_size_t),c_int)
+    n7 = array%data%num_elements / array%data%stride7
     n6 = array%data%stride7 / array%data%stride6
     n5 = array%data%stride6 / array%data%stride5
     n4 = array%data%stride5 / array%data%stride4
     n3 = array%data%stride4 / array%data%stride3
     n2 = array%data%stride3 / array%data%stride2
-    n1 = array%data%stride2 / array%data%stride1
+    n1 = array%data%stride2 / 1
     !
     call c_f_pointer(array%data%data_dev,tmp,SHAPE=[n1,n2,n3,n4,n5,n6,n7])
     !
@@ -21251,8 +21132,8 @@ contains
     offset_remainder = offset_remainder + lb3*array%data%stride3
     lb2 = -offset_remainder / array%data%stride2
     offset_remainder = offset_remainder + lb2*array%data%stride2
-    lb1 = -offset_remainder / array%data%stride1
-    offset_remainder = offset_remainder + lb1*array%data%stride1
+    lb1 = -offset_remainder / 1
+    offset_remainder = offset_remainder + lb1*1
     !
     data_dev(lb1:,lb2:,lb3:,lb4:,lb5:,lb6:,lb7:) => tmp
   end subroutine

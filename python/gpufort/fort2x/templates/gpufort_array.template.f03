@@ -35,7 +35,7 @@ module gpufort_array
     type(c_ptr) :: data_dev     = c_null_ptr
     integer(c_int) :: num_elements = 0  !> Number of elements represented by this array.
     integer(c_int) :: index_offset = -1 !> Offset for index calculation; scalar product of negative lower bounds and strides.
-{% for d in range(1,rank_ub) %}
+{% for d in range(2,rank_ub) %}
     integer(c_int) :: stride{{d}}  = -1 !> Stride for dimension {{d}}
 {% endfor %}
   end type

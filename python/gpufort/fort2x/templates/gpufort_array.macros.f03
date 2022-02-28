@@ -5,6 +5,16 @@
 {% import "gpufort.macros.h" as gm %}
 {% import "common.macros.f03" as cm %}
 {########################################################################################}
+{%- macro array_stride(r,array_rank) -%}
+{%- if r == 1 -%}
+1
+{%- elif r == array_rank+1 -%}
+array%data%num_elements
+{%- else -%}
+array%data%stride{{r}}
+{%- endif -%}
+{%- endmacro -%}
+{########################################################################################}
 {%- macro render_module_procedure(prefix,
                                   max_rank_ub,
                                   routine,
@@ -68,15 +78,15 @@ function {{f_array}}_num_data_bytes(array) result(retval)
   type({{f_array}}),intent(in) :: array
   integer(c_size_t) :: retval 
   !
-  retval = array%data%num_elements*array%bytes_per_element
+  retval = int({{ array_stride(rank+1,rank) }},c_size_t)*int(array%bytes_per_element,c_size_t)
 end function
 
 function {{f_array}}_num_elements(array) result(retval)
   implicit none
   type({{f_array}}),intent(in) :: array
-  integer(c_size_t) :: retval 
+  integer(c_int) :: retval 
   !
-  retval = array%data%num_elements
+  retval = {{ array_stride(rank+1,rank) }}
 end function
 {% endfor %}
 
@@ -105,18 +115,16 @@ subroutine {{binding}}_{{tuple.f_kind}}(&
   {{ gm.separated_list_single_line("n"," = 1; ",rank) }} = 1
   {{ gm.separated_list_single_line("lb"," = 1; ",rank) }} = 1
   ! 
-  n{{rank}} = int(array%data%num_elements / int(array%data%stride{{rank}},&
-               c_size_t),c_int)
-{% for i in range(rank-1,0,-1) %}
-  n{{i}} = array%data%stride{{i+1}} / array%data%stride{{ i }}
+{% for i in range(rank,0,-1) %}
+  n{{i}} = {{ array_stride(i+1,rank) }} / {{ array_stride(i,rank) }}
 {% endfor %}
   !
   call c_f_pointer(array%data%data_{{loc}},tmp,SHAPE=[{{ gm.separated_list_single_line("n",",",rank) }}])
   !
   offset_remainder = array%data%index_offset
 {% for i in range(rank,0,-1) %}
-  lb{{i}} = -offset_remainder / array%data%stride{{i}}
-  offset_remainder = offset_remainder + lb{{i}}*array%data%stride{{i}}
+  lb{{i}} = -offset_remainder / {{ array_stride(i,rank) }}
+  offset_remainder = offset_remainder + lb{{i}}*{{ array_stride(i,rank) }}
 {% endfor %}
   !
   data_{{loc}}({{ gm.separated_list_single_line("lb",":,",rank) }}:) => tmp

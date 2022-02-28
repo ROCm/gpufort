@@ -58,11 +58,10 @@ namespace gpufort {
    */
   template<typename T>
   struct array_descr1 {
-    T*     data_host    = nullptr;
-    T*     data_dev     = nullptr;
-    int num_elements    = 0;     //> Number of elements represented by this array.
-    int    index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
-    int    stride1  = -1;    //> Stride 1 for linearizing 1-dimensional index.
+    T*     data_host = nullptr;
+    T*     data_dev  = nullptr;
+    int num_elements = 0;     //> Number of elements represented by this array.
+    int index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
  
     /**
      * Wrap a host-device pointer pair and store the associated
@@ -82,10 +81,9 @@ namespace gpufort {
        this->data_host = data_host;
        this->data_dev  = data_dev;
        // column-major access
-       this->stride1 = 1;
-       this->num_elements = this->stride1*n1;
+       this->num_elements = 1*n1;
        this->index_offset =
-         -lb1*this->stride1;
+         -lb1*1;
     }
     
     /**
@@ -97,7 +95,7 @@ namespace gpufort {
       const int i1
     ) const {
       return this->index_offset
-          + i1*this->stride1;
+          + i1*1;
     }
     
     /**
@@ -149,7 +147,7 @@ namespace gpufort {
       #endif
       switch(dim) {
        case 1:
-	  return this->num_elements / this->stride1;
+	        return this->num_elements / 1;
        default:
           #ifndef __HIP_DEVICE_COMPILE__
           std::cerr << "‘dim’ argument of ‘gpufort::array1::size’ is not a valid dimension index ('dim': "<<dim<<", max dimension: 1" << std::endl;
@@ -170,9 +168,9 @@ namespace gpufort {
       assert(dim <= 1);
       #endif
       int offset_remainder = this->index_offset;
-      int lb = -offset_remainder / this->stride1;
+      int lb = -offset_remainder / 1;
       #ifndef __HIP_DEVICE_COMPILE__
-      offset_remainder = offset_remainder + lb*this->stride1;
+      offset_remainder = offset_remainder + lb*1;
       assert(offset_remainder == 0);
       #endif
       return lb;
@@ -1212,11 +1210,10 @@ namespace gpufort {
    */
   template<typename T>
   struct array_descr2 {
-    T*     data_host    = nullptr;
-    T*     data_dev     = nullptr;
-    int num_elements    = 0;     //> Number of elements represented by this array.
-    int    index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
-    int    stride1  = -1;    //> Stride 1 for linearizing 2-dimensional index.
+    T*     data_host = nullptr;
+    T*     data_dev  = nullptr;
+    int num_elements = 0;     //> Number of elements represented by this array.
+    int index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
     int    stride2  = -1;    //> Stride 2 for linearizing 2-dimensional index.
  
     /**
@@ -1239,11 +1236,10 @@ namespace gpufort {
        this->data_host = data_host;
        this->data_dev  = data_dev;
        // column-major access
-       this->stride1 = 1;
-       this->stride2 = this->stride1*n1;
+       this->stride2 = 1*n1;
        this->num_elements = this->stride2*n2;
        this->index_offset =
-         -lb1*this->stride1
+         -lb1*1
          -lb2*this->stride2;
     }
     
@@ -1257,7 +1253,7 @@ namespace gpufort {
       const int i2
     ) const {
       return this->index_offset
-          + i1*this->stride1
+          + i1*1
           + i2*this->stride2;
     }
     
@@ -1316,9 +1312,9 @@ namespace gpufort {
       #endif
       switch(dim) {
        case 2:
-	  return this->num_elements / this->stride2;
+	        return this->num_elements / this->stride2;
        case 1:
-	  return this->stride2 / this->stride1;
+	        return this->stride2 / 1;
        default:
           #ifndef __HIP_DEVICE_COMPILE__
           std::cerr << "‘dim’ argument of ‘gpufort::array2::size’ is not a valid dimension index ('dim': "<<dim<<", max dimension: 2" << std::endl;
@@ -1342,9 +1338,9 @@ namespace gpufort {
       int lb = -offset_remainder / this->stride2;
       if ( dim == 2 ) return lb;
       offset_remainder = offset_remainder + lb*this->stride2;
-      lb = -offset_remainder / this->stride1;
+      lb = -offset_remainder / 1;
       #ifndef __HIP_DEVICE_COMPILE__
-      offset_remainder = offset_remainder + lb*this->stride1;
+      offset_remainder = offset_remainder + lb*1;
       assert(offset_remainder == 0);
       #endif
       return lb;
@@ -2426,11 +2422,10 @@ namespace gpufort {
    */
   template<typename T>
   struct array_descr3 {
-    T*     data_host    = nullptr;
-    T*     data_dev     = nullptr;
-    int num_elements    = 0;     //> Number of elements represented by this array.
-    int    index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
-    int    stride1  = -1;    //> Stride 1 for linearizing 3-dimensional index.
+    T*     data_host = nullptr;
+    T*     data_dev  = nullptr;
+    int num_elements = 0;     //> Number of elements represented by this array.
+    int index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
     int    stride2  = -1;    //> Stride 2 for linearizing 3-dimensional index.
     int    stride3  = -1;    //> Stride 3 for linearizing 3-dimensional index.
  
@@ -2456,12 +2451,11 @@ namespace gpufort {
        this->data_host = data_host;
        this->data_dev  = data_dev;
        // column-major access
-       this->stride1 = 1;
-       this->stride2 = this->stride1*n1;
+       this->stride2 = 1*n1;
        this->stride3 = this->stride2*n2;
        this->num_elements = this->stride3*n3;
        this->index_offset =
-         -lb1*this->stride1
+         -lb1*1
          -lb2*this->stride2
          -lb3*this->stride3;
     }
@@ -2477,7 +2471,7 @@ namespace gpufort {
       const int i3
     ) const {
       return this->index_offset
-          + i1*this->stride1
+          + i1*1
           + i2*this->stride2
           + i3*this->stride3;
     }
@@ -2543,11 +2537,11 @@ namespace gpufort {
       #endif
       switch(dim) {
        case 3:
-	  return this->num_elements / this->stride3;
+	        return this->num_elements / this->stride3;
        case 2:
-	  return this->stride3 / this->stride2;
+	        return this->stride3 / this->stride2;
        case 1:
-	  return this->stride2 / this->stride1;
+	        return this->stride2 / 1;
        default:
           #ifndef __HIP_DEVICE_COMPILE__
           std::cerr << "‘dim’ argument of ‘gpufort::array3::size’ is not a valid dimension index ('dim': "<<dim<<", max dimension: 3" << std::endl;
@@ -2574,9 +2568,9 @@ namespace gpufort {
       lb = -offset_remainder / this->stride2;
       if ( dim == 2 ) return lb;
       offset_remainder = offset_remainder + lb*this->stride2;
-      lb = -offset_remainder / this->stride1;
+      lb = -offset_remainder / 1;
       #ifndef __HIP_DEVICE_COMPILE__
-      offset_remainder = offset_remainder + lb*this->stride1;
+      offset_remainder = offset_remainder + lb*1;
       assert(offset_remainder == 0);
       #endif
       return lb;
@@ -3703,11 +3697,10 @@ namespace gpufort {
    */
   template<typename T>
   struct array_descr4 {
-    T*     data_host    = nullptr;
-    T*     data_dev     = nullptr;
-    int num_elements    = 0;     //> Number of elements represented by this array.
-    int    index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
-    int    stride1  = -1;    //> Stride 1 for linearizing 4-dimensional index.
+    T*     data_host = nullptr;
+    T*     data_dev  = nullptr;
+    int num_elements = 0;     //> Number of elements represented by this array.
+    int index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
     int    stride2  = -1;    //> Stride 2 for linearizing 4-dimensional index.
     int    stride3  = -1;    //> Stride 3 for linearizing 4-dimensional index.
     int    stride4  = -1;    //> Stride 4 for linearizing 4-dimensional index.
@@ -3736,13 +3729,12 @@ namespace gpufort {
        this->data_host = data_host;
        this->data_dev  = data_dev;
        // column-major access
-       this->stride1 = 1;
-       this->stride2 = this->stride1*n1;
+       this->stride2 = 1*n1;
        this->stride3 = this->stride2*n2;
        this->stride4 = this->stride3*n3;
        this->num_elements = this->stride4*n4;
        this->index_offset =
-         -lb1*this->stride1
+         -lb1*1
          -lb2*this->stride2
          -lb3*this->stride3
          -lb4*this->stride4;
@@ -3760,7 +3752,7 @@ namespace gpufort {
       const int i4
     ) const {
       return this->index_offset
-          + i1*this->stride1
+          + i1*1
           + i2*this->stride2
           + i3*this->stride3
           + i4*this->stride4;
@@ -3833,13 +3825,13 @@ namespace gpufort {
       #endif
       switch(dim) {
        case 4:
-	  return this->num_elements / this->stride4;
+	        return this->num_elements / this->stride4;
        case 3:
-	  return this->stride4 / this->stride3;
+	        return this->stride4 / this->stride3;
        case 2:
-	  return this->stride3 / this->stride2;
+	        return this->stride3 / this->stride2;
        case 1:
-	  return this->stride2 / this->stride1;
+	        return this->stride2 / 1;
        default:
           #ifndef __HIP_DEVICE_COMPILE__
           std::cerr << "‘dim’ argument of ‘gpufort::array4::size’ is not a valid dimension index ('dim': "<<dim<<", max dimension: 4" << std::endl;
@@ -3869,9 +3861,9 @@ namespace gpufort {
       lb = -offset_remainder / this->stride2;
       if ( dim == 2 ) return lb;
       offset_remainder = offset_remainder + lb*this->stride2;
-      lb = -offset_remainder / this->stride1;
+      lb = -offset_remainder / 1;
       #ifndef __HIP_DEVICE_COMPILE__
-      offset_remainder = offset_remainder + lb*this->stride1;
+      offset_remainder = offset_remainder + lb*1;
       assert(offset_remainder == 0);
       #endif
       return lb;
@@ -5046,11 +5038,10 @@ namespace gpufort {
    */
   template<typename T>
   struct array_descr5 {
-    T*     data_host    = nullptr;
-    T*     data_dev     = nullptr;
-    int num_elements    = 0;     //> Number of elements represented by this array.
-    int    index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
-    int    stride1  = -1;    //> Stride 1 for linearizing 5-dimensional index.
+    T*     data_host = nullptr;
+    T*     data_dev  = nullptr;
+    int num_elements = 0;     //> Number of elements represented by this array.
+    int index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
     int    stride2  = -1;    //> Stride 2 for linearizing 5-dimensional index.
     int    stride3  = -1;    //> Stride 3 for linearizing 5-dimensional index.
     int    stride4  = -1;    //> Stride 4 for linearizing 5-dimensional index.
@@ -5082,14 +5073,13 @@ namespace gpufort {
        this->data_host = data_host;
        this->data_dev  = data_dev;
        // column-major access
-       this->stride1 = 1;
-       this->stride2 = this->stride1*n1;
+       this->stride2 = 1*n1;
        this->stride3 = this->stride2*n2;
        this->stride4 = this->stride3*n3;
        this->stride5 = this->stride4*n4;
        this->num_elements = this->stride5*n5;
        this->index_offset =
-         -lb1*this->stride1
+         -lb1*1
          -lb2*this->stride2
          -lb3*this->stride3
          -lb4*this->stride4
@@ -5109,7 +5099,7 @@ namespace gpufort {
       const int i5
     ) const {
       return this->index_offset
-          + i1*this->stride1
+          + i1*1
           + i2*this->stride2
           + i3*this->stride3
           + i4*this->stride4
@@ -5189,15 +5179,15 @@ namespace gpufort {
       #endif
       switch(dim) {
        case 5:
-	  return this->num_elements / this->stride5;
+	        return this->num_elements / this->stride5;
        case 4:
-	  return this->stride5 / this->stride4;
+	        return this->stride5 / this->stride4;
        case 3:
-	  return this->stride4 / this->stride3;
+	        return this->stride4 / this->stride3;
        case 2:
-	  return this->stride3 / this->stride2;
+	        return this->stride3 / this->stride2;
        case 1:
-	  return this->stride2 / this->stride1;
+	        return this->stride2 / 1;
        default:
           #ifndef __HIP_DEVICE_COMPILE__
           std::cerr << "‘dim’ argument of ‘gpufort::array5::size’ is not a valid dimension index ('dim': "<<dim<<", max dimension: 5" << std::endl;
@@ -5230,9 +5220,9 @@ namespace gpufort {
       lb = -offset_remainder / this->stride2;
       if ( dim == 2 ) return lb;
       offset_remainder = offset_remainder + lb*this->stride2;
-      lb = -offset_remainder / this->stride1;
+      lb = -offset_remainder / 1;
       #ifndef __HIP_DEVICE_COMPILE__
-      offset_remainder = offset_remainder + lb*this->stride1;
+      offset_remainder = offset_remainder + lb*1;
       assert(offset_remainder == 0);
       #endif
       return lb;
@@ -6458,11 +6448,10 @@ namespace gpufort {
    */
   template<typename T>
   struct array_descr6 {
-    T*     data_host    = nullptr;
-    T*     data_dev     = nullptr;
-    int num_elements    = 0;     //> Number of elements represented by this array.
-    int    index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
-    int    stride1  = -1;    //> Stride 1 for linearizing 6-dimensional index.
+    T*     data_host = nullptr;
+    T*     data_dev  = nullptr;
+    int num_elements = 0;     //> Number of elements represented by this array.
+    int index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
     int    stride2  = -1;    //> Stride 2 for linearizing 6-dimensional index.
     int    stride3  = -1;    //> Stride 3 for linearizing 6-dimensional index.
     int    stride4  = -1;    //> Stride 4 for linearizing 6-dimensional index.
@@ -6497,15 +6486,14 @@ namespace gpufort {
        this->data_host = data_host;
        this->data_dev  = data_dev;
        // column-major access
-       this->stride1 = 1;
-       this->stride2 = this->stride1*n1;
+       this->stride2 = 1*n1;
        this->stride3 = this->stride2*n2;
        this->stride4 = this->stride3*n3;
        this->stride5 = this->stride4*n4;
        this->stride6 = this->stride5*n5;
        this->num_elements = this->stride6*n6;
        this->index_offset =
-         -lb1*this->stride1
+         -lb1*1
          -lb2*this->stride2
          -lb3*this->stride3
          -lb4*this->stride4
@@ -6527,7 +6515,7 @@ namespace gpufort {
       const int i6
     ) const {
       return this->index_offset
-          + i1*this->stride1
+          + i1*1
           + i2*this->stride2
           + i3*this->stride3
           + i4*this->stride4
@@ -6614,17 +6602,17 @@ namespace gpufort {
       #endif
       switch(dim) {
        case 6:
-	  return this->num_elements / this->stride6;
+	        return this->num_elements / this->stride6;
        case 5:
-	  return this->stride6 / this->stride5;
+	        return this->stride6 / this->stride5;
        case 4:
-	  return this->stride5 / this->stride4;
+	        return this->stride5 / this->stride4;
        case 3:
-	  return this->stride4 / this->stride3;
+	        return this->stride4 / this->stride3;
        case 2:
-	  return this->stride3 / this->stride2;
+	        return this->stride3 / this->stride2;
        case 1:
-	  return this->stride2 / this->stride1;
+	        return this->stride2 / 1;
        default:
           #ifndef __HIP_DEVICE_COMPILE__
           std::cerr << "‘dim’ argument of ‘gpufort::array6::size’ is not a valid dimension index ('dim': "<<dim<<", max dimension: 6" << std::endl;
@@ -6660,9 +6648,9 @@ namespace gpufort {
       lb = -offset_remainder / this->stride2;
       if ( dim == 2 ) return lb;
       offset_remainder = offset_remainder + lb*this->stride2;
-      lb = -offset_remainder / this->stride1;
+      lb = -offset_remainder / 1;
       #ifndef __HIP_DEVICE_COMPILE__
-      offset_remainder = offset_remainder + lb*this->stride1;
+      offset_remainder = offset_remainder + lb*1;
       assert(offset_remainder == 0);
       #endif
       return lb;
@@ -7942,11 +7930,10 @@ namespace gpufort {
    */
   template<typename T>
   struct array_descr7 {
-    T*     data_host    = nullptr;
-    T*     data_dev     = nullptr;
-    int num_elements    = 0;     //> Number of elements represented by this array.
-    int    index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
-    int    stride1  = -1;    //> Stride 1 for linearizing 7-dimensional index.
+    T*     data_host = nullptr;
+    T*     data_dev  = nullptr;
+    int num_elements = 0;     //> Number of elements represented by this array.
+    int index_offset = -1;    //> Offset for index calculation; scalar product of negative lower bounds and strides.
     int    stride2  = -1;    //> Stride 2 for linearizing 7-dimensional index.
     int    stride3  = -1;    //> Stride 3 for linearizing 7-dimensional index.
     int    stride4  = -1;    //> Stride 4 for linearizing 7-dimensional index.
@@ -7984,8 +7971,7 @@ namespace gpufort {
        this->data_host = data_host;
        this->data_dev  = data_dev;
        // column-major access
-       this->stride1 = 1;
-       this->stride2 = this->stride1*n1;
+       this->stride2 = 1*n1;
        this->stride3 = this->stride2*n2;
        this->stride4 = this->stride3*n3;
        this->stride5 = this->stride4*n4;
@@ -7993,7 +7979,7 @@ namespace gpufort {
        this->stride7 = this->stride6*n6;
        this->num_elements = this->stride7*n7;
        this->index_offset =
-         -lb1*this->stride1
+         -lb1*1
          -lb2*this->stride2
          -lb3*this->stride3
          -lb4*this->stride4
@@ -8017,7 +8003,7 @@ namespace gpufort {
       const int i7
     ) const {
       return this->index_offset
-          + i1*this->stride1
+          + i1*1
           + i2*this->stride2
           + i3*this->stride3
           + i4*this->stride4
@@ -8111,19 +8097,19 @@ namespace gpufort {
       #endif
       switch(dim) {
        case 7:
-	  return this->num_elements / this->stride7;
+	        return this->num_elements / this->stride7;
        case 6:
-	  return this->stride7 / this->stride6;
+	        return this->stride7 / this->stride6;
        case 5:
-	  return this->stride6 / this->stride5;
+	        return this->stride6 / this->stride5;
        case 4:
-	  return this->stride5 / this->stride4;
+	        return this->stride5 / this->stride4;
        case 3:
-	  return this->stride4 / this->stride3;
+	        return this->stride4 / this->stride3;
        case 2:
-	  return this->stride3 / this->stride2;
+	        return this->stride3 / this->stride2;
        case 1:
-	  return this->stride2 / this->stride1;
+	        return this->stride2 / 1;
        default:
           #ifndef __HIP_DEVICE_COMPILE__
           std::cerr << "‘dim’ argument of ‘gpufort::array7::size’ is not a valid dimension index ('dim': "<<dim<<", max dimension: 7" << std::endl;
@@ -8162,9 +8148,9 @@ namespace gpufort {
       lb = -offset_remainder / this->stride2;
       if ( dim == 2 ) return lb;
       offset_remainder = offset_remainder + lb*this->stride2;
-      lb = -offset_remainder / this->stride1;
+      lb = -offset_remainder / 1;
       #ifndef __HIP_DEVICE_COMPILE__
-      offset_remainder = offset_remainder + lb*this->stride1;
+      offset_remainder = offset_remainder + lb*1;
       assert(offset_remainder == 0);
       #endif
       return lb;

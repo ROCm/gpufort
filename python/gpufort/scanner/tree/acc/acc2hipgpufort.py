@@ -64,7 +64,6 @@ def dev_var_name(var):
     result = result.replace("$", "_")
     return opts.acc_dev_prefix + result + opts.acc_dev_suffix
 
-
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def add_implicit_region(stcontainer):
     last_decl_list_node = stcontainer.last_entry_in_decl_list()
@@ -75,11 +74,79 @@ def add_implicit_region(stcontainer):
         stendorreturn.add_to_prolog(textwrap.indent(HIP_GPUFORT_RT_ACC_EXIT_REGION.format(\
             region_kind="implicit_region=.true."),indent))
 
+#def get_mappings(ivars,directive=[],**kwargs):
+#    alloc,_  = util.kwargs.get_value("alloc","",**kwargs)
+#    asyncr,_ = util.kwargs.get_value("asyncr","",**kwargs)
+#    alloc,_  = util.kwargs.get_value("finalize","",**kwargs)
+#    clauses = [
+#      "create","no_create","delete","copyin",
+#      "copy","copyout","present",
+#      ]
+#    clauses_with_async    = ["present","copy","copyin","copyout"]
+#    clauses_with_finalize = ["delete"] 
+#    clauses_with_alloc    = ["alloc"]
+#    #
+#    mappings = {}
+#    for ttaccclause in translator.tree.grammar.acc_mapping_clause.scanString():
+#        clause = ttaccclause[0][0]
+#        tokens1 = ["gpufort_acc_",ttaccclause.kind,"("]
+#        if clause.kind in clauses:
+#            for ttrvalue in clause.var_list
+#                # allocate_rvalue =  (( derived_type_elem | identifier ) + bounds) | derived_type_elem | identifier # TODO check if this can be generalized
+#                while 
+#                var_expr = var_expr1.lower()
+#                parent_already_mapped = False
+#                for parent_type in util.parsing.derived_type_parents(var_expr.lower()):
+#                    parent_already_mapped = parent_already_mapped or parent_type in mappings.keys()
+#                    if parent_already_mapped: break;
+#                if not parent_already_mapped:
+#                    tokens = list(tokens1)
+#                    tokens.append(var_expr)
+#                    if clause.kind in clauses_with_alloc:
+#                        tokens.append(alloc)
+#                    if clause.kind in clauses_with_async:
+#                        tokens.append(asyncr)
+#                    if clause.kind in clauses_with_finalize:
+#                        tokens.append(finalize)
+#                    tokens.append(")") 
+#                    mappings[var_expr] = "".join(tokens)
+#        else:
+#            return SyntaxError("clause not supported") 
+#
+#def generate_kernel_arguments(ivars,directive=[],**kwargs):
+#    """:return a list of arguments given the directives
+#    """
+#    # TODO how to handle case where a variable is part of a mapping
+#    # but not present in the body?
+#    # TODO have a preproc step where derived type members are kicked
+#    # out of the argument list if the parent struct is mapped.
+#    # TODO Simplify ACC parsing, no need to use pyparsing
+#    asyncr,_ = util.kwargs.get_value("asyncr","",**kwargs)
+#    alloc,_ = util.kwargs.get_value("alloc","",**kwargs)
+#
+#    supported_clauses = [
+#      "create",
+#      "no_create",
+#      "delete",
+#      "copyin",
+#      "copy",
+#      "copyout",
+#      "present",
+#      ]
+#    
+#    for parse_result in translator.tree.grammar.acc_mapping_clause.scanString():
+#        clause = parse_result[0][0]
+#        tokens1 = "".join(["gpufort_acc_",parse_result.kind,"("])
+#        if clause.kind in supported_clauses:
+#            for var in clause.var_expressions():
+#
+#        else:
+#            return SyntaxError("Clause not supported") 
+
 class Acc2HipGpufortRT(accbackends.AccBackendBase):
     # clauses
     def _handle_async(self, queue=None, prefix=",asyncr="):
-        """
-        :return: Empty string if no queue was found
+        """:return: Empty string if no queue was found
         :rtype: str
         """
         result = ""
@@ -94,8 +161,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         return result
 
     def _handle_finalize(self):
-        """
-        :return: If a finalize clause is present
+        """:return: If a finalize clause is present
         :rtype: bool
         """
         return len(
@@ -195,30 +261,28 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
 
         ## Init
         stnode = self._stnode
-        if stnode.is_init_directive():
+        if stnode.is_directive(["acc","init"]):
             result += HIP_GPUFORT_RT_ACC_INIT
-        elif stnode.is_update_directive():
+        elif stnode.is_directive(["acc","update"]):
             partial_result, transformed = self._handle_update()
             if transformed:
                 result += partial_result
-        elif stnode.is_shutdown_directive():
+        elif stnode.is_directive(["acc","shutdown"]):
             result += HIP_GPUFORT_RT_ACC_SHUTDOWN
         else:
             ## Enter region commands must come first
-            emit_enter_region = stnode.is_enter_data_directive()
+            emit_enter_region = stnode.is_directive(["acc","enter","data"])
             if emit_enter_region:
                 region_kind = "unstructured=.true."
             else:
                 region_kind = ""
-            emit_enter_region = emit_enter_region or stnode.is_data_directive()
-            emit_enter_region = emit_enter_region or stnode.is_parallel_directive(
-            )
-            emit_enter_region = emit_enter_region or stnode.is_parallel_loop_directive(
-            )
-            emit_enter_region = emit_enter_region or stnode.is_kernels_directive(
-            )
-            emit_enter_region = emit_enter_region or stnode.is_kernels_loop_directive(
-            )
+            emit_enter_region = (emit_enter_region
+                                 or stnode.is_directive(["acc","data"])
+                                 or stnode.is_directive(["acc","parallel"])
+                                 or stnode.is_directive(["acc","parallel","loop"])
+                                 or stnode.is_directive(["acc","kernels"])
+                                 or stnode.is_directive(["acc","kernels","loop"]))
+            
             if emit_enter_region:
                 result += HIP_GPUFORT_RT_ACC_ENTER_REGION.format(
                     region_kind=region_kind)
@@ -236,21 +300,17 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
                 result += partial_result
 
             ## Exit region commands must come last
-            emit_exit_region = stnode.is_exit_data_directive()
+            emit_exit_region = stnode.is_directive(["acc","exit","data"])
             if emit_exit_region:
                 region_kind = "unstructured=.true."
             else:
                 region_kind = ""
-            emit_exit_region = emit_exit_region or (
-                stnode.is_end_directive() and
-                stnode.find_substring("kernels") and
-                not stnode.find_substring("loop"))
-            emit_exit_region = emit_exit_region or (
-                stnode.is_end_directive() and
-                stnode.find_substring("parallel") and
-                not stnode.find_substring("loop"))
-            emit_exit_region = emit_exit_region or (
-                stnode.is_end_directive() and stnode.find_substring("data"))
+            emit_exit_region = (emit_exit_region 
+                               or stnode.is_directive(["acc","end","data"])
+                               or (stnode.is_directive(["acc","end","kernels"])
+                                  and not stnode.is_directive(["acc","end","kernels","loop"]))
+                               or (stnode.is_directive(["acc","end","parallel"])
+                                  and not stnode.is_directive(["acc","end","parallel","loop"])))
             if emit_exit_region:
                 result += HIP_GPUFORT_RT_ACC_EXIT_REGION.format(
                     region_kind=region_kind)
@@ -323,8 +383,8 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
         stloopnest = self._stnode
         ttloopnest = stloopnest.parse_result
         arrays_in_body = ttloopnest.arrays_in_body()
-        if stloopnest.is_parallel_loop_directive(
-        ) or stloopnest.is_kernels_loop_directive():
+        if (stloopnest.is_directive(["acc","parallel","loop"])
+           or stloopnest.is_directive(["acc","kernels","loop"])):
             result_directive, _ = Acc2HipGpufortRT.transform(
                 self,
                 joined_lines,
@@ -332,13 +392,19 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
                 statements_fully_cover_lines,
                 index,
                 handle_if=False)
-            result = textwrap.dedent(result_directive,indent)
+            result = textwrap.dedent(result_directive)
         partial_result, transformed, temp_vars = self._handle_default()
         if transformed:
             stloopnest.parent.append_vars_to_decl_list(temp_vars)
+        # from scanner/fort2x via translator.analysis # TODO revise
+        #for ivar in stloopnest.kernel_args_ivars():  
+        #    # check if ivar is listed in the clauses
+        #    # if so ,check if it is a array, type, or scalar
+        #    # 
+        ## 
         partial_result, _ = nodes.STLoopNest.transform(
-            stloopnest, joined_lines, joined_statements,
-            statements_fully_cover_lines, index)
+                                               stloopnest, joined_lines, joined_statements,
+                                               statements_fully_cover_lines, index)
         partial_result = textwrap.dedent(partial_result)
         result = "\n".join([result.rstrip("\n"), partial_result])
 
@@ -350,9 +416,9 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
             result = result.rstrip(
                 "\n") + "\n" + HIP_GPUFORT_RT_ACC_WAIT.format(
                     queue=queue, asyncr="")
-        #if stloopnest.is_parallel_loop_directive() or stloopnest.is_kernels_loop_directive():
-        if (stloopnest.is_kernels_loop_directive() or
-                stloopnest.is_parallel_loop_directive()):
+        #if stloopnest.is_directive(["acc","parallel","loop"])) or stloopnest.is_directive(["acc","kernels","loop"])):
+        if (stloopnest.is_directive(["acc","kernels","loop"]) or
+           stloopnest.is_directive(["acc","parallel","loop"])):
             result = result.rstrip(
                 "\n") + "\n" + HIP_GPUFORT_RT_ACC_EXIT_REGION.format(
                     region_kind="")

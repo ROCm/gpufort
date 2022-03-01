@@ -49,11 +49,11 @@ class Node():
 
     __repr__ = __str__
 
-def _create_index_records_from_declaration(statement):
+def create_index_records_from_declaration(statement):
     """:raise SyntaxError: If the syntax of the declaration statement is not
                            as expected.
     """
-    f_type, kind, qualifiers, variables = util.parsing.parse_declaration(statement)
+    f_type, kind, qualifiers, dimension_bounds, variables, _, __ = util.parsing.parse_declaration(statement.lower())
     context = []
     for var in variables:
         name, bounds, rhs = var
@@ -69,8 +69,8 @@ def _create_index_records_from_declaration(statement):
         # ACC/OMP
         ivar["declare_on_target"] = False
         # arrays
-        ivar["bounds"] = bounds
-        ivar["rank"]   = len(bounds)
+        ivar["bounds"] = bounds + dimension_bounds
+        ivar["rank"]   = len(ivar["bounds"])
         # handle parameters
         #ivar["value"] = None # TODO parse rhs if necessary
         ivar["rhs"] = rhs
@@ -288,7 +288,7 @@ def _parse_statements(linemaps, file_path):
             msg = "begin to parse declaration '{}'".format(
                 current_statement)
             log_begin_task(current_node, msg)
-            variables = _create_index_records_from_declaration(current_statement)
+            variables = create_index_records_from_declaration(current_statement)
             current_node._data["variables"] += variables
             msg = "finished to parse declaration '{}'".format(current_statement)
             log_end_task(current_node, msg)

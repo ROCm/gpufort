@@ -4,6 +4,31 @@ import re
 
 COMMENT_CHARS = "!cCdD*"
 
+def tokenize(statement, padded_size=0):
+    """Splits string at whitespaces and substrings such as
+    'end', '$', '!', '(', ')', '=>', '=', ',' and "::".
+    Preserves the substrings in the resulting token stream but not the whitespaces.
+    :param str padded_size: Always ensure that the list has at least this size by adding padded_size-N empty
+               strings at the end of the returned token stream. Has no effect if N >= padded_size. 
+               Disable padding by specifying value <= 0.
+    """
+    TOKENS_REMOVE = r"\s+|\t+"
+    TOKENS_KEEP = r"(end|else|!\$?|[c\*]\$|[(),]|::?|=>?|<<<|>>>|[<>]=?|[/=]=|\+|-|\*|/|\.\w+\.)"
+    # IMPORTANT: Use non-capturing groups (?:<expr>) to ensure that an inner group in TOKENS_KEEP
+    # is not captured.
+
+    tokens1 = re.split(TOKENS_REMOVE, statement)
+    tokens = []
+    for tk in tokens1:
+        tokens += [
+            part for part in re.split(TOKENS_KEEP, tk, 0, re.IGNORECASE)
+        ]
+    result = [tk for tk in tokens if tk != None and len(tk.strip())]
+    if padded_size > 0 and len(result) < padded_size:
+        return result + [""] * (padded_size - len(result))
+    else:
+        return result
+
 def derived_type_parents(var_expr):
     """:return: the derived type parents of a 
     variable if the variable is member of a derived type,
@@ -123,31 +148,6 @@ def relocate_inline_comments(lines):
     return result
 
 
-def tokenize(statement, padded_size=0):
-    """Splits string at whitespaces and substrings such as
-    'end', '$', '!', '(', ')', '=>', '=', ',' and "::".
-    Preserves the substrings in the resulting token stream but not the whitespaces.
-    :param str padded_size: Always ensure that the list has at least this size by adding padded_size-N empty
-               strings at the end of the returned token stream. Has no effect if N >= padded_size. 
-               Disable padding by specifying value <= 0.
-    """
-    TOKENS_REMOVE = r"\s+|\t+"
-    TOKENS_KEEP = r"(end|else|!\$?|[c\*]\$|[(),]|::?|=>?|<<<|>>>|[<>]=?|[/=]=|\+|-|\*|/|\.\w+\.)"
-    # IMPORTANT: Use non-capturing groups (?:<expr>) to ensure that an inner group in TOKENS_KEEP
-    # is not captured.
-
-    tokens1 = re.split(TOKENS_REMOVE, statement)
-    tokens = []
-    for tk in tokens1:
-        tokens += [
-            part for part in re.split(TOKENS_KEEP, tk, 0, re.IGNORECASE)
-        ]
-    result = [tk for tk in tokens if tk != None and len(tk.strip())]
-    if padded_size > 0 and len(result) < padded_size:
-        return result + [""] * (padded_size - len(result))
-    else:
-        return result
-
 
 def next_tokens_till_open_bracket_is_closed(tokens, open_brackets=0):
     # ex:
@@ -258,13 +258,16 @@ def parse_declaration(fortran_statement):
     """Decomposes a Fortran declaration into its individual
     parts.
 
-    :return: A tuple (datatype, kind, qualifiers, var-list)
-             where var-list consists of triples (varname, bounds or [], right-hand-side or None)
+    :return: A tuple (datatype, kind, qualifiers, dimension_bounds, var_list, qualifiers_raw)
+             where `qualifiers` contain qualifiers except the `dimension` qualifier,
+             `dimension_bounds` are the arguments to the `dimension` qualifier,
+             var_list consists of triples (varname, bounds or [], right-hand-side or None),
+             and `qualifiers_raw` contains the full list of qualifiers (without whitespaces).
+    :note: case-ins
     :raise SyntaxError: If the syntax of the expression is not as expected.
     """
-    orig_tokens = tokenize(fortran_statement.lower(),
-                           padded_size=10)
-    tokens = orig_tokens
+    tokens = tokenize(fortran_statement,
+                      padded_size=10)
 
     idx_last_consumed_token = None
     # handle datatype
@@ -272,11 +275,12 @@ def parse_declaration(fortran_statement):
     kind = None
     DOUBLE_COLON = "::"
     try:
-        if tokens[0] == "type":
+        tokens_lower = list(map(str.lower, tokens))
+        if tokens_lower[0] == "type":
             # ex: type ( dim3 )
             kind = tokens[2]
             idx_last_consumed_token = 3
-        elif tokens[0:1 + 1] == ["double", "precision"]:
+        elif tokens_lower[0:1 + 1] == ["double", "precision"]:
             datatype = " ".join(tokens[0:1 + 1])
             idx_last_consumed_token = 1
         elif tokens[1] == "*":
@@ -286,14 +290,14 @@ def parse_declaration(fortran_statement):
                 tokens[2:], open_brackets=0)
             kind = "".join(kind_tokens)
             idx_last_consumed_token = 2 + len(kind_tokens) - 1
-        elif tokens[1:4] == ["(","kind","("]:
+        elif tokens_lower[1:4] == ["(","kind","("]:
             # ex: integer ( kind ( 4 ) )
             kind_tokens = next_tokens_till_open_bracket_is_closed(
                 tokens[4:], open_brackets=1)
             kind = "".join(tokens[2:4]+kind_tokens)
             idx_last_consumed_token = 4 + len(kind_tokens)
-        elif (tokens[1:4] == ["(","kind","="] 
-             or tokens[1:4] == ["(","len","="]):
+        elif (tokens_lower[1:4] == ["(","kind","="] 
+             or tokens_lower[1:4] == ["(","len","="]):
             # ex: integer ( kind = 4 )
             kind_tokens = next_tokens_till_open_bracket_is_closed(
                 tokens[4:], open_brackets=1)
@@ -317,6 +321,7 @@ def parse_declaration(fortran_statement):
         raise SyntaxError("could not parse datatype")
     # handle qualifiers
     try:
+        datatype_raw = "".join(tokens[:idx_last_consumed_token+1])
         tokens = tokens[idx_last_consumed_token + 1:] # remove type part tokens
         idx_last_consumed_token = None
         if tokens[0] == "," and DOUBLE_COLON in tokens:
@@ -339,35 +344,37 @@ def parse_declaration(fortran_statement):
     qualifiers = []
     dimension_bounds = []
     for qualifier in qualifiers_raw:
-        qualifier_tokens = tokenize(qualifier)
-        if qualifier_tokens[0] == "dimension":
+        qualifier_tokens       = tokenize(qualifier)
+        qualifier_tokens_lower = list(map(str.lower, qualifier_tokens))
+        if qualifier_tokens_lower[0] == "dimension":
             # ex: dimension ( 1, 2, 1:n )
             qualifier_tokens = tokenize(qualifier)
             if (len(qualifier_tokens) < 4
-               or qualifier_tokens[0:2] != ["dimension","("]
+               or qualifier_tokens_lower[0:2] != ["dimension","("]
                or qualifier_tokens[-1] != ")"):
                 raise SyntaxError("could not parse 'dimension' qualifier")
             dimension_bounds = get_highest_level_arguments(qualifier_tokens[2:-1])
-        elif qualifier_tokens[0] == "intent":
+        elif qualifier_tokens_lower[0] == "intent":
             # ex: intent ( inout )
             qualifier_tokens = tokenize(qualifier)
             if (len(qualifier_tokens) != 4 
-               or qualifier_tokens[0:2] != ["intent","("]
+               or qualifier_tokens_lower[0:2] != ["intent","("]
                or qualifier_tokens[-1] != ")"
-               or qualifier_tokens[2] not in ["out","inout","in"]):
+               or qualifier_tokens_lower[2] not in ["out","inout","in"]):
                 raise SyntaxError("could not parse 'intent' qualifier")
             qualifiers.append("".join(qualifier_tokens))
         elif len(qualifier_tokens)==1 and qualifier_tokens[0].isidentifier():
             qualifiers.append(qualifier)
         else:
             raise SyntaxError("could not parse qualifier '{}'".format(qualifier))
+        
     variables = []
     # 
     for var in variables_raw:
         var_tokens = tokenize(var)
         var_name   = var_tokens.pop(0)
         var_bounds = [] 
-        var_rhs    = ""
+        var_rhs    = None
         # handle bounds
         if (len(var_tokens) > 2
            and var_tokens[0] == "("):
@@ -383,8 +390,8 @@ def parse_declaration(fortran_statement):
             var_rhs = "".join(var_tokens)
         elif len(var_tokens):
             raise SyntaxError("could not parse '{}'".format(var_tokens))
-        variables.append((var_name,var_bounds+dimension_bounds,var_rhs))
-    return (datatype, kind, qualifiers, variables) 
+        variables.append((var_name,var_bounds,var_rhs))
+    return (datatype, kind, qualifiers, dimension_bounds, variables, datatype_raw, qualifiers_raw) 
 
 # def parse_implicit_statement(statement):
 # TODO

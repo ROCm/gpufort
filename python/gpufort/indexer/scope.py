@@ -186,37 +186,7 @@ def _search_index_for_type_or_procedure(index, parent_tag, entry_name,
 # API
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def create_index_search_tag_for_var(var_expr):
-    """
-    Creates tag from variable expressions such as 'A%b(i)%c' that
-    can be used to search the index via the scope module.
-    The example 'A%b(i)%c' is translated to a tag 'a%b%c' (lower case).
-    All array indexing expressions are stripped away.
-    A single identifer 'a' would be translated to the tag 'a'.
-
-    :param str var_expr: a simple identifier such as 'a' or 'A_d' or a more complicated derived-type member variable expression such as 'a%b%c' or 'A%b(i)%c'.
-    :see: indexer.scope.search_index_for_var
-    """
-    result = var_expr.lstrip("-+") # remove trailing minus sign
-    if not "(" in result:
-        return result.lower()
-    else:
-        parts = re.split("([()%,])", result.lower())
-        open_brackets = 0
-        result = []
-        curr = ""
-        for part in parts:
-            if part == "(":
-                open_brackets += 1
-            elif part == ")":
-                open_brackets -= 1
-            elif part == "%" and open_brackets == 0:
-                result.append(curr)
-                curr = ""
-            elif open_brackets == 0:
-                curr += part
-        result.append(curr)
-        return "%".join(result)
-
+    return util.parsing.strip_array_indexing(var_expr).lower()
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def create_scope_from_declaration_list(declaration_list_snippet,

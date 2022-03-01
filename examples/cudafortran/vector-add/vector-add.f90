@@ -5,19 +5,16 @@ program main
   implicit none
   integer, parameter :: N = 40000
   real :: x(N), y(N), a
-  real, device, allocatable :: x_d(:)
+  real, device :: x_d(N)
   real, allocatable :: y_d(:)
-  !real, device :: x_d(N), y_d(N) ! fixed-size arrays are not fully 
-                       ! supported yet as alloc/dealloc are not generated yet
   type(dim3) :: grid, tBlock
   integer :: i
 
   attributes(device) :: y_d
+  allocate(y_d(N))
 
   tBlock = dim3(256,1,1)
   grid = dim3(ceiling(real(N)/tBlock%x),1,1)
-
-  allocate(x_d(N),y_d(N))
 
   x = 1.0; y = 2.0; a = 2.0
   x_d = x
@@ -32,7 +29,7 @@ program main
 
   y = y_d
 
-  deallocate(x_d,y_d)
+  deallocate(y_d)
 
 #define max_err(a) maxval(abs(a-4.0))
 

@@ -404,8 +404,7 @@ class STContainerBase(STNode):
             filter=lambda stnode: isinstance(stnode, STContains)) != None
 
     def append_to_decl_list(self, lines, prepend=False):
-        """
-        Append lines to the last statement in the declaration list.
+        """Append lines to the last statement in the declaration list.
         :param list lines: The lines to append.
         :param bool prepend: Prepend new lines to previously append lines.
         """
@@ -429,8 +428,8 @@ class STContainerBase(STNode):
         :param list lines: The lines to append.
         :param bool prepend: Prepend new lines to previously append lines.
         """
-        indent = last_decl_list_node.first_line_indent()
         for return_or_end_node in self.return_or_end_statements():
+            indent = return_or_end_node.first_line_indent()
             for line in lines:
                 return_or_end_node.add_to_prolog(indent + line)
 
@@ -713,15 +712,6 @@ class STDeclaration(STNode, IDeclListEntry):
 
     def __init__(self, *args, **kwargs):
         STNode.__init__(self, *args, **kwargs)
-        self._ttdeclaration = translator.parse_declaration(
-            self.first_statement())
-        self._vars = [
-            name.lower() for name in self._ttdeclaration.variable_names()
-        ]
-
-    def create_codegen_context(self):
-        return translator.tree.grammar.create_index_records_from_declaration(
-            self._ttdeclaration)
 
     def transform(self,
                   joined_lines,
@@ -738,68 +728,82 @@ class STDeclaration(STNode, IDeclListEntry):
            find first code line and add allocation to preamble if no dummy argument -> double pass
         if integer with stream kind, 
         """
+        stmt = self.first_statement()
         if len(index):
             index = index
         else:
             index = copy.copy(indexer.scope.EMPTY)
-            index["variables"] = self.create_codegen_context()
-        original_datatype = translator.tree.make_f_str(
-            self._ttdeclaration.datatype_f_str())
-        original_qualifiers = [
-            translator.tree.make_f_str(q).lower()
-            for q in self._ttdeclaration.qualifiers
-        ]
-        unchanged_vars = []
-        new_device_pointer_vars = []
-        new_host_pointer_vars = []
+            variables = create_index_records_from_declaration(stmt.lower())
+            index["variables"] += variables
 
-        indent = self.first_line_indent()
+        _, _, _, dimension_bounds, variables, original_datatype, original_qualifiers = util.parsing.parse_declaration(stmt)
+
         # argument names if declared in procedure
         if isinstance(self.parent, STProcedure):
             argnames = list(self.parent.index_record["dummy_args"])
         else:
             argnames = []
-        result = ""
-        for var_name in self._vars:
-            ivar,discovered = indexer.scope.search_index_for_var(\
+
+        result = []
+        modified = False
+        for var in variables:
+            var_name, var_bounds, var_rhs = var
+            ivar,_ = indexer.scope.search_index_for_var(\
               index,self.parent.tag(),\
                 var_name)
             rank = ivar["rank"]
             has_device = "device" in ivar["qualifiers"]
             has_pinned = "pinned" in ivar["qualifiers"]
-            has_allocatable = "allocatable" in ivar["qualifiers"]
-            # clean qualifiers
-            new_qualifiers = []
-            for q in original_qualifiers:
-                if not q in ["target", "pinned", "device", "allocatable"
-                            ] and not q.startswith("dimension"):
-                    new_qualifiers.append(q)
-            if var_name in argnames:
-                new_qualifiers.append("target")
+            has_pointer = "pointer" in ivar["qualifiers"]
+            is_fixed_size_array = (rank > 0
+                                  and "allocatable" not in ivar["qualifiers"]
+                                  and not has_pointer)
+            # 
+            if has_device or has_pinned:
+                # new qualifiers
+                new_qualifiers = []
+                for q in original_qualifiers:
+                    q_lower = q.lower()
+                    if (not q_lower in ["pointer","target", "pinned", "device", "allocatable"] 
+                       and not q_lower.startswith("dimension")):
+                        new_qualifiers.append(q)
+                if var_name in argnames and not has_pointer:
+                    new_qualifiers.append("target")
+                else:
+                    new_qualifiers.append("pointer")
+                if rank > 0:
+                    new_qualifiers.append("dimension(:" + ",:" * (rank-1) + ")")
+                # fixed size arrays
+                if is_fixed_size_array:
+                    malloc_tokens = ["call hipCheck(","hipMalloc","(",var_name,",",",".join(var_bounds+dimension_bounds),"))"]
+                    free_tokens   = ["call hipCheck(","hipFree","(",var_name,"))"]
+                    if has_pinned: 
+                        malloc_tokens[1] = "hipHostMalloc" 
+                        free_tokens[1] = "hipHostFree"
+                        flags = "0"
+                        malloc_tokens.insert(-1,",")
+                        malloc_tokens.insert(-1,flags)
+                    self.parent.append_to_decl_list(["".join(malloc_tokens)])
+                    self.parent.prepend_to_return_or_end_statements(["".join(free_tokens)])
+                # modified variable declaration
+                tokens = [original_datatype]
+                if len(new_qualifiers):
+                    tokens += [",",",".join(new_qualifiers)]
+                result.append("".join(tokens+[" :: ",var_name]))
+                modified = True
             else:
-                new_qualifiers.append("pointer")
-            if rank > 0:
-                new_qualifiers.append("dimension(:" + ",:" * (rank-1) + ")")
-            if has_device and rank > 0:
-                new_device_pointer_vars.append(var_name)
-                result += "\n" + indent + original_datatype + "," + ",".join(
-                    new_qualifiers) + " :: " + var_name
-            elif has_pinned:
-                new_host_pointer_vars.append(var_name)
-                result += "\n" + indent + original_datatype + "," + ",".join(
-                    new_qualifiers) + " :: " + var_name
-
-        # TODO handle side effects if no allocatable present
-        if len(new_device_pointer_vars) + len(
-                new_host_pointer_vars) < len(self._ttdeclaration._rhs):
-            result = indent + self._ttdeclaration.f_str(extra_ignore_list=new_device_pointer_vars+new_host_pointer_vars) +\
-                     result
-        if len(new_device_pointer_vars) or len(
-                new_host_pointer_vars):
-            return result.lstrip("\n"), True
-        else:
-            return "", False
-
+                tokens = [original_datatype]
+                if len(original_qualifiers):
+                    tokens += [",",",".join(original_qualifiers)]
+                tokens += [" :: ",var_name]
+                if len(var_bounds):
+                    tokens.append("({})".format(",".join(var_bounds)))
+                if var_rhs != None:
+                    tokens.append(" => " if has_pointer else " = ")
+                    tokens.append(var_rhs)
+                result.append("".join(tokens))
+            indent = self.first_line_indent()
+            return textwrap.indent("\n".join(result),indent), modified
 
 class STAttributes(STNode):
     """CUDA Fortran specific intrinsic that needs to be removed/commented out

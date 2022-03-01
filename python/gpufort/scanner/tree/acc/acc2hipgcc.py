@@ -234,8 +234,8 @@ class AccLoopNest2HipGccRT(Acc2HipGccRT):
         stnode = self._stnode
         indent = stnode.first_line_indent()
         result = ""
-        if stnode.is_parallel_loop_directive(
-        ) or stnode.is_kernels_loop_directive():
+        if (stnode.is_directive(["acc","parallel","loop"])
+           or stnode.is_directive(["acc","kernels","loop"])):
             partial_result, _ = Acc2HipGccRT.transform(
                 self,
                 joined_lines,
@@ -253,8 +253,8 @@ class AccLoopNest2HipGccRT(Acc2HipGccRT):
         if not len(arg):
             result += "\n" + indent + "call " + HIP_GCC_RT_ACC_WAIT_ALL.format(
                 arg=arg, asyncr="") + "\n"
-        if stnode.is_parallel_loop_directive(
-        ) or stnode.is_kernels_loop_directive():
+        if (stnode.is_directive(["acc","parallel","loop"])
+           or stnode.is_directive(["acc","kernels","loop"])):
             result += indent + "call " + HIP_GCC_RT_GOACC_DATA_END + "\n"
 
         # wrap in if-then-else-endif if necessary

@@ -15,8 +15,8 @@ program main
   integer :: i
   integer(4) :: x(N), y(N), y_exact(N)
 #ifdef _GPUFORT
-  type(c_ptr) :: dev_y
   type(c_ptr) :: dev_x
+  type(c_ptr) :: dev_y
 #endif
 
   do i = 1, N
@@ -37,8 +37,6 @@ program main
   call gpufort_acc_exit_region()
   
   call gpufort_acc_enter_region()
-  dev_y = gpufort_acc_present(y,or=gpufort_acc_event_copy)
-  dev_x = gpufort_acc_present(x,or=gpufort_acc_event_copy)
   ! extracted to HIP C++ file
   call launch_main_23_auto(0,c_null_ptr,)
   call gpufort_acc_wait()

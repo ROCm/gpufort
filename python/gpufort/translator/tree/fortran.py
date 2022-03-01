@@ -1060,55 +1060,6 @@ class TTDimensionQualifier(base.TTNode):
         return "dimension{0}".format(base.make_f_str(self._bounds))
 
 
-class TTDeclaredVariable(base.TTNode):
-    """
-    Spawned from grammar:
-    
-    ```python
-    declaration_var = grammar.Group( identifier + grammar.Optional(LPAR + dimension_list + RPAR,default=[]) + grammar.Optional(EQ + ( matrix_arithmetic_expression | complex_arithmetic_expression | arithmetic_expression ), default=None)) # ! emits [*,[*],*]
-    ```
-    """
-
-    def _assign_fields(self, tokens):
-        self._name = tokens[0][0]
-        self._bounds = tokens[0][1]
-        self._rhs = tokens[0][2]
-
-    def name(self, converter=base.make_c_str):
-        return converter(self._name)
-
-    def has_bounds(self):
-        return self._bounds != None
-
-    def get_bounds(self):
-        return self._bounds
-
-    def to_str(self, converter, include_bounds=True, include_rhs=True):
-        result = converter(self._name)
-        if include_bounds and self.has_bounds():
-            #print(converter(self._bounds))
-            result += converter(self._bounds)
-        if include_rhs and converter(self._rhs) != "":
-            result += " = " + converter(self._rhs)
-        return result
-
-    def rhs_is_number(self):
-        try:
-            ast.literal_eval(self.rhs_c_str())
-            return True
-        except:
-            return False
-
-    def rhs_c_str(self):
-        return "(" + base.make_f_str(self._rhs) + ")"
-
-    def c_str(self, include_bounds=True, include_rhs=True):
-        return self.to_str(base.make_c_str, include_bounds, include_rhs)
-
-    def f_str(self, include_bounds=True, include_rhs=True):
-        return self.to_str(base.make_f_str, include_bounds, include_rhs)
-
-
 class Attributed():
 
     def get_string_qualifiers(self):
@@ -1128,95 +1079,6 @@ class Attributed():
 
     def has_dimension(self):
         return len(base.find_all(self.qualifiers, TTDimensionQualifier))
-
-
-class TTDeclaration(base.TTNode, Attributed):
-    """ 
-    Spawned from grammar:
-    ```python
-    declaration = datatype + grammar.Optional(COMMA + qualifier_list,default=[]) + COLONS + grammar.Group(delimitedList(declaration_var))   # ! emits *,[*],[*]
-    ```
-    """
-
-    def _assign_fields(self, tokens):
-        #declaration = datatype + grammar.Optional(COMMA + attribute_list,default=[]) + COLONS + grammar.Group(delimitedList(declaration_var))   # ! emits *,[*],[*]
-        self.type, self.kind, self.qualifiers, self._rhs = tokens
-        self.ignore_list = []
-
-    def is_derived_type(self):
-        return self.type.lower() == "type"
-
-    def bytes_per_element(self):
-        """:return: bytes required to store one element of the datatype of the declared variables."""
-        return conv.num_bytes(self.type, self.kind)
-
-    def variable_names(self):
-        """:return: names of any variables defined by this declaration statement."""
-        return [ttdeclaredvariable.name() for ttdeclaredvariable in self._rhs]
-
-    def rhs_c_str(self, name):
-        """
-        :return: C expression of the right-hand side of the variable with name `name`. Returns empty string in case there is no right-hand side.
-        :rtype: str
-        :param name: identi
-        """
-        result = ""
-        for ttdeclaredvariable in self._rhs:
-            if ttdeclaredvariable.name().lower() == name.lower():
-                result = base.make_c_str(ttdeclaredvariable._rhs)
-        return result
-
-    def datatype_f_str(self):
-
-        f_type = base.f_keyword(self.type)
-        if self.type.lower() == "type":
-            return opts.derived_type_format.format(type=f_type, kind=self.kind)
-        elif self.type.lower() == "character":
-            if self.kind != None:
-                return opts.character_format.format(type=f_type, len=self.kind)
-            else:
-                return opts.character_format.format(
-                    type=f_type, len="").lstrip()[0:len(f_type)]
-        else:
-            if self.kind != None:
-                return opts.basic_type_format.format(type=f_type,
-                                                     kind=self.kind)
-            else:
-                return opts.basic_type_format.format(
-                    type=f_type, kind="").lstrip()[0:len(f_type)]
-
-    def f_str(self,
-              extra_ignore_list=[],
-              include_bounds=True,
-              include_rhs=True):
-        """
-        The ignore list can be used to filter out some
-        variables
-        """
-        ignore_list = map(str.lower, self.ignore_list + extra_ignore_list)
-        qualifiers_str = ", " if len(self.qualifiers) else ""
-        qualifiers_str += ", ".join(
-            [base.make_f_str(q) for q in self.qualifiers])
-        result = "{0}{1} :: ".format(self.datatype_f_str(), qualifiers_str)
-        ignored_vars = 0
-        for ttdeclaredvariable in self._rhs:
-            if not ttdeclaredvariable.name(
-                    base.make_f_str).lower() in ignore_list:
-                ignored_vars += 1
-                result += "{0},".format(
-                    ttdeclaredvariable.f_str(include_bounds, include_rhs))
-        if ignored_vars == len(self._rhs):
-            return ""
-        else:
-            return result.rstrip(",")
-
-    def c_str(self,
-              extra_ignore_list=[],
-              is_function_argument=False,
-              include_bounds=True,
-              include_rhs=True):
-        assert False, "TTDeclaration.c_str(...) not implemented as not needed"
-
 
 class TTStatement(base.TTNode):
     """
@@ -1309,7 +1171,6 @@ grammar.bounds.setParseAction(TTBounds)
 grammar.matrix_ranges.setParseAction(TTBounds)
 grammar.dimension_qualifier.setParseAction(TTDimensionQualifier)
 grammar.intent_qualifier.setParseAction(TTIntentQualifier)
-grammar.declared_var.setParseAction(TTDeclaredVariable)
 grammar.arithmetic_expression.setParseAction(TTArithmeticExpression)
 grammar.arithmetic_logical_expression.setParseAction(TTArithmeticExpression)
 grammar.complex_arithmetic_expression.setParseAction(
@@ -1322,4 +1183,3 @@ grammar.complex_assignment.setParseAction(TTComplexAssignment)
 # statements
 grammar.return_statement.setParseAction(TTReturn)
 grammar.fortran_subroutine_call.setParseAction(TTSubroutineCall)
-grammar.fortran_declaration.setParseAction(TTDeclaration)

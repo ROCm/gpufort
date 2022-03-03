@@ -24,14 +24,12 @@ class HipKernelGeneratorBase(kernelgen.KernelGeneratorBase):
             Hash code encoding the significant kernel content (expressions and directives).
         * *fortran_snippet* (`str`):
            Original Fortran snippet to put into the kernel documentation. 
-        * *error_handling* (`str`):
            Error handling mode. TODO review
         :param  
         """
         util.kwargs.set_from_kwargs(self, "kernel_name", "mykernel", **kwargs)
         util.kwargs.set_from_kwargs(self, "kernel_hash", "", **kwargs)
         util.kwargs.set_from_kwargs(self, "fortran_snippet", "", **kwargs)
-        util.kwargs.set_from_kwargs(self, "error_handling", None, **kwargs)
         self.scope = scope
         # to be set by subclass:
         self.c_body = ""
@@ -140,7 +138,7 @@ class HipKernelGenerator4LoopNest(HipKernelGeneratorBase):
         self.kernel["shared_vars"],\
         self.kernel["local_vars"] = translator.analysis.lookup_index_entries_for_vars_in_loopnest(self.scope,
                                                                                        ttloopnest,
-                                                                                       self.error_handling)
+                                                                                       )
         self._create_shared_and_local_array_vars()
  
         #util.logging.log_debug2(opts.log_prefix+".HipKernelGenerator4CufKernel","__init__","".join(
@@ -163,7 +161,7 @@ class HipKernelGenerator4CufKernel(HipKernelGeneratorBase):
         self.kernel["local_vars"] = translator.analysis.lookup_index_entries_for_vars_in_procedure_body(self.scope,
                                                                                                         ttprocedure,
                                                                                                         iprocedure,
-                                                                                                        self.error_handling)
+                                                                                                        )
         self._create_shared_and_local_array_vars()
 
     def render_cpu_routine_f03(self, launcher):

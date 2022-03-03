@@ -1,4 +1,4 @@
-#SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import re
 import sys
@@ -558,14 +558,16 @@ class STProcedure(STContainerBase):
             ], None)
             if ivar_result != None:
                 self.c_result_type = ivar_result["c_type"]
+                # TODO catch errors here
+                # statements must contain filename and line numbers as well
                 self.parse_result = translator.parse_procedure_body(
                     self.code, scope, ivar_result["name"])
             else:
-                msg = "could not identify return value for function ''"
-                util.logging.log_error(msg)
-                sys.exit(2)
+                raise util.error.LookupError("could not identify return value for function ''")
         else:
             self.c_result_type = "void"
+            # TODO catch errors here
+            # statements must contain filename and line numbers as well
             self.parse_result = translator.parse_procedure_body(
                 self.code, scope)
 
@@ -656,6 +658,8 @@ class STLoopNest(STNode):
         self.__hash = self.__hash_kernel()
         parent_tag = self.parent.tag()
         scope = indexer.scope.create_scope(index, parent_tag)
+        # TODO catch errors here
+        # statements must contain filename and line numbers as well
         self.parse_result = translator.parse_loop_kernel(self.code, scope)
 
     def kernel_name(self):
@@ -702,179 +706,6 @@ class STLoopNest(STNode):
                 ",".join(self.kernel_args_names))
         return textwrap.indent(result,indent), True
 
-
-class STDeclaration(STNode, IDeclListEntry):
-    """Represents Fortran declarations such as
-    ```Fortran
-    Complex(DP), allocatable, device :: dev_array(:,:)
-    ```
-    """
-
-    def __init__(self, *args, **kwargs):
-        STNode.__init__(self, *args, **kwargs)
-
-    def transform(self,
-                  joined_lines,
-                  joined_statements,
-                  statements_fully_cover_lines,
-                  index=[]):
-        """
-        if device and allocatable, remove device, add pointer
-        if device and fixed size array, remove device, add pointer, replace fixed bounds by other bounds
-           find first code line and add allocation to preamble if no dummy argument. Do similar things
-           with deallocation -> double pass
-        if pinned and allocatable, add pointer
-        if pinned and fixed size array, remove pinned, add pointer, replace fixed bounds by other bounds
-           find first code line and add allocation to preamble if no dummy argument -> double pass
-        if integer with stream kind, 
-        """
-        stmt = self.first_statement()
-        if len(index):
-            index = index
-        else:
-            index = copy.copy(indexer.scope.EMPTY)
-            variables = create_index_records_from_declaration(stmt.lower())
-            index["variables"] += variables
-
-        _, _, _, dimension_bounds, variables, original_datatype, original_qualifiers = util.parsing.parse_declaration(stmt)
-
-        # argument names if declared in procedure
-        if isinstance(self.parent, STProcedure):
-            argnames = list(self.parent.index_record["dummy_args"])
-        else:
-            argnames = []
-
-        result = []
-        modified = False
-        for var in variables:
-            var_name, var_bounds, var_rhs = var
-            ivar,_ = indexer.scope.search_index_for_var(\
-              index,self.parent.tag(),\
-                var_name)
-            rank = ivar["rank"]
-            has_device = "device" in ivar["qualifiers"]
-            has_pinned = "pinned" in ivar["qualifiers"]
-            has_pointer = "pointer" in ivar["qualifiers"]
-            is_fixed_size_array = (rank > 0
-                                  and "allocatable" not in ivar["qualifiers"]
-                                  and not has_pointer)
-            # 
-            if has_device or has_pinned:
-                # new qualifiers
-                new_qualifiers = []
-                for q in original_qualifiers:
-                    q_lower = q.lower()
-                    if (not q_lower in ["pointer","target", "pinned", "device", "allocatable"] 
-                       and not q_lower.startswith("dimension")):
-                        new_qualifiers.append(q)
-                if var_name in argnames and not has_pointer:
-                    new_qualifiers.append("target")
-                else:
-                    new_qualifiers.append("pointer")
-                if rank > 0:
-                    new_qualifiers.append("dimension(:" + ",:" * (rank-1) + ")")
-                # fixed size arrays
-                if is_fixed_size_array:
-                    malloc_tokens = ["call hipCheck(","hipMalloc","(",var_name,",",",".join(var_bounds+dimension_bounds),"))"]
-                    free_tokens   = ["call hipCheck(","hipFree","(",var_name,"))"]
-                    if has_pinned: 
-                        malloc_tokens[1] = "hipHostMalloc" 
-                        free_tokens[1] = "hipHostFree"
-                        flags = "0"
-                        malloc_tokens.insert(-1,",")
-                        malloc_tokens.insert(-1,flags)
-                    self.parent.append_to_decl_list(["".join(malloc_tokens)])
-                    self.parent.prepend_to_return_or_end_statements(["".join(free_tokens)])
-                # modified variable declaration
-                tokens = [original_datatype]
-                if len(new_qualifiers):
-                    tokens += [",",",".join(new_qualifiers)]
-                result.append("".join(tokens+[" :: ",var_name]))
-                modified = True
-            else:
-                tokens = [original_datatype]
-                if len(original_qualifiers):
-                    tokens += [",",",".join(original_qualifiers)]
-                tokens += [" :: ",var_name]
-                if len(var_bounds):
-                    tokens.append("({})".format(",".join(var_bounds)))
-                if var_rhs != None:
-                    tokens.append(" => " if has_pointer else " = ")
-                    tokens.append(var_rhs)
-                result.append("".join(tokens))
-            indent = self.first_line_indent()
-            return textwrap.indent("\n".join(result),indent), modified
-
-class STAttributes(STNode):
-    """CUDA Fortran specific intrinsic that needs to be removed/commented out
-    in any case.
-    """
-    def transform(self,
-                  joined_lines,
-                  joined_statements,
-                  statements_fully_cover_lines,
-                  index=[]): # TODO
-        return "", True
-
-
-def index_var_is_on_device(ivar):
-    return "device" in ivar["qualifiers"]
-
-
-def pinned_or_on_device(ivar):
-    """:return: Qualifier and if special treatment is necessary."""
-    if "device" in ivar["qualifiers"]:
-        return "device", True
-    elif "pinned" in ivar["qualifiers"]:
-        return "pinned", True
-    else:
-        return None, False
-
-
-class STNonZeroCheck(STNode):
-    
-    def transform(self,
-                  joined_lines,
-                  joined_statements,
-                  statements_fully_cover_lines,
-                  index=[]): # TODO
-        result = snippet
-        transformed = False
-        for tokens, start, end in translator.tree.grammar.non_zero_check.scanString(
-                result):
-            parse_result = tokens[0]
-            lhs_name = parse_result.lhs_f_str()
-            ivar,_  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
-              lhs_name)
-            on_device = index_var_is_on_device(ivar)
-            transformed |= on_device
-            if on_device:
-                subst = parse_result.f_str() # TODO backend specific
-                result = result.replace(result[start:end], subst)
-        return result, transformed
-
-
-class STAllocated(STNode):
-
-    def transform(self,
-                  joined_lines,
-                  joined_statements,
-                  statements_fully_cover_lines,
-                  index=[]): # TODO
-
-        def repl(parse_result):
-            var_name = parse_result.var_name()
-            ivar,_ = indexer.scope.search_index_for_var(index,self.parent.tag(),\
-              var_name)
-            on_device = index_var_is_on_device(ivar)
-            return (parse_result.f_str(), on_device) # TODO backend specific
-
-        result, transformed = util.pyparsing.replace_all(
-            joined_statements, translator.tree.grammar.allocated, repl)
-        assert result != None
-        return result, transformed
-
-
 class IWithBackend:
     @classmethod
     def register_backend(cls, src_dialect, dest_dialects, func):
@@ -906,11 +737,87 @@ class IWithBackend:
                 transformed = transformed or transformed1
         return result, transformed
 
-class STUseStatement(STNode, IDeclListEntry, IWithBackend):
+class STDeclaration(STNode, IWithBackend, IDeclListEntry):
+    """Represents Fortran declarations.
+    ```
+    """
     _backends = []
     
-    def __init__(self, *args, **kwargs):
-        STNode.__init__(self, *args, **kwargs)
+    def __init__(self,*args,**kwargs):
+        STNode.__init__(self,*args,**kwargs)
+
+    def transform(self,*args,**kwargs):
+        try:
+            return IWithBackend.transform(self,*args,**kwargs)
+        except util.error.SyntaxError as e:
+            first_linemap = self._linemaps[0]
+            filepath = first_linemap["file"]
+            lineno=first_linemap["lineno"]
+            statement_no  = self._first_statement_index
+            msg = "{}:{}:{}(stmt-no):{}".format(filepath,lineno,current_statement_no+1,str(e))
+            raise util.error.SyntaxError(msg) from e
+def index_var_is_on_device(ivar):
+    return "device" in ivar["qualifiers"]
+
+
+def pinned_or_on_device(ivar):
+    """:return: Qualifier and if special treatment is necessary."""
+    if "device" in ivar["qualifiers"]:
+        return "device", True
+    elif "pinned" in ivar["qualifiers"]:
+        return "pinned", True
+    else:
+        return None, False
+
+
+class STNonZeroCheck(STNode):
+    
+    def transform(self,
+                  joined_lines,
+                  joined_statements,
+                  statements_fully_cover_lines,
+                  index=[]): # TODO
+        result = snippet
+        transformed = False
+        for tokens, start, end in translator.tree.grammar.non_zero_check.scanString(
+                result):
+            parse_result = tokens[0]
+            lhs_name = parse_result.lhs_f_str()
+            ivar  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
+              lhs_name)
+            on_device = index_var_is_on_device(ivar)
+            transformed |= on_device
+            if on_device:
+                subst = parse_result.f_str() # TODO backend specific
+                result = result.replace(result[start:end], subst)
+        return result, transformed
+
+
+class STAllocated(STNode):
+
+    def transform(self,
+                  joined_lines,
+                  joined_statements,
+                  statements_fully_cover_lines,
+                  index=[]): # TODO
+
+        def repl(parse_result):
+            var_name = parse_result.var_name()
+            ivar = indexer.scope.search_index_for_var(index,self.parent.tag(),\
+              var_name)
+            on_device = index_var_is_on_device(ivar)
+            return (parse_result.f_str(), on_device) # TODO backend specific
+
+        result, transformed = util.pyparsing.replace_all(
+            joined_statements, translator.tree.grammar.allocated, repl)
+        assert result != None
+        return result, transformed
+
+class STUseStatement(STNode, IDeclListEntry, IWithBackend):
+    _backends = []
+  
+    def __init__(self,*args,**kwargs):
+        STNode.__init__(self,*args,**kwargs)
     
     def transform(self,*args,**kwargs):
         return IWithBackend.transform(self,*args,**kwargs)
@@ -957,12 +864,16 @@ class STMemcpy(STNode):
         def repl_memcpy_(parse_result):
             dest_name = parse_result.dest_name_f_str()
             src_name = parse_result.src_name_f_str()
-            dest_indexed_var,_ = indexer.scope.search_index_for_var(index,self.parent.tag(),\
-              dest_name,error_handling="off")
-            src_indexed_var,_  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
-              src_name,error_handling="off")
-            dest_on_device = index_var_is_on_device(dest_indexed_var)
-            src_on_device = index_var_is_on_device(src_indexed_var)
+            try:
+                dest_indexed_var = indexer.scope.search_index_for_var(index,self.parent.tag(),\
+                  dest_name)
+                src_indexed_var  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
+                  src_name)
+                dest_on_device = index_var_is_on_device(dest_indexed_var)
+                src_on_device = index_var_is_on_device(src_indexed_var)
+            except util.error.LookupError:
+                dest_on_device = False 
+                src_on_device  = False
             if dest_on_device or src_on_device:
                 subst = parse_result.hip_f_str(dest_on_device, src_on_device)
                 return (textwrap.indent(subst,indent), True)

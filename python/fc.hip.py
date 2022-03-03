@@ -212,7 +212,7 @@ have a '--' prefix while this tool's options have a '-' prefix."""))
         sys.abort(2)
     log_file_path = converter.init_logging(_path)
 
-    fortran_file_paths, cpp_file_paths = converter.run(_path,defines)
+    fortran_file_paths, cpp_file_paths = converter.run_checked(_path,defines)
     cpp_file_path = cpp_file_paths[0] # main C++ file is first item
     modified_file_path = fortran_file_paths[0] # modified input file is first item
 

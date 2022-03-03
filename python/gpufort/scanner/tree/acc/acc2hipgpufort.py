@@ -74,7 +74,42 @@ def add_implicit_region(stcontainer):
         stendorreturn.add_to_prolog(textwrap.indent(HIP_GPUFORT_RT_ACC_EXIT_REGION.format(\
             region_kind="implicit_region=.true."),indent))
 
+# parent_already_mapped = False
+
+# TODO difficult task
+# parent can be struct or (element/subarray of array of struct) #
+# need to know the loop variables to understand if a selected expression
+# requires mapping a whole array or just a subarray or element, e.g.
+# if an array is indexed by a loop variable this implies that the
+# mapping is at least of a certain dimension.
+# Additional analysis would require to take the loop bounds into account.
+# All this complexity must be controlled.
+# From the OpenACC specification:
+# `In Fortran, if a variable or array of composite type is specified, all the members of that derived
+# type are allocated and copied, as appropriate. If any member has the allocatable or
+# pointer attribute, the data accessed through that member are not copied.`
+# => Copy fixed size arrays per default and require manual copy of other data
+# => Emit error if a non-allocatable, non-pointer var should be mapped
+#for parent_type in util.parsing.derived_type_parents(var_expr.lower()):
+#    parent_already_mapped = parent_already_mapped or parent_type in mappings.keys()
+#    if parent_already_mapped: break;
+#if not parent_already_mapped:
+# => 
+
 #def get_mappings(ivars,directive=[],**kwargs):
+#    """
+#    Treat scalars, arrays, derived types differently
+#   
+#    * Simply pass scalars
+#    * Arrays are looked up and put into gpufort_array_wrap_device_ptr
+#    * Special treatment of array of derived type
+#      * need special routine for this pre-generated for derived types
+#      * different treatment if array is part of parent derived type
+#        and parent derived type has been mapped
+#
+#    * derived types
+#    If scalar is part of an array, the whole array is mapped.
+#    """
 #    alloc,_  = util.kwargs.get_value("alloc","",**kwargs)
 #    asyncr,_ = util.kwargs.get_value("asyncr","",**kwargs)
 #    alloc,_  = util.kwargs.get_value("finalize","",**kwargs)
@@ -84,7 +119,7 @@ def add_implicit_region(stcontainer):
 #      ]
 #    clauses_with_async    = ["present","copy","copyin","copyout"]
 #    clauses_with_finalize = ["delete"] 
-#    clauses_with_alloc    = ["alloc"]
+#    clauses_with_alloc    = ["present","delete"]
 #    #
 #    mappings = {}
 #    for ttaccclause in translator.tree.grammar.acc_mapping_clause.scanString():
@@ -92,14 +127,9 @@ def add_implicit_region(stcontainer):
 #        tokens1 = ["gpufort_acc_",ttaccclause.kind,"("]
 #        if clause.kind in clauses:
 #            for ttrvalue in clause.var_list
-#                # allocate_rvalue =  (( derived_type_elem | identifier ) + bounds) | derived_type_elem | identifier # TODO check if this can be generalized
+#                # allocate_rvalue =  (( derived_type_elem | identifier ) + bounds) | derived_type_elem | identifier
 #                while 
 #                var_expr = var_expr1.lower()
-#                parent_already_mapped = False
-#                for parent_type in util.parsing.derived_type_parents(var_expr.lower()):
-#                    parent_already_mapped = parent_already_mapped or parent_type in mappings.keys()
-#                    if parent_already_mapped: break;
-#                if not parent_already_mapped:
 #                    tokens = list(tokens1)
 #                    tokens.append(var_expr)
 #                    if clause.kind in clauses_with_alloc:
@@ -112,7 +142,7 @@ def add_implicit_region(stcontainer):
 #                    mappings[var_expr] = "".join(tokens)
 #        else:
 #            return SyntaxError("clause not supported") 
-#
+
 #def generate_kernel_arguments(ivars,directive=[],**kwargs):
 #    """:return a list of arguments given the directives
 #    """
@@ -443,7 +473,7 @@ def AllocateHipGpufortRT(stallocate, joined_statements, index):
     temp_vars = []
     implicit_region = False
     for var in stallocate.variable_names:
-        ivar, _ = indexer.scope.search_index_for_var(index, parent_tag, var)
+        ivar = indexer.scope.search_index_for_var(index, parent_tag, var)
         host_var = ivar["name"]
         dev_var = dev_var_name(host_var)
         is_local_var = host_var in local_var_names
@@ -481,7 +511,7 @@ def DeallocateHipGpufortRT(stdeallocate, joined_statements, index):
         index)
     acc_delete_calls = []
     for var in stdeallocate.variable_names:
-        ivar, _ = indexer.scope.search_index_for_var(index, parent_tag, var)
+        ivar = indexer.scope.search_index_for_var(index, parent_tag, var)
         host_var = ivar["name"]
         dev_var = dev_var_name(host_var)
         is_local_var = host_var in local_var_names

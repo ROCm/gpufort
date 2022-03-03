@@ -18,8 +18,6 @@ pretty_print_index_file = False # Pretty print index before writing it to disk.
 parse_var_declarations_worker_pool_size = 1 # Number of worker threads for parsing variable declarations.
 parse_var_modification_statements_worker_pool_size = 1 # Number of worker threads for parsing statements that modify variable index linemaps, e.g. CUDA Fortran attributes statements  or OpenACC acc declare directives.
 
-error_handling = "warn" # one of "warn","error"
-
 module_ignore_list = [ # these modules are ignored when checking dependencies
     "cudafor", "cublas", "cusparse", "cusolver", "iso_c_binding",
     "iso_fortran_env"

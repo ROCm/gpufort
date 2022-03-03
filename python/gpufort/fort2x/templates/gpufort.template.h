@@ -130,7 +130,7 @@ namespace {
     return (stride>0) ? ( idx <= end ) : ( -idx <= -end );     
   }
 
-  // type conversions
+  // type conversions (complex make routines already defined via "hip/hip_complex.h")
 {% for float_type in ["float", "double"] %}  // make {{float_type}}
 {%- for type in ["short int",  "unsigned short int",  "unsigned int",  "int",  "long int",  "unsigned long int",  "long long int",  "unsigned long long int",  "signed char",  "unsigned char",  "float",  "double",  "long double"] %}
   __device__ __forceinline__ {{float_type}} make_{{float_type}}(const {{type}} a) {

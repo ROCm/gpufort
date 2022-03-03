@@ -16,12 +16,9 @@ def check_destination_dialect(destination_dialect):
     if destination_dialect in supported_destination_dialects:
         return destination_dialect
     else:
-        msg = "scanner: destination dialect '{}' is not supported. Must be one of: {}".format(
+        msg = "destination dialect '{}' is not supported. Must be one of: {}".format(
             destination_dialect, ", ".join(supported_destination_dialects))
-        util.logging.log_error(opts.log_prefix, "check_destination_dialect",
-                               msg)
-        sys.exit(2)
-
+        raise ValueError(msg)
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def postprocess(stree, index, **kwargs):

@@ -2,6 +2,8 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import re
 
+from . import error
+
 COMMENT_CHARS = "!cCdD*"
 
 def tokenize(statement, padded_size=0):
@@ -249,9 +251,9 @@ def parse_use_statement(statement):
             elif tk.isidentifier() and not is_original_name:
                 only[last] = tk
             else:
-                raise SyntaxError("could not parse 'use' statement")
+                raise error.SyntaxError("could not parse 'use' statement")
     elif len(tokens) != 2:
-        raise SyntaxError("could not parse 'use' statement")
+        raise error.SyntaxError("could not parse 'use' statement")
     return tokens[1], only
 
 def parse_declaration(fortran_statement):
@@ -264,7 +266,7 @@ def parse_declaration(fortran_statement):
              var_list consists of triples (varname, bounds or [], right-hand-side or None),
              and `qualifiers_raw` contains the full list of qualifiers (without whitespaces).
     :note: case-ins
-    :raise SyntaxError: If the syntax of the expression is not as expected.
+    :raise error.SyntaxError: If the syntax of the expression is not as expected.
     """
     tokens = tokenize(fortran_statement,
                       padded_size=10)
@@ -316,9 +318,9 @@ def parse_declaration(fortran_statement):
             # ex: integer a
             idx_last_consumed_token = 0
         else:
-            raise SyntaxError("could not parse datatype")
+            raise error.SyntaxError("could not parse datatype")
     except IndexError:
-        raise SyntaxError("could not parse datatype")
+        raise error.SyntaxError("could not parse datatype")
     # handle qualifiers
     try:
         datatype_raw = "".join(tokens[:idx_last_consumed_token+1])
@@ -330,7 +332,7 @@ def parse_declaration(fortran_statement):
         elif tokens[0] == DOUBLE_COLON:
             idx_last_consumed_token = 0
         elif tokens[0] == ",":
-            raise SyntaxError("could not parse qualifier list")
+            raise error.SyntaxError("could not parse qualifier list")
         qualifiers_raw = get_highest_level_arguments(tokens)
 
         # handle variables list
@@ -338,7 +340,7 @@ def parse_declaration(fortran_statement):
             tokens = tokens[idx_last_consumed_token+1:] # remove qualifier list tokens
         variables_raw = get_highest_level_arguments(tokens)
     except IndexError:
-        raise SyntaxError("could not parse qualifier list")
+        raise error.SyntaxError("could not parse qualifier list")
 
     # construct declaration tree node
     qualifiers = []
@@ -352,7 +354,7 @@ def parse_declaration(fortran_statement):
             if (len(qualifier_tokens) < 4
                or qualifier_tokens_lower[0:2] != ["dimension","("]
                or qualifier_tokens[-1] != ")"):
-                raise SyntaxError("could not parse 'dimension' qualifier")
+                raise error.SyntaxError("could not parse 'dimension' qualifier")
             dimension_bounds = get_highest_level_arguments(qualifier_tokens[2:-1])
         elif qualifier_tokens_lower[0] == "intent":
             # ex: intent ( inout )
@@ -361,12 +363,12 @@ def parse_declaration(fortran_statement):
                or qualifier_tokens_lower[0:2] != ["intent","("]
                or qualifier_tokens[-1] != ")"
                or qualifier_tokens_lower[2] not in ["out","inout","in"]):
-                raise SyntaxError("could not parse 'intent' qualifier")
+                raise error.SyntaxError("could not parse 'intent' qualifier")
             qualifiers.append("".join(qualifier_tokens))
         elif len(qualifier_tokens)==1 and qualifier_tokens[0].isidentifier():
             qualifiers.append(qualifier)
         else:
-            raise SyntaxError("could not parse qualifier '{}'".format(qualifier))
+            raise error.SyntaxError("could not parse qualifier '{}'".format(qualifier))
         
     variables = []
     # 
@@ -379,7 +381,7 @@ def parse_declaration(fortran_statement):
         if (len(var_tokens) > 2
            and var_tokens[0] == "("):
             if len(dimension_bounds):
-                raise SyntaxError("'dimension' and variable cannot be specified both")
+                raise error.SyntaxError("'dimension' and variable cannot be specified both")
             bounds_tokens = next_tokens_till_open_bracket_is_closed(var_tokens)
             var_bounds = get_highest_level_arguments(bounds_tokens[1:-1])
             for i in range(0,len(bounds_tokens)):
@@ -389,7 +391,7 @@ def parse_declaration(fortran_statement):
             var_tokens.pop(0)
             var_rhs = "".join(var_tokens)
         elif len(var_tokens):
-            raise SyntaxError("could not parse '{}'".format(var_tokens))
+            raise error.SyntaxError("could not parse '{}'".format(var_tokens))
         variables.append((var_name,var_bounds,var_rhs))
     return (datatype, kind, qualifiers, dimension_bounds, variables, datatype_raw, qualifiers_raw) 
 

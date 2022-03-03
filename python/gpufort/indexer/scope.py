@@ -8,6 +8,7 @@ import re
 import orjson
 
 from gpufort import util
+
 from . import opts
 from . import indexer
 
@@ -58,7 +59,7 @@ __SCOPE_ENTRY_TYPES = ["procedures", "variables", "types"]
 def _resolve_dependencies(scope,
                                  index_record,
                                  index,
-                                 error_handling=None):
+                                 ):
     """
     Include variable, type, and procedure records from modules used
     by the current record (module,program or procedure).
@@ -111,24 +112,17 @@ def _resolve_dependencies(scope,
             if not used_module_found:
                 msg = "no index record for module '{}' could be found".format(
                     used_module["name"])
-                if opts.error_handling == "strict":
-                    util.logging.log_error(opts.log_prefix,
-                                           "_resolve_dependencies", msg)
-                    sys.exit(ERR_INDEXER_RESOLVE_DEPENDENCIES_FAILED)
-                elif opts.error_handling == "warn":
-                    util.logging.log_warning(opts.log_prefix,
-                                             "_resolve_dependencies",
-                                             msg)
+                raise util.error.LookupError(msg)
 
     handle_use_statements_(scope, index_record)
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def _search_scope_for_type_or_procedure(scope,
-                                                entry_name,
-                                                entry_type,
-                                                empty_record,
-                                                error_handling=None):
+                                        entry_name,
+                                        entry_type,
+                                        empty_record,
+                                        ):
     """
     :param str entry_type: either 'types' or 'procedures'
     """
@@ -142,19 +136,8 @@ def _search_scope_for_type_or_procedure(scope,
     result = next((entry for entry in scope_entities
                    if entry["name"] == entry_name_lower), None)
     if result is None:
-        if error_handling == None:
-            error_handling = opts.error_handling
         msg = "no entry found for {} '{}'.".format(entry_type[:-1], entry_name)
-        if opts.error_handling == "strict":
-            util.logging.log_error(
-                opts.log_prefix, "_search_scope_for_type_or_procedure",
-                msg)
-            sys.exit(ERR_SCOPER_LOOKUP_FAILED)
-        elif opts.error_handling == "warn":
-            util.logging.log_warning(
-                opts.log_prefix, "_search_scope_for_type_or_procedure",
-                msg)
-        return empty_record, False
+        raise util.error.LookupError(msg)
     else:
         util.logging.log_debug2(opts.log_prefix,"_search_scope_for_type_or_procedure",\
           "entry found for {} '{}'".format(entry_type[:-1],entry_name))
@@ -289,9 +272,8 @@ def create_scope(index, tag):
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def search_scope_for_var(scope,
-                              var_expr,
-                              error_handling=None,
-                              resolve=False):
+                         var_expr,
+                         resolve=False):
     """
     %param str variable_tag% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c' or 'a%b(i,j)%c(a%i5)'.
     """
@@ -336,17 +318,8 @@ def search_scope_for_var(scope,
     result = lookup_from_left_to_right_(reversed(scope["variables"]))
 
     if result is None:
-        if error_handling == None:
-            error_handling = opts.error_handling
         msg = "no entry found for variable '{}'.".format(variable_tag)
-        if error_handling == "strict":
-            util.logging.log_error(opts.log_prefix,
-                                   "search_scope_for_var", msg)
-            sys.exit(ERR_SCOPER_LOOKUP_FAILED)
-        elif error_handling == "warn":
-            util.logging.log_warning(opts.log_prefix,
-                                     "search_scope_for_var", msg)
-        return EMPTY_VARIABLE, False
+        raise util.error.LookupError(msg)
     else:
         # resolve
         if resolve:
@@ -385,7 +358,7 @@ def search_scope_for_var(scope,
           "entry found for variable '{}'".format(variable_tag))
         util.logging.log_leave_function(opts.log_prefix,
                                         "search_scope_for_var")
-        return result, True
+        return result
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
@@ -410,10 +383,9 @@ def search_scope_for_procedure(scope, procedure_name):
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def search_index_for_var(index,
-                              parent_tag,
-                              var_expr,
-                              error_handling=None,
-                              resolve=False):
+                         parent_tag,
+                         var_expr,
+                         resolve=False):
     """
     :param str parent_tag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
     %param str var_expr% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c'. Note that all array indexing expressions must be stripped away.
@@ -422,7 +394,7 @@ def search_index_for_var(index,
       {"parent_tag": parent_tag,"var_expr": var_expr})
 
     scope = create_scope(index, parent_tag)
-    return search_scope_for_var(scope, var_expr, error_handling, resolve)
+    return search_scope_for_var(scope, var_expr, resolve)
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)

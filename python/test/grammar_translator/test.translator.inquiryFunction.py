@@ -13,6 +13,9 @@ testdata = []
 testdata.append("size(x,1)")
 testdata.append("size(y,dim=1)")
 testdata.append("size(z,dim=1,kind=4)")
+testdata.append("size(z,dim=1,kind=8)")
+testdata.append("size(z,dim=1,kind=2)")
+#testdata.append("size(z,dim=1,kind=unknown)") will fail
 testdata.append("lbound(x,2)")
 testdata.append("lbound(y,dim=2)")
 testdata.append("lbound(z,dim=2,kind=4)")

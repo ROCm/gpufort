@@ -20,18 +20,15 @@ TEMPLATES = {}
 def generate_code(template_path, context={}):
     global ENV
     global TEMPLATES
-    if template_path in TEMPLATES:
-        template = TEMPLATES[template_path]
-    else:
-        template = ENV.get_template(template_path)
-        TEMPLATES[template_path] = template
     try:
+        if template_path in TEMPLATES:
+            template = TEMPLATES[template_path]
+        else:
+            template = ENV.get_template(template_path)
+            TEMPLATES[template_path] = template
         return template.render(context)
     except Exception as e:
-        util.logging.log_error(
-            "fort2x.hip.render", "generate_code",
-            "could not render template '%s'" % template_path)
-        raise e
+        raise IOError("could not render template '%s'" % template_path)
 
 
 def generate_file(output_path, template_path, context={}):

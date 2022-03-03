@@ -121,7 +121,7 @@ extern "C" {
 {% endfor %}{# target #}
      
     /**
-     * \return Size of the array in dimension 'dim'.
+     * \return size of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,{{rank}}
      */
     __host__ __forceinline__ int {{c_prefix}}_size(
@@ -131,7 +131,7 @@ extern "C" {
     }
     
     /**
-     * \return Lower bound (inclusive) of the array in dimension 'dim'.
+     * \return lower bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,{{rank}}
      */
     __host__ __forceinline__ int {{c_prefix}}_lbound(
@@ -141,7 +141,7 @@ extern "C" {
     }
     
     /**
-     * \return Upper bound (inclusive) of the array in dimension 'dim'.
+     * \return upper bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,{{rank}}
      */
     __host__ __forceinline__ int {{c_prefix}}_ubound(
@@ -153,7 +153,7 @@ extern "C" {
 {% for d in range(rank-1,0,-1) %}
     /**
      * Collapse the array by fixing {{rank-d}} indices.
-     * \return A gpufort array of rank {{d}}.
+     * \return a gpufort array of rank {{d}}.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i{{d+1}},...,i{{rank}} indices to fix.
@@ -180,3 +180,51 @@ extern "C" {
 {% endfor %}
 } // extern "C"
 {%- endmacro -%}
+{########################################################################################}
+{%- macro render_gpufort_array_cpp_property_getters(max_rank) -%}
+{% for rank in range(1,max_rank+1) %}
+/**
+ * \return size of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,{{rank}}
+ */
+template<typename T>
+__host__ __device__ __forceinline__ int size(
+    gpufort::array{{rank}}<T>& array) {
+  return array.data.size(dim);
+}
+
+/**
+ * \return size of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,{{rank}}
+ */
+template<typename T>
+__host__ __device__ __forceinline__ int size(
+    gpufort::array{{rank}}<T>& array,
+    int dim) {
+  return array.data.size(dim);
+}
+
+/**
+ * \return lower bound (inclusive) of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,{{rank}}
+ */
+template<typename T>
+__host__ __forceinline__ int lbound(
+    gpufort::array{{rank}}<T>& array,
+    int dim) {
+  return array.data.lbound(dim);
+}
+
+/**
+ * \return upper bound (inclusive) of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,{{rank}}
+ */
+template<typename T>
+__host__ __forceinline__ int ubound(
+    gpufort::array{{rank}}<T>& array,
+    int dim) {
+  return array.data.ubound(dim);
+}
+{% endfor %}
+{%- endmacro -%}
+{########################################################################################}

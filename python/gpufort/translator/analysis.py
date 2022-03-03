@@ -12,13 +12,13 @@ def strip_member_access(var_exprs):
     result = []
     return [var_expr.split("%", maxsplit=1)[0] for var_expr in var_exprs]
 
-def _lookup_index_vars(scope, var_exprs, consumed_var_exprs=[], error_handling=None):
+def _lookup_index_vars(scope, var_exprs, consumed_var_exprs=[]):
     """Search scope for index vars and remove corresponding 
        var expression from all_vars2 list."""
     ivars = []
     for var_expr in var_exprs:
-        ivar, _ = indexer.scope.search_scope_for_var(
-            scope, var_expr, error_handling)
+        ivar = indexer.scope.search_scope_for_var(
+            scope, var_expr)
         ivars.append(ivar)
         consumed_var_exprs.append(var_expr)
     return ivars
@@ -29,14 +29,13 @@ def lookup_index_entries_for_vars_in_kernel_body(scope,
                                                  shared_vars,
                                                  local_vars,
                                                  loop_vars,
-                                                 error_handling=None):
+):
     """Lookup index variables
     :param list all_vars: List of all variable expressions (var)
     :param list reductions: List of tuples pairing a reduction operation with the associated
                              variable expressions
     :param list shared:     List of variable expressions that are shared by the workitems/threads in a workgroup/threadblock
     :param list local_vars: List of variable expressions that can be mapped to local variables per workitem/thread
-    :param str error_handling: Emit error messages if set to 'strict'; else emit warning
     :note: Emits errors (or warning) if a variable in another list is not present in all_vars
     :note: Emits errors (or warning) if a reduction variable is part of a struct.
     :return: A tuple containing (in this order): global variables, reduced global variables, shared variables, local variables
@@ -63,13 +62,12 @@ def lookup_index_entries_for_vars_in_kernel_body(scope,
     for reduction_op, var_exprs in reductions.items():
         for var_expr in var_exprs:
             if "%" in var_expr:
-                if error_handling == "strict":
-                    pass # TODO error
-                else:
-                    pass # TOOD warn
+                raise util.error.LimitationError("reduction of derived type members not supported")
             else:
-                ivar, _ = indexer.scope.search_scope_for_var(
-                    scope, var_expr, error_handling)
+                ivar = indexer.scope.search_scope_for_var(
+                    scope, var_expr)
+                if ivar["rank"] > 0:
+                    raise util.error.LimitationError("reduction of arrays or array members not supported")
                 rvar = copy.deepcopy(ivar)
                 rvar["op"] = reduction_op
                 rglobal_reduced_vars.append(rvar)
@@ -77,23 +75,23 @@ def lookup_index_entries_for_vars_in_kernel_body(scope,
                 all_vars2.remove(var_expr)
             except:
                 pass # TODO error
+
     for var_expr in all_vars2:
-        ivar, _ = indexer.scope.search_scope_for_var(
-            scope, var_expr, error_handling)
+        ivar = indexer.scope.search_scope_for_var(scope, var_expr)
         iglobal_vars.append(ivar)
 
     return iglobal_vars, rglobal_reduced_vars, ishared_vars, ilocal_vars
 
-def lookup_index_entries_for_vars_in_loopnest(scope,ttloopnest,error_handling=None):
+def lookup_index_entries_for_vars_in_loopnest(scope,ttloopnest,):
     return lookup_index_entries_for_vars_in_kernel_body(scope,
                                                         ttloopnest.vars_in_body(),
                                                         ttloopnest.gang_team_reductions(),
                                                         ttloopnest.gang_team_shared_vars(),
                                                         ttloopnest.local_scalars(),
                                                         ttloopnest.loop_vars(),
-                                                        error_handling)
+                                                        )
 
-def lookup_index_entries_for_vars_in_procedure_body(scope,ttprocedurebody,iprocedure,error_handling=None):
+def lookup_index_entries_for_vars_in_procedure_body(scope,ttprocedurebody,iprocedure):
     shared_vars = [
         ivar["name"]
         for ivar in iprocedure["variables"]
@@ -119,7 +117,7 @@ def lookup_index_entries_for_vars_in_procedure_body(scope,ttprocedurebody,iproce
                                                         shared_vars,
                                                         local_vars,
                                                         loop_vars,
-                                                        error_handling)
+                                                        )
 
 def get_kernel_arguments(iglobal_vars, rglobal_reduced_vars, ishared_vars, ilocal_vars):
     """:return: index records for the variables

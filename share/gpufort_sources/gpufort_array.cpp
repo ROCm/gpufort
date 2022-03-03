@@ -192,7 +192,7 @@ extern "C" {
     }
      
     /**
-     * \return Size of the array in dimension 'dim'.
+     * \return size of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,1
      */
     __host__ __forceinline__ int gpufort_array1_size(
@@ -202,7 +202,7 @@ extern "C" {
     }
     
     /**
-     * \return Lower bound (inclusive) of the array in dimension 'dim'.
+     * \return lower bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,1
      */
     __host__ __forceinline__ int gpufort_array1_lbound(
@@ -212,7 +212,7 @@ extern "C" {
     }
     
     /**
-     * \return Upper bound (inclusive) of the array in dimension 'dim'.
+     * \return upper bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,1
      */
     __host__ __forceinline__ int gpufort_array1_ubound(
@@ -416,7 +416,7 @@ extern "C" {
     }
      
     /**
-     * \return Size of the array in dimension 'dim'.
+     * \return size of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,2
      */
     __host__ __forceinline__ int gpufort_array2_size(
@@ -426,7 +426,7 @@ extern "C" {
     }
     
     /**
-     * \return Lower bound (inclusive) of the array in dimension 'dim'.
+     * \return lower bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,2
      */
     __host__ __forceinline__ int gpufort_array2_lbound(
@@ -436,7 +436,7 @@ extern "C" {
     }
     
     /**
-     * \return Upper bound (inclusive) of the array in dimension 'dim'.
+     * \return upper bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,2
      */
     __host__ __forceinline__ int gpufort_array2_ubound(
@@ -447,7 +447,7 @@ extern "C" {
 
     /**
      * Collapse the array by fixing 1 indices.
-     * \return A gpufort array of rank 1.
+     * \return a gpufort array of rank 1.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i2,...,i2 indices to fix.
@@ -657,7 +657,7 @@ extern "C" {
     }
      
     /**
-     * \return Size of the array in dimension 'dim'.
+     * \return size of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,3
      */
     __host__ __forceinline__ int gpufort_array3_size(
@@ -667,7 +667,7 @@ extern "C" {
     }
     
     /**
-     * \return Lower bound (inclusive) of the array in dimension 'dim'.
+     * \return lower bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,3
      */
     __host__ __forceinline__ int gpufort_array3_lbound(
@@ -677,7 +677,7 @@ extern "C" {
     }
     
     /**
-     * \return Upper bound (inclusive) of the array in dimension 'dim'.
+     * \return upper bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,3
      */
     __host__ __forceinline__ int gpufort_array3_ubound(
@@ -688,7 +688,7 @@ extern "C" {
 
     /**
      * Collapse the array by fixing 1 indices.
-     * \return A gpufort array of rank 2.
+     * \return a gpufort array of rank 2.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i3,...,i3 indices to fix.
@@ -705,7 +705,7 @@ extern "C" {
     }
     /**
      * Collapse the array by fixing 2 indices.
-     * \return A gpufort array of rank 1.
+     * \return a gpufort array of rank 1.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i2,...,i3 indices to fix.
@@ -916,7 +916,7 @@ extern "C" {
     }
      
     /**
-     * \return Size of the array in dimension 'dim'.
+     * \return size of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,4
      */
     __host__ __forceinline__ int gpufort_array4_size(
@@ -926,7 +926,7 @@ extern "C" {
     }
     
     /**
-     * \return Lower bound (inclusive) of the array in dimension 'dim'.
+     * \return lower bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,4
      */
     __host__ __forceinline__ int gpufort_array4_lbound(
@@ -936,7 +936,7 @@ extern "C" {
     }
     
     /**
-     * \return Upper bound (inclusive) of the array in dimension 'dim'.
+     * \return upper bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,4
      */
     __host__ __forceinline__ int gpufort_array4_ubound(
@@ -947,7 +947,7 @@ extern "C" {
 
     /**
      * Collapse the array by fixing 1 indices.
-     * \return A gpufort array of rank 3.
+     * \return a gpufort array of rank 3.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i4,...,i4 indices to fix.
@@ -964,7 +964,7 @@ extern "C" {
     }
     /**
      * Collapse the array by fixing 2 indices.
-     * \return A gpufort array of rank 2.
+     * \return a gpufort array of rank 2.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i3,...,i4 indices to fix.
@@ -982,7 +982,7 @@ extern "C" {
     }
     /**
      * Collapse the array by fixing 3 indices.
-     * \return A gpufort array of rank 1.
+     * \return a gpufort array of rank 1.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i2,...,i4 indices to fix.
@@ -1194,7 +1194,7 @@ extern "C" {
     }
      
     /**
-     * \return Size of the array in dimension 'dim'.
+     * \return size of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,5
      */
     __host__ __forceinline__ int gpufort_array5_size(
@@ -1204,7 +1204,7 @@ extern "C" {
     }
     
     /**
-     * \return Lower bound (inclusive) of the array in dimension 'dim'.
+     * \return lower bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,5
      */
     __host__ __forceinline__ int gpufort_array5_lbound(
@@ -1214,7 +1214,7 @@ extern "C" {
     }
     
     /**
-     * \return Upper bound (inclusive) of the array in dimension 'dim'.
+     * \return upper bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,5
      */
     __host__ __forceinline__ int gpufort_array5_ubound(
@@ -1225,7 +1225,7 @@ extern "C" {
 
     /**
      * Collapse the array by fixing 1 indices.
-     * \return A gpufort array of rank 4.
+     * \return a gpufort array of rank 4.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i5,...,i5 indices to fix.
@@ -1242,7 +1242,7 @@ extern "C" {
     }
     /**
      * Collapse the array by fixing 2 indices.
-     * \return A gpufort array of rank 3.
+     * \return a gpufort array of rank 3.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i4,...,i5 indices to fix.
@@ -1260,7 +1260,7 @@ extern "C" {
     }
     /**
      * Collapse the array by fixing 3 indices.
-     * \return A gpufort array of rank 2.
+     * \return a gpufort array of rank 2.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i3,...,i5 indices to fix.
@@ -1279,7 +1279,7 @@ extern "C" {
     }
     /**
      * Collapse the array by fixing 4 indices.
-     * \return A gpufort array of rank 1.
+     * \return a gpufort array of rank 1.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i2,...,i5 indices to fix.
@@ -1492,7 +1492,7 @@ extern "C" {
     }
      
     /**
-     * \return Size of the array in dimension 'dim'.
+     * \return size of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,6
      */
     __host__ __forceinline__ int gpufort_array6_size(
@@ -1502,7 +1502,7 @@ extern "C" {
     }
     
     /**
-     * \return Lower bound (inclusive) of the array in dimension 'dim'.
+     * \return lower bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,6
      */
     __host__ __forceinline__ int gpufort_array6_lbound(
@@ -1512,7 +1512,7 @@ extern "C" {
     }
     
     /**
-     * \return Upper bound (inclusive) of the array in dimension 'dim'.
+     * \return upper bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,6
      */
     __host__ __forceinline__ int gpufort_array6_ubound(
@@ -1523,7 +1523,7 @@ extern "C" {
 
     /**
      * Collapse the array by fixing 1 indices.
-     * \return A gpufort array of rank 5.
+     * \return a gpufort array of rank 5.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i6,...,i6 indices to fix.
@@ -1540,7 +1540,7 @@ extern "C" {
     }
     /**
      * Collapse the array by fixing 2 indices.
-     * \return A gpufort array of rank 4.
+     * \return a gpufort array of rank 4.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i5,...,i6 indices to fix.
@@ -1558,7 +1558,7 @@ extern "C" {
     }
     /**
      * Collapse the array by fixing 3 indices.
-     * \return A gpufort array of rank 3.
+     * \return a gpufort array of rank 3.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i4,...,i6 indices to fix.
@@ -1577,7 +1577,7 @@ extern "C" {
     }
     /**
      * Collapse the array by fixing 4 indices.
-     * \return A gpufort array of rank 2.
+     * \return a gpufort array of rank 2.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i3,...,i6 indices to fix.
@@ -1597,7 +1597,7 @@ extern "C" {
     }
     /**
      * Collapse the array by fixing 5 indices.
-     * \return A gpufort array of rank 1.
+     * \return a gpufort array of rank 1.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i2,...,i6 indices to fix.
@@ -1811,7 +1811,7 @@ extern "C" {
     }
      
     /**
-     * \return Size of the array in dimension 'dim'.
+     * \return size of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,7
      */
     __host__ __forceinline__ int gpufort_array7_size(
@@ -1821,7 +1821,7 @@ extern "C" {
     }
     
     /**
-     * \return Lower bound (inclusive) of the array in dimension 'dim'.
+     * \return lower bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,7
      */
     __host__ __forceinline__ int gpufort_array7_lbound(
@@ -1831,7 +1831,7 @@ extern "C" {
     }
     
     /**
-     * \return Upper bound (inclusive) of the array in dimension 'dim'.
+     * \return upper bound (inclusive) of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,7
      */
     __host__ __forceinline__ int gpufort_array7_ubound(
@@ -1842,7 +1842,7 @@ extern "C" {
 
     /**
      * Collapse the array by fixing 1 indices.
-     * \return A gpufort array of rank 6.
+     * \return a gpufort array of rank 6.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i7,...,i7 indices to fix.
@@ -1859,7 +1859,7 @@ extern "C" {
     }
     /**
      * Collapse the array by fixing 2 indices.
-     * \return A gpufort array of rank 5.
+     * \return a gpufort array of rank 5.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i6,...,i7 indices to fix.
@@ -1877,7 +1877,7 @@ extern "C" {
     }
     /**
      * Collapse the array by fixing 3 indices.
-     * \return A gpufort array of rank 4.
+     * \return a gpufort array of rank 4.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i5,...,i7 indices to fix.
@@ -1896,7 +1896,7 @@ extern "C" {
     }
     /**
      * Collapse the array by fixing 4 indices.
-     * \return A gpufort array of rank 3.
+     * \return a gpufort array of rank 3.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i4,...,i7 indices to fix.
@@ -1916,7 +1916,7 @@ extern "C" {
     }
     /**
      * Collapse the array by fixing 5 indices.
-     * \return A gpufort array of rank 2.
+     * \return a gpufort array of rank 2.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i3,...,i7 indices to fix.
@@ -1937,7 +1937,7 @@ extern "C" {
     }
     /**
      * Collapse the array by fixing 6 indices.
-     * \return A gpufort array of rank 1.
+     * \return a gpufort array of rank 1.
      * \param[inout] result the collapsed array
      * \param[in]    array  the original array
      * \param[in]    i2,...,i7 indices to fix.

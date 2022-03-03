@@ -9480,5 +9480,300 @@ namespace gpufort {
 
   };
 
+} // namespace gpufort
+
+/**
+ * \return size of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,1
+ */
+template<typename T>
+__host__ __device__ __forceinline__ int size(
+    gpufort::array1<T>& array) {
+  return array.data.size(dim);
+}
+
+/**
+ * \return size of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,1
+ */
+template<typename T>
+__host__ __device__ __forceinline__ int size(
+    gpufort::array1<T>& array,
+    int dim) {
+  return array.data.size(dim);
+}
+
+/**
+ * \return lower bound (inclusive) of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,1
+ */
+template<typename T>
+__host__ __forceinline__ int lbound(
+    gpufort::array1<T>& array,
+    int dim) {
+  return array.data.lbound(dim);
+}
+
+/**
+ * \return upper bound (inclusive) of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,1
+ */
+template<typename T>
+__host__ __forceinline__ int ubound(
+    gpufort::array1<T>& array,
+    int dim) {
+  return array.data.ubound(dim);
+}
+/**
+ * \return size of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,2
+ */
+template<typename T>
+__host__ __device__ __forceinline__ int size(
+    gpufort::array2<T>& array) {
+  return array.data.size(dim);
+}
+
+/**
+ * \return size of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,2
+ */
+template<typename T>
+__host__ __device__ __forceinline__ int size(
+    gpufort::array2<T>& array,
+    int dim) {
+  return array.data.size(dim);
+}
+
+/**
+ * \return lower bound (inclusive) of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,2
+ */
+template<typename T>
+__host__ __forceinline__ int lbound(
+    gpufort::array2<T>& array,
+    int dim) {
+  return array.data.lbound(dim);
+}
+
+/**
+ * \return upper bound (inclusive) of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,2
+ */
+template<typename T>
+__host__ __forceinline__ int ubound(
+    gpufort::array2<T>& array,
+    int dim) {
+  return array.data.ubound(dim);
+}
+/**
+ * \return size of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,3
+ */
+template<typename T>
+__host__ __device__ __forceinline__ int size(
+    gpufort::array3<T>& array) {
+  return array.data.size(dim);
+}
+
+/**
+ * \return size of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,3
+ */
+template<typename T>
+__host__ __device__ __forceinline__ int size(
+    gpufort::array3<T>& array,
+    int dim) {
+  return array.data.size(dim);
+}
+
+/**
+ * \return lower bound (inclusive) of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,3
+ */
+template<typename T>
+__host__ __forceinline__ int lbound(
+    gpufort::array3<T>& array,
+    int dim) {
+  return array.data.lbound(dim);
+}
+
+/**
+ * \return upper bound (inclusive) of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,3
+ */
+template<typename T>
+__host__ __forceinline__ int ubound(
+    gpufort::array3<T>& array,
+    int dim) {
+  return array.data.ubound(dim);
+}
+/**
+ * \return size of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,4
+ */
+template<typename T>
+__host__ __device__ __forceinline__ int size(
+    gpufort::array4<T>& array) {
+  return array.data.size(dim);
+}
+
+/**
+ * \return size of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,4
+ */
+template<typename T>
+__host__ __device__ __forceinline__ int size(
+    gpufort::array4<T>& array,
+    int dim) {
+  return array.data.size(dim);
+}
+
+/**
+ * \return lower bound (inclusive) of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,4
+ */
+template<typename T>
+__host__ __forceinline__ int lbound(
+    gpufort::array4<T>& array,
+    int dim) {
+  return array.data.lbound(dim);
+}
+
+/**
+ * \return upper bound (inclusive) of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,4
+ */
+template<typename T>
+__host__ __forceinline__ int ubound(
+    gpufort::array4<T>& array,
+    int dim) {
+  return array.data.ubound(dim);
+}
+/**
+ * \return size of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,5
+ */
+template<typename T>
+__host__ __device__ __forceinline__ int size(
+    gpufort::array5<T>& array) {
+  return array.data.size(dim);
+}
+
+/**
+ * \return size of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,5
+ */
+template<typename T>
+__host__ __device__ __forceinline__ int size(
+    gpufort::array5<T>& array,
+    int dim) {
+  return array.data.size(dim);
+}
+
+/**
+ * \return lower bound (inclusive) of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,5
+ */
+template<typename T>
+__host__ __forceinline__ int lbound(
+    gpufort::array5<T>& array,
+    int dim) {
+  return array.data.lbound(dim);
+}
+
+/**
+ * \return upper bound (inclusive) of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,5
+ */
+template<typename T>
+__host__ __forceinline__ int ubound(
+    gpufort::array5<T>& array,
+    int dim) {
+  return array.data.ubound(dim);
+}
+/**
+ * \return size of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,6
+ */
+template<typename T>
+__host__ __device__ __forceinline__ int size(
+    gpufort::array6<T>& array) {
+  return array.data.size(dim);
+}
+
+/**
+ * \return size of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,6
+ */
+template<typename T>
+__host__ __device__ __forceinline__ int size(
+    gpufort::array6<T>& array,
+    int dim) {
+  return array.data.size(dim);
+}
+
+/**
+ * \return lower bound (inclusive) of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,6
+ */
+template<typename T>
+__host__ __forceinline__ int lbound(
+    gpufort::array6<T>& array,
+    int dim) {
+  return array.data.lbound(dim);
+}
+
+/**
+ * \return upper bound (inclusive) of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,6
+ */
+template<typename T>
+__host__ __forceinline__ int ubound(
+    gpufort::array6<T>& array,
+    int dim) {
+  return array.data.ubound(dim);
+}
+/**
+ * \return size of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,7
+ */
+template<typename T>
+__host__ __device__ __forceinline__ int size(
+    gpufort::array7<T>& array) {
+  return array.data.size(dim);
+}
+
+/**
+ * \return size of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,7
+ */
+template<typename T>
+__host__ __device__ __forceinline__ int size(
+    gpufort::array7<T>& array,
+    int dim) {
+  return array.data.size(dim);
+}
+
+/**
+ * \return lower bound (inclusive) of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,7
+ */
+template<typename T>
+__host__ __forceinline__ int lbound(
+    gpufort::array7<T>& array,
+    int dim) {
+  return array.data.lbound(dim);
+}
+
+/**
+ * \return upper bound (inclusive) of the array in dimension 'dim'.
+ * \param[in] dim selected dimension: 1,...,7
+ */
+template<typename T>
+__host__ __forceinline__ int ubound(
+    gpufort::array7<T>& array,
+    int dim) {
+  return array.data.ubound(dim);
 }
 #endif // _GPUFORT_ARRAYS_H_

@@ -674,6 +674,19 @@ def run(infile_path,preproc_options):
                                  infile_path + "-linemaps-post.json")
     return fortran_file_paths, cpp_file_paths
 
+def run_checked(*args,**kwargs):
+    try:
+        run(*args,**kwargs)
+    except IOError as e:
+        print("ERROR:"+str(e))
+    except util.error.SyntaxError as e:
+        print("ERROR:"+str(e))
+    except util.error.LimitationError as e:
+        print("ERROR:"+str(e))
+    except util.error.LookupError as e:
+        print("ERROR:"+str(e))
+    except Exception as e:
+        raise e
 
 def set_include_dirs(working_dir, include_dirs):
     """Update opts.include_dirs from all sources."""
@@ -713,6 +726,6 @@ if __name__ == "__main__":
     infile_path = os.path.abspath(args.input) 
     log_file_path   = init_logging(infile_path)
 
-    run(infile_path,defines)
+    run_checked(infile_path,defines)
 
     shutdown_logging(log_file_path)

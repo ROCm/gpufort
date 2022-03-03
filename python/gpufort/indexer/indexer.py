@@ -50,10 +50,11 @@ class Node():
     __repr__ = __str__
 
 def create_index_records_from_declaration(statement):
-    """:raise SyntaxError: If the syntax of the declaration statement is not
-                           as expected.
+    """:raise util.errorSyntaxError: If the syntax of the declaration statement is not
+                                     as expected.
     """
     f_type, kind, qualifiers, dimension_bounds, variables, _, __ = util.parsing.parse_declaration(statement.lower())
+
     context = []
     for var in variables:
         name, bounds, rhs = var
@@ -279,7 +280,9 @@ def _parse_statements(linemaps, file_path):
     def Declaration(tokens):
         nonlocal root
         nonlocal current_node
+        nonlocal current_linemap
         nonlocal current_statement
+        nonlocal current_statement_no
         nonlocal total_num_tasks
         #print(current_statement)
         log_detection_("declaration")
@@ -288,7 +291,13 @@ def _parse_statements(linemaps, file_path):
             msg = "begin to parse declaration '{}'".format(
                 current_statement)
             log_begin_task(current_node, msg)
-            variables = create_index_records_from_declaration(current_statement)
+            try:
+                variables = create_index_records_from_declaration(current_statement)
+            except util.error.SyntaxError as e:
+                filepath = current_linemap["file"]
+                lineno = current_linemap["lineno"]
+                msg = "{}:{}:{}(stmt-no):{}".format(filepath,lineno,current_statement_no+1,str(e))
+                raise util.error.SyntaxError(msg) from e
             current_node._data["variables"] += variables
             msg = "finished to parse declaration '{}'".format(current_statement)
             log_end_task(current_node, msg)

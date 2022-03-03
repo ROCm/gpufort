@@ -2,7 +2,6 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 from . import opts
 
-
 def num_bytes(f_type, kind, default=None):
     """:return: number of bytes to store datatype 'f_type' of kind 'kind'. Expression might contain parameters."""
     assert type(f_type) is str
@@ -26,12 +25,17 @@ def convert_to_c_type(f_type, kind, default=None):
     :param f_type: The original Fortran type, e.g. `REAL` for a `REAL*8`.
     :param kind: The kind of the Fortran type, e.g. `8` for a `REAL*8`.
     :rtype: str
+    :raise ValueError: if the Fortran type could not be transformed into a C type.
     """
     assert type(f_type) is str
     if kind is None:
         kind = ""
     assert type(kind) is str, "{}, {}".format(kind, type(kind))
     kind_lower = kind.lower()
-    return opts.fortran_2_c_type_map.get(f_type.lower(), {
+    result = opts.fortran_2_c_type_map.get(f_type.lower(), {
         kind_lower: default
-    }).get(kind_lower, "UNKNOWN")
+    }).get(kind_lower, None)
+    if result == None:
+        raise ValueError("Fortran type '{}' of kind '{}' could not be translated to C type.".format(\
+            str(f_type),str(kind)))
+    return result

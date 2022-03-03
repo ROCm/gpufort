@@ -112,11 +112,11 @@ class TTNumber(base.TTNode):
                             suffix].strip()
                         return kind_bytes == suffix_bytes
                     else:
-                        util.logging.log_error(opts.log_prefix,"TTNumber.is_real",\
+                        raise util.error.LookupError(\
                           "no number of bytes found for suffix '{}' in 'translator.fortran_type_2_bytes_map[\"real\"]'".format(suffix))
                         sys.exit(2) # TODO error code
             else:
-                util.logging.log_error(opts.log_prefix,"TTNumber.is_real",\
+                raise util.error.LookupError(\
                   "no number of bytes found for kind '{}' in 'translator.fortran_type_2_bytes_map[\"real\"]'".format(kind))
                 sys.exit(2) # TODO error code
         else:
@@ -144,13 +144,10 @@ class TTNumber(base.TTNode):
                             "integer"][suffix].strip()
                         return kind_bytes == suffix_bytes
                     else:
-                        util.logging.log_error(opts.log_prefix,"TTNumber.is_integer",\
-                          "no number of bytes found for suffix '{}' in 'translator.opts.fortran_type_2_bytes_map[\"integer\"]'".format(suffix))
-                        sys.exit(2) # TODO error code
+                        raise ValueError("no number of bytes found for suffix '{}' in 'translator.opts.fortran_type_2_bytes_map[\"integer\"]'".format(suffix))
             else:
-                util.logging.log_error(opts.log_prefix,"TTNumber.is_integer",\
+                raise ValueError(\
                   "no number of bytes found for kind '{}' in 'translator.opts.fortran_type_2_bytes_map[\"integer\"]'".format(kind))
-                sys.exit(2) # TODO error code
         else:
             return is_integer
 
@@ -308,9 +305,30 @@ class TTLValue(base.TTNode, IValue):
         return result
 
 
-class TTSizeInquiry(base.TTNode):
+def _inquiry_str(prefix,ref,dim,kind=""):
+    result = prefix + "(" + ref
+    if len(dim):
+        result += "," + dim
+    if len(kind):
+        result += "," + kind
+    return result + ")"
+
+def _inquiry_c_str(prefix,ref,dim,kind,f_type="integer",c_type_expected="int"):
+    """Tries to determine a C type before calling _inquiry_str.
+    Wraps the result of the latter function into a typecast
+    if the C type does not equal the expected type.
     """
-    Translator tree node for size inquiry function.
+    c_type = conv.convert_to_c_type(f_type,
+                                    kind,
+                                    default=None)
+    result = _inquiry_str(prefix,ref,dim)
+    if c_type_expected != c_type:
+        return "static_cast<{}>({})".format(c_type,result)
+    else:
+        return result
+
+class TTSizeInquiry(base.TTNode):
+    """Translator tree node for size inquiry function.
     """
 
     def _assign_fields(self, tokens):
@@ -324,21 +342,23 @@ class TTSizeInquiry(base.TTNode):
                  are passed as argument of the extracted kernels.
         :note: only the case where <dim> is specified as integer literal is handled by this function.
         """
-        if type(self._dim) is TTNumber:
-            return base.make_c_str(self._ref) + "_n" + base.make_c_str(
-                self._dim)
+        if opts.fortran_style_tensor_access:
+            return _inquiry_c_str("size",
+                                  base.make_c_str(self._ref),
+                                  base.make_c_str(self._dim),
+                                  base.make_c_str(self._kind))
         else:
-            prefix = "size"
-            return "/* " + prefix + "(" + base.make_f_str(self._ref) + ") */"
-
+            if type(self._dim) is TTNumber:
+                return base.make_c_str(self._ref) + "_n" + base.make_c_str(
+                    self._dim)
+            else:
+                prefix = "size"
+                return "/* " + prefix + "(" + base.make_f_str(self._ref) + ") */"
     def f_str(self):
-        prefix = "size"
-        result = prefix + "(" + base.make_f_str(self._ref)
-        if self._dim != None:
-            result += "," + base.make_f_str(self._dim)
-        if self._kind != None:
-            result += "," + base.make_f_str(self._kind)
-        return result + ")"
+        return _inquiry_str("size",
+                            base.make_f_str(self._ref),
+                            base.make_f_str(self._dim),
+                            base.make_f_str(self._kind))
 
 
 class TTLboundInquiry(base.TTNode):
@@ -356,21 +376,24 @@ class TTLboundInquiry(base.TTNode):
                  are passed as argument of the extracted kernels.
         :note:   only the case where <dim> is specified as integer literal is handled by this function.
         """
-        if type(self._dim) is TTNumber:
-            return base.make_c_str(self._ref) + "_lb" + base.make_c_str(
-                self._dim)
+        if opts.fortran_style_tensor_access:
+            return _inquiry_c_str("lbound",
+                                  base.make_c_str(self._ref),
+                                  base.make_c_str(self._dim),
+                                  base.make_c_str(self._kind))
         else:
-            prefix = "lbound"
-            return "/* " + prefix + "(" + base.make_f_str(self._ref) + ") */"
+            if type(self._dim) is TTNumber:
+                return base.make_c_str(self._ref) + "_lb" + base.make_c_str(
+                    self._dim)
+            else:
+                prefix = "lbound"
+                return "/* " + prefix + "(" + base.make_f_str(self._ref) + ") */"
 
     def f_str(self):
-        prefix = "lbound"
-        result = prefix + "(" + base.make_f_str(self._ref)
-        if self._dim != None:
-            result += "," + base.make_f_str(self._dim)
-        if self._kind != None:
-            result += "," + base.make_f_str(self._kind)
-        return result + ")"
+        return _inquiry_str("lbound",
+                            base.make_f_str(self._ref),
+                            base.make_f_str(self._dim),
+                            base.make_f_str(self._kind))
 
 
 class TTUboundInquiry(base.TTNode):
@@ -388,21 +411,23 @@ class TTUboundInquiry(base.TTNode):
                  are passed as argument of the extracted kernels.
         :note:   only the case where <dim> is specified as integer literal is handled by this function.
         """
-        if type(self._dim) is TTNumber:
-            return "({0}_lb{1} + {0}_n{1} - 1)".format(
-                base.make_c_str(self._ref), base.make_c_str(self._dim))
+        if opts.fortran_style_tensor_access:
+            return _inquiry_c_str("ubound",
+                                  base.make_c_str(self._ref),
+                                  base.make_c_str(self._dim),
+                                  base.make_c_str(self._kind))
         else:
-            prefix = "ubound"
-            return "/* " + prefix + "(" + base.make_f_str(self._ref) + ") */"
-
+            if type(self._dim) is TTNumber:
+                return "({0}_lb{1} + {0}_n{1} - 1)".format(
+                    base.make_c_str(self._ref), base.make_c_str(self._dim))
+            else:
+                prefix = "ubound"
+                return "/* " + prefix + "(" + base.make_f_str(self._ref) + ") */"
     def f_str(self):
-        prefix = "ubound"
-        result = prefix + "(" + base.make_f_str(self._ref)
-        if self._dim != None:
-            result += "," + base.make_f_str(self._dim)
-        if self._kind != None:
-            result += "," + base.make_f_str(self._kind)
-        return result + ")"
+        return _inquiry_str("ubound",
+                            base.make_f_str(self._ref),
+                            base.make_f_str(self._dim),
+                            base.make_f_str(self._kind))
 
 
 class TTConvertToExtractReal(base.TTNode):
@@ -449,8 +474,8 @@ class TTConvertToComplex(base.TTNode):
         c_type = conv.convert_to_c_type("complex",
                                         self._kind,
                                         default=None,
-                                        float_complex="float_complex",
-                                        double_complex="double_complex")
+                                        float_complex="hipFloatComplex",
+                                        double_complex="hipDoubleComplex")
         return "make_{2}({0}, {1})".format(base.make_c_str(self._x),
                                            base.make_c_str(self._y), c_type)
 

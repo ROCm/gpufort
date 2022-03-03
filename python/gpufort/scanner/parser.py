@@ -227,7 +227,7 @@ def _parse_file(linemaps, index):
         nonlocal current_linemap
         nonlocal current_statement_no
         log_detection_("attributes statement")
-        new = tree.STAttributes(current_linemap, current_statement_no)
+        new = tree.STCufAttributes(current_linemap, current_statement_no)
         new.ignore_in_s2s_translation = not translation_enabled
         current_node.append(new)
 

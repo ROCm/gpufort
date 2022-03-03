@@ -5,3 +5,4 @@ from . import kwargs
 from . import logging
 from . import parsing
 from . import pyparsing
+from . import error

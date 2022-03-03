@@ -72,14 +72,12 @@ def _parse_fortran_code(statements, scope=None):
     # error handling
     def error_(expr, exception=None):
         nonlocal stmt1
-        util.logging.log_error(
-            opts.log_prefix, "_parse_fortran_code",
-            "failed to parse {} expression '{}'".format(expr, stmt))
         if exception != None:
             debug_msg = ": " + str(exception)
             util.logging.log_debug(opts.log_prefix,
                                    "_parse_fortran_code", debug_msg)
-        sys.exit(2) # TODO error code
+        raise SyntaxError(
+            "failed to parse {} expression '{}'".format(expr, stmt))
 
     def warn_(expr, exception=None):
         nonlocal stmt1
@@ -89,7 +87,6 @@ def _parse_fortran_code(statements, scope=None):
             util.logging.log_debug(opts.log_prefix,
                                    "_parse_fortran_code",
                                    str(exception))
-        sys.exit(2) # TODO error code
 
     def ignore_(expr):
         nonlocal stmt1

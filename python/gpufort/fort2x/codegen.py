@@ -196,10 +196,7 @@ class CodeGenerator():
                             default_modules=self._make_module_dicts(
                                 self.default_modules))
                 if inode == None:
-                    util.logging.log_error(LOG_PREFIX,\
-                                            "traverse_scanner_tree",\
-                                            "could not find self.index record for scanner tree node '{}'.".format(stnode_name))
-                    sys.exit() # TODO add error code
+                    raise util.error.LookupError("could not find self.index record for scanner tree node '{}'.".format(stnode_name))
 
                 cpp_filegen.includes += self._create_includes_from_used_modules(
                     inode)

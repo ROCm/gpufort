@@ -7,7 +7,6 @@ pretty_print_linemaps_dump = False
 pattern_line_continuation = r"\&([!c\*]\$\w+)?|([!c\*]\$\w+\&)"
 # line continuation pattern. The linemapper's preprocessor removes them.
 
-error_handling = "strict"
 # 'strict': program terminates with error. Otherwise, a warning is printed.
 
 user_defined_macros = []

@@ -40,10 +40,8 @@ def _search_values_in_subtree(ttnode, search_filter, scope, min_rank=-1):
             ttnode.body,
             search_filter): # includes the identifiers of the function calls
         tag = indexer.scope.create_index_search_tag_for_var(ttvalue.f_str()) # TODO 
-        ivar, found_in_scope = indexer.scope.search_scope_for_var(
-            scope, tag)
-        if found_in_scope and\
-           ivar["rank"] >= min_rank and\
+        ivar = indexer.scope.search_scope_for_var(scope, tag)
+        if ivar["rank"] >= min_rank and\
            not tag in tags: # ordering important
             tags.append(tag)
     return tags
@@ -81,11 +79,11 @@ def _flag_tensors(ttcontainer, scope):
     """Clarify types of function calls / tensor access that are not members of a struct."""
     for value in base.find_all(ttcontainer.body, fortran.IValue):
         if type(value._value) is fortran.TTFunctionCallOrTensorAccess:
-            _, discovered = indexer.scope.search_scope_for_var(
-                scope, value.f_str())
-            if discovered:
-                value._value._is_tensor_access = base.True3
-
+           try:
+              _ = indexer.scope.search_scope_for_var(scope, value.f_str()) # just check if the var exists
+              value._value._is_tensor_access = base.True3
+           except util.error.LookupError:
+              pass
 
 class ILoopAnnotation():
 
@@ -422,9 +420,9 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
             lvalue = assignment._lhs._value
             lvalue_name = lvalue.f_str().lower()
             if type(lvalue) is fortran.TTIdentifier: # could still be a matrix
-                definition, found_in_scope = indexer.scope.search_scope_for_var(
+                definition = indexer.scope.search_scope_for_var(
                     scope, lvalue_name)
-                if not found_in_scope or definition["rank"] == 0 and\
+                if definition["rank"] == 0 and\
                    not lvalue_name in scalars_read_so_far:
                     initialized_scalars.append(
                         lvalue_name) # read and initialized in
@@ -433,9 +431,9 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
                                             fortran.TTIdentifier)
             for ttidentifier in rhs_identifiers:
                 rvalue_name = ttidentifier.f_str().lower()
-                definition, found_in_scope = indexer.scope.search_scope_for_var(
+                definition = indexer.scope.search_scope_for_var(
                     scope, rvalue_name)
-                if (not found_in_scope or definition["rank"] == 0) and\
+                if definition["rank"] == 0 and\
                    rvalue_name != lvalue_name: # do not include name of rhs if lhs appears in rhs
                     scalars_read_so_far.append(rvalue_name)
         # initialized scalars that are not read (except in same statement) are likely reductions

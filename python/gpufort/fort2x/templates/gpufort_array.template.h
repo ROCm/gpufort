@@ -869,5 +869,7 @@ namespace gpufort {
   };
 {{ "" if not loop.last }}
 {% endfor -%}
-}
+} // namespace gpufort
+
+{{ gam.render_gpufort_array_cpp_property_getters(max_rank) | indent(0,True) -}}
 #endif // _GPUFORT_ARRAYS_H_

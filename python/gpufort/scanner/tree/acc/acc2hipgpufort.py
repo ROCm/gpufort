@@ -15,6 +15,7 @@ from . import accbackends
 from . import accnodes
 
 ## DIRECTIVES
+HIP_GPUFORT_RT_ACC_PRESENT = "call gpufort_acc_ignore(gpufort_acc_present({var}{asyncr}{alloc}))\n"
 # update
 HIP_GPUFORT_RT_ACC_UPDATE = "call gpufort_acc_update_{kind}({var}{asyncr})\n"
 # wait
@@ -25,26 +26,6 @@ HIP_GPUFORT_RT_ACC_SHUTDOWN = "call gpufort_acc_shutdown()\n"
 # regions
 HIP_GPUFORT_RT_ACC_ENTER_REGION = "call gpufort_acc_enter_region({region_kind})\n"
 HIP_GPUFORT_RT_ACC_EXIT_REGION = "call gpufort_acc_exit_region({region_kind})\n"
-## CLAUSES
-# create
-HIP_GPUFORT_RT_ACC_CREATE = "{dev_var} = gpufort_acc_create({var})\n"
-HIP_GPUFORT_RT_ACC_NO_CREATE = "{dev_var} = gpufort_acc_no_create({var})\n"
-HIP_GPUFORT_RT_ACC_COPYIN = "{dev_var} = gpufort_acc_copyin({var}{asyncr})\n"
-HIP_GPUFORT_RT_ACC_COPY = "{dev_var} = gpufort_acc_copy({var}{asyncr})\n"
-HIP_GPUFORT_RT_ACC_COPYOUT = "{dev_var} = gpufort_acc_copyout({var}{asyncr})\n"
-HIP_GPUFORT_RT_ACC_PRESENT = "{dev_var} = gpufort_acc_present({var}{asyncr}{alloc})\n"
-
-HIP_GPUFORT_RT_ACC_DELETE = "call gpufort_acc_delete({var}{alloc}{finalize})\n"
-
-MAPPING_CLAUSE_2_TEMPLATE_MAP = {
-    "create": HIP_GPUFORT_RT_ACC_CREATE,
-    "no_create": HIP_GPUFORT_RT_ACC_NO_CREATE,
-    "delete": HIP_GPUFORT_RT_ACC_DELETE,
-    "copyin": HIP_GPUFORT_RT_ACC_COPYIN,
-    "copy": HIP_GPUFORT_RT_ACC_COPY,
-    "copyout": HIP_GPUFORT_RT_ACC_COPYOUT,
-    "present": HIP_GPUFORT_RT_ACC_PRESENT
-}
 
 HIP_GPUFORT_RT_CLAUSES_OMP2ACC = {
     "alloc": "create",
@@ -74,17 +55,6 @@ def add_implicit_region(stcontainer):
         stendorreturn.add_to_prolog(textwrap.indent(HIP_GPUFORT_RT_ACC_EXIT_REGION.format(\
             region_kind="implicit_region=.true."),indent))
 
-# parent_already_mapped = False
-
-# TODO difficult task
-# parent can be struct or (element/subarray of array of struct) #
-# need to know the loop variables to understand if a selected expression
-# requires mapping a whole array or just a subarray or element, e.g.
-# if an array is indexed by a loop variable this implies that the
-# mapping is at least of a certain dimension.
-# Additional analysis would require to take the loop bounds into account.
-# All this complexity must be controlled.
-# From the OpenACC specification:
 # `In Fortran, if a variable or array of composite type is specified, all the members of that derived
 # type are allocated and copied, as appropriate. If any member has the allocatable or
 # pointer attribute, the data accessed through that member are not copied.`
@@ -96,82 +66,101 @@ def add_implicit_region(stcontainer):
 #if not parent_already_mapped:
 # => 
 
-#def get_mappings(ivars,directive=[],**kwargs):
-#    """
-#    Treat scalars, arrays, derived types differently
-#   
-#    * Simply pass scalars
-#    * Arrays are looked up and put into gpufort_array_wrap_device_ptr
-#    * Special treatment of array of derived type
-#      * need special routine for this pre-generated for derived types
-#      * different treatment if array is part of parent derived type
-#        and parent derived type has been mapped
-#
-#    * derived types
-#    If scalar is part of an array, the whole array is mapped.
-#    """
-#    alloc,_  = util.kwargs.get_value("alloc","",**kwargs)
-#    asyncr,_ = util.kwargs.get_value("asyncr","",**kwargs)
-#    alloc,_  = util.kwargs.get_value("finalize","",**kwargs)
-#    clauses = [
-#      "create","no_create","delete","copyin",
-#      "copy","copyout","present",
-#      ]
-#    clauses_with_async    = ["present","copy","copyin","copyout"]
-#    clauses_with_finalize = ["delete"] 
-#    clauses_with_alloc    = ["present","delete"]
-#    #
-#    mappings = {}
-#    for ttaccclause in translator.tree.grammar.acc_mapping_clause.scanString():
-#        clause = ttaccclause[0][0]
-#        tokens1 = ["gpufort_acc_",ttaccclause.kind,"("]
-#        if clause.kind in clauses:
-#            for ttrvalue in clause.var_list
-#                # allocate_rvalue =  (( derived_type_elem | identifier ) + bounds) | derived_type_elem | identifier
-#                while 
-#                var_expr = var_expr1.lower()
-#                    tokens = list(tokens1)
-#                    tokens.append(var_expr)
-#                    if clause.kind in clauses_with_alloc:
-#                        tokens.append(alloc)
-#                    if clause.kind in clauses_with_async:
-#                        tokens.append(asyncr)
-#                    if clause.kind in clauses_with_finalize:
-#                        tokens.append(finalize)
-#                    tokens.append(")") 
-#                    mappings[var_expr] = "".join(tokens)
-#        else:
-#            return SyntaxError("clause not supported") 
+# TODO make ivar pair of expr and ivar
 
-#def generate_kernel_arguments(ivars,directive=[],**kwargs):
-#    """:return a list of arguments given the directives
-#    """
-#    # TODO how to handle case where a variable is part of a mapping
-#    # but not present in the body?
-#    # TODO have a preproc step where derived type members are kicked
-#    # out of the argument list if the parent struct is mapped.
-#    # TODO Simplify ACC parsing, no need to use pyparsing
-#    asyncr,_ = util.kwargs.get_value("asyncr","",**kwargs)
-#    alloc,_ = util.kwargs.get_value("alloc","",**kwargs)
-#
-#    supported_clauses = [
-#      "create",
-#      "no_create",
-#      "delete",
-#      "copyin",
-#      "copy",
-#      "copyout",
-#      "present",
-#      ]
-#    
-#    for parse_result in translator.tree.grammar.acc_mapping_clause.scanString():
-#        clause = parse_result[0][0]
-#        tokens1 = "".join(["gpufort_acc_",parse_result.kind,"("])
-#        if clause.kind in supported_clauses:
-#            for var in clause.var_expressions():
-#
-#        else:
-#            return SyntaxError("Clause not supported") 
+
+def _mapping(clause_kind,tavar,**kwargs):
+    asyncr,_   = util.kwargs.get_value("asyncr","",**kwargs)
+    finalize,_ = util.kwargs.get_value("finalize","",**kwargs)
+   
+    clauses = [
+      "create","no_create","delete","copyin",
+      "copy","copyout","present",
+    ]
+    
+    if clause.kind in clauses:
+        copy_variants = ["copy","copyin","copyout"]
+        clauses_with_async = (["present"]
+                              + ["present_or_{}".format(v) for v in copy_variants] 
+                              + copy_variants)
+        clauses_with_finalize = ["delete"] 
+
+        tokens = list(tokens1)
+        tokens.append(var_expr)
+        if len(alloc) clause.kind in clauses_with_alloc:
+            tokens += [",",alloc]
+        if len(asyncr) and clause.kind in clauses_with_async:
+            tokens += [",",asyncr]
+        if len(finalize) and clause.kind in clauses_with_finalize:
+            tokens += [",",finalize]
+        tokens.append(")") 
+        return "".join(tokens)
+    else:
+        raise util.parsing.SyntaxError("clause not supported") 
+
+def kernel_args_to_acc_mappings(directive,tavars,present_by_default,callback,**kwargs):
+    """Derive mappings for array and (not yet) derived type variables.
+   
+    :Implemented:
+    
+    * Arrays of basic type are looked up and put into gpufort_array_wrap_device_ptr
+      * If scalar is part of an array, the whole array is mapped.
+    
+    :Not implemented yet:
+      * Special treatment for scalar derived types
+        * IGNORED for the time being
+      * Special treatment of array of derived type
+        * IGNORED for the time being
+        * need special routine for this pre-generated for derived types
+        * different treatment if array is part of parent derived type
+          and parent derived type has been mapped
+    
+    :param bool present_by_default: If unmapped vars are present by default or not.
+    :note: Current implementation does not support mapping of scalars/arrays of user-defined type.
+    :raise util.parsing.LimitationError: 
+    :raise util.parsing.LimitationError: 
+    """
+    #
+    #translator.tree.grammar.acc_mapping_clause.scanString():
+    mappings = {}
+    try:
+        accclauses = [res[0][0] for res in translator.tree.grammar.acc_mapping_clause.scanString(directive)]
+    except Exception:
+        raise util.parsing.SyntaxError("could not parse OpenACC clauses")
+    for tavar in tavars:
+        if tavar["rank"] > 0:
+            explicitly_mapped = False
+            for clause in accclauses: 
+                tokens1 = ["gpufort_acc_",ttaccclause.kind,"("]
+                    for var_expr in clause.var_expressions():
+                        var_tag = util.parsing.strip_array_indexing(var_expr.lower())
+                        if tavar["expr"] == var_tag:
+                            if "%" in var_tag:
+                                raise util.parsing.LimitationError("mapping of derived type members not supported (yet)")
+                            else:
+                                mappings[tavar["expr"]] = callback(clause.kind,tavar,**kwargs)
+                                explicitly_mapped = True
+                                break
+                
+                if explicitly_mapped: break
+            if not explicitly_mapped and present_by_default
+                if "%" in tavar["expr"] or tavar["f_type"]=="type":
+                    raise util.parsing.LimitationError("mapping of derived types and their members not supported (yet)")
+                else:
+                    mappings[tavar["expr"]] = callback("present_or_copy",tavar,**kwargs)
+            elif not explicitly_mapped:       
+                return util.parsing.SyntaxError("no mapping specified for expression: {}".format(tavar["expr"]))
+    return mappings    
+
+def derive_kernel_arguments(directive,ivars,**kwargs):
+    """:return a list of arguments given the directives
+    """
+    # TODO how to handle case where a variable is part of a mapping
+    # but not present in the body?
+    # TODO have a preproc step where derived type members are kicked
+    # out of the argument list if the parent struct is mapped.
+    # TODO Simplify ACC parsing, no need to use pyparsing
+    kernel_args_to_acc_mappings 
 
 class Acc2HipGpufortRT(accbackends.AccBackendBase):
     # clauses

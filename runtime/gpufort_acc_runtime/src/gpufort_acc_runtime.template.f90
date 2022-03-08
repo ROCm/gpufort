@@ -1,11 +1,26 @@
 {# SPDX-License-Identifier: MIT #}
 {# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved. #}
+{#################################################################################}
+{% macro render_interface(interface_name,has_backend=False) %}
+interface {{interface_name}}
+  module procedure &
+{% if has_backend %}
+    {{interface_name}}_b, &
+{% endif %}
+{% for tuple in datatypes %}
+{%   for dims in dimensions %}
+{%     set name = interface_name+"_" + tuple[0] + "_" + dims|string -%}
+    {{name}}{{ ",&" if not loop.last}}
+{%   endfor %}{{ ",&" if not loop.last}}
+{% endfor %}
+end interface
+{% endmacro %}
 ! SPDX-License-Identifier: MIT
 ! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 
 ! TODO not thread-safe, make use of OMP_LIB module if this becomes a problem
 
-! TODO will be slow for large pointer storages 
+! TODO will be slow for large pointer storages
 ! If this becomes an issue, use faster data structures or bind the public interfaces to
 ! a faster C runtime
 
@@ -24,16 +39,8 @@ module gpufort_acc_runtime
   !> reference count to one. When exiting the region the structured
   !> reference count is decremented. If both reference counts are
   !> zero, the device memory is deallocated.
-  interface gpufort_acc_copyin
-    module procedure gpufort_acc_copyin_b
-{%- for tuple in datatypes -%}
-{%- for dims in dimensions -%}
-{%- set name = "gpufort_acc_copyin_" + tuple[0] + "_" + dims|string -%}                                                              
-,{{name}} 
-{%- endfor -%} 
-{%- endfor %} 
-  end interface
-  
+{{ render_interface("gpufort_acc_copyin",True) | indent(2,True) }}
+
   !> copyout( list ) parallel, kernels, serial, data, exit data,
   !> declare
   !> When entering the region, if the data in list is already present on
@@ -46,16 +53,8 @@ module gpufort_acc_runtime
   !> count is set to zero. In any case, if both reference counts are zero,
   !> the data is copied from device memory to the encountering
   !> thread and the device memory is deallocated.
-  interface gpufort_acc_copyout
-    module procedure gpufort_acc_copyout_b
-{%- for tuple in datatypes -%}
-{%- for dims in dimensions -%}
-{%- set name = "gpufort_acc_copyout_" + tuple[0] + "_" + dims|string -%}                                                              
-,{{name}} 
-{%- endfor -%} 
-{%- endfor %} 
-  end interface
-    
+{{ render_interface("gpufort_acc_copyout",True) | indent(2,True) }}
+
   !> copy( list ) parallel, kernels, serial, data, declare
   !> When entering the region, if the data in list is already present on
   !> the current device, the structured reference count is incremented
@@ -65,15 +64,7 @@ module gpufort_acc_runtime
   !> the structured reference count is decremented. If both reference
   !> counts are zero, the data is copied from device memory to the
   !> encountering thread and the device memory is deallocated.
-  interface gpufort_acc_copy
-    module procedure gpufort_acc_copy_b
-{%- for tuple in datatypes -%}
-{%- for dims in dimensions -%}
-{%- set name = "gpufort_acc_copy_" + tuple[0] + "_" + dims|string -%}                                                              
-,{{name}} 
-{%- endfor -%} 
-{%- endfor %} 
-  end interface
+{{ render_interface("gpufort_acc_copy",True) | indent(2,True) }}
 
   !> create( list ) parallel, kernels, serial, data, enter data,
   !> declare
@@ -83,35 +74,19 @@ module gpufort_acc_runtime
   !> is used. Otherwise, it allocates device memory and sets the
   !> appropriate reference count to one. When exiting the region,
   !> the structured reference count is decremented. If both reference
-  !> counts are zero, the device memory is deallocated.  
-  interface gpufort_acc_create
-    module procedure gpufort_acc_create_b
-{%- for tuple in datatypes -%}
-{%- for dims in dimensions -%}
-{%- set name = "gpufort_acc_create_" + tuple[0] + "_" + dims|string -%}                                                              
-,{{name}} 
-{%- endfor -%} 
-{%- endfor %} 
-  end interface
+  !> counts are zero, the device memory is deallocated.
+{{ render_interface("gpufort_acc_create",True) | indent(2,True) }}
 
   !> no_create( list ) parallel, kernels, serial, data
   !> When entering the region, if the data in list is already present on
   !> the current device, the structured reference count is incremented
   !> and that copy is used. Otherwise, no action is performed and any
   !> device code in the construct will use the local memory address
-  !> for that data.  
-  interface gpufort_acc_no_create
-    module procedure gpufort_acc_no_create_b
-{%- for tuple in datatypes -%}
-{%- for dims in dimensions -%}
-{%- set name = "gpufort_acc_no_create_" + tuple[0] + "_" + dims|string -%}                                                              
-,{{name}} 
-{%- endfor -%} 
-{%- endfor %} 
-  end interface
-  
+  !> for that data.
+{{ render_interface("gpufort_acc_no_create",True) | indent(2,True) }}
+
   !> The delete clause may appear on exit data directives.
-  !> 
+  !>
   !> For each var in varlist, if var is in shared memory, no action is taken; if var is not in shared memory,
   !> the delete clause behaves as follows:
   !> If var is not present in the current device memory, a runtime error is issued.
@@ -121,48 +96,33 @@ module gpufort_acc_runtime
   !> Otherwise, a present decrement action with the dynamic reference counter is performed.
   !> If var is a pointer reference, a detach action is performed. If both structured and dynamic
   !> reference counters are zero, a delete action is performed.
-  !> An exit data directive with a delete clause and with or without a finalize clause is 
-  !> functionally equivalent to a call to 
-  !> the acc_delete_finalize or acc_delete API routine, respectively, as described in Section 3.2.23. 
-  !>
-  !> \note use 
-  interface gpufort_acc_delete
-    module procedure gpufort_acc_delete_b
-{%- for tuple in datatypes -%}
-{%- for dims in dimensions -%}
-{%- set name = "gpufort_acc_delete_" + tuple[0] + "_" + dims|string -%}                                                              
-,{{name}} 
-{%- endfor -%} 
-{%- endfor %} 
-  end interface
- 
+  !> An exit data directive with a delete clause and with or without a finalize clause is
+  !> functionally equivalent to a call to
+  !> the acc_delete_finalize or acc_delete API routine, respectively, as described in Section 3.2.23.
+{{ render_interface("gpufort_acc_delete",True) | indent(2,True) }}
+
   !> present( list ) parallel, kernels, serial, data, declare
   !> When entering the region, the data must be present in device
   !> memory, and the structured reference count is incremented.
   !> When exiting the region, the structured reference count is
-  !> decremented. 
-  interface gpufort_acc_present
-    module procedure gpufort_acc_present_b
-{%- for tuple in datatypes -%}
-{%- for dims in dimensions -%}
-{%- set name = "gpufort_acc_present_" + tuple[0] + "_" + dims|string -%}                                                              
-,{{name}} 
-{%- endfor -%} 
-{%- endfor %} 
-  end interface
- 
+  !> decremented.
+{{ render_interface("gpufort_acc_present",True) | indent(2,True) }}
+{{ render_interface("gpufort_acc_present_or_copy",True) | indent(2,True) }}
+{{ render_interface("gpufort_acc_present_or_copyin",True) | indent(2,True) }}
+{{ render_interface("gpufort_acc_present_or_copyout",True) | indent(2,True) }}
+
   !> Update Directive
-  !> 
+  !>
   !> The update directive copies data between the memory for the
   !> encountering thread and the device. An update directive may
   !> appear in any data region, including an implicit data region.
-  !> 
+  !>
   !> FORTRAN
-  !> 
+  !>
   !> !$acc update [clause [[,] clause]…]
-  !> 
+  !>
   !> CLAUSES
-  !> 
+  !>
   !> self( list ) or host( list )
   !>   Copies the data in list from the device to the encountering
   !>   thread.
@@ -180,28 +140,20 @@ module gpufort_acc_runtime
   !> wait [( expression-list )]
   !>   The data movement will not begin execution until all actions on
   !>   the corresponding async queue(s) are complete.
-  interface gpufort_acc_update_host
-    module procedure gpufort_acc_update_host_b
-{%- for tuple in datatypes -%}
-{%- for dims in dimensions -%}
-{%- set name = "gpufort_acc_update_host_" + tuple[0] + "_" + dims|string -%}                                                              
-,{{name}} 
-{%- endfor -%} 
-{%- endfor %} 
-  end interface
-  
+{{ render_interface("gpufort_acc_update_host",True) | indent(2,True) }}
+
   !> Update Directive
-  !> 
+  !>
   !> The update directive copies data between the memory for the
   !> encountering thread and the device. An update directive may
   !> appear in any data region, including an implicit data region.
-  !> 
+  !>
   !> FORTRAN
-  !> 
+  !>
   !> !$acc update [clause [[,] clause]…]
-  !> 
+  !>
   !> CLAUSES
-  !> 
+  !>
   !> self( list ) or host( list )
   !>   Copies the data in list from the device to the encountering
   !>   thread.
@@ -219,18 +171,10 @@ module gpufort_acc_runtime
   !> wait [( expression-list )]
   !>   The data movement will not begin execution until all actions on
   !>   the corresponding async queue(s) are complete.
-  interface gpufort_acc_update_device
-    module procedure gpufort_acc_update_device_b
-{%- for tuple in datatypes -%}
-{%- for dims in dimensions -%}
-{%- set name = "gpufort_acc_update_device_" + tuple[0] + "_" + dims|string -%}                                                              
-,{{name}} 
-{%- endfor -%} 
-{%- endfor %} 
-  end interface
+{{ render_interface("gpufort_acc_update_device",True) | indent(2,True) }}
 
   contains
-    
+
     !
     ! autogenerated routines for different inputs
     !
@@ -244,7 +188,7 @@ module gpufort_acc_runtime
 {% set size = '' %}
 {% set rank = '' %}
 {% endif %}
-{% set suffix = tuple[0] + "_" + dims|string %}                                                              
+{% set suffix = tuple[0] + "_" + dims|string %}
     function gpufort_acc_present_{{suffix}}(hostptr,module_var,or,async) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b, gpufort_acc_event_undefined
@@ -259,6 +203,22 @@ module gpufort_acc_runtime
       !
       deviceptr = gpufort_acc_present_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8,module_var,or,async)
     end function
+    
+{%- for copy_type in ["copy","copyin","copyout"] -%}
+    function gpufort_acc_present_or_{{copy_type}}_{{suffix}}(hostptr,module_var,async) result(deviceptr)
+      use iso_c_binding
+      use gpufort_acc_runtime_base, only: gpufort_acc_present_b, gpufort_acc_event_undefined
+      implicit none
+      {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
+      logical,intent(in),optional  :: module_var
+      integer,intent(in),optional  :: async
+      !
+      type(c_ptr) :: deviceptr
+      !
+      deviceptr = gpufort_acc_present_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8,module_var,&
+                                        gpufort_acc_event_{{copy_type}},async)
+    end function
+{%- endfor -%}
 
     function gpufort_acc_create_{{suffix}}(hostptr,module_var) result(deviceptr)
       use iso_c_binding
@@ -355,7 +315,7 @@ module gpufort_acc_runtime
       call gpufort_acc_update_device_b(c_loc(hostptr),condition,if_present,async,module_var)
     end subroutine
 
-{% endfor %} 
-{% endfor %} 
+{% endfor %}
+{% endfor %}
 
 end module

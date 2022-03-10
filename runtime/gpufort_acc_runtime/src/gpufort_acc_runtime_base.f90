@@ -29,6 +29,8 @@ module gpufort_acc_runtime_base
             gpufort_acc_event_copyout,&
             gpufort_acc_event_copy     
 
+  public :: gpufort_acc_get_stream
+
   PRIVATE ! Everything below and not listed above as public is private
 
   !
@@ -103,14 +105,11 @@ module gpufort_acc_runtime_base
   !> Data structure to map integer numbers to queues.  
   type :: t_queue
     type(c_ptr) :: queueptr = c_null_ptr
-    integer     :: num_refs = 0
     
     contains 
       procedure :: is_initialized     => t_queue_is_initialized_
       procedure :: initialize         => t_queue_initialize_
       procedure :: destroy            => t_queue_destroy_
-      procedure :: decrement_num_refs => t_queue_decrement_num_refs_
-      procedure :: increment_num_refs => t_queue_increment_num_refs_
   end type
 
   type(t_record_list),save       :: record_list_
@@ -276,7 +275,6 @@ module gpufort_acc_runtime_base
       class(t_queue),intent(inout) :: queue
       !
       call hipCheck(hipStreamCreate(queue%queueptr))
-      queue%num_refs = 1
     end subroutine
     
     subroutine t_queue_destroy_(queue)
@@ -287,62 +285,45 @@ module gpufort_acc_runtime_base
       !
       call hipCheck(hipStreamDestroy(queue%queueptr))
       queue%queueptr = c_null_ptr
-      queue%num_refs = 0
     end subroutine
-    
-    subroutine t_queue_increment_num_refs_(queue)
-      implicit none
-      class(t_queue),intent(inout) :: queue
-      !
-      queue%num_refs = queue%num_refs + 1
-    end subroutine
-    
-    function t_queue_decrement_num_refs_(queue) result(ret)
-      implicit none
-      class(t_queue),intent(inout) :: queue
-      logical :: ret
-      !
-      queue%num_refs = queue%num_refs - 1
-      ret = queue%num_refs .eq. 0
-    end function
     
     !
     ! queues_
     !
     
     !> \note Not thread safe 
-    subroutine create_increment_queue_(id)
+    subroutine ensure_queue_exists_(id)
        implicit none
        integer, intent(in) :: id
        !
        if ( id .gt. 0 .and. id .le. MAX_QUEUES ) then
           if ( .not. queues_(id)%is_initialized() ) then
             call queues_(id)%initialize()
-          else 
-            call queues_(id)%increment_num_refs()
           endif
           last_queue_index_ = max(id, last_queue_index_)
        else if ( id .gt. MAX_QUEUES ) then
-         ERROR STOP "gpufort_acc_runtime: create_increment_queue_: queue id greater than parameter MAX_QUEUES" 
+         ERROR STOP "gpufort_acc_runtime: ensure_queue_exists_: queue id greater than parameter MAX_QUEUES" 
+       else
+         ERROR STOP "gpufort_acc_runtime: ensure_queue_exists_: queue id must be greater than 0" 
        endif
     end subroutine
    
     !> \note Not thread safe 
-    subroutine decrement_release_queue_(id)
+    subroutine destroy_queue_(id)
        implicit none
        integer, intent(in) :: id
        !
        if ( id .gt. 0 .and. id .le. MAX_QUEUES ) then
           if ( queues_(id)%is_initialized() ) then
-            if ( queues_(id)%decrement_num_refs() ) then ! side effects
-              call queues_(id)%destroy()
-            endif
+            call queues_(id)%destroy()
           endif
           if ( id .eq. last_queue_index_ ) then
             last_queue_index_ = last_queue_index_ - 1
           endif
        else if ( id .gt. MAX_QUEUES ) then
-         ERROR STOP "gpufort_acc_runtime: decrement_release_queue_: queue id greater than parameter MAX_QUEUES"
+         ERROR STOP "gpufort_acc_runtime: destroy_queue_: queue id greater than parameter MAX_QUEUES"
+       else
+         ERROR STOP "gpufort_acc_runtime: destroy_queue_: queue id must be greater than 0" 
        endif
     end subroutine
     
@@ -406,8 +387,8 @@ module gpufort_acc_runtime_base
       !
 #ifndef BLOCKING_COPIES
       if ( present(async) ) then
-        if ( async .ge. 0 ) then
-          call create_increment_queue_(async)
+        if ( async .gt. 0 ) then
+          call ensure_queue_exists_(async)
           call hipCheck(hipMemcpyAsync(record%deviceptr,record%hostptr,&
                   record%num_bytes_used,hipMemcpyHostToDevice,queues_(async)%queueptr))
         else
@@ -432,8 +413,8 @@ module gpufort_acc_runtime_base
       !
 #ifndef BLOCKING_COPIES
       if ( present(async) ) then
-        if ( async .ge. 0 ) then
-          call create_increment_queue_(async)
+        if ( async .gt. 0 ) then
+          call ensure_queue_exists_(async)
           call hipCheck(hipMemcpyAsync(record%hostptr,record%deviceptr,&
                   record%num_bytes_used,hipMemcpyDeviceToHost,queues_(async)%queueptr))
         else
@@ -807,7 +788,7 @@ module gpufort_acc_runtime_base
         endif 
         !
         call record_list_%initialize()
-        allocate(queues_(MAX_QUEUES))
+        allocate(queues_(1:MAX_QUEUES))
         initialized_ = .true.
       endif
     end subroutine
@@ -1426,4 +1407,14 @@ module gpufort_acc_runtime_base
       endif
     end subroutine
 
+    function gpufort_acc_get_stream(queue_id):
+       implicit none
+       integer, intent(in) :: queue_id
+       if ( queue_id .eq. 0 ) then
+          return c_null_ptr
+       else 
+          call ensure_queue_exists_(queue_id)
+          return queue_id(id)%queueptr
+       endif
+    end function
 end module

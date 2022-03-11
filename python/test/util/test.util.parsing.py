@@ -90,7 +90,7 @@ class TestParsingUtils(unittest.TestCase):
             print(s.getvalue())
         elapsed = time.time() - self.started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
-    def test_1_split_fortran_line(self):
+    def test_01_split_fortran_line(self):
         for line in self.prepare(testdata1):
             indent,stmt_or_dir,comment,trailing_ws =\
               util.parsing.split_fortran_line(line)
@@ -103,16 +103,16 @@ class TestParsingUtils(unittest.TestCase):
             else:
                 self.assertFalse(len(comment))
         # 
-    def test_2_relocate_inline_comments(self):
+    def test_02_relocate_inline_comments(self):
         result = util.parsing.relocate_inline_comments(\
                    testdata2.splitlines())
         self.assertEqual(self.clean("\n".join(result)),self.clean(testdata2_result))
-    def test_3_extract_function_calls(self):
+    def test_03_extract_function_calls(self):
         for c in ["a","b","c","d","f","g","h","i","j","k"]:
             result = util.parsing.extract_function_calls(testdata3,c)
             #print(result)
             self.assertEqual(result,testdata3_result[c])
-    def test_4_parse_use_statement(self):
+    def test_04_parse_use_statement(self):
         statements = [
           "use mymod",
           "use mymod, only: var1",
@@ -128,7 +128,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_use_statement(stmt))
             self.assertEqual(util.parsing.parse_use_statement(stmt),results[i])
-    def test_5_parse_declaration(self):
+    def test_05_parse_declaration(self):
         statements = [
           "integer,parameter :: a(1) = (/1/), b = 5*2**3",
           "integer(kind(hipSuccess)),parameter :: ierr = hipSuccess",
@@ -138,17 +138,18 @@ class TestParsingUtils(unittest.TestCase):
           "integer,dimension(:,:) :: int_array2d",
         ]
         results = [
-          ('integer', None, ['parameter'], [('a', ['1'], '(/1/)'), ('b', [], '5*2**3')]),
-          ('integer', 'kind(hipsuccess)', ['parameter'], [('ierr', [], 'hipsuccess')]),
-          ('integer', '4', ['parameter'], [('parameter', [], '')]),
-          ('integer', '4', ['pointer'], [('a', [':'], 'null()'), ('b', [], 'null()')]),
-          ('integer', '4', ['allocatable'], [('b', [':', ':', 'n', '-1:5'], '')]),
-          ('integer', None, [], [('int_array2d', [':', ':'], '')]),
+          # type, kind, qualifiers without dimensions, dimension bounds, variables: list of (name, bounds, rhs)
+          ('integer', None, ['parameter'], [], [('a', ['1'], '(/1/)'), ('b', [], '5*2**3')], 'integer', ['parameter']),
+          ('integer', 'kind(hipSuccess)', ['parameter'], [], [('ierr', [], 'hipSuccess')], 'integer(kind(hipSuccess))', ['parameter']),
+          ('integer', '4', ['parameter'], [], [('parameter', [], None)], 'integer(kind=4),', ['parameter']),
+          ('integer', '4', ['pointer'], [], [('a', [':'], 'null()'), ('b', [], 'null()')], 'integer*4', ['pointer']),
+          ('integer', '4', ['allocatable'], [], [('b', [':', ':', 'n', '-1:5'], None)], 'integer*4', ['allocatable']),
+          ('integer', None, [], [':', ':'], [('int_array2d', [], None)], 'integer', ['dimension(:,:)']) ,
         ]
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_declaration(stmt))
             self.assertEqual(util.parsing.parse_declaration(stmt),results[i])
-    def test_6_strip_array_indexing(self):
+    def test_06_strip_array_indexing(self):
         expressions = [
           "a",
           "a(1)",
@@ -166,7 +167,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.strip_array_indexing(expr))
             self.assertEqual(util.parsing.strip_array_indexing(expr),results[i])
-    def test_7_derived_type_parents(self):
+    def test_07_derived_type_parents(self):
         expressions = [
           "a",
           "a(1)",
@@ -184,5 +185,55 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.derived_type_parents(expr))
             self.assertEqual(util.parsing.derived_type_parents(expr),results[i])
+    def test_08_tokenize(self):
+        expressions = [
+          "!$acc enter data copyin(a) copyout(b(-1:))",
+        ]
+        results = [
+          ['!$', 'acc', 'enter', 'data', 'copyin', '(', 'a', ')', 'copyout', '(', 'b', '(', '-', '1', ':', ')', ')'],
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing.tokenize(expr))
+            self.assertEqual(util.parsing.tokenize(expr),results[i])
+    def test_09_parse_directive(self):
+        expressions = [
+          "!$acc enter data copyin(a,b,c(:)) copyout(b(-1:))",
+        ]
+        results = [
+          ['!$', 'acc', 'enter', 'data', 'copyin(a,b,c(:))', 'copyout(b(-1:))'],
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing.parse_directive(expr))
+            self.assertEqual(util.parsing.parse_directive(expr),results[i])
+    
+    def test_10_parse_acc_clauses(self):
+        expressions = [
+          ["copyin(a,b,c(:))","copyout(b(-1:))","async"],
+          ["copyin(a,b,c(:))","copyout(b(-1:))","reduction(+:a)","async"],
+          ["map(to:x,y(:),tofrom:a%z(1:n,2:m))"], # actually OMP clauses
+        ]
+        results = [
+          [('copyin', ['a', 'b', 'c(:)']), ('copyout', ['b(-1:)']), ('async', [])]
+          [('copyin', ['a', 'b', 'c(:)']), ('copyout', ['b(-1:)']), ('reduction', [('+', ['a'])]), ('async', [])]
+          [('map', [('to', ['x', 'y(:)']), ('tofrom', ['a%z(1:n,2:m)'])])]
+        ]
+        for i,expr in enumerate(expressions):
+            print(util.parsing.parse_acc_clauses(expr))
+            #self.assertEqual(util.parsing.parse_acc_clauses(expr),results[i])
+    
+    def test_11_parse_acc_directive(self):
+        expressions = [
+          "!$acc enter data copyin(a,b,c(:)) copyout(b(-1:))",
+          "!$acc wait(i,j) async(c)",
+          "!$acc kernels loop reduction(+:x)"
+        ]
+        results = [
+          ('!$', ['acc', 'enter', 'data'], [], ['copyin(a,b,c(:))', 'copyout(b(-1:))']),
+          ('!$', ['acc', 'wait'], ['i', 'j'], ['async(c)']),
+        ]
+        for i,expr in enumerate(expressions):
+            print(util.parsing.parse_acc_directive(expr))
+            #self.assertEqual(util.parsing.parse_acc_directive(expr),results[i])
+
 if __name__ == '__main__':
     unittest.main() 

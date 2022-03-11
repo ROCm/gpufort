@@ -149,8 +149,6 @@ def relocate_inline_comments(lines):
             in_multiline_statement = False
     return result
 
-
-
 def next_tokens_till_open_bracket_is_closed(tokens, open_brackets=0):
     # ex:
     # input:  [  "kind","=","2","*","(","5","+","1",")",")",",","pointer",",","allocatable" ], open_brackets=1
@@ -169,7 +167,6 @@ def next_tokens_till_open_bracket_is_closed(tokens, open_brackets=0):
         criterion = idx < len(tokens) and open_brackets > 0
     # TODO throw error if open_brackets still > 0
     return result
-
 
 def get_highest_level_arguments(tokens,
                                 open_brackets=0,
@@ -205,7 +202,7 @@ def get_highest_level_arguments(tokens,
 def extract_function_calls(text, func_name):
     """Extract all calls of the function `func_name` from the input text.
     :param str text: the input text.
-    :param str func_name: Name of the function.
+    :param str func_name: Name of the function. Can be a regular expression.
     :note: Input text must not contain any line break/continuation characters.
     :return: List of tuples that each contain the function call substring at position 0
              and the list of function call argument substrings at position 1.
@@ -394,6 +391,121 @@ def parse_declaration(fortran_statement):
             raise error.SyntaxError("could not parse '{}'".format(var_tokens))
         variables.append((var_name,var_bounds,var_rhs))
     return (datatype, kind, qualifiers, dimension_bounds, variables, datatype_raw, qualifiers_raw) 
+
+def parse_directive(directive,tokens_to_omit_at_begin=0):
+    """Splits a directive in directive sentinel, 
+    identifiers and clause-like expressions.
+
+    :return: List of directive parts as strings.
+    :param int tokens_to_omit_at_begin: Number of tokens to omit at the begin of the result.
+                                        Can be used to get only the tokens that
+                                        belong to the clauses of the directive if 
+                                        the directive kind is already known.
+
+    :Example:
+
+    Given the directive "$!acc data copyin ( a (1,:),b,c) async",
+    this routine will return a list (tokens_to_omit_at_begin = 0)
+    ['$!','acc','data','copyin(a(1,:),b,c)','async']
+    If tokens_to_omit_at_begin = 3, this routine will return
+    ['copyin(a(1,:),b,c)','async']
+    """
+    tokens = tokenize(directive)
+    it = 0
+    result = []
+    while len(tokens):
+        tk = tokens.pop(0) 
+        if tk == "(":
+            rest = next_tokens_till_open_bracket_is_closed(tokens,1)
+            result[-1] = "".join([result[-1],tk]+rest)
+            for i in range(0,len(rest)):
+                tokens.pop(0)
+        elif tk.isidentifier() or tk.endswith("$"):
+            result.append(tk)
+        else:
+            raise error.SyntaxError("unexpected clause or identifier token: {}".format(tk))
+    return result[tokens_to_omit_at_begin:]
+
+def parse_acc_directive(directive):
+    """Parses an OpenACC directive, returns a triple of its sentinel, its kind (as list of tokens)
+    plus its clauses (as list of tokens). 
+
+    :Example:
+
+    Given
+      `!$acc enter data copyin(a,b) async`,
+    this routine returns
+      ('!$',['acc','enter','data'],['copyin(a,b)','async'])
+    """
+    directive_parts = parse_directive(directive)
+    directive_kinds = [
+      ["acc","init"],
+      ["acc","shutdown"],
+      ["acc","data"],
+      ["acc","enter","data"],
+      ["acc","exit","data"],
+      ["acc","wait"],
+      ["acc","update"],
+      ["acc","declare"],
+      ["acc","routine"],
+      ["acc","loop"],
+      ["acc","parallel","loop"],
+      ["acc","kernels","loop"],
+      ["acc","parallel"],
+      ["acc","kernels"],
+    ]
+    directive_kind = []
+    directive_args = []
+    clauses        = []
+    sentinel = directive_parts.pop(0)
+    for kind in directive_kinds:
+        length = len(kind)
+        last_directive_token_parts = directive_parts[length-1].split("(")
+        if (len(directive_parts) >= length
+           and (directive_parts[0:length-1]+last_directive_token_parts[0:1])==kind):
+            directive_kind = kind
+            if len(last_directive_token_parts) > 1:
+                _, directive_args = parse_acc_clauses([directive_parts[length-1]])[0] 
+            clauses = directive_parts[length:]
+            break
+    if not len(directive_kind):
+        raise error.SyntaxError("could not identify kind of directive")
+    return sentinel, directive_kind, directive_args, clauses
+
+def parse_acc_clauses(clauses):
+    """Converts OpenACC-like clauses into tuples with the name
+    of the clause as first argument and the list of arguments of the clause
+    as second argument, might be empty.
+    :param list clauses: A list of acc clause expressions (strings).
+    """
+    result = []
+    for expr in clauses:
+        tokens = tokenize(expr)
+        if len(tokens) == 1 and tokens[0].isidentifier():
+            result.append((tokens[0],[]))
+        elif (len(tokens) > 3 
+             and tokens[0].isidentifier()
+             and tokens[1] == "(" 
+             and tokens[-1] == ")"):
+            args1 = get_highest_level_arguments(tokens[2:-1], 0, [","],[]) # clip the ')' at the end
+            args = []
+            current_group = None
+            for arg in args1:
+                arg_parts = tokenize(arg)
+                if len(arg_parts)>1 and arg_parts[1]==":":
+                    if current_group != None:
+                        args.append(current_group)
+                    current_group = ( arg_parts[0], ["".join(arg_parts[2:])] )
+                elif current_group != None:
+                    current_group[1].append(arg)
+                else:
+                    args.append(arg)
+            if current_group != None:
+                args.append(current_group)
+            result.append((tokens[0], args))
+        else:
+            raise error.SyntaxError("could not parse expression: '{}'".format(expr))
+    return result
 
 # def parse_implicit_statement(statement):
 # TODO

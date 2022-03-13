@@ -1,4 +1,4 @@
-TEST     ?= test 
+TEST     ?= module-module module-program module-module-procedure
 DEPS     ?= 
 SOURCES  ?= $(TEST).f90 $(DEPS)
 DEPS_OBJ  = $(DEPS:.cpp=.o)

@@ -110,6 +110,7 @@ module gpufort_acc_runtime
 {{ render_interface("gpufort_acc_present_or_copy",True) | indent(2,True) }}
 {{ render_interface("gpufort_acc_present_or_copyin",True) | indent(2,True) }}
 {{ render_interface("gpufort_acc_present_or_copyout",True) | indent(2,True) }}
+{{ render_interface("gpufort_acc_present_or_create",True) | indent(2,True) }}
 
   !> Update Directive
   !>
@@ -204,8 +205,8 @@ module gpufort_acc_runtime
       deviceptr = gpufort_acc_present_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8,module_var,or,async)
     end function
     
-{%- for copy_type in ["copy","copyin","copyout"] -%}
-    function gpufort_acc_present_or_{{copy_type}}_{{suffix}}(hostptr,module_var,async) result(deviceptr)
+{%- for or_clause_type in ["copy","copyin","copyout","create"] -%}
+    function gpufort_acc_present_or_{{or_clause_type}}_{{suffix}}(hostptr,module_var,async) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b, gpufort_acc_event_undefined
       implicit none
@@ -216,7 +217,7 @@ module gpufort_acc_runtime
       type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_present_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8,module_var,&
-                                        gpufort_acc_event_{{copy_type}},async)
+                                        gpufort_acc_event_{{or_clause_type}},async)
     end function
 {%- endfor -%}
 

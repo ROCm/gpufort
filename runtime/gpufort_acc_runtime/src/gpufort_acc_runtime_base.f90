@@ -13,6 +13,7 @@ module gpufort_acc_runtime_base
   public :: gpufort_acc_copyin_b, gpufort_acc_copyout_b, gpufort_acc_copy_b, & 
             gpufort_acc_create_b, gpufort_acc_no_create_b, 
             gpufort_acc_present_b, &
+            gpufort_acc_present_or_create_b, &
             gpufort_acc_present_or_copyin_b, gpufort_acc_present_or_copyout_b, gpufort_acc_present_or_copy_b, & 
             gpufort_acc_delete_b 
   public :: gpufort_acc_update_host_b, gpufort_acc_update_device_b
@@ -983,14 +984,14 @@ module gpufort_acc_runtime_base
           success      = .true.
           opt_or = eval_optval_(or,gpufort_acc_event_undefined)
           select case (opt_or)
-            case (gpufort_acc_event_copy)
-              deviceptr = gpufort_acc_copy_b(hostptr,num_bytes,async,module_var)
             case (gpufort_acc_event_create)
               deviceptr = gpufort_acc_create_b(hostptr,num_bytes,async,module_var)
             case (gpufort_acc_event_copyin)
               deviceptr = gpufort_acc_copyin_b(hostptr,num_bytes,async,module_var)
             case (gpufort_acc_event_copyout)
               deviceptr = gpufort_acc_copyout_b(hostptr,num_bytes,async,module_var)
+            case (gpufort_acc_event_copy)
+              deviceptr = gpufort_acc_copy_b(hostptr,num_bytes,async,module_var)
             case default
               success = .false.
               print *, "ERROR: did not find record for hostptr:"
@@ -1020,6 +1021,20 @@ module gpufort_acc_runtime_base
         !  record_list_%records(loc)%increment_num_refs()
         !endif
       endif
+    end function
+    
+    function gpufort_acc_present_or_create_b(hostptr,num_bytes,module_var,async) result(deviceptr)
+      use iso_fortran_env
+      use iso_c_binding
+      use gpufort_acc_runtime_c_bindings
+      implicit none
+      type(c_ptr),intent(in)       :: hostptr
+      integer(c_size_t),intent(in) :: num_bytes
+      !logical,intent(in),optional :: exiting
+      logical,intent(in),optional  :: module_var
+      integer,intent(in),optional  :: async
+      !
+      deviceptr = gpufort_acc_present_b(hostptr,num_bytes,module_var,gpufort_acc_event_create,async) 
     end function
     
     function gpufort_acc_present_or_copyin_b(hostptr,num_bytes,module_var,async) result(deviceptr)

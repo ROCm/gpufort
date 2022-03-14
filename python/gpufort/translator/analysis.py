@@ -79,7 +79,6 @@ def lookup_index_entries_for_vars_in_kernel_body(scope,
     taglobal_vars = []
 
     for reduction_op, var_exprs in reductions.items():
-        
         for var_expr in var_exprs:
             if "%" in var_expr:
                 raise util.error.LimitationError("reduction of derived type members not supported")

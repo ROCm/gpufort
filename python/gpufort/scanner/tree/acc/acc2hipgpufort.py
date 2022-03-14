@@ -33,21 +33,23 @@ _ACC_DELETE = "call gpufort_acc_delete({var}{options})\n"
 _ACC_COPY = "call gpufort_acc_ignore(gpufort_acc_copy({var}{options}))\n"
 _ACC_COPYIN = "call gpufort_acc_ignore(gpufort_acc_copyin({var}{options}))\n"
 _ACC_COPYOUT = "call gpufort_acc_ignore(gpufort_acc_copyout({var}{options}))\n"
-_ACC_PRESENT_OR_COPY = "call gpufort_acc_ignore(gpufort_acc_present_or_copy({var}{options}))\n"
+_ACC_PRESENT_OR_CREATE = "call gpufort_acc_ignore(gpufort_acc_present_or_create({var}{options}))\n"
 _ACC_PRESENT_OR_COPYIN = "call gpufort_acc_ignore(gpufort_acc_present_or_copyin({var}{options}))\n"
 _ACC_PRESENT_OR_COPYOUT = "call gpufort_acc_ignore(gpufort_acc_present_or_copyout({var}{options}))\n"
+_ACC_PRESENT_OR_COPY = "call gpufort_acc_ignore(gpufort_acc_present_or_copy({var}{options}))\n"
 
 _DATA_CLAUSE_2_TEMPLATE_MAP = {
   "create": _ACC_CREATE,
   "no_create": _ACC_NO_CREATE,
   "delete": _ACC_DELETE,
   "copyin": _ACC_COPYIN,
+  "copyout": _ACC_COPYOUT,
   "copy": _ACC_COPY,
-  "present_or_copyout": _ACC_PRESENT_OR_COPYOUT,
+  "present": _ACC_PRESENT,
+  "present_or_create": _ACC_PRESENT_OR_CREATE,
   "present_or_copyin": _ACC_PRESENT_OR_COPYIN,
-  "present_or_copy": _ACC_PRESENT_OR_COPY,
   "present_or_copyout": _ACC_PRESENT_OR_COPYOUT,
-  "present": _ACC_PRESENT
+  "present_or_copy": _ACC_PRESENT_OR_COPY,
 }
         
 _DATA_CLAUSES_WITH_ASYNC = [
@@ -175,7 +177,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         elif stnode.is_directive(["acc","shutdown"]):
             result.append(_ACC_SHUTDOWN)
         elif stnode.is_directive(["acc","update"]):
-            result.append(self._handle_wait_clause())
+            result += self._handle_wait_clause()
             async_expr = self._get_async_clause_expr()
             result += self._update_directive(async_expr)
         elif stnode.is_directive(["acc","wait"]):
@@ -253,8 +255,9 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
         """:return a list of arguments given the directives.
         """
         result = []
+        acc_clauses = self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP)
         mappings = translator.analysis.kernel_args_to_acc_mappings_no_types(
-                       self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP.keys()),
+                       acc_clauses,
                        self.stnode.kernel_args_tavars,
                        self.stnode.get_vars_present_per_default(),
                        AccLoopNest2HipGpufortRT._map_array,
@@ -309,7 +312,7 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
 def _add_implicit_region(stcontainer):
     last_decl_list_node = stcontainer.last_entry_in_decl_list()
     indent = last_decl_list_node.first_line_indent()
-    last_decl_list_node.add_to_epilog(textwrap.indent(_ACC_ENTER_REGION,format(\
+    last_decl_list_node.add_to_epilog(textwrap.indent(_ACC_ENTER_REGION.format(\
         options="implicit_region=.true."),indent))
     for stendorreturn in stcontainer.return_or_end_statements():
         stendorreturn.add_to_prolog(textwrap.indent(_ACC_EXIT_REGION.format(\
@@ -345,7 +348,7 @@ def AllocateHipGpufortRT(stallocate, joined_statements, index):
                 alloc=module_var+",or=gpufort_acc_event_"+map_kind,dev_var=dev_var))
     if len(acc_present_calls):
         if implicit_region:
-            add_implicit_region(stcontainer)
+            _add_implicit_region(stcontainer)
         for line in acc_present_calls:
             stallocate.add_to_epilog(textwrap.indent(line,indent))
     return joined_statements, False
@@ -399,12 +402,12 @@ def Acc2HipGpufortRTPostprocess(stree, index):
         local_var_names, dummy_arg_names = stcontainer.local_and_dummy_var_names(
             index)
         # TODO also process type members
-        acc_present_calls = ""
+        acc_present_calls = []
         implicit_region = False
         for ivar in scope_vars:
-            host_var = ivar["name"]
-            is_local_var = host_var in local_var_names
-            is_arg = host_var in dummy_arg_names
+            var_expr = ivar["name"]
+            is_local_var = var_expr in local_var_names
+            is_arg = var_expr in dummy_arg_names
             is_used_module_var = not is_local_var and not is_arg
             is_allocatable = "allocatable" in ivar["qualifiers"]
             is_pointer = "pointer" in ivar["qualifiers"]
@@ -412,25 +415,19 @@ def Acc2HipGpufortRTPostprocess(stree, index):
                 if not is_used_module_var:
                     implicit_region = True
                 module_var = ",module_var=.true." if is_used_module_var else ""
-                if is_pointer:
-                    cond = "if (associated({var})) "
-                    acc_present_template = (
-                        cond
-                        + _ACC_PRESENT.replace("", ""))
-                else:
-                    acc_present_template = _ACC_PRESENT
                 # find return and end, emit 1 new implicit region for all
-                if ivar["declare_on_target"] in _CLAUSES_OMP2ACC.keys(
-                ):
-                    map_kind = _CLAUSES_OMP2ACC[
-                        ivar["declare_on_target"]]
-                    acc_present_calls += acc_present_template.format(\
-                        var=host_var,options="",\
-                        alloc=module_var+",or=gpufort_acc_event_"+map_kind,dev_var=dev_var)
+                declare = ivar["declare_on_target"]
+                if declare in _CLAUSES_OMP2ACC.keys():
+                    map_kind = "".join(["present_or_",_CLAUSES_OMP2ACC[declare]])
+                    acc_present_template =  _DATA_CLAUSE_2_TEMPLATE_MAP[map_kind]
+                    if is_pointer:
+                        acc_present_template = "".join(["if (associated({var})) ",acc_present_template])
+                    acc_present_calls.append(acc_present_template.format(
+                        var=var_expr,options=module_var))
         if len(acc_present_calls):
             if implicit_region:
-                add_implicit_region(stcontainer)
-            last_decl_list_node.add_to_epilog(textwrap.indent(acc_present_calls,indent))
+                _add_implicit_region(stcontainer)
+            last_decl_list_node.add_to_epilog(textwrap.indent("".join(acc_present_calls),indent))
 
 dest_dialects = ["hipgpufort"]
 accnodes.STAccDirective.register_backend(dest_dialects,Acc2HipGpufortRT()) # instance

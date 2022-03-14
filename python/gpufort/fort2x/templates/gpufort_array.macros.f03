@@ -553,7 +553,7 @@ interface {{iface}}
 {%   set size_dims = ",dimension("+rank|string+")" %}
 {%   set f_array  = prefix+rank|string %}
 {%   set binding  = f_array+"_"+routine %}
-{#      {{binding}}_cptr,& #}
+      {{binding}}_cptr,& 
 {%   for tuple in datatypes %}
       {{binding}}_{{tuple.f_kind}}{{",&\n" if not loop.last}}{% endfor %}{{",&" if not loop.last}}
 {% endfor %}

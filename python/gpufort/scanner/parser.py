@@ -361,12 +361,14 @@ def _parse_file(linemaps, index):
         new.ignore_in_s2s_translation = not translation_enabled
         directive_no += 1
         # if end directive ascend
-        if new.is_end_directive() and type(current_node) is tree.acc.STAccDirective and\
-           current_node.is_kernels_directive():
+        if (new.is_directive(["acc","end","kernels"]) 
+           and isinstance(current_node, tree.acc.STAccDirective)
+           and current_node.is_directive(["acc","kernels"])):
             ascend_()
         # descend in constructs or new node
-        elif new.is_parallel_loop_directive() or new.is_kernels_loop_directive() or\
-             (not new.is_end_directive() and new.is_parallel_directive()):
+        elif (new.is_directive(["acc","parallel"]) # TODO this assumes that there will be always an acc loop afterwards
+             or new.is_directive(["acc","parallel","loop"])
+             or new.is_directive(["acc","kernels","loop"])):
             new = tree.acc.STAccLoopNest(current_linemap, current_statement_no,
                                          directive_no)
             new.kind = "acc-compute-construct"
@@ -374,7 +376,7 @@ def _parse_file(linemaps, index):
             new._do_loop_ctr_memorised = do_loop_ctr
             descend_(new) # descend also appends
             keep_recording = True
-        elif not new.is_end_directive() and new.is_kernels_directive():
+        elif new.is_directive(["acc","kernels"]):
             descend_(new) # descend also appends
             #print("descending into kernels or parallel construct")
         else:

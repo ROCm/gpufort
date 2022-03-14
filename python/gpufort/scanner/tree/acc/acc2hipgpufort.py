@@ -199,7 +199,8 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             ## mapping clauses on data directives
             if (stnode.is_directive(["acc","enter","data"])
                or stnode.is_directive(["acc","exit","data"])
-               or stnode.is_directive(["acc","data"])):
+               or stnode.is_directive(["acc","data"])
+               or stnode.is_directive(["acc","kernels"])):
                 async_expr = self._get_async_clause_expr()
                 finalize_expr = self._get_finalize_clause_expr();
                 if len(finalize_expr) and not stnode.is_directive(["acc","exit","data"]):
@@ -245,12 +246,19 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
     def derive_kernel_call_arguments(self):
         """:return a list of arguments given the directives.
         """
-        return kernel_args_to_acc_mappings_no_types(self.stnode.clauses,
+        result = []
+        mappings = kernel_args_to_acc_mappings_no_types(self.stnode.clauses,
                                                     self.stnode.kernels_args_tavars,
                                                     self.stnode.get_vars_present_per_default(),
                                                     AccLoopNest2HipGpufortRT._mapping,
                                                     finalize=self._get_finalize_clause_expr(),
                                                     asyncr=self._get_async_clause_expr())
+        for var_expr, runtime_call in mappings:
+            tokens = ["gpufort_array_wrap_device_ptr(",runtime_call,
+                         "shape(",var_expr,"),","lbounds(",var_expr,"))"]
+            result.append("".join(tokens))
+        return result
+        
     def transform(self,
                   joined_lines,
                   joined_statements,

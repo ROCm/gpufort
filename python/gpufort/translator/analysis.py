@@ -147,7 +147,7 @@ def get_kernel_args(taglobal_vars, taglobal_reduced_vars, tashared_vars, talocal
 def kernel_args_to_acc_mappings_no_types(acc_clauses,tavars,present_by_default,callback,**kwargs):
     r"""Derive mappings for arrays
 
-    :return: A dictionary that maps the 'expr' field of a translator analysis var ('tavar')
+    :return: A list of tuples that maps the 'expr' field of a translator analysis var ('tavar')
              to an implementation-specific OpenACC mapping. The implementation-specific
              mapping is realised via a callback.
     
@@ -173,14 +173,13 @@ def kernel_args_to_acc_mappings_no_types(acc_clauses,tavars,present_by_default,c
             for clause in acc_clauses:
                 kind1, args = clause
                 kind = kind1.lower()
-                for var_expr1 in args:
-                    var_expr = var_expr1.lower()
-                    var_tag = util.parsing.strip_array_indexing(var_expr)
+                for var_expr in args:
+                    var_tag = util.parsing.strip_array_indexing(var_expr.lower())
                     if tavar["expr"] == var_tag:
                         if "%" in var_tag:
                             raise util.parsing.LimitationError("mapping of derived type members not supported (yet)")
                         else:
-                            mappings[tavar["expr"]] = callback(kind,var_expr,**kwargs)
+                            mappings.append((var_expr, callback(kind,var_expr,**kwargs)))
                             explicitly_mapped = True
                             break
                 if explicitly_mapped: break
@@ -188,7 +187,7 @@ def kernel_args_to_acc_mappings_no_types(acc_clauses,tavars,present_by_default,c
                 if "%" in tavar["expr"] or tavar["f_type"]=="type": # TODO refine
                     raise util.parsing.LimitationError("mapping of derived types and their members not supported (yet)")
                 else:
-                    mappings[tavar["expr"]] = callback("present_or_copy",tavar["expr"],**kwargs)
+                    mappings.append((tavar["var_expr"], callback("present_or_copy",tavar["expr"],**kwargs)))
             elif not explicitly_mapped:
                 return util.parsing.SyntaxError("no mapping specified for expression: {}".format(tavar["expr"]))
     return mappings 

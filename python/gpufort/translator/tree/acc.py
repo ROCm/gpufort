@@ -506,9 +506,13 @@ class TTAccLoop(TTAccDirectiveBase, directives.ILoopAnnotation):
 
     def num_collapse(self):
         clause = base.find_first(self.clauses, TTAccClauseCollapse)
-        if clause is None or not clause.value.is_integer():
+        if clause is None:
+            return 1
+        elif clause.value.is_integer():
+            print(base.make_c_str(clause.value))
             raise util.error.SyntaxError("argument of clause 'collapse' must be integer number")
-        return int(base.make_c_str(clause.value))
+        else:
+            return int(base.make_c_str(clause.value))
 
     def tile_sizes(self):
         assert False, "Not implemented!"

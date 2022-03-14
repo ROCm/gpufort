@@ -453,21 +453,29 @@ def parse_acc_directive(directive):
       ["acc","kernels","loop"],
       ["acc","parallel"],
       ["acc","kernels"],
+      ["acc","serial"],
+      ["acc","end","data"],
+      ["acc","end","loop"],
+      ["acc","end","parallel","loop"],
+      ["acc","end","kernels","loop"],
+      ["acc","end","parallel"],
+      ["acc","end","kernels"],
+      ["acc","end","serial"],
     ]
     directive_kind = []
     directive_args = []
     clauses        = []
-    sentinel = directive_parts.pop(0)
+    sentinel = directive_parts.pop(0) # get rid of sentinel
     for kind in directive_kinds:
         length = len(kind)
-        last_directive_token_parts = directive_parts[length-1].split("(")
-        if (len(directive_parts) >= length
-           and (directive_parts[0:length-1]+last_directive_token_parts[0:1])==kind):
-            directive_kind = kind
-            if len(last_directive_token_parts) > 1:
-                _, directive_args = parse_acc_clauses([directive_parts[length-1]])[0] 
-            clauses = directive_parts[length:]
-            break
+        if len(directive_parts) >= length:
+            last_directive_token_parts = directive_parts[length-1].split("(")
+            if (directive_parts[0:length-1]+last_directive_token_parts[0:1])==kind:
+                directive_kind = kind
+                if len(last_directive_token_parts) > 1:
+                    _, directive_args = parse_acc_clauses([directive_parts[length-1]])[0] 
+                clauses = directive_parts[length:]
+                break
     if not len(directive_kind):
         raise error.SyntaxError("could not identify kind of directive")
     return sentinel, directive_kind, directive_args, clauses

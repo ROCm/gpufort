@@ -278,7 +278,6 @@ def populate_cl_arg_parser(parser,for_converter=True):
         help=
         "Per detected loop kernel, also extract the CPU implementation  [default: (default) config value].",
     )
-emit_interop_types    
     group_fort2x_hip.add_argument(
         "--emit-debug-code",
         dest="emit_debug_code",

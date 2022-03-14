@@ -65,7 +65,10 @@ def create_index_records_from_declaration(statement):
         ivar["kind"]   = kind
         # TODO bytes per element can be computed on the fly
         ivar["bytes_per_element"] = translator.num_bytes(f_type, kind, default=None)
-        ivar["c_type"]            = translator.convert_to_c_type(f_type, kind, "TODO unknown")
+        if f_type == "type":
+            ivar["c_type"] = ivar["kind"] 
+        else:
+            ivar["c_type"] = translator.convert_to_c_type(f_type, kind, "TODO unknown")
         ivar["qualifiers"] = qualifiers
         # ACC/OMP
         ivar["declare_on_target"] = False

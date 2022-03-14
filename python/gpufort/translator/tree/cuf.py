@@ -109,11 +109,11 @@ class TTCufKernelDo(base.TTNode, directives.IComputeConstruct,
     def num_collapse(self):
         return self._num_outer_loops_to_map
 
-    def grid_expression_f_str(self):
+    def grid_expr_f_str(self):
         """ only CUF """
         return base.make_f_str(self._grid)
 
-    def block_expression_f_str(self):
+    def block_expr_f_str(self):
         """ only CUF """
         return base.make_f_str(self._block)
 

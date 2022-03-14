@@ -22,8 +22,8 @@ _ACC_WAIT = "call gpufort_acc_wait({queue}{options})\n"
 _ACC_INIT = "call gpufort_acc_init()\n"
 _ACC_SHUTDOWN = "call gpufort_acc_shutdown()\n"
 # regions
-_ACC_ENTER_REGION = "call gpufort_acc_enter_region({region_kind})\n"
-_ACC_EXIT_REGION = "call gpufort_acc_exit_region({region_kind})\n"
+_ACC_ENTER_REGION = "call gpufort_acc_enter_region({options})\n"
+_ACC_EXIT_REGION = "call gpufort_acc_exit_region({options})\n"
 
 # clauses
 _ACC_CREATE = "call gpufort_acc_ignore(gpufort_acc_create({var}))\n"
@@ -82,7 +82,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         return finalize_expr
     
     def _get_async_clause_expr(self):
-        async_queue, async_present = self.stnode.get_async_queue()
+        async_queue, async_present = self.stnode.get_async_clause_queue()
         async_expr = ""
         if async_present and async_queue!=None:
             async_expr = "async={}".format(async_queue)
@@ -169,6 +169,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         """
         result = []
 
+        stnode = self.stnode
         if stnode.is_directive(["acc","init"]):
             result.append(_ACC_INIT)
         elif stnode.is_directive(["acc","shutdown"]):
@@ -187,7 +188,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
                or stnode.is_directive(["acc","parallel","loop"])
                or stnode.is_directive(["acc","kernels"])
                or stnode.is_directive(["acc","kernels","loop"])):
-                if not stnode.is_directive["acc","data"]:
+                if not stnode.is_directive(["acc","data"]):
                     result += self._handle_wait_clause()  
                 if stnode.is_directive(["acc","enter","data"]):
                     result.append(_ACC_ENTER_REGION.format(
@@ -214,10 +215,10 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
                or stnode.is_directive(["acc","end","parallel"])):
                 if stnode.is_directive(["acc","exit","data"]):
                     result.append(_ACC_EXIT_REGION.format(
-                        region_kind="unstructured=.true."))
+                        options="unstructured=.true."))
                 else:
                     result.append(_ACC_EXIT_REGION.format(
-                        region_kind=""))
+                        options=""))
         # _handle if
         if handle_if:
             self._handle_if_clause(result)
@@ -227,18 +228,23 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
 
 class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
 
-    def _mapping(clause_kind,var_expr,**kwargs):
+    def _map_array(clause_kind,var_expr,**kwargs):
         asyncr,_   = util.kwargs.get_value("asyncr","",**kwargs)
         finalize,_ = util.kwargs.get_value("finalize","",**kwargs)
         
-        tokens = ["gpufort_acc_",clause_kind,"("]
         if clause_kind in _DATA_CLAUSE_2_TEMPLATE_MAP:
-            tokens.append(var_expr)
+            runtime_call_tokens = ["gpufort_acc_",clause_kind,"("]
+            runtime_call_tokens.append(var_expr)
             if len(asyncr) and clause.kind in _DATA_CLAUSES_WITH_ASYNC:
-                tokens += [",",asyncr]
+                runtime_call_tokens += [",",asyncr]
             if len(finalize) and clause.kind in _DATA_CLAUSES_WITH_FINALIZE:
-                tokens += [",",finalize]
-            tokens.append(")") 
+                runtime_call_tokens += [",",finalize]
+            runtime_call_tokens.append(")") 
+            tokens = [
+              "gpufort_array_wrap_device_ptr(&\n",
+              " "*4,"".join(runtime_call_tokens),
+              ",shape(",var_expr,")",",lbounds(",var_expr,"))",
+            ]
             return "".join(tokens)
         else:
             raise util.parsing.SyntaxError("clause not supported") 
@@ -247,16 +253,15 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
         """:return a list of arguments given the directives.
         """
         result = []
-        mappings = kernel_args_to_acc_mappings_no_types(self.stnode.clauses,
-                                                    self.stnode.kernels_args_tavars,
-                                                    self.stnode.get_vars_present_per_default(),
-                                                    AccLoopNest2HipGpufortRT._mapping,
-                                                    finalize=self._get_finalize_clause_expr(),
-                                                    asyncr=self._get_async_clause_expr())
-        for var_expr, runtime_call in mappings:
-            tokens = ["gpufort_array_wrap_device_ptr(",runtime_call,
-                         "shape(",var_expr,"),","lbounds(",var_expr,"))"]
-            result.append("".join(tokens))
+        mappings = translator.analysis.kernel_args_to_acc_mappings_no_types(
+                       self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP.keys()),
+                       self.stnode.kernel_args_tavars,
+                       self.stnode.get_vars_present_per_default(),
+                       AccLoopNest2HipGpufortRT._map_array,
+                       finalize=self._get_finalize_clause_expr(),
+                       asyncr=self._get_async_clause_expr())
+        for var_expr, argument in mappings:
+            result.append(argument)
         return result
         
     def transform(self,
@@ -282,18 +287,18 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
         queue, found_async = stloopnest.get_async_clause_queue()
         if not found_async:
             queue = "0"
-        stloopkernel.stream_f_str = "gpufort_acc_get_stream({})".format(queue)
-        stloopkernel.blocking_launch_f_str = ".{}.".format(str(not found_async))
+        stloopnest.stream_f_str = "gpufort_acc_get_stream({})".format(queue)
+        stloopnest.blocking_launch_f_str = ".{}.".format(str(not found_async))
        
         stloopnest.kernel_args_names = self.derive_kernel_call_arguments()
         result_loopnest, _ = nodes.STLoopNest.transform(
                                  stloopnest, joined_lines, joined_statements,
                                  statements_fully_cover_lines, index)
-        result.append(textwrap.dedent(partial_result))
+        result.append(textwrap.dedent(result_loopnest))
         
         if (stloopnest.is_directive(["acc","kernels","loop"]) or
            stloopnest.is_directive(["acc","parallel","loop"])):
-            result.append(_ACC_EXIT_REGION.format(region_kind=""))
+            result.append(_ACC_EXIT_REGION.format(options=""))
         
         self._handle_if_clause(result)
 
@@ -305,10 +310,10 @@ def _add_implicit_region(stcontainer):
     last_decl_list_node = stcontainer.last_entry_in_decl_list()
     indent = last_decl_list_node.first_line_indent()
     last_decl_list_node.add_to_epilog(textwrap.indent(_ACC_ENTER_REGION,format(\
-        region_kind="implicit_region=.true."),indent))
+        options="implicit_region=.true."),indent))
     for stendorreturn in stcontainer.return_or_end_statements():
         stendorreturn.add_to_prolog(textwrap.indent(_ACC_EXIT_REGION.format(\
-            region_kind="implicit_region=.true."),indent))
+            options="implicit_region=.true."),indent))
 
 def AllocateHipGpufortRT(stallocate, joined_statements, index):
     stcontainer = stallocate.parent

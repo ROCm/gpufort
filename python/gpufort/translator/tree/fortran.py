@@ -285,7 +285,10 @@ class TTRValue(base.TTNode, IValue):
     def c_str(self):
         result = self._sign + base.make_c_str(self._value)
         if len(self._reduction_index):
-            result += "[{idx}]".format(idx=self._reduction_index)
+            if opts.fortran_style_tensor_access:
+                result += "({idx})".format(idx=self._reduction_index)
+            else:
+                result += "[{idx}]".format(idx=self._reduction_index)
         return result.lower()
 
 
@@ -301,7 +304,10 @@ class TTLValue(base.TTNode, IValue):
     def c_str(self):
         result = base.make_c_str(self._value)
         if len(self._reduction_index):
-            result += "[{idx}]".format(idx=self._reduction_index)
+            if opts.fortran_style_tensor_access:
+                result += "({idx})".format(idx=self._reduction_index)
+            else:
+                result += "[{idx}]".format(idx=self._reduction_index)
         return result
 
 

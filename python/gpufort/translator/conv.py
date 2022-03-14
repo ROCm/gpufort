@@ -39,3 +39,13 @@ def convert_to_c_type(f_type, kind, default=None):
         raise ValueError("Fortran type '{}' of kind '{}' could not be translated to C type.".format(\
             str(f_type),str(kind)))
     return result
+
+def get_operator_name(op):
+    if op[0] == ".":
+        return op.replace(".","")
+    elif op == "+":
+        return "add"
+    elif op == "*":
+        return "mult"
+    else:
+        return op

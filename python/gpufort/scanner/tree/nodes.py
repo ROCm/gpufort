@@ -695,8 +695,9 @@ class STLoopNest(STNode):
                   index=[]):
         kernel_args = []
         # determine grid or problem size
+        launcher_name = self.kernel_launcher_name()
         launcher_name_suffix = "_hip_"
-        grid_or_ps_f_str  = self.parse_result.grid_f_str()
+        grid_or_ps_f_str  = self.parse_result.grid_expr_f_str()
         if grid_or_ps_f_str == None and self.parse_result.num_gangs_teams_blocks_specified():
             grid = self.parse_result.num_gangs_teams_blocks()
             grid_or_ps_f_str = "dim3({})".format(",".join(grid))
@@ -704,15 +705,15 @@ class STLoopNest(STNode):
             launcher_name_suffix = "_hip_ps_"
             grid_or_ps_f_str = "dim3({})".format(",".join(self.parse_result.problem_size()))
         launcher_name += (launcher_name_suffix if not opts.loop_kernel_default_launcher=="cpu" else "_cpu_")
-        # determine block size
-        block_f_str = self.parse_result.block_f_str()
+        ## determine block size
+        block_f_str = self.parse_result.block_expr_f_str()
         if block_f_str == None and self.parse_result.num_threads_in_block_specified():
             block = self.parse_result.num_threads_in_block()
             block_f_str = "dim3({})".format(",".join(block))
         else:
             block_f_str = "dim3(128)" # use config values 
-        kernel_args.append(self.grid_or_ps_f_str)
-        kernel_args.append(self.block_f_str)
+        kernel_args.append(grid_or_ps_f_str)
+        kernel_args.append(block_f_str)
         kernel_args.append(self.sharedmem_f_str)
         # stream
         try:
@@ -726,7 +727,7 @@ class STLoopNest(STNode):
         #
         result = []
         result.append("! extracted to HIP C++ file\n")
-        result.append("call {0}({1})\n".format(launcher_name,",".join(kernel_args)))
+        result.append("call {0}(\n  {1})\n".format(launcher_name,",&\n  ".join(kernel_args)))
         indent = self.first_line_indent()
         return textwrap.indent("".join(result),indent), True
 

@@ -8,7 +8,10 @@ to the device.
 import copy
 
 from gpufort import indexer
+from gpufort import util
+
 from . import tree
+from . import conv
 
 # TODO only strip certain derived type expressions, e.g. if a struct is copied via copy(<struct>)
 # or if a CUDA Fortran derived type has the device attribute
@@ -76,15 +79,16 @@ def lookup_index_entries_for_vars_in_kernel_body(scope,
     taglobal_vars = []
 
     for reduction_op, var_exprs in reductions.items():
+        
         for var_expr in var_exprs:
             if "%" in var_expr:
                 raise util.error.LimitationError("reduction of derived type members not supported")
             else:
-                tavar = _create_analysis_var(scope,expr)
-                if tavar["rank"] > 0:
+                tavar1 = _create_analysis_var(scope,var_expr)
+                if tavar1["rank"] > 0:
                     raise util.error.LimitationError("reduction of arrays or array members not supported")
-                tavar = copy.deepcopy(tavar)
-                tavar["op"] = reduction_op
+                tavar = copy.deepcopy(tavar1)
+                tavar["op"] = conv.get_operator_name(reduction_op)
                 taglobal_reduced_vars.append(tavar)
             try:
                 all_vars2.remove(var_expr)
@@ -92,8 +96,8 @@ def lookup_index_entries_for_vars_in_kernel_body(scope,
                 pass # TODO error
 
     for var_expr in all_vars2:
-        ivar = indexer.scope.search_scope_for_var(scope, var_expr)
-        taglobal_vars.append(ivar)
+        tavar = _create_analysis_var(scope, var_expr)
+        taglobal_vars.append(tavar)
 
     return taglobal_vars, taglobal_reduced_vars, tashared_vars, talocal_vars
 
@@ -163,12 +167,12 @@ def kernel_args_to_acc_mappings_no_types(acc_clauses,tavars,present_by_default,c
     
     :note: Current implementation does not support mapping of scalars/arrays of derived type.
     
-    :raise util.parsing.LimitationError: If a derived type must be mapped.
+    :raise util.error.LimitationError: If a derived type must be mapped.
     :raise util.parsing.SyntaxError: If the OpenACC clauses could not be parsed. 
     """
-    mappings = {}
+    mappings = []
     for tavar in tavars:
-        if tavar["rank"] > 0:
+        if tavar["rank"] > 0: # map array
             explicitly_mapped = False
             for clause in acc_clauses:
                 kind1, args = clause
@@ -177,7 +181,7 @@ def kernel_args_to_acc_mappings_no_types(acc_clauses,tavars,present_by_default,c
                     var_tag = util.parsing.strip_array_indexing(var_expr.lower())
                     if tavar["expr"] == var_tag:
                         if "%" in var_tag:
-                            raise util.parsing.LimitationError("mapping of derived type members not supported (yet)")
+                            raise util.error.LimitationError("mapping of derived type members not supported (yet)")
                         else:
                             mappings.append((var_expr, callback(kind,var_expr,**kwargs)))
                             explicitly_mapped = True
@@ -185,9 +189,13 @@ def kernel_args_to_acc_mappings_no_types(acc_clauses,tavars,present_by_default,c
                 if explicitly_mapped: break
             if not explicitly_mapped and present_by_default:
                 if "%" in tavar["expr"] or tavar["f_type"]=="type": # TODO refine
-                    raise util.parsing.LimitationError("mapping of derived types and their members not supported (yet)")
+                    raise util.error.LimitationError("mapping of derived types and their members not supported (yet)")
                 else:
-                    mappings.append((tavar["var_expr"], callback("present_or_copy",tavar["expr"],**kwargs)))
+                    mappings.append((tavar["expr"], callback("present_or_copy",tavar["expr"],**kwargs)))
             elif not explicitly_mapped:
                 return util.parsing.SyntaxError("no mapping specified for expression: {}".format(tavar["expr"]))
+        elif tavar["f_type"] == "type": # map type
+            raise util.error.LimitationError("mapping of derived types and their members not supported (yet)")
+        else: # basic type scalars
+            mappings.append((tavar["expr"],tavar["expr"]))
     return mappings 

@@ -34,13 +34,13 @@ class STAccDirective(nodes.STDirective):
         """
         return self.directive_kind == kind 
 
-    def get_matching_clauses(clause_kinds):
+    def get_matching_clauses(self,clause_kinds):
         """:return: List of clauses whose kind is part of
         `clause_kinds`.
         :param list clause_kinds: List of clause kinds in lower case.
         """
         return [clause for clause in self.clauses
-                if clause[0].lower() in clause_names] 
+                if clause[0].lower() in clause_kinds] 
 
     def is_purely_declarative(self):
         return (self.is_directive(["acc","declare"])
@@ -145,7 +145,7 @@ class STAccLoopNest(STAccDirective, nodes.STLoopNest):
         :raise util.error.SyntaxError: If the present clause appears more than once or if
                                        it more than one argument or .
         """
-        default_clause = next((c for c in self.directive_parts if c[0].lower()=="default"),None)
+        default_clause = next((c for c in self.clauses if c[0].lower()=="default"),None)
         if default_clause == None:
             return True
         elif len(default_clause[1]) == 1:

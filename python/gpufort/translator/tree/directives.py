@@ -93,11 +93,11 @@ class ILoopAnnotation():
     def tile_sizes(self):
         return [grammar.CLAUSE_NOT_FOUND]
 
-    def grid_expression_f_str(self):
+    def grid_expr_f_str(self):
         """ only CUF """
         return None
 
-    def block_expression_f_str(self):
+    def block_expr_f_str(self):
         """ only CUF """
         return None
 
@@ -218,20 +218,20 @@ class IComputeConstruct():
     def discover_reduction_candidates(self):
         return False
 
-    def grid_expression_f_str(self):
+    def grid_expr_f_str(self):
         """ only CUF """
         return None
 
-    def block_expression_f_str(self):
+    def block_expr_f_str(self):
         """ only CUF """
         return None
     
     def num_gangs_teams_blocks_specified(self):
-        return next((el for el in self.num_gangs_teams_blocks 
+        return next((el for el in self.num_gangs_teams_blocks()
                     if el != grammar.CLAUSE_NOT_FOUND),None) != None
     
     def num_threads_in_block_specified(self):
-        return next((el for el in self.num_gangs_teams_blocks 
+        return next((el for el in self.num_gangs_teams_blocks() 
                     if el != grammar.CLAUSE_NOT_FOUND),None) != None
 
     def num_gangs_teams_blocks(self):
@@ -544,13 +544,13 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
     def present_by_default(self):
         return self.__parent_directive().present_by_default()
 
-    def grid_expression_f_str(self):
+    def grid_expr_f_str(self):
         """ only CUF """
-        return self.__first_loop_annotation().grid_expression_f_str()
+        return self.__first_loop_annotation().grid_expr_f_str()
 
-    def block_expression_f_str(self):
+    def block_expr_f_str(self):
         """ only CUF """
-        return self.__first_loop_annotation().block_expression_f_str()
+        return self.__first_loop_annotation().block_expr_f_str()
 
     def gang_team_private_vars(self, converter=base.make_f_str):
         return self.__parent_directive().gang_team_private_vars(converter)
@@ -691,8 +691,12 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
         for kind, reduced_vars in self.gang_team_reductions(
                 base.make_c_str).items():
             for var in reduced_vars:
-                reduction_preamble += "reduce_op_{kind}::init({var}[{tidx}]);\n".format(
-                    kind=kind, var=var, tidx=tidx)
+                if opts.fortran_style_tensor_access:
+                    reduction_preamble += "reduce_op_{kind}::init({var}({tidx}));\n".format(
+                        kind=kind, var=var, tidx=tidx)
+                else:
+                    reduction_preamble += "reduce_op_{kind}::init({var}[{tidx}]);\n".format(
+                        kind=kind, var=var, tidx=tidx)
         # 3. collapse and transform do-loops
         do_loops = base.find_all(self.body[0], TTDo)
         if num_outer_loops_to_map == 1 or (opts.loop_collapse_strategy

@@ -3,6 +3,8 @@
 from gpufort import util
 
 from .. import opts
+from .. import conv
+
 from . import grammar
 from . import base
 from . import directives
@@ -105,9 +107,7 @@ class TTAccClauseReduction(base.TTNode):
         op = converter(self.operator)
         if converter == base.make_c_str:
             # post-process
-            op = op.replace(".", "")
-            op = op.replace("+", "add")
-            op = op.replace("*", "mult")
+            op = conv.get_operator_name(op.lower())
             # "+" "*" "max" "min" "iand" "ior" "ieor" ".and." ".or." ".eqv." ".neqv."
         result[op] = [base.make_f_str(var) for var in self.vars]
         return result

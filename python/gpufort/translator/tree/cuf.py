@@ -5,35 +5,6 @@ from . import fortran
 from . import grammar
 from . import directives
 
-
-class TTCppIfdef(base.TTNode):
-
-    def _assign_fields(self, tokens):
-        self._pp_var = tokens
-
-    def pp_var(self):
-        """For checking if this a CUDA preprocessor variable
-        """
-        return self._pp_var
-
-    def f_str(self, hip_var):
-        return "#if defined({0}) || defined({1})".format(self._pp_var, hip_var)
-
-
-class TTCppDefined(base.TTNode):
-
-    def _assign_fields(self, tokens):
-        self._pp_var = tokens
-
-    def pp_var(self):
-        """For checking if this a CUDA preprocessor variable
-        """
-        return self._pp_var
-
-    def f_str(self, hip_var):
-        return "( defined({0}) || defined({1}) )".format(self._pp_var, hip_var)
-
-
 class TTAttributes(base.TTNode, fortran.Attributed):
 
     def _assign_fields(self, tokens):

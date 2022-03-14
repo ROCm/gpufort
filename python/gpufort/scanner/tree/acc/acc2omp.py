@@ -49,7 +49,7 @@ class AccLoopNest2Omp(accbackends.AccBackendBase):
         else:
             snippet = joined_statements
         try:
-            parent_tag = self._stnode.parent.tag()
+            parent_tag = self.stnode.parent.tag()
             scope = indexer.scope.create_scope(index, parent_tag)
             parse_result = translator.parse_loop_kernel(
                 snippet.splitlines(), scope)

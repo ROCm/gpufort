@@ -317,7 +317,7 @@ def _parse_statements(linemaps, file_path):
             log_begin_task(current_node, msg)
             #
             attribute, modified_vars = \
-                translator.parse_attributes(translator.tree.grammar.attributes.parseString(current_statement)[0])
+                translator.parse_attributes(translator.tree.grammar.attributes.parseString(current_statement)[0]) # TODO switch to token based parser
             for var_context in current_node._data["variables"]:
                 if var_context["name"] in modified_vars:
                     var_context["qualifiers"].append(attribute)
@@ -338,7 +338,7 @@ def _parse_statements(linemaps, file_path):
             current_statement)
         log_begin_task(current_node, msg)
         #
-        parse_result = translator.tree.grammar.acc_declare.parseString(
+        parse_result = translator.tree.grammar.acc_declare.parseString( # TODO switch to token based parser
             current_statement)[0]
         for var_context in current_node._data["variables"]:
             for var_name in parse_result.map_alloc_vars():
@@ -368,7 +368,7 @@ def _parse_statements(linemaps, file_path):
         if current_node != root:
             msg = "begin to parse acc routine directive '{}'".format(
                 current_statement)
-            parse_result = translator.tree.grammar.acc_routine.parseString(
+            parse_result = translator.tree.grammar.acc_routine.parseString( # TODO switch to token based parser
                 current_statement)[0]
             if parse_result.parallelism() == "seq":
                 current_node._data["attributes"] += ["host", "device"]

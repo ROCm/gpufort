@@ -36,3 +36,4 @@ emit_cpu_launcher = False
 emit_debug_code = False
 # Generate debug routine calls into the code that can be used
 # to print out kernel argument values or device array elements and norms.
+emit_interop_types = False

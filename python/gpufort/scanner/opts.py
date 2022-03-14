@@ -27,8 +27,5 @@ cuda_ifdef = "CUDA"
 cublas_version = 1
 keep_cuda_lib_names = False
 
-acc_dev_prefix = "dev_"
-acc_dev_suffix = ""
-
 line_groups_enable = True # group modified lines such that they appear in the block when wrapping them in ifdefs.
 line_groups_include_blank_lines = True # Include intermediate blank lines into a line group.

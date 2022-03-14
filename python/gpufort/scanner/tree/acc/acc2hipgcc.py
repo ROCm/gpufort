@@ -231,7 +231,7 @@ class AccLoopNest2HipGccRT(Acc2HipGccRT):
                   joined_statements,
                   statements_fully_cover_lines,
                   index=[]):
-        stnode = self._stnode
+        stnode = self.stnode
         indent = stnode.first_line_indent()
         result = ""
         if (stnode.is_directive(["acc","parallel","loop"])

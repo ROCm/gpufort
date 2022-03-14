@@ -533,7 +533,7 @@ class STProcedure(STContainerBase):
         # check attributes
         self.index_record, _ = indexer.scope.search_index_for_procedure(
             index, parent_tag, name)
-        self.kernel_args_ivars = []
+        self.kernel_args_tavars = []
         self.c_result_type = "void"
         self.parse_result = None
 
@@ -550,26 +550,33 @@ class STProcedure(STContainerBase):
         scope = indexer.scope.create_scope(index, self.tag())
         iprocedure = self.index_record
 
-        if self.is_function():
-            result_name = iprocedure["result_name"]
-            ivar_result = next([
-                var for var in iprocedure["variables"]
-                if var["name"] == iprocedure["result_name"]
-            ], None)
-            if ivar_result != None:
-                self.c_result_type = ivar_result["c_type"]
+        try:
+            if self.is_function():
+                result_name = iprocedure["result_name"]
+                ivar_result = next([
+                    var for var in iprocedure["variables"]
+                    if var["name"] == iprocedure["result_name"]
+                ], None)
+                if ivar_result != None:
+                    self.c_result_type = ivar_result["c_type"]
+                    # TODO catch errors here
+                    # statements must contain filename and line numbers as well
+                    self.parse_result = translator.parse_procedure_body(
+                        self.code, scope, ivar_result["name"])
+                else:
+                    raise util.error.LookupError("could not identify return value for function ''")
+            else:
+                self.c_result_type = "void"
                 # TODO catch errors here
                 # statements must contain filename and line numbers as well
                 self.parse_result = translator.parse_procedure_body(
-                    self.code, scope, ivar_result["name"])
-            else:
-                raise util.error.LookupError("could not identify return value for function ''")
-        else:
-            self.c_result_type = "void"
-            # TODO catch errors here
-            # statements must contain filename and line numbers as well
-            self.parse_result = translator.parse_procedure_body(
-                self.code, scope)
+                    self.code, scope)
+        except util.error.SyntaxError as e:
+            raise util.error.SyntaxError("{}:{}:{}".format(
+                    self._linemaps[0]["file"],self._linemaps["0"]["lineno"],e.msg) from e
+        except util.error.LimitationError as e:
+            raise util.error.LimitationError("{}:{}:{}".format(
+                    self._linemaps[0]["file"],self._linemaps["0"]["lineno"],e.msg) from e
 
     def is_function(self):
         """:return: If the procedure is a function. Otherwise, it is a subroutine."""
@@ -635,16 +642,17 @@ class STLoopNest(STNode):
 
     def __init__(self, *args, **kwargs):
         STNode.__init__(self, *args, **kwargs)
-        self.grid_f_str = None
-        self.block_f_str = None
-        self.sharedmem_f_str = "0" # set from extraction routine
-        self.stream_f_str = "c_null_ptr" # set from extraction routine
-        self.kernel_args_ivars = []
-        self.kernel_args_names = [] # set from extraction routine
-        self.code = []
-        self.parse_result = None
         self._do_loop_ctr_memorised = -1
         self.__hash = None
+        #
+        self.parse_result          = None
+        self.sharedmem_f_str       = "0" # set from extraction routine
+        self.stream_f_str          = "c_null_ptr" # set from extraction routine
+        self.blocking_launch_f_str = ".false."
+        #
+        self.kernel_args_tavars = [] # set from extraction routine
+        self.kernel_args_names = [] # set from subclass
+        self.code = []
     def __hash_kernel(self):
         """Compute hash code for this kernel. Must be done before any transformations are performed."""
         statements = list(self.code) # copy
@@ -658,9 +666,14 @@ class STLoopNest(STNode):
         self.__hash = self.__hash_kernel()
         parent_tag = self.parent.tag()
         scope = indexer.scope.create_scope(index, parent_tag)
-        # TODO catch errors here
-        # statements must contain filename and line numbers as well
-        self.parse_result = translator.parse_loop_kernel(self.code, scope)
+        try:
+            self.parse_result = translator.parse_loop_kernel(self.code, scope)
+        except util.error.SyntaxError as e:
+            raise util.error.SyntaxError("{}:{}:{}".format(
+                    self._linemaps[0]["file"],self._linemaps["0"]["lineno"],e.msg) from e
+        except util.error.LimitationError as e:
+            raise util.error.LimitationError("{}:{}:{}".format(
+                    self._linemaps[0]["file"],self._linemaps["0"]["lineno"],e.msg) from e
 
     def kernel_name(self):
         """derive a name for the kernel"""
@@ -675,36 +688,54 @@ class STLoopNest(STNode):
     def kernel_launcher_name(self):
         return "launch_{}".format(self.kernel_name())
 
-    def set_kernel_call_arguments(self,ivars):
-        """Add a kernel argument to the list of kernel arguments.
-        Subroutines may wrap the argument name 
-        into additional code, e.g. code to obtain device
-        data from an OpenACC runtime.
-        :param str argname: Argument name; never a derived type member access 
-                            or array element access expression.
-        """
-        assert False, "Must be implemented by subclass!"
-
     def transform(self,
                   joined_lines,
                   joined_statements,
                   statements_fully_cover_lines,
                   index=[]):
-        indent = self.first_line_indent()
+        kernel_args = []
+        # determine grid or problem size
+        launcher_name_suffix = "_hip_"
+        grid_or_ps_f_str  = self.parse_result.grid_f_str()
+        if grid_or_ps_f_str == None and self.parse_result.num_gangs_teams_blocks_specified():
+            grid = self.parse_result.num_gangs_teams_blocks()
+            grid_or_ps_f_str = "dim3({})".format(",".join(grid))
+        else:
+            launcher_name_suffix = "_hip_ps_"
+            grid_or_ps_f_str = "dim3({})".format(",".join(self.parse_result.problem_size()))
+        launcher_name += (launcher_name_suffix if not opts.loop_kernel_default_launcher=="cpu" else "_cpu_")
+        # determine block size
+        block_f_str = self.parse_result.block_f_str()
+        if block_f_str == None and self.parse_result.num_threads_in_block_specified():
+            block = self.parse_result.num_threads_in_block()
+            block_f_str = "dim3({})".format(",".join(block))
+        else:
+            block_f_str = "dim3(128)" # use config values 
+        kernel_args.append(self.grid_or_ps_f_str)
+        kernel_args.append(self.block_f_str)
+        if grid_f_str == None # or opts.loop_kernel_default_launcher == "cpu": # use auto or cpu launcher
+            launcher_name += ("_hip_ps" if not opts.loop_kernel_default_launcher=="cpu" else "_cpu")
+            kernel_args.append(self.problem_size_f_str)
+            kernel_args.append(self.block_f_str)
+        else grid_f_str != None:
+            launcher_name += ("_hip" if not opts.loop_kernel_default_launcher=="cpu" else "_cpu")
+            kernel_args.append(self.grid_f_str)
+            kernel_args.append(self.block_f_str)
+        kernel_args.append(self.sharedmem_f_str)
+        kernel_args.append(self.blocking_launch_f_str)
+        # stream
         try:
             stream_as_int = int(self.stream_f_str)
-            stream = "c_null_ptr" if stream_as_int < 1 else self.stream_f_str
+            stream = "c_null_ptr"
         except:
             stream = self.stream_f_str
-        if self.grid_f_str == None or self.block_f_str == None or opts.loop_kernel_default_launcher == "cpu": # use auto or cpu launcher
-            result="! extracted to HIP C++ file\ncall {0}_{launcher}({1},{2},{3})".format(\
-              self.kernel_launcher_name(),self.sharedmem_f_str,stream,\
-                ",".join(self.kernel_args_names),launcher=opts.loop_kernel_default_launcher)
-        else:
-            result="! extracted to HIP C++ file\ncall {0}({1},{2},{3},{4},{5})".format(\
-              self.kernel_launcher_name(),self.grid_f_str,self.block_f_str,self.sharedmem_f_str,stream,\
-                ",".join(self.kernel_args_names))
-        return textwrap.indent(result,indent), True
+        kernel_args.append(stream)
+        kernel_args += self.kernel_args_names
+        result = []
+        result.append("! extracted to HIP C++ file\n")
+        result.append("call {0}({1})\n".format(launcher_name,",".join(kernel_args))
+        indent = self.first_line_indent()
+        return textwrap.indent("".join(result),indent), True
 
 class IWithBackend:
     @classmethod
@@ -858,8 +889,7 @@ class STMemcpy(STNode):
                   joined_lines,
                   joined_statements,
                   statements_fully_cover_lines,
-                  index=[]): # TODO
-
+                  index=[]): # TODO backend specific
         indent = self.first_line_indent()
         def repl_memcpy_(parse_result):
             dest_name = parse_result.dest_name_f_str()

@@ -36,16 +36,16 @@ class HipKernelGeneratorBase(kernelgen.KernelGeneratorBase):
         #
         self.kernel = None
 
-    def get_kernel_arguments(self):
+    def get_kernel_args(self):
         """:return: index records for the variables
                     that must be passed as kernel arguments.
         :note: Shared_vars and local_vars must be passed as kernel argument
                as well if the respective variable is an array. 
         """
-        return (self.kernel["global_vars"]
-                + self.kernel["global_reduced_vars"]
-                + [ivar for ivar in self.kernel["shared_vars"] if ivar["rank"] > 0]
-                + [ivar for ivar in self.kernel["local_vars"] if ivar["rank"] > 0])
+        return translator.analysis.get_kernel_args(self.kernel["global_vars"],
+                                                   self.kernel["global_reduced_vars"],
+                                                   self.kernel["shared_vars"],
+                                                   self.kernel["local_vars"])
 
     def _create_kernel_context(self,launch_bounds=None):
         kernel = self._create_kernel_base_context(self.kernel_name,

@@ -95,11 +95,11 @@ class ILoopAnnotation():
 
     def grid_expression_f_str(self):
         """ only CUF """
-        return ""
+        return None
 
     def block_expression_f_str(self):
         """ only CUF """
-        return ""
+        return None
 
     def num_gangs_teams_blocks(self):
         return [grammar.CLAUSE_NOT_FOUND]
@@ -175,7 +175,7 @@ class TTDo(base.TTContainer):
         return "int {var} = {begin} + ({step})*({tid}{denom} % {size});\n".format(\
                 var=ivar,begin=begin,tid=tid,denom=denominator,size=size,step=step)
 
-    def problem_size(self, converter=base.make_c_str):
+    def problem_size(self, converter=base.make_f_str):
         if self._step == "1":
             return "(1 + (({end}) - ({begin})))".format(\
                 begin=converter(self._begin._rhs),end=converter(self._end),step=converter(self._step) )
@@ -225,6 +225,14 @@ class IComputeConstruct():
     def block_expression_f_str(self):
         """ only CUF """
         return None
+    
+    def num_gangs_teams_blocks_specified(self):
+        return next((el for el in self.num_gangs_teams_blocks 
+                    if el != grammar.CLAUSE_NOT_FOUND,None) != None
+    
+    def num_threads_in_block_specified(self):
+        return next((el for el in self.num_gangs_teams_blocks 
+                    if el != grammar.CLAUSE_NOT_FOUND,None) != None
 
     def num_gangs_teams_blocks(self):
         return [grammar.CLAUSE_NOT_FOUND]
@@ -329,7 +337,7 @@ class IComputeConstruct():
         """ only ACC """
         return []
 
-    def all_mapped_arrays(self):
+    def all_mapped_vars(self):
         """:return: Name of all mapped variables. """
         result = []
         result += self.deviceptrs()
@@ -346,7 +354,7 @@ class IComputeConstruct():
 
     def all_unmapped_arrays(self):
         """:return: Name of all unmapped array variables"""
-        mapped_vars = self.all_mapped_arrays()
+        mapped_vars = self.all_mapped_vars()
         arrays_in_body = self.arrays_in_body()
         return [var for var in arrays_in_body if not var in mapped_vars]
 

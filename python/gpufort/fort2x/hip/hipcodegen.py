@@ -48,6 +48,8 @@ class HipCodeGenerator(codegen.CodeGenerator):
         * *emit_debug_code* (``bool``):
             Write debug code such as printing of kernel arguments or device array norms and elements
             into the generated kernel launchers. Defaults to opts value.
+        * *emit_interop_types* (``bool``):
+            Emit interoperable derived types. Defaults to opts value.
 """
         codegen.CodeGenerator.__init__(self, stree, index, **kwargs)
         util.kwargs.set_from_kwargs(self, "emit_debug_code",
@@ -62,6 +64,8 @@ class HipCodeGenerator(codegen.CodeGenerator):
                                     opts.emit_cpu_launcher, **kwargs)
         util.kwargs.set_from_kwargs(self, "emit_launcher_interfaces",
                                     opts.emit_launcher_interfaces, **kwargs)
+        util.kwargs.set_from_kwargs(self, "emit_interop_types",
+                                    opts.emit_interop_types, **kwargs)
 
     @util.logging.log_entry_and_exit(opts.log_prefix+".HipCodeGenerator")
     def __render_kernel(self,
@@ -121,6 +125,11 @@ class HipCodeGenerator(codegen.CodeGenerator):
         """
         scope = indexer.scope.create_scope(self.index, stloopnest.parent.tag())
 
+        # TODO 
+        # clause analysis needed to derive kernel arguments
+        # if derived type access in kernel
+        # Further tree modification required if no parent type is passed down
+        # but an error expression instead
         mykernelgen = hipkernelgen.HipKernelGenerator4LoopNest(
             stloopnest.parse_result, scope,
             kernel_name = stloopnest.kernel_name(),
@@ -131,8 +140,8 @@ class HipCodeGenerator(codegen.CodeGenerator):
                              cpp_filegen,
                              fortran_filegen,
                              is_loopnest=True)
-        
-        stloopnest.kernel_args_ivars = mykernelgen.get_kernel_arguments()
+        # feed back arguments; TODO see above
+        stloopnest.kernel_args_tavars = mykernelgen.get_kernel_args()
 
     @util.logging.log_entry_and_exit(opts.log_prefix+".HipCodeGenerator")
     def _render_device_procedure(self, stprocedure, cpp_filegen, fortran_filegen):
@@ -158,16 +167,17 @@ class HipCodeGenerator(codegen.CodeGenerator):
                              fortran_filegen,
                              is_loopnest=False)
         
-        stprocedure.kernel_args_ivars = mykernelgen.get_kernel_arguments()
+        stprocedure.kernel_args_tavars = mykernelgen.get_kernel_args()
 
         util.logging.log_leave_function(opts.log_prefix, "self._render_loop_nest")
 
     @util.logging.log_entry_and_exit(opts.log_prefix+".HipCodeGenerator")
     def _render_derived_types(self, itypes, cpp_filegen, fortran_modulegen):
-        derivedtypegen = hipderivedtypegen.HipDerivedTypeGenerator(itypes, [])
-        cpp_filegen.rendered_types += derivedtypegen.render_derived_type_definitions_cpp(
-        )
-        fortran_modulegen.rendered_types += derivedtypegen.render_derived_type_definitions_f03(
-        )
-        fortran_modulegen.rendered_routines += derivedtypegen.render_derived_type_routines_f03(
-        )
+        if self.emit_interop_types:
+            derivedtypegen = hipderivedtypegen.HipDerivedTypeGenerator(itypes, [])
+            cpp_filegen.rendered_types += derivedtypegen.render_derived_type_definitions_cpp(
+            )
+            fortran_modulegen.rendered_types += derivedtypegen.render_derived_type_definitions_f03(
+            )
+            fortran_modulegen.rendered_routines += derivedtypegen.render_derived_type_routines_f03(
+            )

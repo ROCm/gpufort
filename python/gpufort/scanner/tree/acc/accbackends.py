@@ -9,10 +9,10 @@ from . import accnodes
 class AccBackendBase:
 
     def __init__(self):
-        self._stnode = None
+        self.stnode = None
 
     def configure(self,stnode):
-        self._stnode = stnode
+        self.stnode = stnode
 
     def transform(self,*args,**kwargs):
         assert False, "not implemented"

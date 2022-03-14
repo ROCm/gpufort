@@ -19,7 +19,6 @@ class STCufDirective(nodes.STDirective):
                                    first_linemap_first_statement,
                                    directive_no,
                                    sentinel="!$cuf")
-        self._default_present_vars = []
 
     def transform(self,
                   joined_lines,

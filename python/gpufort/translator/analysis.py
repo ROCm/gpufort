@@ -39,7 +39,7 @@ def _lookup_index_vars(scope, var_exprs, consumed_var_exprs=[]):
     tavars = []
     for var_expr in var_exprs:
         tavar = _create_analysis_var(scope,var_expr)
-        tavars.append(ivar2)
+        tavars.append(tavar)
         consumed_var_exprs.append(var_expr)
     return tavars
 
@@ -119,7 +119,7 @@ def lookup_index_entries_for_vars_in_procedure_body(scope,ttprocedurebody,iproce
         for ivar in iprocedure["variables"]
         if ivar["name"] not in iprocedure["dummy_args"]
     ]
-    all_var_exprs = ttprocedure.vars_in_body() # in the body, there might be variables present from used modules
+    all_var_exprs = ttprocedurebody.vars_in_body() # in the body, there might be variables present from used modules
     all_vars = iprocedure["dummy_args"] + [
         v for v in all_var_exprs if (v not in iprocedure["dummy_args"] and
                                      v not in tree.grammar.DEVICE_PREDEFINED_VARIABLES)

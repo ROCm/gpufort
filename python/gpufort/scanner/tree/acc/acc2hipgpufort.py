@@ -330,22 +330,22 @@ def AllocateHipGpufortRT(stallocate, joined_statements, index):
     implicit_region = False
     for var in stallocate.variable_names:
         ivar = indexer.scope.search_index_for_var(index, parent_tag, var)
-        host_var = ivar["name"]
-        is_local_var = host_var in local_var_names
-        is_arg = host_var in dummy_arg_names
+        var_expr = ivar["name"]
+        is_local_var = var_expr in local_var_names
+        is_arg = var_expr in dummy_arg_names
         is_used_module_var = not is_local_var and not is_arg
         is_allocatable_or_pointer = "allocatable" in ivar["qualifiers"] or\
                              "pointer" in ivar["qualifiers"]
-        assert is_allocatable_or_pointer
+        assert is_allocatable_or_pointer # TODO emit error
         module_var = ",module_var=.true." if is_used_module_var else ""
         if not is_used_module_var:
             implicit_region = True
-        if ivar["declare_on_target"] in _CLAUSES_OMP2ACC.keys():
-            map_kind = _CLAUSES_OMP2ACC[
-                ivar["declare_on_target"]]
-            acc_present_calls.append(_ACC_PRESENT.format(\
-                var=host_var,options="",\
-                alloc=module_var+",or=gpufort_acc_event_"+map_kind,dev_var=dev_var))
+        declare = ivar["declare_on_target"]
+        if declare in _CLAUSES_OMP2ACC.keys():
+            map_kind = "".join(["present_or_",_CLAUSES_OMP2ACC[declare]])
+            acc_present_template =  _DATA_CLAUSE_2_TEMPLATE_MAP[map_kind]
+            acc_present_calls.append(acc_present_template.format(
+                var=var_expr,options=module_var))
     if len(acc_present_calls):
         if implicit_region:
             _add_implicit_region(stcontainer)
@@ -365,9 +365,9 @@ def DeallocateHipGpufortRT(stdeallocate, joined_statements, index):
     acc_delete_calls = []
     for var in stdeallocate.variable_names:
         ivar = indexer.scope.search_index_for_var(index, parent_tag, var)
-        host_var = ivar["name"]
-        is_local_var = host_var in local_var_names
-        is_arg = host_var in dummy_arg_names
+        var_expr = ivar["name"]
+        is_local_var = var_expr in local_var_names
+        is_arg = var_expr in dummy_arg_names
         is_used_module_var = not is_local_var and not is_arg
         is_allocatable_or_pointer = "allocatable" in ivar["qualifiers"] or\
                              "pointer" in ivar["qualifiers"]
@@ -375,8 +375,7 @@ def DeallocateHipGpufortRT(stdeallocate, joined_statements, index):
         module_var = ",module_var=.true." if is_used_module_var else ""
         if ivar["declare_on_target"] in ["alloc", "to", "tofrom"]:
             acc_delete_calls.append(_ACC_DELETE.format(\
-              var=host_var,options="",finalize="",\
-              alloc=module_var,dev_var=dev_var))
+              var=var_expr,options=module_var))
     for line in acc_delete_calls:
         stdeallocate.add_to_prolog(textwrap.indent(line,indent))
     return joined_statements, False

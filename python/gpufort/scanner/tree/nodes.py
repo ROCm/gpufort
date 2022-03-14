@@ -573,10 +573,10 @@ class STProcedure(STContainerBase):
                     self.code, scope)
         except util.error.SyntaxError as e:
             raise util.error.SyntaxError("{}:{}:{}".format(
-                    self._linemaps[0]["file"],self._linemaps["0"]["lineno"],e.msg) from e
+                    self._linemaps[0]["file"],self._linemaps["0"]["lineno"],e.msg)) from e
         except util.error.LimitationError as e:
             raise util.error.LimitationError("{}:{}:{}".format(
-                    self._linemaps[0]["file"],self._linemaps["0"]["lineno"],e.msg) from e
+                    self._linemaps[0]["file"],self._linemaps["0"]["lineno"],e.msg)) from e
 
     def is_function(self):
         """:return: If the procedure is a function. Otherwise, it is a subroutine."""
@@ -670,10 +670,10 @@ class STLoopNest(STNode):
             self.parse_result = translator.parse_loop_kernel(self.code, scope)
         except util.error.SyntaxError as e:
             raise util.error.SyntaxError("{}:{}:{}".format(
-                    self._linemaps[0]["file"],self._linemaps["0"]["lineno"],e.msg) from e
+                    self._linemaps[0]["file"],self._linemaps["0"]["lineno"],e.msg)) from e
         except util.error.LimitationError as e:
             raise util.error.LimitationError("{}:{}:{}".format(
-                    self._linemaps[0]["file"],self._linemaps["0"]["lineno"],e.msg) from e
+                    self._linemaps[0]["file"],self._linemaps["0"]["lineno"],e.msg)) from e
 
     def kernel_name(self):
         """derive a name for the kernel"""
@@ -713,16 +713,7 @@ class STLoopNest(STNode):
             block_f_str = "dim3(128)" # use config values 
         kernel_args.append(self.grid_or_ps_f_str)
         kernel_args.append(self.block_f_str)
-        if grid_f_str == None # or opts.loop_kernel_default_launcher == "cpu": # use auto or cpu launcher
-            launcher_name += ("_hip_ps" if not opts.loop_kernel_default_launcher=="cpu" else "_cpu")
-            kernel_args.append(self.problem_size_f_str)
-            kernel_args.append(self.block_f_str)
-        else grid_f_str != None:
-            launcher_name += ("_hip" if not opts.loop_kernel_default_launcher=="cpu" else "_cpu")
-            kernel_args.append(self.grid_f_str)
-            kernel_args.append(self.block_f_str)
         kernel_args.append(self.sharedmem_f_str)
-        kernel_args.append(self.blocking_launch_f_str)
         # stream
         try:
             stream_as_int = int(self.stream_f_str)
@@ -730,10 +721,12 @@ class STLoopNest(STNode):
         except:
             stream = self.stream_f_str
         kernel_args.append(stream)
+        kernel_args.append(self.blocking_launch_f_str)
         kernel_args += self.kernel_args_names
+        #
         result = []
         result.append("! extracted to HIP C++ file\n")
-        result.append("call {0}({1})\n".format(launcher_name,",".join(kernel_args))
+        result.append("call {0}({1})\n".format(launcher_name,",".join(kernel_args)))
         indent = self.first_line_indent()
         return textwrap.indent("".join(result),indent), True
 

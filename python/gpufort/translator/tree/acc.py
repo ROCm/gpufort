@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+from gpufort import util
+
 from .. import opts
 from . import grammar
 from . import base
 from . import directives
-
 
 class TTAccClauseGang(base.TTNode):
 
@@ -505,7 +506,9 @@ class TTAccLoop(TTAccDirectiveBase, directives.ILoopAnnotation):
 
     def num_collapse(self):
         clause = base.find_first(self.clauses, TTAccClauseCollapse)
-        return 1 if clause is None else clause.value()
+        if clause is None or not clause.value.is_integer():
+            raise util.error.SyntaxError("argument of clause 'collapse' must be integer number")
+        return int(base.make_c_str(clause.value))
 
     def tile_sizes(self):
         assert False, "Not implemented!"

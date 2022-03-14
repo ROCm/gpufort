@@ -228,11 +228,11 @@ class IComputeConstruct():
     
     def num_gangs_teams_blocks_specified(self):
         return next((el for el in self.num_gangs_teams_blocks 
-                    if el != grammar.CLAUSE_NOT_FOUND,None) != None
+                    if el != grammar.CLAUSE_NOT_FOUND),None) != None
     
     def num_threads_in_block_specified(self):
         return next((el for el in self.num_gangs_teams_blocks 
-                    if el != grammar.CLAUSE_NOT_FOUND,None) != None
+                    if el != grammar.CLAUSE_NOT_FOUND),None) != None
 
     def num_gangs_teams_blocks(self):
         return [grammar.CLAUSE_NOT_FOUND]

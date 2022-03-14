@@ -149,7 +149,7 @@ class STAccLoopNest(STAccDirective, nodes.STLoopNest):
         if default_clause == None:
             return True
         elif len(default_clause[1]) == 1:
-            if len(default_clause[1]) > 1):
+            if len(default_clause[1]) > 1:
                 raise util.error.SyntaxError("OpenACC 'default' does only take one argument")
             value = default_clause[1][0].lower()
             if value == "present":

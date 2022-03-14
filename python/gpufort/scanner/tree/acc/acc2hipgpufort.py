@@ -82,7 +82,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         return finalize_expr
     
     def _get_async_clause_expr(self):
-        async_queue, async_present = self.stnode.get_async_queue())
+        async_queue, async_present = self.stnode.get_async_queue()
         async_expr = ""
         if async_present and async_queue!=None:
             async_expr = "async={}".format(async_queue)
@@ -92,7 +92,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
 
     def _handle_wait_clause(self):
         result = []
-        wait_queues, wait_present = self.stnode.get_wait_clause_queues())
+        wait_queues, wait_present = self.stnode.get_wait_clause_queues()
         wait_expr = ""
         if wait_present and not len(wait_queues):
             result.append(_ACC_WAIT.format(var="",options=""))
@@ -119,8 +119,8 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         condition, found_if = self.stnode.get_if_clause_condition()
         if found_if:
             result = [textwrap.dedent(l," "*2) for l in result]
-            result.insert(0,"if ( {} ) then\n".format(condition)
-            result.append("endif\n".format(condition)
+            result.insert(0,"if ( {} ) then\n".format(condition))
+            result.append("endif\n".format(condition))
 
     def _update_directive(self,async_expr):
         """Emits a acc_clause_update command for every variable in the list
@@ -203,7 +203,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
                 async_expr = self._get_async_clause_expr()
                 finalize_expr = self._get_finalize_clause_expr();
                 if len(finalize_expr) and not stnode.is_directive(["acc","exit","data"]):
-                    raise util.error.SyntaxError("finalize clause may only appear on 'exit data' directive."
+                    raise util.error.SyntaxError("finalize clause may only appear on 'exit data' directive.")
                 result += self._handle_data_clauses(async_expr,finalize_expr)
 
             ## Exit region commands must come last
@@ -242,12 +242,15 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
         else:
             raise util.parsing.SyntaxError("clause not supported") 
     
-    def derive_kernel_args(self,tavars,present_by_default,**kwargs):
-        """:return a list of arguments given the directives
+    def derive_kernel_call_arguments(self):
+        """:return a list of arguments given the directives.
         """
-        return kernel_args_to_acc_mappings_no_types(self.stnode.clauses,tavars,present_by_default,
-                                                    AccLoopNest2HipGpufortRT._mapping,**kwargs)
-
+        return kernel_args_to_acc_mappings_no_types(self.stnode.clauses,
+                                                    self.stnode.kernels_args_tavars,
+                                                    self.stnode.get_vars_present_per_default(),
+                                                    AccLoopNest2HipGpufortRT._mapping,
+                                                    finalize=self._get_finalize_clause_expr(),
+                                                    asyncr=self._get_async_clause_expr())
     def transform(self,
                   joined_lines,
                   joined_statements,
@@ -273,10 +276,11 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
             queue = "0"
         stloopkernel.stream_f_str = "gpufort_acc_get_stream({})".format(queue)
         stloopkernel.blocking_launch_f_str = ".{}.".format(str(not found_async))
-        
+       
+        stloopnest.kernel_args_names = self.derive_kernel_call_arguments()
         result_loopnest, _ = nodes.STLoopNest.transform(
-                              stloopnest, joined_lines, joined_statements,
-                              statements_fully_cover_lines, index)
+                                 stloopnest, joined_lines, joined_statements,
+                                 statements_fully_cover_lines, index)
         result.append(textwrap.dedent(partial_result))
         
         if (stloopnest.is_directive(["acc","kernels","loop"]) or

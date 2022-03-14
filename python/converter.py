@@ -278,12 +278,20 @@ def populate_cl_arg_parser(parser,for_converter=True):
         help=
         "Per detected loop kernel, also extract the CPU implementation  [default: (default) config value].",
     )
+emit_interop_types    
     group_fort2x_hip.add_argument(
         "--emit-debug-code",
         dest="emit_debug_code",
         action="store_true",
         help=
         "Generate debug code into the kernel launchers that allows to print kernel arguments, launch parameters, input/output array norms and elements, or to synchronize a kernel [default: (default) config value].",
+    )
+    group_fort2x_hip.add_argument(
+        "--emit-interop-types",
+        dest="emit_interop_types",
+        action="store_true",
+        help=
+        "Generate interoperable types from derived types found in the file.",
     )
 
     # CUDA Fortran
@@ -377,6 +385,7 @@ def populate_cl_arg_parser(parser,for_converter=True):
         only_modify_translation_source=False,
         emit_cpu_implementation=False,
         emit_debug_code=False,
+        emit_interop_types=False,
         emit_launcher_interfaces=False,
         create_gpufort_headers=False,
         create_gpufort_sources=False,
@@ -519,6 +528,8 @@ def map_args_to_opts(args):
         fort2x.hip.opts.emit_launcher_interfaces = True
     if args.emit_debug_code:
         fort2x.hip.opts.emit_debug_code = True
+    if args.emit_interop_types:
+        fort2x.hip.opts.emit_interop_types = True
     # wrap modified lines in ifdef
     linemapper.opts.line_grouping_ifdef_macro = args.wrap_in_ifdef
     # developer: logging

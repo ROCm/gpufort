@@ -184,7 +184,7 @@ def kernel_args_to_acc_mappings_no_types(acc_clauses,tavars,present_by_default,c
                             explicitly_mapped = True
                             break
                 if explicitly_mapped: break
-            if not explicitly_mapped and present_by_default
+            if not explicitly_mapped and present_by_default:
                 if "%" in tavar["expr"] or tavar["f_type"]=="type": # TODO refine
                     raise util.parsing.LimitationError("mapping of derived types and their members not supported (yet)")
                 else:

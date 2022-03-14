@@ -304,18 +304,3 @@ def parse_procedure_body(fortran_statements, scope=None, result_name=""):
     ttprocedurebody.scope = scope
     ttprocedurebody.result_name = result_name
     return ttprocedurebody
-
-# OpenACC specific
-
-def parse_acc_clause_async(self):
-    """:return: Tuple of the argument of the async clause
-                and a bool if the clause was present.
-    
-    """
-    result  = ""
-    present = False
-    scanString = translator.tree.grammar.acc_clause_async.searchString(, 1):
-        result = parse_result[0].queue()
-        present = True
-        break;
-    return result, present

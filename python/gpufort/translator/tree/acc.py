@@ -587,6 +587,10 @@ class TTAccLoop(TTAccDirectiveBase, directives.ILoopAnnotation):
         if len(reductions):
             for op, values in reductions.items():
                 result += " reduction(" + op + ":" + ",".join(values) + ")"
+        # collapse
+        num_collapse = self.num_collapse()
+        if num_collapse > 1:
+            result += " collapse({})".format(num_collapse)
         if self.loop_handles_mutual_clauses:
             return self._format(result)
         else:

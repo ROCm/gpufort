@@ -1,5 +1,5 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+        # SPDX-License-Identifier: MIT
+        # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 log_prefix = "scanner" # log prefix
 
 translation_enabled_by_default = True
@@ -15,8 +15,8 @@ loop_vars = "integer :: {}".format(",".join([
 ])) # integer :: _a,_b,_c,_d,...
 
 loop_kernel_name_template = "{parent}_{lineno}" # parent: name of parent module,program,subroutine (lower case)
-# lineno: line number
-# hash: Hash of the kernel (whitespaces are removed beforehand)
+        # lineno: line number
+        # hash: Hash of the kernel (whitespaces are removed beforehand)
 
 loop_kernel_default_launcher = "auto" # "auto" or "cpu"
 

@@ -1,10 +1,10 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+        # SPDX-License-Identifier: MIT
+        # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 log_prefix = "fort2x.gpufort_sources"
-# Prefix for log output that this component writes.
+        # Prefix for log output that this component writes.
 max_dim = 7
-# Generate rank-dependent classes and expressions up to
-# this dimension.
+        # Generate rank-dependent classes and expressions up to
+        # this dimension.
 datatypes = [
     {
         "c_type": "bool",
@@ -55,5 +55,5 @@ datatypes = [
         "f_type": "complex(c_double_complex)"
     },
 ]
-# Generate rank-dependent classes and expressions for these
-# datatypes.
+        # Generate rank-dependent classes and expressions for these
+        # datatypes.

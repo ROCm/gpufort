@@ -408,7 +408,7 @@ end function
 {%     set routine = "init" %}
 {%     set binding  = f_array+"_"+routine %}
 {%     set size_dims = ",dimension("+rank|string+")" %}
-function {{f_array}}_wrap_device_ptr_cptr(&
+function {{f_array}}_wrap_device_cptr(&
     data_dev,sizes,lbounds,bytes_per_element) result(array)
   use iso_c_binding
   use hipfort_enums
@@ -553,7 +553,6 @@ interface {{iface}}
 {%   set size_dims = ",dimension("+rank|string+")" %}
 {%   set f_array  = prefix+rank|string %}
 {%   set binding  = f_array+"_"+routine %}
-      {{binding}}_cptr,& 
 {%   for tuple in datatypes %}
       {{binding}}_{{tuple.f_kind}}{{",&\n" if not loop.last}}{% endfor %}{{",&" if not loop.last}}
 {% endfor %}

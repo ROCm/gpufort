@@ -11,7 +11,7 @@ module gpufort_acc_runtime_base
 
   public :: gpufort_acc_ignore
   public :: gpufort_acc_copyin_b, gpufort_acc_copyout_b, gpufort_acc_copy_b, & 
-            gpufort_acc_create_b, gpufort_acc_no_create_b, 
+            gpufort_acc_create_b, gpufort_acc_no_create_b,& 
             gpufort_acc_present_b, &
             gpufort_acc_present_or_create_b, &
             gpufort_acc_present_or_copyin_b, gpufort_acc_present_or_copyout_b, gpufort_acc_present_or_copy_b, & 
@@ -381,6 +381,7 @@ module gpufort_acc_runtime_base
    subroutine t_record_copy_to_device_(record,async)
       use iso_c_binding
       use hipfort_check
+      use hipfort_enums
       use hipfort_hipmemcpy
       implicit none
       class(t_record),intent(in)  :: record
@@ -407,6 +408,7 @@ module gpufort_acc_runtime_base
     subroutine t_record_copy_to_host_(record,async)
       use iso_c_binding
       use hipfort_check
+      use hipfort_enums
       use hipfort_hipmemcpy
       implicit none
       class(t_record),intent(in) :: record
@@ -1034,6 +1036,8 @@ module gpufort_acc_runtime_base
       logical,intent(in),optional  :: module_var
       integer,intent(in),optional  :: async
       !
+      type(c_ptr) :: deviceptr
+      !
       deviceptr = gpufort_acc_present_b(hostptr,num_bytes,module_var,gpufort_acc_event_create,async) 
     end function
     
@@ -1047,6 +1051,8 @@ module gpufort_acc_runtime_base
       !logical,intent(in),optional :: exiting
       logical,intent(in),optional  :: module_var
       integer,intent(in),optional  :: async
+      !
+      type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_present_b(hostptr,num_bytes,module_var,gpufort_acc_event_copyin,async) 
     end function
@@ -1062,6 +1068,8 @@ module gpufort_acc_runtime_base
       logical,intent(in),optional  :: module_var
       integer,intent(in),optional  :: async
       !
+      type(c_ptr) :: deviceptr
+      !
       deviceptr = gpufort_acc_present_b(hostptr,num_bytes,module_var,gpufort_acc_event_copyout,async) 
     end function
     
@@ -1075,6 +1083,8 @@ module gpufort_acc_runtime_base
       !logical,intent(in),optional :: exiting
       logical,intent(in),optional  :: module_var
       integer,intent(in),optional  :: async
+      !
+      type(c_ptr) :: deviceptr
       !
       deviceptr = gpufort_acc_present_b(hostptr,num_bytes,module_var,gpufort_acc_event_copy,async) 
     end function
@@ -1097,6 +1107,7 @@ module gpufort_acc_runtime_base
       integer(c_size_t),intent(in) :: num_bytes
       integer,intent(in),optional  :: async ! ignored for now
       logical,intent(in),optional  :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       integer :: loc
@@ -1125,6 +1136,7 @@ module gpufort_acc_runtime_base
       implicit none
       type(c_ptr), intent(in)     :: hostptr
       logical,intent(in),optional :: module_var
+      !
       type(c_ptr) :: deviceptr
       !
       logical :: success
@@ -1422,14 +1434,17 @@ module gpufort_acc_runtime_base
       endif
     end subroutine
 
-    function gpufort_acc_get_stream(queue_id):
+    function gpufort_acc_get_stream(queue_id) result (stream)
        implicit none
        integer, intent(in) :: queue_id
+       ! 
+       type(c_ptr) :: stream
+       !
        if ( queue_id .eq. 0 ) then
-          return c_null_ptr
+          stream = c_null_ptr
        else 
           call ensure_queue_exists_(queue_id)
-          return queue_id(id)%queueptr
+          stream = queues_(queue_id)%queueptr
        endif
     end function
 end module

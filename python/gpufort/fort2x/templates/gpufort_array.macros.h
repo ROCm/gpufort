@@ -184,13 +184,12 @@ extern "C" {
 {%- macro render_gpufort_array_cpp_property_getters(max_rank) -%}
 {% for rank in range(1,max_rank+1) %}
 /**
- * \return size of the array in dimension 'dim'.
- * \param[in] dim selected dimension: 1,...,{{rank}}
+ * \return Number of array elements.
  */
 template<typename T>
 __host__ __device__ __forceinline__ int size(
     gpufort::array{{rank}}<T>& array) {
-  return array.data.size(dim);
+  return array.size();
 }
 
 /**
@@ -201,7 +200,7 @@ template<typename T>
 __host__ __device__ __forceinline__ int size(
     gpufort::array{{rank}}<T>& array,
     int dim) {
-  return array.data.size(dim);
+  return array.size(dim);
 }
 
 /**
@@ -212,7 +211,7 @@ template<typename T>
 __host__ __forceinline__ int lbound(
     gpufort::array{{rank}}<T>& array,
     int dim) {
-  return array.data.lbound(dim);
+  return array.lbound(dim);
 }
 
 /**
@@ -223,7 +222,7 @@ template<typename T>
 __host__ __forceinline__ int ubound(
     gpufort::array{{rank}}<T>& array,
     int dim) {
-  return array.data.ubound(dim);
+  return array.ubound(dim);
 }
 {% endfor %}
 {%- endmacro -%}

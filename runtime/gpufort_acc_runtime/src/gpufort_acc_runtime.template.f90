@@ -9,9 +9,8 @@ interface {{interface_name}}
 {% endif %}
 {% for tuple in datatypes %}
 {%   for dims in dimensions %}
-{%     set name = interface_name+"_" + tuple[0] + "_" + dims|string -%}
-    {{name}}{{ ",&" if not loop.last}}
-{%   endfor %}{{ ",&" if not loop.last}}
+{%     set name = interface_name+"_" + tuple[0] + "_" + dims|string %}
+    {{name}}{{",&\n" if not loop.last}}{% endfor %}{{ ",&" if not loop.last}}
 {% endfor %}
 end interface
 {% endmacro %}
@@ -205,7 +204,7 @@ module gpufort_acc_runtime
       deviceptr = gpufort_acc_present_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8,module_var,or,async)
     end function
     
-{%- for or_clause_type in ["copy","copyin","copyout","create"] -%}
+{% for or_clause_type in ["copy","copyin","copyout","create"] %}
     function gpufort_acc_present_or_{{or_clause_type}}_{{suffix}}(hostptr,module_var,async) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b, gpufort_acc_event_undefined
@@ -219,7 +218,7 @@ module gpufort_acc_runtime
       deviceptr = gpufort_acc_present_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8,module_var,&
                                         gpufort_acc_event_{{or_clause_type}},async)
     end function
-{%- endfor -%}
+{% endfor %}
 
     function gpufort_acc_create_{{suffix}}(hostptr,module_var) result(deviceptr)
       use iso_c_binding

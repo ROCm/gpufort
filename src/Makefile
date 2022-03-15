@@ -11,10 +11,10 @@ SUFFIX       ?= $(if $(HIP_PLATFORM),$(HIP_PLATFORM),amd)
 LIBGPUFORT    = libgpufort_$(SUFFIX).a
 
 # files
-HIP_SRC  = $(shell find . -name "*.hip.cpp")
+HIP_SRC  = $(shell find . -name "*.cpp")
 FORT_SRC = $(shell find . -name "*.f03")
 
-HIP_OBJ  = $(HIP_SRC:%.hip.cpp=%.hip.o)
+HIP_OBJ  = $(HIP_SRC:%.cpp=%.cpp.o)
 FORT_OBJ = $(FORT_SRC:%.f03=%.o)
 
 # targets
@@ -25,7 +25,7 @@ all: gpufort_sources $(LIBGPUFORT)
 gpufort_sources:
 	gpufort --create-gpufort-sources
 
-$(HIP_OBJ): %.hip.o: %.hip.cpp
+$(HIP_OBJ): %.cpp.o: %.cpp
 	$(HIPCC) $(GPUFORT_INC) $(HIPCC_CFLAGS) -c $^ -o $@
 
 $(FORT_OBJ): %.o: %.f03

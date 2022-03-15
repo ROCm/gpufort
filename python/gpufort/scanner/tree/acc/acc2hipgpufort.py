@@ -230,7 +230,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
 
 class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
 
-    def _map_array(clause_kind,var_expr,**kwargs):
+    def _map_array(clause_kind,var_expr,tavar,**kwargs):
         asyncr,_   = util.kwargs.get_value("asyncr","",**kwargs)
         finalize,_ = util.kwargs.get_value("finalize","",**kwargs)
         
@@ -243,7 +243,7 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
                 runtime_call_tokens += [",",finalize]
             runtime_call_tokens.append(")") 
             tokens = [
-              "gpufort_array_wrap_device_ptr(&\n",
+              "gpufort_array",taver["rank"],"_wrap_device_cptr(&\n",
               " "*4,"".join(runtime_call_tokens),
               ",shape(",var_expr,")",",lbound(",var_expr,"))",
             ]

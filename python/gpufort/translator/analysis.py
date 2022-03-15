@@ -182,7 +182,7 @@ def kernel_args_to_acc_mappings_no_types(acc_clauses,tavars,present_by_default,c
                         if "%" in var_tag:
                             raise util.error.LimitationError("mapping of derived type members not supported (yet)")
                         else:
-                            mappings.append((var_expr, callback(kind,var_expr,**kwargs)))
+                            mappings.append((var_expr, callback(kind,var_expr,tavar,**kwargs)))
                             explicitly_mapped = True
                             break
                 if explicitly_mapped: break
@@ -190,7 +190,7 @@ def kernel_args_to_acc_mappings_no_types(acc_clauses,tavars,present_by_default,c
                 if "%" in tavar["expr"] or tavar["f_type"]=="type": # TODO refine
                     raise util.error.LimitationError("mapping of derived types and their members not supported (yet)")
                 else:
-                    mappings.append((tavar["expr"], callback("present_or_copy",tavar["expr"],**kwargs)))
+                    mappings.append((tavar["expr"], callback("present_or_copy",tavar["expr"],tavar,**kwargs)))
             elif not explicitly_mapped:
                 return util.parsing.SyntaxError("no mapping specified for expression: {}".format(tavar["expr"]))
         elif tavar["f_type"] == "type": # map type

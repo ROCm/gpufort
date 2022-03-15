@@ -23,7 +23,7 @@ def CufLoopNest2Hip(stloopnest,*args,**kwargs):
         if tavar["rank"] > 0:
             var_expr = tavar["expr"]
             tokens = [
-              "gpufort_array_wrap_device_ptr(&\n",
+              "gpufort_array",tavar["rank"],"_wrap_device_cptr(&\n",
               " "*4,var_expr,",lbounds(",var_expr,"))",
             ]
             stloopnest.kernel_args_names.append("".join(tokens))

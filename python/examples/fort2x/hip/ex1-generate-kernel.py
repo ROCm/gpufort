@@ -12,17 +12,22 @@ util.logging.init_logging("log.log", LOG_FORMAT, "debug")
 
 declaration_list = """\
 integer, parameter :: N = 1000, M=2000
-integer :: i,j
+integer :: i,j,k
 integer(4) :: x(N), y(N), y_exact(N)
 """
 
 annotated_loop_nest = """\
 !$acc parallel loop present(x,y) collapse(2)
-do i = 1, N
 do j = 1, M
-  x(i,j) = 1
-  y(i,j) = 2
-end do
+  do i = 1, N
+    x(i,j) = 1
+    y(i,j) = 2
+
+    do while ( k < 10 )
+      y(i,j) = x(i,j) * k
+      k = k + 1
+    end do
+  end do
 end do
 """
 

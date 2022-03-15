@@ -9,7 +9,7 @@ from .. import opts
 from . import base
 from . import fortran
 from . import grammar
-
+from . import transformations
 
 #TODO exclude other annotations as well from this search
 #TODO improve
@@ -148,13 +148,10 @@ class TTDo(base.TTContainer):
         self.annotation, self._begin, self._end, self._step, self.body = tokens
         if self.annotation == None:
             self.annotation = ILoopAnnotation()
-        self._thread_index = None # "z","y","x"
+        self.thread_index = None # "z","y","x"
 
     def children(self):
         return [self.annotation, self.body, self._begin, self._end, self._step]
-
-    def set_hip_thread_index(self, name):
-        self._thread_index = name
 
     def hip_thread_index_c_str(self):
         ivar = self.loop_var()
@@ -162,18 +159,15 @@ class TTDo(base.TTContainer):
             self._begin._rhs) # array indexing is corrected in index macro
         step = base.make_c_str(self._step)
         return "int {var} = {begin} + ({step})*(threadIdx.{idx} + blockIdx.{idx} * blockDim.{idx});\n".format(\
-                var=ivar,begin=begin,idx=self._thread_index,step=step)
+                var=ivar,begin=begin,idx=self.thread_index,step=step)
 
-    def collapsed_loop_index_c_str(self, denominator):
-        ivar = self.loop_var()
-        tid = self._thread_index
-        assert not tid is None
+    def collapsed_loop_index_c_str(self):
+        idx = self.loop_var()
         begin = base.make_c_str(self._begin._rhs)
-        size = self.problem_size()
+        end = base.make_c_str(self._end)
         step = base.make_c_str(self._step)
-        # int i<n> = begin<n> + step<n>*(i<denominator<n>> % size<n>)
-        return "int {var} = {begin} + ({step})*({tid}{denom} % {size});\n".format(\
-                var=ivar,begin=begin,tid=tid,denom=denominator,size=size,step=step)
+        return "int {var} = outermost_index({begin},{end},{step},{index});\n".format(\
+                var=idx,begin=begin,end=end,step=step,index=self.thread_index)
 
     def problem_size(self, converter=base.make_f_str):
         if self._step == "1":
@@ -194,13 +188,13 @@ class TTDo(base.TTContainer):
         return converter(self._begin._lhs)
 
     def c_str(self):
-        ivar = self.loop_var()
-        begin = base.make_c_str(
-            self._begin._rhs) # array indexing is corrected in index macro
-        end = base.make_c_str(self._end)
-        step = base.make_c_str(self._step)
         body_content = base.TTContainer.c_str(self)
-        if self._thread_index == None:
+        if self.thread_index == None:
+            ivar = self.loop_var()
+            begin = base.make_c_str(
+                self._begin._rhs) # array indexing is corrected in index macro
+            end = base.make_c_str(self._end)
+            step = base.make_c_str(self._step)
             return "for ({0}={1}; {0} <= {2}; {0} += {3}) {{\n{4}\n}}".format(\
                     ivar, begin, end, step, body_content)
         else:
@@ -709,33 +703,18 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
             thread_indices = ["x", "y", "z"]
             for i in range(0, 3 - num_outer_loops_to_map):
                 thread_indices.pop()
-            indices = ""
+            indices = []
             conditions = []
             for loop in do_loops:
                 if not len(thread_indices):
                     break
-                loop.set_hip_thread_index(thread_indices.pop())
-                indices += loop.hip_thread_index_c_str()
+                loop.thread_index = thread_indices.pop()
+                indices.append(loop.hip_thread_index_c_str())
                 conditions.append(loop.hip_thread_bound_c_str())
         else: # "collapse" or num_outer_loops_to_map > 3
-            indices = ""
-            conditions = []
-            denominator_factors = []
-            for loop in reversed(do_loops[0:num_outer_loops_to_map]):
-                loop.set_hip_thread_index(tidx)
-                # denominator1 = ""
-                # denominator2 = "/" + "(end1 - begin1 + 1)"
-                # denominator3 = "/" + "(end1 - begin1 + 1)*(end1 - begin1 + 1)"
-                if len(denominator_factors):
-                    indices += loop.collapsed_loop_index_c_str(
-                        "/(" + "*".join(denominator_factors) + ")")
-                else:
-                    indices += loop.collapsed_loop_index_c_str("")
-                denominator_factors.append(loop.problem_size())
-                conditions.append(loop.hip_thread_bound_c_str())
-        # TODO fix indenting
-        c_snippet = "{0}{2}if ({1}) {{\n{3}\n}}".format(\
-            indices,"&&".join(conditions),reduction_preamble,base.make_c_str(self.body[0]))
+            indices, conditions = transformations.collapse_loopnest(do_loops)
+        c_snippet = "{0}\n{2}if ({1}) {{\n{3}\n}}".format(\
+            "".join(indices),"&&".join(conditions),reduction_preamble,base.make_c_str(self.body[0]))
         return prepostprocess.postprocess_c_snippet(c_snippet)
 
 

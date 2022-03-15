@@ -28,7 +28,9 @@ module mymod
 end module
 """
 
-codegen, linemaps = fort2x.hip.create_code_generator(file_content=file_content)
+help(fort2x.hip.hipcodegen)
+codegen, linemaps = fort2x.hip.create_code_generator(file_content=file_content,
+                                                     emit_interop_types=True)
 codegen.run()
 
 print("modified Fortran file:")

@@ -125,9 +125,42 @@ namespace {
     }
   }{{"\n" if not loop.last}}{% endfor %}
   
-  // loop condition
-  template <typename I, typename E, typename S> __device__ __forceinline__ bool loop_cond(I idx,E end,S stride) {
-    return (stride>0) ? ( idx <= end ) : ( -idx <= -end );     
+  /**
+   * Checks if `idx` has reached the end of the loop iteration
+   * range yet. 
+   *
+   * \note Takes only the sign of `step` into account, not its value.
+   *
+   * \param[in] end end of the loop iteration range
+   * \param[in] step step size of the loop iteration range
+   */
+  template <typename T> __device__ __forceinline__ bool loop_cond(T idx,T end,T step) {
+    return (step>0) ? ( idx <= end ) : ( -idx <= -end );     
+  }
+  
+  /**
+   * Given the index of a collapsed loop nest,
+   * this function returns the index of the outermost loop
+   * of the original loop nest.
+   * Result takes loop begin and step size into account.
+   *
+   * \note Side effects: Argument `collapsed_index`
+   *       is decremented according to the iteration range size 
+   *       of the outer loop. It can then be used to retrieve
+   *       the index of the next inner loop, and so on.
+   * \param[inout] collaped_index index for iterating collapsed loop nest.
+   * \param[in] begin begin of the outer loop iteration range
+   * \param[in] end end of the outer loop iteration range
+   * \param[in] step step size of the outer loop iteration range
+   */
+  template <typename T>
+  __host__ __device__ __forceinline__ T outermost_index(
+    I& collapsed_index
+    const T begin, const T end,const T step=1) {
+    const T size = (abs(end - begin) + 1)/abs(step);
+    const T idx = collapsed_index / size; // rounds down
+    collapsed_index -= idx*size;
+    return (begin + step*idx);
   }
 
   // type conversions (complex make routines already defined via "hip/hip_complex.h")

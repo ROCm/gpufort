@@ -458,7 +458,7 @@ class STContainerBase(STNode):
             dummy_arg_names = []
         else:
             parent_tag = self.parent.tag()
-            irecord, _ = indexer.scope.search_index_for_procedure(
+            irecord = indexer.scope.search_index_for_procedure(
                 index, parent_tag, self.name)
             dummy_arg_names = irecord["dummy_args"]
         local_var_names = [
@@ -531,7 +531,7 @@ class STProcedure(STContainerBase):
         self.kind = kind
         self.code = []
         # check attributes
-        self.index_record, _ = indexer.scope.search_index_for_procedure(
+        self.index_record = indexer.scope.search_index_for_procedure(
             index, parent_tag, name)
         self.kernel_args_tavars = []
         self.c_result_type = "void"
@@ -701,7 +701,7 @@ class STLoopNest(STNode):
         if grid_or_ps_f_str == None and self.parse_result.num_gangs_teams_blocks_specified():
             grid = self.parse_result.num_gangs_teams_blocks()
             grid_or_ps_f_str = "dim3({})".format(",".join(grid))
-        else:
+        elif grid_or_ps_f_str == None:
             launcher_name_suffix = "_hip_ps_"
             grid_or_ps_f_str = "dim3({})".format(",".join(self.parse_result.problem_size()))
         launcher_name += (launcher_name_suffix if not opts.loop_kernel_default_launcher=="cpu" else "_cpu_")
@@ -710,7 +710,7 @@ class STLoopNest(STNode):
         if block_f_str == None and self.parse_result.num_threads_in_block_specified():
             block = self.parse_result.num_threads_in_block()
             block_f_str = "dim3({})".format(",".join(block))
-        else:
+        elif block_f_str == None:
             block_f_str = "dim3(128)" # use config values 
         kernel_args.append(grid_or_ps_f_str)
         kernel_args.append(block_f_str)

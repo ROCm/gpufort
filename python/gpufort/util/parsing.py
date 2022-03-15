@@ -149,29 +149,32 @@ def relocate_inline_comments(lines):
             in_multiline_statement = False
     return result
 
-def next_tokens_till_open_bracket_is_closed(tokens, open_brackets=0):
+def next_tokens_till_open_bracket_is_closed(tokens, open_brackets=0, brackets=("(",")"), keepend=True):
     # ex:
     # input:  [  "kind","=","2","*","(","5","+","1",")",")",",","pointer",",","allocatable" ], open_brackets=1
     # result: [  "kind","=","2","*","(","5","+","1",")",")" ]
     result = []
     idx = 0
-    criterion = True
+    criterion = (len(tokens) and tokens[0]==brackets[0]) or open_brackets > 0
     while criterion:
         tk = tokens[idx]
         result.append(tk)
-        if tk == "(":
+        if tk == brackets[0]:
             open_brackets += 1
-        elif tk == ")":
+        elif tk == brackets[1]:
             open_brackets -= 1
         idx += 1
         criterion = idx < len(tokens) and open_brackets > 0
     # TODO throw error if open_brackets still > 0
+    if not keepend:
+        result.pop()
     return result
 
 def get_highest_level_arguments(tokens,
                                 open_brackets=0,
                                 separators=[","],
-                                terminators=["::", "\n", "!"]):
+                                terminators=["::", "\n", "!"],
+                                brackets=("(",")")):
     # ex:
     # input: ["parameter",",","intent","(","inout",")",",","dimension","(",":",",",":",")","::"]
     # result : ["parameter", "intent(inout)", "dimension(:,:)" ]
@@ -191,9 +194,9 @@ def get_highest_level_arguments(tokens,
             criterion = False
         else:
             current_substr += tk
-        if tk == "(":
+        if tk == brackets[0]:
             open_brackets += 1
-        elif tk == ")":
+        elif tk == brackets[1]:
             open_brackets -= 1
     if len(current_substr):
         result.append(current_substr)
@@ -210,7 +213,7 @@ def extract_function_calls(text, func_name):
     result = []
     for m in re.finditer(r"{}\s*\(".format(func_name), text):
         rest_substr = next_tokens_till_open_bracket_is_closed(
-            text[m.end():], 1)
+            text[m.end():], open_brackets=1)
         args = get_highest_level_arguments(rest_substr[:-1], 0, [","],
                                            []) # clip the ')' at the end
         end = m.end() + len(rest_substr)
@@ -279,14 +282,17 @@ def parse_declaration(fortran_statement):
             # ex: type ( dim3 )
             kind = tokens[2]
             idx_last_consumed_token = 3
-        elif tokens_lower[0:1 + 1] == ["double", "precision"]:
-            datatype = " ".join(tokens[0:1 + 1])
+        elif tokens_lower[0:2] == ["double", "precision"]:
+            datatype = " ".join(tokens[0:2])
             idx_last_consumed_token = 1
         elif tokens[1] == "*":
             # ex: integer * 4
             # ex: integer * ( 4*2 )
-            kind_tokens = next_tokens_till_open_bracket_is_closed(
-                tokens[2:], open_brackets=0)
+            if tokens[2] == "(":
+                kind_tokens = next_tokens_till_open_bracket_is_closed(
+                    tokens[3:], open_brackets=1)
+            else:
+                kind_tokens = tokens[2] 
             kind = "".join(kind_tokens)
             idx_last_consumed_token = 2 + len(kind_tokens) - 1
         elif tokens_lower[1:4] == ["(","kind","("]:
@@ -514,6 +520,47 @@ def parse_acc_clauses(clauses):
         else:
             raise error.SyntaxError("could not parse expression: '{}'".format(expr))
     return result
+
+def parse_cuf_kernel_call(statement):
+    """Parses a CUDA Fortran kernel call statement.
+    Decomposes it into kernel name, launch parameters,
+    and kernel arguments.
+    
+    :Example:
+
+    `call mykernel<<grid,dim>>(arg0,arg1,arg2(1:n))`
+
+    will result in a triple
+
+    ("mykernel",["grid","dim"],["arg0","arg1","arg2(1:n)"])
+    """
+    tokens = tokenize(statement)
+    if tokens.pop(0).lower() != "call":
+        return error.SyntaxError("could not parse CUDA Fortran kernel call: expected 'call'")
+    kernel_name = tokens.pop(0)
+    # parameters
+    if not kernel_name.isidentifier():
+        return error.SyntaxError("could not parse CUDA Fortran kernel call: expected 'identifier'")
+    if tokens.pop(0) != "<<<":
+        return error.SyntaxError("could not parse CUDA Fortran kernel call: expected '<<<'")
+    params_tokens = next_tokens_till_open_bracket_is_closed(tokens, open_brackets=1, brackets=("<<<",">>>"), keepend=False)
+    for i in range(0,len(params_tokens)):
+        tokens.pop(0)
+    if tokens.pop(0) != ">>>":
+        return error.SyntaxError("could not parse CUDA Fortran kernel call: expected '>>>'")
+    # arguments
+    if tokens.pop(0) != "(":
+        return error.SyntaxError("could not parse CUDA Fortran kernel call: expected '('")
+    args_tokens = next_tokens_till_open_bracket_is_closed(tokens, open_brackets=1, keepend=False)
+    for i in range(0,len(args_tokens)):
+        tokens.pop(0)
+    if tokens.pop(0) != ")":
+        return error.SyntaxError("could not parse CUDA Fortran kernel call: expected ')'")
+    params = get_highest_level_arguments(params_tokens,terminators=[])
+    args = get_highest_level_arguments(args_tokens,terminators=[])
+    if len(tokens):
+        return error.SyntaxError("could not parse CUDA Fortran kernel call: trailing text")
+    return kernel_name, params, args
 
 # def parse_implicit_statement(statement):
 # TODO

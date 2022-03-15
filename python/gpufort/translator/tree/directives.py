@@ -696,23 +696,10 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
         if num_outer_loops_to_map == 1 or (opts.loop_collapse_strategy
                                            == "grid" and
                                            num_outer_loops_to_map <= 3):
-            if num_outer_loops_to_map > 3:
-                util.logging.log_warn(
-                    "loop collapse strategy grid chosen with nested loops > 3")
-            num_outer_loops_to_map = min(3, num_outer_loops_to_map)
-            thread_indices = ["x", "y", "z"]
-            for i in range(0, 3 - num_outer_loops_to_map):
-                thread_indices.pop()
-            indices = []
-            conditions = []
-            for loop in do_loops:
-                if not len(thread_indices):
-                    break
-                loop.thread_index = thread_indices.pop()
-                indices.append(loop.hip_thread_index_c_str())
-                conditions.append(loop.hip_thread_bound_c_str())
+            indices, conditions = transformations.map_loopnest_to_grid(do_loops,num_outer_loops_to_map)
         else: # "collapse" or num_outer_loops_to_map > 3
             indices, conditions = transformations.collapse_loopnest(do_loops)
+        
         c_snippet = "{0}\n{2}if ({1}) {{\n{3}\n}}".format(\
             "".join(indices),"&&".join(conditions),reduction_preamble,base.make_c_str(self.body[0]))
         return prepostprocess.postprocess_c_snippet(c_snippet)

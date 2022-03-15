@@ -17,6 +17,18 @@ backends.supported_destination_dialects.add("hip")
 dest_dialects = ["hip","hipgcc","hipgpufort"]
 
 def CufLoopNest2Hip(stloopnest,*args,**kwargs):
+    # map the parameters
+    # TODO check for derived types
+    for tavar in stloopnest.kernel_args_tavars:
+        if tavar["rank"] > 0:
+            var_expr = tavar["expr"]
+            tokens = [
+              "gpufort_array_wrap_device_ptr(&\n",
+              " "*4,var_expr,",lbounds(",var_expr,"))",
+            ]
+            stloopnest.kernel_args_names.append("".join(tokens))
+        else:
+            stloopnest.kernel_args_names.append(tavar["expr"])
     return nodes.STLoopNest.transform(stloopnest,*args,**kwargs)
 
 # backends for standard nodes

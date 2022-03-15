@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+import textwrap
+
 from gpufort import util
 from gpufort import translator
 from gpufort import indexer
@@ -129,44 +131,25 @@ class STCufKernelCall(nodes.STNode):
                   statements_fully_cover_lines,
                   index=[]):
         if "cuf" in opts.source_dialects:
-            snippet = joined_statements
-            for tokens, start, end in translator.tree.grammar.cuf_kernel_call.scanString(
-                    snippet):
-                parse_result = tokens[0]
-                kernel_args = []
-                for ttexpr in parse_result._args:
-                    # expand array arguments
-                    max_rank = 0
-                    for rvalue in translator.tree.find_all(ttexpr,
-                                                           translator.tree.TTRValue):
-                        # TODO lookup the procedure first
-                        ivar = indexer.scope.search_index_for_var(index,self.parent.tag(),\
-                           rvalue.name())
-                        max_rank = max(max_rank, ivar["rank"])
-                    expr_f_str = translator.tree.make_f_str(ttexpr)
-                    if max_rank > 0:
-                        kernel_args.append("c_loc(" + expr_f_str + ")")
-                    else:
-                        kernel_args.append(expr_f_str)
-                    for rank in range(1, max_rank + 1):
-                        kernel_args.append("size({0},{1})".format(
-                            expr_f_str, rank))
-                    for rank in range(1, max_rank + 1):
-                        kernel_args.append("lbound({0},{1})".format(
-                            expr_f_str, rank))
-                kernel_launch_info = translator.tree.grammar.cuf_kernel_call.parseString(
-                    self.first_statement())[0]
-                subst="call launch_{0}({1},{2},{3},{4},{5})".format(\
-                  kernel_launch_info.kernel_name_f_str(),\
-                  kernel_launch_info.grid_f_str(),
-                  kernel_launch_info.block_f_str(),\
-                  kernel_launch_info.sharedmem_f_str(),
-                  kernel_launch_info.stream_f_str(),\
-                  ",".join(kernel_args)
-                )
-                snippet = snippet.replace(snippet[start:end], subst)
-                break
-            return snippet, True
+            kernel_name, launch_params, call_args = util.parsing.parse_cuf_kernel_call(joined_statements)
+            iprocedure = indexer.scope.search_index_for_procedure(index,self.parent.tag(),kernel_name)
+            if len(call_args) != len(iprocedure["dummy_args"]):
+                raise util.error.SyntaxError("kernel subroutine '{}' expects {} arguments but {} were passed".format
+                        (kernel_name,len(iprocedure["dummy_args"]),len(call_args)))
+            for i,arg in enumerate(iprocedure["dummy_args"]):
+                ivar = next((ivar for ivar in iprocedure["variables"] if ivar["name"] == arg),None)
+                if ivar == None:
+                    raise util.error.LookupError("could not find index record for dummy argument '{}'".format(arg))
+                if ivar["rank"] > 0:
+                    expr = call_args[i]
+                    call_args[i] = "gpufort_wrap_device_ptr({0},lbound({0}))".format(expr)
+            if len(launch_params) == 4:
+                if launch_params[3]=="0": launch_params[3] = "c_null_ptr" # stream
+            else:
+                launch_params += ["0","c_null_ptr"] # sharedmem, stream
+            tokens = ["call ",kernel_name,"(&\n  ",",&\n  ".join(launch_params+call_args),")"]
+            indent = self.first_line_indent()
+            return textwrap.indent("".join(tokens),indent), True
         else:
             return "", False
 

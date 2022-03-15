@@ -143,7 +143,7 @@ def _search_scope_for_type_or_procedure(scope,
           "entry found for {} '{}'".format(entry_type[:-1],entry_name))
         util.logging.log_leave_function(
             opts.log_prefix, "_search_scope_for_type_or_procedure")
-        return result, True
+        return result
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)

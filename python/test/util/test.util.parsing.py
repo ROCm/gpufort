@@ -213,13 +213,13 @@ class TestParsingUtils(unittest.TestCase):
           ["map(to:x,y(:),tofrom:a%z(1:n,2:m))"], # actually OMP clauses
         ]
         results = [
-          [('copyin', ['a', 'b', 'c(:)']), ('copyout', ['b(-1:)']), ('async', [])]
-          [('copyin', ['a', 'b', 'c(:)']), ('copyout', ['b(-1:)']), ('reduction', [('+', ['a'])]), ('async', [])]
-          [('map', [('to', ['x', 'y(:)']), ('tofrom', ['a%z(1:n,2:m)'])])]
+          [('copyin', ['a', 'b', 'c(:)']), ('copyout', ['b(-1:)']), ('async', [])],
+          [('copyin', ['a', 'b', 'c(:)']), ('copyout', ['b(-1:)']), ('reduction', [('+', ['a'])]), ('async', [])],
+          [('map', [('to', ['x', 'y(:)']), ('tofrom', ['a%z(1:n,2:m)'])])],
         ]
         for i,expr in enumerate(expressions):
-            print(util.parsing.parse_acc_clauses(expr))
-            #self.assertEqual(util.parsing.parse_acc_clauses(expr),results[i])
+            #print(util.parsing.parse_acc_clauses(expr))
+            self.assertEqual(util.parsing.parse_acc_clauses(expr),results[i])
     
     def test_11_parse_acc_directive(self):
         expressions = [
@@ -230,10 +230,23 @@ class TestParsingUtils(unittest.TestCase):
         results = [
           ('!$', ['acc', 'enter', 'data'], [], ['copyin(a,b,c(:))', 'copyout(b(-1:))']),
           ('!$', ['acc', 'wait'], ['i', 'j'], ['async(c)']),
+          ('!$', ['acc', 'kernels', 'loop'], [], ['reduction(+:x)']),
         ]
         for i,expr in enumerate(expressions):
-            print(util.parsing.parse_acc_directive(expr))
-            #self.assertEqual(util.parsing.parse_acc_directive(expr),results[i])
+            #print(util.parsing.parse_acc_directive(expr))
+            self.assertEqual(util.parsing.parse_acc_directive(expr),results[i])
+    def test_12_parse_cuf_kernel_call(self):
+        expressions = [
+          "call mykernel<<<grid,block>>>(arg1,arg2,arg3(1:n))",
+          "call mykernel<<<grid,block,0,stream>>>(arg1,arg2,arg3(1:n))",
+        ]
+        results = [
+          ('mykernel',['grid','block'],['arg1','arg2','arg3(1:n)']),
+          ('mykernel',['grid','block','0','stream'],['arg1','arg2','arg3(1:n)']),
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing.parse_cuf_kernel_call(expr))
+            self.assertEqual(util.parsing.parse_cuf_kernel_call(expr),results[i])
 
 if __name__ == '__main__':
     unittest.main() 

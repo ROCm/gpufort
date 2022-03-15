@@ -1,11 +1,10 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-LOG_DIR="log"
+util.logging.opts.log_dir="log"
 
-fort2hip.CLANG_FORMAT_STYLE = "\"{BasedOnStyle: llvm, ColumnLimit: 140}\""
 
-fort2hip.EMITTED_DEBUG_CODE = False
+fort2x.hip.opts.emitted_debug_code = false
 
-fort2hip.PRETTIFY_MODIFIED_TRANSLATION_SOURCE = True
+fort2x.hip.opts.prettify_modified_translation_source = true
 
-scanner.LOOP_KERNEL_DEFAULT_LAUNCHER= "auto"
+scanner.opts.loop_kernel_default_launcher= "auto"

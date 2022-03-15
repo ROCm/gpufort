@@ -1,13 +1,12 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-scanner.DESTINATION_DIALECT="hipgpufort"
-scanner.LOOP_KERNEL_DEFAULT_LAUNCHER="auto"
+scanner.opts.destination_dialect="hipgpufort"
+scanner.opts.loop_kernel_default_launcher="auto"
 
-fort2hip.CLANG_FORMAT_STYLE="\"{BasedOnStyle: llvm, ColumnLimit: 140, BinPackArguments: false, BinPackParameters: false}\""
 
-LOG_DIR="log"
+util.logging.opts.log_dir="log"
 #LOG_LEVEL="debug"
 
 #utils.logging.opts.verbose = True
 
-ENABLE_PROFILING=False
+enable_profiling=false

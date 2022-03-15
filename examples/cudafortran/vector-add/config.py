@@ -1,23 +1,22 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-fort2x.hip.opts.clang_format_style="\"{BasedOnStyle: llvm, ColumnLimit: 140, BinPackArguments: false, BinPackParameters: false}\""
 
-#fort2hip.EMIT_DEBUG_CODE = False
+#fort2x.hip.opts.emit_debug_code = false
 
-#fort2hip.PRETTIFY_EMITTED_FORTRAN_CODE = False
+#fort2x.hip.opts.prettify_emitted_fortran_code = false
 
-def myBlockDims(kernelName,dims):
+def blockdims(kernelname,dims):
     return [512]
 
-def myLaunchBounds(kernelName):
-    print(kernelName)
+def launchbounds(kernelname):
+    print(kernelname)
     return "512,2"
 
-#fort2hip.GET_BLOCK_DIMS = myBlockDims
+#fort2x.hip.opts.get_block_dims = blockdims
 
-#fort2hip.GET_LAUNCH_BOUNDS = myLaunchBounds
+#fort2x.hip.opts.get_launch_bounds = launchbounds
 
-opts.prettify_modified_translation_source = True
+opts.prettify_modified_translation_source = true
 
 opts.log_dir="log"
 

@@ -6,10 +6,10 @@ all: headers modules
 
 headers:
 	gpufort --create-gpufort-headers
-	touch cudafor-fort2hip.hip.cpp
+	touch cudafor-fort2x.cpp
 
 modules:
 	gpufort --only-create-mod-files cudafor.f90
 
 clean_all:
-	for expr in "*.json" "*.mod" "*.gpufort_mod" "*-fort2hip.*" "*-gpufort.*" "*.h"; do find . -name "$$expr" -delete; done
+	for expr in "*.json" "*.mod" "*.gpufort_mod" "*-fort2x.*" "*-gpufort.*" "*.h"; do find . -name "$$expr" -delete; done

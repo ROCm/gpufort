@@ -151,7 +151,7 @@ def populate_cl_arg_parser(parser,for_converter=True):
     parser.add_argument(
         "--wrap",
         dest="wrap_in_ifdef",
-        const="_GPUFORT",
+        const="__GPUFORT",
         default=linemapper.opts.line_grouping_ifdef_macro,
         action="store_const",
         help="Wrap original and modified code as follows:\n"\

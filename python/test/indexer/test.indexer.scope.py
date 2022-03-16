@@ -18,8 +18,6 @@ gfortran_options="-DCUDA"
 
 indexer.opts.error_handling="strict"
 
-USE_EXTERNAL_PREPROCESSOR = False
-
 # scan index
 index = []
 
@@ -27,7 +25,6 @@ index = []
 class TestScoper(unittest.TestCase):
     def setUp(self):
         global index
-        self.index = index
         self.started_at = time.time()
     def tearDown(self):
         elapsed = time.time() - self.started_at
@@ -35,13 +32,8 @@ class TestScoper(unittest.TestCase):
     def test_0_donothing(self):
         pass 
     def test_1_indexer_scan_files(self):
-        global USE_EXTERNAL_PREPROCESSOR
-        if USE_EXTERNAL_PREPROCESSOR:
-            indexer.scan_file("test_modules.f90",gfortran_options,self.index)
-            indexer.scan_file("test1.f90",gfortran_options,self.index)
-        else:
-            indexer.update_index_from_linemaps(linemapper.read_file("test_modules.f90",gfortran_options),self.index)
-            indexer.update_index_from_linemaps(linemapper.read_file("test1.f90",gfortran_options),self.index)
+        indexer.update_index_from_linemaps(linemapper.read_file("test_modules.f90",gfortran_options),index)
+        indexer.update_index_from_linemaps(linemapper.read_file("test1.f90",gfortran_options),index)
     def test_2_scope_search_for_vars(self):
         c   = indexer.scope.search_index_for_var(index,"test1","c") # included from module 'simple'
         indexer.opts.scopes.clear()

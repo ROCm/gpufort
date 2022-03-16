@@ -223,8 +223,9 @@ def extract_function_calls(text, func_name):
 def parse_use_statement(statement):
     """Extracts module name and 'only' variables
     from the statement.
-    :return: A tuple of containing module name and a dict of 'only' 
-    mappings (in that order).
+    :return: A tuple of containing module name and a list of 'only' 
+    tuples (in that order). The 'only' tuples store
+    the local name and the module variable name (in that order).
     :raise SyntaxError: If the syntax of the expression is not as expected.
 
     :Example:
@@ -233,23 +234,27 @@ def parse_use_statement(statement):
 
     will result in the tuple:
 
-    ("mod",{"var1":"var1","var2":"var3"])
+    ("mod", [("var1","var1"), ("var2","var3)])
+
+    In the example above, `var2` is the local name,
+    `var3` is the name of the variable as it appears
+    in module 'mod'. In case no '=>' is present,
+    the local name is the same as the module name.
     """
     tokens = tokenize(statement)
-    only = {}
+    only = []
     if len(tokens) > 5 and tokens[2:5] == [",","only",":"]:
-        is_original_name = True
-        last = tokens[5]
+        is_local_name = True
         for tk in tokens[5:]:
             if tk == ",":
-                is_original_name = True
+                is_local_name = True
             elif tk == "=>":
-                is_original_name = False
-            elif tk.isidentifier() and is_original_name:
-                only[tk] = tk           #
-                last = tk
-            elif tk.isidentifier() and not is_original_name:
-                only[last] = tk
+                is_local_name = False
+            elif tk.isidentifier() and is_local_name:
+                only.append((tk,tk))
+            elif tk.isidentifier() and not is_local_name:
+                local_name,_ = only[-1]
+                only[-1] = (local_name, tk)
             else:
                 raise error.SyntaxError("could not parse 'use' statement")
     elif len(tokens) != 2:

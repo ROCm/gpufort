@@ -120,10 +120,10 @@ class TestParsingUtils(unittest.TestCase):
           "use mymod, only: var1, var2=>var3",
         ]
         results = [
-          ('mymod', {}),
-          ('mymod', {'var1': 'var1'}),
-          ('mymod', {'var1': 'var1', 'var2': 'var2'}),
-          ('mymod', {'var1': 'var1', 'var2': 'var3'}),
+          ('mymod', []),
+          ('mymod', [('var1', 'var1')]),
+          ('mymod', [('var1', 'var1'),('var2', 'var2')]),
+          ('mymod', [('var1', 'var1'),('var2', 'var3')]),
         ]
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_use_statement(stmt))

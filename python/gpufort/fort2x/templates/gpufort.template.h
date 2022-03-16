@@ -134,7 +134,7 @@ namespace {
    * \param[in] end end of the loop iteration range
    * \param[in] step step size of the loop iteration range
    */
-  template <typename T> __device__ __forceinline__ bool loop_cond(T idx,T end,T step) {
+  __device__ __forceinline__ bool loop_cond(int idx,int end,int step) {
     return (step>0) ? ( idx <= end ) : ( -idx <= -end );     
   }
   
@@ -153,28 +153,28 @@ namespace {
    * \param[in] end end of the outer loop iteration range
    * \param[in] step step size of the outer loop iteration range
    */
-  template <typename T>
-  __host__ __device__ __forceinline__ T outermost_index(
-    I& collapsed_index
-    const T begin, const T end,const T step=1) {
-    const T size = (abs(end - begin) + 1)/abs(step);
-    const T idx = collapsed_index / size; // rounds down
+  __host__ __device__ __forceinline__ int outermost_index(
+    int& collapsed_index,
+    const int begin, const int end,const int step=1
+  ) {
+    const int size = (abs(end - begin) + 1)/abs(step);
+    const int idx = collapsed_index / size; // rounds down
     collapsed_index -= idx*size;
     return (begin + step*idx);
   }
 
   // type conversions (complex make routines already defined via "hip/hip_complex.h")
 {% for float_type in ["float", "double"] %}  // make {{float_type}}
-{%- for type in ["short int",  "unsigned short int",  "unsigned int",  "int",  "long int",  "unsigned long int",  "long long int",  "unsigned long long int",  "signed char",  "unsigned char",  "float",  "double",  "long double"] %}
+{% for type in ["short int",  "unsigned short int",  "unsigned int",  "int",  "long int",  "unsigned long int",  "long long int",  "unsigned long long int",  "signed char",  "unsigned char",  "float",  "double",  "long double"] %}
   __device__ __forceinline__ {{float_type}} make_{{float_type}}(const {{type}} a) {
     return static_cast<{{float_type}}>(a);
   }
-{%- endfor %}
-{%- for type in ["hipFloatComplex", "hipDoubleComplex" ] %}
+{% endfor %}
+{% for type in ["hipFloatComplex", "hipDoubleComplex" ] %}
   __device__ __forceinline__ {{float_type}} make_{{float_type}}(const {{type}} a) {
     return static_cast<{{float_type}}>(a.x);
   }
-{%- endfor %}
+{% endfor %}
 {% endfor %} 
   // math functions 
   __device__ __forceinline__ hipFloatComplex conj(const hipFloatComplex& c) {

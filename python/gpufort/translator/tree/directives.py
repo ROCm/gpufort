@@ -166,8 +166,8 @@ class TTDo(base.TTContainer):
         begin = base.make_c_str(self._begin._rhs)
         end = base.make_c_str(self._end)
         step = base.make_c_str(self._step)
-        return "int {var} = outermost_index({begin},{end},{step},{index});\n".format(\
-                var=idx,begin=begin,end=end,step=step,index=self.thread_index)
+        return "int {var} = outermost_index({index}},{begin},{end},{step});\n".format(\
+               var=idx,begin=begin,end=end,step=step,index=self.thread_index)
 
     def problem_size(self, converter=base.make_f_str):
         if self._step == "1":

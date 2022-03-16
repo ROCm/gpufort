@@ -261,23 +261,24 @@ def _parse_statements(linemaps, file_path):
             util.logging.log_warning(opts.log_prefix,"_parse_statements","found derived type in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
                     format(current_statement,current_node._kind))
 
-    def Use(tokens):
+    def Use():
         nonlocal current_node
+        nonlocal current_statement
         log_detection_("use statement")
+        
         if current_node._kind != "root":
+            module, only = util.parsing.parse_use_statement(current_statement)
+            
             used_module = {}
-            used_module["name"] = translator.tree.make_f_str(tokens[1])
+            used_module["name"] = module 
             used_module["only"] = []
-            for pair in tokens[2]:
-                original = translator.tree.make_f_str(pair[0])
-                renamed = original if pair[
-                    1] is None else translator.tree.make_f_str(pair[1])
+            for pair in only:
                 used_module["only"].append({
-                    "original": original,
-                    "renamed": renamed
+                    "original": pair[1],
+                   "renamed": pair[0],
                 })
             current_node._data["used_modules"].append(
-                used_module) # TODO only include what is necessary
+                used_module)
 
     # delayed parsing
     def Declaration(tokens):
@@ -294,13 +295,7 @@ def _parse_statements(linemaps, file_path):
             msg = "begin to parse declaration '{}'".format(
                 current_statement)
             log_begin_task(current_node, msg)
-            try:
-                variables = create_index_records_from_declaration(current_statement)
-            except util.error.SyntaxError as e:
-                filepath = current_linemap["file"]
-                lineno = current_linemap["lineno"]
-                msg = "{}:{}:{}(stmt-no):{}".format(filepath,lineno,current_statement_no+1,str(e))
-                raise util.error.SyntaxError(msg) from e
+            variables = create_index_records_from_declaration(current_statement)
             current_node._data["variables"] += variables
             msg = "finished to parse declaration '{}'".format(current_statement)
             log_end_task(current_node, msg)
@@ -394,7 +389,6 @@ def _parse_statements(linemaps, file_path):
     structure_end.setParseAction(End)
 
     datatype_reg.setParseAction(Declaration)
-    use.setParseAction(Use)
     attributes.setParseAction(Attributes)
 
     def try_to_parse_string(expression_name, expression):
@@ -421,65 +415,68 @@ def _parse_statements(linemaps, file_path):
         return passes_filter
 
     # parser loop
-    for current_linemap_no, current_linemap in enumerate(linemaps):
-        if current_linemap["is_active"]:
-            for current_statement_no, stmt in enumerate(
-                    current_linemap["statements"]):
-                current_statement = stmt["body"].lower().strip(" \t\n")
-                if not consider_statement(current_statement):
-                    util.logging.log_debug3(
-                        opts.log_prefix, "_collect_statements",
-                        "ignore statement '{}'".format(current_statement))
-                else:
-                    util.logging.log_debug3(
-                        opts.log_prefix, "_parse_statements",
-                        "process statement '{}'".format(current_statement))
-                    current_tokens = re.split(
-                        r"\s+|\t+",
-                        current_statement.lower().strip(" \t"))
-                    current_statement_stripped = "".join(current_tokens)
-                    for expr in [
-                            "program", "module", "subroutine", "function",
-                            "type"
-                    ]:
-                        if is_end_statement_(current_tokens, expr):
-                            End()
-                    for comment_char in "!*c":
-                        if current_tokens[0] == comment_char + "$acc":
-                            if current_tokens[1] == "declare":
-                                AccDeclare()
-                            elif current_tokens[1] == "routine":
-                                AccRoutine()
-                    if current_tokens[0] == "use":
-                        try_to_parse_string("use", use)
-                    #elif current_tokens[0] == "implicit":
-                    #    try_to_parse_string("implicit",IMPLICIT)
-                    elif current_tokens[0] == "module":
-                        try_to_parse_string("module", module_start)
-                    elif current_tokens[0] == "program":
-                        try_to_parse_string("program", program_start)
-                    elif current_tokens[0].startswith(
-                            "type"): # type a ; type, bind(c) :: a
-                        try_to_parse_string("type", type_start)
-                    elif current_tokens[0].startswith(
-                            "attributes"): # attributes(device) :: a
-                        try_to_parse_string("attributes", attributes)
-                    # cannot be combined with above checks
-                    if "function" in current_tokens:
-                        try_to_parse_string("function", function_start)
-                    elif "subroutine" in current_tokens:
-                        try_to_parse_string("subroutine", subroutine_start)
-                    for expr in [
-                            "type", "character", "integer", "logical", "real",
-                            "complex", "double"
-                    ]: # type(dim3) :: a
-                        if expr in current_tokens[0]:
-                            try_to_parse_string("declaration", datatype_reg)
-                            break
-                    #try_to_parse_string("declaration|type_start|use|attributes|module_start|program_start|function_start|subroutine_start",\
-                    #  datatype_reg|type_start|use|attributes|module_start|program_start|function_start|subroutine_start)
+    try:
+        for current_linemap_no, current_linemap in enumerate(linemaps):
+            if current_linemap["is_active"]:
+                for current_statement_no, stmt in enumerate(
+                        current_linemap["statements"]):
+                    current_statement = stmt["body"].lower().strip(" \t\n")
+                    if not consider_statement(current_statement):
+                        util.logging.log_debug3(
+                            opts.log_prefix, "_collect_statements",
+                            "ignore statement '{}'".format(current_statement))
+                    else:
+                        util.logging.log_debug3(
+                            opts.log_prefix, "_parse_statements",
+                            "process statement '{}'".format(current_statement))
+                        current_tokens = re.split(
+                            r"\s+|\t+",
+                            current_statement.lower().strip(" \t"))
+                        current_statement_stripped = "".join(current_tokens)
+                        for expr in [
+                                "program", "module", "subroutine", "function",
+                                "type"
+                        ]:
+                            if is_end_statement_(current_tokens, expr):
+                                End()
+                        for comment_char in "!*c":
+                            if current_tokens[0] == comment_char + "$acc":
+                                if current_tokens[1] == "declare":
+                                    AccDeclare()
+                                elif current_tokens[1] == "routine":
+                                    AccRoutine()
+                        if current_tokens[0] == "use":
+                            Use()
+                        #elif current_tokens[0] == "implicit":
+                        #    try_to_parse_string("implicit",IMPLICIT)
+                        elif current_tokens[0] == "module":
+                            try_to_parse_string("module", module_start)
+                        elif current_tokens[0] == "program":
+                            try_to_parse_string("program", program_start)
+                        elif current_tokens[0].startswith(
+                                "type"): # type a ; type, bind(c) :: a
+                            try_to_parse_string("type", type_start)
+                        elif current_tokens[0].startswith(
+                                "attributes"): # attributes(device) :: a
+                            try_to_parse_string("attributes", attributes)
+                        # cannot be combined with above checks
+                        if "function" in current_tokens:
+                            try_to_parse_string("function", function_start)
+                        elif "subroutine" in current_tokens:
+                            try_to_parse_string("subroutine", subroutine_start)
+                        for expr in [
+                                "type", "character", "integer", "logical", "real",
+                                "complex", "double"
+                        ]: # type(dim3) :: a
+                            if expr in current_tokens[0]:
+                                try_to_parse_string("declaration", datatype_reg)
+                                break
+    except util.error.SyntaxError as e:
+        filepath = current_linemap["file"]
+        lineno = current_linemap["lineno"]
+        msg = "{}:{}:{}(stmt-no):{}".format(filepath,lineno,current_statement_no+1,str(e))
+        raise util.error.SyntaxError(msg) from e
 
-    # apply attributes and acc variable modifications
     return index
 
 

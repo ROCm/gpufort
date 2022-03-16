@@ -282,11 +282,11 @@ def search_scope_for_var(scope,
 
     result = None
     # reverse access such that entries from the inner-most scope come first
-    scope_types = reversed(scope["types"])
+    scope_types = list(reversed(scope["types"]))
 
     variable_tag = create_index_search_tag_for_var(var_expr)
     list_of_var_names = variable_tag.split("%")
-
+    
     def lookup_from_left_to_right_(scope_vars, pos=0):
         """:note: recursive"""
         nonlocal scope_types
@@ -298,67 +298,62 @@ def search_scope_for_var(scope,
                 (var for var in scope_vars if var["name"] == var_name),
                 None)
         else:
-            try:
-                matching_type_var = next((
-                    var for var in scope_vars if var["name"] == var_name),
-                                         None)
-                if matching_type_var != None:
-                    matching_type = next(
-                        (typ for typ in scope_types
-                         if typ["name"] == matching_type_var["kind"]), None)
-                    result = lookup_from_left_to_right_(
-                        reversed(matching_type["variables"]), pos + 1)
-                else:
-                    result = None
-            except Exception as e:
-                raise e
-                result = None
+            matching_type_var = next((
+                var for var in scope_vars if var["name"] == var_name),
+                                     None)
+            if matching_type_var == None:
+                raise util.error.LookupError("no index record found for variable '{}' in scope".format(var_expr))
+            matching_type = next(
+                (typ for typ in scope_types
+                 if typ["name"] == matching_type_var["kind"]), None)
+            if matching_type == None:
+                raise util.error.LookupError("no index record found for derived type '{}' in scope".format(matching_type_var["kind"]))
+            result = lookup_from_left_to_right_(
+                reversed(matching_type["variables"]), pos + 1)
         return result
 
     result = lookup_from_left_to_right_(reversed(scope["variables"]))
 
-    if result is None:
-        msg = "no entry found for variable '{}'.".format(variable_tag)
-        raise util.error.LookupError(msg)
-    else:
-        # resolve
-        if resolve:
-            for ivar in reversed(scope["variables"]):
-                if "parameter" in ivar["qualifiers"]:
-                    for entry in [
-                            "kind", "unspecified_bounds", "lbounds", "counts",
-                            "total_count", "total_bytes", "index_macro"
-                    ]:
-                        if entry in result:
-                            dest_tokens = util.parsing.tokenize(result[entry])
-                            modified_entry = ""
-                            # TODO handle selected kind here
-                            for tk in dest_tokens:
-                                modified_entry += tk.replace(
-                                    ivar["name"], "(" + ivar["value"] + ")")
-                            result[entry] = modified_entry
-                if "parameter" in result["qualifiers"]:
-                    if not result["f_type"] in ["character", "type"]:
-                        result["value"].replace(ivar["value"],
-                                                "(" + ivar["value"] + ")")
-            for entry in [
-                    "value", "kind", "unspecified_bounds", "lbounds", "counts",
-                    "total_count", "total_bytes", "index_macro"
-            ]:
-                if entry in result:
-                    entry_value = result[entry]
-                    try:
-                        code = compile(entry_value, "<string>", "eval")
-                        entry_value = str(eval(code, {"__builtins__": {}}, {}))
-                    except:
-                        pass
-                    result[entry] = entry_value
+    # resolve
+    if resolve:
+        pass
+    # TODO revisit
+    #    for ivar in reversed(scope["variables"]):
+    #        if "parameter" in ivar["qualifiers"]:
+    #            for entry in [
+    #                    "kind", "unspecified_bounds", "lbounds", "counts",
+    #                    "total_count", "total_bytes", "index_macro"
+    #            ]:
+    #                if entry in result:
+    #                    dest_tokens = util.parsing.tokenize(result[entry])
+    #                    modified_entry = ""
+    #                    # TODO handle selected kind here
+    #                    for tk in dest_tokens:
+    #                        modified_entry += tk.replace(
+    #                            ivar["name"], "(" + ivar["value"] + ")")
+    #                    result[entry] = modified_entry
+    #        if "parameter" in result["qualifiers"]:
+    #            if not result["f_type"] in ["character", "type"]:
+    #                result["value"].replace(ivar["value"],
+    #                                        "(" + ivar["value"] + ")")
+    #    for entry in [
+    #            "value", "kind", "unspecified_bounds", "lbounds", "counts",
+    #            "total_count", "total_bytes", "index_macro"
+    #    ]:
+    #        if entry in result:
+    #            entry_value = result[entry]
+    #            try:
+    #                code = compile(entry_value, "<string>", "eval")
+    #                entry_value = str(eval(code, {"__builtins__": {}}, {}))
+    #            except:
+    #                pass
+    #            result[entry] = entry_value
 
-        util.logging.log_debug2(opts.log_prefix,"search_scope_for_var",\
-          "entry found for variable '{}'".format(variable_tag))
-        util.logging.log_leave_function(opts.log_prefix,
-                                        "search_scope_for_var")
-        return result
+    util.logging.log_debug2(opts.log_prefix,"search_scope_for_var",\
+      "entry found for variable '{}'".format(variable_tag))
+    util.logging.log_leave_function(opts.log_prefix,
+                                    "search_scope_for_var")
+    return result
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)

@@ -28,7 +28,6 @@ module mymod
 end module
 """
 
-help(fort2x.hip.hipcodegen)
 codegen, linemaps = fort2x.hip.create_code_generator(file_content=file_content,
                                                      emit_interop_types=True)
 codegen.run()

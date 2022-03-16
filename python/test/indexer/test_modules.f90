@@ -6,7 +6,7 @@ module simple_base
 end module
 
 module simple
-  use simple_base, only: z1 => abc1 ! include z1 but rename it to abc1
+  use simple_base, only: abc1 => z1 ! include z1 but rename it to abc1
   integer :: a
   integer, parameter :: n = 100
   real :: c(n,n)

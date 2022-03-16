@@ -693,43 +693,47 @@ class STLoopNest(STNode):
                   joined_statements,
                   statements_fully_cover_lines,
                   index=[]):
-        kernel_args = []
-        # determine grid or problem size
-        launcher_name = self.kernel_launcher_name()
-        launcher_name_suffix = "_hip_"
-        grid_or_ps_f_str  = self.parse_result.grid_expr_f_str()
-        if grid_or_ps_f_str == None and self.parse_result.num_gangs_teams_blocks_specified():
-            grid = self.parse_result.num_gangs_teams_blocks()
-            grid_or_ps_f_str = "dim3({})".format(",".join(grid))
-        elif grid_or_ps_f_str == None:
-            launcher_name_suffix = "_hip_ps_"
-            grid_or_ps_f_str = "dim3({})".format(",".join(self.parse_result.problem_size()))
-        launcher_name += (launcher_name_suffix if not opts.loop_kernel_default_launcher=="cpu" else "_cpu_")
-        ## determine block size
-        block_f_str = self.parse_result.block_expr_f_str()
-        if block_f_str == None and self.parse_result.num_threads_in_block_specified():
-            block = self.parse_result.num_threads_in_block()
-            block_f_str = "dim3({})".format(",".join(block))
-        elif block_f_str == None:
-            block_f_str = "dim3(128)" # use config values 
-        kernel_args.append(grid_or_ps_f_str)
-        kernel_args.append(block_f_str)
-        kernel_args.append(self.sharedmem_f_str)
-        # stream
-        try:
-            stream_as_int = int(self.stream_f_str)
-            stream = "c_null_ptr"
-        except:
-            stream = self.stream_f_str
-        kernel_args.append(stream)
-        kernel_args.append(self.blocking_launch_f_str)
-        kernel_args += self.kernel_args_names
-        #
-        result = []
-        result.append("! extracted to HIP C++ file\n")
-        result.append("call {0}(\n  {1})\n".format(launcher_name,",&\n  ".join(kernel_args)))
-        indent = self.first_line_indent()
-        return textwrap.indent("".join(result),indent), True
+        if opts.destination_dialect.startswith("hip"):
+            self.parent.add_use_statement("gpufort_array")
+            kernel_args = []
+            # determine grid or problem size
+            launcher_name = self.kernel_launcher_name()
+            launcher_name_suffix = "_hip"
+            grid_or_ps_f_str  = self.parse_result.grid_expr_f_str()
+            if grid_or_ps_f_str == None and self.parse_result.num_gangs_teams_blocks_specified():
+                grid = self.parse_result.num_gangs_teams_blocks()
+                grid_or_ps_f_str = "dim3({})".format(",".join(grid))
+            elif grid_or_ps_f_str == None:
+                launcher_name_suffix = "_hip_ps"
+                grid_or_ps_f_str = "dim3({})".format(",".join(self.parse_result.problem_size()))
+            launcher_name += (launcher_name_suffix if not opts.loop_kernel_default_launcher=="cpu" else "_cpu_")
+            ## determine block size
+            block_f_str = self.parse_result.block_expr_f_str()
+            if block_f_str == None and self.parse_result.num_threads_in_block_specified():
+                block = self.parse_result.num_threads_in_block()
+                block_f_str = "dim3({})".format(",".join(block))
+            elif block_f_str == None:
+                block_f_str = "dim3(128)" # use config values 
+            kernel_args.append(grid_or_ps_f_str)
+            kernel_args.append(block_f_str)
+            kernel_args.append(self.sharedmem_f_str)
+            # stream
+            try:
+                stream_as_int = int(self.stream_f_str)
+                stream = "c_null_ptr"
+            except:
+                stream = self.stream_f_str
+            kernel_args.append(stream)
+            kernel_args.append(self.blocking_launch_f_str)
+            kernel_args += self.kernel_args_names
+            #
+            result = []
+            result.append("! extracted to HIP C++ file\n")
+            result.append("call {0}(&\n  {1})\n".format(launcher_name,",&\n  ".join(kernel_args)))
+            indent = self.first_line_indent()
+            return textwrap.indent("".join(result),indent), True
+        else:
+            return None, False
 
 class IWithBackend:
     @classmethod

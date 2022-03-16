@@ -29,15 +29,15 @@ class CodeGenerator():
             to extract all kernels [default: ['*']]
         * *cpp_file_preamble* (`str`):
             A preamble to write at the top of the files produced by the C++ generators
-            that can be created by this class [default: .opts.cpp_file_preamble].
+            that can be created by this class [default: .optscpp_file_preamble].
         * *cpp_file_ext* (`str`):
-            File extension for the generated C++ files [default: .opts.cpp_file_ext].
+            File extension for the generated C++ files [default: .optscpp_file_ext].
         * *default_modules* (`list`):
-            Default modules to use by any interface or modified Fortran module, program, or procedure. [default: .opts.fortran_default_modules].
+            Default modules to use by any interface or modified Fortran module, program, or procedure. [default: .optsfortran_default_modules].
         * *default_includes* (`list`):
-            Default includes for generated C++ files. [default: .opts.cpp_default_includes].
+            Default includes for generated C++ files. [default: .optscpp_default_includes].
         * *fortran_module_suffix* (`str`):
-            Suffix for generated Fortran modules [default: .opts.fortran_module_suffix].
+            Suffix for generated Fortran modules [default: .optsfortran_module_suffix].
         """
         self.stree = stree
         self.index = index
@@ -56,6 +56,7 @@ class CodeGenerator():
         # adjusted by subclasses
         #
         self.cpp_filegen = filegen.CppFileGenerator(
+            default_includes=self.default_includes,
             prolog=self.cpp_file_preamble)
         self.cpp_filegens_per_module = []
         self.fortran_modulegens = []

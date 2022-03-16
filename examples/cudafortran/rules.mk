@@ -1,5 +1,6 @@
 FC     ?= gfortran
 CFLAGS ?= $(shell gpufort --gfortran_config)
+LDFLAGS ?= $(shell gpufort --ldflags)
 
 HIPCC ?= hipcc -fPIC 
 HIPCC += -DGPUFORT_PRINT_KERNEL_ARGS_ALL 

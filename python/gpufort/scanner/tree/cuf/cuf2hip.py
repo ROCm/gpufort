@@ -23,8 +23,8 @@ def CufLoopNest2Hip(stloopnest,*args,**kwargs):
         if tavar["rank"] > 0:
             var_expr = tavar["expr"]
             tokens = [
-              "gpufort_array",tavar["rank"],"_wrap_device_cptr(&\n",
-              " "*4,var_expr,",lbounds(",var_expr,"))",
+              "gpufort_array",str(tavar["rank"]),"_wrap_device_cptr(&\n",
+              " "*4,"c_loc(",var_expr,"),shape(",var_expr,",kind=c_int),lbound(",var_expr,",kind=c_int))",
             ]
             stloopnest.kernel_args_names.append("".join(tokens))
         else:
@@ -64,25 +64,25 @@ def handle_deallocate_cuf(stdeallocate, joined_statements, index):
     subst = stdeallocate.parse_result.hip_f_str(array_qualifiers).lstrip(" ")
     return (textwrap.indent(subst,indent), transformed)
 
-_cuf_2_hipfort = {
-  "cudafor" : "hipfort",
-  "cublas" : "hipblas",
-  "cusparse" : "hipsparse",
-  "cufft" : "hipfft",
-  "curand" : "hipblas",
-}
-
 def handle_use_statement_cuf(stuse, joined_statements, index):
     """Removes CUDA Fortran use statements and 
     adds hipfort use statements instead. 
     """
     mod, only = util.parsing.parse_use_statement(joined_statements)
 
+    cuf_2_hipfort = {
+      "cudafor" : "hipfort",
+      "cublas" : "hipblas",
+      "cusparse" : "hipsparse",
+      "cufft" : "hipfft",
+      "curand" : "hipblas",
+    }
+
     # TODO handle only part
-    cuf_module = mod in _cuf_2_hipfort
+    cuf_module = mod in cuf_2_hipfort
     if cuf_module:
         assert isinstance(stuse.parent,nodes.STContainerBase)
-        stuse.parent.add_use_statement(_cuf_2_hipfort[mod])
+        stuse.parent.add_use_statement(cuf_2_hipfort[mod])
         stuse.parent.add_use_statement("hipfort_check")
         stuse.parent.add_use_statement("iso_c_binding")
     return "", cuf_module

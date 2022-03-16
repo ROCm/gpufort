@@ -298,7 +298,7 @@ end function
 {% set rank_ub=rank+1 %}
     buffer(&
 {% for i in range(1,rank_ub) %}
-      gpufort_array_lbound(array,{{i}}):{{ "," if not loop.last else ")" }}&
+      gpufort_array{{rank}}_lbound(array,{{i}}):{{ "," if not loop.last else ")" }}&
 {% endfor %}
         => buffer
   end function

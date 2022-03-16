@@ -245,7 +245,7 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
             tokens = [
               "gpufort_array",taver["rank"],"_wrap_device_cptr(&\n",
               " "*4,"".join(runtime_call_tokens),
-              ",shape(",var_expr,")",",lbound(",var_expr,"))",
+              ",shape(",var_expr,",kind=c_int),lbound(",var_expr,"kind=c_int))",
             ]
             return "".join(tokens)
         else:

@@ -86,69 +86,69 @@ extern "C" {
 
 {% for target in ["host","device"] %}
 {% set is_host = target == "host" %}
-    /**
-     * Allocate a {{target}} buffer with
-     * the same size as the data buffers
-     * associated with this gpufort array.
-     * \see num_data_bytes()
-     * \param[inout] pointer to the buffer to allocate
+  /**
+   * Allocate a {{target}} buffer with
+   * the same size as the data buffers
+   * associated with this gpufort array.
+   * \see num_data_bytes()
+   * \param[inout] pointer to the buffer to allocate
 {% if is_host %}
-     * \param[in] pinned If the memory should be pinned (default=true)
-     * \param[in] flags  Flags for the host memory allocation (default=0).
+   * \param[in] pinned If the memory should be pinned (default=true)
+   * \param[in] flags  Flags for the host memory allocation (default=0).
 {% endif %}
-     */
-    __host__ hipError_t {{c_prefix}}_allocate_{{target}}_buffer(
-      gpufort::array{{rank}}<{{c_type}}>* array,
-      void** buffer{{",bool pinned=true,int flags=0" if is_host}}
-    ) {
-      return array->allocate_{{target}}_buffer(buffer{{",pinned,flags" if is_host}});
-    }
+   */
+  __host__ hipError_t {{c_prefix}}_allocate_{{target}}_buffer(
+    gpufort::array{{rank}}<{{c_type}}>* array,
+    void** buffer{{",bool pinned=true,int flags=0" if is_host}}
+  ) {
+    return array->allocate_{{target}}_buffer(buffer{{",pinned,flags" if is_host}});
+  }
 
-    /**
-     * Deallocate a {{target}} buffer
-     * created via the allocate_{{target}}_buffer routine.
-     * \see num_data_bytes(), allocate_{{target}}_buffer
-     * \param[inout] the buffer to deallocte
+  /**
+   * Deallocate a {{target}} buffer
+   * created via the allocate_{{target}}_buffer routine.
+   * \see num_data_bytes(), allocate_{{target}}_buffer
+   * \param[inout] the buffer to deallocte
 {% if is_host %}
      * \param[in] pinned If the memory to deallocate is pinned [default=true]
 {% endif %}
-     */
-    __host__ hipError_t {{c_prefix}}_deallocate_{{target}}_buffer(
-        gpufort::array{{rank}}<{{c_type}}>* array,
-        void* buffer{{",bool pinned=true" if is_host}}) {
-      return array->deallocate_{{target}}_buffer(buffer{{",pinned" if is_host}});
-    }
+   */
+  __host__ hipError_t {{c_prefix}}_deallocate_{{target}}_buffer(
+      gpufort::array{{rank}}<{{c_type}}>* array,
+      void* buffer{{",bool pinned=true" if is_host}}) {
+    return array->deallocate_{{target}}_buffer(buffer{{",pinned" if is_host}});
+  }
 {% endfor %}{# target #}
-     
-    /**
-     * \return size of the array in dimension 'dim'.
-     * \param[in] dim selected dimension: 1,...,{{rank}}
-     */
-    __host__ __forceinline__ int {{c_prefix}}_size(
-        gpufort::array{{rank}}<{{c_type}}>* array,
-        int dim) {
-      return array->data.size(dim);
-    }
-    
-    /**
-     * \return lower bound (inclusive) of the array in dimension 'dim'.
-     * \param[in] dim selected dimension: 1,...,{{rank}}
-     */
-    __host__ __forceinline__ int {{c_prefix}}_lbound(
-        gpufort::array{{rank}}<{{c_type}}>* array,
-        int dim) {
-      return array->data.lbound(dim);
-    }
-    
-    /**
-     * \return upper bound (inclusive) of the array in dimension 'dim'.
-     * \param[in] dim selected dimension: 1,...,{{rank}}
-     */
-    __host__ __forceinline__ int {{c_prefix}}_ubound(
-        gpufort::array{{rank}}<{{c_type}}>* array,
-        int dim) {
-      return array->data.ubound(dim);
-    }
+   
+  /**
+   * \return size of the array in dimension 'dim'.
+   * \param[in] dim selected dimension: 1,...,{{rank}}
+   */
+  __host__  int {{c_prefix}}_size(
+      gpufort::array{{rank}}<{{c_type}}>* array,
+      int dim) {
+    return array->data.size(dim);
+  }
+  
+  /**
+   * \return lower bound (inclusive) of the array in dimension 'dim'.
+   * \param[in] dim selected dimension: 1,...,{{rank}}
+   */
+  __host__  int {{c_prefix}}_lbound(
+      gpufort::array{{rank}}<{{c_type}}>* array,
+      int dim) {
+    return array->data.lbound(dim);
+  }
+  
+  /**
+   * \return upper bound (inclusive) of the array in dimension 'dim'.
+   * \param[in] dim selected dimension: 1,...,{{rank}}
+   */
+  __host__  int {{c_prefix}}_ubound(
+      gpufort::array{{rank}}<{{c_type}}>* array,
+      int dim) {
+    return array->data.ubound(dim);
+  }
 
 {% for d in range(rank-1,0,-1) %}
     /**
@@ -158,18 +158,18 @@ extern "C" {
      * \param[in]    array  the original array
      * \param[in]    i{{d+1}},...,i{{rank}} indices to fix.
      */
-    __host__ void {{c_prefix}}_collapse_{{d}}(
-        gpufort::array{{d}}<{{c_type}}>* result,
-        gpufort::array{{rank}}<{{c_type}}>* array,
+  __host__ void {{c_prefix}}_collapse_{{d}}(
+      gpufort::array{{d}}<{{c_type}}>* result,
+      gpufort::array{{rank}}<{{c_type}}>* array,
 {% for e in range(d+1,rank_ub) %}
-        const int i{{e}}{{"," if not loop.last}}
+      const int i{{e}}{{"," if not loop.last}}
 {% endfor %}
-    ) {
-      auto collapsed_array = 
-        array->collapse( 
-{{"" | indent(10,True)}}{% for e in range(d+1,rank_ub) %}i{{e}}{{"," if not loop.last}}{%- endfor %});
-      result->copy(collapsed_array);
-    }
+  ) {
+    auto collapsed_array = 
+      array->collapse( 
+{{"" | indent(8,True)}}{% for e in range(d+1,rank_ub) %}i{{e}}{{"," if not loop.last}}{%- endfor %});
+    result->copy(collapsed_array);
+  }
 {% endfor %}
   
   __host__ void {{c_prefix}}_inc_num_refs(

@@ -136,6 +136,14 @@ namespace gpufort {
       #endif
     }
     
+
+    /**
+     * \return Number of array elements.
+     */
+    __host__ __device__ __forceinline__ int size() const {
+      return this->num_elements;
+    }
+    
     /**
      * \return Size of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,1
@@ -146,9 +154,9 @@ namespace gpufort {
       assert(dim <= 1);
       #endif
       switch(dim) {
-       case 1:
-	        return this->num_elements / 1;
-       default:
+        case 1:
+          return this->num_elements / 1;
+        default:
           #ifndef __HIP_DEVICE_COMPILE__
           std::cerr << "‘dim’ argument of ‘gpufort::array1::size’ is not a valid dimension index ('dim': "<<dim<<", max dimension: 1" << std::endl;
           std::terminate();
@@ -998,13 +1006,6 @@ namespace gpufort {
     __host__ size_t num_data_bytes() {
       return this->data.num_elements * this->bytes_per_element;
     }
-    
-    /**
-     * \return the number of elements of this array.
-     */
-    __host__ int num_elements() {
-      return this->data.num_elements;
-    }
 
     /**
      * Linearize multi-dimensional index.
@@ -1041,6 +1042,13 @@ namespace gpufort {
       return this->data(
         i1
       );
+    }
+    
+    /**
+     * \return Number of array elements.
+     */
+    __host__ __device__ __forceinline__ int size() const {
+      return this->data.num_elements;
     }
     
     /**
@@ -1301,6 +1309,14 @@ namespace gpufort {
       #endif
     }
     
+
+    /**
+     * \return Number of array elements.
+     */
+    __host__ __device__ __forceinline__ int size() const {
+      return this->num_elements;
+    }
+    
     /**
      * \return Size of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,2
@@ -1311,11 +1327,11 @@ namespace gpufort {
       assert(dim <= 2);
       #endif
       switch(dim) {
-       case 2:
-	        return this->num_elements / this->stride2;
-       case 1:
-	        return this->stride2 / 1;
-       default:
+        case 2:
+          return this->num_elements / this->stride2;
+        case 1:
+          return this->stride2 / 1;
+        default:
           #ifndef __HIP_DEVICE_COMPILE__
           std::cerr << "‘dim’ argument of ‘gpufort::array2::size’ is not a valid dimension index ('dim': "<<dim<<", max dimension: 2" << std::endl;
           std::terminate();
@@ -2168,13 +2184,6 @@ namespace gpufort {
     __host__ size_t num_data_bytes() {
       return this->data.num_elements * this->bytes_per_element;
     }
-    
-    /**
-     * \return the number of elements of this array.
-     */
-    __host__ int num_elements() {
-      return this->data.num_elements;
-    }
 
     /**
      * Linearize multi-dimensional index.
@@ -2214,6 +2223,13 @@ namespace gpufort {
       return this->data(
         i1,i2
       );
+    }
+    
+    /**
+     * \return Number of array elements.
+     */
+    __host__ __device__ __forceinline__ int size() const {
+      return this->data.num_elements;
     }
     
     /**
@@ -2526,6 +2542,14 @@ namespace gpufort {
       #endif
     }
     
+
+    /**
+     * \return Number of array elements.
+     */
+    __host__ __device__ __forceinline__ int size() const {
+      return this->num_elements;
+    }
+    
     /**
      * \return Size of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,3
@@ -2536,13 +2560,13 @@ namespace gpufort {
       assert(dim <= 3);
       #endif
       switch(dim) {
-       case 3:
-	        return this->num_elements / this->stride3;
-       case 2:
-	        return this->stride3 / this->stride2;
-       case 1:
-	        return this->stride2 / 1;
-       default:
+        case 3:
+          return this->num_elements / this->stride3;
+        case 2:
+          return this->stride3 / this->stride2;
+        case 1:
+          return this->stride2 / 1;
+        default:
           #ifndef __HIP_DEVICE_COMPILE__
           std::cerr << "‘dim’ argument of ‘gpufort::array3::size’ is not a valid dimension index ('dim': "<<dim<<", max dimension: 3" << std::endl;
           std::terminate();
@@ -3398,13 +3422,6 @@ namespace gpufort {
     __host__ size_t num_data_bytes() {
       return this->data.num_elements * this->bytes_per_element;
     }
-    
-    /**
-     * \return the number of elements of this array.
-     */
-    __host__ int num_elements() {
-      return this->data.num_elements;
-    }
 
     /**
      * Linearize multi-dimensional index.
@@ -3447,6 +3464,13 @@ namespace gpufort {
       return this->data(
         i1,i2,i3
       );
+    }
+    
+    /**
+     * \return Number of array elements.
+     */
+    __host__ __device__ __forceinline__ int size() const {
+      return this->data.num_elements;
     }
     
     /**
@@ -3814,6 +3838,14 @@ namespace gpufort {
       #endif
     }
     
+
+    /**
+     * \return Number of array elements.
+     */
+    __host__ __device__ __forceinline__ int size() const {
+      return this->num_elements;
+    }
+    
     /**
      * \return Size of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,4
@@ -3824,15 +3856,15 @@ namespace gpufort {
       assert(dim <= 4);
       #endif
       switch(dim) {
-       case 4:
-	        return this->num_elements / this->stride4;
-       case 3:
-	        return this->stride4 / this->stride3;
-       case 2:
-	        return this->stride3 / this->stride2;
-       case 1:
-	        return this->stride2 / 1;
-       default:
+        case 4:
+          return this->num_elements / this->stride4;
+        case 3:
+          return this->stride4 / this->stride3;
+        case 2:
+          return this->stride3 / this->stride2;
+        case 1:
+          return this->stride2 / 1;
+        default:
           #ifndef __HIP_DEVICE_COMPILE__
           std::cerr << "‘dim’ argument of ‘gpufort::array4::size’ is not a valid dimension index ('dim': "<<dim<<", max dimension: 4" << std::endl;
           std::terminate();
@@ -4691,13 +4723,6 @@ namespace gpufort {
     __host__ size_t num_data_bytes() {
       return this->data.num_elements * this->bytes_per_element;
     }
-    
-    /**
-     * \return the number of elements of this array.
-     */
-    __host__ int num_elements() {
-      return this->data.num_elements;
-    }
 
     /**
      * Linearize multi-dimensional index.
@@ -4743,6 +4768,13 @@ namespace gpufort {
       return this->data(
         i1,i2,i3,i4
       );
+    }
+    
+    /**
+     * \return Number of array elements.
+     */
+    __host__ __device__ __forceinline__ int size() const {
+      return this->data.num_elements;
     }
     
     /**
@@ -5168,6 +5200,14 @@ namespace gpufort {
       #endif
     }
     
+
+    /**
+     * \return Number of array elements.
+     */
+    __host__ __device__ __forceinline__ int size() const {
+      return this->num_elements;
+    }
+    
     /**
      * \return Size of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,5
@@ -5178,17 +5218,17 @@ namespace gpufort {
       assert(dim <= 5);
       #endif
       switch(dim) {
-       case 5:
-	        return this->num_elements / this->stride5;
-       case 4:
-	        return this->stride5 / this->stride4;
-       case 3:
-	        return this->stride4 / this->stride3;
-       case 2:
-	        return this->stride3 / this->stride2;
-       case 1:
-	        return this->stride2 / 1;
-       default:
+        case 5:
+          return this->num_elements / this->stride5;
+        case 4:
+          return this->stride5 / this->stride4;
+        case 3:
+          return this->stride4 / this->stride3;
+        case 2:
+          return this->stride3 / this->stride2;
+        case 1:
+          return this->stride2 / 1;
+        default:
           #ifndef __HIP_DEVICE_COMPILE__
           std::cerr << "‘dim’ argument of ‘gpufort::array5::size’ is not a valid dimension index ('dim': "<<dim<<", max dimension: 5" << std::endl;
           std::terminate();
@@ -6050,13 +6090,6 @@ namespace gpufort {
     __host__ size_t num_data_bytes() {
       return this->data.num_elements * this->bytes_per_element;
     }
-    
-    /**
-     * \return the number of elements of this array.
-     */
-    __host__ int num_elements() {
-      return this->data.num_elements;
-    }
 
     /**
      * Linearize multi-dimensional index.
@@ -6105,6 +6138,13 @@ namespace gpufort {
       return this->data(
         i1,i2,i3,i4,i5
       );
+    }
+    
+    /**
+     * \return Number of array elements.
+     */
+    __host__ __device__ __forceinline__ int size() const {
+      return this->data.num_elements;
     }
     
     /**
@@ -6591,6 +6631,14 @@ namespace gpufort {
       #endif
     }
     
+
+    /**
+     * \return Number of array elements.
+     */
+    __host__ __device__ __forceinline__ int size() const {
+      return this->num_elements;
+    }
+    
     /**
      * \return Size of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,6
@@ -6601,19 +6649,19 @@ namespace gpufort {
       assert(dim <= 6);
       #endif
       switch(dim) {
-       case 6:
-	        return this->num_elements / this->stride6;
-       case 5:
-	        return this->stride6 / this->stride5;
-       case 4:
-	        return this->stride5 / this->stride4;
-       case 3:
-	        return this->stride4 / this->stride3;
-       case 2:
-	        return this->stride3 / this->stride2;
-       case 1:
-	        return this->stride2 / 1;
-       default:
+        case 6:
+          return this->num_elements / this->stride6;
+        case 5:
+          return this->stride6 / this->stride5;
+        case 4:
+          return this->stride5 / this->stride4;
+        case 3:
+          return this->stride4 / this->stride3;
+        case 2:
+          return this->stride3 / this->stride2;
+        case 1:
+          return this->stride2 / 1;
+        default:
           #ifndef __HIP_DEVICE_COMPILE__
           std::cerr << "‘dim’ argument of ‘gpufort::array6::size’ is not a valid dimension index ('dim': "<<dim<<", max dimension: 6" << std::endl;
           std::terminate();
@@ -7478,13 +7526,6 @@ namespace gpufort {
     __host__ size_t num_data_bytes() {
       return this->data.num_elements * this->bytes_per_element;
     }
-    
-    /**
-     * \return the number of elements of this array.
-     */
-    __host__ int num_elements() {
-      return this->data.num_elements;
-    }
 
     /**
      * Linearize multi-dimensional index.
@@ -7536,6 +7577,13 @@ namespace gpufort {
       return this->data(
         i1,i2,i3,i4,i5,i6
       );
+    }
+    
+    /**
+     * \return Number of array elements.
+     */
+    __host__ __device__ __forceinline__ int size() const {
+      return this->data.num_elements;
     }
     
     /**
@@ -8086,6 +8134,14 @@ namespace gpufort {
       #endif
     }
     
+
+    /**
+     * \return Number of array elements.
+     */
+    __host__ __device__ __forceinline__ int size() const {
+      return this->num_elements;
+    }
+    
     /**
      * \return Size of the array in dimension 'dim'.
      * \param[in] dim selected dimension: 1,...,7
@@ -8096,21 +8152,21 @@ namespace gpufort {
       assert(dim <= 7);
       #endif
       switch(dim) {
-       case 7:
-	        return this->num_elements / this->stride7;
-       case 6:
-	        return this->stride7 / this->stride6;
-       case 5:
-	        return this->stride6 / this->stride5;
-       case 4:
-	        return this->stride5 / this->stride4;
-       case 3:
-	        return this->stride4 / this->stride3;
-       case 2:
-	        return this->stride3 / this->stride2;
-       case 1:
-	        return this->stride2 / 1;
-       default:
+        case 7:
+          return this->num_elements / this->stride7;
+        case 6:
+          return this->stride7 / this->stride6;
+        case 5:
+          return this->stride6 / this->stride5;
+        case 4:
+          return this->stride5 / this->stride4;
+        case 3:
+          return this->stride4 / this->stride3;
+        case 2:
+          return this->stride3 / this->stride2;
+        case 1:
+          return this->stride2 / 1;
+        default:
           #ifndef __HIP_DEVICE_COMPILE__
           std::cerr << "‘dim’ argument of ‘gpufort::array7::size’ is not a valid dimension index ('dim': "<<dim<<", max dimension: 7" << std::endl;
           std::terminate();
@@ -8978,13 +9034,6 @@ namespace gpufort {
     __host__ size_t num_data_bytes() {
       return this->data.num_elements * this->bytes_per_element;
     }
-    
-    /**
-     * \return the number of elements of this array.
-     */
-    __host__ int num_elements() {
-      return this->data.num_elements;
-    }
 
     /**
      * Linearize multi-dimensional index.
@@ -9039,6 +9088,13 @@ namespace gpufort {
       return this->data(
         i1,i2,i3,i4,i5,i6,i7
       );
+    }
+    
+    /**
+     * \return Number of array elements.
+     */
+    __host__ __device__ __forceinline__ int size() const {
+      return this->data.num_elements;
     }
     
     /**
@@ -9483,13 +9539,12 @@ namespace gpufort {
 } // namespace gpufort
 
 /**
- * \return size of the array in dimension 'dim'.
- * \param[in] dim selected dimension: 1,...,1
+ * \return Number of array elements.
  */
 template<typename T>
 __host__ __device__ __forceinline__ int size(
     gpufort::array1<T>& array) {
-  return array.data.size(dim);
+  return array.size();
 }
 
 /**
@@ -9500,7 +9555,7 @@ template<typename T>
 __host__ __device__ __forceinline__ int size(
     gpufort::array1<T>& array,
     int dim) {
-  return array.data.size(dim);
+  return array.size(dim);
 }
 
 /**
@@ -9511,7 +9566,7 @@ template<typename T>
 __host__ __forceinline__ int lbound(
     gpufort::array1<T>& array,
     int dim) {
-  return array.data.lbound(dim);
+  return array.lbound(dim);
 }
 
 /**
@@ -9522,16 +9577,15 @@ template<typename T>
 __host__ __forceinline__ int ubound(
     gpufort::array1<T>& array,
     int dim) {
-  return array.data.ubound(dim);
+  return array.ubound(dim);
 }
 /**
- * \return size of the array in dimension 'dim'.
- * \param[in] dim selected dimension: 1,...,2
+ * \return Number of array elements.
  */
 template<typename T>
 __host__ __device__ __forceinline__ int size(
     gpufort::array2<T>& array) {
-  return array.data.size(dim);
+  return array.size();
 }
 
 /**
@@ -9542,7 +9596,7 @@ template<typename T>
 __host__ __device__ __forceinline__ int size(
     gpufort::array2<T>& array,
     int dim) {
-  return array.data.size(dim);
+  return array.size(dim);
 }
 
 /**
@@ -9553,7 +9607,7 @@ template<typename T>
 __host__ __forceinline__ int lbound(
     gpufort::array2<T>& array,
     int dim) {
-  return array.data.lbound(dim);
+  return array.lbound(dim);
 }
 
 /**
@@ -9564,16 +9618,15 @@ template<typename T>
 __host__ __forceinline__ int ubound(
     gpufort::array2<T>& array,
     int dim) {
-  return array.data.ubound(dim);
+  return array.ubound(dim);
 }
 /**
- * \return size of the array in dimension 'dim'.
- * \param[in] dim selected dimension: 1,...,3
+ * \return Number of array elements.
  */
 template<typename T>
 __host__ __device__ __forceinline__ int size(
     gpufort::array3<T>& array) {
-  return array.data.size(dim);
+  return array.size();
 }
 
 /**
@@ -9584,7 +9637,7 @@ template<typename T>
 __host__ __device__ __forceinline__ int size(
     gpufort::array3<T>& array,
     int dim) {
-  return array.data.size(dim);
+  return array.size(dim);
 }
 
 /**
@@ -9595,7 +9648,7 @@ template<typename T>
 __host__ __forceinline__ int lbound(
     gpufort::array3<T>& array,
     int dim) {
-  return array.data.lbound(dim);
+  return array.lbound(dim);
 }
 
 /**
@@ -9606,16 +9659,15 @@ template<typename T>
 __host__ __forceinline__ int ubound(
     gpufort::array3<T>& array,
     int dim) {
-  return array.data.ubound(dim);
+  return array.ubound(dim);
 }
 /**
- * \return size of the array in dimension 'dim'.
- * \param[in] dim selected dimension: 1,...,4
+ * \return Number of array elements.
  */
 template<typename T>
 __host__ __device__ __forceinline__ int size(
     gpufort::array4<T>& array) {
-  return array.data.size(dim);
+  return array.size();
 }
 
 /**
@@ -9626,7 +9678,7 @@ template<typename T>
 __host__ __device__ __forceinline__ int size(
     gpufort::array4<T>& array,
     int dim) {
-  return array.data.size(dim);
+  return array.size(dim);
 }
 
 /**
@@ -9637,7 +9689,7 @@ template<typename T>
 __host__ __forceinline__ int lbound(
     gpufort::array4<T>& array,
     int dim) {
-  return array.data.lbound(dim);
+  return array.lbound(dim);
 }
 
 /**
@@ -9648,16 +9700,15 @@ template<typename T>
 __host__ __forceinline__ int ubound(
     gpufort::array4<T>& array,
     int dim) {
-  return array.data.ubound(dim);
+  return array.ubound(dim);
 }
 /**
- * \return size of the array in dimension 'dim'.
- * \param[in] dim selected dimension: 1,...,5
+ * \return Number of array elements.
  */
 template<typename T>
 __host__ __device__ __forceinline__ int size(
     gpufort::array5<T>& array) {
-  return array.data.size(dim);
+  return array.size();
 }
 
 /**
@@ -9668,7 +9719,7 @@ template<typename T>
 __host__ __device__ __forceinline__ int size(
     gpufort::array5<T>& array,
     int dim) {
-  return array.data.size(dim);
+  return array.size(dim);
 }
 
 /**
@@ -9679,7 +9730,7 @@ template<typename T>
 __host__ __forceinline__ int lbound(
     gpufort::array5<T>& array,
     int dim) {
-  return array.data.lbound(dim);
+  return array.lbound(dim);
 }
 
 /**
@@ -9690,16 +9741,15 @@ template<typename T>
 __host__ __forceinline__ int ubound(
     gpufort::array5<T>& array,
     int dim) {
-  return array.data.ubound(dim);
+  return array.ubound(dim);
 }
 /**
- * \return size of the array in dimension 'dim'.
- * \param[in] dim selected dimension: 1,...,6
+ * \return Number of array elements.
  */
 template<typename T>
 __host__ __device__ __forceinline__ int size(
     gpufort::array6<T>& array) {
-  return array.data.size(dim);
+  return array.size();
 }
 
 /**
@@ -9710,7 +9760,7 @@ template<typename T>
 __host__ __device__ __forceinline__ int size(
     gpufort::array6<T>& array,
     int dim) {
-  return array.data.size(dim);
+  return array.size(dim);
 }
 
 /**
@@ -9721,7 +9771,7 @@ template<typename T>
 __host__ __forceinline__ int lbound(
     gpufort::array6<T>& array,
     int dim) {
-  return array.data.lbound(dim);
+  return array.lbound(dim);
 }
 
 /**
@@ -9732,16 +9782,15 @@ template<typename T>
 __host__ __forceinline__ int ubound(
     gpufort::array6<T>& array,
     int dim) {
-  return array.data.ubound(dim);
+  return array.ubound(dim);
 }
 /**
- * \return size of the array in dimension 'dim'.
- * \param[in] dim selected dimension: 1,...,7
+ * \return Number of array elements.
  */
 template<typename T>
 __host__ __device__ __forceinline__ int size(
     gpufort::array7<T>& array) {
-  return array.data.size(dim);
+  return array.size();
 }
 
 /**
@@ -9752,7 +9801,7 @@ template<typename T>
 __host__ __device__ __forceinline__ int size(
     gpufort::array7<T>& array,
     int dim) {
-  return array.data.size(dim);
+  return array.size(dim);
 }
 
 /**
@@ -9763,7 +9812,7 @@ template<typename T>
 __host__ __forceinline__ int lbound(
     gpufort::array7<T>& array,
     int dim) {
-  return array.data.lbound(dim);
+  return array.lbound(dim);
 }
 
 /**
@@ -9774,6 +9823,6 @@ template<typename T>
 __host__ __forceinline__ int ubound(
     gpufort::array7<T>& array,
     int dim) {
-  return array.data.ubound(dim);
+  return array.ubound(dim);
 }
 #endif // _GPUFORT_ARRAYS_H_

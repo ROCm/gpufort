@@ -9195,7 +9195,7 @@ contains
       opt_sync_mode)
     if ( present(ierr) ) ierr = opt_ierr
   end function
-  function gpufort_array1_wrap_device_ptr_cptr(&
+  function gpufort_array1_wrap_device_cptr(&
       data_dev,sizes,lbounds,bytes_per_element) result(array)
     use iso_c_binding
     use hipfort_enums
@@ -10440,7 +10440,7 @@ contains
       opt_sync_mode)
     if ( present(ierr) ) ierr = opt_ierr
   end function
-  function gpufort_array2_wrap_device_ptr_cptr(&
+  function gpufort_array2_wrap_device_cptr(&
       data_dev,sizes,lbounds,bytes_per_element) result(array)
     use iso_c_binding
     use hipfort_enums
@@ -11685,7 +11685,7 @@ contains
       opt_sync_mode)
     if ( present(ierr) ) ierr = opt_ierr
   end function
-  function gpufort_array3_wrap_device_ptr_cptr(&
+  function gpufort_array3_wrap_device_cptr(&
       data_dev,sizes,lbounds,bytes_per_element) result(array)
     use iso_c_binding
     use hipfort_enums
@@ -12930,7 +12930,7 @@ contains
       opt_sync_mode)
     if ( present(ierr) ) ierr = opt_ierr
   end function
-  function gpufort_array4_wrap_device_ptr_cptr(&
+  function gpufort_array4_wrap_device_cptr(&
       data_dev,sizes,lbounds,bytes_per_element) result(array)
     use iso_c_binding
     use hipfort_enums
@@ -14175,7 +14175,7 @@ contains
       opt_sync_mode)
     if ( present(ierr) ) ierr = opt_ierr
   end function
-  function gpufort_array5_wrap_device_ptr_cptr(&
+  function gpufort_array5_wrap_device_cptr(&
       data_dev,sizes,lbounds,bytes_per_element) result(array)
     use iso_c_binding
     use hipfort_enums
@@ -15420,7 +15420,7 @@ contains
       opt_sync_mode)
     if ( present(ierr) ) ierr = opt_ierr
   end function
-  function gpufort_array6_wrap_device_ptr_cptr(&
+  function gpufort_array6_wrap_device_cptr(&
       data_dev,sizes,lbounds,bytes_per_element) result(array)
     use iso_c_binding
     use hipfort_enums
@@ -16665,7 +16665,7 @@ contains
       opt_sync_mode)
     if ( present(ierr) ) ierr = opt_ierr
   end function
-  function gpufort_array7_wrap_device_ptr_cptr(&
+  function gpufort_array7_wrap_device_cptr(&
       data_dev,sizes,lbounds,bytes_per_element) result(array)
     use iso_c_binding
     use hipfort_enums

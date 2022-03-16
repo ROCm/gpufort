@@ -59,7 +59,7 @@ namespace {
   };
   
   template <typename T, typename ReduceOpT>
-  void reduce(const T *const d_in, const int &NX, const T *h_out) {
+  void reduce(const T *const d_in, const int &NX, T& h_out) {
     T *d_out = nullptr;
     HIP_CHECK(hipMalloc((void **)&d_out, sizeof(T)));
     // Determine temporary device storage requirements
@@ -73,7 +73,7 @@ namespace {
     // Run reduction
     hipcub::DeviceReduce::Reduce(temp_storage, temp_storage_bytes, d_in, d_out, NX,
                                  ReduceOpT(), ReduceOpT::template ival<T>());
-    HIP_CHECK(hipMemcpy((void *)h_out, d_out, sizeof(T), hipMemcpyDeviceToHost));
+    HIP_CHECK(hipMemcpy((void *)&h_out, d_out, sizeof(T), hipMemcpyDeviceToHost));
     // Clean up
     HIP_CHECK(hipFree(d_out));
     HIP_CHECK(hipFree(temp_storage));

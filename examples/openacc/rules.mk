@@ -16,4 +16,3 @@ OMPFC        ?= /opt/rocm/llvm/bin/flang
 OMPFC_CFLAGS ?= $(CFLAGS) -fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx908
 
 LDFLAGS = $(shell gpufort --ldflags-gpufort-rt) -lgfortran
-

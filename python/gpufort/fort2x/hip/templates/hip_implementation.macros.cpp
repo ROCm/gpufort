@@ -7,9 +7,9 @@
 {%- if rvars|length > 0 -%}
 {%- for rvar in rvars %} 
 {%- set rvar_buffer = rvar.name + "_buf" -%}
-gpufort::array<{{rvar.c_type}}> {{rvar_buffer}};
+gpufort::array{{rvar.rank+1}}<{{rvar.c_type}}> {{rvar_buffer}};
 {{rvar_buffer}}.init(sizeof({{rvar.c_type}})/*bytes per element*/,nullptr/*hostptr*/,nullptr/*deviceptr*/,
-  __total_threads(grid,block)/*#elements*/,0/*lower bound*/,AllocMode::WrapHostAllocDevice);
+  __total_threads(grid,block)/*#elements*/,0/*lower bound*/,gpufort::AllocMode::WrapHostAllocDevice);
 {% endfor -%}
 {%- endif -%}
 {%- endmacro -%}

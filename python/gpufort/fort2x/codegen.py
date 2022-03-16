@@ -245,7 +245,6 @@ class CodeGenerator():
                         cpp_filegen,
                     ))
                 elif isinstance(stnode.parent, scanner.tree.STRoot):
-                    print("merge")
                     self.cpp_filegen.merge(cpp_filegen)
 
         traverse_node_(self.stree)

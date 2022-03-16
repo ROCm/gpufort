@@ -243,9 +243,9 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
                 runtime_call_tokens += [",",finalize]
             runtime_call_tokens.append(")") 
             tokens = [
-              "gpufort_array",taver["rank"],"_wrap_device_cptr(&\n",
+              "gpufort_array",str(tavar["rank"]),"_wrap_device_cptr(&\n",
               " "*4,"".join(runtime_call_tokens),
-              ",shape(",var_expr,",kind=c_int),lbound(",var_expr,"kind=c_int))",
+              ",shape(",var_expr,",kind=c_int),lbound(",var_expr,",kind=c_int))",
             ]
             return "".join(tokens)
         else:
@@ -291,7 +291,7 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
         if not found_async:
             queue = "0"
         stloopnest.stream_f_str = "gpufort_acc_get_stream({})".format(queue)
-        stloopnest.blocking_launch_f_str = ".{}.".format(str(not found_async))
+        stloopnest.async_launch_f_str = ".{}.".format(str(found_async)).lower()
        
         stloopnest.kernel_args_names = self.derive_kernel_call_arguments()
         result_loopnest, _ = nodes.STLoopNest.transform(

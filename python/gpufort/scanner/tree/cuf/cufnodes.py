@@ -132,6 +132,7 @@ class STCufKernelCall(nodes.STNode):
                   index=[]):
         if "cuf" in opts.source_dialects and opts.destination_dialect.startswith("hip"):
             self.parent.add_use_statement("gpufort_array")
+            self.parent.add_use_statement("hipfort_types",only=["dim3"])
             #
             kernel_name, launch_params, call_args = util.parsing.parse_cuf_kernel_call(joined_statements)
             iprocedure = indexer.scope.search_index_for_procedure(index,self.parent.tag(),kernel_name)

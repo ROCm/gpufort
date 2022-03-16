@@ -648,7 +648,7 @@ class STLoopNest(STNode):
         self.parse_result          = None
         self.sharedmem_f_str       = "0" # set from extraction routine
         self.stream_f_str          = "c_null_ptr" # set from extraction routine
-        self.blocking_launch_f_str = ".false."
+        self.async_launch_f_str = ".false."
         #
         self.kernel_args_tavars = [] # set from extraction routine
         self.kernel_args_names = [] # set from subclass
@@ -695,6 +695,7 @@ class STLoopNest(STNode):
                   index=[]):
         if opts.destination_dialect.startswith("hip"):
             self.parent.add_use_statement("gpufort_array")
+            self.parent.add_use_statement("hipfort_types",only=["dim3"])
             #
             kernel_args = []
             # determine grid or problem size
@@ -725,7 +726,7 @@ class STLoopNest(STNode):
             except:
                 stream = self.stream_f_str
             kernel_args.append(stream)
-            kernel_args.append(self.blocking_launch_f_str)
+            kernel_args.append(self.async_launch_f_str)
             kernel_args += self.kernel_args_names
             #
             result = []

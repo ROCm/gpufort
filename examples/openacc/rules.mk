@@ -15,5 +15,5 @@ HIPFC ?= hipfc
 OMPFC        ?= /opt/rocm/llvm/bin/flang
 OMPFC_CFLAGS ?= $(CFLAGS) -fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx908
 
-CFLAGS += $(shell gpufort --ldflags-gpufort-rt) -lgfortran
+LDFLAGS = $(shell gpufort --ldflags-gpufort-rt) -lgfortran
 

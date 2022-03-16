@@ -26,12 +26,5 @@ def add_runtime_module_use_statements(stree,acc_runtime_module_name):
 
     directives = stree.find_all(filter=directive_filter, recursively=True)
     for directive in directives:
-        stnode = directive.parent.first_entry_in_decl_list()
-        # add acc use statements
-        if not stnode is None:
-            indent = stnode.first_line_indent()
-            if acc_runtime_module_name != None and len(
-                    acc_runtime_module_name):
-                stnode.add_to_prolog(
-                    "{0}use {1}\n{0}use iso_c_binding\n".format(
-                        indent, acc_runtime_module_name))
+        directive.parent.add_use_statement(acc_runtime_module_name)
+        directive.parent.add_use_statement("iso_c_binding")

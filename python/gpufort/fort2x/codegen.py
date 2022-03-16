@@ -228,21 +228,24 @@ class CodeGenerator():
                     traverse_node_(stchildnode)
 
                 # finalize
+                # Fortran code
                 if isinstance(stnode.parent,(scanner.tree.STRoot,scanner.tree.STModule)) and\
                    fortran_modulegen.stores_any_code():
                     # Directly modify Fortran tree with new definitions.
                     self._modify_stcontainer(stnode, fortran_modulegen)
                 if isinstance(stnode.parent, scanner.tree.STRoot) and\
                    fortran_modulegen.stores_any_code():
-                    # module generator can be used to generate standalone module (files).
-                    self.fortran_modulegens.append(fortran_modulegen)
+                     # module generator can be used to generate standalone module (files).
+                     self.fortran_modulegens.append(fortran_modulegen)
+                # C++ code
                 if isinstance(stnode, scanner.tree.STModule): #
                     self.cpp_filegen.includes.append(cpp_file_name)
                     self.cpp_filegens_per_module.append((
                         cpp_file_name,
                         cpp_filegen,
                     ))
-                else:
+                elif isinstance(stnode.parent, scanner.tree.STRoot):
+                    print("merge")
                     self.cpp_filegen.merge(cpp_filegen)
 
         traverse_node_(self.stree)

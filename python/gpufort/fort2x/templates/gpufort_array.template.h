@@ -101,10 +101,9 @@ namespace gpufort {
        this->data_host = data_host;
        this->data_dev  = data_dev;
        // column-major access
-{% for d in range(2,rank_ub) %}
+{% for d in range(2,rank_ub+1) %}
        {{ this_stride(d,rank) }} = {{ this_stride(d-1,rank) }}*n{{d-1}};
 {% endfor %}
-       this->num_elements = {{ this_stride(rank,rank) }}*n{{rank}};
        this->index_offset =
 {% for d in range(1,rank_ub) %}
          -lb{{d}}*{{ this_stride(d,rank) }}{{";" if loop.last}}
@@ -172,7 +171,7 @@ namespace gpufort {
      * \return Number of array elements.
      */
     __host__ __device__ __forceinline__ int size() const {
-      return this->num_elements;
+      return {{ this_stride(rank+1,rank) }};
     }
     
     /**
@@ -240,8 +239,8 @@ namespace gpufort {
                                                                         //> wrap the host and allocate device data
     SyncMode               sync_mode  = SyncMode::None;                 //> How data should be synchronized
                                                                         //> during the initialization and destruction of this GPUFORT array.
-    int num_refs             = 0;  //> Number of references.
-    size_t bytes_per_element = -1; //> Bytes per element; stored to make num_data_bytes routine independent of T 
+    int num_refs          = 0;  //> Number of references.
+    int bytes_per_element = -1; //> Bytes per element; stored to make num_data_bytes routine independent of T 
 
     array{{rank}}() {
       // do nothing

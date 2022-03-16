@@ -297,6 +297,8 @@ def search_scope_for_var(scope,
             result = next(
                 (var for var in scope_vars if var["name"] == var_name),
                 None)
+            if result == None:
+                raise util.error.LookupError("no index record found for variable '{}' in scope".format(var_expr))
         else:
             matching_type_var = next((
                 var for var in scope_vars if var["name"] == var_name),

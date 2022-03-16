@@ -170,6 +170,8 @@ class CodeGenerator():
                     stnode
             ): # handle before STProcedure (without attributes) is handled
                 self._render_device_procedure(stnode, cpp_filegen, fortran_modulegen)
+                cpp_filegen.includes += self._create_includes_from_used_modules(
+                    stnode.index_record)
             elif isinstance(stnode,
                             (scanner.tree.STProgram, scanner.tree.STModule,
                              scanner.tree.STProcedure)):

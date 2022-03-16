@@ -695,6 +695,7 @@ class STLoopNest(STNode):
                   index=[]):
         if opts.destination_dialect.startswith("hip"):
             self.parent.add_use_statement("gpufort_array")
+            #
             kernel_args = []
             # determine grid or problem size
             launcher_name = self.kernel_launcher_name()

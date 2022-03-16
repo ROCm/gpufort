@@ -81,15 +81,12 @@ GPUFORT_PRINT_ARGS({% if is_gpu_launcher %}{% if have_problem_size %}problem_siz
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_hip_kernel_synchronization(kernel_name) -%}
-bool synchronize_stream = !async;
-#if defined(SYNCHRONIZE_DEVICE_ALL) || defined(SYNCHRONIZE_DEVICE_{{kernel_name}})
-ierr = hipDeviceSynchronize();
-if ( ierr != hipSuccess ) return ierr;
-synchronize_stream = false;
-#elif defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_{{kernel_name}})
-synchronize_stream = true;
+if ( 
+#if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_{{kernel_name}})
+  true ||
 #endif
-if ( synchronize_stream ) { 
+  !async
+) { 
   ierr = hipStreamSynchronize(stream);
   if ( ierr != hipSuccess ) return ierr;
 }

@@ -130,7 +130,9 @@ class STCufKernelCall(nodes.STNode):
                   joined_statements,
                   statements_fully_cover_lines,
                   index=[]):
-        if "cuf" in opts.source_dialects:
+        if "cuf" in opts.source_dialects and opts.destination_dialect.startswith("hip"):
+            self.parent.add_use_statement("gpufort_array")
+            #
             kernel_name, launch_params, call_args = util.parsing.parse_cuf_kernel_call(joined_statements)
             iprocedure = indexer.scope.search_index_for_procedure(index,self.parent.tag(),kernel_name)
             if len(call_args) != len(iprocedure["dummy_args"]):
@@ -142,12 +144,14 @@ class STCufKernelCall(nodes.STNode):
                     raise util.error.LookupError("could not find index record for dummy argument '{}'".format(arg))
                 if ivar["rank"] > 0:
                     expr = call_args[i]
-                    call_args[i] = "gpufort_wrap_device_ptr({0},lbound({0}))".format(expr)
+                    call_args[i] = "".join(["gpufort_array",str(ivar["rank"]),"_wrap_device_cptr(&\n    ",
+                                   "c_loc({0}),shape({0},kind=c_int),lbound({0},kind=c_int))".format(expr,ivar["rank"])])
             if len(launch_params) == 4:
                 if launch_params[3]=="0": launch_params[3] = "c_null_ptr" # stream
             else:
                 launch_params += ["0","c_null_ptr"] # sharedmem, stream
-            tokens = ["call ",kernel_name,"(&\n  ",",&\n  ".join(launch_params+call_args),")"]
+            launch_params.append(".true.") # async
+            tokens = ["call launch_",kernel_name,"_hip(&\n  ",",&\n  ".join(launch_params+call_args),")"]
             indent = self.first_line_indent()
             return textwrap.indent("".join(tokens),indent), True
         else:

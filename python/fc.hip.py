@@ -18,15 +18,15 @@ import subprocess
 import argparse
 
 import converter
-import gpufort
 import opts
 
+from gpufort import util
+from gpufort import scanner
 
 def parse_raw_cl_args():
     """Collect host and target compiler options.
     """
     options = sys.argv[1:]
-    print(options)
 
     prefix = "-gpufort"
     targets = ["host", "target"]
@@ -36,16 +36,17 @@ def parse_raw_cl_args():
         "-".join([prefix, x, y]) for x in targets for y in flags
     ]
     compiler_options.append("-".join([prefix,"ldflags"]))
+    #
     result = {}
     for copt in compiler_options:
-        result[copt] = []
-    current_key = None
+        result[copt.replace(prefix,"")] = []
+    copt = None
     for i, opt in enumerate(list(options)):
         if opt in compiler_options:
-            current_key = current_key.replace(prefix, "")
+            copt = opt
         else:
-            if current_key != None:
-                result[current_key].append(opt)
+            if copt != None:
+                result[copt.replace(prefix,"")].append(opt)
     return result
 
 
@@ -65,14 +66,6 @@ def populate_cl_arg_parser(parser):
                         default=None,
                         type=str,
                         help="Path/name for the result.")
-    parser.add_argument(
-        "-save-temps",
-        dest="save_temps",
-        default=os.getcwd(),
-        type=str,
-        help=
-        "Save temporary output files, i.e. intermediate results produced by the translation of the original code to standard Fortran plus HIP C++.",
-    )
     parser.add_argument(
         "-gpufort-host-compiler",
         dest="host_compiler",
@@ -102,14 +95,36 @@ def populate_cl_arg_parser(parser):
         help=
         "Do not use any GPUFORT default flags but instead provide all flags explicitly via the '--gpufort-(host|target)-(cflags|ldflags)' flags.",
     )
+    parser.add_argument(
+        "-save-temps",
+        dest="save_temps",
+        action="store_true",
+        help=
+        "Save temporary output files, i.e. intermediate results produced by the translation of the original code to standard Fortran plus HIP C++.",
+    )
+    parser.add_argument(
+        "-only-codegen",
+        dest="only_codegen",
+        action="store_true",
+        help=
+        "Only generate code. Do not compile.",
+    )
+    parser.add_argument(
+        "-no-codegen",
+        dest="no_codegen",
+        action="store_true",
+        help=
+        "Do not generate code. This assumes that this has been done before.",
+    )
     parser.set_defaults(only_compile=False,
-                        use_default_flags=False,
+                        only_codegen=False,
+                        no_codegen=False,
+                        use_default_flags=True,
                         openacc=False)
 
-
-def check_inputs(tpaths):
+def check_inputs(paths):
     """:return: Typical object file name/path that compilers derive from a Fortran/C++ source file.
-    :raise gpufort.util.error.ValueError: If no single file with Fortran file extension could be identified
+    :raise util.error.ValueError: If no single file with Fortran file extension could be identified
                        and the other inputs do not have an '.so', '.a', or '.o' ending.
     """
     fortran_files = []
@@ -123,12 +138,12 @@ def check_inputs(tpaths):
             objects.append(abspath)
         else:
             others.append(path)
-    if len(fortran_files) or len(fortran_files) > 1:
-        raise gpufort.util.error.UserValueError(
-            "Specify only a single Fortran file as input; have: "
+    if len(fortran_files) > 1:
+        raise ValueError(
+            "specify only a single Fortran file as input; have: "
             + ",".join(fortran_files))
     if len(others):
-        raise gpufort.util.error.UserValueError(
+        raise ValueError(
             "The following files are neither Fortran nor object files: "
             + ",".join(others))
     return fortran_files[0], objects
@@ -137,13 +152,19 @@ def check_inputs(tpaths):
 def get_object_path(source_path):
     """:return: Typical object file name/path that compilers derive from a Fortran/C++ source file.
     """
-    return re.sub(r"\.(f[0-9]*|cpp)$", ".o", source_path, re.IGNORECASE)
+    result = re.sub(r"\.f[0-9]*$", ".o", source_path, re.IGNORECASE)
+    result = re.sub(r"\.(c|cc|cxx|cpp)$", ".cpp.o", result, re.IGNORECASE)
+    return result
 
 
-def run_subprocess(cmd):
+def run_subprocess(cmd,verbose=False):
     """Run the subprocess in a blocking manner, collect error code,
     standard output and error output. 
     """
+    util.logging.log_info(opts.log_prefix, "run_subprocess", " ".join(cmd))
+    if verbose:
+        print(" ".join(cmd))
+     
     p = subprocess.Popen(cmd,
                          shell=False,
                          stdout=subprocess.PIPE,
@@ -157,20 +178,20 @@ def handle_subprocess_output(triple):
     status, output, errors = triple
     sys.stdout.write(output)
     sys.stderr.write(errors)
-    return status, p.stdout.read().decode("utf-8"), p.stderr.read().decode(
-        "utf-8")
-
+    # TODO detect errors and warnings line numbers
+    # TODO use single-line-block linemaps to trace back source of errors
+    # in original file
 
 def hardcode_pure_converter_opts():
     """Fixes certain opts, makes them unaffected by config.
     """
     # always overwrite these options
-    opts.only_create_gpufort_module_files = False
-    opts.skip_create_gpufort_module_files = False
+    scanner.opts.destination_dialect = "hipgpufort"
+    #opts.only_create_gpufort_module_files = False
+    #opts.skip_create_gpufort_module_files = False
     opts.only_modify_translation_source = False
     opts.only_emit_kernels_and_launchers = False
     opts.only_emit_kernels = False
-
 
 def remove_file(path):
     """Tries to remove file. Throws no error if it doesn't exists."""
@@ -194,7 +215,12 @@ have a '--' prefix while this tool's options have a '-' prefix."""))
     populate_cl_arg_parser(parser)
     converter.populate_cl_arg_parser(parser, False)
     args, unknown_args = converter.parse_cl_args(parser, False)
-    converter.map_args_to_opts(args)
+    
+    if args.only_codegen and args.no_codegen:
+        util.logging.log_error(opts.log_prefix,"__main__","'-only-codegen' and '-no-codegen' are mutually exclusive")
+        sys.exit(2)
+
+    converter.map_args_to_opts(args, False)
     if len(opts.post_cli_actions):
         msg = "run registered actions"
         util.logging.log_info(msg, verbose=False)
@@ -206,80 +232,82 @@ have a '--' prefix while this tool's options have a '-' prefix."""))
     hardcode_pure_converter_opts()
 
     try:
-        _path, object_files = check_inputs(args.inputs)
-    except UserValueError as uve:
-        util.logging.log_error(opts.log_prefix, "_main__", str(uve))
-        sys.abort(2)
-    log_file_path = converter.init_logging(_path)
+        infile_path, object_files = check_inputs(args.inputs)
+    except ValueError as uve:
+        util.logging.log_error(opts.log_prefix, "__main__", str(uve))
+        sys.exit(2)
+    log_file_path = converter.init_logging(infile_path)
 
-    fortran_file_paths, cpp_file_paths = converter.run_checked(_path,defines)
-    cpp_file_path = cpp_file_paths[0] # main C++ file is first item
-    modified_file_path = fortran_file_paths[0] # modified input file is first item
+    modified_fortran_file_path = "".join([infile_path,opts.fortran_file_ext])
+    cpp_file_path = "".join([infile_path,opts.cpp_file_ext])
+    if args.only_codegen or not args.no_codegen:
+        # configure scanner source dialects based on -openacc flag
+        if not args.openacc and "acc" in scanner.opts.source_dialects:
+            scanner.opts.source_dialects.remove("acc")
+        elif args.openacc:
+            scanner.opts.source_dialects.add("acc")
+        converter.run_checked(infile_path,modified_fortran_file_path,cpp_file_path,defines)
 
     # output file name
-    outfile_path = args.output
-    if args.outfile == None:
+    if not args.only_codegen:
+        outfile_path = args.output
+        if outfile_path == None:
+            if args.only_compile:
+                outfile_path = get_object_path(
+                    infile_path) # ! object file should be named after object file
+            else:
+                outfile_path = os.path.join(os.path.dirname(infile_path), "a.out")
+
+        # flags
+        fortran_cflags = []
+        cpp_cflags = []
+        ldflags = []
+        if args.use_default_flags:
+            cpp_cflags += converter.get_basic_cflags()
+            fortran_cflags += list(cpp_cflags)
+            ldflags += converter.get_basic_ldflags(args.openacc)
+            if os.path.basename(args.host_compiler) == "gfortran":
+                fortran_cflags = converter.get_gfortran_cflags()
+            if os.path.basename(args.target_compiler) in ["hipcc", "hipcc.bin"]:
+                cpp_cflags += converter.get_hipcc_cflags()
+
+        # cpp compilation
+        cpp_object_path = get_object_path(cpp_file_path)
+        cpp_cmd = ([args.target_compiler] + cpp_cflags
+                   + host_and_target_compiler_options["-target-cflags"]
+                   + ["-c", cpp_file_path]
+                   + ["-o", cpp_object_path])
+        handle_subprocess_output(run_subprocess(cpp_cmd,args.verbose))
+        # fortran compilation
+        modified_object_path = get_object_path(modified_fortran_file_path)
+        # emit a single object combining the Fortran and C++ objects
         if args.only_compile:
-            outfile_path = get_object_path(
-                _path) # ! object file should be named after object file
+            fortran_cmd = ([args.host_compiler] + fortran_cflags
+                           + host_and_target_compiler_options["-host-cflags"]
+                           + ["-c", modified_fortran_file_path]
+                           + ["-o", modified_object_path])
+            handle_subprocess_output(run_subprocess(fortran_cmd,args.verbose))
+            # merge object files; produces: outfile_path
+            handle_subprocess_output(
+                run_subprocess([
+                    "ld", "-r", "-o", outfile_path, modified_object_path,
+                    cpp_object_path
+                ],args.verbose))
+            os.remove(modified_object_path)
+        # emit an executable
         else:
-            outfile_path = os.path.join(os.path.dirname(_path), "a.out")
-
-    # configure scanner source dialects based on -openacc flag
-    if not args.openacc and "acc" in gpufort.scanner.opts.source_dialects:
-        gpufort.scanner.opts.source_dialects.remove("acc")
-    elif args.openacc:
-        gpufort.scanner.opts.source_dialects.add("acc")
-
-    # flags
-    fortran_cflags = []
-    ldflags = []
-    if args.use_default_flags:
-        cpp_cflags += converter.get_basic_cflags()
-        fortran_cflags += list(cpp_cflags)
-        ldflags += converter.get_basic_ldflags(args.openacc)
-        if os.path.basename(args.host_compiler) == "gfortran":
-            fortran_cflags = converter.get_gfortran_cflags()
-        if os.path.basename(args.target_compiler) in ["hipcc", "hipcc.bin"]:
-            cpp_cflags += converter.get_hipcc_cflags()
-
-    cpp_object_path = get_object_path(cpp_file_path)
-    # cpp compilation
-    cpp_cmd = ([args.target_compiler] + cpp_cflags
-               + host_and_target_compiler_options["target_cflags"]
-               + ["-c", cpp_file_path]
-               + ["-o", cpp_object_path])
-    handle_subprocess_output(run_subprocess(cpp_cmd))
-    # fortran compilation
-    modified_object_path = get_object_path(modified_file_path)
-    # emit a single object combining the Fortran and C++ objects
-    if args.only_compile:
-        fortran_cmd = ([args.host_compiler] + fortran_cflags
-                       + host_and_target_compiler_options["host_cflags"]
-                       + ["-c", modified_file_path]
-                       + ["-o", modified_object_path])
-        handle_subprocess_output(run_subprocess(fortran_cmd))
-        # merge object files; produces: outfile_path
-        handle_subprocess_output(
-            run_subprocess([
-                "ld", "-r", "-o", outfile_path, modified_object_path,
-                cpp_object_path
-            ]))
-        os.remove(modified_object_path)
-    # emit an executable
-    else:
-        fortran_cmd = ([args.host_compiler] + fortran_cflags
-                       + host_and_target_compiler_options["host_cflags"]
-                       + [modified_file_path] 
-                       + [cpp_object_path] 
-                       + ldflags
-                       + host_and_target_compiler_options["ldflags"]
-                       + ["-o", outfile_path])
-        handle_subprocess_output(run_subprocess(fortran_cmd))
-        # merge object files; produces: outfile_path
-    if not args.save_temps:
-        remove_file(cpp_file_path)
-        remove_file(modified_file_path)
+            fortran_cmd = ([args.host_compiler] + fortran_cflags
+                           + host_and_target_compiler_options["-host-cflags"]
+                           + [modified_fortran_file_path] 
+                           + [cpp_object_path] 
+                           + ldflags
+                           + host_and_target_compiler_options["-ldflags"]
+                           + ["-o", outfile_path])
+            handle_subprocess_output(run_subprocess(fortran_cmd,args.verbose))
+            # merge object files; produces: outfile_path
+        if not args.save_temps:
+            remove_file(cpp_file_path)
+            remove_file(modified_fortran_file_path)
 
     converter.shutdown_logging(log_file_path)
 else:

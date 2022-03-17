@@ -1,17 +1,17 @@
-.PHONY: clean_all gpufort_headers gpufort_sources share/gpufort_sources lib/$(LIBGPUFORT) lib/$(LIBGPUFORT_ACC)
+.PHONY: clean_all gpufort_headers gpufort_sources gpufort_templates share/gpufort_sources lib/$(LIBGPUFORT) lib/$(LIBGPUFORT_ACC)
 
 SUFFIX         = $(if $(HIP_PLATFORM),$(HIP_PLATFORM),amd)
 LIBGPUFORT     = libgpufort_$(SUFFIX).a
 LIBGPUFORT_ACC = libgpufort_acc_$(SUFFIX).a
 
-GPUFORT_DIR     = $(shell gpufort --path)
+GPUFORT_DIR     = .
 GPUFORT_ACC_DIR = $(GPUFORT_DIR)/runtime/gpufort_acc_runtime
 
-all: | gpufort_templates gpufort_headers lib/$(LIBGPUFORT) lib/$(LIBGPUFORT_ACC) make_directories
+all: | gpufort_templates lib/$(LIBGPUFORT) lib/$(LIBGPUFORT_ACC) make_directories
 
 gpufort_templates:
-	make -C $(GPUFORT_DIR)/python/gpufort/fort2x/templates
-	make -C $(GPUFORT_DIR)/python/gpufort/fort2x/hip/templates
+	make -C $(GPUFORT_DIR)/python/gpufort/fort2x/templates all
+	make -C $(GPUFORT_DIR)/python/gpufort/fort2x/hip/templates all
 
 gpufort_headers:
 	make -C $(GPUFORT_DIR)/include all
@@ -19,20 +19,20 @@ gpufort_headers:
 gpufort_sources:
 	make -C $(GPUFORT_DIR)/src gpufort_sources
 
-share/gpufort_sources: gpufort_headers gpufort_sources
+share/hip/gpufort_sources: gpufort_headers gpufort_sources
 	mv src/gpufort_array.cpp share/gpufort_sources
 	mv src/gpufort_array.f03 share/gpufort_sources
 	mv include/gpufort.h share/gpufort_sources
 	mv include/gpufort_array.h share/gpufort_sources
 	mv include/gpufort_reduction.h share/gpufort_sources
 
-lib/$(LIBGPUFORT): | gpufort_headers gpufort_sources make_directories
+lib/$(LIBGPUFORT): | gpufort_templates gpufort_headers gpufort_sources make_directories
 	make -C $(GPUFORT_DIR)/src $(LIBGPUFORT)
 	mv $(GPUFORT_DIR)/src/$(LIBGPUFORT) $(GPUFORT_DIR)/lib
 	mv $(GPUFORT_DIR)/src/*.mod $(GPUFORT_DIR)/include/$(SUFFIX)/
 	make -C $(GPUFORT_DIR)/src clean
 
-lib/$(LIBGPUFORT_ACC): make_directories
+lib/$(LIBGPUFORT_ACC): | gpufort_templates make_directories
 	make -C $(GPUFORT_ACC_DIR)/ lib/$(LIBGPUFORT_ACC)
 	mv $(GPUFORT_ACC_DIR)/lib/$(LIBGPUFORT_ACC)\
 	    $(GPUFORT_DIR)/lib/

@@ -8,6 +8,7 @@ import hashlib
 import cProfile
 import pstats
 import io
+import textwrap
 
 # local imports
 from gpufort import util
@@ -131,6 +132,23 @@ def populate_cl_arg_parser(parser,for_converter=True):
                             type=str,
                             nargs="?",
                             default=None)
+        parser.add_argument("--output",
+                            help="Name/path for the modified Fortran file.",
+                            type=str,
+                            dest="output",
+                            nargs="?",
+                            default=None)
+        parser.add_argument("--output-cpp",
+                            help=textwrap.dedent("""\
+                                  Name/path for the main C++ file if any C++ code is generated.
+                                  Per module C++ files are written into the main C++ file's
+                                  parent directory.
+                                  If not specified, all C++ files are written
+                                  to the same directory as the modified Fortran file."""),
+                            dest="output_cpp",
+                            type=str,
+                            nargs="?",
+                            default=None)
     parser.add_argument(
         "--working-dir",
         dest="working_dir",
@@ -148,17 +166,19 @@ def populate_cl_arg_parser(parser,for_converter=True):
         default=[],
         type=str,
     )
-    parser.add_argument(
-        "--wrap",
-        dest="wrap_in_ifdef",
-        const="__GPUFORT",
-        default=linemapper.opts.line_grouping_ifdef_macro,
-        action="store_const",
-        help="Wrap original and modified code as follows:\n"\
-             + "```#ifdef <macro_name>\n<modified_code>\n#else\n<original_code>\n#endif\n```"\
-             +"If this option is set but no macro is specified, the default '_GPUFORT' is used.",
-    )
     if for_converter:
+        parser.add_argument(
+            "--wrap",
+            dest="wrap_in_ifdef",
+            const="__GPUFORT",
+            default=linemapper.opts.line_grouping_ifdef_macro,
+            action="store_const",
+            help=textwrap.dedent("""\
+                 Wrap original and modified code as follows:
+                 ```#ifdef <macro_name>\n<modified_code>\n#else\n<original_code>\n#endif\n
+                 If this option is set but no macro is specified, the default '__GPUFORT' is used.
+                 If this option is not set, the respective config value is used."""),
+        )
         parser.add_argument(
             "--dest",
             dest="destination_dialect",
@@ -168,14 +188,14 @@ def populate_cl_arg_parser(parser,for_converter=True):
                 scanner.tree.supported_destination_dialects)),
         )
     parser.add_argument(
-        "--gfortran_config",
+        "--gfortran-config",
         dest="print_gfortran_config",
         action="store_true",
         help=
         "Print include and compile flags; output is influenced by HIP_PLATFORM environment variable.",
     )
     parser.add_argument(
-        "--cpp_config",
+        "--cpp-config",
         dest="print_cpp_config",
         action="store_true",
         help=
@@ -256,20 +276,12 @@ def populate_cl_arg_parser(parser,for_converter=True):
             "Only emit kernels; do not emit kernel launchers and do not modify host code [default: False].",
         )
     group_fort2x_hip = parser.add_argument_group("Fortran-to-HIP")
-    if for_converter:
-        group_fort2x_hip.add_argument(
-            "--emit-launcher-interfaces",
-            dest="emit_launcher_interfaces",
-            action="store_true",
-            help=
-            "Emit explicit Fortran interfaces to the C++ kernel launchers  [default: (default) config value].",
-        )
     group_fort2x_hip.add_argument(
-        "--emit-grid-launcher",
-        dest="emit_cpu_implementation",
+        "--emit-launcher-interfaces",
+        dest="emit_launcher_interfaces",
         action="store_true",
         help=
-        "Per detected loop kernel, also emit a grid launcher [default: (default) config value].",
+        "Emit explicit Fortran interfaces to the C++ kernel launchers  [default: (default) config value].",
     )
     group_fort2x_hip.add_argument(
         "--emit-cpu-impl",
@@ -482,27 +494,48 @@ def parse_cl_args(parser,for_converter=True):
         msg = "unknown arguments (may be used by registered actions): {}".format(
             " ".join(unknown_args))
         print("WARNING: " + msg, file=sys.stderr)
-    # check if input is set
-    if args.input is None:
-        msg = "no input file"
-        print("ERROR: " + msg, file=sys.stderr)
-        sys.exit(2)
-    if args.input[0] != "/":
-        args.input = args.working_dir + "/" + args.input
-    if not os.path.exists(args.input):
-        msg = "input file '{}' cannot be found".format(args.input)
-        print("ERROR: " + msg, file=sys.stderr)
-        sys.exit(2)
+    # check input and output paths
+    if for_converter:
+        if args.input is None:
+            msg = "no input file"
+            print("ERROR: " + msg, file=sys.stderr)
+            sys.exit(2)
+        if not os.path.isabs(args.input):
+            args.input = os.path.join(args.working_dir, args.input)
+        if args.output != None and not os.path.isabs(args.output):
+            args.output = os.path.join(args.working_dir, args.output)
+        if args.output_cpp != None and not os.path.isabs(args.output_cpp):
+            if args.output != None:
+                args.output_cpp = os.path.join(os.path.dirname(args.output), args.output_cpp)
+            else:
+                args.output_cpp = os.path.join(args.working_dir, args.output_cpp)
+        if not os.path.exists(args.input):
+            msg = "input file '{}' cannot be found".format(args.input)
+            print("ERROR: " + msg, file=sys.stderr)
+            sys.exit(2)
+        if args.output != None and not os.path.exists(os.path.dirname(args.output)):
+            msg = "output directory '{}' does not exist".format(os.path.dirname(args.output))
+            print("ERROR: " + msg, file=sys.stderr)
+            sys.exit(2)
+        if args.output_cpp != None and not os.path.exists(os.path.dirname(args.output_cpp)):
+            msg = "output directory for C++ files '{}' does not exist".format(os.path.dirname(args.output_cpp))
+            print("ERROR: " + msg, file=sys.stderr)
+            sys.exit(2)
+        if args.output == None:
+            args.output = "".join([args.input,opts.fortran_file_ext]) 
+        if args.output_cpp == None:
+            args.output_cpp = "".join([args.input,opts.cpp_file_ext]) 
     #
     return args, unknown_args
 
 
-def map_args_to_opts(args):
+def map_args_to_opts(args,for_converter=True):
     # OVERWRITE CONFIG VALUES
     # parse file and create index in parallel
-    if args.destination_dialect != None:
-        scanner.opts.destination_dialect = scanner.tree.check_destination_dialect(
-            args.destination_dialect)
+    if for_converter: 
+        if args.destination_dialect != None:
+            scanner.opts.destination_dialect = scanner.tree.check_destination_dialect(
+                args.destination_dialect)
     # only create modules files / skip module file generation
     if args.only_create_gpufort_module_files:
         opts.only_create_gpufort_module_files = True
@@ -530,7 +563,8 @@ def map_args_to_opts(args):
     if args.emit_interop_types:
         fort2x.hip.opts.emit_interop_types = True
     # wrap modified lines in ifdef
-    linemapper.opts.line_grouping_ifdef_macro = args.wrap_in_ifdef
+    if for_converter:
+        linemapper.opts.line_grouping_ifdef_macro = args.wrap_in_ifdef
     # developer: logging
     if len(args.log_level):
         opts.log_level = args.log_level
@@ -608,7 +642,7 @@ def create_index(search_dirs, options, file_path, linemaps=None):
     return index
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def translate_source(infile_path, stree, linemaps, index, preamble):
+def translate_source(infile_path, outfile_path, stree, linemaps, index, preamble):
     # post process
     scanner.tree.postprocess(
         stree,
@@ -623,20 +657,21 @@ def translate_source(infile_path, stree, linemaps, index, preamble):
     transform_(stree)
 
     # write the file
-    outfile_path = infile_path + opts.fortran_file_ext
     linemapper.write_modified_file(outfile_path, infile_path, linemaps,
                                    preamble)
 
     # prettify the file
     # if opts.fortran_prettifier != None
     #    util.file.prettify_f_file(outfile_path)
-    msg = "created hipified input file: ".ljust(40) + outfile_path
+    msg = "created translated input file: ".ljust(40) + outfile_path
     util.logging.log_info(opts.log_prefix, "translate_source", msg)
 
     return outfile_path
 
 
-def run(infile_path,preproc_options):
+def run(infile_path,outfile_path,outfile_cpp_path,preproc_options):
+    cpp_file_paths = []
+
     """Converter runner."""
     if opts.profiling_enable:
         profiler = cProfile.Profile()
@@ -651,8 +686,6 @@ def run(infile_path,preproc_options):
 
     index = create_index(opts.include_dirs, preproc_options, infile_path,
                          linemaps)
-    fortran_file_paths = []
-    cpp_file_paths     = []
     if not opts.only_create_gpufort_module_files:
         stree, _, __ = scanner.parse_file(file_linemaps=linemaps,
                                           file_path=infile_path,
@@ -660,14 +693,12 @@ def run(infile_path,preproc_options):
         if "hip" in scanner.opts.destination_dialect:
             codegen = fort2x.hip.hipcodegen.HipCodeGenerator(stree, index)
             codegen.run()
-            cpp_file_paths += codegen.write_cpp_files("".join(
-                [infile_path, opts.cpp_file_ext]))
+            cpp_file_paths += codegen.write_cpp_files(outfile_cpp_path)
 
         if not (opts.only_emit_kernels or
                 opts.only_emit_kernels_and_launchers):
-            outfile_path = translate_source(infile_path, stree, linemaps, index,
-                           opts.fortran_file_preamble)
-            fortran_file_paths.append(outfile_path)
+            translate_source(infile_path, outfile_path, stree, linemaps, index,
+                             opts.fortran_file_preamble)
     #
     if opts.profiling_enable:
         profiler.disable()
@@ -682,7 +713,7 @@ def run(infile_path,preproc_options):
                               "dump linemaps (after translation)")
         linemapper.dump_linemaps(linemaps,
                                  infile_path + "-linemaps-post.json")
-    return fortran_file_paths, cpp_file_paths
+    return cpp_file_paths
 
 def run_checked(*args,**kwargs):
     try:
@@ -734,8 +765,10 @@ if __name__ == "__main__":
     set_include_dirs(args.working_dir, args.search_dirs + include_dirs)
 
     infile_path = os.path.abspath(args.input) 
-    log_file_path   = init_logging(infile_path)
+    outfile_path = os.path.abspath(args.output) 
+    outfile_cpp_path = os.path.abspath(args.output_cpp) 
+    log_file_path = init_logging(infile_path)
 
-    run_checked(infile_path,defines)
+    run_checked(infile_path,outfile_path,outfile_cpp_path,defines)
 
     shutdown_logging(log_file_path)

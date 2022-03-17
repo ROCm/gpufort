@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+import sys
+
 from gpufort import translator
 from gpufort import util
 
@@ -19,7 +21,7 @@ def CufLoopNest2Omp(stloopnest,*args,**kwargs):
     fully covered by the statements.
     """
     try:
-        parent_tag = self._stnode.parent.tag()
+        parent_tag = stloopnest.parent.tag()
         scope = indexer.scope.create_scope(index, parent_tag)
         parse_result = translator.parse_loop_kernel(
             joined_statements.splitlines(), scope)

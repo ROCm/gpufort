@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import textwrap
+import re
 
 from gpufort import util
 from gpufort import translator
@@ -44,11 +45,10 @@ class STCufLoopNest(STCufDirective, nodes.STLoopNest):
     def transform(self,joined_lines,joined_statements,*args,**kwargs):
         result = joined_statements
         transformed = False
-        if "cuf" in opts.source_dialects:
-            for dest_dialects, func in self.__class__._backends:
-                if self.dest_dialect in dest_dialects:
-                    result, transformed1 = func(self, joined_lines, joined_statements, *args, **kwargs)
-                    transformed = transformed or transformed1
+        for dest_dialects, func in self.__class__._backends:
+            if self.dest_dialect in dest_dialects:
+                result, transformed1 = func(self, joined_lines, joined_statements, *args, **kwargs)
+                transformed = transformed or transformed1
         return result, transformed
 
 class STCufLibCall(nodes.STNode):
@@ -73,50 +73,43 @@ class STCufLibCall(nodes.STNode):
                   index=[]):
         snippet = joined_statements
         transformed = False
-        if "cuf" in opts.source_dialects:
-            old_snippet = snippet
-            indent = self.first_line_indent()
-            if not opts.keep_cuda_lib_names:
+        old_snippet = snippet
+        indent = self.first_line_indent()
+        if not opts.keep_cuda_lib_names:
 
-                def repl_memcpy(parse_result):
-                    dest_name = parse_result.dest_name_f_str()
-                    src_name = parse_result.src_name_f_str()
-                    dest_indexed_var = indexer.scope.search_index_for_var(index,self.parent.tag(),\
-                      dest_name)
-                    src_indexed_var  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
-                      src_name)
-                    dest_on_device = index_var_is_on_device(dest_indexed_var)
-                    src_on_device = index_var_is_on_device(src_indexed_var)
-                    subst = parse_result.hip_f_str(dest_on_device, src_on_device)
-                    return (subst, True)
-
-                snippet, _ = util.pyparsing.replace_all(
-                    snippet, translator.tree.grammar.cuf_cudamemcpy_variant,
-                    repl_memcpy)
-
-            def repl_cublas(parse_result):
-                subst = parse_result.f_str(indent)
+            def repl_memcpy(parse_result):
+                dest_name = parse_result.dest_name_f_str()
+                src_name = parse_result.src_name_f_str()
+                dest_indexed_var = indexer.scope.search_index_for_var(index,self.parent.tag(),\
+                  dest_name)
+                src_indexed_var  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
+                  src_name)
+                dest_on_device = index_var_is_on_device(dest_indexed_var)
+                src_on_device = index_var_is_on_device(src_indexed_var)
+                subst = parse_result.hip_f_str(dest_on_device, src_on_device)
                 return (subst, True)
 
-            snippet, have_cublas = util.pyparsing.replace_all(
-                snippet, translator.tree.grammar.cuf_cublas_call, repl_cublas)
-            if have_cublas:
-                self._has_cublas = True
-            for elem in CUDA_RUNTIME_ENUMS:
-                snippet = replace_ignore_case(
-                    elem,
-                    elem.replace("cuda", "hip").replace("CUDA", "HIP"), snippet)
-            for elem in CUDA_LIB_ENUMS:
-                snippet = replace_ignore_case(
-                    elem,
-                    elem.replace("cu", "hip").replace("CU", "HIP"), snippet)
-            for elem in ALL_HOST_ROUTINES: # runtime routines
-                snippet = replace_ignore_case(elem, elem.replace("cuda", "hip"),
-                                              snippet)
-            for elem in CUDA_MATH_LIB_FUNCTIONS:
-                snippet = replace_ignore_case(elem, elem.replace("cu", "hip"),
-                                              snippet)
-            transformed = snippet.lower() != old_snippet
+            snippet, _ = util.pyparsing.replace_all(
+                snippet, translator.tree.grammar.cuf_cudamemcpy_variant,
+                repl_memcpy)
+
+        def repl_cublas(parse_result):
+            subst = parse_result.f_str(indent)
+            return (subst, True)
+
+        snippet, have_cublas = util.pyparsing.replace_all(
+            snippet, translator.tree.grammar.cuf_cublas_call, repl_cublas)
+        if have_cublas:
+            self._has_cublas = True
+        for elem in grammar.CUDA_RUNTIME_ENUMS:
+            snippet = re.sub(elem,elem.replace("cuda", "hip").replace("CUDA", "HIP"), snippet, re.IGNORECASE)
+        for elem in grammar.CUDA_LIB_ENUMS:
+            snippet = re.sub(elem,elem.replace("cuda", "hip").replace("CUDA", "HIP"), snippet, re.IGNORECASE)
+        for elem in grammar.ALL_HOST_ROUTINES: # runtime routines
+            snippet = re.sub(elem,elem.replace("cuda", "hip").replace("CUDA", "HIP"), snippet, re.IGNORECASE)
+        for elem in grammar.CUDA_MATH_LIB_FUNCTIONS:
+            snippet = re.sub(elem,elem.replace("cuda", "hip").replace("CUDA", "HIP"), snippet, re.IGNORECASE)
+        transformed = snippet.lower() != old_snippet
         return snippet, transformed
 
 
@@ -130,7 +123,7 @@ class STCufKernelCall(nodes.STNode):
                   joined_statements,
                   statements_fully_cover_lines,
                   index=[]):
-        if "cuf" in opts.source_dialects and opts.destination_dialect.startswith("hip"):
+        if opts.destination_dialect.startswith("hip"):
             self.parent.add_use_statement("gpufort_array")
             self.parent.add_use_statement("hipfort_types",only=["dim3"])
             #
@@ -163,4 +156,4 @@ class STCufAttributes(nodes.STNode):
     in any case.
     """
     def transform(self,*args,**kwargs): # TODO
-        return "", "cuf" in opts.source_dialects
+        return "", True 

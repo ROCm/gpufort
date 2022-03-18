@@ -221,6 +221,45 @@ def populate_cl_arg_parser(parser,for_converter=True):
         action="store_true",
         help="Print path to the GPUFORT root directory.",
     )
+    # Frontends
+    group_frontends = parser.add_argument_group("Frontends")
+    group_frontends.add_argument(
+        "--no-modern-fortran",
+        dest="modern_fortran",
+        action="store_false",
+        help="Translate legacy Fortran.",
+    )
+    group_frontends.add_argument(
+        "--cuda",
+        dest="cuda",
+        action="store_true",
+        help="Translate CUDA Fortran statements.",
+    )
+    group_frontends.add_argument(
+        "--no-cuda",
+        dest="cuda",
+        action="store_false",
+        help="Do not translate CUDA Fortran statements.",
+    )
+    group_frontends.add_argument(
+        "--cublas-v2",
+        dest="cublasV2",
+        action="store_true",
+        help=
+        "Assume cublas v2 function signatures that use a handle. Overrides config value.",
+    )
+    group_frontends.add_argument(
+        "--openacc",
+        dest="openacc",
+        action="store_true",
+        help="Translate OpenACC statements.",
+    )
+    group_frontends.add_argument(
+        "--no-openacc",
+        dest="openacc",
+        action="store_false",
+        help="Do not translate OpenACC statements.",
+    )
     # config options: shadow arguments that are actually taken care of by raw argument parsing
     group_config = parser.add_argument_group("Config file")
     group_config.add_argument(
@@ -305,16 +344,6 @@ def populate_cl_arg_parser(parser,for_converter=True):
         "Generate interoperable types from derived types found in the file.",
     )
 
-    # CUDA Fortran
-    group_cuf = parser.add_argument_group("CUDA Fortran input")
-    group_cuf.add_argument(
-        "--cublas-v2",
-        dest="cublasV2",
-        action="store_true",
-        help=
-        "Assume cublas v2 function signatures that use a handle. Overrides config value.",
-    )
-
     # developer options
     group_developer = parser.add_argument_group(
         "Developer options (logging, profiling, ...)")
@@ -390,6 +419,9 @@ def populate_cl_arg_parser(parser,for_converter=True):
     parser.set_defaults(
         print_config_defaults=False,
         dump_linemaps=False,
+        modern_fortran=True,
+        cuda=True,
+        openacc=True,
         cublasV2=False,
         only_emit_kernels_and_launchers=False,
         only_emit_kernels=False,
@@ -536,6 +568,25 @@ def map_args_to_opts(args,for_converter=True):
         if args.destination_dialect != None:
             scanner.opts.destination_dialect = scanner.tree.check_destination_dialect(
                 args.destination_dialect)
+    # frontends
+    linemapper.opts.modern_fortran = args.modern_fortran
+    indexer.opts.modern_fortran = args.modern_fortran
+    scanner.opts.modern_fortran = args.modern_fortran
+    translator.opts.modern_fortran = args.modern_fortran
+    #
+    linemapper.opts.cuda_fortran = args.cuda
+    indexer.opts.cuda_fortran = args.cuda
+    if args.cuda:
+        scanner.opts.source_dialects.add("cuf")
+    else:
+        scanner.opts.source_dialects.remove("cuf")
+    #
+    indexer.opts.openacc = args.openacc
+    if args.openacc:
+        scanner.opts.source_dialects.add("acc")
+    else:
+        scanner.opts.source_dialects.remove("acc")
+
     # only create modules files / skip module file generation
     if args.only_create_gpufort_module_files:
         opts.only_create_gpufort_module_files = True
@@ -614,31 +665,14 @@ def shutdown_logging(log_file_path):
     util.logging.log_info(opts.log_prefix, "__main__", msg)
     util.logging.shutdown()
 
-def create_index(search_dirs, options, file_path, linemaps=None):
-    util.logging.log_enter_function(
-        opts.log_prefix,
-        "create_index",
-        {
-            "file_path": file_path,
-            "options": " ".join(options),
-            "search_dirs": " ".join(search_dirs),
-        },
-    )
-
-    options_as_str = " ".join(options)
-
+@util.logging.log_entry_and_exit(opts.log_prefix)
+def create_index(linemaps, output_dir, search_dirs):
     index = []
     if not opts.skip_create_gpufort_module_files:
-        if linemaps != None:
-            indexer.update_index_from_linemaps(linemaps, index)
-        else:
-            indexer.scan_file(file_path, options_as_str, index)
-        output_dir = os.path.dirname(file_path)
+        indexer.update_index_from_linemaps(linemaps, index)
         indexer.write_gpufort_module_files(index, output_dir)
     index.clear()
     indexer.load_gpufort_module_files(search_dirs, index)
-
-    util.logging.log_leave_function(opts.log_prefix, "create_index")
     return index
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
@@ -677,15 +711,13 @@ def run(infile_path,outfile_path,outfile_cpp_path,preproc_options):
         profiler = cProfile.Profile()
         profiler.enable()
 
-    linemaps = linemapper.read_file(infile_path, preproc_options)
+    linemaps = linemapper.read_file(infile_path, preproc_options=preproc_options)
     if opts.dump_linemaps:
         util.logging.log_info(opts.log_prefix, "__main__",
                               "dump linemaps (before translation)")
         linemapper.dump_linemaps(linemaps,
                                  infile_path + "-linemaps-pre.json")
-
-    index = create_index(opts.include_dirs, preproc_options, infile_path,
-                         linemaps)
+    index = create_index(linemaps,os.path.dirname(infile_path),opts.include_dirs)
     if not opts.only_create_gpufort_module_files:
         stree, _, __ = scanner.parse_file(file_linemaps=linemaps,
                                           file_path=infile_path,

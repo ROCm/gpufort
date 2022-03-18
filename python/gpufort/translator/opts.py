@@ -195,3 +195,5 @@ fortran_type_2_bytes_map = { # x86_64
 loop_collapse_strategy = "collapse" # One of "collapse","collapse-always","grid"
         # options for CUF
 cublas_version = 1
+
+modern_fortran = True

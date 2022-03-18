@@ -14,7 +14,7 @@ util.logging.opts.verbose = False
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
 util.logging.init_logging("log.log",LOG_FORMAT,"warning")
 
-gfortran_options="-DCUDA"
+preproc_options="-DCUDA"
 
 indexer.opts.error_handling="strict"
 
@@ -32,8 +32,8 @@ class TestScoper(unittest.TestCase):
     def test_0_donothing(self):
         pass 
     def test_1_indexer_scan_files(self):
-        indexer.update_index_from_linemaps(linemapper.read_file("test_modules.f90",gfortran_options),index)
-        indexer.update_index_from_linemaps(linemapper.read_file("test1.f90",gfortran_options),index)
+        indexer.update_index_from_linemaps(linemapper.read_file("test_modules.f90",preproc_options=preproc_options),index)
+        indexer.update_index_from_linemaps(linemapper.read_file("test1.f90",preproc_options=preproc_options),index)
     def test_2_scope_search_for_vars(self):
         c   = indexer.scope.search_index_for_var(index,"test1","c") # included from module 'simple'
         indexer.opts.scopes.clear()

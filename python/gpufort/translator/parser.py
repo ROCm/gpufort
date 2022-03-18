@@ -34,6 +34,7 @@ def _parse_fortran_code(statements, scope=None):
     - consider comments
     - every call returns a subtree
     """
+    modern_fortran = opts.modern_fortran
 
     # tree creation ops
     def append_(node, kind=None):
@@ -120,11 +121,7 @@ def _parse_fortran_code(statements, scope=None):
                 append_(stmt, "blank line")
         elif util.parsing.is_ignored_statement(tokens):
             ignore_("statement")
-        elif util.parsing.is_comment(tokens, stmt):
-            if type(curr) != tree.TTRoot:
-                comment = re.split("!|^[c*]", stmt1, 1, re.IGNORECASE)[1]
-                append_("// " + comment + "\n", "comment")
-        elif util.parsing.is_fortran_directive(tokens, stmt):
+        elif util.parsing.is_fortran_directive(stmt,modern_fortran):
             try:
                 if util.parsing.is_ignored_fortran_directive(tokens):
                     ignore_("directive")
@@ -159,6 +156,10 @@ def _parse_fortran_code(statements, scope=None):
             except Exception as e:
                 error_("directive", e)
                 pass
+        elif util.parsing.is_fortran_comment(stmt,modern_fortran):
+            if type(curr) != tree.TTRoot:
+                comment = re.split("!|^[c*]", stmt1, 1, re.IGNORECASE)[1]
+                append_("// " + comment + "\n", "comment")
         # do/while
         elif util.parsing.is_do_while(tokens):
             try:

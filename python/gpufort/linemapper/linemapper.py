@@ -103,10 +103,10 @@ def evaluate_condition(input_string, macro_stack):
     return eval(code, {"__builtins__": {}}, {}) > 0
 
 
-def _handle_preprocessor_directive(lines, fortran_file_path, macro_stack,
+def _handle_preprocessor_directive(lines, file_path, macro_stack,
                                    region_stack1, region_stack2):
     """
-    :param str fortran_file_path: needed to load included files where only relative path is specified
+    :param str file_path: needed to load included files where only relative path is specified
     :param list macro_stack: A stack for storing/removing macro definition based on preprocessor directives.
     :param list region_stack1: A stack that stores if the current code region is active or inactive.
     :param list region_stack2: A stack that stores if any if/elif branch in the current if-elif-else-then
@@ -119,7 +119,7 @@ def _handle_preprocessor_directive(lines, fortran_file_path, macro_stack,
 
     macro_names = ",".join([macro["name"] for macro in macro_stack])
     util.logging.log_enter_function(opts.log_prefix,"_handle_preprocessor_directive",\
-      {"fortran-file-path": fortran_file_path,\
+      {"fortran-file-path": file_path,\
        "region-stack-1":    region_stack_format(region_stack1),\
        "region-stack-2":    region_stack_format(region_stack2),\
        "macro-names":       macro_names})
@@ -169,12 +169,15 @@ def _handle_preprocessor_directive(lines, fortran_file_path, macro_stack,
                 result = grammar.pp_dir_include.parseString(
                     single_line_statement, parseAll=True)
                 filename = result.filename.strip(" \t")
-                current_dir = os.path.dirname(fortran_file_path)
-                if not filename.startswith("/") and len(current_dir):
-                    filename = os.path.dirname(
-                        fortran_file_path) + "/" + filename
+                current_dir = os.path.dirname(file_path)
+                if not os.path.isabs(filename) and len(current_dir):
+                    filename = os.path.join(os.path.dirname(
+                        file_path),filename)
                 included_linemaps = _preprocess_and_normalize_fortran_file(
-                    filename, macro_stack, region_stack1, region_stack2)
+                    file_path=filename, 
+                    macro_stack = macro_stack,
+                    region_stack1 = region_stack1,
+                    region_stack2 = region_stack2)
                 handled = True
         # if cond. true, push new region to stack
         if stripped_first_line.startswith("if"):
@@ -252,7 +255,7 @@ def _convert_lines_to_statements(lines):
     into multi-line if-then-endif statements.
     """
 
-    p_continuation = re.compile(r"\&\s*([!c\*]\$\w+)?|([!c\*]\$\w+\&)",
+    p_continuation = re.compile(r"\&\s*([!c\*][@\$]\w+)?|([!c\*][@\$]\w+\&)",
                                 re.IGNORECASE)
     # we look for a sequence ") <word>" were word != "then".
     p_single_line_if = re.compile(
@@ -321,7 +324,7 @@ def _detect_line_starts(lines):
     The difference between the line numbers of consecutive entries
     is the number of lines the first statement occupies.
     """
-    p_directive_continuation = re.compile(r"[!c\*]\$\w+\&")
+    p_directive_continuation = re.compile(r"[!c\*][@\$]\w+\&")
 
     # 1. save multi-line statements (&) in buffer
     buffering = False
@@ -340,23 +343,14 @@ def _detect_line_starts(lines):
     line_starts.append(len(lines))
     return line_starts
 
-
-def _preprocess_and_normalize_fortran_file(fortran_file_path, macro_stack,
-                                           region_stack1, region_stack2):
+@util.logging.log_entry_and_exit(opts.log_prefix)
+def _preprocess_and_normalize_fortran_file(file_path, **kwargs):
     """
     :throws: IOError if the specified file cannot be found/accessed.
     """
-    util.logging.log_enter_function(opts.log_prefix,
-                                    "_preprocess_and_normalize_fortran_file",
-                                    {"fortran_file_path": fortran_file_path})
-
     try:
-        with open(fortran_file_path, "r") as infile:
-            linemaps = preprocess_and_normalize(infile.readlines(),
-                                                fortran_file_path, macro_stack,
-                                                region_stack1, region_stack2)
-            util.logging.log_leave_function(
-                opts.log_prefix, "_preprocess_and_normalize_fortran_file")
+        with open(file_path, "r") as infile:
+            linemaps = preprocess_and_normalize(infile.readlines(),file_path=file_path,**kwargs)
             return linemaps
     except Exception as e:
         raise e
@@ -495,20 +489,52 @@ def init_macros(options):
 
 
 def preprocess_and_normalize(fortran_file_lines,
-                             fortran_file_path,
-                             macro_stack=[],
-                             region_stack1=[True],
-                             region_stack2=[True]):
-    """:param list file_lines: Lines of a file, terminated with line break characters ('\n').
-    :returns: a list of dicts with keys 'lineno', 'original_lines', 'statements'.
+                             **kwargs):
+    r""":param list file_lines: Lines of a file, terminated with line break characters ('\n').
+    :param \*\*kwargs: keyword arguments. See below.
+     :returns: a list of dicts with keys 'lineno', 'original_lines', 'statements'.
+
+    :Keyword Arguments (User):
+   
+    * *modern_fortran* (`bool`):
+        Expect modern Fortran comments and directives, defaults to config value.
+    * *cuda_fortran* (`bool`):
+        Expect CUDA Fortran conditional code, defaults to config value.
+    * *preproc_options* (`str`):
+        Preprocessor options that are translated to macros
+        if no macro stack is found.
+    
+    :Keyword Arguments (Internal):
+    
+    * *macro_stack* (`list`):
+        :param list macro_stack: A stack for storing/removing macro definition based on preprocessor directives.
+    * *region_stack1* (`list`):
+        A stack that stores if the current code region is active or inactive.
+    * *region_stack2* (`list`):
+        A stack that stores if any if/elif branch in the current if-elif-else-then
+        construct was active. This info is needed to decide if an else region 
+        should be activated.
     """
+    macro_stack,found_macro_stack = util.kwargs.get_value("macro_stack",[],**kwargs)
+    if not found_macro_stack:
+        preproc_options,_ = util.kwargs.get_value("preproc_options","",**kwargs)
+        macro_stack = init_macros(preproc_options)
+    region_stack1,_ = util.kwargs.get_value("region_stack1",[True],**kwargs)
+    region_stack2,_ = util.kwargs.get_value("region_stack2",[True],**kwargs)
+    file_path,_ = util.kwargs.get_value("file_path","<unknown>",**kwargs)
+    
+    only_apply_user_defined_macros,_ = util.kwargs.get_value("only_apply_user_defined_macros",
+                                           opts.only_apply_user_defined_macros,**kwargs)
+    modern_fortran,_ = util.kwargs.get_value("modern_fortran",opts.modern_fortran,**kwargs)
+    cuda_fortran  ,_ = util.kwargs.get_value("cuda_fortran",opts.cuda_fortran,**kwargs)
 
     util.logging.log_enter_function(opts.log_prefix,
                                     "preprocess_and_normalize",
-                                    {"fortran_file_path": fortran_file_path})
+                                    {"file_path": file_path})
     assert opts.default_indent_char in [
         ' ', '\t'
     ], "Indent char must be whitespace ' ' or tab '\\t'"
+                    
 
     # 1. detect line starts
     line_starts = _detect_line_starts(fortran_file_lines)
@@ -522,10 +548,11 @@ def preprocess_and_normalize(fortran_file_lines,
 
         included_linemaps = []
         is_preprocessor_directive = lines[0].startswith("#")
-        if is_preprocessor_directive and not opts.only_apply_user_defined_macros:
+        modified = False
+        if is_preprocessor_directive and not only_apply_user_defined_macros:
             try:
                 included_linemaps = _handle_preprocessor_directive(
-                    lines, fortran_file_path, macro_stack, region_stack1,
+                    lines, file_path, macro_stack, region_stack1,
                     region_stack2)
                 statements1 = []
                 statements3 = []
@@ -544,10 +571,16 @@ def preprocess_and_normalize(fortran_file_lines,
             for stmt2 in statements2:
                 for stmt3 in _convert_lines_to_statements([stmt2]):
                     statement = {"epilog": [], "prolog": [], "body": stmt3}
+                    # treat statements such as "!@cuf ierr = hipStreamSynchronize(stream)
+                    stmt4 = re.sub(r"[!*c]@gpufort\s*","",stmt3)
+                    if cuda_fortran and util.parsing.is_cuda_fortran_conditional_code(stmt3,modern_fortran):
+                        stmt4 = re.sub(r"[!*c]@cuf\s*","",stmt4)
+                    modified = len(stmt4) < len(stmt3)
+                    statement["body"] = stmt4 
                     statements3.append(statement)
         #if len(included_linemaps) or (not is_preprocessor_directive and region_stack1[-1]):
         linemap = {
-            "file": fortran_file_path,
+            "file": file_path,
             "lineno": line_start + 1, # key
             "lines": lines,
             "raw_statements": statements1,
@@ -556,7 +589,7 @@ def preprocess_and_normalize(fortran_file_lines,
             "is_active": region_stack1[-1],
             # inout
             "statements": statements3,
-            "modified": False,
+            "modified": modified,
             # out
             "prolog": [],
             "epilog": []
@@ -566,8 +599,8 @@ def preprocess_and_normalize(fortran_file_lines,
                                     "preprocess_and_normalize")
     return linemaps
 
-
-def read_lines(fortran_lines, options="", fortran_file_path="<none>"):
+@util.logging.log_entry_and_exit(opts.log_prefix)
+def read_lines(fortran_lines, **kwargs):
     """
     A C and Fortran preprocessor (cpp and fpp).
 
@@ -577,22 +610,18 @@ def read_lines(fortran_lines, options="", fortran_file_path="<none>"):
 
     :return: The input data structure without the entries whose statements where not in active code region
              as determined by the preprocessor.
-    :param str options: a sequence of compiler options such as '-D<key> -D<key>=<value>'.
-    :param str fortran_file_path: File path to write into the linemaps.
     """
     # TODO check if order of read_file routines can be simplified using this method
 
-    util.logging.log_enter_function(opts.log_prefix, "read_lines",
-                                    {"options": options})
+    util.logging.log_enter_function(opts.log_prefix, "read_lines")
 
-    macro_stack = init_macros(options)
-    linemaps = preprocess_and_normalize(fortran_lines, fortran_file_path,
-                                        macro_stack)
+    linemaps = preprocess_and_normalize(fortran_lines, **kwargs)
     util.logging.log_leave_function(opts.log_prefix, "read_lines")
     return linemaps
 
 
-def read_file(fortran_file_path, options=""):
+@util.logging.log_entry_and_exit(opts.log_prefix)
+def read_file(fortran_file_path,**kwargs):
     """A C and Fortran preprocessor (cpp and fpp).
 
     Current limitations:
@@ -601,20 +630,15 @@ def read_file(fortran_file_path, options=""):
 
     :return: The input data structure without the entries whose statements where not in active code region
              as determined by the preprocessor.
-    :param str options: a sequence of compiler options such as '-D<key> -D<key>=<value>'.
     :throws: IOError if the specified file cannot be found/accessed.
     """
 
     util.logging.log_enter_function(opts.log_prefix, "read_file", {
         "fortran_file_path": fortran_file_path,
-        "options": options
     })
 
-    macro_stack = init_macros(options)
     try:
-        linemaps = _preprocess_and_normalize_fortran_file(fortran_file_path,macro_stack,\
-           region_stack1=[True],region_stack2=[True]) # init value of region_stack[0] can be arbitrary
-        util.logging.log_leave_function(opts.log_prefix, "read_file")
+        linemaps = _preprocess_and_normalize_fortran_file(fortran_file_path,**kwargs)
         return linemaps
     except Exception as e:
         raise e

@@ -5,7 +5,7 @@ def get_value(key, default, **kwargs):
     value = next((v for k, v in kwargs.items() if key == k),
                  kwarg_not_found_result)
     kwarg_found = (value != kwarg_not_found_result)
-    return value if kwarg_found else default, kwarg_found
+    return ((value if kwarg_found else default), kwarg_found)
 
 
 def set_from_kwargs(obj, attr, default, **kwargs):

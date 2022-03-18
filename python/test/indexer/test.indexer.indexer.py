@@ -11,14 +11,14 @@ from gpufort import util
 from gpufort import linemapper
 
 log_format = "[%(levelname)s]\tgpufort:%(message)s"
-log_level                   = "debug2"
+log_level                   = "debug"
 util.logging.opts.verbose   = False
+#util.logging.opts.log_filter = "acc"
 util.logging.opts.traceback = False
 util.logging.init_logging("log.log",log_format,log_level)
 
-gfortran_options="-DCUDA"
+preproc_options="-DCUDA"
 
-USE_EXTERNAL_PREPROCESSOR = False
 PROFILING_ENABLE          = False
 
 index = []
@@ -40,12 +40,8 @@ class TestIndexer(unittest.TestCase):
         if PROFILING_ENABLE:
             profiler = cProfile.Profile()
             profiler.enable()
-        if USE_EXTERNAL_PREPROCESSOR:
-            indexer.scan_file("test_modules.f90",gfortran_options,self.index)
-            indexer.scan_file("test1.f90",gfortran_options,self.index)
-        else:
-            indexer.update_index_from_linemaps(linemapper.read_file("test_modules.f90",gfortran_options),self.index)
-            indexer.update_index_from_linemaps(linemapper.read_file("test1.f90",gfortran_options),self.index)
+        indexer.update_index_from_linemaps(linemapper.read_file("test_modules.f90",preproc_options=preproc_options),self.index)
+        indexer.update_index_from_linemaps(linemapper.read_file("test1.f90",preproc_options=preproc_options),self.index)
         if PROFILING_ENABLE:
             profiler.disable() 
             s = io.StringIO()

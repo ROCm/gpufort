@@ -4,10 +4,15 @@ log_prefix = "linemapper" # prefix for logging
 pretty_print_linemaps_dump = False
         # Prettify linemaps JSON files.
         #PATTERN_LINE_CONTINUATION=r"(\&\s*\n\s*([!c\*]\$\w+)?)|(^\s*[!c\*]\$\w+\&\s*)"
-pattern_line_continuation = r"\&([!c\*]\$\w+)?|([!c\*]\$\w+\&)"
+#pattern_line_continuation = r"\&([!c\*][@\$]\w+)?|([!c\*][@\$]\w+\&)"
         # line continuation pattern. The linemapper's preprocessor removes them.
 
         # 'strict': program terminates with error. Otherwise, a warning is printed.
+
+modern_fortran = True
+        # Expect modern Fortran comments and directives
+cuda_fortran = True
+        # Expect conditional code such as `!@cuf ierr = cudaDeviceSynchronize()`.
 
 user_defined_macros = []
         # manually add macro definitions: dicts with entries 'name' (str),

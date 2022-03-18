@@ -68,8 +68,8 @@ class TestLinemapper(unittest.TestCase):
         numTests = len(testdata_true) + len(testdata_false)
         self.extra = ", performed {} checks".format(numTests)
     def test_2_full_test(self):
-        options = "-DCUDA -DCUDA2"
-        linemaps                  = linemapper.read_file("test1.f90",options)
+        preproc_options = "-DCUDA -DCUDA2"
+        linemaps                  = linemapper.read_file("test1.f90",preproc_options=preproc_options)
         result_lines              = linemapper.render_file(linemaps,stage="lines")
         result_raw_statements     = linemapper.render_file(linemaps,stage="raw_statements")
         result_statements         = linemapper.render_file(linemaps,stage="statements")
@@ -118,8 +118,7 @@ class TestLinemapper(unittest.TestCase):
         self.assertEqual(self.clean(result_raw_statements),self.clean(testdata_raw_statements))
         self.assertEqual(self.clean(result_statements),self.clean(testdata_statements))
     def test_3_expand_single_line_if(self):
-        options = ""
-        linemaps = linemapper.read_file("test2.f90",options)
+        linemaps = linemapper.read_file("test2.f90",preproc_options="")
         result_statements = linemapper.render_file(linemaps,stage="statements")
         testdata_statements =\
 """
@@ -131,8 +130,7 @@ end program
 """    
         self.assertEqual(self.clean(result_statements),self.clean(testdata_statements))
     def test_4_collapse_multiline_acc_directive(self):
-        options = ""
-        linemaps = linemapper.read_file("test3.f90",options)
+        linemaps = linemapper.read_file("test3.f90",preproc_options="")
         result_statements = linemapper.render_file(linemaps,stage="statements")
         testdata_statements =\
 """

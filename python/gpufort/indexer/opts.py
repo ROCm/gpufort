@@ -3,15 +3,12 @@
         # configurable parameters
 log_prefix = "indexer"
 
-structures = r"module|program|function|routine|procedure|subroutine|interface|type|(end\s*(module|program|function|subroutine|interface|type))"
-declarations = r"integer|real|double|logical" # derived types already considered by STRUCTURES
-attributes = r"attributes"
-use = r"use"
-directives = r"([!c\*]\$\w+)"
-
-filter = r"\b(" + structures + "|" + declarations + "|" + attributes + "|" + use + r")\b" + "|" + directives
-
-continuation_filter = r"(\&\s*\n)|(\n\s*[\!c\*]\$\w+\&)"
+modern_fortran = True
+        # Expect modern Fortran comments and directives
+cuda_fortran = True
+        # Expect CUDA Fortran statements, directives and conditional code such as `!@cuf ierr = cudaDeviceSynchronize()`
+openacc = True
+        # Expect OpenACC directives and runtime calls 
 
 pretty_print_index_file = False # Pretty print index before writing it to disk.
 
@@ -19,6 +16,8 @@ module_ignore_list = [ # these modules are ignored when checking dependencies
     "cudafor", "cublas", "cusparse", "cusolver", "iso_c_binding",
     "iso_fortran_env"
 ]
+
+gpufort_module_file_suffix = ".gpufort_mod"
 
 scopes = [] # Can be used to preload scopes
 remove_outdated_scopes = False # Set to false if you want to preload scopes via your config file

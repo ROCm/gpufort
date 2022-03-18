@@ -6,6 +6,8 @@ translation_enabled_by_default = True
 
 source_dialects     = set(["cuf", "acc"]) # one of ["acc","cuf","omp"]
 destination_dialect = "omp" # one of ["omp","hip-runtime-rt"]
+modern_fortran = True
+        # Expect modern Fortran comments and directives
 
 kernels_to_convert_to_hip = [
 ] # add line number here (might change if snippets are included included); check log to find actual line number

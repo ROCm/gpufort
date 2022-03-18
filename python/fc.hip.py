@@ -22,6 +22,7 @@ import opts
 
 from gpufort import util
 from gpufort import scanner
+from gpufort import linemapper
 
 def parse_raw_cl_args():
     """Collect host and target compiler options.
@@ -83,12 +84,6 @@ def populate_cl_arg_parser(parser):
         "Compiler for offload target code, defaults to 'hipcc'. Use '--gpufort-target-cflags <flags>' to set compilation flags and '--gpufort-dflags <flags>' to set linker flags. Flags to GPUFORT related libraries are added by default if not specified otherwise. Host and target compiler and their respective options must be specified after all other GPUFORT options.",
     )
     parser.add_argument(
-        "-openacc",
-        dest="openacc",
-        action="store_true",
-        help="Translate OpenACC statements.",
-    )
-    parser.add_argument(
         "-no-gpufort-default-flags",
         dest="use_default_flags",
         action="store_false",
@@ -119,8 +114,7 @@ def populate_cl_arg_parser(parser):
     parser.set_defaults(only_compile=False,
                         only_codegen=False,
                         no_codegen=False,
-                        use_default_flags=True,
-                        openacc=False)
+                        use_default_flags=True)
 
 def check_inputs(paths):
     """:return: Typical object file name/path that compilers derive from a Fortran/C++ source file.
@@ -187,6 +181,7 @@ def hardcode_pure_converter_opts():
     """
     # always overwrite these options
     scanner.opts.destination_dialect = "hipgpufort"
+    linemapper.opts.line_grouping_ifdef_macro = None
     #opts.only_create_gpufort_module_files = False
     #opts.skip_create_gpufort_module_files = False
     opts.only_modify_translation_source = False

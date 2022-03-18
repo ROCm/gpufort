@@ -22,7 +22,7 @@ from . import opts
 
 # Pyparsing actions that create scanner tree (ST)
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def _parse_file(linemaps, index):
+def _parse_file(linemaps, index, **kwargs):
     """Generates a tree representation of the Fortran constructs
     in a Fortran file that is called *scanner tree*.
     :param list linemaps: List of linemaps created by GPUFORT's linemapper
@@ -30,9 +30,12 @@ def _parse_file(linemaps, index):
     :param list index: Index records created by GPUFORT's indexer
                        component.
     """
-
-    translation_enabled = opts.translation_enabled_by_default
-
+    modern_fortran,_ = util.kwargs.get_value("modern_fortran",opts.modern_fortran,**kwargs)
+    cuda_fortran  ,_ = util.kwargs.get_value("cuda_fortran","cuf" in opts.source_dialects,**kwargs)
+    openacc       ,_ = util.kwargs.get_value("openacc","acc" in opts.source_dialects,**kwargs)
+    translation_enabled_by_default,_ = util.kwargs.get_value("translation_enabled_by_default",opts.translation_enabled_by_default,**kwargs)
+    
+    translation_enabled = translation_enabled_by_default
     current_node = tree.STRoot()
     do_loop_ctr = 0
     keep_recording = False
@@ -322,14 +325,14 @@ def _parse_file(linemaps, index):
         nonlocal keep_recording
         log_detection_("CUDA API call")
         cudaApi, args = tokens
-        if not type(current_node) in [cuf.STCufLibCall, cuf.STCufKernelCall]:
+        if not type(current_node) in [tree.cuf.STCufLibCall, tree.cuf.STCufKernelCall]:
             new = tree.cuf.STCufLibCall(current_linemap, current_statement_no)
             new.ignore_in_s2s_translation = not translation_enabled
             new.cudaApi = cudaApi
             #print("finishes_on_first_line={}".format(finishes_on_first_line))
-            assert type(new.parent) in [
-                tree.STModule, tree.STProcedure, tree.STProgram
-            ], type(new.parent)
+            #assert type(new.parent) in [
+            #    tree.STModule, tree.STProcedure, tree.STProgram
+            #], type(new.parent)
             append_if_not_recording_(new)
 
     def CufKernelCall(tokens):
@@ -528,39 +531,32 @@ def _parse_file(linemaps, index):
         if condition1 and condition2:
             for current_statement_no, current_statement in enumerate(
                     current_linemap["statements"]):
-                util.logging.log_debug4(opts.log_prefix,"parse_file","parsing statement '{}' associated with lines [{},{}]".format(current_statement["body"].rstrip(),\
+                original_statement_lower = current_statement["body"].lower()
+                util.logging.log_debug4(opts.log_prefix,"parse_file","parsing statement '{}' associated with lines [{},{}]".format(original_statement_lower.rstrip(),\
                     current_linemap["lineno"],current_linemap["lineno"]+len(current_linemap["lines"])-1))
-
-                current_tokens = util.parsing.tokenize(
-                    current_statement["body"].lower(), padded_size=6)
-                current_statement_stripped = " ".join(current_tokens)
+                current_tokens = util.parsing.tokenize(original_statement_lower, padded_size=6)
+                current_statement_stripped = " ".join([tk for tk in current_tokens if len(tk)])
                 current_statement_stripped_no_comments = current_statement_stripped.split(
                     "!")[0]
                 if len(current_tokens):
                     # constructs
                     if current_tokens[0] == "end":
-                        for kind in [
-                                "program", "module", "subroutine", "function"
-                        ]: # ignore types/interfaces here
-                            if is_end_statement_(current_tokens, kind):
-                                End()
-                        if is_end_statement_(current_tokens, "do"):
+                        if current_tokens[1] in [
+                             "program", "module", "subroutine", "function"
+                           ]: # ignore types/interfaces here
+                            End()
+                        elif current_tokens[1] == "do":
                             DoLoop_leave()
                     if util.parsing.is_do(current_tokens):
                         DoLoop_visit()
                     # single-statements
                     if not keep_recording:
-                        if "acc" in opts.source_dialects:
-                            for comment_char in "!*c":
-                                if current_tokens[0:2] == [
-                                        comment_char + "$", "acc"
-                                ]:
-                                    AccDirective()
-                                elif current_tokens[0:2] == [
-                                        comment_char + "$", "gpufort"
-                                ]:
-                                    GpufortControl()
-                        if "cuf" in opts.source_dialects:
+                        if util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
+                            if current_tokens[1] == "acc":
+                                AccDirective()
+                            elif current_tokens[1] == "gpufort":
+                                GpufortControl()
+                        if cuda_fortran:
                             if "attributes" in current_tokens:
                                 try_to_parse_string("attributes",
                                                     tree.grammar.attributes)
@@ -571,10 +567,8 @@ def _parse_file(linemaps, index):
                                 try_to_parse_string(
                                     "cuf_kernel_call",
                                     tree.grammar.cuf_kernel_call)
-                            for comment_char in "!*c":
-                                if current_tokens[0:2] == [
-                                        comment_char + "$", "cuf"
-                                ]:
+                            if util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
+                                if current_tokens[1:4] == ["cuf","kernel","do"]:
                                     CufLoopNest()
                         if "=" in current_tokens:
                             if not try_to_parse_string("memcpy",
@@ -681,10 +675,9 @@ def parse_file(**kwargs):
             )
         with open(file_path, "r") as infile:
             file_content = infile.read()
-    preproc_options, _ = util.kwargs.get_value("preproc_options", "", **kwargs)
     if not have_linemaps:
         linemaps = linemapper.read_lines(
-            file_content.splitlines(keepends=True), preproc_options, file_path)
+            file_content.splitlines(keepends=True), **kwargs)
     if not file_is_indexed:
         indexer.update_index_from_linemaps(linemaps, index)
 
@@ -698,8 +691,9 @@ def parse_file(**kwargs):
             with open(path, "r") as infile:
                 other_files_contents.append(infile.read())
     for content in other_files_contents:
-        indexer.update_index_from_snippet(index, content, preproc_options)
-    return _parse_file(linemaps, index), index, linemaps
+        indexer.update_index_from_snippet(index, content, **kwargs)
+    kwargs.pop("index")
+    return _parse_file(linemaps, index, **kwargs), index, linemaps
 
 
 __all__ = ["parse_file"]

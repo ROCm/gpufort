@@ -6,7 +6,7 @@ from . import error
 
 COMMENT_CHARS = "!cCdD*"
 
-def tokenize(statement, padded_size=0):
+def tokenize(statement, padded_size=0, modern_fortran=True):
     """Splits string at whitespaces and substrings such as
     'end', '$', '!', '(', ')', '=>', '=', ',' and "::".
     Preserves the substrings in the resulting token stream but not the whitespaces.
@@ -15,7 +15,10 @@ def tokenize(statement, padded_size=0):
                Disable padding by specifying value <= 0.
     """
     TOKENS_REMOVE = r"\s+|\t+"
-    TOKENS_KEEP = r"(end|else|!\$?|[c\*]\$|[(),]|::?|=>?|<<<|>>>|[<>]=?|[/=]=|\+|-|\*|/|\.\w+\.)"
+    if modern_fortran:
+        TOKENS_KEEP = r"(end|else|![@\$]?|[(),]|::?|=>?|<<<|>>>|[<>]=?|[\/=]=|\+|-|\*|\/|\.\w+\.)"
+    else:
+        TOKENS_KEEP = r"(end|else|![@\$]?|^[c\*][@\$]?|[(),]|::?|=>?|<<<|>>>|[<>]=?|[\/=]=|\+|-|\*|\/|\.\w+\.)"
     # IMPORTANT: Use non-capturing groups (?:<expr>) to ensure that an inner group in TOKENS_KEEP
     # is not captured.
 
@@ -92,7 +95,7 @@ def split_fortran_line(line):
     if len(content):
         if len_preceding_ws == 0 and content[0] in COMMENT_CHARS or\
            content[0] == "!":
-            if len(content) > 1 and content[1] == "$":
+            if len(content) > 1 and content[1] in "$@":
                 statement = content
             else:
                 comment = content
@@ -261,7 +264,60 @@ def parse_use_statement(statement):
         raise error.SyntaxError("could not parse 'use' statement")
     return tokens[1], only
 
-def parse_declaration(fortran_statement):
+def parse_attributes_statement(statement):
+    """Parses a CUDA Fortran attributes statement.
+    :return: A tuple with the attribute as first
+            and the subjected variables (list of str)
+            as second entry.
+   
+    :Example:
+   
+    `attributes(device) :: var_a, var_b`
+   
+    will result in 
+
+    ('device', ['var_a', 'var_b'])
+    """
+    tokens = tokenize(statement,10)
+
+    attributes = []
+    if tokens.pop(0)!="attributes":
+        raise error.SyntaxError("expected 'attributes' keyword")
+    if tokens.pop(0)!="(":
+        raise error.SyntaxError("expected '('")
+    i = 0
+    tk = tokens.pop(0)
+    condition = True
+    while ( condition ):
+        if i % 2 == 0:
+           if tk.isidentifier():
+               attributes.append(tk)
+           else:
+               raise error.SyntaxError("expected identifier")
+        elif tk not in [","]:
+            raise error.SyntaxError("expected ','")
+        i += 1
+        tk = tokens.pop(0)
+        condition = tk != ")"
+    if tk!=")":
+        raise error.SyntaxError("expected ')'")
+    if tokens.pop(0)!="::":
+        raise error.SyntaxError("expected '::'")
+    # variables
+    variables = []
+    i = 0
+    for i,tk in enumerate(tokens):
+        if len(tk):
+            if i % 2 == 0:
+               if tk.isidentifier():
+                   variables.append(tk)
+               else:
+                   raise error.SyntaxError("expected identifier")
+            elif tk != ",":
+                raise error.SyntaxError("expected ','")
+    return attributes, variables    
+
+def parse_declaration(statement):
     """Decomposes a Fortran declaration into its individual
     parts.
 
@@ -273,8 +329,7 @@ def parse_declaration(fortran_statement):
     :note: case-ins
     :raise error.SyntaxError: If the syntax of the expression is not as expected.
     """
-    tokens = tokenize(fortran_statement,
-                      padded_size=10)
+    tokens = tokenize(statement,10)
 
     idx_last_consumed_token = None
     # handle datatype
@@ -629,19 +684,27 @@ def is_blank_line(statement):
     return not len(statement.strip())
 
 
-def is_comment(tokens, statement):
-    cond1 = tokens[0] == "!"
-    cond2 = len(statement) and statement[0] in ["c", "*"]
-    return cond1 or cond2
+def is_fortran_directive(statement,modern_fortran):
+    """If the statement is a directive."""
+    return len(statement) > 2 and (modern_fortran and statement.lstrip()[0:2] == "!$" 
+       or (not modern_fortran and statement[0:2] in ["c$","*$"]))
+
+def is_cuda_fortran_conditional_code(statement,modern_fortran):
+    """If the statement is a directive."""
+    return len(statement) > 2 and (modern_fortran and statement.lstrip()[0:5] == "!@cuf" 
+       or (not modern_fortran and statement[0:5] in ["c@cuf","*@cuf"]))
+
+def is_fortran_comment(statement,modern_fortran):
+    """If the statement is a directive.
+    :note: Assumes that `is_cuda_fortran_conditional_code` and 
+           `is_fortran_directive` are checked before.
+    """
+    return len(statement) and (modern_fortran and statement.lstrip()[0] == "!" 
+       or (not modern_fortran and statement[0] in "c*"))
 
 
 def is_cpp_directive(statement):
     return statement[0] == "#"
-
-
-def is_fortran_directive(tokens, statement):
-    return tokens[0] in ["!$", "*$", "c$"]
-
 
 def is_ignored_fortran_directive(tokens):
     return tokens[1:2+1] == ["acc","end"] and\

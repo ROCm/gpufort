@@ -13,15 +13,8 @@ from gpufort import translator
 from gpufort import linemapper
 from . import opts
 
-GPUFORT_MODULE_FILE_SUFFIX = ".gpufort_mod"
-
-CASELESS = False
-GRAMMAR_DIR = os.path.join(os.path.dirname(__file__), "../grammar")
-exec(open(os.path.join(GRAMMAR_DIR, "grammar.py")).read())
-
-# configurable parameters
-p_filter = re.compile(opts.filter)
-p_continuation = re.compile(opts.continuation_filter)
+import pyparsing
+from . import grammar
 
 class Node():
 
@@ -82,12 +75,11 @@ def create_index_records_from_declaration(statement):
     return context
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def _parse_statements(linemaps, file_path):
-    # Regex
-    datatype_reg = Regex(
-        r"\b(type\s*\(|character|integer|logical|real|complex|double\s+precision)\b"
-    )
-
+def _parse_statements(linemaps, file_path,**kwargs):
+    modern_fortran,_ = util.kwargs.get_value("modern_fortran",opts.modern_fortran,**kwargs)
+    cuda_fortran  ,_ = util.kwargs.get_value("cuda_fortran",opts.cuda_fortran,**kwargs)
+    openacc       ,_ = util.kwargs.get_value("openacc",opts.openacc,**kwargs)
+    
     index = []
 
     # statistics
@@ -161,20 +153,22 @@ def _parse_statements(linemaps, file_path):
                     linemaps, end)
             current_node = current_node._parent
 
-    def ModuleStart(tokens):
+    def ModuleStart():
         nonlocal root
         nonlocal current_node
-        name = tokens[0]
+        nonlocal current_tokens
+        name = current_tokens[1]
         module = create_base_entry_("module", name, file_path)
         assert current_node == root
         current_node._data.append(module)
         current_node = Node("module", name, data=module, parent=current_node)
         log_enter_node_()
 
-    def ProgramStart(tokens):
+    def ProgramStart():
         nonlocal root
         nonlocal current_node
-        name = tokens[0]
+        nonlocal current_tokens
+        name = current_tokens[1]
         program = create_base_entry_("program", name, file_path)
         assert current_node._kind == "root"
         current_node._data.append(program)
@@ -281,7 +275,7 @@ def _parse_statements(linemaps, file_path):
                 used_module)
 
     # delayed parsing
-    def Declaration(tokens):
+    def Declaration():
         nonlocal root
         nonlocal current_node
         nonlocal current_linemap
@@ -300,7 +294,7 @@ def _parse_statements(linemaps, file_path):
             msg = "finished to parse declaration '{}'".format(current_statement)
             log_end_task(current_node, msg)
 
-    def Attributes(tokens):
+    def Attributes():
         """Add attributes to previously declared variables in same scope/declaration list.
         Does not modify scope of other variables.
         """
@@ -314,11 +308,10 @@ def _parse_statements(linemaps, file_path):
                 current_statement)
             log_begin_task(current_node, msg)
             #
-            attribute, modified_vars = \
-                translator.parse_attributes(translator.tree.grammar.attributes.parseString(current_statement)[0]) # TODO switch to token based parser
+            attributes, modified_vars = util.parsing.parse_attributes_statement(current_statement)
             for var_context in current_node._data["variables"]:
                 if var_context["name"] in modified_vars:
-                    var_context["qualifiers"].append(attribute)
+                    var_context["qualifiers"] += attributes
             #
             msg = "finished to parse attributes statement '{}'".format(current_statement)
             log_end_task(current_node, msg)
@@ -379,23 +372,15 @@ def _parse_statements(linemaps, file_path):
             msg = "finished to parse acc routine directive '{}'".format(current_statement)
             log_end_task(current_node, msg)
 
-    module_start.setParseAction(ModuleStart)
-    type_start.setParseAction(TypeStart)
-    program_start.setParseAction(ProgramStart)
-    function_start.setParseAction(FunctionStart)
-    subroutine_start.setParseAction(SubroutineStart)
-
-    type_end.setParseAction(End)
-    structure_end.setParseAction(End)
-
-    datatype_reg.setParseAction(Declaration)
-    attributes.setParseAction(Attributes)
+    grammar.type_start.setParseAction(TypeStart)
+    grammar.function_start.setParseAction(FunctionStart)
+    grammar.subroutine_start.setParseAction(SubroutineStart)
 
     def try_to_parse_string(expression_name, expression):
         try:
             expression.parseString(current_statement)
             return True
-        except ParseBaseException as e:
+        except pyparsing.ParseBaseException as e:
             util.logging.log_debug3(
                 opts.log_prefix, "_parse_statements",
                 "did not find expression '{}' in statement '{}'".format(
@@ -404,73 +389,54 @@ def _parse_statements(linemaps, file_path):
                                     "_parse_statements", str(e))
             return False
 
-    def is_end_statement_(tokens, kind):
-        result = tokens[0] == "end" + kind
-        if not result and len(tokens):
-            result = tokens[0] == "end" and tokens[1] == kind
-        return result
-
-    def consider_statement(stripped_statement):
-        passes_filter = p_filter.match(stripped_statement) != None
-        return passes_filter
-
     # parser loop
     try:
         for current_linemap_no, current_linemap in enumerate(linemaps):
             if current_linemap["is_active"]:
                 for current_statement_no, stmt in enumerate(
                         current_linemap["statements"]):
-                    current_statement = stmt["body"].lower().strip(" \t\n")
-                    if not consider_statement(current_statement):
-                        util.logging.log_debug3(
-                            opts.log_prefix, "_collect_statements",
-                            "ignore statement '{}'".format(current_statement))
-                    else:
-                        util.logging.log_debug3(
-                            opts.log_prefix, "_parse_statements",
-                            "process statement '{}'".format(current_statement))
-                        current_tokens = re.split(
-                            r"\s+|\t+",
-                            current_statement.lower().strip(" \t"))
-                        current_statement_stripped = "".join(current_tokens)
-                        for expr in [
-                                "program", "module", "subroutine", "function",
-                                "type"
-                        ]:
-                            if is_end_statement_(current_tokens, expr):
-                                End()
-                        for comment_char in "!*c":
-                            if current_tokens[0] == comment_char + "$acc":
-                                if current_tokens[1] == "declare":
-                                    AccDeclare()
-                                elif current_tokens[1] == "routine":
-                                    AccRoutine()
-                        if current_tokens[0] == "use":
-                            Use()
-                        #elif current_tokens[0] == "implicit":
-                        #    try_to_parse_string("implicit",IMPLICIT)
-                        elif current_tokens[0] == "module":
-                            try_to_parse_string("module", module_start)
-                        elif current_tokens[0] == "program":
-                            try_to_parse_string("program", program_start)
-                        elif current_tokens[0].startswith(
-                                "type"): # type a ; type, bind(c) :: a
-                            try_to_parse_string("type", type_start)
-                        elif current_tokens[0].startswith(
-                                "attributes"): # attributes(device) :: a
-                            try_to_parse_string("attributes", attributes)
-                        # cannot be combined with above checks
-                        if "function" in current_tokens:
-                            try_to_parse_string("function", function_start)
-                        elif "subroutine" in current_tokens:
-                            try_to_parse_string("subroutine", subroutine_start)
-                        for expr in [
-                                "type", "character", "integer", "logical", "real",
-                                "complex", "double"
-                        ]: # type(dim3) :: a
-                            if expr in current_tokens[0]:
-                                try_to_parse_string("declaration", datatype_reg)
-                                break
+                    original_statement_lower = stmt["body"].lower()
+                    current_tokens = util.parsing.tokenize(original_statement_lower,padded_size=6)
+                    current_statement = " ".join([tk for tk in current_tokens if len(tk)])
+
+                    util.logging.log_debug3(
+                        opts.log_prefix, "_parse_statements",
+                        "process statement '{}'".format(current_statement))
+                    if (current_tokens[0]=="end" and 
+                       current_tokens[1] in [
+                        "program", "module", "subroutine", "function",
+                        "type"]):
+                        End()
+                    elif openacc and util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
+                        if current_tokens[1:3] == ["acc","declare"]:
+                            AccDeclare()
+                        elif current_tokens[1:3] == ["acc","routine"]:
+                            AccRoutine()
+                    elif current_tokens[0] == "use":
+                        Use()
+                    #elif current_tokens[0] == "implicit":
+                    #    try_to_parse_string("implicit",grammar.IMPLICIT)
+                    elif current_tokens[0] == "module":
+                        ModuleStart()
+                    elif current_tokens[0] == "program":
+                        ProgramStart()
+                    elif current_tokens[0] == "type" and current_tokens[1] != "(": # type a ; type, bind(c) :: a
+                        try_to_parse_string("type", grammar.type_start)
+                    # cannot be combined with above checks in current form
+                    # TODO parse functions, subroutine signatures more carefully
+                    if "function" in current_tokens:
+                        try_to_parse_string("function", grammar.function_start)
+                    elif "subroutine" in current_tokens:
+                        try_to_parse_string("subroutine", grammar.subroutine_start)
+                    elif current_tokens[0] == "attributes" and "::" in current_tokens: # attributes(device) :: a
+                        Attributes() 
+                    elif current_tokens[0] in [
+                         "character", "integer", "logical", "real",
+                         "complex", "double"
+                       ]:
+                        Declaration()
+                    elif current_tokens[0:2] == ["type","("]: # type(dim3) :: a
+                        Declaration()
     except util.error.SyntaxError as e:
         filepath = current_linemap["file"]
         lineno = current_linemap["lineno"]
@@ -497,35 +463,25 @@ def _read_json_file(file_path):
 
 # API
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def scan_file(file_path, preproc_options, index):
-    """Creates an index from a single file.
-    """
-    filtered_statements = _read_fortran_file(file_path, preproc_options)
-    util.logging.log_debug2(opts.log_prefix,"scan_file","extracted the following statements:\n>>>\n{}\n<<<".format(\
-        "\n".join(filtered_statements)))
-    index += _parse_statements(filtered_statements, file_path)
-
-
-@util.logging.log_entry_and_exit(opts.log_prefix)
-def update_index_from_linemaps(linemaps, index):
+def update_index_from_linemaps(linemaps, index,**kwargs):
     """Updates index from a number of linemaps."""
     if len(linemaps):
         index += _parse_statements(linemaps,
-                                          file_path=linemaps[0]["file"])
+                                   file_path=linemaps[0]["file"],
+                                   **kwargs)
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def update_index_from_snippet(index, snippet, preproc_options=""):
-    macro_stack = linemapper.init_macros(preproc_options)
+def update_index_from_snippet(index, snippet, **kwargs):
     linemaps = linemapper.preprocess_and_normalize(snippet.splitlines(),
-                                                   "dummy.f90", macro_stack)
-    update_index_from_linemaps(linemaps, index)
+                                                   "dummy.f90", macro_stack, **kwargs)
+    update_index_from_linemaps(linemaps, index, **kwargs)
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def create_index_from_snippet(snippet, preproc_options=""):
+def create_index_from_snippet(snippet, **kwargs):
     index = []
-    update_index_from_snippet(index, snippet, preproc_options)
+    update_index_from_snippet(index, snippet, **kwargs)
     return index
 
 
@@ -571,7 +527,7 @@ def write_gpufort_module_files(index, output_dir):
     :param str output_dir: [in] Output directory.
     """
     for mod in index:
-        file_path = output_dir + "/" + mod["name"] + GPUFORT_MODULE_FILE_SUFFIX
+        file_path = output_dir + "/" + mod["name"] + opts.gpufort_module_file_suffix
         _write_json_file(mod, file_path)
 
 
@@ -585,10 +541,10 @@ def load_gpufort_module_files(input_dirs, index):
     """
     for input_dir in input_dirs:
         for child in os.listdir(input_dir):
-            if child.endswith(GPUFORT_MODULE_FILE_SUFFIX):
+            if child.endswith(opts.gpufort_module_file_suffix):
                 module_already_exists = False
                 for mod in index:
-                    if mod == child.replace(GPUFORT_MODULE_FILE_SUFFIX, ""):
+                    if mod == child.replace(opts.gpufort_module_file_suffix, ""):
                         module_already_exists = True
                         break
                 if not module_already_exists:

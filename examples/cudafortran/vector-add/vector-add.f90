@@ -9,6 +9,7 @@ program main
   real, allocatable :: y_d(:)
   type(dim3) :: grid, tBlock
   integer :: i
+  !@cuf integer :: ierr
 
   attributes(device) :: y_d
   allocate(y_d(N))
@@ -26,6 +27,7 @@ program main
   do i=1,size(y_d,1)
     y_d(i) = y_d(i) + a*xi
   end do
+  !@cuf ierr = cudaDeviceSynchronize()
 
   y = y_d
 

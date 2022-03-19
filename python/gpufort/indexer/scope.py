@@ -180,7 +180,7 @@ def create_scope_from_declaration_list(declaration_list_snippet,
     """
     dummy_module = """module dummy\n{}
     end module dummy""".format(declaration_list_snippet)
-    index = indexer.create_index_from_snippet(dummy_module, preproc_options)
+    index = indexer.create_index_from_snippet(dummy_module, preproc_options=preproc_options)
     scope = create_scope(index, "dummy")
     return scope
 

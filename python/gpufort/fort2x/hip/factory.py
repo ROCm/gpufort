@@ -41,9 +41,9 @@ def create_kernel_generator_from_loop_nest(declaration_list_snippet,
     """
     preproc_options = util.kwargs.get_value("preproc_options", "", **kwargs)
     scope = indexer.scope.create_scope_from_declaration_list(
-        declaration_list_snippet, preproc_options)
+        declaration_list_snippet, preproc_options=preproc_options)
     linemaps = linemapper.read_lines(
-        loop_nest_snippet.splitlines(keepends=True), preproc_options)
+        loop_nest_snippet.splitlines(keepends=True), preproc_options=preproc_options)
     fortran_statements = linemapper.get_statement_bodies(linemaps)
     ttloopnest = translator.parse_loop_kernel(fortran_statements, scope)
 

@@ -139,28 +139,51 @@ namespace {
   }
   
   /**
-   * Given the index of a collapsed loop nest,
+   * Given the index for iterating a collapsed loop nest
+   * and the number of iterations of that collapsed loop nest,
    * this function returns the index of the outermost loop
-   * of the original loop nest.
-   * Result takes loop begin and step size into account.
+   * of the original (uncollapsed) loop nest.
    *
-   * \note Side effects: Argument `collapsed_index`
-   *       is decremented according to the iteration range size 
-   *       of the outer loop. It can then be used to retrieve
+   * \return index for iterating the original outermost loop.
+   *
+   * \note Side effects: Argument `index`
+   *       is decremented according to the number of iterations
+   *       of the outermost loop. It can then be used to retrieve
    *       the index of the next inner loop, and so on.
-   * \param[inout] collaped_index index for iterating collapsed loop nest.
-   * \param[in] begin begin of the outer loop iteration range
-   * \param[in] end end of the outer loop iteration range
-   * \param[in] step step size of the outer loop iteration range
+   *       Argument `problem_size` is divided by the number of iterations of the outermost loop.
+   *       It can then also be passed directly to the next call of `outermost_index`.
+   * \param[inout] index index for iterating collapsed loop nest. This
+   *                     is not the index of the outermost loop!
+   * \param[inout] problem_size Denominator for retrieving outermost loop index. Must be chosen
+   *                           equal to the total number of iterations of the collapsed loop nest 
+   *                           before the first call of `outermost_index`.
+   * \param[in] begin begin of the outermost loop iteration range
+   * \param[in] end end of the outermost loop iteration range
+   * \param[in] step step size of the outermost loop iteration range
    */
   __host__ __device__ __forceinline__ int outermost_index(
-    int& collapsed_index,
-    const int begin, const int end,const int step=1
+    int& index,
+    int& problem_size,
+    const int begin, const int end, const int step
   ) {
     const int size = (abs(end - begin) + 1)/abs(step);
-    const int idx = collapsed_index / size; // rounds down
-    collapsed_index -= idx*size;
+    problem_size /= size;
+    const int idx = index / problem_size; // rounds down
+    index -= idx*problem_size;
     return (begin + step*idx);
+  }
+ 
+  /** 
+   * Overloaded variant that deduces the sign of a unit step
+   * based on inputs `begin` and `end`.
+   */ 
+  __host__ __device__ __forceinline__ int outermost_index(
+    int& index,
+    int& problem_size,
+    const int begin, const int end
+  ) {
+    int step = ( begin <= end ) ? 1 : -1; 
+    return outermost_index(index,problem_size,begin,end,step);
   }
 
   // type conversions (complex make routines already defined via "hip/hip_complex.h")

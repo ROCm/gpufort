@@ -474,7 +474,7 @@ def update_index_from_linemaps(linemaps, index,**kwargs):
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def update_index_from_snippet(index, snippet, **kwargs):
     linemaps = linemapper.preprocess_and_normalize(snippet.splitlines(),
-                                                   "dummy.f90", macro_stack, **kwargs)
+                                                   file_path="dummy.f90", **kwargs)
     update_index_from_linemaps(linemaps, index, **kwargs)
 
 

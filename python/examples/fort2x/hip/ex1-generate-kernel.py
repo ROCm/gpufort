@@ -17,7 +17,7 @@ integer(4) :: x(N), y(N), y_exact(N)
 """
 
 annotated_loop_nest = """\
-!$acc parallel loop present(x,y) collapse(2)
+!$acc parallel loop present(x,y) private(k,i) collapse(1)
 do j = 1, M
   do i = 1, N
     x(i,j) = 1

@@ -156,7 +156,7 @@ fortran_end_select_case = Regex(r"end\s*select(\s+\w+)?",re.IGNORECASE).suppress
 
 ## Do/while Loop
 do_loop_start    = Regex(r"(\w+:)?\s*do",re.IGNORECASE).suppress()
-fortran_do       = do_loop_start + assignment + COMMA + arithmetic_expression + Optional(COMMA + arithmetic_expression,default="1")
+fortran_do       = do_loop_start + assignment + COMMA + arithmetic_expression + Optional(COMMA + arithmetic_expression,default=None)
 fortran_do_while = do_loop_start + WHILE + LPAR + arithmetic_logical_expression + RPAR 
 
 # TODO Dominic: Simplify

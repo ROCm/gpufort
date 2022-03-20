@@ -101,12 +101,15 @@ def lookup_index_entries_for_vars_in_kernel_body(scope,
     return taglobal_vars, taglobal_reduced_vars, tashared_vars, talocal_vars
 
 def lookup_index_entries_for_vars_in_loopnest(scope,ttloopnest):
+    loop_vars = ttloopnest.loop_vars()
+    local_vars = [v for v in (ttloopnest.local_scalars()+ttloopnest.gang_team_private_vars())
+                  if v not in loop_vars]
     return lookup_index_entries_for_vars_in_kernel_body(scope,
                                                         ttloopnest.vars_in_body(),
                                                         ttloopnest.gang_team_reductions(),
                                                         ttloopnest.gang_team_shared_vars(),
-                                                        ttloopnest.local_scalars(),
-                                                        ttloopnest.loop_vars())
+                                                        local_vars,
+                                                        loop_vars)
 
 def lookup_index_entries_for_vars_in_procedure_body(scope,ttprocedurebody,iprocedure):
     shared_vars = [

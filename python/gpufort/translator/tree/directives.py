@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+import textwrap
+
 import pyparsing
 
 from gpufort import indexer
@@ -154,51 +156,101 @@ class TTDo(base.TTContainer):
         return [self.annotation, self.body, self._begin, self._end, self._step]
 
     def hip_thread_index_c_str(self):
-        ivar = self.loop_var()
+        idx = self.loop_var()
         begin = base.make_c_str(
             self._begin._rhs) # array indexing is corrected in index macro
-        step = base.make_c_str(self._step)
-        return "int {var} = {begin} + ({step})*(threadIdx.{idx} + blockIdx.{idx} * blockDim.{idx});\n".format(\
-                var=ivar,begin=begin,idx=self.thread_index,step=step)
+        end = base.make_c_str(self._end)
+        if self._step != None:
+            step = base.make_c_str(self._step)
+        elif opts.all_unspecified_do_loop_step_sizes_are_positive:
+            step = "1"
+        else:
+            step = "({} <= {}) ? 1 : -1".format(begin,end)
+        return "int {idx} = {begin} + ({step})*(threadIdx.{tidx} + blockIdx.{tidx} * blockDim.{tidx});\n".format(\
+                idx=idx,begin=begin,tidx=self.thread_index,step=step)
 
     def collapsed_loop_index_c_str(self):
         idx = self.loop_var()
-        begin = base.make_c_str(self._begin._rhs)
-        end = base.make_c_str(self._end)
-        step = base.make_c_str(self._step)
-        return "int {var} = outermost_index({index},{begin},{end},{step});\n".format(\
-               var=idx,begin=begin,end=end,step=step,index=self.thread_index)
+        args = [
+          self.thread_index,
+          base.make_c_str(self._begin._rhs),
+          base.make_c_str(self._end),
+        ]
+        if self._step != None:
+            args.append(base.make_c_str(self._step))
+        elif opts.all_unspecified_do_loop_step_sizes_are_positive:
+            args.append("1")
+        return "int {idx} = outermost_index({args});\n".format(\
+               idx=idx,args=",".join(args))
 
     def problem_size(self, converter=base.make_f_str):
-        if self._step == "1":
-            return "(1 + (({end}) - ({begin})))".format(\
+        if self._step == None:
+            return "(1 + abs(({end}) - ({begin})))".format(\
                 begin=converter(self._begin._rhs),end=converter(self._end),step=converter(self._step) )
         else:
-            return "(1 + (({end}) - ({begin}))/({step}))".format(\
+            return "(1 + abs(({end}) - ({begin}))/abs({step}))".format(\
                 begin=converter(self._begin._rhs),end=converter(self._end),step=converter(self._step))
 
     def hip_thread_bound_c_str(self):
-        ivar = self.loop_var()
-        begin = base.make_c_str(self._begin._rhs)
-        end = base.make_c_str(self._end)
-        step = base.make_c_str(self._step)
-        return "loop_cond({0},{1},{2})".format(ivar, end, step)
+        args = [
+          self.loop_var(),
+          base.make_c_str(self._begin._rhs),
+          base.make_c_str(self._end),
+        ]
+        if self._step != None:
+            args.append(base.make_c_str(self._step))
+        elif opts.all_unspecified_do_loop_step_sizes_are_positive:
+            args.append("1")
+        return "loop_cond({})".format(",".join(args))
 
     def loop_var(self, converter=base.make_c_str):
         return converter(self._begin._lhs)
 
     def c_str(self):
-        body_content = base.TTContainer.c_str(self)
+        body = textwrap.dedent(base.TTContainer.c_str(self))
         if self.thread_index == None:
-            ivar = self.loop_var()
+            idx = self.loop_var()
             begin = base.make_c_str(
                 self._begin._rhs) # array indexing is corrected in index macro
             end = base.make_c_str(self._end)
-            step = base.make_c_str(self._step)
-            return "for ({0}={1}; {0} <= {2}; {0} += {3}) {{\n{4}\n}}".format(\
-                    ivar, begin, end, step, body_content)
+            condition = self.hip_thread_bound_c_str()
+            step = None
+            if self._step != None:
+                step = base.make_c_str(self._step)
+                try: # check if step is an integer number
+                    ival = int(step)
+                    step = str(ival)
+                    if ival > 0:
+                        condition = "{} <= {}".format(idx,end)
+                    else:
+                        condition = "{} >= {}".format(idx,end)
+                except:
+                    pass
+            elif opts.all_unspecified_do_loop_step_sizes_are_positive:
+                condition = "{} <= {}".format(idx,end)
+                step = "1"
+            elif not opts.loop_versioning:
+                step = "(({} <= {}) ? 1 : -1)".format(begin,end)
+            if step != None:
+                return textwrap.dedent("""\
+                    for ({idx}={begin}; {condition}; {idx} += {step}) {{
+                    {body}
+                    }}""").format(\
+                        idx=idx, begin=begin, condition=condition, step=step, body=textwrap.indent(body," "*2))
+            else:
+                return textwrap.dedent("""\
+                           if ( {begin} <= {end} ) {{
+                             for ({idx}={begin}; {idx} <= {end}; {idx}++) {{
+                           {body}
+                             }}
+                           }} else {{
+                             for ({idx}={begin}; {idx} >= {end}; {idx}--) {{
+                           {body}
+                             }}
+                           }}""").format(\
+                        idx=idx, begin=begin, end=end, step=step, body=textwrap.indent(body," "*4))
         else:
-            return body_content
+            return textwrap.indent(body," "*2)
 
 
 class IComputeConstruct():
@@ -387,7 +439,7 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
         if num_outer_loops_to_map > 0:
             return identifier_names[0:num_outer_loops_to_map]
         else:
-            return identifier_names
+            return []
 
     def vars_in_body(self):
         return _vars_in_subtree(self, self.scope)
@@ -547,7 +599,8 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
         return self.__first_loop_annotation().block_expr_f_str()
 
     def gang_team_private_vars(self, converter=base.make_f_str):
-        return self.__parent_directive().gang_team_private_vars(converter)
+        result = self.__parent_directive().gang_team_private_vars(converter)
+        return result
 
     def gang_team_firstprivate_vars(self, converter=base.make_f_str):
         return self.__parent_directive().gang_team_firstprivate_vars(converter)

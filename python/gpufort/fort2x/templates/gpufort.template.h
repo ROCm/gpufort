@@ -131,11 +131,22 @@ namespace {
    *
    * \note Takes only the sign of `step` into account, not its value.
    *
+   * \param[in] idx loop index
+   * \param[in] begin begin of the loop iteration range
    * \param[in] end end of the loop iteration range
    * \param[in] step step size of the loop iteration range
    */
-  __device__ __forceinline__ bool loop_cond(int idx,int end,int step) {
+  __device__ __forceinline__ bool loop_cond(int idx,int begin,int end,int step) {
     return (step>0) ? ( idx <= end ) : ( -idx <= -end );     
+  }
+  
+  /** 
+   * Overloaded variant that deduces the sign of a unit step
+   * based on inputs `begin` and `end`.
+   */ 
+  __device__ __forceinline__ bool loop_cond(int idx,int begin,int end) {
+    int step = ( begin <= end ) ? 1 : -1; 
+    return loop_cond(idx,begin,end,step);
   }
   
   /**

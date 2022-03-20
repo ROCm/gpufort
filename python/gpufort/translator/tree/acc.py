@@ -484,7 +484,7 @@ class TTAccWait(TTAccDirectiveBase):
         return self._format(result)
 
 
-class TTAccLoop(TTAccDirectiveBase, directives.ILoopAnnotation):
+class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
     """
     possible clauses:
       collapse( n )
@@ -511,7 +511,6 @@ class TTAccLoop(TTAccDirectiveBase, directives.ILoopAnnotation):
         elif clause.value.is_integer():
             return int(base.make_c_str(clause.value))
         else:
-            print(base.make_c_str(clause.value))
             raise util.error.SyntaxError("argument of clause 'collapse' must be integer number")
 
     def tile_sizes(self):
@@ -604,8 +603,7 @@ class TTAccLoop(TTAccDirectiveBase, directives.ILoopAnnotation):
             return result
 
 
-class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase,
-                                directives.IComputeConstruct):
+class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase,directives.IComputeConstruct):
     """
     possible clauses:
       async [( int-expr )]
@@ -630,10 +628,10 @@ class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase,
       default( none | present )
     """
 
-    def private_vars(self, converter=base.make_f_str):
+    def gang_team_private_vars(self, converter=base.make_f_str):
         return self.handle_mapping_clause(["private"], converter)
 
-    def firstprivate_vars(self, converter=base.make_f_str):
+    def gang_team_firstprivate_vars(self, converter=base.make_f_str):
         return self.handle_mapping_clause(["firstprivate"], converter)
 
     def omp_f_str(self,
@@ -660,8 +658,8 @@ class TTAccParallel(TTAccComputeConstructBase):
                                                 prefix))
 
 
-class TTAccParallelLoop(TTAccParallel, TTAccLoop):
-
+class TTAccParallelLoop(TTAccLoop,TTAccParallel):
+    
     def _assign_fields(self, tokens):
         TTAccDirectiveBase._assign_fields(self, tokens)
         self.loop_handles_mutual_clauses = False

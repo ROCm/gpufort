@@ -56,10 +56,8 @@ class TTContainer(TTNode):
         return self.body
 
     def c_str(self):
-        result = ""
-        for child in self.body:
-            result += make_c_str(child).rstrip() + "\n"
-        return textwrap.indent(result.rstrip(),self.indent)
+        result = [make_c_str(child).rstrip() for child in self.body]
+        return textwrap.indent("\n".join(result),self.indent)
 
 class TTRoot(TTContainer):
     pass

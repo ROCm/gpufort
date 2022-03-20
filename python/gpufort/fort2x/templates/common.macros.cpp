@@ -72,12 +72,12 @@ gpufort::array{{rvar.rank+1}}<{{c_type}}>{{suffix}} {{rvar.name}}
 {%- macro render_local_var_decl(ivar) -%}
 {%- set prefix = "__shared__ " if "shared" in ivar.qualifiers else "" -%}
 {%- set c_type = ivar.kind if ivar.f_type=="type" else ivar.c_type -%}
-{%- if ivar.rank > 0 -%}
+{% if ivar.rank > 0 %}
 {#    todo add local C array init here too, that one gets a __shared__ prefix if needed #}
 gpufort::array{{ivar.rank}}<{{c_type}}> {{ivar.name}};
-{%- else -%}
+{% else %}
 {{prefix}}{{c_type}} {{ivar.name}};
-{%- endif -%}
+{% endif %}
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_local_var_decls(ivars) -%}

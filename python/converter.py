@@ -462,18 +462,10 @@ def get_gfortran_cflags():
 def get_basic_ldflags(with_runtime):
     ldflags = []
     hip_platform = os.environ.get("HIP_PLATFORM", "amd")
+    ldflags.append("".join(["-L",os.path.join(__GPUFORT_ROOT_DIR, "lib")]))
     if with_runtime:
-        ldflags.append("".join([
-            " -L",
-            os.path.join(__GPUFORT_ROOT_DIR, "lib"), " -lgpufort_acc_",
-            hip_platform, " -lgpufort_", hip_platform
-            ]))
-    else:
-        ldflags.append("".join([
-            " -L",
-            os.path.join(__GPUFORT_ROOT_DIR, "lib"), " -lgpufort_",
-            hip_platform
-            ]))
+        ldflags.append("".join(["-lgpufort_acc_",hip_platform]))
+    ldflags.append("".join(["-lgpufort_",hip_platform]))
     return ldflags
 
 def parse_cl_args(parser,for_converter=True):

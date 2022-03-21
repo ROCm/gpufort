@@ -14,6 +14,8 @@ codegen.omp:
 build.hip: codegen.hip
 	$(HIPCC) $(HIPCC_CFLAGS) -c $(TEST_SRC)-gpufort.cpp
 	$(HIPFC) $(TEST_SRC)-gpufort.f08 -o $(TEST_NAME) $(TEST_SRC)-gpufort.o $(CFLAGS) $(LDFLAGS)
+compile.hip:
+	gpufortfc $(TEST_SRC) --openacc -v -o $(TEST_NAME)
 build.omp: codegen.omp
 	$(OMPFC) -ffree-form $(OMPFC_CFLAGS) -fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx906 $(TEST_NAME).hipified.f90 -o $(TEST_NAME)
 

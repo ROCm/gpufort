@@ -262,10 +262,27 @@ class TestParsingUtils(unittest.TestCase):
           "a(i,j)%b%arg3(1:n)",
         ]
         results = [
+          "aLijR_b_arg3L1TnR",
         ]
         for i,expr in enumerate(expressions):
-            print(util.parsing.mangle_fortran_var_expr(expr))
-            #self.assertEqual(util.parsing.parse_cuf_kernel_call(expr),results[i])
+            #print(util.parsing.mangle_fortran_var_expr(expr))
+            self.assertEqual(util.parsing.mangle_fortran_var_expr(expr),results[i])
+    def test_15_parse_derived_type_statement(self):
+        expressions = [
+          'type mytype',
+          'type :: mytype',
+          'type, bind(c) :: mytype',
+          'type :: mytype(k,l)',
+        ]
+        results = [
+          ('mytype', [], []),
+          ('mytype', [], []),
+          ('mytype', ['bind(c)'], []),
+          ('mytype', [], ['k,l)']),
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing.parse_derived_type_statement(expr))
+            self.assertEqual(util.parsing.parse_derived_type_statement(expr),results[i])
 
 if __name__ == '__main__':
     unittest.main() 

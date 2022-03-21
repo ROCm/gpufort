@@ -118,9 +118,19 @@ def handle_declaration_cuf(stdeclaration, joined_statements, index=[]):
     modified = False
     for var in variables:
         var_name, var_bounds, var_rhs = var
-        ivar = indexer.scope.search_index_for_var(\
-          index,stdeclaration.parent.tag(),\
-            var_name)
+        if stdeclaration.derived_type_parent == None:
+            ivar = indexer.scope.search_index_for_var(
+              index,stdeclaration.parent.tag(),
+                var_name)
+        else:
+            parent_type = indexer.scope.search_index_for_type(
+                index,stdeclaration.parent.tag(),
+                stdeclaration.derived_type_parent)
+            ivar = next(
+                (v for v in parent_type["variables"] if v["name"] == var_name),
+                None)
+            if result == None:
+                raise util.error.LookupError("no index record found for variable '{}' in scope".format(var_name))
         rank = ivar["rank"]
         has_device = "device" in ivar["qualifiers"]
         has_pinned = "pinned" in ivar["qualifiers"]

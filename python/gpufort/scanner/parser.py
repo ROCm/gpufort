@@ -43,6 +43,8 @@ def _parse_file(linemaps, index, **kwargs):
     current_file = str(fortran_file_path)
     current_linemap = None
     directive_no = 0
+    current_tokens = None
+    derived_type_parent = None
 
     def log_detection_(kind):
         nonlocal current_node
@@ -96,27 +98,44 @@ def _parse_file(linemaps, index, **kwargs):
         current_node = current_node.parent
 
     # parse actions
-    def Module_visit(tokens):
+    def ModuleStart():
         nonlocal translation_enabled
         nonlocal current_node
         nonlocal current_linemap
         nonlocal current_statement_no
+        nonlocal current_tokens
         log_detection_("module")
-        new = tree.STModule(tokens[0], current_linemap, current_statement_no)
+        new = tree.STModule(current_tokens[1], current_linemap, current_statement_no)
         new.ignore_in_s2s_translation = not translation_enabled
         descend_(new)
 
-    def Program_visit(tokens):
+    def ProgramStart():
         nonlocal translation_enabled
         nonlocal current_node
         nonlocal current_linemap
         nonlocal current_statement_no
+        nonlocal current_tokens
         log_detection_("program")
-        new = tree.STProgram(tokens[0], current_linemap, current_statement_no)
+        new = tree.STProgram(current_tokens[1], current_linemap, current_statement_no)
         new.ignore_in_s2s_translation = not translation_enabled
         descend_(new)
+    
+    def TypeStart():
+        nonlocal derived_type_parent
+        nonlocal current_statement_stripped_no_comments
+        log_detection_("type")
+        name, _, __ = util.parsing.parse_derived_type_statement(current_statement_stripped_no_comments)
+        derived_type_parent = name
+    
+    def TypeEnd():
+        nonlocal derived_type_parent
+        log_detection_("end program")
+        derived_type_parent = None
+        new = tree.STPlaceHolder(current_linemap, current_statement_no)
+        new.ignore_in_s2s_translation = not translation_enabled
+        append_if_not_recording_(new)
 
-    def Function_visit(tokens):
+    def FunctionStart(tokens):
         nonlocal translation_enabled
         nonlocal current_node
         nonlocal current_linemap
@@ -129,7 +148,7 @@ def _parse_file(linemaps, index, **kwargs):
         keep_recording = new.keep_recording()
         descend_(new)
 
-    def Subroutine_visit(tokens):
+    def SubroutineStart(tokens):
         nonlocal translation_enabled
         nonlocal current_node
         nonlocal current_linemap
@@ -182,7 +201,7 @@ def _parse_file(linemaps, index, **kwargs):
             (type(current_node) is tree.acc.STAccDirective) and\
             (current_node.is_kernels_directive())
 
-    def DoLoop_visit():
+    def DoLoopStart():
         nonlocal translation_enabled
         nonlocal current_node
         nonlocal current_linemap
@@ -197,7 +216,7 @@ def _parse_file(linemaps, index, **kwargs):
             keep_recording = True
         do_loop_ctr += 1
 
-    def DoLoop_leave():
+    def DoLoopEnd():
         nonlocal current_node
         nonlocal current_linemap
         nonlocal current_statement_no
@@ -219,8 +238,10 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal current_node
         nonlocal current_linemap
         nonlocal current_statement_no
+        nonlocal derived_type_parent
         log_detection_("declaration")
         new = tree.STDeclaration(current_linemap, current_statement_no)
+        new.derived_type_parent = derived_type_parent
         new.ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
 
@@ -431,10 +452,8 @@ def _parse_file(linemaps, index, **kwargs):
             translation_enabled = False
 
     # TODO completely remove / comment out !$acc end kernels
-    tree.grammar.module_start.setParseAction(Module_visit)
-    tree.grammar.program_start.setParseAction(Program_visit)
-    tree.grammar.function_start.setParseAction(Function_visit)
-    tree.grammar.subroutine_start.setParseAction(Subroutine_visit)
+    tree.grammar.function_start.setParseAction(FunctionStart)
+    tree.grammar.subroutine_start.setParseAction(SubroutineStart)
 
     tree.grammar.use.setParseAction(UseStatement)
 
@@ -546,9 +565,11 @@ def _parse_file(linemaps, index, **kwargs):
                            ]: # ignore types/interfaces here
                             End()
                         elif current_tokens[1] == "do":
-                            DoLoop_leave()
+                            DoLoopEnd()
+                        elif current_tokens[1] == "type":
+                            TypeEnd()
                     if util.parsing.is_do(current_tokens):
-                        DoLoop_visit()
+                        DoLoopStart()
                     # single-statements
                     if not keep_recording:
                         if util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
@@ -601,13 +622,9 @@ def _parse_file(linemaps, index, **kwargs):
                         elif current_tokens[0] == "contains":
                             Contains()
                         elif current_tokens[0] == "module":
-                            try_to_parse_string("module",
-                                                tree.grammar.module_start)
-                        elif current_tokens[0:2] == ["end", "type"]:
-                            PlaceHolder()
+                            ModuleStart()
                         elif current_tokens[0] == "program":
-                            try_to_parse_string("program",
-                                                tree.grammar.program_start)
+                            ProgramStart()
                         elif current_tokens[0] == "return":
                             Return()
                         elif current_tokens[0] in [
@@ -619,6 +636,8 @@ def _parse_file(linemaps, index, **kwargs):
                         elif current_tokens[0] == "type" and current_tokens[
                                 1] == "(":
                             try_to_parse_string("declaration", datatype_reg)
+                        elif current_tokens[0] == "type":
+                            TypeStart()
                     else:
                         current_node.add_linemap(current_linemap)
                         current_node._last_statement_index = current_statement_no

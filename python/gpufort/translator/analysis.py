@@ -98,7 +98,9 @@ def _apply_substitions(tavars,substitutions):
 
 def lookup_index_entries_for_vars_in_loopnest(scope,ttloopnest,substitutions={}):
     loop_vars = ttloopnest.loop_vars()
-    local_vars = [v for v in (local_scalars(ttloopnest,scope)+ttloopnest.gang_team_private_vars())
+    local_scalars_ = local_scalars(ttloopnest,scope)
+
+    local_vars = [v for v in (local_scalars_+ttloopnest.gang_team_private_vars())
                   if v not in loop_vars]
     result = lookup_index_entries_for_vars_in_kernel_body(scope,
                                                           vars_in_subtree(ttloopnest, scope),
@@ -238,16 +240,17 @@ def local_scalars_and_reduction_candidates(ttloopnest, scope):
     ] # per line, with name of lhs scalar removed from list
     initialized_scalars = []
     # depth first search
-    assignments = tree.find_all_matching(
-        ttloopnest.body[0], lambda node: type(node) in [
+    
+    assignments = find_all_matching_exclude_directives(
+        ttloopnest.body[0], lambda node: isinstance(node,(
             tree.TTAssignment, tree.TTComplexAssignment, tree.
             TTMatrixAssignment
-        ])
+        )))
     for assignment in assignments:
         # lhs scalars
-        lvalue = assignment._lhs._value
-        lvalue_name = lvalue.f_str().lower()
-        if type(lvalue) is tree.TTIdentifier: # could still be a matrix
+        lvalue = assignment._lhs
+        lvalue_name = lvalue._value.f_str().lower()
+        if isinstance(lvalue, tree.TTIdentifier): # could still be a matrix
             definition = indexer.scope.search_scope_for_var(
                 scope, lvalue_name)
             if definition["rank"] == 0 and\
@@ -255,15 +258,15 @@ def local_scalars_and_reduction_candidates(ttloopnest, scope):
                 initialized_scalars.append(
                     lvalue_name) # read and initialized in
         # rhs scalars
-        rhs_identifiers = tree.find_all(assignment._rhs,
-                                        tree.TTIdentifier)
-        for ttidentifier in rhs_identifiers:
-            rvalue_name = ttidentifier.f_str().lower()
-            definition = indexer.scope.search_scope_for_var(
-                scope, rvalue_name)
-            if definition["rank"] == 0 and\
-               rvalue_name != lvalue_name: # do not include name of rhs if lhs appears in rhs
-                scalars_read_so_far.append(rvalue_name)
+        ttrvalues = tree.find_all(assignment._rhs,tree.TTRValue)
+        for ttrvalue in ttrvalues:
+            if isinstance(ttrvalue._value,tree.TTIdentifier):
+                rvalue_name = ttrvalue._value.f_str().lower()
+                definition = indexer.scope.search_scope_for_var(
+                    scope, rvalue_name)
+                if definition["rank"] == 0 and\
+                   rvalue_name != lvalue_name: # do not include name of rhs if lhs appears in rhs
+                    scalars_read_so_far.append(rvalue_name)
     # initialized scalars that are not read (except in same statement) are likely reductions
     # initialized scalars that are read again in other statements are likely local variables
     reduction_candidates = [
@@ -322,16 +325,16 @@ def kernel_args_to_acc_mappings_no_types(acc_clauses,tavars,present_by_default,c
                 for var_expr in args:
                     var_tag = util.parsing.strip_array_indexing(var_expr.lower())
                     if tavar["expr"] == var_tag:
-                        if "%" in var_tag:
-                            raise util.error.LimitationError("mapping of derived type members not supported (yet)")
+                        if tavar["f_type"]=="type":
+                            raise util.error.LimitationError("mapping of derived type scalars and arrays not supported (yet)")
                         else:
                             mappings.append((var_expr, callback(kind,var_expr,tavar,**kwargs)))
                             explicitly_mapped = True
                             break
                 if explicitly_mapped: break
             if not explicitly_mapped and present_by_default:
-                if "%" in tavar["expr"] or tavar["f_type"]=="type": # TODO refine
-                    raise util.error.LimitationError("mapping of derived types and their members not supported (yet)")
+                if tavar["f_type"]=="type": # TODO refine
+                    raise util.error.LimitationError("mapping of derived type scalars and arrays not supported (yet)")
                 else:
                     mappings.append((tavar["expr"], callback("present_or_copy",tavar["expr"],tavar,**kwargs)))
             elif not explicitly_mapped:

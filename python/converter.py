@@ -743,13 +743,21 @@ def run_checked(*args,**kwargs):
     try:
         run(*args,**kwargs)
     except IOError as e:
-        print("ERROR:"+str(e))
+        msg = str(e)
+        print("ERROR: "+msg)
+        util.logging.log_exception(opts.log_prefix, "run_checked", msg)
     except util.error.SyntaxError as e:
-        print("ERROR:"+str(e))
+        msg = str(e)
+        print("ERROR: "+msg)
+        util.logging.log_exception(opts.log_prefix, "run_checked", msg)
     except util.error.LimitationError as e:
-        print("ERROR:"+str(e))
+        msg = str(e)
+        print("ERROR: "+msg)
+        util.logging.log_exception(opts.log_prefix, "run_checked", msg)
     except util.error.LookupError as e:
-        print("ERROR:"+str(e))
+        msg = str(e)
+        print("ERROR: "+msg)
+        util.logging.log_exception(opts.log_prefix, "run_checked", msg)
     except Exception as e:
         raise e
 

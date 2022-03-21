@@ -199,11 +199,11 @@ def next_tokens_till_open_bracket_is_closed(tokens, open_brackets=0, brackets=("
 def get_highest_level_arguments(tokens,
                                 open_brackets=0,
                                 separators=[","],
-                                terminators=["::", "\n", "!"],
+                                terminators=["::", "\n", "!",""],
                                 brackets=("(",")")):
     # ex:
     # input: ["parameter",",","intent","(","inout",")",",","dimension","(",":",",",":",")","::"]
-    # result : ["parameter", "intent(inout)", "dimension(:,:)" ]
+    # result : ["parameter", "intent(inout)", "dimension(:,:)" ], i.e. terminators are excluded
     result = []
     idx = 0
     current_substr = ""
@@ -480,6 +480,79 @@ def parse_declaration(statement):
             raise error.SyntaxError("could not parse '{}'".format(var_tokens))
         variables.append((var_name,var_bounds,var_rhs))
     return (datatype, kind, qualifiers, dimension_bounds, variables, datatype_raw, qualifiers_raw) 
+
+def parse_derived_type_statement(statement):
+    """Parse the first statement of derived type declaration.
+    :return: A triple consisting of the type name, its attributes, and
+             its parameters (in that order).    
+    :Example:
+  
+    Given the statements
+
+    'type mytype',
+    'type :: mytype',
+    'type, bind(c) :: mytype',
+    'type :: mytype(k,l)'
+    
+    this routine will return
+
+    ('mytype', [], []),
+    ('mytype', [], []),
+    ('mytype', ['bind(c)'], []),
+    ('mytype', [], ['k','l'])
+    """
+    tokens = tokenize(statement,padded_size=10)
+    if not tokens.pop(0).lower() == "type":
+        raise error.SyntaxError("expected 'type'")
+    name       = None
+    tk = tokens.pop(0)
+    parse_attributes = False
+    have_name = False
+    if tk.isidentifier():
+        name = tk 
+        have_name = True
+        # do parameters
+        pass
+    elif tk == "::":
+        # do name
+        # do parameters
+        pass
+    elif tk == ",":
+        # do qualifiers
+        # do parameters
+        parse_attributes = True
+    else:
+        raise error.SyntaxError("expected ',','::', or identifier")
+    parameters = []
+    if parse_attributes:
+        attributes = get_highest_level_arguments(tokens)
+        if not len(attributes):
+            raise error.SyntaxError("expected at least one derived type attribute")
+        while tokens.pop(0) != "::":
+            pass
+    else:
+        attributes = []
+    tk = tokens.pop(0)
+    if not have_name and tk.isidentifier():
+        name = tk 
+    elif not have_name:
+        raise error.SyntaxError("expected identifier")
+    tk = tokens.pop(0)
+    if tk == "(": # qualifier list
+        if not len(tokens):
+            raise error.SyntaxError("expected list of parameters")
+        parameters = get_highest_level_arguments(tokens[:-1],open_brackets=1)
+        if not len(parameters):
+            raise error.SyntaxError("expected at least one derived type parameter")
+        tk = tokens.pop(0)
+        while tk not in ["",")"]:
+            tk = tokens.pop(0)
+            pass
+        if not tk == ")":
+            raise error.SyntaxError("expected ')'")
+    elif not tk == "":
+        raise error.SyntaxError("expected ')'")
+    return name, attributes, parameters
 
 def parse_directive(directive,tokens_to_omit_at_begin=0):
     """Splits a directive in directive sentinel, 

@@ -13,8 +13,11 @@ def translate_procedure_body_to_hip_kernel_body(ttprocedurebody, scope, **kwargs
     """
     # 0. Clarify types of function calls / tensor access that are not
     # members of a struct
-    tree.transformations.flag_tensors(ttprocedurebody, scope)
-    # 2. Propagate result variable name to return statements
+    lrvalues = analysis.find_all_matching_exclude_directives(ttprocedurebody.body,
+                                                             lambda ttnode: isinstance(ttnode,tree.IValue))
+    tree.transformations.flag_tensors(lrvalues, scope)
+    
+    # 1. Propagate result variable name to return statements
     if len(ttprocedurebody.result_name):
         for expr in tree.find_all(ttprocedurebody.body, tree.TTReturn):
             expr._result_name = result_name

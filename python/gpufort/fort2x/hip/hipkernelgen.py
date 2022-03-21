@@ -150,17 +150,17 @@ class HipKernelGenerator4LoopNest(HipKernelGeneratorBase):
 
 class HipKernelGenerator4CufKernel(HipKernelGeneratorBase):
 
-    def __init__(self, ttprocedure, iprocedure, scope, **kwargs):
+    def __init__(self, ttprocedurebody, iprocedure, scope, **kwargs):
         HipKernelGeneratorBase.__init__(self, scope, **kwargs)
         #
-        self.c_body = translator.codegen.translate_procedurebody_to_hip_kernel_body(ttprocedurebody,scope,**kwargs)
+        self.c_body = translator.codegen.translate_procedure_body_to_hip_kernel_body(ttprocedurebody,scope,**kwargs)
         self.kernel = self._create_kernel_context()
         
         self.kernel["global_vars"],\
         self.kernel["global_reduced_vars"],\
         self.kernel["shared_vars"],\
         self.kernel["local_vars"] = translator.analysis.lookup_index_entries_for_vars_in_procedure_body(self.scope,
-                                                                                                        ttprocedure,
+                                                                                                        ttprocedurebody,
                                                                                                         iprocedure,
                                                                                                         )
         self._create_shared_and_local_array_vars()

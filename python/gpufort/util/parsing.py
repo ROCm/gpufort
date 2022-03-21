@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+# TODO use deque
+
 import re
 
 from . import error
@@ -16,9 +18,9 @@ def tokenize(statement, padded_size=0, modern_fortran=True):
     """
     TOKENS_REMOVE = r"\s+|\t+"
     if modern_fortran:
-        TOKENS_KEEP = r"(end|else|![@\$]?|[(),]|::?|=>?|<<<|>>>|[<>]=?|[\/=]=|\+|-|\*|\/|\.\w+\.)"
+        TOKENS_KEEP = r"(end|else|![@\$]?|[(),%]|::?|=>?|<<<|>>>|[<>]=?|[\/=]=|\+|-|\*|\/|\.\w+\.)"
     else:
-        TOKENS_KEEP = r"(end|else|![@\$]?|^[c\*][@\$]?|[(),]|::?|=>?|<<<|>>>|[<>]=?|[\/=]=|\+|-|\*|\/|\.\w+\.)"
+        TOKENS_KEEP = r"(end|else|![@\$]?|^[c\*][@\$]?|[(),%]|::?|=>?|<<<|>>>|[<>]=?|[\/=]=|\+|-|\*|\/|\.\w+\.)"
     # IMPORTANT: Use non-capturing groups (?:<expr>) to ensure that an inner group in TOKENS_KEEP
     # is not captured.
 
@@ -33,6 +35,27 @@ def tokenize(statement, padded_size=0, modern_fortran=True):
         return result + [""] * (padded_size - len(result))
     else:
         return result
+
+def mangle_fortran_var_expr(var_expr):
+    """Unsophisticated name mangling routine that
+    replaces '%(),:' by underscores."""
+    result = ""
+    tokens = tokenize(var_expr)
+    while len(tokens):
+        tk = tokens.pop(0)
+        if tk == "%":
+            result += "_"
+        elif tk == ",":
+            result += ""
+        elif tk == "(":
+            result += "L"
+        elif tk == ")":
+            result += "R"
+        elif tk == ":":
+            result += "T"
+        else:
+            result += tk
+    return result
 
 def derived_type_parents(var_expr):
     """:return: the derived type parents of a 

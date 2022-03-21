@@ -6,7 +6,7 @@
 {%- macro render_reductions_prepare(rvars) -%}
 {%- if rvars|length > 0 -%}
 {%- for rvar in rvars %} 
-{%- set rvar_buffer = rvar.name + "_buf" -%}
+{%- set rvar_buffer = rvar.c_name + "_buf" -%}
 gpufort::array{{rvar.rank+1}}<{{rvar.c_type}}> {{rvar_buffer}};
 {{rvar_buffer}}.init(sizeof({{rvar.c_type}})/*bytes per element*/,nullptr/*hostptr*/,nullptr/*deviceptr*/,
   __total_threads(grid,block)/*#elements*/,0/*lower bound*/,gpufort::AllocMode::WrapHostAllocDevice);
@@ -16,9 +16,9 @@ gpufort::array{{rvar.rank+1}}<{{rvar.c_type}}> {{rvar_buffer}};
 {########################################################################################}
 {%- macro render_reductions_finalize(rvars) -%}
 {%- for rvar in rvars %} 
-{%- set rvar_buffer = rvar.name + "_buf" -%}
-reduce<{{rvar.c_type}}, reduce_op_{{rvar.op}}>({{rvar_buffer}}.data.data_dev,{{rvar_buffer}}.data.num_elements, {{rvar.name}});
-ierr = {{rvar.name}}_buf.destroy();
+{%- set rvar_buffer = rvar.c_name + "_buf" -%}
+reduce<{{rvar.c_type}}, reduce_op_{{rvar.op}}>({{rvar_buffer}}.data.data_dev,{{rvar_buffer}}.data.num_elements, {{rvar.c_name}});
+ierr = {{rvar.c_name}}_buf.destroy();
 if ( ierr != hipSuccess ) return ierr;
 {%- endfor -%}
 {%- endmacro %}
@@ -47,10 +47,10 @@ GPUFORT_PRINT_ARGS({% if is_gpu_launcher %}{% if have_problem_size %}problem_siz
 #endif
 {% for ivar in global_vars %}
 {%   if ivar.rank > 0 and ivar.f_type in ["logical","integer","float"] %}
-#if defined(GPUFORT_PRINT_{{stage}}_ARRAY_ALL) || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}})_ALL || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}}_{{ivar.name}})
-{{ivar.name}}.print_device_data(std::cout,"{{prefix}}",gpufort::PrintMode::PrintValuesAndNorms);
-#elif defined(GPUFORT_PRINT_{{stage}}_ARRAY_ALL) || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}})_ALL || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}}_{{ivar.name}})
-{{ivar.name}}.print_device_data(std::cout,"{{prefix}}",gpufort::PrintMode::PrintNorms);
+#if defined(GPUFORT_PRINT_{{stage}}_ARRAY_ALL) || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}})_ALL || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}}_{{ivar.c_name}})
+{{ivar.c_name}}.print_device_data(std::cout,"{{prefix}}",gpufort::PrintMode::PrintValuesAndNorms);
+#elif defined(GPUFORT_PRINT_{{stage}}_ARRAY_ALL) || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}})_ALL || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}}_{{ivar.c_name}})
+{{ivar.c_name}}.print_device_data(std::cout,"{{prefix}}",gpufort::PrintMode::PrintNorms);
 #endif
 {%   endif %}
 {% endfor %}

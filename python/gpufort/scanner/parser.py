@@ -692,7 +692,8 @@ def parse_file(**kwargs):
                 other_files_contents.append(infile.read())
     for content in other_files_contents:
         indexer.update_index_from_snippet(index, content, **kwargs)
-    kwargs.pop("index")
+    if "index" in kwargs:
+        kwargs.pop("index")
     return _parse_file(linemaps, index, **kwargs), index, linemaps
 
 

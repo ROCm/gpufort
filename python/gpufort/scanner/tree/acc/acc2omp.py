@@ -43,22 +43,15 @@ class AccLoopNest2Omp(accbackends.AccBackendBase):
                   joined_statements,
                   statements_fully_cover_lines,
                   index=[]):
+        parent_tag = self.stnode.parent.tag()
+        scope      = indexer.scope.create_scope(index, parent_tag)
+        ttloopnest = stloopkernel.parse_result 
+        
+        arrays       = translator.analysis.arrays_in_subtree(ttloopnest, scope)
+        inout_arrays = translator.analysis.inout_arrays_in_subtree(ttloopnest, scope)
 
-        if statements_fully_cover_lines:
-            snippet = joined_lines
-        else:
-            snippet = joined_statements
-        try:
-            parent_tag = self.stnode.parent.tag()
-            scope = indexer.scope.create_scope(index, parent_tag)
-            parse_result = translator.parse_loop_kernel(
-                snippet.splitlines(), scope)
-            return parse_result.omp_f_str(snippet), True
-        except Exception as e:
-            util.logging.log_exception(
-                LOG_PREFIX, "AccLoopNest2Omp.transform",
-                "failed to convert kernel " + str(snippet))
-            sys.exit(2)
+        snippet = joined_lines if statements_fully_cover_lines else joined_statements
+        return translator.codegen.translate_loopnest_to_omp(snippet, ttloopnest, inout_arrays_in_body, arrays_in_body), True
 
 accnodes.STAccDirective.register_backend(dest_dialects,Acc2Omp())
 accnodes.STAccLoopNest.register_backend(dest_dialects,AccLoopNest2Omp())

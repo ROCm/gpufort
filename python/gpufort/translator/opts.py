@@ -198,6 +198,8 @@ all_unspecified_do_loop_step_sizes_are_positive = True
         # All unspecified do loop step sizes are assumed to be +1
 loop_versioning = False
         # Emit different loop variants if the step size is not known
+map_to_flat_arrays = True
+        # Map allocatable or pointer array members of derived types to flat arrays.
 # options for CUF
 cublas_version = 1
         # Assume cublas version 1, i.e. CUBLAS routines do not expect a handle

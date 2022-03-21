@@ -13,18 +13,24 @@ util.logging.init_logging("log.log", LOG_FORMAT, "debug")
 declaration_list = """\
 integer, parameter :: N = 1000, M=2000
 integer :: i,j,k
-integer(4) :: x(N), y(N), y_exact(N)
+integer(4) :: x(M,N), y(N), y_exact(N)
+
+type grid_t
+  integer(4),allocatable :: x(:,:)
+end type
+
+type(grid_t) :: grid
 """
 
 annotated_loop_nest = """\
-!$acc parallel loop present(x,y) private(k,i) collapse(1)
+!$acc parallel loop present(grid,y) private(k,i) collapse(1)
 do j = 1, M
   do i = 1, N
-    x(i,j) = 1
+    grid%x(i,j) = 1
     y(i,j) = 2
 
     do while ( k < 10 )
-      y(i,j) = x(i,j) * k
+      y(i,j) = grid%x(i,j) * k
       k = k + 1
     end do
   end do

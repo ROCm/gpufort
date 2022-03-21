@@ -6,6 +6,7 @@ import logging
 import collections
 import ast
 import re
+
 from gpufort import util
 
 from . import tree

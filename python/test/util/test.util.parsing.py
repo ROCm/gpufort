@@ -257,6 +257,15 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_cuf_kernel_call(expr))
             self.assertEqual(util.parsing.parse_cuf_kernel_call(expr),results[i])
+    def test_14_mangle_fortran_var_expr(self):
+        expressions = [
+          "a(i,j)%b%arg3(1:n)",
+        ]
+        results = [
+        ]
+        for i,expr in enumerate(expressions):
+            print(util.parsing.mangle_fortran_var_expr(expr))
+            #self.assertEqual(util.parsing.parse_cuf_kernel_call(expr),results[i])
 
 if __name__ == '__main__':
     unittest.main() 

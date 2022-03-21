@@ -275,7 +275,6 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
         result = []
         stloopnest = self.stnode
         ttloopnest = stloopnest.parse_result
-        #arrays_in_body = ttloopnest.arrays_in_body()
         if (stloopnest.is_directive(["acc","parallel","loop"])
            or stloopnest.is_directive(["acc","kernels","loop"])):
             result_directive, _ = Acc2HipGpufortRT.transform(

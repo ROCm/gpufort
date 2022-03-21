@@ -217,7 +217,7 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
             return self.has_matrix_range_args() or\
                    not self.__guess_it_is_function()
 
-    def __name_c_str(self):
+    def name_c_str(self):
         raw_name = base.make_c_str(self._name).lower()
         num_args = len(self._args)
         if raw_name == "sign":
@@ -229,7 +229,7 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
         return raw_name
 
     def c_str(self):
-        name = self.__name_c_str()
+        name = self.name_c_str()
         if (not opts.fortran_style_tensor_access) and self.is_tensor():
             return "{0}[_idx_{0}({1})]".format(name, ",".join([
                 base.make_c_str(s) for s in self._args
@@ -247,15 +247,15 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
 class IValue:
 
     def is_identifier(self):
-        return type(self._value) is TTIdentifier
+        return isinstace(self._value, TTIdentifier)
+
+    def get_value(self):
+        return self._value 
 
     def name(self):
         return self._value.f_str()
 
     def has_matrix_range_args(self):
-        """
-        Functionality for scanner.
-        """
         if type(self._value) is TTFunctionCallOrTensorAccess:
             return self._value.has_matrix_range_args()
         elif type(self._value) is TTDerivedTypeMember:
@@ -297,7 +297,6 @@ class TTLValue(base.TTNode, IValue):
     def _assign_fields(self, tokens):
         self._value = tokens[0]
         self._reduction_index = ""
-        #print("{0}: {1}".format(self.c_str(),self.location))
     def f_str(self):
         return base.make_f_str(self._value)
 
@@ -532,13 +531,26 @@ class TTDerivedTypeMember(base.TTNode):
     def _assign_fields(self, tokens):
         self._type, self._element = tokens
         #print(self._type)
+        self._c_str = None
+
+    def identifier_f_str(self):
+        result = base.make_c_str(self._type)
+        current = self._element
+        while isinstance(current,TTDerivedTypeMember):
+            current = current._element
+            result += "%"+base.make_c_str(self._type)
+        if isinstance(current,TTFunctionCallOrTensorAccess):
+            result += "%"+current.name_c_str()
+        else: # TTIdentifier
+            result += "%"+current.c_str()
+        return result             
+
     def last_element_matrix_range_args(self):
-        """
-        Returns all matrix range args in the order of their appeareance.
+        """Returns all matrix range args in the order of their appeareance.
         """
         result = []
         current = self._element
-        while type(current) is TTDerivedTypeMember:
+        while isinstance(current,TTDerivedTypeMember):
             current = current._element
         if type(current) is TTFunctionCallOrTensorAccess:
             return current.matrix_range_args()
@@ -546,21 +558,26 @@ class TTDerivedTypeMember(base.TTNode):
             return []
 
     def last_element_has_matrix_range_args(self):
-        """
-        If any matrix range args are present in the argument list.
+        """If any matrix range args are present in the argument list.
         """
         result = []
         current = self._element
-        while type(current) is TTDerivedTypeMember:
+        while isinstance(current,TTDerivedTypeMember):
             current = current._element
         if type(current) is TTFunctionCallOrTensorAccess:
             return current.has_matrix_range_args()
         else:
             return False
 
+    def overwrite_c_str(self,expr):
+        self._c_str = expr
+
     def c_str(self):
-        return base.make_c_str(self._type) + "." + base.make_c_str(
-            self._element)
+        if self._c_str == None:
+            return base.make_c_str(self._type) + "." + base.make_c_str(
+                self._element)
+        else:
+            return self._c_str
 
     def f_str(self):
         return base.make_f_str(self._type) + "%" + base.make_f_str(

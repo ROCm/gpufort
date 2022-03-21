@@ -10,9 +10,9 @@
                             or "intent(out)" in ivar.qualifiers
                             or "intent(inout)" in ivar.qualifiers)) else "" -%}
 {%- if ivar.rank > 0 -%}
-gpufort::array{{ivar.rank}}<{{c_type}}>{{suffix}} {{ivar.name}}
+gpufort::array{{ivar.rank}}<{{c_type}}>{{suffix}} {{ivar.c_name}}
 {%- else -%}
-{{c_type}}{{suffix}} {{ivar.name}}
+{{c_type}}{{suffix}} {{ivar.c_name}}
 {%- endif -%}
 {%- endmacro -%}
 {########################################################################################}
@@ -29,9 +29,9 @@ gpufort::array{{ivar.rank}}<{{c_type}}>{{suffix}} {{ivar.name}}
                             or "intent(out)" in ivar.qualifiers
                             or "intent(inout)" in ivar.qualifiers)) else "" -%}
 {%- if is_device_routine -%}
-gpufort::array{{rvar.rank+1}}<{{c_type}}>{{suffix}} {{rvar.name}}
+gpufort::array{{rvar.rank+1}}<{{c_type}}>{{suffix}} {{rvar.c_name}}
 {%- else -%}
-{{c_type}}{{suffix}} {{rvar.name}}
+{{c_type}}{{suffix}} {{rvar.c_name}}
 {%- endif -%}
 {%- endmacro -%}
 {########################################################################################}
@@ -49,14 +49,14 @@ gpufort::array{{rvar.rank+1}}<{{c_type}}>{{suffix}} {{rvar.name}}
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_global_params(ivars) -%}
-{%- for ivar in ivars -%}{{ivar.name}}{{"," if not loop.last}}{% endfor -%}
+{%- for ivar in ivars -%}{{ivar.c_name}}{{"," if not loop.last}}{% endfor -%}
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_global_reduced_params(rvars,is_device_routine=False) -%}
 {%- if is_device_routine -%}
-{%- for rvar in rvars -%}{%- set rvar_buffer = rvar.name + "_buf" -%}{{rvar_buffer}}{{"," if not loop.last}}{% endfor -%}
+{%- for rvar in rvars -%}{%- set rvar_buffer = rvar.c_name + "_buf" -%}{{rvar_buffer}}{{"," if not loop.last}}{% endfor -%}
 {%- else -%}
-{%- for rvar in rvars -%}{{rvar.name}}{{"," if not loop.last}}{% endfor -%}
+{%- for rvar in rvars -%}{{rvar.c_name}}{{"," if not loop.last}}{% endfor -%}
 {%- endif -%}
 {%- endmacro -%}
 {########################################################################################}
@@ -74,9 +74,9 @@ gpufort::array{{rvar.rank+1}}<{{c_type}}>{{suffix}} {{rvar.name}}
 {%- set c_type = ivar.kind if ivar.f_type=="type" else ivar.c_type -%}
 {% if ivar.rank > 0 %}
 {#    todo add local C array init here too, that one gets a __shared__ prefix if needed #}
-gpufort::array{{ivar.rank}}<{{c_type}}> {{ivar.name}};
+gpufort::array{{ivar.rank}}<{{c_type}}> {{ivar.c_name}};
 {% else %}
-{{prefix}}{{c_type}} {{ivar.name}};
+{{prefix}}{{c_type}} {{ivar.c_name}};
 {% endif %}
 {%- endmacro -%}
 {########################################################################################}

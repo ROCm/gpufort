@@ -6,6 +6,7 @@ of a loop nest or procedure that is mapped
 to the device.
 """
 import copy
+import pyparsing
 
 from gpufort import indexer
 from gpufort import util
@@ -13,23 +14,12 @@ from gpufort import util
 from . import tree
 from . import conv
 
-# TODO only strip certain derived type expressions, e.g. if a struct is copied via copy(<struct>)
-# or if a CUDA Fortran derived type has the device attribute
-
-def strip_member_access(var_exprs):
-    """Strip off member access parts from derived type member access expressions,
-       e.g. 'a%b%c' becomes 'a'.
-    """
-    # TODO only strip certain derived type expressions, e.g. if a struct is copied via copy(<struct>)
-    # or if a CUDA Fortran derived type has the device attribute
-    result = []
-    return [var_expr.split("%", maxsplit=1)[0] for var_expr in var_exprs]
-
 def _create_analysis_var(scope, var_expr):
     ivar = indexer.scope.search_scope_for_var(
         scope, var_expr)
     tavar = copy.deepcopy(ivar)
     tavar["expr"] = util.parsing.strip_array_indexing(var_expr).lower()
+    tavar["c_name"] = tavar["name"] 
     tavar["op"]   = ""
     return tavar
 
@@ -100,16 +90,25 @@ def lookup_index_entries_for_vars_in_kernel_body(scope,
 
     return taglobal_vars, taglobal_reduced_vars, tashared_vars, talocal_vars
 
-def lookup_index_entries_for_vars_in_loopnest(scope,ttloopnest):
+def _apply_substitions(tavars,substitutions):
+    for i,tavar in enumerate(tavars):
+        var_expr = tavar["expr"]
+        if var_expr in substitutions:
+            tavar["c_name"] = substitutions[var_expr]
+
+def lookup_index_entries_for_vars_in_loopnest(scope,ttloopnest,substitutions={}):
     loop_vars = ttloopnest.loop_vars()
-    local_vars = [v for v in (ttloopnest.local_scalars()+ttloopnest.gang_team_private_vars())
+    local_vars = [v for v in (local_scalars(ttloopnest,scope)+ttloopnest.gang_team_private_vars())
                   if v not in loop_vars]
-    return lookup_index_entries_for_vars_in_kernel_body(scope,
-                                                        ttloopnest.vars_in_body(),
-                                                        ttloopnest.gang_team_reductions(),
-                                                        ttloopnest.gang_team_shared_vars(),
-                                                        local_vars,
-                                                        loop_vars)
+    result = lookup_index_entries_for_vars_in_kernel_body(scope,
+                                                          vars_in_subtree(ttloopnest, scope),
+                                                          ttloopnest.gang_team_reductions(),
+                                                          ttloopnest.gang_team_shared_vars(),
+                                                          local_vars,
+                                                          loop_vars)
+    for i in range(0,4):
+        _apply_substitions(result[i],substitutions)
+    return result
 
 def lookup_index_entries_for_vars_in_procedure_body(scope,ttprocedurebody,iprocedure):
     shared_vars = [
@@ -147,6 +146,147 @@ def get_kernel_args(taglobal_vars, taglobal_reduced_vars, tashared_vars, talocal
             + taglobal_reduced_vars
             + [tavar for tavar in tashared_vars if tavar["rank"] > 0]
             + [tavar for tavar in talocal_vars if tavar["rank"] > 0])
+    
+def find_all_matching_exclude_directives(ttnode,
+                                         filter_expr=lambda x: True):
+    """Find all translator tree nodes that match the filter_expr.
+    Does not search subtrees of directives."""
+    result = []
+
+    def traverse_(curr):
+        if isinstance(curr, tree.ILoopAnnotation):
+            return
+        if filter_expr(curr):
+            result.append(curr)
+        if isinstance(curr,pyparsing.ParseResults) or\
+           isinstance(curr,list):
+            for el in curr:
+                traverse_(el)
+        elif isinstance(curr, tree.TTNode):
+            for el in curr.children():
+                traverse_(el)
+
+    traverse_(ttnode)
+    return result
+
+def search_lrvalue_exprs_in_subtree(ttnode, search_filter, scope, min_rank=-1):
+    
+    tags = []
+    for ttvalue in find_all_matching_exclude_directives(
+            ttnode.body,
+            search_filter): # includes the identifiers of the function calls
+        tag = indexer.scope.create_index_search_tag_for_var(ttvalue.f_str()) # TODO 
+        ivar = indexer.scope.search_scope_for_var(scope, tag)
+        if ivar["rank"] >= min_rank and\
+           not tag in tags: # ordering important
+            tags.append(tag)
+    return tags
+
+
+def vars_in_subtree(ttnode, scope):
+    """:return: all identifiers of LValue and RValues in the body."""
+
+    def search_filter(node):
+        return isinstance(node,tree.IValue) and\
+               type(node._value) in [tree.TTDerivedTypeMember,tree.TTIdentifier,tree.TTFunctionCallOrTensorAccess]
+
+    result = search_lrvalue_exprs_in_subtree(ttnode, search_filter, scope)
+    return result
+
+def arrays_in_subtree(ttnode, scope):
+
+    def search_filter(node):
+        return isinstance(node,tree.IValue) and\
+                type(node._value) is tree.TTFunctionCallOrTensorAccess
+
+    return search_lrvalue_exprs_in_subtree(ttnode, search_filter, scope, 1)
+
+
+def inout_arrays_in_subtree(ttnode, scope):
+
+    def search_filter(node):
+        return type(node) is tree.TTLValue and\
+                type(node._value) is tree.TTFunctionCallOrTensorAccess
+
+    return search_lrvalue_exprs_in_subtree(ttnode, search_filter, scope, 1)
+
+#def all_unmapped_arrays(ttloopnest, scope):
+#    """:return: Name of all unmapped array variables"""
+#    mapped_vars = ttloopnest.all_mapped_vars()
+#    if ttloopnest.all_arrays_are_on_device():
+#        return []
+#    else:
+#        return [var for var in arrays_in_body if not var in mapped_vars]
+#
+#def deviceptrs(ttloopnest):
+#    if ttloopnest.all_arrays_are_on_device():
+#        return arrays_in_subtree(ttloopnest, scope)
+#    else:
+#        return ttloopnest.deviceptrs()
+    
+def local_scalars_and_reduction_candidates(ttloopnest, scope):
+    """
+    local variable      - scalar variable that is not read before the assignment (and is no derived type member)
+    reduction_candidates - scalar variable that is written but not read anymore 
+    NOTE: Always returns Fortran identifiers
+    NOTE: The loop variables need to be removed from this result when rendering the corresponding C kernel.
+    NOTE: Implementatin assumes that loop condition variables are not written to in loop body. 
+    NOTE: When rendering the kernel, it is best to exclude all variables for which an array declaration has been found,
+    from the result list. TTCufKernelDo instances do not know of the type of the variables.
+    """
+    scalars_read_so_far = [
+    ] # per line, with name of lhs scalar removed from list
+    initialized_scalars = []
+    # depth first search
+    assignments = tree.find_all_matching(
+        ttloopnest.body[0], lambda node: type(node) in [
+            tree.TTAssignment, tree.TTComplexAssignment, tree.
+            TTMatrixAssignment
+        ])
+    for assignment in assignments:
+        # lhs scalars
+        lvalue = assignment._lhs._value
+        lvalue_name = lvalue.f_str().lower()
+        if type(lvalue) is tree.TTIdentifier: # could still be a matrix
+            definition = indexer.scope.search_scope_for_var(
+                scope, lvalue_name)
+            if definition["rank"] == 0 and\
+               not lvalue_name in scalars_read_so_far:
+                initialized_scalars.append(
+                    lvalue_name) # read and initialized in
+        # rhs scalars
+        rhs_identifiers = tree.find_all(assignment._rhs,
+                                        tree.TTIdentifier)
+        for ttidentifier in rhs_identifiers:
+            rvalue_name = ttidentifier.f_str().lower()
+            definition = indexer.scope.search_scope_for_var(
+                scope, rvalue_name)
+            if definition["rank"] == 0 and\
+               rvalue_name != lvalue_name: # do not include name of rhs if lhs appears in rhs
+                scalars_read_so_far.append(rvalue_name)
+    # initialized scalars that are not read (except in same statement) are likely reductions
+    # initialized scalars that are read again in other statements are likely local variables
+    reduction_candidates = [
+        name for name in initialized_scalars
+        if name not in scalars_read_so_far
+    ]
+    local_scalars = [
+        name for name in initialized_scalars
+        if name not in reduction_candidates
+    ] # contains loop variables
+    loop_vars = [var.lower() for var in ttloopnest.loop_vars()]
+    for var in list(local_scalars):
+        if var.lower() in loop_vars:
+            local_scalars.remove(var)
+    return local_scalars, reduction_candidates
+
+def local_scalars(ttloopnest, scope):
+    local_scalars, _ = local_scalars_and_reduction_candidates(ttloopnest, scope)
+    return local_scalars
+
+def reduction_candidates(ttloopnest, scope):
+    _, reduction_candidates = local_scalars_and_reduction_candidates(ttloopnest, scope)
+    return reduction_candidates
 
 # OpenACC specific
 

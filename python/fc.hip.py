@@ -300,6 +300,7 @@ have a '--' prefix while this tool's options have a '-' prefix."""))
                            + ["-o", outfile_path])
             handle_subprocess_output(run_subprocess(fortran_cmd,args.verbose))
             # merge object files; produces: outfile_path
+            remove_file(cpp_object_path)
         if not args.save_temps:
             remove_file(cpp_file_path)
             remove_file(modified_fortran_file_path)

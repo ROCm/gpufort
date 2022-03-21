@@ -1,36 +1,37 @@
 {#- SPDX-License-Identifier: MIT                                        -#}
 {#- Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.-#}
 {########################################################################################}
-{%- macro render_param_decl(ivar,
+{%- macro render_param_decl(tavar,
                             qualifiers="",
                             array_and_type_suffix="",
                             interop_suffix="_interop") -%}
-{%- if ivar.f_type in ["integer","real","logical","type"] -%}
-{%-   if ivar.rank > 0 -%}
-type(gpufort_array{{ivar.rank}}){{qualifiers}} :: {{ivar.name}}
+{% set name = tavar.c_name if tavar.c_name is defined else tavar.name %}
+{%- if tavar.f_type in ["integer","real","logical","type"] -%}
+{%-   if tavar.rank > 0 -%}
+type(gpufort_array{{tavar.rank}}){{qualifiers}} :: {{name}}
 {%-   else -%}
-{%-     if ivar.f_type == "type" -%}
-{{ivar.f_type}}({{ivar.kind}}{{interop_suffix}}){{qualifiers}} :: {{ivar.name}}
-{%-     elif ivar.kind is not none and ivar.kind|length -%}
-{{ivar.f_type}}({{ivar.kind}}){{qualifiers}} :: {{ivar.name}}
+{%-     if tavar.f_type == "type" -%}
+{{tavar.f_type}}({{tavar.kind}}{{interop_suffix}}){{qualifiers}} :: {{name}}
+{%-     elif tavar.kind is not none and tavar.kind|length -%}
+{{tavar.f_type}}({{tavar.kind}}){{qualifiers}} :: {{name}}
 {%-     else -%}
-{{ivar.f_type}}{{qualifiers}} :: {{ivar.name}}
+{{tavar.f_type}}{{qualifiers}} :: {{name}}
 {%-     endif -%}
 {%-   endif -%}
 {%- endif -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_param_decls(ivars,
+{%- macro render_param_decls(tavars,
                              qualifiers="",
                              array_and_type_suffix="",
                              interop_suffix="_interop",
                              sep="\n") -%}
-{%- for ivar in ivars -%}{{render_param_decl(ivar,qualifiers,array_and_type_suffix,interop_suffix)}}{{sep if not loop.last}}{% endfor -%}
+{%- for tavar in tavars -%}{{render_param_decl(tavar,qualifiers,array_and_type_suffix,interop_suffix)}}{{sep if not loop.last}}{% endfor -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_params(ivars,
+{%- macro render_params(tavars,
                         sep=",") -%}
-{%- for ivar in ivars -%}{{ivar.name}}{{sep if not loop.last}}{% endfor -%}
+{%- for tavar in tavars -%}{{tavar.c_name}}{{sep if not loop.last}}{% endfor -%}
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_used_modules(used_modules) -%}
@@ -39,10 +40,10 @@ use {{module.name}}{{(", only: "+module.only|join(",") if module.only|length>0)}
 {% endfor %}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_imports(ivars) -%}
-{% for ivar in ivars %}
-{% if ivar.rank == 0 and ivar.f_type == "type" %}
-import {{ivar.kind}}
+{%- macro render_imports(tavars) -%}
+{% for tavar in tavars %}
+{% if tavar.rank == 0 and tavar.f_type == "type" %}
+import {{tavar.kind}}
 {% endif %}{% endfor %}
 {%- endmacro -%}
 {########################################################################################}

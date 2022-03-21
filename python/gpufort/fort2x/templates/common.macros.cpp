@@ -1,33 +1,34 @@
 {#- SPDX-License-Identifier: MIT                                        -#}
 {#- Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.-#}
 {########################################################################################}
-{%- macro render_global_param_decl(ivar,is_device_routine=False,is_kernel=False) -%}
-{%- set c_type = ivar.kind if ivar.f_type=="type" else ivar.c_type -%}
+{%- macro render_global_param_decl(tavar,is_device_routine=False,is_kernel=False) -%}
+{%- set c_type = tavar.kind if tavar.f_type=="type" else tavar.c_type -%}
 {%- set suffix = "&" if (not is_device_routine
                         or not is_kernel 
-                        and (ivar.rank > 0
-                            or ivar.f_type == "type"
-                            or "intent(out)" in ivar.qualifiers
-                            or "intent(inout)" in ivar.qualifiers)) else "" -%}
-{%- if ivar.rank > 0 -%}
-gpufort::array{{ivar.rank}}<{{c_type}}>{{suffix}} {{ivar.c_name}}
+                        and (tavar.rank > 0
+                            or tavar.f_type == "type"
+                            or "intent(out)" in tavar.qualifiers
+                            or "intent(inout)" in tavar.qualifiers)) else "" -%}
+{% set name = tavar.c_name if tavar.c_name is defined else tavar.name %}
+{%- if tavar.rank > 0 -%}
+gpufort::array{{tavar.rank}}<{{c_type}}>{{suffix}} {{name}}
 {%- else -%}
-{{c_type}}{{suffix}} {{ivar.c_name}}
+{{c_type}}{{suffix}} {{name}}
 {%- endif -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_global_param_decls(ivars,sep,is_device_routine=False,is_kernel=False) -%}
-{%- for ivar in ivars -%}{{render_global_param_decl(ivar,is_device_routine,is_kernel)}}{{sep if not loop.last}}{% endfor -%}
+{%- macro render_global_param_decls(tavars,sep,is_device_routine=False,is_kernel=False) -%}
+{%- for tavar in tavars -%}{{render_global_param_decl(tavar,is_device_routine,is_kernel)}}{{sep if not loop.last}}{% endfor -%}
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_global_reduced_param_decl(rvar,is_device_routine=False,is_kernel=False) -%}
 {%- set c_type = rvar.kind if rvar.f_type=="type" else rvar.c_type -%}
 {%- set suffix = "&" if (not is_device_routine
                         or not is_kernel 
-                        and (ivar.rank > 0
-                            or ivar.f_type == "type"
-                            or "intent(out)" in ivar.qualifiers
-                            or "intent(inout)" in ivar.qualifiers)) else "" -%}
+                        and (tavar.rank > 0
+                            or tavar.f_type == "type"
+                            or "intent(out)" in tavar.qualifiers
+                            or "intent(inout)" in tavar.qualifiers)) else "" -%}
 {%- if is_device_routine -%}
 gpufort::array{{rvar.rank+1}}<{{c_type}}>{{suffix}} {{rvar.c_name}}
 {%- else -%}
@@ -39,17 +40,17 @@ gpufort::array{{rvar.rank+1}}<{{c_type}}>{{suffix}} {{rvar.c_name}}
 {%- for rvar in rvars -%}{{render_global_reduced_param_decl(rvar,is_device_routine,is_kernel)}}{{sep if not loop.last}}{% endfor -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_all_global_param_decls(ivars,rvars,is_device_routine=False,is_kernel=False) -%}
-{%- if ivars|length > 0 -%}
-{{ render_global_param_decls(ivars,",\n",is_device_routine,is_kernel)}}{{ ",\n" if rvars|length }}
+{%- macro render_all_global_param_decls(tavars,rvars,is_device_routine=False,is_kernel=False) -%}
+{%- if tavars|length > 0 -%}
+{{ render_global_param_decls(tavars,",\n",is_device_routine,is_kernel)}}{{ ",\n" if rvars|length }}
 {%- endif -%}
 {%- if rvars|length > 0 -%}
 {{ render_global_reduced_param_decls(rvars,"\n",is_device_routine,is_kernel) }}
 {%- endif -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_global_params(ivars) -%}
-{%- for ivar in ivars -%}{{ivar.c_name}}{{"," if not loop.last}}{% endfor -%}
+{%- macro render_global_params(tavars) -%}
+{%- for tavar in tavars -%}{{tavar.c_name}}{{"," if not loop.last}}{% endfor -%}
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_global_reduced_params(rvars,is_device_routine=False) -%}
@@ -60,32 +61,32 @@ gpufort::array{{rvar.rank+1}}<{{c_type}}>{{suffix}} {{rvar.c_name}}
 {%- endif -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_all_global_params(ivars,rvars,is_device_routine=False) -%}
-{%- if ivars|length > 0 -%}
-{{ render_global_params(ivars)}}{{ "," if rvars|length }}
+{%- macro render_all_global_params(tavars,rvars,is_device_routine=False) -%}
+{%- if tavars|length > 0 -%}
+{{ render_global_params(tavars)}}{{ "," if rvars|length }}
 {%- endif -%}
 {%- if rvars|length > 0 -%}
 {{ render_global_reduced_params(rvars,is_device_routine) }}
 {%- endif -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_local_var_decl(ivar) -%}
-{%- set prefix = "__shared__ " if "shared" in ivar.qualifiers else "" -%}
-{%- set c_type = ivar.kind if ivar.f_type=="type" else ivar.c_type -%}
-{% if ivar.rank > 0 %}
+{%- macro render_local_var_decl(tavar) -%}
+{%- set prefix = "__shared__ " if "shared" in tavar.qualifiers else "" -%}
+{%- set c_type = tavar.kind if tavar.f_type=="type" else tavar.c_type -%}
+{% if tavar.rank > 0 %}
 {#    todo add local C array init here too, that one gets a __shared__ prefix if needed #}
-gpufort::array{{ivar.rank}}<{{c_type}}> {{ivar.c_name}};
+gpufort::array{{tavar.rank}}<{{c_type}}> {{tavar.c_name}};
 {% else %}
-{{prefix}}{{c_type}} {{ivar.c_name}};
+{{prefix}}{{c_type}} {{tavar.c_name}};
 {% endif %}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_local_var_decls(ivars) -%}
+{%- macro render_local_var_decls(tavars) -%}
 {# todo must be modified for arrays #}
-{%- for ivar in ivars -%}{{render_local_var_decl(ivar)}}{% endfor -%}
+{%- for tavar in tavars -%}{{render_local_var_decl(tavar)}}{% endfor -%}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_shared_var_decls(ivars) -%}
+{%- macro render_shared_var_decls(tavars) -%}
 {# todo must be modified for arrays #}
-{%- for ivar in ivars -%}{{render_local_var_decl(ivar)}}{% endfor -%}
+{%- for tavar in tavars -%}{{render_local_var_decl(tavar)}}{% endfor -%}
 {%- endmacro -%}

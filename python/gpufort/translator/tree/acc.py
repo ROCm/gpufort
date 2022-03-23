@@ -14,26 +14,16 @@ class TTAccClauseGang(base.TTNode):
     def _assign_fields(self, tokens):
         self.value = tokens[0]
 
-    def value(self):
-        return self.value
-
 
 class TTAccClauseWorker(base.TTNode):
 
     def _assign_fields(self, tokens):
         self.value = tokens[0]
 
-    def value(self):
-        return self.value
-
-
 class TTAccClauseVector(base.TTNode):
 
     def _assign_fields(self, tokens):
         self.value = tokens[0]
-
-    def value(self):
-        return self.value
 
 
 class TTAccClauseNumGangs(TTAccClauseGang):
@@ -93,9 +83,6 @@ class TTAccClauseDefault(base.TTNode):
     def _assign_fields(self, tokens):
         self.value = tokens
 
-    def value(self):
-        return self.value
-
 
 class TTAccClauseReduction(base.TTNode):
 
@@ -131,10 +118,10 @@ class TTAccClauseTile(base.TTNode):
 class TTAccClauseCollapse(base.TTNode):
 
     def _assign_fields(self, tokens):
-        self.value = tokens[0]
+        self._value = tokens[0]
 
     def value(self):
-        return int(self.value._value)
+        return int(self._value._value)
 
 
 class TTAccClauseWait(base.TTNode):
@@ -150,10 +137,6 @@ class TTAccClauseAsync(base.TTNode):
 
     def _assign_fields(self, tokens):
         self.expression = tokens[0]
-
-    def expression(self):
-        return base.make_f_str(self.expression)
-
 
 #
 # Directives
@@ -206,7 +189,7 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
     def async_nowait(self):
         clause = base.find_first(self.clauses, TTAccClauseAsync)
         if not clause is None:
-            return base.make_f_str(clause.expression())
+            return base.make_f_str(clause.expression)
         else:
             return grammar.CLAUSE_NOT_FOUND
 
@@ -257,7 +240,7 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
     def present_by_default(self):
         clause = base.find_first(self.clauses, TTAccClauseDefault)
         if not clause is None:
-            return clause.value() == "present"
+            return clause.value == "present"
         else:
             return True
 
@@ -508,10 +491,8 @@ class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
         clause = base.find_first(self.clauses, TTAccClauseCollapse)
         if clause is None:
             return 1
-        elif clause.value.is_integer():
-            return int(base.make_c_str(clause.value))
         else:
-            raise util.error.SyntaxError("argument of clause 'collapse' must be integer number")
+            return clause.value()
 
     def tile_sizes(self):
         assert False, "Not implemented!"
@@ -521,19 +502,19 @@ class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
         clauses = base.find_all_matching(
             self.clauses, lambda x: isinstance(x, TTAccClauseGang), 2)
         return [grammar.CLAUSE_NOT_FOUND
-               ] if clause is None else [max([c.value() for c in clauses])]
+               ] if clause is None else [max([c.value for c in clauses])]
 
     def num_workers(self):
         clauses = base.find_all_matching(
             self.clauses, lambda x: isinstance(x, TTAccClauseWorker), 2)
         return grammar.CLAUSE_NOT_FOUND if clause is None else max(
-            [c.value() for c in clauses])
+            [c.value for c in clauses])
 
     def simdlen_vector_length(self):
         clauses = base.find_all_matching(
             self.clauses, lambda x: isinstance(x, TTAccClauseVector), 2)
         return grammar.CLAUSE_NOT_FOUND if clause is None else max(
-            [c.value() for c in clauses])
+            [c.value for c in clauses])
 
     def num_threads_in_block(self):
         workers = self.num_workers()
@@ -583,8 +564,8 @@ class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
                 pass
             elif type(clause) is TTAccClauseVector:
                 result += " simd"
-                if clause.value() > 0:
-                    result += " simd simdlen(" + str(clause.value()) + ")"
+                if clause.value > 0:
+                    result += " simd simdlen(" + str(clause.value) + ")"
         if self.loop_handles_mutual_clauses:
             private_vars = self.private_vars()
             if len(private_vars):

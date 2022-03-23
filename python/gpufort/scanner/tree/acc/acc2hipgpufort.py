@@ -37,6 +37,7 @@ _ACC_PRESENT_OR_CREATE = "call gpufort_acc_ignore(gpufort_acc_present_or_create(
 _ACC_PRESENT_OR_COPYIN = "call gpufort_acc_ignore(gpufort_acc_present_or_copyin({var}{options}))\n"
 _ACC_PRESENT_OR_COPYOUT = "call gpufort_acc_ignore(gpufort_acc_present_or_copyout({var}{options}))\n"
 _ACC_PRESENT_OR_COPY = "call gpufort_acc_ignore(gpufort_acc_present_or_copy({var}{options}))\n"
+_ACC_DEVICEPTR = "gpufort_acc_deviceptr({var},lbound({var}){options})\n"
 
 _DATA_CLAUSE_2_TEMPLATE_MAP = {
   "create": _ACC_CREATE,
@@ -123,7 +124,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             result = [textwrap.dedent(l," "*2) for l in result]
             result.insert(0,"if ( {} ) then\n".format(condition))
             result.append("endif\n".format(condition))
-
+    
     def _update_directive(self,async_expr):
         """Emits a acc_clause_update command for every variable in the list
         """
@@ -136,6 +137,39 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
                     var=var_expr,
                     options=_create_options_str(options),
                     kind=kind.lower()))
+        return result
+    
+    def _host_data_directive(self):
+        """Emits an associate statement with a mapping
+        of each host variable to the mapped device array.
+        """
+        mappings = []
+        options = []
+        for kind, args in self.stnode.get_matching_clauses(["if","if_present"]):
+            if kind == "if":
+                options.append("=".join(["if",args[0]]))
+            elif kind == "if_present":
+                options.append("if_present=True")
+        for kind, args in self.stnode.get_matching_clauses(["use_device"]):
+            for var_expr in args:
+                mappings.append(" => ".join([
+                  var_expr,
+                  _ACC_DEVICEPTR.format(var=var_expr,
+                    options=_create_options_str(options)).rstrip(),
+                  ]))
+        result = []
+        if len(mappings):
+            result.append("associate (&\n")
+            for mapping in mappings:
+                result.append("".join(["  ",mapping,"&\n"]))
+            result.append(")\n")
+        return result
+    
+    def _end_host_data_directive(self,async_expr):
+        """Emits a acc_clause_update command for every variable in the list
+        """
+        #if self.stnode.is_directive(["acc","update"]):
+        result = [""]
         return result
 
     def _wait_directive(self):
@@ -182,6 +216,10 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             result += self._update_directive(async_expr)
         elif stnode.is_directive(["acc","wait"]):
             result += self._wait_directive()
+        elif stnode.is_directive(["acc","host_data"]):
+            result += self._host_data_directive()
+        elif stnode.is_directive(["acc","end","host_data"]):
+            result.append("end associate")
         else: # data regions
             ## Enter region commands must come first
             if (stnode.is_directive(["acc","enter","data"])

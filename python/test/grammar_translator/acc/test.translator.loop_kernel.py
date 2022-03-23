@@ -114,7 +114,7 @@ class TestParseLoopKernel(unittest.TestCase):
         end do
         """)
         self.results.append("""
-        !$omp target teams distribute parallel do
+        !$omp target teams distribute parallel do collapse(2)
         do i = 1, n
           do j = 1, n
             e(i,j) = 3;
@@ -163,9 +163,12 @@ class TestParseLoopKernel(unittest.TestCase):
             return re.sub("\s+|\t+|\n+|&","",text)
         for i,snippet in enumerate(self.testdata):
             try:
-                result = translator.parse_loop_kernel(snippet.splitlines(),self.scope)
-                omp_result = result.omp_f_str(snippet)
-                self.assertEqual(strip_(omp_result),strip_(self.results[i]))
+                ttloopnest = translator.parse_loop_kernel(snippet.splitlines(),self.scope)
+                arrays = translator.analysis.arrays_in_subtree(ttloopnest, self.scope)
+                inout_arrays = translator.analysis.inout_arrays_in_subtree(ttloopnest, self.scope)
+                omp_snippet = translator.codegen.translate_loopnest_to_omp(snippet,ttloopnest,inout_arrays,arrays)
+                #print(omp_snippet)
+                self.assertEqual(strip_(omp_snippet),strip_(self.results[i]))
             except Exception as e:
                 print("failed to parse '{}'".format(snippet),file=sys.stderr)
                 raise e

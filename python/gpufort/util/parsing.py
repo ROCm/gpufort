@@ -18,9 +18,9 @@ def tokenize(statement, padded_size=0, modern_fortran=True):
     """
     TOKENS_REMOVE = r"\s+|\t+"
     if modern_fortran:
-        TOKENS_KEEP = r"(end|else|![@\$]?|[(),%]|::?|=>?|<<<|>>>|[<>]=?|[\/=]=|\+|-|\*|\/|\.\w+\.)"
+        TOKENS_KEEP = r"(\b(end|else)\b|![@\$]?|[(),%]|::?|=>?|<<<|>>>|[<>]=?|[\/=]=|\+|-|\*|\/|\.\w+\.)"
     else:
-        TOKENS_KEEP = r"(end|else|![@\$]?|^[c\*][@\$]?|[(),%]|::?|=>?|<<<|>>>|[<>]=?|[\/=]=|\+|-|\*|\/|\.\w+\.)"
+        TOKENS_KEEP = r"(\b(end|else)\b|![@\$]?|^[c\*][@\$]?|[(),%]|::?|=>?|<<<|>>>|[<>]=?|[\/=]=|\+|-|\*|\/|\.\w+\.)"
     # IMPORTANT: Use non-capturing groups (?:<expr>) to ensure that an inner group in TOKENS_KEEP
     # is not captured.
 
@@ -373,11 +373,12 @@ def parse_declaration(statement):
             # ex: integer * ( 4*2 )
             if tokens[2] == "(":
                 kind_tokens = next_tokens_till_open_bracket_is_closed(
-                    tokens[3:], open_brackets=1)
+                    tokens[3:], open_brackets=1)[:-1]
+                kind = "".join(kind_tokens)
+                idx_last_consumed_token = 2 + len(kind_tokens) + 1 # )
             else:
-                kind_tokens = tokens[2] 
-            kind = "".join(kind_tokens)
-            idx_last_consumed_token = 2 + len(kind_tokens) - 1
+                kind = tokens[2] 
+                idx_last_consumed_token = 2
         elif tokens_lower[1:4] == ["(","kind","("]:
             # ex: integer ( kind ( 4 ) )
             kind_tokens = next_tokens_till_open_bracket_is_closed(
@@ -407,7 +408,6 @@ def parse_declaration(statement):
             raise error.SyntaxError("could not parse datatype")
     except IndexError:
         raise error.SyntaxError("could not parse datatype")
-    # handle qualifiers
     try:
         datatype_raw = "".join(tokens[:idx_last_consumed_token+1])
         tokens = tokens[idx_last_consumed_token + 1:] # remove type part tokens
@@ -460,6 +460,7 @@ def parse_declaration(statement):
     # 
     for var in variables_raw:
         var_tokens = tokenize(var)
+        print(var_tokens)
         var_name   = var_tokens.pop(0)
         var_bounds = [] 
         var_rhs    = None

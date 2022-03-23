@@ -137,19 +137,26 @@ class TestParsingUtils(unittest.TestCase):
           "integer*4,allocatable :: b(:,:,n,-1:5)",
           "integer,dimension(:,:) :: int_array2d",
           "character*(*) :: a",
+          "character*(len=*) :: a",
+          "integer a( m ), b( m, n )",
+          "real*8 a( * ), b( * )",
         ]
         results = [
           # type, kind, qualifiers without dimensions, dimension bounds, variables: list of (name, bounds, rhs)
           ('integer', None, ['parameter'], [], [('a', ['1'], '(/1/)'), ('b', [], '5*2**3')], 'integer', ['parameter']),
           ('integer', 'kind(hipSuccess)', ['parameter'], [], [('ierr', [], 'hipSuccess')], 'integer(kind(hipSuccess))', ['parameter']),
-          ('integer', '4', ['parameter'], [], [('parameter', [], None)], 'integer(kind=4),', ['parameter']),
+          ('integer', '4', ['parameter'], [], [('mykind', [], '3')], 'integer(kind=4)', ['parameter']),
           ('integer', '4', ['pointer'], [], [('a', [':'], 'null()'), ('b', [], 'null()')], 'integer*4', ['pointer']),
           ('integer', '4', ['allocatable'], [], [('b', [':', ':', 'n', '-1:5'], None)], 'integer*4', ['allocatable']),
           ('integer', None, [], [':', ':'], [('int_array2d', [], None)], 'integer', ['dimension(:,:)']) ,
+          ('character', '*', [], [], [('a', [], None)], 'character*(*)', []),
+          ('character', 'len=*', [], [], [('a', [], None)], 'character*(len=*)', []),
+          ('integer', None, [], [], [('a', ['m'], None), ('b', ['m', 'n'], None)], 'integer', []),
+          ('real', '8', [], [], [('a', ['*'], None), ('b', ['*'], None)], 'real*8', []),
         ]
         for i,stmt in enumerate(statements):
-            print(util.parsing.parse_declaration(stmt))
-            #self.assertEqual(util.parsing.parse_declaration(stmt),results[i])
+            #print(util.parsing.parse_declaration(stmt))
+            self.assertEqual(util.parsing.parse_declaration(stmt),results[i])
     def test_06_parse_attributes_statement(self):
         statements = [
           "attributes(device,constant) :: a_d, b_d"

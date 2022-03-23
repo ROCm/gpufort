@@ -382,16 +382,16 @@ def parse_declaration(statement):
         elif tokens_lower[1:4] == ["(","kind","("]:
             # ex: integer ( kind ( 4 ) )
             kind_tokens = next_tokens_till_open_bracket_is_closed(
-                tokens[4:], open_brackets=1)
-            kind = "".join(tokens[2:4]+kind_tokens)
-            idx_last_consumed_token = 4 + len(kind_tokens)
+                tokens[4:], open_brackets=2)
+            kind = "".join(tokens[2:4]+kind_tokens[:-1])
+            idx_last_consumed_token = 4 + len(kind_tokens) - 1
         elif (tokens_lower[1:4] == ["(","kind","="] 
              or tokens_lower[1:4] == ["(","len","="]):
             # ex: integer ( kind = 4 )
             kind_tokens = next_tokens_till_open_bracket_is_closed(
                 tokens[4:], open_brackets=1)
             kind = "".join(kind_tokens[:-1])
-            idx_last_consumed_token = 4 + len(kind_tokens)
+            idx_last_consumed_token = 4 + len(kind_tokens) - 1
         elif tokens[1] == "(":
             # ex: integer ( 4 )
             # ex: integer ( 4*2 )
@@ -408,27 +408,26 @@ def parse_declaration(statement):
             raise error.SyntaxError("could not parse datatype")
     except IndexError:
         raise error.SyntaxError("could not parse datatype")
+    qualifiers_raw = []
     try:
         datatype_raw = "".join(tokens[:idx_last_consumed_token+1])
         tokens = tokens[idx_last_consumed_token + 1:] # remove type part tokens
         idx_last_consumed_token = None
-        if tokens[0] == "," and DOUBLE_COLON in tokens:
-            qualifiers = get_highest_level_arguments(tokens)
+        if tokens[0] == "," and DOUBLE_COLON in tokens: # qualifier list
+            qualifiers_raw = get_highest_level_arguments(tokens)
             idx_last_consumed_token = tokens.index(DOUBLE_COLON)
-        elif tokens[0] == DOUBLE_COLON:
+        elif tokens[0] == DOUBLE_COLON: # variables begin afterwards
             idx_last_consumed_token = 0
-        elif tokens[0] == ",":
+        elif tokens[0].isidentifier(): # variables begin directly
+            idx_last_consumed_token = -1
+        else:
             raise error.SyntaxError("could not parse qualifier list")
-        qualifiers_raw = get_highest_level_arguments(tokens)
-
         # handle variables list
-        if idx_last_consumed_token != None:
-            tokens = tokens[idx_last_consumed_token+1:] # remove qualifier list tokens
+        tokens = tokens[idx_last_consumed_token+1:] # remove qualifier list tokens
         variables_raw = get_highest_level_arguments(tokens)
     except IndexError:
         raise error.SyntaxError("could not parse qualifier list")
-
-    # construct declaration tree node
+    # analyze qualifiers
     qualifiers = []
     dimension_bounds = []
     for qualifier in qualifiers_raw:
@@ -455,12 +454,10 @@ def parse_declaration(statement):
             qualifiers.append(qualifier)
         else:
             raise error.SyntaxError("could not parse qualifier '{}'".format(qualifier))
-        
+    # analyze variables
     variables = []
-    # 
     for var in variables_raw:
         var_tokens = tokenize(var)
-        print(var_tokens)
         var_name   = var_tokens.pop(0)
         var_bounds = [] 
         var_rhs    = None

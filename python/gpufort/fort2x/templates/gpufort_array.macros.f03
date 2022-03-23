@@ -402,7 +402,7 @@ function {{f_array}}_wrap{{async_suffix}}_{{tuple.f_kind}}{{dev}}(&
     opt_sync_mode)
   if ( present(ierr) ) ierr = opt_ierr
 end function
-{%         endfor %}{# async #}
+{%         endfor %}{# asyncr #}
 {%       endfor %}{# dev #}
 {%     endfor %}{# datatypes #}
 {%     set routine = "init" %}

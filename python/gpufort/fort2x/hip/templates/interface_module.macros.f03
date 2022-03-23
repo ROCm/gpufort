@@ -43,7 +43,7 @@ end interface
                              fortran_snippet) -%}
 {%- set num_args = kernel.global_vars|length+kernel.shared_and_local_array_vars|length+kernel.global_reduced_vars|length -%}
 function {{kernel.name}}_cpu(&
-    sharedmem,stream,async{{"," if num_args > 0 }}&
+    sharedmem,stream,asyncr{{"," if num_args > 0 }}&
 {{cm.render_params(kernel.global_vars+kernel.shared_and_local_array_vars+kernel.global_reduced_vars,sep=",&\n") | indent(4,True)}}) bind(c,name="{{kernel.name}}_cpu") &
       result(ierr)
 {% if launcher.used_modules|length %}

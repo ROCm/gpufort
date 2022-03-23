@@ -43,7 +43,7 @@ dim3 grid({% for dim in ["x","y","z"] %}divideAndRoundUp(problem_size.{{dim}},bl
 {% set direction = "in" if stage == "INPUT" else "out" %}
 #if defined(GPUFORT_PRINT_KERNEL_ARGS_ALL) || defined(GPUFORT_PRINT_KERNEL_ARGS_{{kernel_name}})
 std::cout << "{{prefix}}:args:{{direction}}:";
-GPUFORT_PRINT_ARGS({% if is_gpu_launcher %}{% if have_problem_size %}problem_size.x,problem_size.y,problem_size.y,{% endif %}grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream,async{% endif %}{% if num_args %},{{cm.render_global_params(global_vars+global_reduced_vars)}}{% endif %});
+GPUFORT_PRINT_ARGS({% if is_gpu_launcher %}{% if have_problem_size %}problem_size.x,problem_size.y,problem_size.y,{% endif %}grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream,asyncr{% endif %}{% if num_args %},{{cm.render_global_params(global_vars+global_reduced_vars)}}{% endif %});
 #endif
 {% for ivar in global_vars %}
 {%   if ivar.rank > 0 and ivar.f_type in ["logical","integer","float"] %}
@@ -85,7 +85,7 @@ if (
 #if defined(SYNCHRONIZE_ALL) || defined(SYNCHRONIZE_{{kernel_name}})
   true ||
 #endif
-  !async
+  !asyncr
 ) { 
   ierr = hipStreamSynchronize(stream);
   if ( ierr != hipSuccess ) return ierr;
@@ -100,7 +100,7 @@ extern "C" hipError_t {{launcher.name}}_(
     dim3& block,
     int& sharedmem,
     hipStream_t& stream,
-    bool& async{{"," if num_args > 0}}
+    bool& asyncr{{"," if num_args > 0}}
 {{ cm.render_all_global_param_decls(kernel.global_vars,kernel.global_reduced_vars,) | indent(4,True) }}) {
   hipError_t ierr = hipSuccess;
 {% if have_problem_size %}
@@ -145,7 +145,7 @@ extern "C" hipError_t {{launcher.name}}_(
     dim3& dummy2,
     int& sharedmem,
     hipStream_t& stream,
-    bool& async{{"," if num_args > 0}}
+    bool& asyncr{{"," if num_args > 0}}
 {{ cm.render_all_global_param_decls(kernel.global_vars+kernel.shared_and_local_array_vars,
                                     kernel.global_reduced_vars) | indent(4,True) }}) {
   hipError_t ierr = hipSuccess;

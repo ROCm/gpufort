@@ -123,14 +123,14 @@ end do
 {########################################################################################}
 {% macro render_derived_type_copy_array_member_routines(derived_types,
                                                                       direction="in",
-                                                                      async="_async",
+                                                                      asyncr="_async",
                                                                       used_modules=[],
                                                                       error_check="hipCheck",
                                                                       synchronize_queue="hipStreamSynchronize",
                                                                       interop_suffix="_interop",
                                                                       orig_var="orig_type",
                                                                       interop_var="interop_type")  %}
-{% set is_async = async == "_async" %}
+{% set is_async = asyncr == "_async" %}
 {% set src = "original type's array member" if direction == "in" else "interoperable type's array member"  %}
 {% set dest = "original type's array member" if direction != "out" else "interoperable type's array member"  %}
 {% set tofrom = "to" if direction=="in" else "from"  %}
@@ -149,7 +149,7 @@ end do
 !> \note Device to host copy is blocking as it needs to complete before the interoperable type's
 !>       host data can be copied to the original type.
 {%      endif  %}
-subroutine {{interop_type_name}}_copy{{direction}}_{{ivar.name}}{{async}}(&
+subroutine {{interop_type_name}}_copy{{direction}}_{{ivar.name}}{{asyncr}}(&
   {{interop_var}},{{orig_var}},&
   {{tofrom}}_device{{",queue" if is_async}})
 {%      if used_modules|length  %}
@@ -159,7 +159,7 @@ subroutine {{interop_type_name}}_copy{{direction}}_{{ivar.name}}{{async}}(&
   type({{interop_type_name}}),intent(inout) :: {{interop_var}}
   type({{derived_type.name}}),intent(in) :: {{orig_var}}
   logical,intent(in) :: {{tofrom}}_device
-{%      if async == "_async"  %}
+{%      if asyncr == "_async"  %}
   type(c_ptr),intent(in) :: queue
 {%      endif  %}
 {%      if ivar.f_type == "type"  %}
@@ -175,7 +175,7 @@ subroutine {{interop_type_name}}_copy{{direction}}_{{ivar.name}}{{async}}(&
   endif
 {%      if direction != "in"  %}
   if (from_device) then
-    call {{error_check}}(gpufort_array_copy_to_host{{async}}({{interop_var}}%{{ivar.name}}{{",queue" if is_async}}))
+    call {{error_check}}(gpufort_array_copy_to_host{{asyncr}}({{interop_var}}%{{ivar.name}}{{",queue" if is_async}}))
 {%        if is_async  %}
     call {{error_check}}({{synchronize_queue}}(queue)}}
 {%        endif  %}
@@ -191,7 +191,7 @@ subroutine {{interop_type_name}}_copy{{direction}}_{{ivar.name}}{{async}}(&
 {%      if direction == "in"  %}
   !
   if (to_device) then
-    call {{error_check}}(gpufort_array_copy_to_device{{async}}({{interop_var}}%{{ivar.name}}{{",queue" if is_async}}))
+    call {{error_check}}(gpufort_array_copy_to_device{{asyncr}}({{interop_var}}%{{ivar.name}}{{",queue" if is_async}}))
   endif
   if ( allocate_temporary_host_buffer ) then ! allocate host array
     call {{error_check}}({{synchronize_queue}}(queue)}}
@@ -206,17 +206,17 @@ end subroutine{{"\n" if not loop.last}}
 {########################################################################################}
 {% macro render_derived_type_init_array_member(derived_type,
                                                 member,
-                                                async="_async",
+                                                asyncr="_async",
                                                 error_check="hipCheck",
                                                 interop_suffix="_interop",
                                                 orig_var="orig_type",
                                                 interop_var="interop_type")  %}
-{% set is_async = async == "_async" %}
+{% set is_async = asyncr == "_async" %}
 {% set interop_type_name = derived_type.name + interop_suffix %}
 {% for ivar in derived_type.variables %}
 {%  if ivar.name == member  %}
 {%    if ivar.f_type in ["integer","real","logical"]  %}
-call {{error_check}}(gpufort_array_init{{async}}({{interop_var}}%{{member}},{{orig_var}}%{{member}},&
+call {{error_check}}(gpufort_array_init{{asyncr}}({{interop_var}}%{{member}},{{orig_var}}%{{member}},&
   {{"queue," if is_async}}alloc_mode=gpufort_array_wrap_host_alloc_device,&
   sync_mode=sync_mode))
 {%     elif ivar.f_type == "type"  %}
@@ -229,7 +229,7 @@ call {{error_check}}(gpufort_array_init({{interop_var}}%{{member}},&
 !
 if ( sync_mode .eq. gpufort_array_sync_copy .or.&
      sync_mode .eq. gpufort_array_sync_copyin) then
-  call {{interop_type_name}}_copyin_{{member}}{{async}}({{interop_var}},{{orig_var}},.true.{{",queue" if is_async}})
+  call {{interop_type_name}}_copyin_{{member}}{{asyncr}}({{interop_var}},{{orig_var}},.true.{{",queue" if is_async}})
 endif
 {%     endif  %}
 {%   endif  %}
@@ -237,13 +237,13 @@ endif
 {% endmacro  %}
 {########################################################################################}
 {% macro render_derived_type_init_array_member_routines(derived_types,
-                                                        async="_async",
+                                                        asyncr="_async",
                                                         used_modules=[],
                                                         error_check="hipCheck",
                                                         interop_suffix="_interop",
                                                         orig_var="orig_type",
                                                         interop_var="interop_type")  %}
-{% set is_async = async == "_async" %}
+{% set is_async = asyncr == "_async" %}
 {% for derived_type in derived_types %}
 {% set interop_type_name = derived_type.name + interop_suffix %}
 {%  for ivar in derived_type.variables %}
@@ -255,7 +255,7 @@ endif
 !> \param[in] queue Asynchronous queue, e.g. HIP/CUDA stream, to use for the device data copies between host and device.
 {%      endif  %}
 !> \param[in] sync_mode Synchronization mode, i.e. what copies to perform at init and destruction.
-subroutine {{interop_type_name}}_init_{{ivar.name}}{{async}}(&
+subroutine {{interop_type_name}}_init_{{ivar.name}}{{asyncr}}(&
     {{interop_var}},&
     {{orig_var}},&
     sync_mode,&
@@ -283,7 +283,7 @@ subroutine {{interop_type_name}}_init_{{ivar.name}}{{async}}(&
   !
 {{ render_derived_type_init_array_member(derived_type,
                                          ivar.name,
-                                         async,
+                                         asyncr,
                                          error_check,
                                          interop_suffix,
                                          orig_var,
@@ -298,10 +298,10 @@ end subroutine{{"\n" if not loop.last}}
                                                                 member,
                                                                 interop_member_type_name,
                                                                 rank,
-                                                                async="_async",
+                                                                asyncr="_async",
                                                                 orig_var="orig_type",
                                                                 interop_var="interop_type")  %}
-{% set is_async = async == "_async" %}
+{% set is_async = asyncr == "_async" %}
 {% set rank_ub=rank+1 %}
 {% set index = "i"+range(1,rank_ub)|join(",i") %}
 call c_f_pointer({{interop_var}}%{{member}}%data%data_host,&
@@ -313,7 +313,7 @@ call c_f_pointer({{interop_var}}%{{member}}%data%data_host,&
 {% for i in range(1,rank_ub)  %}
 do i{{i}} = lbound({{orig_var}},{{i}}),ubound({{orig_var}},{{i}})
 {% endfor %}
-    call {{interop_member_type_name}}_destroy{{async}}({{interop_var}}_{{member}}({{index}}),{{orig_var}}%{{member}}({{index}}){{",queue" if is_async}})
+    call {{interop_member_type_name}}_destroy{{asyncr}}({{interop_var}}_{{member}}({{index}}),{{orig_var}}%{{member}}({{index}}){{",queue" if is_async}})
 {% for i in range(1,rank_ub)  %}
 end do
 {% endfor %}
@@ -321,13 +321,13 @@ end do
 {########################################################################################}
 {% macro render_derived_type_destroy_array_member(derived_type,
                                                   member,
-                                                  async="_async",
+                                                  asyncr="_async",
                                                   synchronize_queue="hipStreamSynchronize",
                                                   error_check="hipCheck",
                                                   interop_suffix="_interop",
                                                   orig_var="orig_type",
                                                   interop_var="interop_type")  %}
-{% set is_async = async == "_async" %}
+{% set is_async = asyncr == "_async" %}
 {% set interop_type_name = derived_type.name + interop_suffix %}
 {% for ivar in derived_type.variables %}
 {%  if ivar.name == member  %}
@@ -336,31 +336,31 @@ end do
                                                          member,
                                                          ivar.kind+interop_suffix,
                                                          ivar.rank,
-                                                         async="_async",
+                                                         asyncr="_async",
                                                          orig_var="orig_type",
                                                          interop_var="interop_type") -}}
 !
 if ( {{interop_var}}%{{member}}%sync_mode .eq. gpufort_array_sync_copy .or.&
      {{interop_var}}%{{member}}%sync_mode .eq. gpufort_array_sync_copyin) then
-  call {{interop_type_name}}_copyout_{{member}}{{async}}({{interop_var}},{{orig_var}},.true.{{",queue" if is_async}})
+  call {{interop_type_name}}_copyout_{{member}}{{asyncr}}({{interop_var}},{{orig_var}},.true.{{",queue" if is_async}})
 endif
 !
 {{interop_var}}%{{member}}%sync_mode=gpufort_array_sync_none ! set pre destruction to prevent unnecessary copy at destruction
 {%    endif  %}
-call {{error_check}}(gpufort_array_destroy{{async}}({{interop_var}}%{{member}}{{",queue" if is_async}}))
+call {{error_check}}(gpufort_array_destroy{{asyncr}}({{interop_var}}%{{member}}{{",queue" if is_async}}))
 {%-   endif  %}
 {% endfor %}
 {% endmacro  %}
 {########################################################################################}
 {% macro render_derived_type_destroy_array_member_routines(derived_types,
-                                                            async="_async",
+                                                            asyncr="_async",
                                                             used_modules=[],
                                                             synchronize_queue="hipStreamSynchronize",
                                                             error_check="hipCheck",
                                                             interop_suffix="_interop",
                                                             orig_var="orig_type",
                                                             interop_var="interop_type")  %}
-{% set is_async = async == "_async" %}
+{% set is_async = asyncr == "_async" %}
 {% for derived_type in derived_types %}
 {% set interop_type_name = derived_type.name + interop_suffix %}
 {%  for ivar in derived_type.variables %}
@@ -376,7 +376,7 @@ call {{error_check}}(gpufort_array_destroy{{async}}({{interop_var}}%{{member}}{{
 !> \note Device to host copy is blocking as it needs to complete before the interoperable type's
 !>       host data can be copied to the original type.
 {%      endif  %}
-subroutine {{interop_type_name}}_destroy_{{ivar.name}}{{async}}(&
+subroutine {{interop_type_name}}_destroy_{{ivar.name}}{{asyncr}}(&
     {{interop_var}},&
     {{orig_var}}{{",queue" if is_async}})
 {% if used_modules|length  %}
@@ -397,7 +397,7 @@ subroutine {{interop_type_name}}_destroy_{{ivar.name}}{{async}}(&
   if ({{interop_var}}%{{member}}%bytes_per_element .gt. 0) then ! implies initialized
 {{ render_derived_type_destroy_array_member(derived_type,
                                             member,
-                                            async,
+                                            asyncr,
                                             synchronize_queue,
                                             error_check,
                                             interop_suffix,
@@ -411,12 +411,12 @@ end subroutine{{"\n" if not loop.last}}
 {% endmacro  %}
 {########################################################################################}
 {% macro render_derived_type_destroy_routines(derived_types,
-                                               async="_async",
+                                               asyncr="_async",
                                                used_modules=[],
                                                interop_suffix="_interop",
                                                orig_var="orig_type",
                                                interop_var="interop_type")  %}
-{% set is_async = async == "_async" %}
+{% set is_async = asyncr == "_async" %}
 {% for derived_type in derived_types %}
 {%   set interop_type_name = derived_type.name + interop_suffix %}
 !> Destroys the interoperable type's members and
@@ -430,7 +430,7 @@ end subroutine{{"\n" if not loop.last}}
 !> \note Device to host copy is blocking as it needs to complete before the interoperable type's
 !>       host data can be copied to the original type.
 {%  endif  %}
-subroutine {{interop_type_name}}_destroy{{async}}(&
+subroutine {{interop_type_name}}_destroy{{asyncr}}(&
     {{interop_var}},&
     {{orig_var}}{{",queue" if is_async}})
 {%  if used_modules|length  %}
@@ -446,12 +446,12 @@ subroutine {{interop_type_name}}_destroy{{async}}(&
 {%  for ivar in derived_type.variables %}
 {%     set member = ivar.name %}
 {%    if ivar.rank > 0  %}
-  call {{interop_type_name}}_destroy_{{member}}{{async}}(&
+  call {{interop_type_name}}_destroy_{{member}}{{asyncr}}(&
     {{interop_var}},&
     {{orig_var}}{{",queue" if is_async}})
 {%    elif ivar.f_type=="type"  %}
 {%      set interop_member_type_name = ivar.kind+interop_suffix %}
-  call {{interop_member_type_name}}_destroy{{async}}(&
+  call {{interop_member_type_name}}_destroy{{asyncr}}(&
     {{interop_var}}%{{member}},&
     {{orig_var}}%{{member}}{{",queue" if is_async}})
 {%    endif  %}
@@ -469,7 +469,7 @@ end subroutine
 !> \note Device to host copy is blocking as it needs to complete before the interoperable type's
 !>       host data can be copied to the original type.
 {%  endif %}
-subroutine {{interop_type_name}}_destroy{{async}}_cptr(&
+subroutine {{interop_type_name}}_destroy{{asyncr}}_cptr(&
     {{interop_var}}_cptr,&
     {{orig_var}}_cptr{{",queue" if is_async}})
 {%  if used_modules|length  %}
@@ -486,7 +486,7 @@ subroutine {{interop_type_name}}_destroy{{async}}_cptr(&
   !
   call c_f_pointer({{interop_var}}_cptr,{{interop_var}})
   call c_f_pointer({{orig_var}}_cptr,{{orig_var}})
-  call {{interop_type_name}}_destroy{{async}}(&
+  call {{interop_type_name}}_destroy{{asyncr}}(&
     {{interop_var}},&
     {{orig_var}}{{",queue" if is_async}})
 end subroutine{{"\n" if not loop.last}}

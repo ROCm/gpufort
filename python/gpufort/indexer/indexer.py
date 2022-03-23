@@ -419,7 +419,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
                         Use()
                     #elif current_tokens[0] == "implicit":
                     #    try_to_parse_string("implicit",grammar.IMPLICIT)
-                    elif current_tokens[0] == "module":
+                    elif current_tokens[0] == "module" and current_tokens[1] != "procedure":
                         ModuleStart()
                     elif current_tokens[0] == "program":
                         ProgramStart()

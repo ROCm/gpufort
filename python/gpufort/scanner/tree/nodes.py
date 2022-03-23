@@ -889,26 +889,30 @@ class STMemcpy(STNode):
                   joined_lines,
                   joined_statements,
                   statements_fully_cover_lines,
-                  index=[]): # TODO backend specific
-        indent = self.first_line_indent()
-        def repl_memcpy_(parse_result):
-            dest_name = parse_result.dest_name_f_str()
-            src_name = parse_result.src_name_f_str()
-            try:
-                dest_indexed_var = indexer.scope.search_index_for_var(index,self.parent.tag(),\
-                  dest_name)
-                src_indexed_var  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
-                  src_name)
-                dest_on_device = index_var_is_on_device(dest_indexed_var)
-                src_on_device = index_var_is_on_device(src_indexed_var)
-            except util.error.LookupError:
-                dest_on_device = False 
-                src_on_device  = False
-            if dest_on_device or src_on_device:
-                subst = parse_result.hip_f_str(dest_on_device, src_on_device)
-                return (textwrap.indent(subst,indent), True)
-            else:
-                return ("", False) # no transformation; will not be considered
+                  index=[]): 
+        # TODO backend specific, move to cuf subpackage
+        if "cuf" in opts.source_dialects:
+            indent = self.first_line_indent()
+            def repl_memcpy_(parse_result):
+                dest_name = parse_result.dest_name_f_str()
+                src_name = parse_result.src_name_f_str()
+                try:
+                    dest_indexed_var = indexer.scope.search_index_for_var(index,self.parent.tag(),\
+                      dest_name)
+                    src_indexed_var  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
+                      src_name)
+                    dest_on_device = index_var_is_on_device(dest_indexed_var)
+                    src_on_device = index_var_is_on_device(src_indexed_var)
+                except util.error.LookupError:
+                    dest_on_device = False 
+                    src_on_device  = False
+                if dest_on_device or src_on_device:
+                    subst = parse_result.hip_f_str(dest_on_device, src_on_device)
+                    return (textwrap.indent(subst,indent), True)
+                else:
+                    return ("", False) # no transformation; will not be considered
 
-        return repl_memcpy_(self._parse_result)
+            return repl_memcpy_(self._parse_result)
+        else:
+            return ("", False)
         #return util.pyparsing.replace_all(joined_statements,translator.tree.grammar.memcpy,repl_memcpy)

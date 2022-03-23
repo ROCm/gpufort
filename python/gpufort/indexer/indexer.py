@@ -6,7 +6,7 @@ import copy
 import re
 import concurrent.futures
 
-import orjson
+import json
 
 from gpufort import util
 from gpufort import translator
@@ -141,7 +141,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_linemap_no
         nonlocal current_statement_no
         nonlocal current_statement
-        log_detection_("end of program/module/subroutine/function")
+        log_detection_("end of program/module/subroutine/function/type")
         if current_node._kind != "root":
             log_leave_node_()
             accelerator_routine = False
@@ -451,17 +451,15 @@ def _parse_statements(linemaps, file_path,**kwargs):
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def _write_json_file(index, file_path):
-    with open(file_path, "wb") as outfile:
-        if opts.pretty_print_index_file:
-            outfile.write(orjson.dumps(index, option=orjson.OPT_INDENT_2))
-        else:
-            outfile.write(orjson.dumps(index))
-
+    with open(file_path, "w") as outfile:
+        json.dump(index,outfile)
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def _read_json_file(file_path):
-    with open(file_path, "rb") as infile:
-        return orjson.loads(infile.read())
+    util.logging.log_debug2(opts.log_prefix,"_read_json_file","".join(["reading file:",file_path]))
+    #print(file_path,file=sys.stderr)
+    with open(file_path, "r") as infile:
+        return json.load(infile)
 
 
 # API

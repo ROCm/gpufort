@@ -140,6 +140,7 @@ class TestParsingUtils(unittest.TestCase):
           "character*(len=*) :: a",
           "integer a( m ), b( m, n )",
           "real*8 a( * ), b( * )",
+          "character*(*), intent(in)    :: c",
         ]
         results = [
           # type, kind, qualifiers without dimensions, dimension bounds, variables: list of (name, bounds, rhs)
@@ -153,6 +154,7 @@ class TestParsingUtils(unittest.TestCase):
           ('character', 'len=*', [], [], [('a', [], None)], 'character*(len=*)', []),
           ('integer', None, [], [], [('a', ['m'], None), ('b', ['m', 'n'], None)], 'integer', []),
           ('real', '8', [], [], [('a', ['*'], None), ('b', ['*'], None)], 'real*8', []),
+          ('character', '*', ['intent(in)'], [], [('c', [], None)], 'character*(*)', ['intent(in)']),
         ]
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_declaration(stmt))

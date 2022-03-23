@@ -621,7 +621,7 @@ def _parse_file(linemaps, index, **kwargs):
                             PlaceHolder()
                         elif current_tokens[0] == "contains":
                             Contains()
-                        elif current_tokens[0] == "module":
+                        elif current_tokens[0] == "module" and current_tokens[1] != "procedure":
                             ModuleStart()
                         elif current_tokens[0] == "program":
                             ProgramStart()

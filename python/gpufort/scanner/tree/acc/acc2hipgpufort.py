@@ -98,9 +98,9 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         wait_queues, wait_present = self.stnode.get_wait_clause_queues()
         wait_expr = ""
         if wait_present and not len(wait_queues):
-            result.append(_ACC_WAIT.format(var="",options=""))
+            result.append(_ACC_WAIT.format(queue="",options=""))
         elif wait_present and len(wait_queues):
-            result.append(_ACC_WAIT.format(var=",".join(wait_queues),options=""))
+            result.append(_ACC_WAIT.format(queue=",".join(wait_queues),options=""))
         return result
  
     def _handle_data_clauses(self,async_expr,finalize_expr):

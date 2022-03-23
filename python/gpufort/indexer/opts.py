@@ -15,6 +15,9 @@ pretty_print_index_file = False # Pretty print index before writing it to disk.
 module_ignore_list = [ # these modules are ignored when checking dependencies
     "iso_c_binding",
     "iso_fortran_env", 
+    "ieee_arithmetic",
+    "openacc",
+    "openacc_lib",
     "cudafor",
     "cublas",
     "cusparse",

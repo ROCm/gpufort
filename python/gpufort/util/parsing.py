@@ -18,9 +18,9 @@ def tokenize(statement, padded_size=0, modern_fortran=True):
     """
     TOKENS_REMOVE = r"\s+|\t+"
     if modern_fortran:
-        TOKENS_KEEP = r"(\b(end|else)\b|![@\$]?|[(),%]|::?|=>?|<<<|>>>|[<>]=?|[\/=]=|\+|-|\*|\/|\.\w+\.)"
+        TOKENS_KEEP = r"(\bend\b|\belse\b|![@\$]?|[(),%]|::?|=>?|<<<|>>>|[<>]=?|[\/=]=|\+|-|\*|\/|\.\w+\.)"
     else:
-        TOKENS_KEEP = r"(\b(end|else)\b|![@\$]?|^[c\*][@\$]?|[(),%]|::?|=>?|<<<|>>>|[<>]=?|[\/=]=|\+|-|\*|\/|\.\w+\.)"
+        TOKENS_KEEP = r"(\bend\b|\belse\b|![@\$]?|^[c\*][@\$]?|[(),%]|::?|=>?|<<<|>>>|[<>]=?|[\/=]=|\+|-|\*|\/|\.\w+\.)"
     # IMPORTANT: Use non-capturing groups (?:<expr>) to ensure that an inner group in TOKENS_KEEP
     # is not captured.
 

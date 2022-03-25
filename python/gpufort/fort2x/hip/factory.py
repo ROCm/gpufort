@@ -45,7 +45,7 @@ def create_kernel_generator_from_loop_nest(declaration_list_snippet,
     linemaps = linemapper.read_lines(
         loop_nest_snippet.splitlines(keepends=True), preproc_options=preproc_options)
     fortran_statements = linemapper.get_statement_bodies(linemaps)
-    ttloopnest = translator.parse_loop_kernel(fortran_statements, scope)
+    ttloopnest = translator.parse_loopnest(fortran_statements, scope)
 
     return hipkernelgen.HipKernelGenerator4LoopNest(
         ttloopnest,

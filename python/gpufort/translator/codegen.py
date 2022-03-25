@@ -59,9 +59,8 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
     tidx = "__gidx{dim}".format(dim=dim)
     # 1. unpack colon (":") expressions
     for expr in tree.find_all(ttloopnest.body[0], tree.TTStatement):
-        if type(expr._statement[0]) is tree.TTAssignment:
-            expr._statement[0] = expr._statement[
-                0].convert_to_do_loop_nest_if_necessary()
+        if type(expr._statement) is tree.TTAssignment:
+            expr._statement = expr._statement.convert_to_do_loop_nest_if_necessary()
     # 2. Identify reduced variables
     for expr in tree.find_all(ttloopnest.body[0], tree.TTAssignment):
         for value in tree.find_all_matching(

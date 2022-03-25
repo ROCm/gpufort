@@ -6,6 +6,7 @@ import pprint
 import jinja2
 
 from gpufort import util
+
 from . import opts
 
 LOADER = jinja2.FileSystemLoader(
@@ -56,6 +57,9 @@ def render_gpufort_array_source_file(output_path, context={}):
 def render_gpufort_array_fortran_interfaces_file(output_path, context={}):
     generate_file(output_path, "gpufort_array.template.f03", context)
 
-
 parent_dir = os.path.dirname(__file__)
-exec(open(os.path.join(parent_dir, "templates", "render.py.in")).read())
+include_file = os.path.abspath(os.path.join(parent_dir, "templates", "render.py.in"))
+if os.path.exists(include_file):
+    exec(open(include_file).read())
+else:
+    util.logging.log_warning(opts.log_prefix,"<module load>","file '{}' not found".format(include_file))

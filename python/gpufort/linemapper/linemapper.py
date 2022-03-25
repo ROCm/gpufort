@@ -2,6 +2,7 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import os, sys
 import re
+import copy
 
 import orjson
 
@@ -11,6 +12,7 @@ from . import opts
 
 _ERR_LINEMAPPER_MACRO_DEFINITION_NOT_FOUND = 11001
 
+EMPTY_STATEMENT = {"epilog": [], "prolog": [], "body": ""}
 
 def _evaluate_defined(input_string, macro_names):
     # expand macro; one at a time
@@ -570,7 +572,8 @@ def preprocess_and_normalize(fortran_file_lines,
             statements3 = []
             for stmt2 in statements2:
                 for stmt3 in _convert_lines_to_statements([stmt2]):
-                    statement = {"epilog": [], "prolog": [], "body": stmt3}
+                    statement = copy.copy(EMPTY_STATEMENT)
+                    statement["body"] = stmt3
                     # treat statements such as "!@cuf ierr = hipStreamSynchronize(stream)
                     stmt4 = re.sub(r"[!*c]@gpufort\s*","",stmt3)
                     if cuda_fortran and util.parsing.is_cuda_fortran_conditional_code(stmt3,modern_fortran):

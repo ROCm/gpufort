@@ -184,18 +184,16 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
         self._args = tokens[1]
         self._is_tensor_access = base.Unknown3
 
-    def matrix_range_args(self):
+    def bounds(self):
+        """Returns all range args in the order of their appeareance.
         """
-        Returns all matrix range args in the order of their appeareance.
-        """
-        return base.find_all(self._args, searched_type=TTMatrixRange)
+        return base.find_all(self._args, searched_type=TTRange)
 
-    def has_matrix_range_args(self):
-        """
-        If any matrix range args are present in the argument list.
+    def has_bounds(self):
+        """If any range args are present in the argument list.
         """
         return not base.find_first(self._args,
-                                   searched_type=TTMatrixRange) is None
+                                   searched_type=TTRange) is None
 
     def __guess_it_is_function(self):
         """ 
@@ -214,7 +212,7 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
         elif self._is_tensor_access == base.False3:
             return False
         else:
-            return self.has_matrix_range_args() or\
+            return self.has_bounds() or\
                    not self.__guess_it_is_function()
 
     def name_c_str(self):
@@ -254,22 +252,38 @@ class IValue:
 
     def name(self):
         return self._value.f_str()
-
-    def has_matrix_range_args(self):
+    
+    def has_bounds(self):
         if type(self._value) is TTFunctionCallOrTensorAccess:
-            return self._value.has_matrix_range_args()
+            return self._value.has_bounds()
         elif type(self._value) is TTDerivedTypeMember:
-            return self._value.last_element_has_matrix_range_args()
+            return self._value.last_element_has_bounds()
         else:
             return False
 
-    def matrix_range_args(self):
+    def bounds(self):
         if type(self._value) is TTFunctionCallOrTensorAccess:
-            return self._value.matrix_range_args()
+            return self._value.bounds()
         elif type(self._value) is TTDerivedTypeMember:
-            return self._value.last_element_matrix_range_args()
+            return self._value.last_element_bounds()
         else:
             return []
+    
+    def has_args(self):
+        if type(self._value) is TTFunctionCallOrTensorAccess:
+            return True
+        elif type(self._value) is TTDerivedTypeMember:
+            return self._value.last_element_has_args()
+        else:
+            return False
+    
+    def args(self):
+        if type(self._value) is TTFunctionCallOrTensorAccess:
+            return self._value._args
+        elif type(self._value) is TTDerivedTypeMember:
+            return self._value.last_element_has_args()
+        else:
+            return False
 
 
 class TTRValue(base.TTNode, IValue):
@@ -545,27 +559,51 @@ class TTDerivedTypeMember(base.TTNode):
             result += "%"+current.c_str()
         return result             
 
-    def last_element_matrix_range_args(self):
-        """Returns all matrix range args in the order of their appeareance.
+    def last_element_bounds(self):
+        """Returns all range args in the order of their appeareance.
         """
         result = []
         current = self._element
         while isinstance(current,TTDerivedTypeMember):
             current = current._element
         if type(current) is TTFunctionCallOrTensorAccess:
-            return current.matrix_range_args()
+            return current.bounds()
         else:
             return []
 
-    def last_element_has_matrix_range_args(self):
-        """If any matrix range args are present in the argument list.
+    def last_element_has_bounds(self):
+        """If any range args are present in the argument list.
         """
         result = []
         current = self._element
         while isinstance(current,TTDerivedTypeMember):
             current = current._element
         if type(current) is TTFunctionCallOrTensorAccess:
-            return current.has_matrix_range_args()
+            return current.has_bounds()
+        else:
+            return False
+    
+    def last_element_has_args(self):
+        """If any range args are present in the argument list.
+        """
+        result = []
+        current = self._element
+        while isinstance(current,TTDerivedTypeMember):
+            current = current._element
+        if type(current) is TTFunctionCallOrTensorAccess:
+            return True
+        else:
+            return False
+    
+    def last_element_args(self):
+        """If any range args are present in the argument list.
+        """
+        result = []
+        current = self._element
+        while isinstance(current,TTDerivedTypeMember):
+            current = current._element
+        if type(current) is TTFunctionCallOrTensorAccess:
+            return current._args
         else:
             return False
 
@@ -699,19 +737,19 @@ class TTAssignment(base.TTNode):
         loop_nest_end = ""
         original_f_str = self.f_str()
         # TODO fix should be moved into parser preprocessing stage
-        for i, matrix_range in enumerate(self._lhs.matrix_range_args()):
+        for i, ttrange in enumerate(self._lhs.bounds()):
             loop_var_name = "_" + chr(
                 ord('a') + i) # Fortran names cannot start with "_"
-            matrix_range.set_loop_var(loop_var_name)
-            lbound = matrix_range.lBound()
+            ttrange.set_loop_var(loop_var_name)
+            lbound = ttrange.l_bound()
             if not len(lbound):
                 lbound = "{name}_lb{i}".format(name=name, i=i + 1)
-            ubound = matrix_range.uBound()
+            ubound = ttrange.u_bound()
             if not len(ubound):
                 ubound = "({lbound} + {name}_n{i} - 1)".format(lbound=lbound,
                                                                name=name,
                                                                i=i + 1)
-            stride = matrix_range.stride()
+            stride = ttrange.stride()
             if not len(stride):
                 stride = "1"
             loop_nest_start = "do {var}={lb},{ub},{step}\n".format(
@@ -721,14 +759,14 @@ class TTAssignment(base.TTNode):
         if len(loop_nest_start):
             # TODO put into options
             for rvalue in base.find_all(self._rhs, searched_type=TTRValue):
-                for i, matrix_range in enumerate(rvalue.matrix_range_args()):
+                for i, ttrange in enumerate(rvalue.bounds()):
                     loop_var_name = "_" + chr(
                         ord('a') + i) # Fortran names cannot start with "_"
-                    matrix_range.set_loop_var(loop_var_name)
+                    ttrange.set_loop_var(loop_var_name)
             loop_nest_start += "! TODO(gpufort) please check if this conversion was done correctly\n"
             loop_nest_start += "! original: {}\n".format(original_f_str)
             result = loop_nest_start + self.f_str() + "\n" + loop_nest_end
-            return annotated_do_loop.parseString(result)[0]
+            return do_loop.parseString(result)[0]
         else:
             return self
 
@@ -752,20 +790,6 @@ class TTAssignment(base.TTNode):
         else:
             return self._lhs.f_str() + "=" + flatten_arithmetic_expression(
                 self._rhs, converter=base.make_f_str) + ";\n"
-
-
-class TTRange(base.TTNode):
-
-    def _assign_fields(self, tokens):
-        self._begin, self._end = tokens
-        del self._tokens
-
-    def f_str(self):
-        return self._begin.f_str() + ":" + self._end.f_str()
-
-    def c_str(self):
-        return self.f_str()
-
 
 class TTComplexAssignment(base.TTNode):
 
@@ -817,26 +841,26 @@ class TTIntentQualifier(base.TTNode):
         return "intent({0})".format(self._intent)
 
 
-class TTMatrixRange(base.TTNode):
+class TTRange(base.TTNode):
 
     def _assign_fields(self, tokens):
         self._lbound, self._ubound, self._stride = tokens
-        self._loop_var = ""
+        self._f_str = None
 
     def set_loop_var(self, name):
         self._loop_var = name
 
-    def lBound(self, converter=base.make_c_str):
+    def l_bound(self, converter=base.make_c_str):
         return converter(self._lbound)
 
-    def uBound(self, converter=base.make_c_str):
+    def u_bound(self, converter=base.make_c_str):
         return converter(self._ubound)
 
     def unspecified_l_bound(self):
-        return not len(self.lBound())
+        return not len(self.l_bound())
 
     def unspecified_u_bound(self):
-        return not len(self.uBound())
+        return not len(self.u_bound())
 
     def stride(self, converter=base.make_c_str):
         return converter(self._stride)
@@ -865,9 +889,12 @@ class TTMatrixRange(base.TTNode):
         else:
             return "/*TODO fix this BEGIN*/{0}/*fix END*/".format(self.f_str())
 
+    def overwrite_f_str(self):
+        self._f_str = f_str
+    
     def f_str(self):
-        if len(self._loop_var):
-            return self._loop_var # if a do loop is wrapped around this range
+        if self._f_str != None
+            return self._f_str
         else:
             result = ""
             if not self._lbound is None:
@@ -891,7 +918,7 @@ class TTBounds(base.TTNode):
     where
     
     ```python 
-    dimension_value = ( matrix_range | arithmetic_expression | Literal("*"))
+    dimension_value = ( range | arithmetic_expression | Literal("*"))
     ```
     """
 
@@ -909,7 +936,7 @@ class TTBounds(base.TTNode):
         for dim in self._bounds:
             result |= type(dim) is str and dim == "*"
             result |= type(dim) in [
-                TTMatrixRange
+                TTRange
             ] and (dim.unspecified_l_bound() or dim.unspecified_u_bound())
         return result
 
@@ -930,8 +957,8 @@ class TTBounds(base.TTNode):
         for el in self._bounds:
             if type(el) is TTArithmeticExpression:
                 result.append(["1", converter(el)])
-            elif type(el) is TTMatrixRange:
-                result.append([el.lBound(converter), el.uBound(converter)])
+            elif type(el) is TTRange:
+                result.append([el.l_bound(converter), el.u_bound(converter)])
             elif el in [":", "*"]:
                 pass
         return result
@@ -1134,8 +1161,8 @@ class TTStatement(base.TTNode):
     One example is converting to colon operations to do loops.
     """
 
-    def _assign_fields(self, tokens):
-        self._statement = tokens
+    def _assign_fields(self, token):
+        self._statement = token
 
     def children(self):
         return [self._statement]
@@ -1214,9 +1241,8 @@ grammar.conjugate_double_complex.setParseAction(TTConjugate) # same action
 grammar.size_inquiry.setParseAction(TTSizeInquiry)
 grammar.lbound_inquiry.setParseAction(TTLboundInquiry)
 grammar.ubound_inquiry.setParseAction(TTUboundInquiry)
-grammar.matrix_range.setParseAction(TTMatrixRange)
+grammar.array_range.setParseAction(TTRange)
 grammar.bounds.setParseAction(TTBounds)
-grammar.matrix_ranges.setParseAction(TTBounds)
 grammar.dimension_qualifier.setParseAction(TTDimensionQualifier)
 grammar.intent_qualifier.setParseAction(TTIntentQualifier)
 grammar.arithmetic_expression.setParseAction(TTArithmeticExpression)

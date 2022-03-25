@@ -255,7 +255,14 @@ def _parse_fortran_code(statements, scope=None):
             try:
                 parse_result = tree.grammar.fortran_assignment.parseString(
                     stmt_no_comment, parseAll=True)
-                append_(parse_result[0], "assignment")
+                statement = tree.TTStatement(stmt_no_comment, 0, parse_result[0])
+                if (level == 0
+                   and curr_offload_region != None 
+                   and curr_offload_loop == None):
+                    append_(tree.TTLoopNest(stmt_no_comment,"", [curr_offload_region, [statement]]),\
+                            "offloaded array assignment")
+                else:
+                    append_(statement, "assignment")
             except Exception as e:
                 error_("assignment", e)
         elif util.parsing.is_subroutine_call(tokens):
@@ -288,13 +295,14 @@ def parse_attributes(ttattributes):
 # while they are specified with ACC,OMP.
 
 
-def parse_loop_kernel(fortran_statements, scope=None):
+def parse_loopnest(fortran_statements, scope=None):
     """:return: C snippet equivalent to original Fortran code.
     """
-    ttloopkernel = _parse_fortran_code(fortran_statements).body[0]
+    ttloopnest = _parse_fortran_code(fortran_statements).body[0]
+    curr_offload_region = None
 
-    ttloopkernel.scope = scope
-    return ttloopkernel
+    ttloopnest.scope = scope
+    return ttloopnest
 
 
 def parse_procedure_body(fortran_statements, scope=None, result_name=""):

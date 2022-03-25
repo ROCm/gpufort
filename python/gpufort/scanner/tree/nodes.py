@@ -631,12 +631,9 @@ class STDirective(STNode):
     def __init__(self,
                  first_linemap,
                  first_linemap_first_statement,
-                 directive_no,
                  sentinel="!$cuf"):
         STNode.__init__(self, first_linemap, first_linemap_first_statement)
         self._sentinel = sentinel
-        self._directive_no = directive_no
-
 
 class STLoopNest(STNode):
 
@@ -667,7 +664,7 @@ class STLoopNest(STNode):
         parent_tag = self.parent.tag()
         scope = indexer.scope.create_scope(index, parent_tag)
         try:
-            self.parse_result = translator.parse_loop_kernel(self.code, scope)
+            self.parse_result = translator.parse_loopnest(self.code, scope)
         except util.error.SyntaxError as e:
             raise util.error.SyntaxError("{}:{}:{}".format(
                     self._linemaps[0]["file"],self._linemaps["0"]["lineno"],e.msg)) from e
@@ -891,7 +888,8 @@ class STMemcpy(STNode):
                   statements_fully_cover_lines,
                   index=[]): 
         # TODO backend specific, move to cuf subpackage
-        if "cuf" in opts.source_dialects:
+        # TODO remove completely and make subcase of assignment
+        if "cuf" in opts.source_dialects and isinstance(self.parent, STContainerBase):
             indent = self.first_line_indent()
             def repl_memcpy_(parse_result):
                 dest_name = parse_result.dest_name_f_str()
@@ -911,8 +909,6 @@ class STMemcpy(STNode):
                     return (textwrap.indent(subst,indent), True)
                 else:
                     return ("", False) # no transformation; will not be considered
-
             return repl_memcpy_(self._parse_result)
         else:
             return ("", False)
-        #return util.pyparsing.replace_all(joined_statements,translator.tree.grammar.memcpy,repl_memcpy)

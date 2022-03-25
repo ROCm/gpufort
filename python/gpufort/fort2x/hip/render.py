@@ -5,6 +5,8 @@ import pprint
 
 import jinja2
 
+from . import opts
+
 from gpufort import util
 
 LOADER = jinja2.FileSystemLoader(
@@ -34,6 +36,9 @@ def generate_file(output_path, template_path, context={}):
     with open(output_path, "w") as output:
         output.write(generate_code(template_path, context))
 
-
 parent_dir = os.path.dirname(__file__)
-exec(open(os.path.join(parent_dir, "templates", "render.py.in")).read())
+include_file = os.path.abspath(os.path.join(parent_dir, "templates", "render.py.in"))
+if os.path.exists(include_file):
+    exec(open(include_file).read())
+else:
+    util.logging.log_warning(opts.log_prefix,"<module load>","file '{}' not found".format(include_file))

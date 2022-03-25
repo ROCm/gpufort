@@ -333,7 +333,10 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
         return [self._parent_directive, self.body]
 
     def __first_loop_annotation(self):
-        return self.body[0].annotation
+        if isinstance(self.body[0],TTDo):
+            return self.body[0].annotation
+        else:
+            return None
 
     def parent_directive(self):
         if self._parent_directive == None:
@@ -427,11 +430,11 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
 
     def grid_expr_f_str(self):
         """ only CUF """
-        return self.__first_loop_annotation().grid_expr_f_str()
+        return self.parent_directive().grid_expr_f_str()
 
     def block_expr_f_str(self):
         """ only CUF """
-        return self.__first_loop_annotation().block_expr_f_str()
+        return self.parent_directive().block_expr_f_str()
 
     def gang_team_private_vars(self, converter=base.make_f_str):
         result = self.parent_directive().gang_team_private_vars(converter)
@@ -442,12 +445,16 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
 
     # TODO move into analysis
     def gang_team_reductions(self, converter=base.make_f_str):
-        if self.__first_loop_annotation().discover_reduction_candidates():
-            return {
-                "UNKNOWN": self.reduction_candidates()
-            } # TODO default reduction type should be configurable
+        if self.__first_loop_annotation() != None:
+            if self.__first_loop_annotation().discover_reduction_candidates():
+                return {
+                    "UNKNOWN": self.reduction_candidates()
+                } # TODO default reduction type should be configurable
+            else:
+                return self.__first_loop_annotation().reductions(converter)
         else:
-            return self.__first_loop_annotation().reductions(converter)
+            return {}
+        
 
     def stream(self, converter=base.make_f_str):
         return self.parent_directive().stream(converter)

@@ -79,13 +79,13 @@ fortran_assignment = matrix_assignment | complex_assignment | assignment
 
 single_colon   = (Literal(":") + ~Literal(":")).suppress()
 stride         = single_colon + arithmetic_expression
-matrix_range0  = single_colon.copy().setParseAction(lambda tokens: [None,None])           
-matrix_range1a = (arithmetic_expression + single_colon).setParseAction(lambda tokens: [None,tokens[0]]) 
-matrix_range1b = (single_colon + arithmetic_expression).setParseAction(lambda tokens: [tokens[0],None])
-matrix_range2  = (arithmetic_expression + single_colon + arithmetic_expression)
-matrix_range   = (matrix_range2 | matrix_range1b | matrix_range1a | matrix_range0) + Optional(stride,default=None)
+array_range0  = single_colon.copy().setParseAction(lambda tokens: [None,None])           
+array_range1a = (arithmetic_expression + single_colon).setParseAction(lambda tokens: [None,tokens[0]]) 
+array_range1b = (single_colon + arithmetic_expression).setParseAction(lambda tokens: [tokens[0],None])
+array_range2  = (arithmetic_expression + single_colon + arithmetic_expression)
+array_range   = (array_range2 | array_range1b | array_range1a | array_range0) + Optional(stride,default=None)
 # define forward declared tokens
-func_rvalue       <<= matrix_range | arithmetic_logical_expression
+func_rvalue       <<= array_range | arithmetic_logical_expression
 
 # conversion functions
 # TODO check type of variable when translating
@@ -199,9 +199,9 @@ PUBLIC,PRIVATE,EXTERNAL,INTRINSIC = makeCaselessLiteral(\
   "public,private,external,intrinsic")
 simple_attribute = Regex(r"\b(public|private|external|intrinsic|value|parameter|allocatable|pointer|save|target|shared|device|pinned|managed|optional|vartype|contiguous)\b",re.IGNORECASE)
 # TODO identify how many what dimension(5) means. Range 1:5?
-dimension_value     = matrix_range | arithmetic_expression | Literal("*")
+dimension_value     = array_range | arithmetic_expression | Literal("*")
 bounds              = Group(LPAR + delimitedList(dimension_value) + RPAR)
-matrix_ranges       = Group(LPAR + delimitedList(matrix_range) + RPAR)
+bounds       = Group(LPAR + delimitedList(array_range) + RPAR)
 dimension_qualifier = Group(DIMENSION + bounds) # emits [*]
 intent_qualifier    = Group(INTENT + LPAR + (INOUT|IN|OUT) + RPAR)   # emits *
 qualifier           = intent_qualifier | dimension_qualifier | simple_attribute

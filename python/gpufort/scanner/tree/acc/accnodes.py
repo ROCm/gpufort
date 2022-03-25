@@ -15,17 +15,36 @@ class STAccDirective(nodes.STDirective):
     def register_backend(cls, dest_dialects, singleton):
         cls._backends.append((dest_dialects, singleton))
 
-    def __init__(self, first_linemap, first_linemap_first_statement,
-                 directive_no):
+    def __init__(self, first_linemap, first_linemap_first_statement, top_level_directive=None):
+        """
+        :param str top_level_directive: Overwrites the top level directive. If set to None, routine obtains
+                              the top-level main directive as first statement from the first
+                              linemap.
+        """
         nodes.STDirective.__init__(self,
                                    first_linemap,
                                    first_linemap_first_statement,
-                                   directive_no,
                                    sentinel="!$acc")
         self.dest_dialect = opts.destination_dialect
         #
-        _, self.directive_kind, self.directive_args, unprocessed_clauses = util.parsing.parse_acc_directive(self.first_statement())
+        self.top_level_directive = top_level_directive
+        directive_expr = top_level_directive if self.top_level_directive != None else self.first_statement()
+        _, self.directive_kind, self.directive_args, unprocessed_clauses = util.parsing.parse_acc_directive(directive_expr)
         self.clauses = util.parsing.parse_acc_clauses(unprocessed_clauses)
+   
+    # overwrite 
+    def first_statement(self):
+        if self.top_level_directive != None:
+            return self.top_level_directive
+        else:
+            return nodes.STDirective.first_statement(self)
+
+    # overwrite 
+    def statements(self, include_none_entries=False):
+        if self.top_level_directive != None:
+            return self.top_level_directive
+        else:
+            return nodes.STDirective.statements(self, include_none_entries)
 
     def is_directive(self,kind=[]):
         """:return if this is a directive of the given kind,
@@ -132,13 +151,26 @@ class STAccLoopNest(STAccDirective, nodes.STLoopNest):
     def register_backend(cls, dest_dialects, singleton):
         cls._backends.append((dest_dialects, singleton))
 
-    def __init__(self, first_linemap, first_linemap_first_statement,
-                 directive_no):
+    def __init__(self, first_linemap, first_linemap_first_statement, top_level_directive = None):
         STAccDirective.__init__(self, first_linemap,
-                                first_linemap_first_statement, directive_no)
+                                first_linemap_first_statement, top_level_directive)
         nodes.STLoopNest.__init__(self, first_linemap,
                                   first_linemap_first_statement)
         self.dest_dialect = opts.destination_dialect
+    
+    # overwrite 
+    def first_statement(self):
+        if self.top_level_directive != None:
+            return self.top_level_directive
+        else:
+            return nodes.STDirective.first_statement(self)
+
+    # overwrite 
+    def statements(self, include_none_entries=False):
+        result = nodes.STDirective.statements(self, include_none_entries)
+        if self.top_level_directive != None:
+            result.insert(0,self.top_level_directive)
+        return result
 
     def get_vars_present_per_default(self):
         """:return: If unmapped variables are present by default.

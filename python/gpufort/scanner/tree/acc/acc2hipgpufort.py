@@ -220,45 +220,46 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             result += self._host_data_directive()
         elif stnode.is_directive(["acc","end","host_data"]):
             result.append("end associate")
-        else: # data regions
-            ## Enter region commands must come first
-            if (stnode.is_directive(["acc","enter","data"])
-               or stnode.is_directive(["acc","data"])
-               or stnode.is_directive(["acc","parallel"])
-               or stnode.is_directive(["acc","parallel","loop"])
-               or stnode.is_directive(["acc","kernels"])
-               or stnode.is_directive(["acc","kernels","loop"])):
-                if not stnode.is_directive(["acc","data"]):
-                    result += self._handle_wait_clause()  
-                if stnode.is_directive(["acc","enter","data"]):
-                    result.append(_ACC_ENTER_REGION.format(
-                        options="unstructured=.true."))
-                else:
-                    result.append(_ACC_ENTER_REGION.format(
-                        options=""))
+        elif (stnode.is_directive(["acc","end","parallel"])
+             or stnode.is_directive(["acc","end","parallel","loop"])
+             or stnode.is_directive(["acc","end","kernels","loop"])):
+            pass
+        elif (stnode.is_directive(["acc","parallel"])
+             or stnode.is_directive(["acc","parallel","loop"])
+             or stnode.is_directive(["acc","kernels","loop"])):
+            assert False, "should not be called for parallel (loop) and kernels loop directive"
+        elif (stnode.is_directive(["acc","end","kernels"])
+             or stnode.is_directive(["acc","end","data"])):
+            result.append(_ACC_EXIT_REGION.format(
+                options=""))
+        # data regions
+        elif stnode.is_directive(["acc","enter","data"]):
+            result += self._handle_wait_clause()  
+            result.append(_ACC_ENTER_REGION.format(
+                options="unstructured=.true."))
+        elif stnode.is_directive(["acc","data"]):
+            result.append(_ACC_ENTER_REGION.format(
+                options=""))
+        elif stnode.is_directive(["acc","kernels"]):
+            result += self._handle_wait_clause()  
+            result.append(_ACC_ENTER_REGION.format(
+                options=""))
 
-            ## mapping clauses on data directives
-            if (stnode.is_directive(["acc","enter","data"])
-               or stnode.is_directive(["acc","exit","data"])
-               or stnode.is_directive(["acc","data"])
-               or stnode.is_directive(["acc","kernels"])):
-                async_expr = self._get_async_clause_expr()
-                finalize_expr = self._get_finalize_clause_expr();
-                if len(finalize_expr) and not stnode.is_directive(["acc","exit","data"]):
-                    raise util.error.SyntaxError("finalize clause may only appear on 'exit data' directive.")
-                result += self._handle_data_clauses(async_expr,finalize_expr)
+        ## mapping clauses on data and kernels directives
+        if (stnode.is_directive(["acc","enter","data"])
+           or stnode.is_directive(["acc","exit","data"])
+           or stnode.is_directive(["acc","data"])
+           or stnode.is_directive(["acc","kernels"])):
+            async_expr = self._get_async_clause_expr()
+            finalize_expr = self._get_finalize_clause_expr();
+            if len(finalize_expr) and not stnode.is_directive(["acc","exit","data"]):
+                raise util.error.SyntaxError("finalize clause may only appear on 'exit data' directive.")
+            result += self._handle_data_clauses(async_expr,finalize_expr)
 
-            ## Exit region commands must come last
-            if (stnode.is_directive(["acc","exit","data"]) 
-               or stnode.is_directive(["acc","end","data"])
-               or stnode.is_directive(["acc","end","kernels"])
-               or stnode.is_directive(["acc","end","parallel"])):
-                if stnode.is_directive(["acc","exit","data"]):
-                    result.append(_ACC_EXIT_REGION.format(
-                        options="unstructured=.true."))
-                else:
-                    result.append(_ACC_EXIT_REGION.format(
-                        options=""))
+        ## Exit region commands must come last
+        if stnode.is_directive(["acc","exit","data"]):
+            result.append(_ACC_EXIT_REGION.format(
+                options="unstructured=.true."))
         # _handle if
         if handle_if:
             self._handle_if_clause(result)
@@ -268,10 +269,12 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
 
 class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
 
-    def _map_array(clause_kind,var_expr,tavar,**kwargs):
+    def _map_array(clause_kind1,var_expr,tavar,**kwargs):
         asyncr,_   = util.kwargs.get_value("asyncr","",**kwargs)
         finalize,_ = util.kwargs.get_value("finalize","",**kwargs)
-        
+        all_present,_ = util.kwargs.get_value("all_present",False,**kwargs)       
+
+        clause_kind = clause_kind1 if not all_present else "present"
         if clause_kind in _DATA_CLAUSE_2_TEMPLATE_MAP:
             runtime_call_tokens = ["gpufort_acc_",clause_kind,"("]
             runtime_call_tokens.append(var_expr)
@@ -299,6 +302,7 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
                        self.stnode.kernel_args_tavars,
                        self.stnode.get_vars_present_per_default(),
                        AccLoopNest2HipGpufortRT._map_array,
+                       all_present=self.stnode.is_directive(["acc","kernels"]),
                        finalize=self._get_finalize_clause_expr(),
                        asyncr=self._get_async_clause_expr())
         for var_expr, argument in mappings:
@@ -313,16 +317,18 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
         result = []
         stloopnest = self.stnode
         ttloopnest = stloopnest.parse_result
-        if (stloopnest.is_directive(["acc","parallel","loop"])
-           or stloopnest.is_directive(["acc","kernels","loop"])):
-            result_directive, _ = Acc2HipGpufortRT.transform(
-                self,
-                joined_lines,
-                joined_statements,
-                statements_fully_cover_lines,
-                index,
-                handle_if=False)
-            result.append(textwrap.dedent(result_directive).rstrip("\n"))
+        
+        # if kernels loop / parallel / parallel loop -> enter_region
+        # if kernels -> do not emit enter_region
+        emit_enter_exit_region = \
+           (stloopnest.is_directive(["acc","kernels","loop"])
+           or stloopnest.is_directive(["acc","kernels","loop"])
+           or stloopnest.is_directive(["acc","parallel","loop"]))
+        
+        if emit_enter_exit_region:
+            result += self._handle_wait_clause()  
+            result.append(_ACC_ENTER_REGION.format(
+                options=""))
         
         queue, found_async = stloopnest.get_async_clause_queue()
         if not found_async:
@@ -336,8 +342,7 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
                                  statements_fully_cover_lines, index)
         result.append(textwrap.dedent(result_loopnest))
         
-        if (stloopnest.is_directive(["acc","kernels","loop"]) or
-           stloopnest.is_directive(["acc","parallel","loop"])):
+        if emit_enter_exit_region:
             result.append(_ACC_EXIT_REGION.format(options=""))
         
         self._handle_if_clause(result)

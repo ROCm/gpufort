@@ -42,9 +42,9 @@ def _parse_file(linemaps, index, **kwargs):
     fortran_file_path = linemaps[0]["file"]
     current_file = str(fortran_file_path)
     current_linemap = None
-    directive_no = 0
     current_tokens = None
     derived_type_parent = None
+    acc_kernels_directive = None
 
     def log_detection_(kind):
         nonlocal current_node
@@ -195,11 +195,9 @@ def _parse_file(linemaps, index, **kwargs):
             append_if_not_recording_(new)
 
     def in_kernels_acc_region_and_not_recording():
-        nonlocal current_node
         nonlocal keep_recording
-        return not keep_recording and\
-            (type(current_node) is tree.acc.STAccDirective) and\
-            (current_node.is_kernels_directive())
+        nonlocal acc_kernels_directive
+        return not keep_recording and acc_kernels_directive != None
 
     def DoLoopStart():
         nonlocal translation_enabled
@@ -378,31 +376,30 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal current_statement_no
         nonlocal keep_recording
         nonlocal do_loop_ctr
-        nonlocal directive_no
+        nonlocal acc_kernels_directive
         log_detection_("OpenACC directive")
-        new = tree.acc.STAccDirective(current_linemap, current_statement_no,
-                                      directive_no)
+        new = tree.acc.STAccDirective(current_linemap, current_statement_no)
         new.ignore_in_s2s_translation = not translation_enabled
-        directive_no += 1
         # if end directive ascend
         if (new.is_directive(["acc","end","kernels"]) 
-           and isinstance(current_node, tree.acc.STAccDirective)
-           and current_node.is_directive(["acc","kernels"])):
-            ascend_()
+           and acc_kernels_directive != None):
+            acc_kernels_directive = None
+            util.logging.log_debug(opts.log_prefix,"_parse_file","leave acc kernels region")
         # descend in constructs or new node
         elif (new.is_directive(["acc","parallel"]) # TODO this assumes that there will be always an acc loop afterwards
              or new.is_directive(["acc","parallel","loop"])
-             or new.is_directive(["acc","kernels","loop"])):
-            new = tree.acc.STAccLoopNest(current_linemap, current_statement_no,
-                                         directive_no)
+             or new.is_directive(["acc","kernels","loop"])
+             or (acc_kernels_directive != None
+                and new.is_directive(["acc","loop"]))):
+            new = tree.acc.STAccLoopNest(current_linemap, current_statement_no, acc_kernels_directive)
             new.kind = "acc-compute-construct"
             new.ignore_in_s2s_translation = not translation_enabled
             new._do_loop_ctr_memorised = do_loop_ctr
             descend_(new) # descend also appends
             keep_recording = True
         elif new.is_directive(["acc","kernels"]):
-            descend_(new) # descend also appends
-            #print("descending into kernels or parallel construct")
+            acc_kernels_directive = new.first_statement()
+            util.logging.log_debug(opts.log_prefix,"_parse_file","enter acc kernels region")
         else:
             # append new directive
             append_if_not_recording_(new)
@@ -414,14 +411,11 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal current_statement_no
         nonlocal do_loop_ctr
         nonlocal keep_recording
-        nonlocal directive_no
         log_detection_("CUDA Fortran loop kernel directive")
-        new = tree.cuf.STCufLoopNest(current_linemap, current_statement_no,
-                                     directive_no)
+        new = tree.cuf.STCufLoopNest(current_linemap, current_statement_no)
         new.kind = "cuf-kernel-do"
         new.ignore_in_s2s_translation = not translation_enabled
         new._do_loop_ctr_memorised = do_loop_ctr
-        directive_no += 1
         descend_(new)
         keep_recording = True
 
@@ -431,16 +425,21 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal current_linemap
         nonlocal current_statement_no
         nonlocal current_statement
+        nonlocal acc_kernels_directive
+        nonlocal index
         log_detection_("assignment")
         if in_kernels_acc_region_and_not_recording():
             parse_result = translator.tree.grammar.assignment_begin.parseString(
                 current_statement["body"])
             lvalue = translator.tree.find_first(parse_result, translator.tree.TTLValue)
+            # TODO
             if not lvalue is None and lvalue.has_matrix_range_args():
                 new = tree.acc.STAccLoopNest(current_linemap,
-                                             current_statement_no)
+                                             current_statement_no,
+                                             acc_kernels_directive)
                 new.ignore_in_s2s_translation = not translation_enabled
                 append_if_not_recording_(new)
+                new.complete_init(index)
 
     def GpufortControl():
         nonlocal current_statement

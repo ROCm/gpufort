@@ -42,6 +42,7 @@ class TemplateGenerator:
                     for regex in self.macro_filters:
                         if regex.match(parse_result[0]):
                             if self.verbose:
+                                print(parse_result)
                             macro_name = parse_result[0]
                             macro_args = parse_result[1:]
                             macro_signature = "".join([macro_name,"(",\

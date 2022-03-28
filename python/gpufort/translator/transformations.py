@@ -3,93 +3,41 @@
 from gpufort import util
 from gpufort import indexer
 
-from . import base
-from . import fortran
+from . import tree
+from . import analysis
+from . import parser
 
-#def convert_to_do_loop_nest_if_necessary(ttassignment,scope,fortran_style_tensors=True):
-#
-#    """
-#    - step through bounds
-#    - if type is range
-#      - get upper bound
-#        - not found: use a_lb<i>+a_n<i>-1
-#      - get lower bound
-#         - not found: use a_lb<i>
-#    """
-#    name = self._lhs.name()
-#    loop_nest_start = ""
-#    loop_nest_end = ""
-#    original_f_str = self.f_str()
-#    # TODO fix should be moved into parser preprocessing stage
-#    for i, ttrange in enumerate(self._lhs.bounds()):
-#        loop_var_name = "_" + chr(
-#            ord('a') + i) # Fortran names cannot start with "_"
-#        ttrange.set_loop_var(loop_var_name)
-#        lbound = ttrange.l_bound()
-#        if not len(lbound):
-#            if fortran_style_tensors:
-#                lbound = "lbound({name},{i})".format(name=name, i=i + 1)
-#            else:
-#                lbound = "{name}_lb{i}".format(name=name, i=i + 1)
-#        ubound = ttrange.u_bound()
-#        if not len(ubound):
-#            if fortran_style_tensors:
-#                ubound = "ubound({name},{i})".format(name=name, i=i + 1)
-#            else:
-#                ubound = "({ubound} + {name}_n{i} - 1)".format(ubound=ubound,
-#                                                               name=name,
-#                                                               i=i + 1)
-#        stride = ttrange.stride()
-#        if not len(stride):
-#            stride = "1"
-#        loop_nest_start = "do {var}={lb},{ub},{step}\n".format(
-#            var=loop_var_name, lb=lbound, ub=ubound,
-#            step=stride) + loop_nest_start
-#        loop_nest_end = "end do\n" + loop_nest_end
-#    if len(loop_nest_start):
-#        # TODO put into options
-#        for rvalue in base.find_all(self._rhs, searched_type=TTRValue):
-#            for i, ttrange in enumerate(rvalue.bounds()):
-#                loop_var_name = "_" + chr(
-#                    ord('a') + i) # Fortran names cannot start with "_"
-#                ttrange.set_loop_var(loop_var_name)
-#        loop_nest_start += "! TODO(gpufort) please check if this conversion was done correctly\n"
-#        loop_nest_start += "! original: {}\n".format(original_f_str)
-#        result = loop_nest_start + self.f_str() + "\n" + loop_nest_end
-#        return do_loop.parseString(result)[0]
-#    else:
-#        return self
-    
-def _collect_ranges(function_call_args,include_none_values=False) 
+def _collect_ranges(function_call_args,include_none_values=False):
         ttranges = []
-        for i,enumerate(ttnode in function_call_args):
-            if isinstance(ttnode, fortran.TTRange):
+        for i,elem in enumerate(function_call_args):
+            ttnode = elem[0]
+            if isinstance(ttnode, tree.TTRange):
                 ttranges.append(ttnode)
             elif include_none_values:
                 ttranges.append(None)
         return ttranges
 
-def _collect_ranges_in_lrvalue(ttnode,include_none_values=False):
+def _collect_ranges_in_lrvalue(lrvalue,include_none_values=False):
     """
     :return A list of range objects. If the list is empty, no function call
             or tensor access has been found. If the list contains a None element
             this implies that a function call or tensor access has been found 
             was scalar index argument was used.
     """
-    current = ttnode
-    if isinstance(current,fortran.TTFunctionCallOrTensorAccess):
-        return collect_ranges_(current,include_none_values)
-    elif isinstance(current,fortran.TTDerivedTypeMember):
+    current = lrvalue._value
+    if isinstance(current,tree.TTFunctionCallOrTensorAccess):
+        return _collect_ranges(current._args,include_none_values)
+    elif isinstance(current,tree.TTDerivedTypeMember):
         result = []
         while current == TTDerivedTypeMember:
-            if isinstance(current._type,fortran.TTFunctionCallOrTensorAccess):
-                result += collect_ranges_(current._type._args,include_none_values)
-            if isinstance(current._element,fortran.TTFunctionCallOrTensorAccess):
-                result += collect_ranges_(current._element._args,include_none_values)
+            if isinstance(current._type,tree.TTFunctionCallOrTensorAccess):
+                result += _collect_ranges(current._type._args,include_none_values)
+            if isinstance(current._element,tree.TTFunctionCallOrTensorAccess):
+                result += _collect_ranges(current._element._args,include_none_values)
             current = current._element
         return result
 
-def _create_do_loop_statements_fstr(ranges,loop_indices):
+def _create_do_loop_statements(ranges,loop_indices,fortran_style_tensors):
     do_statements     = []
     end_do_statements = []
     for i, ttrange in enumerate(ranges,1):
@@ -111,15 +59,13 @@ def _create_do_loop_statements_fstr(ranges,loop_indices):
         stride = ttrange.stride()
         if len(stride):
             stride = "," + stride
-        indent = "  "*(i-1) 
-        do_statements.append("{indent}do {var}={lb},{ub}{step}\n".format(
-            indent=indent,
+        do_statements.append("do {var}={lb},{ub}{step}".format(
             var=loop_idx, lb=lbound, ub=ubound,
             step=stride))
-        end_do_statements.insert(0,"{indent}end do\n")
+        end_do_statements.insert(0,"end do")
     return do_statements, end_do_statements
 
-def expand_array_expression(ttassignment,scope,int_counter,fortran_style_tensors=True):
+def _expand_array_expression(ttassignment,scope,int_counter,fortran_style_tensors):
     """
     - step through bounds
     - if type is range
@@ -128,30 +74,53 @@ def expand_array_expression(ttassignment,scope,int_counter,fortran_style_tensors
       - get lower bound
          - not found: use a_lb<i>
     """
-    lvalue_f_str = base.make_f_str(ttassignment._lhs.value)
+    lvalue_f_str = tree.make_f_str(ttassignment._lhs._value)
     livar = indexer.scope.search_scope_for_var(scope,lvalue_f_str)
-    loop_indices = 
+    loop_indices = [] 
     if livar["rank"] > 0:
-        lvalue_ranges = _collect_ranges_in_lrvalue(ttassignment._lhs.value)
+        lvalue_ranges = _collect_ranges_in_lrvalue(ttassignment._lhs)
         if len(lvalue_ranges):
             loop_indices = [ "".join(["_i",str(int_counter+i)]) for i in range(0,len(lvalue_ranges)) ]
             for i,idx in enumerate(loop_indices):
                 lvalue_ranges[i].overwrite_f_str(idx)
             rvalue_ranges = []
-            for ttrvalue in base.find_all(ttassignment._rhs, searched_type=TTRValue):
-                rvalue_f_str = base.make_f_str(ttassignment._rhs.value)
-                rvalue_ranges = _collect_ranges_in_lrvalue(ttrvalue)
-                rivar = indexer.scope.search_scope_for_var(scope,rvalue_f_str)            
-                if len(lvalue_ranges) == len(rvalue_ranges):
-                    for i,idx in enumerate(loop_indices):
-                        lvalue_ranges[i].overwrite_f_str(idx)
-                else:
-                    raise util.error.LimitationError("failed to expand colon operator expression to loopnest: not enough colon expressions in rvalue argument list")
-        do_loop_statements, end_do_statements = _create_do_loop_statements_fstr)
-        int_counter += len(loop_indices)
-        return modified_expression, do_loop_statements, end_do_statements, int_counter += len(loop_indices), True
+            for ttrvalue in tree.find_all(ttassignment._rhs, searched_type=tree.TTRValue):
+                try:
+                    rvalue_f_str = tree.make_f_str(ttrvalue._value)
+                    rivar = indexer.scope.search_scope_for_var(scope,rvalue_f_str)
+                    if rivar["rank"] > 0:
+                        rvalue_ranges = _collect_ranges_in_lrvalue(ttrvalue)
+                        if len(rvalue_ranges):
+                            if len(lvalue_ranges) == len(rvalue_ranges):
+                                for i,idx in enumerate(loop_indices):
+                                    rvalue_ranges[i].overwrite_f_str(idx)
+                            else:
+                                raise util.error.LimitationError("failed to expand colon operator expression to loopnest: not enough colon expressions in rvalue argument list")
+                except util.error.LookupError:
+                    pass          
+            do_loop_statements, end_do_statements = _create_do_loop_statements(lvalue_ranges,loop_indices,fortran_style_tensors)
+            statements = do_loop_statements + [ttassignment.f_str()] + end_do_statements
+            return statements, int_counter + len(loop_indices), True
+        else:
+            return [], int_counter, False
     else:
-        return None, [], [], int_counter, False
+        return [], int_counter, False
+
+def expand_all_array_expressions(ttnode,scope,fortran_style_tensors=True):
+    def isassignmentstatement_(ttnode):
+        return (isinstance(ttnode,tree.TTStatement) 
+               and isinstance(ttnode._statement,tree.TTAssignment))
+    statements = analysis.find_all_matching_exclude_directives(ttnode,isassignmentstatement_)
+    int_counter = 1
+    for ttstatement in statements:
+        ttassignment = ttstatement._statement
+        statements, int_counter, modified =\
+          _expand_array_expression(ttassignment,scope,int_counter,
+                                   fortran_style_tensors)
+        if modified:
+            ttdo = parser.parse_fortran_code(statements).body[0] # parse returns ttroot
+            ttstatement._statement = ttdo
+    return int_counter
 
 def move_statements_into_loopnest_body(ttloopnest):
     # subsequent loop ranges must not depend on LHS of assignment
@@ -163,7 +132,7 @@ def collapse_loopnest(ttdos):
     problem_sizes = []
     for ttdo in ttdos:
         problem_sizes.append("({})".format(
-            ttdo.problem_size(converter=base.make_c_str)))
+            ttdo.problem_size(converter=tree.make_c_str)))
         ttdo.thread_index = "_remainder,_denominator" # side effects
         indices.append(ttdo.collapsed_loop_index_c_str())
     conditions = [ ttdos[0].hip_thread_bound_c_str() ]
@@ -199,7 +168,7 @@ def map_allocatable_pointer_derived_type_members_to_flat_arrays(lrvalues,loop_va
     substitutions = {}
     for lrvalue in lrvalues:
         ttnode = lrvalue.get_value()
-        if isinstance(ttnode,fortran.TTDerivedTypeMember):
+        if isinstance(ttnode,tree.TTDerivedTypeMember):
             ident = ttnode.identifier_f_str()
             ivar = indexer.scope.search_scope_for_var(scope,ident)
             if (ivar["rank"] > 0
@@ -224,9 +193,9 @@ def map_allocatable_pointer_derived_type_members_to_flat_arrays(lrvalues,loop_va
 def flag_tensors(lrvalues, scope):
     """Clarify types of function calls / tensor access that are not members of a struct."""
     for value in lrvalues:
-        if isinstance(value._value, fortran.TTFunctionCallOrTensorAccess):
+        if isinstance(value._value, tree.TTFunctionCallOrTensorAccess):
            try:
               _ = indexer.scope.search_scope_for_var(scope, value.f_str()) # just check if the var exists
-              value._value._is_tensor_access = base.True3
+              value._value._is_tensor_access = tree.True3
            except util.error.LookupError:
               pass

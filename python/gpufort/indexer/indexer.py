@@ -8,12 +8,14 @@ import concurrent.futures
 
 import json
 
+import pyparsing
+
 from gpufort import util
 from gpufort import translator
 from gpufort import linemapper
-from . import opts
 
-import pyparsing
+from . import opts
+from . import types
 from . import grammar
 
 class Node():
@@ -51,29 +53,7 @@ def create_index_records_from_declaration(statement):
     context = []
     for var in variables:
         name, bounds, rhs = var
-        ivar = {}
-        # basic
-        ivar["name"]   = name
-        ivar["f_type"] = f_type
-        ivar["kind"]   = kind
-        # TODO bytes per element can be computed on the fly
-        ivar["bytes_per_element"] = translator.num_bytes(f_type, kind, default=None)
-        if f_type == "type":
-            ivar["c_type"] = ivar["kind"] 
-        elif f_type == "character":
-            ivar["c_type"] = "char"
-            # TODO more carefully check if len or kind is specified for characters
-        elif f_type != "character": 
-            ivar["c_type"] = translator.convert_to_c_type(f_type, kind, "TODO unknown")
-        ivar["qualifiers"] = qualifiers
-        # ACC/OMP
-        ivar["declare_on_target"] = False
-        # arrays
-        ivar["bounds"] = bounds + dimension_bounds
-        ivar["rank"]   = len(ivar["bounds"])
-        # handle parameters
-        #ivar["value"] = None # TODO parse rhs if necessary
-        ivar["rhs"] = rhs
+        ivar = types.create_index_var(f_type,kind,name,qualifiers,bounds+dimension_bounds,rhs)
         context.append(ivar)
     return context
 
@@ -484,7 +464,6 @@ def create_index_from_snippet(snippet, **kwargs):
     index = []
     update_index_from_snippet(index, snippet, **kwargs)
     return index
-
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def search_derived_types(imodule, search_procedures=True):

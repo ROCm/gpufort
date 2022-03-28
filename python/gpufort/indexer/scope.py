@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-#!/usr/bin/env python3
 import os, sys, traceback
 import copy
 import re
@@ -11,57 +10,46 @@ from gpufort import util
 
 from . import opts
 from . import indexer
+from . import types
 
-ERR_SCOPER_RESOLVE_DEPENDENCIES_FAILED = 1001
-ERR_SCOPER_LOOKUP_FAILED = 1002
+def __default_implicit_type(var_expr):
+    if var_expr[0] in "ijklmn":
+        return "integer", None
+    else:
+        return "real", None
 
-__UNKNOWN = "UNKNOWN"
+def __implicit_type(var_expr,implicit_none,type_map):
+    """
+    :param dict type_map: contains a tuple of Fortran type and kind
+                          for certain letters.
+    :param bool implicit_none: 
+    """
+    if var_expr.isidentifier(): 
+        if len(type_map) and var_expr[0] in type_map:
+            return type_map[var_expr[0]]
+        elif var_expr[0:2] == "_i":
+            return "integer", None
+        elif not implicit_none:
+            return __default_implicit_type(var_expr)
+        else:
+            raise util.error.LookupError("no index record found for variable '{}' in scope".format(var_expr))
+    else:
+        raise util.error.LookupError("no index record found for variable '{}' in scope".format(var_expr))
 
-EMPTY_VARIABLE = {
-    "name": __UNKNOWN,
-    "f_type": __UNKNOWN,
-    "kind": __UNKNOWN,
-    "bytes_per_element": __UNKNOWN,
-    "c_type": __UNKNOWN,
-    "f_interface_type": __UNKNOWN,
-    "f_interface_qualifiers": __UNKNOWN,
-    "qualifiers": [],
-    "declare_on_target": __UNKNOWN,
-    "rank": -1,
-    "unspecified_bounds": __UNKNOWN,
-    "lbounds": __UNKNOWN,
-    "counts": __UNKNOWN,
-    "total_count": __UNKNOWN,
-    "total_bytes": __UNKNOWN,
-    "index_macro": __UNKNOWN,
-    "index_macro_with_placeholders": __UNKNOWN
-}
-
-EMPTY_TYPE = {"name": __UNKNOWN, "variables": []}
-
-EMPTY_PROCEDURE = {
-    "kind": __UNKNOWN,
-    "name": __UNKNOWN,
-    "result_name": __UNKNOWN,
-    "attributes": [],
-    "dummy_args": [],
-    "variables": [],
-    "procedures": [],
-    "used_modules": []
-}
-
-EMPTY_SCOPE = {"tag": "", "types": [], "variables": [], "procedures": []}
-
-__SCOPE_ENTRY_TYPES = ["procedures", "variables", "types"]
-
+def __lookup_implicitly_declared_var(var_expr,implicit_none,type_map={}):
+    """
+    :param dict type_map: contains a tuple of Fortran type and kind
+                          for certain letters.
+    :param bool implicit_none: 
+    """
+    f_type, kind = __implicit_type(var_expr,implicit_none,type_map)
+    return types.create_index_var(f_type,kind,var_expr)
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def _resolve_dependencies(scope,
-                                 index_record,
-                                 index,
-                                 ):
-    """
-    Include variable, type, and procedure records from modules used
+                          index_record,
+                          index):
+    """Include variable, type, and procedure records from modules used
     by the current record (module,program or procedure).
 
     :param dict scope: the scope that you updated with information from the used modules.
@@ -93,11 +81,11 @@ def _resolve_dependencies(scope,
                             "_resolve_dependencies.handle_use_statements",
                             "use all definitions from module '{}'".format(
                                 imodule["name"]))
-                        for entry_type in __SCOPE_ENTRY_TYPES:
+                        for entry_type in types.SCOPE_ENTRY_TYPES:
                             scope[entry_type] += module[entry_type]
                     else:
                         for mapping in used_module["only"]:
-                            for entry_type in __SCOPE_ENTRY_TYPES:
+                            for entry_type in types.SCOPE_ENTRY_TYPES:
                                 for entry in module[entry_type]:
                                     if entry["name"] == mapping["original"]:
                                         util.logging.log_debug2(opts.log_prefix,
@@ -156,7 +144,7 @@ def _search_index_for_type_or_procedure(index, parent_tag, entry_name,
       {"parent_tag": parent_tag,"entry_name": entry_name,"entry_type": entry_type})
 
     if parent_tag is None:
-        scope = dict(EMPTY_SCOPE) # top-level subroutine/function
+        scope = dict(types.EMPTY_SCOPE) # top-level subroutine/function
         scope["procedures"] = [index_entry for index_entry in index\
           if index_entry["name"]==entry_name and index_entry["kind"] in ["subroutine","function"]]
     else:
@@ -197,7 +185,7 @@ def create_scope(index, tag):
 
     # check if already a scope exists for the tag or if
     # it can be derived from a higher-level scope
-    existing_scope = EMPTY_SCOPE
+    existing_scope = types.EMPTY_SCOPE
     nesting_level = -1 # -1 implies that nothing has been found
     scopes_to_delete = []
     for s in opts.scopes:
@@ -260,7 +248,7 @@ def create_scope(index, tag):
                     _resolve_dependencies(new_scope, current_record,
                                                  index)
                     # 2. now include the current record's
-                    for entry_type in __SCOPE_ENTRY_TYPES:
+                    for entry_type in types.SCOPE_ENTRY_TYPES:
                         if entry_type in current_record:
                             new_scope[entry_type] += current_record[entry_type]
                     current_record_list = current_record["procedures"]
@@ -314,8 +302,14 @@ def search_scope_for_var(scope,
                 reversed(matching_type["variables"]), pos + 1)
         return result
 
-    result = lookup_from_left_to_right_(reversed(scope["variables"]))
-
+    try:
+        result = lookup_from_left_to_right_(reversed(scope["variables"]))
+    except util.error.LookupError as e:
+        # TODO check what implicit rules are set, should be set in index and scope
+        # if scope["implicit"] == "none"
+        # elif scope["implicit"] == "default"
+        # elif scope["implicit"] == ... 
+        result = __lookup_implicitly_declared_var(var_expr,implicit_none=True,type_map={})
     # resolve
     if resolve:
         pass
@@ -364,7 +358,7 @@ def search_scope_for_type(scope, type_name):
     :param str type_name: lower case name of the searched type. Simple identifier such as 'mytype'.
     """
     result = _search_scope_for_type_or_procedure(
-        scope, type_name, "types", EMPTY_TYPE)
+        scope, type_name, "types", types.EMPTY_TYPE)
     return result
 
 
@@ -374,7 +368,7 @@ def search_scope_for_procedure(scope, procedure_name):
     :param str procedure_name: lower case name of the searched procedure. Simple identifier such as 'mysubroutine'.
     """
     result = _search_scope_for_type_or_procedure(
-        scope, procedure_name, "procedures", EMPTY_PROCEDURE)
+        scope, procedure_name, "procedures", types.EMPTY_PROCEDURE)
     return result
 
 
@@ -403,7 +397,7 @@ def search_index_for_type(index, parent_tag, type_name):
     util.logging.log_enter_function(opts.log_prefix,"search_index_for_type",\
       {"parent_tag": parent_tag,"type_name": type_name})
     result = _search_index_for_type_or_procedure(
-        index, parent_tag, type_name, "types", EMPTY_TYPE)
+        index, parent_tag, type_name, "types", types.EMPTY_TYPE)
     util.logging.log_leave_function(opts.log_prefix, "search_index_for_type")
     return result
 
@@ -417,7 +411,7 @@ def search_index_for_procedure(index, parent_tag, procedure_name):
     util.logging.log_enter_function(opts.log_prefix,"search_index_for_procedure",\
       {"parent_tag": parent_tag,"procedure_name": procedure_name})
     result = _search_index_for_type_or_procedure(
-        index, parent_tag, procedure_name, "procedures", EMPTY_PROCEDURE)
+        index, parent_tag, procedure_name, "procedures", types.EMPTY_PROCEDURE)
     util.logging.log_leave_function(opts.log_prefix,
                                     "search_index_for_procedure")
     return result

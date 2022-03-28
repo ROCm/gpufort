@@ -38,7 +38,7 @@ end do
 
 for snippet in testdata:
     try:
-        translator.parse_loop_kernel(snippet.splitlines())
+        translator.parse_loopnest(snippet.splitlines())
     except Exception as e:
         print(" - FAILED",file=sys.stderr)
         print("failed to parse '{}'".format(snippet),file=sys.stderr)

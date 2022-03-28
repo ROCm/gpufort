@@ -3,3 +3,4 @@
 from .indexer import *
 from . import scope
 from . import opts
+from . import types

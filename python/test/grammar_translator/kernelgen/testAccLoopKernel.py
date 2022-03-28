@@ -186,7 +186,7 @@ translator.LOOP_COLLAPSE_STRATEGY="collapse"
 #print(result.c_str())
 #print(result.problem_size())
 c_snippet, problem_size, kernel_launch_info, identifier_names, localLValues, loop_vars, reduction =\
-        translator.parse_loop_kernel(test)
+        translator.parse_loopnest(test)
 print(c_snippet)
 
 #for i in range(len(testdata)):

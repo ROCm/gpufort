@@ -384,6 +384,7 @@ def _parse_file(linemaps, index, **kwargs):
         if (new.is_directive(["acc","end","kernels"]) 
            and acc_kernels_directive != None):
             acc_kernels_directive = None
+            append_if_not_recording_(new)
             util.logging.log_debug(opts.log_prefix,"_parse_file","leave acc kernels region")
         # descend in constructs or new node
         elif (new.is_directive(["acc","parallel"]) # TODO this assumes that there will be always an acc loop afterwards
@@ -399,6 +400,7 @@ def _parse_file(linemaps, index, **kwargs):
             keep_recording = True
         elif new.is_directive(["acc","kernels"]):
             acc_kernels_directive = new.first_statement()
+            append_if_not_recording_(new)
             util.logging.log_debug(opts.log_prefix,"_parse_file","enter acc kernels region")
         else:
             # append new directive
@@ -433,7 +435,7 @@ def _parse_file(linemaps, index, **kwargs):
                 current_statement["body"])
             lvalue = translator.tree.find_first(parse_result, translator.tree.TTLValue)
             # TODO
-            if not lvalue is None and lvalue.has_matrix_range_args():
+            if not lvalue is None and lvalue.has_range_args():
                 new = tree.acc.STAccLoopNest(current_linemap,
                                              current_statement_no,
                                              acc_kernels_directive)

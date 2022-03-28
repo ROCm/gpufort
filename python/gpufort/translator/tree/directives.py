@@ -6,12 +6,13 @@ import pyparsing
 
 from gpufort import indexer
 from gpufort import util
+
 from .. import prepostprocess
 from .. import opts
+
 from . import base
 from . import fortran
 from . import grammar
-from . import transformations
 
 class ILoopAnnotation():
 
@@ -327,7 +328,7 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
 
     def _assign_fields(self, tokens):
         self._parent_directive, self.body = tokens
-        self.scope = indexer.scope.EMPTY_SCOPE
+        self.scope = indexer.types.EMPTY_SCOPE
 
     def children(self):
         return [self._parent_directive, self.body]
@@ -345,6 +346,8 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
             return self._parent_directive
 
     # TODO move into analysis
+    # TODO too simplistic: Does not take into account
+    # that loops may be interdependent
     def loop_vars(self):
         num_outer_loops_to_map = int(self.parent_directive().num_collapse())
         identifier_names = []
@@ -354,13 +357,13 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
         if num_outer_loops_to_map > 0:
             return identifier_names[0:num_outer_loops_to_map]
         else:
-            return []
+            return identifier_names[0:1]
 
     # TODO move into analysis
     def problem_size(self):
         num_outer_loops_to_map = int(self.parent_directive().num_collapse())
-        if opts.loop_collapse_strategy == "grid" or num_outer_loops_to_map == 1:
-            num_outer_loops_to_map = min(3, num_outer_loops_to_map)
+        if opts.loop_collapse_strategy == "grid" or num_outer_loops_to_map <= 1:
+            num_outer_loops_to_map = max(1,min(3, num_outer_loops_to_map))
             result = ["-1"] * num_outer_loops_to_map
             do_loops = base.find_all(self.body[0], TTDo)
             for i, loop in enumerate(do_loops):

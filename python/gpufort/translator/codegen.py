@@ -4,6 +4,8 @@ from . import opts
 from . import tree
 from . import prepostprocess
 from . import analysis
+from . import parser
+from . import transformations
 
 def translate_procedure_body_to_hip_kernel_body(ttprocedurebody, scope, **kwargs):
     """
@@ -11,11 +13,14 @@ def translate_procedure_body_to_hip_kernel_body(ttprocedurebody, scope, **kwargs
     Non-empty result names will be propagated to
     all return statements.
     """
-    # 0. Clarify types of function calls / tensor access that are not
-    # members of a struct
+    fortran_style_tensor_access,_ = util.kwargs.get_value("fortran_style_tensor_access",opts.fortran_style_tensor_access,**kwargs)
+    
+    transformations.expand_all_array_expressions(ttprocedurebody, scope, fortran_style_tensor_access)
     lrvalues = analysis.find_all_matching_exclude_directives(ttprocedurebody.body,
                                                              lambda ttnode: isinstance(ttnode,tree.IValue))
-    tree.transformations.flag_tensors(lrvalues, scope)
+    
+    # TODO pass Fortran style access option down here too
+    transformations.flag_tensors(lrvalues, scope)
     
     # 1. Propagate result variable name to return statements
     if len(ttprocedurebody.result_name):
@@ -38,16 +43,19 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
     """
     loop_collapse_strategy,_ = util.kwargs.get_value("loop_collapse_strategy",opts.loop_collapse_strategy,**kwargs)
     map_to_flat_arrays,_     = util.kwargs.get_value("map_to_flat_arrays",opts.map_to_flat_arrays,**kwargs)
+    fortran_style_tensor_access,_ = util.kwargs.get_value("fortran_style_tensor_access",opts.fortran_style_tensor_access,**kwargs)
 
-    # 0. Clarify types of function calls / tensor access that are not
-    # members of a struct
+    transformations.expand_all_array_expressions(ttloopnest.body, scope, fortran_style_tensor_access)
     lrvalues = analysis.find_all_matching_exclude_directives(ttloopnest.body,
                                                              lambda ttnode: isinstance(ttnode,tree.IValue))
-    tree.transformations.flag_tensors(lrvalues, scope)
+    # TODO pass Fortran style access option down here too
+    transformations.flag_tensors(lrvalues, scope)
+    
+    
     substitutions = {}
     if map_to_flat_arrays:
         loop_vars = ttloopnest.loop_vars()
-        substitutions = tree.transformations.map_allocatable_pointer_derived_type_members_to_flat_arrays(lrvalues,loop_vars,scope)
+        substitutions = transformations.map_allocatable_pointer_derived_type_members_to_flat_arrays(lrvalues,loop_vars,scope)
     
     # TODO look up correct signature of called device functions from index
     # 1.1 Collapsing
@@ -57,10 +65,7 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
     else: # "collapse" or num_outer_loops_to_map > 3
         dim = 1
     tidx = "__gidx{dim}".format(dim=dim)
-    # 1. unpack colon (":") expressions
-    for expr in tree.find_all(ttloopnest.body[0], tree.TTStatement):
-        if type(expr._statement) is tree.TTAssignment:
-            expr._statement = expr._statement.convert_to_do_loop_nest_if_necessary()
+    
     # 2. Identify reduced variables
     for expr in tree.find_all(ttloopnest.body[0], tree.TTAssignment):
         for value in tree.find_all_matching(
@@ -92,9 +97,9 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
     if num_outer_loops_to_map == 1 or (opts.loop_collapse_strategy
                                        == "grid" and
                                        num_outer_loops_to_map <= 3):
-        indices, conditions = tree.transformations.map_loopnest_to_grid(do_loops,num_outer_loops_to_map)
+        indices, conditions = transformations.map_loopnest_to_grid(do_loops,num_outer_loops_to_map)
     else: # "collapse" or num_outer_loops_to_map > 3
-        indices, conditions = tree.transformations.collapse_loopnest(do_loops)
+        indices, conditions = transformations.collapse_loopnest(do_loops)
     
     c_snippet = "{0}\n{2}if ({1}) {{\n{3}\n}}".format(\
         "".join(indices),"&&".join(conditions),reduction_preamble,tree.make_c_str(ttloopnest.body[0]))

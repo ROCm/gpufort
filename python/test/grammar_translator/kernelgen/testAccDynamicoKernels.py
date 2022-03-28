@@ -36,13 +36,13 @@ translator.LOOP_COLLAPSE_STRATEGY="collapse"
 
 print("k1:")
 c_snippet, problem_size, kernel_launch_info, identifier_names, localLValues, loop_vars, reduction =\
-        translator.parse_loop_kernel(k1)
+        translator.parse_loopnest(k1)
 print(c_snippet)
 print(problem_size[0])
 
 print("k2:")
 c_snippet, problem_size, kernel_launch_info, identifier_names, localLValues, loop_vars, reduction =\
-        translator.parse_loop_kernel(k2)
+        translator.parse_loopnest(k2)
 print(c_snippet)
 print(problem_size[0])
 

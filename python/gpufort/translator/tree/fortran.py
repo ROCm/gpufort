@@ -189,7 +189,7 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
         """
         return base.find_all(self._args, searched_type=TTRange)
 
-    def has_bounds(self):
+    def has_range_args(self):
         """If any range args are present in the argument list.
         """
         return not base.find_first(self._args,
@@ -212,7 +212,7 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
         elif self._is_tensor_access == base.False3:
             return False
         else:
-            return self.has_bounds() or\
+            return self.has_range_args() or\
                    not self.__guess_it_is_function()
 
     def name_c_str(self):
@@ -253,11 +253,11 @@ class IValue:
     def name(self):
         return self._value.f_str()
     
-    def has_bounds(self):
+    def has_range_args(self):
         if type(self._value) is TTFunctionCallOrTensorAccess:
-            return self._value.has_bounds()
+            return self._value.has_range_args()
         elif type(self._value) is TTDerivedTypeMember:
-            return self._value.last_element_has_bounds()
+            return self._value.last_element_has_range_args()
         else:
             return False
 
@@ -571,7 +571,7 @@ class TTDerivedTypeMember(base.TTNode):
         else:
             return []
 
-    def last_element_has_bounds(self):
+    def last_element_has_range_args(self):
         """If any range args are present in the argument list.
         """
         result = []
@@ -579,7 +579,7 @@ class TTDerivedTypeMember(base.TTNode):
         while isinstance(current,TTDerivedTypeMember):
             current = current._element
         if type(current) is TTFunctionCallOrTensorAccess:
-            return current.has_bounds()
+            return current.has_range_args()
         else:
             return False
     
@@ -723,73 +723,12 @@ class TTAssignment(base.TTNode):
     def _assign_fields(self, tokens):
         self._lhs, self._rhs = tokens
 
-    def convert_to_do_loop_nest_if_necessary(self):
-        """
-        - step through bounds
-        - if type is range
-          - get upper bound
-	    - not found: use a_lb<i>+a_n<i>-1
-	  - get lower bound
-	     - not found: use a_lb<i>
-        """
-        name = self._lhs.name()
-        loop_nest_start = ""
-        loop_nest_end = ""
-        original_f_str = self.f_str()
-        # TODO fix should be moved into parser preprocessing stage
-        for i, ttrange in enumerate(self._lhs.bounds()):
-            loop_var_name = "_" + chr(
-                ord('a') + i) # Fortran names cannot start with "_"
-            ttrange.set_loop_var(loop_var_name)
-            lbound = ttrange.l_bound()
-            if not len(lbound):
-                lbound = "{name}_lb{i}".format(name=name, i=i + 1)
-            ubound = ttrange.u_bound()
-            if not len(ubound):
-                ubound = "({lbound} + {name}_n{i} - 1)".format(lbound=lbound,
-                                                               name=name,
-                                                               i=i + 1)
-            stride = ttrange.stride()
-            if not len(stride):
-                stride = "1"
-            loop_nest_start = "do {var}={lb},{ub},{step}\n".format(
-                var=loop_var_name, lb=lbound, ub=ubound,
-                step=stride) + loop_nest_start
-            loop_nest_end = "end do\n" + loop_nest_end
-        if len(loop_nest_start):
-            # TODO put into options
-            for rvalue in base.find_all(self._rhs, searched_type=TTRValue):
-                for i, ttrange in enumerate(rvalue.bounds()):
-                    loop_var_name = "_" + chr(
-                        ord('a') + i) # Fortran names cannot start with "_"
-                    ttrange.set_loop_var(loop_var_name)
-            loop_nest_start += "! TODO(gpufort) please check if this conversion was done correctly\n"
-            loop_nest_start += "! original: {}\n".format(original_f_str)
-            result = loop_nest_start + self.f_str() + "\n" + loop_nest_end
-            return do_loop.parseString(result)[0]
-        else:
-            return self
+    def c_str(self):
+        return "".join([self._lhs.c_str(),"=",flatten_arithmetic_expression(self._rhs),";\n"])
 
-    def c_str(self, unpack=False):
-        """
-        :param unpack: Converts this assignment to a do loop nest if any
-        matrix ranges ([...]:[...]) are found.
-        """
-        if unpack:
-            return self.convert_to_do_loop_nest_if_necessary(
-            ).c_str()
-        else:
-            return  self._lhs.c_str(
-            ) + "=" + flatten_arithmetic_expression(self._rhs) + ";\n"
-
-    def f_str(self, unpack=False):
-        """
-        """
-        if unpack:
-            return self.convert_to_do_loop_nest_if_necessary().f_str()
-        else:
-            return self._lhs.f_str() + "=" + flatten_arithmetic_expression(
-                self._rhs, converter=base.make_f_str) + ";\n"
+    def f_str(self):
+        return "".join([self._lhs.f_str(),"=",flatten_arithmetic_expression(
+            self._rhs, converter=base.make_f_str),"\n"])
 
 class TTComplexAssignment(base.TTNode):
 
@@ -884,16 +823,13 @@ class TTRange(base.TTNode):
 
     def c_str(self):
         #return self.size(base.make_c_str)
-        if len(self._loop_var):
-            return self._loop_var # if a do loop is wrapped around this range
-        else:
-            return "/*TODO fix this BEGIN*/{0}/*fix END*/".format(self.f_str())
+        return "/*TODO fix this BEGIN*/{0}/*fix END*/".format(self.f_str())
 
-    def overwrite_f_str(self):
+    def overwrite_f_str(self,f_str):
         self._f_str = f_str
     
     def f_str(self):
-        if self._f_str != None
+        if self._f_str != None:
             return self._f_str
         else:
             result = ""

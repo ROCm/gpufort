@@ -16,7 +16,7 @@ from . import prepostprocess
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def _parse_fortran_code(statements, scope=None):
+def parse_fortran_code(statements):
     """
     :param list for
     
@@ -46,7 +46,7 @@ def _parse_fortran_code(statements, scope=None):
         curr.body.append(node)
         if kind != None:
             util.logging.log_debug2(
-                opts.log_prefix, "_parse_fortran_code.append_",
+                opts.log_prefix, "parse_fortran_code.append_",
                 "found {} in statement '{}'".format(kind, stmt))
 
     def descend_(node, kind, inc_level=True):
@@ -58,7 +58,7 @@ def _parse_fortran_code(statements, scope=None):
         if inc_level:
             level += 1
         util.logging.log_debug2(
-            opts.log_prefix, "_parse_fortran_code.append_",
+            opts.log_prefix, "parse_fortran_code.append_",
             "enter {} in statement '{}'".format(kind, stmt))
 
     def ascend_(kind):
@@ -68,7 +68,7 @@ def _parse_fortran_code(statements, scope=None):
         curr = curr.parent
         level = min(level - 1, 0)
         util.logging.log_debug2(
-            opts.log_prefix, "_parse_fortran_code.append_",
+            opts.log_prefix, "parse_fortran_code.append_",
             "leave {} in statement '{}'".format(kind, stmt))
 
     # error handling
@@ -77,22 +77,22 @@ def _parse_fortran_code(statements, scope=None):
         if exception != None:
             debug_msg = ": " + str(exception)
             util.logging.log_debug(opts.log_prefix,
-                                   "_parse_fortran_code", debug_msg)
+                                   "parse_fortran_code", debug_msg)
         raise SyntaxError(
             "failed to parse {} expression '{}'".format(expr, stmt))
 
     def warn_(expr, exception=None):
         nonlocal stmt1
-        util.logging.log_warn(opts.log_prefix, "_parse_fortran_code",
+        util.logging.log_warn(opts.log_prefix, "parse_fortran_code",
                               "ignored {} expression '{}'".format(expr, stmt))
         if exception != None:
             util.logging.log_debug(opts.log_prefix,
-                                   "_parse_fortran_code",
+                                   "parse_fortran_code",
                                    str(exception))
 
     def ignore_(expr):
         nonlocal stmt1
-        util.logging.log_debug3(opts.log_prefix, "_parse_fortran_code",
+        util.logging.log_debug3(opts.log_prefix, "parse_fortran_code",
                                 "ignored {} '{}'".format(expr, stmt))
 
     # parser loop
@@ -110,11 +110,11 @@ def _parse_fortran_code(statements, scope=None):
         else:
             stmt_no_comment = stmt.lower()
         util.logging.log_debug3(
-            opts.log_prefix, "_parse_fortran_code",
+            opts.log_prefix, "parse_fortran_code",
             "process statement '{}' (preprocessed: '{}')".format(stmt1, stmt))
         if len(tokens):
             util.logging.log_debug4(opts.log_prefix,
-                                    "_parse_fortran_code",
+                                    "parse_fortran_code",
                                     "tokens=['{}']".format("','".join(tokens)))
         # tree construction
         if util.parsing.is_blank_line(stmt):
@@ -133,7 +133,7 @@ def _parse_fortran_code(statements, scope=None):
                     curr_offload_region = parse_result[0]
                     curr_offload_loop = parse_result[0]
                     util.logging.log_debug2(
-                        opts.log_prefix, "_parse_fortran_code.append_",
+                        opts.log_prefix, "parse_fortran_code.append_",
                         "found {} in statement '{}'".format(
                             "loop offloading directive", stmt))
                 elif util.parsing.is_fortran_offload_region_directive(tokens):
@@ -141,7 +141,7 @@ def _parse_fortran_code(statements, scope=None):
                         stmt, parseAll=True)
                     curr_offload_region = parse_result[0]
                     util.logging.log_debug2(
-                        opts.log_prefix, "_parse_fortran_code.append_",
+                        opts.log_prefix, "parse_fortran_code.append_",
                         "found {} in statement '{}'".format(
                             "begin of offloaded region", stmt))
                 elif util.parsing.is_fortran_offload_loop_directive(tokens):
@@ -149,7 +149,7 @@ def _parse_fortran_code(statements, scope=None):
                         stmt, parseAll=True)
                     curr_offload_loop = parse_result[0]
                     util.logging.log_debug2(
-                        opts.log_prefix, "_parse_fortran_code.append_",
+                        opts.log_prefix, "parse_fortran_code.append_",
                         "found {} in statement '{}'".format(
                             "loop directive", stmt))
                 else:
@@ -298,7 +298,7 @@ def parse_attributes(ttattributes):
 def parse_loopnest(fortran_statements, scope=None):
     """:return: C snippet equivalent to original Fortran code.
     """
-    ttloopnest = _parse_fortran_code(fortran_statements).body[0]
+    ttloopnest = parse_fortran_code(fortran_statements).body[0]
     curr_offload_region = None
 
     ttloopnest.scope = scope
@@ -308,7 +308,7 @@ def parse_loopnest(fortran_statements, scope=None):
 def parse_procedure_body(fortran_statements, scope=None, result_name=""):
     """Parse a function/subroutine body.
     """
-    parse_result = _parse_fortran_code(fortran_statements)
+    parse_result = parse_fortran_code(fortran_statements)
     ttprocedurebody = tree.TTProcedureBody("", 0, [parse_result.body])
 
     ttprocedurebody.scope = scope

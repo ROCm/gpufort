@@ -151,10 +151,10 @@ class TestParseLoopKernel(unittest.TestCase):
     def tearDown(self):
         elapsed = time.time() - self.started_at
         print('{} ({}s, {} kernels)'.format(self.id(), round(elapsed, 6),len(self.testdata)))
-    def test_0_parse_loop_kernel(self):
+    def test_0_parse_loopnest(self):
         for snippet in self.testdata:
             try:
-                result = translator.parse_loop_kernel(snippet.splitlines(),self.scope)
+                result = translator.parse_loopnest(snippet.splitlines(),self.scope)
             except Exception as e:
                 print("failed to parse '{}'".format(snippet),file=sys.stderr)
                 raise e
@@ -163,7 +163,7 @@ class TestParseLoopKernel(unittest.TestCase):
             return re.sub("\s+|\t+|\n+|&","",text)
         for i,snippet in enumerate(self.testdata):
             try:
-                ttloopnest = translator.parse_loop_kernel(snippet.splitlines(),self.scope)
+                ttloopnest = translator.parse_loopnest(snippet.splitlines(),self.scope)
                 arrays = translator.analysis.arrays_in_subtree(ttloopnest, self.scope)
                 inout_arrays = translator.analysis.inout_arrays_in_subtree(ttloopnest, self.scope)
                 omp_snippet = translator.codegen.translate_loopnest_to_omp(snippet,ttloopnest,inout_arrays,arrays)

@@ -310,8 +310,17 @@ def _perfectly_nested_outer_do_loops(ttloopnest):
         # check for interdependent loops
         current = ttloopnest.body[0]
         ttdos.append(current)
-        while len(current.body) == 1 and isinstance(current.body[0],tree.TTDo):
-            current = current.body[0]
+        
+        def condition_(current):
+            return (len(current.body) == 1
+                   and (isinstance(current.body[0],tree.TTDo)
+                       or (isinstance(current.body[0],tree.TTStatement)
+                          and isinstance(current.body[0]._statement,tree.TTDo))))
+        while condition_(current):
+            if isinstance(current.body[0],tree.TTDo):
+                current = current.body[0]
+            else:
+                current = current.body[0]._statement
             ttdos.append(current)
         return ttdos, False
 

@@ -33,6 +33,7 @@ do j = 1, M
       y(i,j) = grid%x(i,j) * k
       k = k + 1
     end do
+    y(j,i:i+2) = grid%x(j,i:i+2)
   end do
 end do
 """

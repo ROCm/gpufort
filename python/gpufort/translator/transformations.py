@@ -29,7 +29,7 @@ def _collect_ranges_in_lrvalue(lrvalue,include_none_values=False):
         return _collect_ranges(current._args,include_none_values)
     elif isinstance(current,tree.TTDerivedTypeMember):
         result = []
-        while current == TTDerivedTypeMember:
+        while current == tree.TTDerivedTypeMember:
             if isinstance(current._type,tree.TTFunctionCallOrTensorAccess):
                 result += _collect_ranges(current._type._args,include_none_values)
             if isinstance(current._element,tree.TTFunctionCallOrTensorAccess):

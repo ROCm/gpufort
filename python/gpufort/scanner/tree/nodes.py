@@ -784,7 +784,7 @@ class STDeclaration(STNode, IWithBackend, IDeclListEntry):
             filepath = first_linemap["file"]
             lineno=first_linemap["lineno"]
             statement_no  = self._first_statement_index
-            msg = "{}:{}:{}(stmt-no):{}".format(filepath,lineno,current_statement_no+1,str(e))
+            msg = "{}:{}:{}(stmt-no):{}".format(filepath,lineno,statement_no+1,str(e))
             raise util.error.SyntaxError(msg) from e
 def index_var_is_on_device(ivar):
     return "device" in ivar["qualifiers"]

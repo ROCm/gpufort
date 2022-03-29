@@ -628,14 +628,18 @@ def _parse_file(linemaps, index, **kwargs):
                             ProgramStart()
                         elif current_tokens[0] == "return":
                             Return()
-                        elif current_tokens[0] in [
+                        # TODO build proper parser of function / subroutine
+                        # plus corresponding detection criterion
+                        elif (not "function" in current_tokens 
+                             and current_tokens[0] in [
                                 "character", "integer", "logical", "real",
                                 "complex", "double"
-                        ]:
+                            ]):
                             try_to_parse_string("declaration", datatype_reg)
                             break
-                        elif current_tokens[0] == "type" and current_tokens[
-                                1] == "(":
+                        elif (not "function" in current_tokens 
+                             and current_tokens[0] == "type" 
+                             and current_tokens[1] == "("):
                             try_to_parse_string("declaration", datatype_reg)
                         elif current_tokens[0] == "type":
                             TypeStart()

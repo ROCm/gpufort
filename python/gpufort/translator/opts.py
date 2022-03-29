@@ -90,6 +90,7 @@ fortran_2_c_type_map = {
         "4": "int",
         "2": "short",
         "1": "char",
+        "c_char": "char",
         "c_int": "int",
         "c_short": "short int",
         "c_long": "long int",

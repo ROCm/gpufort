@@ -20,7 +20,7 @@ program main
 
   !$acc data copy(struct%x(1:N),y(1:N))
  
-  !$acc parallel loop present(struct%x,y)
+  !$acc parallel loop present(struct%x(1:N),y(1:N))
   do i = 1, N
     struct%x(i) = 1
     y(i) = 2

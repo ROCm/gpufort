@@ -648,6 +648,8 @@ class STLoopNest(STNode):
         self.async_launch_f_str = ".false."
         #
         self.kernel_args_tavars = [] # set from extraction routine
+        self.problem_size = [] # set from extraction routine
+        #
         self.kernel_args_names = [] # set from subclass
         self.code = []
     def __hash_kernel(self):
@@ -704,7 +706,7 @@ class STLoopNest(STNode):
                 grid_or_ps_f_str = "dim3({})".format(",".join(grid))
             elif grid_or_ps_f_str == None:
                 launcher_name_suffix = "_hip_ps"
-                grid_or_ps_f_str = "dim3({})".format(",".join(self.parse_result.problem_size()))
+                grid_or_ps_f_str = "dim3({})".format(",".join(self.problem_size))
             launcher_name += (launcher_name_suffix if not opts.loop_kernel_default_launcher=="cpu" else "_cpu_")
             ## determine block size
             block_f_str = self.parse_result.block_expr_f_str()
@@ -855,9 +857,13 @@ class STAllocate(STNode, IWithBackend):
 
     def __init__(self, first_linemap, first_linemap_first_statement):
         STNode.__init__(self, first_linemap, first_linemap_first_statement)
-        self.parse_result = translator.tree.grammar.allocate.parseString(
-            self.statements()[0])[0]
-        self.variable_names = self.parse_result.variable_names()
+        self.parse_result = None
+        try:
+            self.parse_result = translator.tree.grammar.allocate.parseString(
+                self.first_statement())[0]
+            self.variable_names = self.parse_result.variable_names()
+        except Exception as e:
+            print(e)
     
     def transform(self,*args,**kwargs):
         return IWithBackend.transform(self,*args,**kwargs)

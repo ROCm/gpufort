@@ -232,12 +232,6 @@ class IComputeConstruct():
     def reduction_candidates(self):
         return []
 
-    def loop_vars(self):
-        return []
-
-    def problem_size(self):
-        return []
-
     def async_nowait():
         """value != grammar.CLAUSE_NOT_FOUND means True"""
         return grammar.CLAUSE_NOT_FOUND
@@ -344,43 +338,6 @@ class TTLoopNest(base.TTContainer, IComputeConstruct):
             return self._first_loop_annotation()
         else:
             return self._parent_directive
-
-    # TODO move into analysis
-    # TODO too simplistic: Does not take into account
-    # that loops may be interdependent
-    def loop_vars(self):
-        num_outer_loops_to_map = int(self.parent_directive().num_collapse())
-        identifier_names = []
-        do_loops = base.find_all(self.body[0], TTDo)
-        for loop in do_loops:
-            identifier_names.append(loop.loop_var(base.make_f_str))
-        if num_outer_loops_to_map > 0:
-            return identifier_names[0:num_outer_loops_to_map]
-        else:
-            return identifier_names[0:1]
-
-    # TODO move into analysis
-    def problem_size(self):
-        num_outer_loops_to_map = int(self.parent_directive().num_collapse())
-        if opts.loop_collapse_strategy == "grid" or num_outer_loops_to_map <= 1:
-            num_outer_loops_to_map = max(1,min(3, num_outer_loops_to_map))
-            result = ["-1"] * num_outer_loops_to_map
-            do_loops = base.find_all(self.body[0], TTDo)
-            for i, loop in enumerate(do_loops):
-                if i < num_outer_loops_to_map:
-                    result[i] = loop.problem_size()
-            return result
-        else: # "collapse"
-            result = ""
-            do_loops = base.find_all(self.body[0], TTDo)
-            for loop in reversed(do_loops[0:num_outer_loops_to_map]):
-                if len(result):
-                    result += "*"
-                result += loop.problem_size()
-            if len(result):
-                return [result]
-            else:
-                return ["-1"]
 
     def async_nowait():
         """value != grammar.CLAUSE_NOT_FOUND means True"""

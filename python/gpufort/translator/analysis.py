@@ -13,6 +13,7 @@ from gpufort import util
 
 from . import tree
 from . import conv
+from . import opts
 
 def _create_analysis_var(scope, var_expr):
     ivar = indexer.scope.search_scope_for_var(
@@ -96,14 +97,18 @@ def _apply_substitions(tavars,substitutions):
         if var_expr in substitutions:
             tavar["c_name"] = substitutions[var_expr]
 
-def lookup_index_entries_for_vars_in_loopnest(scope,ttloopnest,substitutions={}):
-    loop_vars = ttloopnest.loop_vars()
+def lookup_index_entries_for_vars_in_loopnest(scope,ttloopnest,loop_vars,substitutions={}):
+    all_vars       = vars_in_subtree(ttloopnest, scope)
     local_scalars_ = local_scalars(ttloopnest,scope)
-
-    local_vars = [v for v in (local_scalars_+ttloopnest.gang_team_private_vars())
-                  if v not in loop_vars]
+    local_vars     = [v for v in (local_scalars_+ttloopnest.gang_team_private_vars())
+                     if v not in loop_vars]
+    local_vars    += [v for v in all_vars 
+                     if (v[0]=="_" 
+                        and v not in loop_vars 
+                        and v not in local_vars)]
+    # TODO improve
     result = lookup_index_entries_for_vars_in_kernel_body(scope,
-                                                          vars_in_subtree(ttloopnest, scope),
+                                                          all_vars,
                                                           ttloopnest.gang_team_reductions(),
                                                           ttloopnest.gang_team_shared_vars(),
                                                           local_vars,
@@ -251,9 +256,9 @@ def local_scalars_and_reduction_candidates(ttloopnest, scope):
         lvalue = assignment._lhs
         lvalue_name = lvalue._value.f_str().lower()
         if isinstance(lvalue, tree.TTIdentifier): # could still be a matrix
-            definition = indexer.scope.search_scope_for_var(
+            ivar = indexer.scope.search_scope_for_var(
                 scope, lvalue_name)
-            if definition["rank"] == 0 and\
+            if ivar["rank"] == 0 and\
                not lvalue_name in scalars_read_so_far:
                 initialized_scalars.append(
                     lvalue_name) # read and initialized in
@@ -262,9 +267,9 @@ def local_scalars_and_reduction_candidates(ttloopnest, scope):
         for ttrvalue in ttrvalues:
             if isinstance(ttrvalue._value,tree.TTIdentifier):
                 rvalue_name = ttrvalue._value.f_str().lower()
-                definition = indexer.scope.search_scope_for_var(
+                ivar = indexer.scope.search_scope_for_var(
                     scope, rvalue_name)
-                if definition["rank"] == 0 and\
+                if ivar["rank"] == 0 and\
                    rvalue_name != lvalue_name: # do not include name of rhs if lhs appears in rhs
                     scalars_read_so_far.append(rvalue_name)
     # initialized scalars that are not read (except in same statement) are likely reductions
@@ -277,10 +282,6 @@ def local_scalars_and_reduction_candidates(ttloopnest, scope):
         name for name in initialized_scalars
         if name not in reduction_candidates
     ] # contains loop variables
-    loop_vars = [var.lower() for var in ttloopnest.loop_vars()]
-    for var in list(local_scalars):
-        if var.lower() in loop_vars:
-            local_scalars.remove(var)
     return local_scalars, reduction_candidates
 
 def local_scalars(ttloopnest, scope):
@@ -290,6 +291,56 @@ def local_scalars(ttloopnest, scope):
 def reduction_candidates(ttloopnest, scope):
     _, reduction_candidates = local_scalars_and_reduction_candidates(ttloopnest, scope)
     return reduction_candidates
+
+def loop_vars_in_loopnest(ttdos):
+    identifier_names = []
+    for ttdo in ttdos:
+        identifier_names.append(ttdo.loop_var(tree.make_f_str))
+    return identifier_names
+
+def _perfectly_nested_outer_do_loops(ttloopnest):
+    """TODO 
+    """
+    if isinstance(ttloopnest.body[0],tree.TTStatement):
+        # in this case, an array expression was unpacked.
+        # The result is always a perfect loopnest
+        return tree.find_all(ttloopnest.body[0], tree.TTDo), True
+    elif isinstance(ttloopnest.body[0],tree.TTDo):
+        ttdos = []
+        # check for interdependent loops
+        current = ttloopnest.body[0]
+        ttdos.append(current)
+        while len(current.body) == 1 and isinstance(current.body[0],tree.TTDo):
+            current = current.body[0]
+            ttdos.append(current)
+        return ttdos, False
+
+def perfectly_nested_do_loops_to_map(ttloopnest):
+    num_loops_to_map = max(1,int(ttloopnest.parent_directive().num_collapse()))
+    ttdos, from_array_expression = _perfectly_nested_outer_do_loops(ttloopnest)
+    if from_array_expression:
+        num_loops_to_map = len(ttdos)
+    return ttdos[0:num_loops_to_map]
+
+def problem_size(ttdos,**kwargs):
+    loop_collapse_strategy,_ = util.kwargs.get_value("loop_collapse_strategy",opts.loop_collapse_strategy,**kwargs)
+    
+    num_loops_to_map = len(ttdos)
+    if loop_collapse_strategy == "grid" or num_loops_to_map == 1:
+        num_loops_to_map = min(3, num_loops_to_map)
+        result = ["-1"] * num_loops_to_map
+        for i, ttdo in enumerate(ttdos):
+            if i < num_loops_to_map:
+                result[i] = ttdo.problem_size()
+        return result
+    else: # "collapse"
+        result = []
+        for ttdo in ttdos:
+            result.append(ttdo.problem_size())
+        if len(result):
+            return ["*".join(result)]
+        else:
+            return ["-1"]
 
 # OpenACC specific
 

@@ -59,7 +59,7 @@ def _create_do_loop_statements(ranges,loop_indices,fortran_style_tensors):
         stride = ttrange.stride()
         if len(stride):
             stride = "," + stride
-        do_statements.append("do {var}={lb},{ub}{step}".format(
+        do_statements.insert(0,"do {var}={lb},{ub}{step}".format(
             var=loop_idx, lb=lbound, ub=ubound,
             step=stride))
         end_do_statements.insert(0,"end do")
@@ -123,6 +123,7 @@ def expand_all_array_expressions(ttnode,scope,fortran_style_tensors=True):
     return int_counter
 
 def move_statements_into_loopnest_body(ttloopnest):
+    # TODO
     # subsequent loop ranges must not depend on LHS of assignment
     # or inout, out arguments of function call
     pass 
@@ -140,22 +141,18 @@ def collapse_loopnest(ttdos):
     indices.insert(0,"int _remainder = __gidx1;\n")
     return indices, conditions
 
-def map_loopnest_to_grid(ttdos,num_outer_loops_to_map):
-    if num_outer_loops_to_map > 3:
-        util.logging.log_warn(
-            "ttdo collapse strategy 'grid' chosen with nested loops > 3")
-    num_outer_loops_to_map = min(3, num_outer_loops_to_map)
+def map_loopnest_to_grid(ttdos):
     thread_indices = ["x", "y", "z"]
-    for i in range(0, 3 - num_outer_loops_to_map):
+    while len(thread_indices) > len(ttdos):
         thread_indices.pop()
     indices = []
     conditions = []
     for ttdo in ttdos:
-        if not len(thread_indices):
-            break
         ttdo.thread_index = thread_indices.pop()
         indices.append(ttdo.hip_thread_index_c_str())
         conditions.append(ttdo.hip_thread_bound_c_str())
+        if not len(thread_indices):
+            break
     return indices, conditions
 
 def map_allocatable_pointer_derived_type_members_to_flat_arrays(lrvalues,loop_vars,scope):

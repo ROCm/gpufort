@@ -603,10 +603,10 @@ def _parse_file(linemaps, index, **kwargs):
                                             tree.grammar.non_zero_check)
                         if "allocated" in current_tokens:
                             scan_string("allocated", tree.grammar.ALLOCATED)
-                        if "deallocate" in current_tokens:
+                        if current_tokens[0] == "deallocate":
                             try_to_parse_string("deallocate",
                                                 tree.grammar.DEALLOCATE)
-                        if "allocate" in current_tokens:
+                        elif current_tokens[0] == "allocate":
                             try_to_parse_string("allocate",
                                                 tree.grammar.ALLOCATE)
                         if "function" in current_tokens:

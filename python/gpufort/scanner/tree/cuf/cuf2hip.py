@@ -68,7 +68,7 @@ def handle_use_statement_cuf(stuse, joined_statements, index):
     """Removes CUDA Fortran use statements and 
     adds hipfort use statements instead. 
     """
-    mod, only = util.parsing.parse_use_statement(joined_statements)
+    mod, qualifiers, renamings, only = util.parsing.parse_use_statement(joined_statements)
 
     cuf_2_hipfort = {
       "cudafor" : "hipfort",

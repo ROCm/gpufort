@@ -14,7 +14,6 @@ from . import hipderivedtypegen
 from . import hipkernelgen
 from . import opts
 
-
 class HipCodeGenerator(codegen.CodeGenerator):
     """Code generator for generating HIP C++ kernels and kernel launchers
        that can be called from Fortran code."""
@@ -142,6 +141,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
                              is_loopnest=True)
         # feed back arguments; TODO see above
         stloopnest.kernel_args_tavars = mykernelgen.get_kernel_args()
+        stloopnest.problem_size = mykernelgen.problem_size
 
     @util.logging.log_entry_and_exit(opts.log_prefix+".HipCodeGenerator")
     def _render_device_procedure(self, stprocedure, cpp_filegen, fortran_filegen):

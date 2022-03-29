@@ -3,7 +3,7 @@
 program main
   use cudafor
   implicit none
-  integer, parameter :: N = 40000
+  integer, parameter :: N = 400
   real :: x(N), y(N), a
   real, device :: x_d(N)
   real, allocatable :: y_d(:)
@@ -28,6 +28,7 @@ program main
     y_d(i) = y_d(i) + a*xi
   end do
   !@cuf ierr = cudaDeviceSynchronize()
+  !@cuf if ( ierr .ne. 0 ) ERROR STOP "kernel launch failed!"
 
   y = y_d
 

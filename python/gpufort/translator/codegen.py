@@ -7,21 +7,24 @@ from . import analysis
 from . import parser
 from . import transformations
 
+def _modify_array_expressions(ttnode,lrvalues,scope,**kwargs):
+    fortran_style_tensor_access,_ = util.kwargs.get_value("fortran_style_tensor_access",opts.fortran_style_tensor_access,**kwargs)
+    
+    transformations.expand_all_array_expressions(ttnode, scope, fortran_style_tensor_access)
+    
+    # TODO pass Fortran style access option down here too
+    transformations.flag_tensors(lrvalues, scope)
+
 def translate_procedure_body_to_hip_kernel_body(ttprocedurebody, scope, **kwargs):
     """
     :return: body of a procedure as C/C++ code.
     Non-empty result names will be propagated to
     all return statements.
     """
-    fortran_style_tensor_access,_ = util.kwargs.get_value("fortran_style_tensor_access",opts.fortran_style_tensor_access,**kwargs)
-    
-    transformations.expand_all_array_expressions(ttprocedurebody, scope, fortran_style_tensor_access)
     lrvalues = analysis.find_all_matching_exclude_directives(ttprocedurebody.body,
                                                              lambda ttnode: isinstance(ttnode,tree.IValue))
-    
-    # TODO pass Fortran style access option down here too
-    transformations.flag_tensors(lrvalues, scope)
-    
+    _modify_array_expressions(ttprocedurebody, lrvalues, scope, **kwargs)
+ 
     # 1. Propagate result variable name to return statements
     if len(ttprocedurebody.result_name):
         for expr in tree.find_all(ttprocedurebody.body, tree.TTReturn):
@@ -32,40 +35,8 @@ def translate_procedure_body_to_hip_kernel_body(ttprocedurebody, scope, **kwargs
         c_body += "\nreturn " + result_name + ";"
     return prepostprocess.postprocess_c_snippet(c_body)
 
-def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
-    r"""This routine generates an HIP/C kernel body.
-    :param ttloopnest: A translator tree node describing a loopnest
-    :param scope: A scope; see gpufort.indexer.scope
-    :param \*\*kwargs: keyword arguments.
-    
-    :return: A HIP C++ snippet and a list of substitutions that have
-             been performed to the variables found in the body.
-    """
-    loop_collapse_strategy,_ = util.kwargs.get_value("loop_collapse_strategy",opts.loop_collapse_strategy,**kwargs)
-    map_to_flat_arrays,_     = util.kwargs.get_value("map_to_flat_arrays",opts.map_to_flat_arrays,**kwargs)
-    fortran_style_tensor_access,_ = util.kwargs.get_value("fortran_style_tensor_access",opts.fortran_style_tensor_access,**kwargs)
-
-    transformations.expand_all_array_expressions(ttloopnest.body, scope, fortran_style_tensor_access)
-    lrvalues = analysis.find_all_matching_exclude_directives(ttloopnest.body,
-                                                             lambda ttnode: isinstance(ttnode,tree.IValue))
-    # TODO pass Fortran style access option down here too
-    transformations.flag_tensors(lrvalues, scope)
-    
-    
-    substitutions = {}
-    if map_to_flat_arrays:
-        loop_vars = ttloopnest.loop_vars()
-        substitutions = transformations.map_allocatable_pointer_derived_type_members_to_flat_arrays(lrvalues,loop_vars,scope)
-    
-    # TODO look up correct signature of called device functions from index
-    # 1.1 Collapsing
-    num_outer_loops_to_map = int(ttloopnest.parent_directive().num_collapse())
-    if opts.loop_collapse_strategy == "grid" and num_outer_loops_to_map <= 3:
-        dim = num_outer_loops_to_map
-    else: # "collapse" or num_outer_loops_to_map > 3
-        dim = 1
-    tidx = "__gidx{dim}".format(dim=dim)
-    
+def _handle_reductions(ttloopnest,grid_dim):
+    tidx = "__gidx{dim}".format(dim=grid_dim)
     # 2. Identify reduced variables
     for expr in tree.find_all(ttloopnest.body[0], tree.TTAssignment):
         for value in tree.find_all_matching(
@@ -92,19 +63,52 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
             else:
                 reduction_preamble += "reduce_op_{kind}::init({var}[{tidx}]);\n".format(
                     kind=kind, var=var, tidx=tidx)
-    # 3. collapse and transform do-loops
-    do_loops = tree.find_all(ttloopnest.body[0], tree.TTDo)
-    if num_outer_loops_to_map == 1 or (opts.loop_collapse_strategy
-                                       == "grid" and
-                                       num_outer_loops_to_map <= 3):
-        indices, conditions = transformations.map_loopnest_to_grid(do_loops,num_outer_loops_to_map)
-    else: # "collapse" or num_outer_loops_to_map > 3
-        indices, conditions = transformations.collapse_loopnest(do_loops)
+    return reduction_preamble
+
+def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
+    r"""This routine generates an HIP/C kernel body.
+    :param ttloopnest: A translator tree node describing a loopnest
+    :param scope: A scope; see gpufort.indexer.scope
+    :param \*\*kwargs: keyword arguments.
+    
+    :return: A HIP C++ snippet and a list of substitutions that have
+             been performed to the variables found in the body.
+    """
+    loop_collapse_strategy,_ = util.kwargs.get_value("loop_collapse_strategy",opts.loop_collapse_strategy,**kwargs)
+    map_to_flat_arrays,_     = util.kwargs.get_value("map_to_flat_arrays",opts.map_to_flat_arrays,**kwargs)
+    fortran_style_tensor_access,_ = util.kwargs.get_value("fortran_style_tensor_access",opts.fortran_style_tensor_access,**kwargs)
+
+    lrvalues = analysis.find_all_matching_exclude_directives(ttloopnest.body,
+                                                             lambda ttnode: isinstance(ttnode,tree.IValue))
+    _modify_array_expressions(ttloopnest,lrvalues,scope,**kwargs)   
+ 
+    ttdos = analysis.perfectly_nested_do_loops_to_map(ttloopnest) 
+    problem_size = analysis.problem_size(ttdos,**kwargs)
+    loop_vars = analysis.loop_vars_in_loopnest(ttdos)
+    substitutions = {}
+    if map_to_flat_arrays:
+        substitutions = transformations.map_allocatable_pointer_derived_type_members_to_flat_arrays(lrvalues,loop_vars,scope)
+    
+    num_loops_to_map = len(ttdos)
+    if loop_collapse_strategy == "grid" and num_loops_to_map <= 3:
+        grid_dim = num_loops_to_map
+    else: # "collapse" or num_loops_to_map > 3
+        grid_dim = 1
+    
+    reduction_preamble = _handle_reductions(ttloopnest,grid_dim)
+    
+    # collapse and transform do-loops
+    if (num_loops_to_map <= 1 
+       or (loop_collapse_strategy == "grid" 
+          and num_loops_to_map <= 3)):
+        indices, conditions = transformations.map_loopnest_to_grid(ttdos)
+    else: # collapse strategy or num_loops_to_map > 3
+        indices, conditions = transformations.collapse_loopnest(ttdos)
     
     c_snippet = "{0}\n{2}if ({1}) {{\n{3}\n}}".format(\
         "".join(indices),"&&".join(conditions),reduction_preamble,tree.make_c_str(ttloopnest.body[0]))
 
-    return prepostprocess.postprocess_c_snippet(c_snippet), substitutions
+    return prepostprocess.postprocess_c_snippet(c_snippet), problem_size, loop_vars, substitutions
 
 def translate_loopnest_to_omp(fortran_snippet, ttloopnest, inout_arrays_in_body, arrays_in_body):
     """
@@ -114,7 +118,7 @@ def translate_loopnest_to_omp(fortran_snippet, ttloopnest, inout_arrays_in_body,
 
     # TODO There is only one loop or loop-like expression
     # in a parallel loop.
-    # There might me multiple loops or look-like expressions
+    # There might me multiple loops or loop-like expressions
     # in a kernels region.
     # kernels directives must be split
     # into multiple clauses.

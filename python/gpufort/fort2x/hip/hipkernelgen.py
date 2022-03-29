@@ -130,7 +130,7 @@ class HipKernelGenerator4LoopNest(HipKernelGeneratorBase):
 
     def __init__(self, ttloopnest, scope, **kwargs):
         HipKernelGeneratorBase.__init__(self, scope, **kwargs)
-        self.c_body, substitutions = translator.codegen.translate_loopnest_to_hip_kernel_body(ttloopnest,scope,**kwargs)
+        self.c_body, self.problem_size, loop_vars, substitutions = translator.codegen.translate_loopnest_to_hip_kernel_body(ttloopnest,scope,**kwargs)
         self.kernel = self._create_kernel_context()
        
         self.kernel["global_vars"],\
@@ -138,6 +138,7 @@ class HipKernelGenerator4LoopNest(HipKernelGeneratorBase):
         self.kernel["shared_vars"],\
         self.kernel["local_vars"] = translator.analysis.lookup_index_entries_for_vars_in_loopnest(self.scope,
                                                                                        ttloopnest,
+                                                                                       loop_vars,
                                                                                        substitutions,
                                                                                        )
         self._create_shared_and_local_array_vars()

@@ -16,11 +16,10 @@ class STCufDirective(nodes.STDirective):
     """This class has the functionality of a kernel if the stored lines contain
     a cuf kernel directivity. 
     """
-    def __init__(self, first_linemap, first_linemap_first_statement, directive_no):
+    def __init__(self, first_linemap, first_linemap_first_statement):
         nodes.STDirective.__init__(self,
                                    first_linemap,
                                    first_linemap_first_statement,
-                                   directive_no,
                                    sentinel="!$cuf")
 
     def transform(self,
@@ -37,8 +36,8 @@ class STCufLoopNest(STCufDirective, nodes.STLoopNest):
     def register_backend(cls, dest_dialects, func):
         cls._backends.append((dest_dialects, func))
 
-    def __init__(self, first_linemap, first_linemap_first_statement, directive_no):
-        STCufDirective.__init__(self, first_linemap, first_linemap_first_statement, directive_no)
+    def __init__(self, first_linemap, first_linemap_first_statement):
+        STCufDirective.__init__(self, first_linemap, first_linemap_first_statement)
         nodes.STLoopNest.__init__(self, first_linemap, first_linemap_first_statement)
         self.dest_dialect = opts.destination_dialect
 

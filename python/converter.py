@@ -663,8 +663,9 @@ def create_index(linemaps, output_dir, search_dirs):
     if not opts.skip_create_gpufort_module_files:
         indexer.update_index_from_linemaps(linemaps, index)
         indexer.write_gpufort_module_files(index, output_dir)
-    index.clear()
-    indexer.load_gpufort_module_files(search_dirs, index)
+    if not opts.only_create_gpufort_module_files:
+        index.clear()
+        indexer.load_gpufort_module_files(search_dirs, index)
     return index
 
 @util.logging.log_entry_and_exit(opts.log_prefix)

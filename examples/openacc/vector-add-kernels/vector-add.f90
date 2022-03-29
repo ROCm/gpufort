@@ -12,18 +12,14 @@ program main
     y_exact(i) = 3
   end do
 
-  !$acc data copy(x(1:N),y(1:N))
- 
-  !$acc kernels present(x,y)
+  !$acc kernels copy(x,y)
   x(1:N) = 1
   y(1:N) = x(1:n) + x(1:n)
-  !$acc end kernels  
 
-  !$acc parallel loop
   do i = 1, N
     y(i) = x(i) + y(i)
   end do
-  !$acc end data
+  !$acc end kernels  
   
   do i = 1, N
     if ( y_exact(i) .ne.&

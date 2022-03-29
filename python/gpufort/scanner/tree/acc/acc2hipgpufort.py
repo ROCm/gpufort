@@ -272,9 +272,12 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
     def _map_array(clause_kind1,var_expr,tavar,**kwargs):
         asyncr,_   = util.kwargs.get_value("asyncr","",**kwargs)
         finalize,_ = util.kwargs.get_value("finalize","",**kwargs)
-        all_present,_ = util.kwargs.get_value("all_present",False,**kwargs)       
+        prepend_present,_ = util.kwargs.get_value("prepend_present",False,**kwargs)       
 
-        clause_kind = clause_kind1 if not all_present else "present"
+        if prepend_present and clause_kind1.startswith("copy"):
+            clause_kind = "".join(["present_or_",clause_kind1])
+        else:
+            clause_kind = clause_kind1
         if clause_kind in _DATA_CLAUSE_2_TEMPLATE_MAP:
             runtime_call_tokens = ["gpufort_acc_",clause_kind,"("]
             runtime_call_tokens.append(var_expr)
@@ -297,14 +300,19 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
         """
         result = []
         acc_clauses = self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP)
+        
+        kwargs = {
+          "finalize":self._get_finalize_clause_expr(),
+          "asyncr":self._get_async_clause_expr(),
+        }
+        if self.stnode.is_directive(["acc","kernels"]):
+            kwargs["prepend_present"] = True
         mappings = translator.analysis.kernel_args_to_acc_mappings_no_types(
                        acc_clauses,
                        self.stnode.kernel_args_tavars,
                        self.stnode.get_vars_present_per_default(),
                        AccLoopNest2HipGpufortRT._map_array,
-                       all_present=self.stnode.is_directive(["acc","kernels"]),
-                       finalize=self._get_finalize_clause_expr(),
-                       asyncr=self._get_async_clause_expr())
+                       **kwargs)
         for var_expr, argument in mappings:
             result.append(argument)
         return result

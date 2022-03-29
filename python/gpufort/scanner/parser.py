@@ -205,9 +205,10 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal current_linemap
         nonlocal do_loop_ctr
         nonlocal keep_recording
+        nonlocal acc_kernels_directive
         log_detection_("do loop")
         if in_kernels_acc_region_and_not_recording():
-            new = tree.acc.STAccLoopNest(current_linemap, current_statement_no)
+            new = tree.acc.STAccLoopNest(current_linemap, current_statement_no, acc_kernels_directive)
             new.ignore_in_s2s_translation = not translation_enabled
             new._do_loop_ctr_memorised = do_loop_ctr
             descend_(new)

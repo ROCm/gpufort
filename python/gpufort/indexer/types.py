@@ -46,14 +46,6 @@ def create_index_var(f_type,kind,name,qualifiers=[],bounds=[],rhs=None):
     ivar["f_type"] = f_type
     ivar["kind"]   = kind
     # TODO bytes per element can be computed on the fly
-    ivar["bytes_per_element"] = translator.num_bytes(f_type, kind, default=None)
-    if f_type == "type":
-        ivar["c_type"] = ivar["kind"] 
-    elif f_type == "character":
-        ivar["c_type"] = "char"
-        # TODO more carefully check if len or kind is specified for characters
-    elif f_type != "character": 
-        ivar["c_type"] = translator.convert_to_c_type(f_type, kind, "TODO unknown")
     ivar["qualifiers"] = qualifiers
     # arrays
     ivar["bounds"] = bounds

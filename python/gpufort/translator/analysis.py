@@ -15,6 +15,18 @@ from . import tree
 from . import conv
 from . import opts
 
+def _append_c_type(tavar):
+    f_type = tavar["f_type"]
+    kind = tavar["kind"]
+    if f_type == "type":
+        tavar["c_type"] = tavar["kind"] 
+    elif f_type == "character":
+        tavar["c_type"] = "char"
+        # TODO more carefully check if len or kind is specified for characters
+    elif f_type != "character": 
+        tavar["c_type"] = conv.convert_to_c_type(f_type, kind, "TODO unknown")
+    tavar["bytes_per_element"] = conv.num_bytes(f_type, kind, default=None)
+
 def _create_analysis_var(scope, var_expr):
     ivar = indexer.scope.search_scope_for_var(
         scope, var_expr)
@@ -22,6 +34,7 @@ def _create_analysis_var(scope, var_expr):
     tavar["expr"] = util.parsing.strip_array_indexing(var_expr).lower()
     tavar["c_name"] = tavar["name"] 
     tavar["op"]   = ""
+    _append_c_type(tavar)
     return tavar
 
 def _lookup_index_vars(scope, var_exprs, consumed_var_exprs=[]):

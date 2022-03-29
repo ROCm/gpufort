@@ -244,10 +244,17 @@ def _parse_statements(linemaps, file_path,**kwargs):
         log_detection_("use statement")
         
         if current_node._kind != "root":
-            module, only = util.parsing.parse_use_statement(current_statement)
-            
+            module, qualifiers, renamings, only = util.parsing.parse_use_statement(current_statement)
+           
             used_module = {}
             used_module["name"] = module 
+            used_module["qualifiers"] = qualifiers
+            used_module["renamings"] = []
+            for pair in renamings:
+                used_module["renamings"].append({
+                    "original": pair[1],
+                   "renamed": pair[0],
+                })
             used_module["only"] = []
             for pair in only:
                 used_module["only"].append({

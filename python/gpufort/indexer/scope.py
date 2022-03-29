@@ -67,7 +67,8 @@ def _resolve_dependencies(scope,
         """
         nonlocal index
         for used_module in imodule["used_modules"]:
-            used_module_found = used_module["name"] in opts.module_ignore_list
+            used_module_found = ("intrinsic" in used_module["qualifiers"]
+                                or used_module["name"] in opts.module_ignore_list)
             # include definitions from other modules
             for module in index:
                 if module["name"] == used_module["name"]:
@@ -82,17 +83,32 @@ def _resolve_dependencies(scope,
                             "use all definitions from module '{}'".format(
                                 imodule["name"]))
                         for entry_type in types.SCOPE_ENTRY_TYPES:
-                            scope[entry_type] += module[entry_type]
+                            scope[entry_type] += copy.deepcopy(module[entry_type])
+                        if len(used_module["renamings"]):
+                            for mapping in used_module["renamings"]:
+                                for entry_type in types.SCOPE_ENTRY_TYPES:
+                                    entry = next((entry for entry in scope[entry_type] 
+                                                 if entry["name"] == mapping["original"]),None)
+                                if entry != None:
+                                    entry["name"] = mapping["renamed"]
+                                    util.logging.log_debug2(opts.log_prefix,
+                                      "_resolve_dependencies.handle_use_statements",
+                                      "use {} '{}' from module '{}' as '{}'".format(
+                                      entry_type[0:-1],mapping["original"],
+                                      imodule["name"],
+                                      mapping["renamed"]))
+                                    break
                     else:
                         for mapping in used_module["only"]:
                             for entry_type in types.SCOPE_ENTRY_TYPES:
                                 for entry in module[entry_type]:
                                     if entry["name"] == mapping["original"]:
                                         util.logging.log_debug2(opts.log_prefix,
-                                          "_resolve_dependencies.handle_use_statements",\
-                                          "use {} '{}' as '{}' from module '{}'".format(\
-                                          entry_type[0:-1],mapping["original"],mapping["renamed"],\
-                                          imodule["name"]))
+                                          "_resolve_dependencies.handle_use_statements",
+                                          "only use {} '{}' from module '{}' as '{}'".format(
+                                          entry_type[0:-1],mapping["original"],
+                                          imodule["name"],
+                                          mapping["renamed"]))
                                         copied_entry = copy.deepcopy(entry)
                                         copied_entry["name"] = mapping[
                                             "renamed"]

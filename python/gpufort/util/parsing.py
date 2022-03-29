@@ -196,11 +196,14 @@ def next_tokens_till_open_bracket_is_closed(tokens, open_brackets=0, brackets=("
         result.pop()
     return result
 
-def get_highest_level_arguments(tokens,
-                                open_brackets=0,
-                                separators=[","],
-                                terminators=["::", "\n", "!",""],
-                                brackets=("(",")")):
+def get_highest_level_args(tokens,
+                           separators=[","],
+                           terminators=["::", "\n", "!",""],
+                           brackets=("(",")")):
+    """
+    :return: Tuple of highest level arguments and number of consumed tokens
+             in that order.
+    """
     # ex:
     # input: ["parameter",",","intent","(","inout",")",",","dimension","(",":",",",":",")","::"]
     # result : ["parameter", "intent(inout)", "dimension(:,:)" ], i.e. terminators are excluded
@@ -208,25 +211,31 @@ def get_highest_level_arguments(tokens,
     idx = 0
     current_substr = ""
     criterion = len(tokens)
+    open_brackets = 0
+    num_consumed_tokens = 0
     while criterion:
         tk = tokens[idx]
         idx += 1
         criterion = idx < len(tokens)
-        if tk in separators and open_brackets == 0:
-            if len(current_substr):
-                result.append(current_substr)
-            current_substr = ""
-        elif tk in terminators:
-            criterion = False
-        else:
-            current_substr += tk
+        #
         if tk == brackets[0]:
             open_brackets += 1
         elif tk == brackets[1]:
             open_brackets -= 1
+        #
+        num_consumed_tokens += 1
+        if tk in separators and open_brackets == 0:
+            if len(current_substr):
+                result.append(current_substr)
+            current_substr = ""
+        elif tk in terminators or open_brackets < 0:
+            criterion = False
+            num_consumed_tokens -= 1
+        else: 
+            current_substr += tk
     if len(current_substr):
         result.append(current_substr)
-    return result
+    return result, num_consumed_tokens
 
 def extract_function_calls(text, func_name):
     """Extract all calls of the function `func_name` from the input text.
@@ -240,52 +249,91 @@ def extract_function_calls(text, func_name):
     for m in re.finditer(r"{}\s*\(".format(func_name), text):
         rest_substr = next_tokens_till_open_bracket_is_closed(
             text[m.end():], open_brackets=1)
-        args = get_highest_level_arguments(rest_substr[:-1], 0, [","],
-                                           []) # clip the ')' at the end
+        args,_  = get_highest_level_args(rest_substr[:], [","],
+                                           [])
         end = m.end() + len(rest_substr)
         result.append((text[m.start():end], args))
     return result
 
 def parse_use_statement(statement):
-    """Extracts module name and 'only' variables
+    """Extracts module name, qualifiers, renamings and 'only' mappings
     from the statement.
-    :return: A tuple of containing module name and a list of 'only' 
-    tuples (in that order). The 'only' tuples store
+    :return: A 4-tuple containing module name, qualifiers, list of renaming tuples, and a list of 'only' 
+    tuples (in that order). The renaming and 'only' tuples store
     the local name and the module variable name (in that order).
     :raise SyntaxError: If the syntax of the expression is not as expected.
 
-    :Example:
+    :Examples:
     
     `import mod, only: var1, var2 => var3`
+    `import, intrinsic :: mod, only: var1, var2 => var3`
 
     will result in the tuple:
 
-    ("mod", [("var1","var1"), ("var2","var3)])
+    ("mod", [], [("var1","var1"), ("var2","var3)])
+    ("mod", ['intrinsic'], [("var1","var1"), ("var2","var3)])
 
     In the example above, `var2` is the local name,
     `var3` is the name of the variable as it appears
     in module 'mod'. In case no '=>' is present,
     the local name is the same as the module name.
     """
-    tokens = tokenize(statement)
-    only = []
-    if len(tokens) > 5 and tokens[2:5] == [",","only",":"]:
+    tokens = tokenize(statement,10)
+    if tokens.pop(0).lower() != "use":
+        raise error.SyntaxError("expected 'use'")
+    module_name = None
+    qualifiers  = []
+    tk = tokens.pop(0)
+    if tk.isidentifier():
+        module_name = tk
+    elif tk == ",":
+        qualifiers,num_consumed_tokens = get_highest_level_args(tokens)
+        for i in range(0,num_consumed_tokens):
+            tokens.pop(0)
+        if tokens.pop(0) != "::":
+            raise error.SyntaxError("expected '::' after qualifier list")
+        tk = tokens.pop(0)
+        if tk.isidentifier():
+            module_name = tk
+    else: 
+        raise error.SyntaxError("expected ',' or identifier after 'use'")
+    mappings = []
+    have_only      = False
+    have_renamings = False
+    if len(tokens) > 3 and tokens[0:3] == [",","only",":"]:
+        have_only = True
+    elif (len(tokens) > 3 
+         and tokens[0] == ","):
+        have_renamings = True
+    if have_only:    
+        for i in range(0,3):
+                tokens.pop(0)
+    if have_only or have_renamings:
         is_local_name = True
-        for tk in tokens[5:]:
+        while len(tokens):
+            tk = tokens.pop(0)
             if tk == ",":
                 is_local_name = True
             elif tk == "=>":
                 is_local_name = False
             elif tk.isidentifier() and is_local_name:
-                only.append((tk,tk))
+                mappings.append((tk,tk))
             elif tk.isidentifier() and not is_local_name:
-                local_name,_ = only[-1]
-                only[-1] = (local_name, tk)
-            else:
+                local_name,_ = mappings[-1]
+                mappings[-1] = (local_name, tk)
+            elif tk != "":
                 raise error.SyntaxError("could not parse 'use' statement")
-    elif len(tokens) != 2:
-        raise error.SyntaxError("could not parse 'use' statement")
-    return tokens[1], only
+    if have_only:
+        only = mappings
+        renamings = []
+    else:
+        only = []
+        renamings = mappings
+    if len(tokens):
+        while len(tokens) and tokens.pop(0) == "": pass
+    if len(tokens):
+        raise error.SyntaxError("expected end of statement or ', only:' or ', <expr1> => <expr2>' after module name")
+    return module_name, qualifiers, renamings, only
 
 def parse_attributes_statement(statement):
     """Parses a CUDA Fortran attributes statement.
@@ -414,7 +462,7 @@ def parse_declaration(statement):
         tokens = tokens[idx_last_consumed_token + 1:] # remove type part tokens
         idx_last_consumed_token = None
         if tokens[0] == "," and DOUBLE_COLON in tokens: # qualifier list
-            qualifiers_raw = get_highest_level_arguments(tokens)
+            qualifiers_raw,_  = get_highest_level_args(tokens)
             idx_last_consumed_token = tokens.index(DOUBLE_COLON)
         elif tokens[0] == DOUBLE_COLON: # variables begin afterwards
             idx_last_consumed_token = 0
@@ -424,7 +472,7 @@ def parse_declaration(statement):
             raise error.SyntaxError("could not parse qualifier list")
         # handle variables list
         tokens = tokens[idx_last_consumed_token+1:] # remove qualifier list tokens
-        variables_raw = get_highest_level_arguments(tokens)
+        variables_raw,_  = get_highest_level_args(tokens)
     except IndexError:
         raise error.SyntaxError("could not parse qualifier list")
     # analyze qualifiers
@@ -440,7 +488,7 @@ def parse_declaration(statement):
                or qualifier_tokens_lower[0:2] != ["dimension","("]
                or qualifier_tokens[-1] != ")"):
                 raise error.SyntaxError("could not parse 'dimension' qualifier")
-            dimension_bounds = get_highest_level_arguments(qualifier_tokens[2:-1])
+            dimension_bounds,_  = get_highest_level_args(qualifier_tokens[2:-1])
         elif qualifier_tokens_lower[0] == "intent":
             # ex: intent ( inout )
             qualifier_tokens = tokenize(qualifier)
@@ -467,7 +515,7 @@ def parse_declaration(statement):
             if len(dimension_bounds):
                 raise error.SyntaxError("'dimension' and variable cannot be specified both")
             bounds_tokens = next_tokens_till_open_bracket_is_closed(var_tokens)
-            var_bounds = get_highest_level_arguments(bounds_tokens[1:-1])
+            var_bounds,_  = get_highest_level_args(bounds_tokens[1:-1])
             for i in range(0,len(bounds_tokens)):
                 var_tokens.pop(0)
         if (len(var_tokens) > 1 and
@@ -523,7 +571,7 @@ def parse_derived_type_statement(statement):
         raise error.SyntaxError("expected ',','::', or identifier")
     parameters = []
     if parse_attributes:
-        attributes = get_highest_level_arguments(tokens)
+        attributes,_  = get_highest_level_args(tokens)
         if not len(attributes):
             raise error.SyntaxError("expected at least one derived type attribute")
         while tokens.pop(0) != "::":
@@ -539,7 +587,7 @@ def parse_derived_type_statement(statement):
     if tk == "(": # qualifier list
         if not len(tokens):
             raise error.SyntaxError("expected list of parameters")
-        parameters = get_highest_level_arguments(tokens[:-1],open_brackets=1)
+        parameters,_  = get_highest_level_args(tokens[:-1])
         if not len(parameters):
             raise error.SyntaxError("expected at least one derived type parameter")
         tk = tokens.pop(0)
@@ -657,7 +705,7 @@ def parse_acc_clauses(clauses):
              and tokens[0].isidentifier()
              and tokens[1] == "(" 
              and tokens[-1] == ")"):
-            args1 = get_highest_level_arguments(tokens[2:-1], 0, [","],[]) # clip the ')' at the end
+            args1,_  = get_highest_level_args(tokens[2:-1], [","],[]) # clip the ')' at the end
             args = []
             current_group = None
             for arg in args1:
@@ -712,8 +760,8 @@ def parse_cuf_kernel_call(statement):
         tokens.pop(0)
     if tokens.pop(0) != ")":
         return error.SyntaxError("could not parse CUDA Fortran kernel call: expected ')'")
-    params = get_highest_level_arguments(params_tokens,terminators=[])
-    args = get_highest_level_arguments(args_tokens,terminators=[])
+    params,_  = get_highest_level_args(params_tokens,terminators=[])
+    args,_  = get_highest_level_args(args_tokens,terminators=[])
     if len(tokens):
         return error.SyntaxError("could not parse CUDA Fortran kernel call: trailing text")
     return kernel_name, params, args
@@ -724,43 +772,69 @@ def parse_cuf_kernel_call(statement):
 # def parse_dimension_statement(statement):
 # TODO
 #     pass
-#def parse_allocate_statement(statement):
-#    """Parses:
-#  
-#      (deallocate|allocate) (allocation-list [, stat=stat-variable])
-#
-#    where each entry in allocation-list has the following syntax:
-#
-#      name( [lower-bound :] upper-bound [, ...] )  
-#
-#    :return: List of tuples pairing variable names and bound information plus
-#             a status variable expression if the `stat` variable is set. Otherwise
-#             the second return value is None.
-#
-#    :Example:
-#    
-#    `allocate(a(1,N),b(-1:m,n)`
-#
-#    will result in the list:
-#
-#    [("a",[("1","N")]),("b",[("-1","m"),("1","n)])]
-#
-#    where `1` is the default lower bound if none is present.
-#    """
-#    result1 = [] 
-#    result2 = None
-#    args = get_highest_level_arguments(tokenize(text)[2:-1]) # : [...,"b(-1:m,n)"]
-#    for arg in args:
-#        tokens = tokenize(arg)
-#        if tokens[0].lower() == "stat":
-#            result2 = " ".join(tokens[2:])
-#        else:
-#            varname = tokens[0] # : "b"
-#            bounds = get_highest_level_arguments(tokens[2:]) # : ["-1:m", "n"]
-#            for bound in bounds:
-#                bound.split(":")
-#            pair = (tokens[0],[])
-#    return result1, result2
+
+def parse_allocate_statement(statement):
+    """Parses:
+  
+      (deallocate|allocate) (allocation-list [, stat=stat-variable])
+
+    where each entry in allocation-list has the following syntax:
+
+      name( [lower-bound :] upper-bound [, ...] )  
+
+    :return: List of tuples pairing variable names and bound information plus
+             a status variable expression if the `stat` variable is set. Otherwise
+             the second return value is None.
+
+    :Example:
+    
+    `allocate(a(1:N),b(-1:m:2,n))`
+
+    will result in the list:
+
+    [("a",[("1","N",None)]),("b",[("-1","m",2),("1","n",None)])]
+
+    where `1` is the default lower bound if none is present.
+    """
+    result1 = [] 
+    result2 = None
+    tokens = tokenize(statement)
+    if not tokens.pop(0).lower() in ["allocate","deallocate"]:
+        raise error.SyntaxError("expected 'allocate' or 'deallocate'")
+    if tokens.pop(0) != "(":
+        raise error.SyntaxError("expected '('")
+    args,_  = get_highest_level_args(tokens) # : [...,"b(-1:m,n)"]
+    for arg in args:
+        arg_tokens = tokenize(arg)
+        if arg_tokens[0].lower() == "stat":
+            if result2 != None:
+                raise error.SyntaxError("expected only a single 'stat' expression")
+            arg_tokens.pop(0)
+            if arg_tokens.pop(0) != "=":
+                raise error.SyntaxError("expected '='")
+            result2 = "".join(arg_tokens)
+        else:
+            varname = arg_tokens.pop(0) # : "b"
+            if not varname.isidentifier():
+                raise error.SyntaxError("expected '='")
+            if arg_tokens.pop(0) != "(":
+                raise error.SyntaxError("expected '('")
+            ranges,_  = get_highest_level_args(arg_tokens) # : ["-1:m", "n"]
+            var_tuple = (varname, [])
+            for r in ranges:
+                range_tokens,_  = get_highest_level_args(tokenize(r),
+                                                      separators=[":"])
+                if len(range_tokens) == 1:
+                    range_tuple = ("1",range_tokens[0],None)
+                elif len(range_tokens) == 2:
+                    range_tuple = (range_tokens[0],range_tokens[1],None)
+                elif len(range_tokens) == 3:
+                    range_tuple = (range_tokens[0],range_tokens[1],range_tokens[2])
+                else:
+                    raise error.SyntaxError("expected 1,2, or 3 colon-separated range components") 
+                var_tuple[1].append(range_tuple)
+            result1.append(var_tuple)
+    return result1, result2
 
 # rules
 def is_declaration(tokens):

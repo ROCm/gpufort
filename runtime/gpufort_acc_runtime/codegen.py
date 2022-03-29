@@ -37,11 +37,16 @@ if __name__ == "__main__":
     template_path = args.input
     outfile_path  = template_path.replace(".template","")
 
-    datatypes  =  [\
-            ["l","1","logical"], \
-            ["i4", "4", "integer(4)"] ,["i8","8","integer(8)"], \
-            ["r4","4","real(4)"], ["r8","8","real(8)"], \
-            ["c4","2*4","complex(4)"],["c8","2*8","complex(8)"] \
+    datatypes  =  [
+        ("l","1","logical"), 
+        ("c", "1", "character(c_char)") ,
+        ("i2","2","integer(c_short)"), 
+        ("i4", "4", "integer(c_int)") ,
+        ("i8","8","integer(c_long)"), 
+        ("r4","4","real(c_float)"), 
+        ("r8","8","real(c_double)"), 
+        ("c4","2*4","complex(c_float_complex)"),
+        ("c8","2*8","complex(c_double_complex)"),
     ]
     dimensions = range(0,max_dims+1)
     context = { "datatypes" : datatypes, "dimensions" : dimensions }

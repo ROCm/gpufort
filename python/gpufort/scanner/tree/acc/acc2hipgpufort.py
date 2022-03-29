@@ -37,7 +37,7 @@ _ACC_PRESENT_OR_CREATE = "call gpufort_acc_ignore(gpufort_acc_present_or_create(
 _ACC_PRESENT_OR_COPYIN = "call gpufort_acc_ignore(gpufort_acc_present_or_copyin({var}{options}))\n"
 _ACC_PRESENT_OR_COPYOUT = "call gpufort_acc_ignore(gpufort_acc_present_or_copyout({var}{options}))\n"
 _ACC_PRESENT_OR_COPY = "call gpufort_acc_ignore(gpufort_acc_present_or_copy({var}{options}))\n"
-_ACC_DEVICEPTR = "gpufort_acc_deviceptr({var},lbound({var}){options})\n"
+_ACC_USE_DEVICE = "gpufort_acc_use_device({var},lbound({var}){options})\n"
 
 _DATA_CLAUSE_2_TEMPLATE_MAP = {
   "create": _ACC_CREATE,
@@ -149,19 +149,20 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             if kind == "if":
                 options.append("=".join(["if",args[0]]))
             elif kind == "if_present":
-                options.append("if_present=True")
+                options.append("if_present=.true.")
         for kind, args in self.stnode.get_matching_clauses(["use_device"]):
             for var_expr in args:
                 mappings.append(" => ".join([
                   var_expr,
-                  _ACC_DEVICEPTR.format(var=var_expr,
+                  _ACC_USE_DEVICE.format(var=var_expr,
                     options=_create_options_str(options)).rstrip(),
                   ]))
         result = []
         if len(mappings):
             result.append("associate (&\n")
-            for mapping in mappings:
-                result.append("".join(["  ",mapping,"&\n"]))
+            for mapping in mappings[:-1]:
+                result.append("".join(["  ",mapping,",","&\n"]))
+            result.append("".join(["  ",mappings[-1],"&\n"]))
             result.append(")\n")
         return result
     

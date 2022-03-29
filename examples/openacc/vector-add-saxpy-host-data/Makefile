@@ -13,9 +13,9 @@ codegen.omp:
 	gpufort $(TEST_SRC) --wrap --dest omp --config config.py
 build.hip: codegen.hip
 	$(HIPCC) $(HIPCC_CFLAGS) -c $(TEST_SRC)-gpufort.cpp
-	$(HIPFC) $(TEST_SRC)-gpufort.f08 -o $(TEST_NAME) $(TEST_SRC)-gpufort.o $(CFLAGS) $(LDFLAGS)
+	$(HIPFC) $(TEST_SRC)-gpufort.f08 -o $(TEST_NAME) $(TEST_SRC)-gpufort.o $(CFLAGS) $(LDFLAGS) -lhipblas
 compile.hip:
-	gpufortfc $(TEST_SRC) --openacc -v -o $(TEST_NAME)
+	gpufortfc $(TEST_SRC) --openacc -v -o $(TEST_NAME) -gpufort-ldflags -lhipblas
 build.omp: codegen.omp
 	$(OMPFC) -ffree-form $(OMPFC_CFLAGS) -fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx906 $(TEST_NAME).hipified.f90 -o $(TEST_NAME)
 

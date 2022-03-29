@@ -1,6 +1,17 @@
 {# SPDX-License-Identifier: MIT #}
 {# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved. #}
-{#################################################################################}
+{########################################################################################}
+{%- macro render_set_fptr_lower_bound(fptr,
+                                     array,
+                                     rank) -%}
+{% set rank_ub=rank+1 %}
+{{fptr}}(&
+{% for i in range(1,rank_ub) %}
+  lbound({{array}},{{i}}):{{ "," if not loop.last else ")" }}&
+{% endfor %}
+    => {{fptr}}
+{%- endmacro  -%}
+{#######################################################################################}
 {% macro render_interface(interface_name,has_backend=False) %}
 interface {{interface_name}}
   module procedure &
@@ -14,6 +25,7 @@ interface {{interface_name}}
 {% endfor %}
 end interface
 {% endmacro %}
+{########################################################################################}
 ! SPDX-License-Identifier: MIT
 ! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 
@@ -27,6 +39,13 @@ end interface
 
 module gpufort_acc_runtime
   use gpufort_acc_runtime_base
+    
+  !> Lookup device pointer for given host pointer.
+  !> \param[in] condition condition that must be met, otherwise host pointer is returned. Defaults to '.true.'.
+  !> \param[in] if_present Only return device pointer if one could be found for the host pointer.
+  !>                       otherwise host pointer is returned. Defaults to '.false.'.
+  !> \note Returns a c_null_ptr if the host pointer is invalid, i.e. not C associated.
+{{ render_interface("gpufort_acc_use_device",True) | indent(2,True) }}
 
   !> copyin( list ) parallel, kernels, serial, data, enter data,
   !> declare
@@ -182,13 +201,37 @@ module gpufort_acc_runtime
 {% for tuple in datatypes -%}
 {%- for dims in dimensions -%}
 {% if dims > 0 %}
+{% set shape = ',shape(hostptr)' %}
 {% set size = 'size(hostptr)*' %}
 {% set rank = ',dimension(' + ':,'*(dims-1) + ':)' %}
 {% else %}
+{% set shape = '' %}
 {% set size = '' %}
 {% set rank = '' %}
 {% endif %}
 {% set suffix = tuple[0] + "_" + dims|string %}
+    function gpufort_acc_use_device_{{suffix}}(hostptr,lbounds,condition,if_present) result(resultptr)
+      use iso_c_binding
+      use gpufort_acc_runtime_base, only: gpufort_acc_use_device_b
+      implicit none
+      {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
+      integer(c_int),dimension({{ dims }}),intent(in),optional :: lbounds
+      logical,intent(in),optional  :: condition,if_present
+      !
+      {{tuple[2]}},pointer{{ rank }} :: resultptr
+      ! 
+      type(c_ptr) :: cptr
+      !
+      cptr = gpufort_acc_use_device_b(c_loc(hostptr),{{size}}{{tuple[1]}}_8,condition,if_present)
+      !
+      call c_f_pointer(cptr,resultptr{{shape}})
+{% if dims > 0 %}
+      if ( present(lbounds) ) then
+{{ render_set_fptr_lower_bound("resultptr","hostptr",dims) | indent(8,True) }}
+      endif
+{% endif %}
+    end function 
+
     function gpufort_acc_present_{{suffix}}(hostptr,module_var,or,async) result(deviceptr)
       use iso_c_binding
       use gpufort_acc_runtime_base, only: gpufort_acc_present_b, gpufort_acc_event_undefined

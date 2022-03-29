@@ -10,6 +10,7 @@ module gpufort_acc_runtime_base
   ! These routines are public
 
   public :: gpufort_acc_ignore
+  public :: gpufort_acc_use_device_b
   public :: gpufort_acc_copyin_b, gpufort_acc_copyout_b, gpufort_acc_copy_b, & 
             gpufort_acc_create_b, gpufort_acc_no_create_b,& 
             gpufort_acc_present_b, &
@@ -938,6 +939,45 @@ module gpufort_acc_runtime_base
       !
     end subroutine
 
+    !> Lookup device pointer for given host pointer.
+    !> \param[in] condition condition that must be met, otherwise host pointer is returned. Defaults to '.true.'.
+    !> \param[in] if_present Only return device pointer if one could be found for the host pointer.
+    !>                       otherwise host pointer is returned. Defaults to '.false.'.
+    !> \note Returns a c_null_ptr if the host pointer is invalid, i.e. not C associated.
+    function gpufort_acc_use_device_b(hostptr,num_bytes,condition,if_present) result(resultptr)
+      use iso_fortran_env
+      use iso_c_binding
+      use gpufort_acc_runtime_c_bindings, only: inc_cptr, print_cptr
+      implicit none
+      type(c_ptr),intent(in)       :: hostptr
+      integer(c_size_t),intent(in) :: num_bytes
+      logical,intent(in),optional  :: condition,if_present
+      !
+      type(c_ptr) :: resultptr
+      !
+      integer(c_size_t) :: offset_bytes
+      logical           :: success, fits
+      integer           :: loc
+      !
+      resultptr = hostptr
+      if ( .not. c_associated(hostptr) ) then
+         resultptr = c_null_ptr
+      else if ( eval_optval_(condition,.true.) ) then
+        loc = record_list_%find_record(hostptr,success) ! TODO already detect a suitable candidate here on-the-fly
+        if ( success ) then 
+            fits      = record_list_%records(loc)%is_subarray(hostptr,num_bytes,offset_bytes) ! TODO might not fit, i.e. only subarray
+                                                                                              ! might have been mapped before
+            resultptr = inc_cptr(record_list_%records(loc)%deviceptr,offset_bytes)
+        else if ( eval_optval_(if_present,.false.) ) then
+            resultptr = hostptr
+        else
+            print *, "ERROR: did not find record for hostptr:"
+            CALL print_cptr(hostptr)
+            ERROR STOP "gpufort_acc_use_device_b: no record found for hostptr"
+        endif
+      endif
+    end function
+
     ! Data Clauses
     ! The description applies to the clauses used on compute
     ! constructs, data constructs, and enter data and exit
@@ -979,7 +1019,8 @@ module gpufort_acc_runtime_base
       else
         loc = record_list_%find_record(hostptr,success) ! TODO already detect a suitable candidate here on-the-fly
         if ( success ) then 
-          fits      = record_list_%records(loc)%is_subarray(hostptr,num_bytes,offset_bytes)
+          fits      = record_list_%records(loc)%is_subarray(hostptr,num_bytes,offset_bytes) ! TODO might not fit, i.e. only subarray
+                                                                                            ! might have been mapped before
           deviceptr = inc_cptr(record_list_%records(loc)%deviceptr,offset_bytes)
         else
           offset_bytes = -1

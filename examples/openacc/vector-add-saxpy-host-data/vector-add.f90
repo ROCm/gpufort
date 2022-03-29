@@ -9,6 +9,8 @@ program main
   integer, parameter :: N = 1000
   integer :: i
   real(c_float) :: x(N), y(N), y_exact(N) 
+  type(c_ptr) :: handle
+  !
 
   do i = 1, N
     y_exact(i) = 3
@@ -23,9 +25,13 @@ program main
   end do
   
   !$acc host_data use_device(x,y)
+  call hipCheck(hipblasCreate(handle))
   call hipCheck(hipblasSaxpy(handle,N,&
                              1.0,x,1,y,1))
+  call hipCheck(hipblasDestroy(handle))
   !$acc end host_data
+  
+  !$acc end data
   
   do i = 1, N
     if ( y_exact(i) .ne.&

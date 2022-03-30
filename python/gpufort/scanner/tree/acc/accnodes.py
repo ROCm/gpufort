@@ -142,6 +142,7 @@ class STAccDirective(nodes.STDirective):
                 if self.dest_dialect in dest_dialects:
                     singleton.configure(self)
                     return singleton.transform(*args,**kwargs)
+        return "", False
 
 
 class STAccLoopNest(STAccDirective, nodes.STLoopNest):
@@ -198,3 +199,4 @@ class STAccLoopNest(STAccDirective, nodes.STLoopNest):
             if self.dest_dialect in dest_dialects:
                 singleton.configure(self)
                 return singleton.transform(*args,**kwargs)
+        return "", False

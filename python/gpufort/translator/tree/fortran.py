@@ -203,8 +203,8 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
         name = base.make_c_str(self._name).lower()
         return len(self._args) == 0 or\
           name in opts.gpufort_cpp_symbols or\
-          name in ALL_HOST_ROUTINES or\
-          name in ALL_DEVICE_ROUTINES
+          name in grammar.ALL_HOST_ROUTINES or\
+          name in grammar.ALL_DEVICE_ROUTINES
 
     def is_tensor(self):
         if self._is_tensor_access == base.True3:

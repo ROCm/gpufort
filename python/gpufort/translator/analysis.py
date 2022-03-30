@@ -207,8 +207,12 @@ def vars_in_subtree(ttnode, scope):
     """:return: all identifiers of LValue and RValues in the body."""
 
     def search_filter(node):
-        return isinstance(node,tree.IValue) and\
-               type(node._value) in [tree.TTDerivedTypeMember,tree.TTIdentifier,tree.TTFunctionCallOrTensorAccess]
+        cond1 = (isinstance(node,tree.IValue)
+                and isinstance(node._value, (tree.TTDerivedTypeMember,tree.TTIdentifier,tree.TTFunctionCallOrTensorAccess)))
+        if cond1 and isinstance(node._value, tree.TTFunctionCallOrTensorAccess):
+            return node._value.is_tensor()
+        else:
+            return cond1 
 
     result = search_lrvalue_exprs_in_subtree(ttnode, search_filter, scope)
     return result
@@ -216,8 +220,12 @@ def vars_in_subtree(ttnode, scope):
 def arrays_in_subtree(ttnode, scope):
 
     def search_filter(node):
-        return isinstance(node,tree.IValue) and\
-                type(node._value) is tree.TTFunctionCallOrTensorAccess
+        cond1 = (isinstance(node,tree.IValue) 
+                and isinstance(node._value, tree.TTFunctionCallOrTensorAccess))
+        if cond1 and isinstance(node._value, tree.TTFunctionCallOrTensorAccess):
+            return node._value.is_tensor()
+        else:
+            return cond1 
 
     return search_lrvalue_exprs_in_subtree(ttnode, search_filter, scope, 1)
 
@@ -225,8 +233,12 @@ def arrays_in_subtree(ttnode, scope):
 def inout_arrays_in_subtree(ttnode, scope):
 
     def search_filter(node):
-        return type(node) is tree.TTLValue and\
-                type(node._value) is tree.TTFunctionCallOrTensorAccess
+        cond1 = (isinstance(node,tree.LValue) 
+                and isinstance(node._value, tree.TTFunctionCallOrTensorAccess))
+        if cond1 and isinstance(node._value, tree.TTFunctionCallOrTensorAccess):
+            return node._value.is_tensor()
+        else:
+            return cond1 
 
     return search_lrvalue_exprs_in_subtree(ttnode, search_filter, scope, 1)
 

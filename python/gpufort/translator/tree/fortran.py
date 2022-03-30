@@ -89,14 +89,14 @@ class TTNumber(base.TTNode):
         """:return: If the number is a real (of a certain kind)."""
         is_real = "." in self._value
         if is_real and kind != None:
-            if kind in fortran_type_2_bytes_map["real"]:
+            if kind in opts.fortran_type_2_bytes_map["real"]:
                 parts = self._value.split("_")
                 has_exponent_e = "e" in self._value
                 has_exponent_d = "d" in self._value
                 has_exponent = has_exponent_e or has_exponent_d
-                default_real_bytes = fortran_type_2_bytes_map["real"][
+                default_real_bytes = opts.fortran_type_2_bytes_map["real"][
                     ""].strip()
-                kind_bytes = fortran_type_2_bytes_map["real"][kind].strip()
+                kind_bytes = opts.fortran_type_2_bytes_map["real"][kind].strip()
                 if len(parts) == 1: # no suffix
                     cond = False
                     cond = cond or (has_exponent_d and kind_bytes == "8")
@@ -107,8 +107,8 @@ class TTNumber(base.TTNode):
                     return cond
                 elif len(parts) == 2: # suffix
                     suffix = parts[1]
-                    if suffix in fortran_type_2_bytes_map["real"]:
-                        suffix_bytes = fortran_type_2_bytes_map["real"][
+                    if suffix in opts.fortran_type_2_bytes_map["real"]:
+                        suffix_bytes = opts.fortran_type_2_bytes_map["real"][
                             suffix].strip()
                         return kind_bytes == suffix_bytes
                     else:
@@ -703,12 +703,12 @@ class TTPower(base.TTNode):
 
     def gpufort_f_str(self, scope=None):
         sign = ""
-        base = self._base
+        thebase = self._base
         if type(self._base) is TTRValue:
-            base = self._base._value
+            thebase = self._base._value
             sign = self._base._sign
         return "{sign}__pow({base},{exp})".format(\
-            sign=base.make_f_str(sign),base=base.make_f_str(base),
+            sign=base.make_f_str(sign),base=base.make_f_str(thebase),
             exp=base.make_f_str(self._exp))
 
     __str__ = gpufort_f_str

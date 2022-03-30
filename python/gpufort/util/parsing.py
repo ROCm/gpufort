@@ -8,29 +8,51 @@ from . import error
 
 COMMENT_CHARS = "!cCdD*"
 
-def tokenize(statement, padded_size=0, modern_fortran=True):
+def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
     """Splits string at whitespaces and substrings such as
     'end', '$', '!', '(', ')', '=>', '=', ',' and "::".
     Preserves the substrings in the resulting token stream but not the whitespaces.
     :param str padded_size: Always ensure that the list has at least this size by adding padded_size-N empty
                strings at the end of the returned token stream. Has no effect if N >= padded_size. 
                Disable padding by specifying value <= 0.
+    :param bool keepws: keep whitespaces in the resulting list of tokens.
     """
-    TOKENS_REMOVE = r"\s+|\t+"
+    TOKENS_KEEP = [
+        r"[\"](?:\\.|[^\"\\])*[\"]",
+        r"[\'](?:\\.|[^\'\\])*[\']",
+        r"\bend(?:if|do)?\b",
+        r"\belse(?:if)?\b",
+        r"[(),%]",
+        r"::?",
+        r"=>?",
+        r"<<<",
+        r">>>",
+        r"[<>]=?",
+        r"[\/=]=",
+        r"\+",
+        r"-",
+        r"\*",
+        r"\/",
+        r"\.\w+\.",
+        r"\s+|\t+",
+    ]
     if modern_fortran:
-        TOKENS_KEEP = r"(\bend\b|\belse\b|![@\$]?|[(),%]|::?|=>?|<<<|>>>|[<>]=?|[\/=]=|\+|-|\*|\/|\.\w+\.)"
+        TOKENS_KEEP.append(r"![@\$]?")
     else:
-        TOKENS_KEEP = r"(\bend\b|\belse\b|![@\$]?|^[c\*][@\$]?|[(),%]|::?|=>?|<<<|>>>|[<>]=?|[\/=]=|\+|-|\*|\/|\.\w+\.)"
+        TOKENS_KEEP.append(r"^[c\*][@\$]?")
     # IMPORTANT: Use non-capturing groups (?:<expr>) to ensure that an inner group in TOKENS_KEEP
     # is not captured.
-
-    tokens1 = re.split(TOKENS_REMOVE, statement)
+    keep_pattern = "".join(["(","|".join(TOKENS_KEEP),")"])
+    
+    tokens1 = re.split(keep_pattern, statement, 0, re.IGNORECASE)
     tokens = []
     for tk in tokens1:
-        tokens += [
-            part for part in re.split(TOKENS_KEEP, tk, 0, re.IGNORECASE)
-        ]
-    result = [tk for tk in tokens if tk != None and len(tk.strip())]
+        if tk.lower() in ["endif", "elseif", "enddo"]:
+            tokens.append(tk[:-2])
+            tokens.append(tk[-2:])
+        else:
+            tokens.append(tk)
+    result = [tk for tk in tokens if tk != None and (keepws or len(tk.strip()))]
     if padded_size > 0 and len(result) < padded_size:
         return result + [""] * (padded_size - len(result))
     else:

@@ -90,6 +90,32 @@ class TestParsingUtils(unittest.TestCase):
             print(s.getvalue())
         elapsed = time.time() - self.started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
+    def test_01_tokenize(self):
+        statements = [
+          "a,b(i,j),c(i,j,k)",  # 17 tokens
+          "call debug(1, \"my literal string with ; and \\\"; use something \")",
+          "call debug(1, 'my literal string with ; and \\'; use something ')",
+          "end do",
+          "enddo",
+          "end if",
+          "endif",
+          "else if",
+          "elseif",
+        ]
+        results = [
+          ['a', ',', 'b', '(', 'i', ',', 'j', ')', ',', 'c', '(', 'i', ',', 'j', ',', 'k', ')'],
+          ['call', 'debug', '(', '1', ',', '"my literal string with ; and \\"; use something "', ')'],
+          ['call', 'debug', '(', '1', ',', "'my literal string with ; and \\'; use something '", ')'],
+          ['end', 'do'],
+          ['end', 'do'],
+          ['end', 'if'],
+          ['end', 'if'],
+          ['else', 'if'],
+          ['else', 'if'],
+        ]
+        for i,stmt in enumerate(statements):
+            #print(util.parsing.tokenize(stmt))
+            self.assertEqual(util.parsing.tokenize(stmt),results[i])
     def test_01_split_fortran_line(self):
         for line in self.prepare(testdata1):
             indent,stmt_or_dir,comment,trailing_ws =\

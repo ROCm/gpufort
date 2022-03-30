@@ -3,7 +3,7 @@
 import re
 
 from . import opts
-
+from . import tree
 
 def preprocess_fortran_statement(statement):
     """Performs the following operations:
@@ -12,7 +12,7 @@ def preprocess_fortran_statement(statement):
     """
     result = statement
     if "**" in result:
-        result = power.transformString(result)
+        result = tree.grammar.power.transformString(result)
     return result
 
 

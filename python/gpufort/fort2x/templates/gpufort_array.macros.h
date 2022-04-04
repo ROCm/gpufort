@@ -208,7 +208,7 @@ __host__ __device__ __forceinline__ int size(
  * \param[in] dim selected dimension: 1,...,{{rank}}
  */
 template<typename T>
-__host__ __forceinline__ int lbound(
+__host__ __device__ __forceinline__ int lbound(
     gpufort::array{{rank}}<T>& array,
     int dim) {
   return array.lbound(dim);
@@ -219,7 +219,7 @@ __host__ __forceinline__ int lbound(
  * \param[in] dim selected dimension: 1,...,{{rank}}
  */
 template<typename T>
-__host__ __forceinline__ int ubound(
+__host__ __device__ __forceinline__ int ubound(
     gpufort::array{{rank}}<T>& array,
     int dim) {
   return array.ubound(dim);

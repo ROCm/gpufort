@@ -13,7 +13,7 @@ program main
   end do
 
   !$acc kernels copy(x,y)
-  x(1:N) = 1
+  x(:) = 1
   y(1:N) = x(1:n) + x(1:n)
 
   do i = 1, N

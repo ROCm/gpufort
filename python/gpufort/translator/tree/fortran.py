@@ -547,16 +547,17 @@ class TTDerivedTypeMember(base.TTNode):
         #print(self._type)
         self._c_str = None
 
-    def identifier_f_str(self):
-        result = base.make_c_str(self._type)
+    def identifier_part(self,converter=base.make_f_str):
+        result = converter(self._type)
         current = self._element
         while isinstance(current,TTDerivedTypeMember):
             current = current._element
-            result += "%"+base.make_c_str(self._type)
+            result += "%"+converter(self._type)
         if isinstance(current,TTFunctionCallOrTensorAccess):
+            # TODO 
             result += "%"+current.name_c_str()
         else: # TTIdentifier
-            result += "%"+current.c_str()
+            result += "%"+converter(current)
         return result             
 
     def last_element_bounds(self):

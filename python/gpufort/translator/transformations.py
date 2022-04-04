@@ -37,7 +37,7 @@ def _collect_ranges_in_lrvalue(lrvalue,include_none_values=False):
             current = current._element
         return result
 
-def _create_do_loop_statements(ranges,loop_indices,fortran_style_tensors):
+def _create_do_loop_statements(name,ranges,loop_indices,fortran_style_tensors):
     do_statements     = []
     end_do_statements = []
     for i, ttrange in enumerate(ranges,1):
@@ -97,8 +97,13 @@ def _expand_array_expression(ttassignment,scope,int_counter,fortran_style_tensor
                             else:
                                 raise util.error.LimitationError("failed to expand colon operator expression to loopnest: not enough colon expressions in rvalue argument list")
                 except util.error.LookupError:
-                    pass          
-            do_loop_statements, end_do_statements = _create_do_loop_statements(lvalue_ranges,loop_indices,fortran_style_tensors)
+                    pass
+            # TODO externalize routine
+            if isinstance(ttassignment._lhs._value,tree.TTDerivedTypeMember):
+                f_expr = ttassignment.identifier_part(tree.make_f_str)
+            else:
+                f_expr = ttassignment._lhs._value.name_c_str()
+            do_loop_statements, end_do_statements = _create_do_loop_statements(f_expr,lvalue_ranges,loop_indices,fortran_style_tensors)
             statements = do_loop_statements + [ttassignment.f_str()] + end_do_statements
             return statements, int_counter + len(loop_indices), True
         else:
@@ -166,7 +171,7 @@ def map_allocatable_pointer_derived_type_members_to_flat_arrays(lrvalues,loop_va
     for lrvalue in lrvalues:
         ttnode = lrvalue.get_value()
         if isinstance(ttnode,tree.TTDerivedTypeMember):
-            ident = ttnode.identifier_f_str()
+            ident = ttnode.identifier_part()
             ivar = indexer.scope.search_scope_for_var(scope,ident)
             if (ivar["rank"] > 0
                 and ("allocatable" in ivar["qualifiers"]

@@ -136,7 +136,7 @@ block = Forward() # forward declaration
 #  ELSE
 #     Grade = 'a'
 #  END IF
-fortran_if_else_if = Optional(ELSE,default="") + IF + LPAR + arithmetic_logical_expression + RPAR + THEN
+fortran_if_else_if = Optional(CASELESS_LITERAL("else"),default="") + IF + LPAR + arithmetic_logical_expression + RPAR + THEN
 fortran_else       = ELSE
 
 #[name:] select case (expression)

@@ -206,6 +206,7 @@ def parse_fortran_code(statements):
             try:
                 parse_result = tree.grammar.fortran_if_else_if.parseString(
                     stmt_no_comment, parseAll=True)
+                #print(parse_result)
                 descend_(
                     tree.TTIfElseIf(stmt_no_comment, 0,
                                     parse_result.asList() + [[]]),

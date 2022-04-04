@@ -13,7 +13,7 @@ codegen.omp:
 	gpufort $(TEST_SRC) --wrap --dest omp --config config.py
 build.hip: codegen.hip
 	$(HIPCC) $(HIPCC_CFLAGS) -c $(TEST_SRC)-gpufort.cpp
-	$(HIPFC) $(TEST_SRC)-gpufort.f08 -o $(TEST_NAME) $(TEST_SRC)-gpufort.o $(CFLAGS) $(LDFLAGS)
+	$(HIPFC) $(TEST_SRC)-gpufort.f08 -o $(TEST_NAME) $(TEST_SRC)-gpufort.o $(CFLAGS) $(LDFLAGS) 
 compile.hip:
 	gpufortfc $(TEST_SRC) --openacc -v -o $(TEST_NAME)
 build.omp: codegen.omp

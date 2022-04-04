@@ -3,7 +3,7 @@ CFLAGS ?= $(shell gpufort --gfortran-config)
 
 HIPCC ?= hipcc -fPIC 
 
-HIPCC_CFLAGS = $(shell gpufort --cpp-config)
+HIPCC_CFLAGS = $(shell gpufort --cpp-config) -std=c++14
 
 HIPCC += -DGPUFORT_PRINT_KERNEL_ARGS_ALL 
 HIPCC += -DGPUFORT_PRINT_INPUT_ARRAY_NORMS_ALL

@@ -200,8 +200,8 @@ namespace gpufort {
                                                                         //> wrap the host and allocate device data
     SyncMode               sync_mode  = SyncMode::None;                 //> How data should be synchronized
                                                                         //> during the initialization and destruction of this GPUFORT array.
-    int num_refs             = 0;  //> Number of references.
-    size_t bytes_per_element = -1; //> Bytes per element; stored to make num_data_bytes routine independent of T 
+    int num_refs          = 0;  //> Number of references.
+    int bytes_per_element = -1; //> Bytes per element; stored to make num_data_bytes routine independent of T 
 
     array1() {
       // do nothing
@@ -1378,8 +1378,8 @@ namespace gpufort {
                                                                         //> wrap the host and allocate device data
     SyncMode               sync_mode  = SyncMode::None;                 //> How data should be synchronized
                                                                         //> during the initialization and destruction of this GPUFORT array.
-    int num_refs             = 0;  //> Number of references.
-    size_t bytes_per_element = -1; //> Bytes per element; stored to make num_data_bytes routine independent of T 
+    int num_refs          = 0;  //> Number of references.
+    int bytes_per_element = -1; //> Bytes per element; stored to make num_data_bytes routine independent of T 
 
     array2() {
       // do nothing
@@ -2616,8 +2616,8 @@ namespace gpufort {
                                                                         //> wrap the host and allocate device data
     SyncMode               sync_mode  = SyncMode::None;                 //> How data should be synchronized
                                                                         //> during the initialization and destruction of this GPUFORT array.
-    int num_refs             = 0;  //> Number of references.
-    size_t bytes_per_element = -1; //> Bytes per element; stored to make num_data_bytes routine independent of T 
+    int num_refs          = 0;  //> Number of references.
+    int bytes_per_element = -1; //> Bytes per element; stored to make num_data_bytes routine independent of T 
 
     array3() {
       // do nothing
@@ -3917,8 +3917,8 @@ namespace gpufort {
                                                                         //> wrap the host and allocate device data
     SyncMode               sync_mode  = SyncMode::None;                 //> How data should be synchronized
                                                                         //> during the initialization and destruction of this GPUFORT array.
-    int num_refs             = 0;  //> Number of references.
-    size_t bytes_per_element = -1; //> Bytes per element; stored to make num_data_bytes routine independent of T 
+    int num_refs          = 0;  //> Number of references.
+    int bytes_per_element = -1; //> Bytes per element; stored to make num_data_bytes routine independent of T 
 
     array4() {
       // do nothing
@@ -5284,8 +5284,8 @@ namespace gpufort {
                                                                         //> wrap the host and allocate device data
     SyncMode               sync_mode  = SyncMode::None;                 //> How data should be synchronized
                                                                         //> during the initialization and destruction of this GPUFORT array.
-    int num_refs             = 0;  //> Number of references.
-    size_t bytes_per_element = -1; //> Bytes per element; stored to make num_data_bytes routine independent of T 
+    int num_refs          = 0;  //> Number of references.
+    int bytes_per_element = -1; //> Bytes per element; stored to make num_data_bytes routine independent of T 
 
     array5() {
       // do nothing
@@ -6720,8 +6720,8 @@ namespace gpufort {
                                                                         //> wrap the host and allocate device data
     SyncMode               sync_mode  = SyncMode::None;                 //> How data should be synchronized
                                                                         //> during the initialization and destruction of this GPUFORT array.
-    int num_refs             = 0;  //> Number of references.
-    size_t bytes_per_element = -1; //> Bytes per element; stored to make num_data_bytes routine independent of T 
+    int num_refs          = 0;  //> Number of references.
+    int bytes_per_element = -1; //> Bytes per element; stored to make num_data_bytes routine independent of T 
 
     array6() {
       // do nothing
@@ -8228,8 +8228,8 @@ namespace gpufort {
                                                                         //> wrap the host and allocate device data
     SyncMode               sync_mode  = SyncMode::None;                 //> How data should be synchronized
                                                                         //> during the initialization and destruction of this GPUFORT array.
-    int num_refs             = 0;  //> Number of references.
-    size_t bytes_per_element = -1; //> Bytes per element; stored to make num_data_bytes routine independent of T 
+    int num_refs          = 0;  //> Number of references.
+    int bytes_per_element = -1; //> Bytes per element; stored to make num_data_bytes routine independent of T 
 
     array7() {
       // do nothing
@@ -9563,7 +9563,7 @@ __host__ __device__ __forceinline__ int size(
  * \param[in] dim selected dimension: 1,...,1
  */
 template<typename T>
-__host__ __forceinline__ int lbound(
+__host__ __device__ __forceinline__ int lbound(
     gpufort::array1<T>& array,
     int dim) {
   return array.lbound(dim);
@@ -9574,7 +9574,7 @@ __host__ __forceinline__ int lbound(
  * \param[in] dim selected dimension: 1,...,1
  */
 template<typename T>
-__host__ __forceinline__ int ubound(
+__host__ __device__ __forceinline__ int ubound(
     gpufort::array1<T>& array,
     int dim) {
   return array.ubound(dim);
@@ -9604,7 +9604,7 @@ __host__ __device__ __forceinline__ int size(
  * \param[in] dim selected dimension: 1,...,2
  */
 template<typename T>
-__host__ __forceinline__ int lbound(
+__host__ __device__ __forceinline__ int lbound(
     gpufort::array2<T>& array,
     int dim) {
   return array.lbound(dim);
@@ -9615,7 +9615,7 @@ __host__ __forceinline__ int lbound(
  * \param[in] dim selected dimension: 1,...,2
  */
 template<typename T>
-__host__ __forceinline__ int ubound(
+__host__ __device__ __forceinline__ int ubound(
     gpufort::array2<T>& array,
     int dim) {
   return array.ubound(dim);
@@ -9645,7 +9645,7 @@ __host__ __device__ __forceinline__ int size(
  * \param[in] dim selected dimension: 1,...,3
  */
 template<typename T>
-__host__ __forceinline__ int lbound(
+__host__ __device__ __forceinline__ int lbound(
     gpufort::array3<T>& array,
     int dim) {
   return array.lbound(dim);
@@ -9656,7 +9656,7 @@ __host__ __forceinline__ int lbound(
  * \param[in] dim selected dimension: 1,...,3
  */
 template<typename T>
-__host__ __forceinline__ int ubound(
+__host__ __device__ __forceinline__ int ubound(
     gpufort::array3<T>& array,
     int dim) {
   return array.ubound(dim);
@@ -9686,7 +9686,7 @@ __host__ __device__ __forceinline__ int size(
  * \param[in] dim selected dimension: 1,...,4
  */
 template<typename T>
-__host__ __forceinline__ int lbound(
+__host__ __device__ __forceinline__ int lbound(
     gpufort::array4<T>& array,
     int dim) {
   return array.lbound(dim);
@@ -9697,7 +9697,7 @@ __host__ __forceinline__ int lbound(
  * \param[in] dim selected dimension: 1,...,4
  */
 template<typename T>
-__host__ __forceinline__ int ubound(
+__host__ __device__ __forceinline__ int ubound(
     gpufort::array4<T>& array,
     int dim) {
   return array.ubound(dim);
@@ -9727,7 +9727,7 @@ __host__ __device__ __forceinline__ int size(
  * \param[in] dim selected dimension: 1,...,5
  */
 template<typename T>
-__host__ __forceinline__ int lbound(
+__host__ __device__ __forceinline__ int lbound(
     gpufort::array5<T>& array,
     int dim) {
   return array.lbound(dim);
@@ -9738,7 +9738,7 @@ __host__ __forceinline__ int lbound(
  * \param[in] dim selected dimension: 1,...,5
  */
 template<typename T>
-__host__ __forceinline__ int ubound(
+__host__ __device__ __forceinline__ int ubound(
     gpufort::array5<T>& array,
     int dim) {
   return array.ubound(dim);
@@ -9768,7 +9768,7 @@ __host__ __device__ __forceinline__ int size(
  * \param[in] dim selected dimension: 1,...,6
  */
 template<typename T>
-__host__ __forceinline__ int lbound(
+__host__ __device__ __forceinline__ int lbound(
     gpufort::array6<T>& array,
     int dim) {
   return array.lbound(dim);
@@ -9779,7 +9779,7 @@ __host__ __forceinline__ int lbound(
  * \param[in] dim selected dimension: 1,...,6
  */
 template<typename T>
-__host__ __forceinline__ int ubound(
+__host__ __device__ __forceinline__ int ubound(
     gpufort::array6<T>& array,
     int dim) {
   return array.ubound(dim);
@@ -9809,7 +9809,7 @@ __host__ __device__ __forceinline__ int size(
  * \param[in] dim selected dimension: 1,...,7
  */
 template<typename T>
-__host__ __forceinline__ int lbound(
+__host__ __device__ __forceinline__ int lbound(
     gpufort::array7<T>& array,
     int dim) {
   return array.lbound(dim);
@@ -9820,7 +9820,7 @@ __host__ __forceinline__ int lbound(
  * \param[in] dim selected dimension: 1,...,7
  */
 template<typename T>
-__host__ __forceinline__ int ubound(
+__host__ __device__ __forceinline__ int ubound(
     gpufort::array7<T>& array,
     int dim) {
   return array.ubound(dim);

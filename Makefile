@@ -1,4 +1,4 @@
-.PHONY: clean_all gpufort_headers gpufort_sources gpufort_templates share/gpufort_sources lib/$(LIBGPUFORT) lib/$(LIBGPUFORT_ACC)
+.PHONY: clean_all gpufort_headers gpufort_sources gpufort_templates share/hip/gpufort_sources lib/$(LIBGPUFORT) lib/$(LIBGPUFORT_ACC)
 
 SUFFIX         = $(if $(HIP_PLATFORM),$(HIP_PLATFORM),amd)
 LIBGPUFORT     = libgpufort_$(SUFFIX).a

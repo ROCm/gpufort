@@ -204,11 +204,13 @@ def create_scope(index, tag):
     existing_scope = types.EMPTY_SCOPE
     nesting_level = -1 # -1 implies that nothing has been found
     scopes_to_delete = []
+    tag_tokens = tag.split(":")
     for s in opts.scopes:
         existing_tag = s["tag"]
-        if existing_tag == tag[0:len(existing_tag)]:
+        existing_tag_tokens = existing_tag.split(":")
+        if tag_tokens == existing_tag_tokens:
             existing_scope = s
-            nesting_level = len(existing_tag.split(":")) - 1
+            nesting_level = len(existing_tag_tokens) - 1
         else:
             scopes_to_delete.append(s)
     # clean up scopes that are not used anymore
@@ -220,7 +222,6 @@ def create_scope(index, tag):
             opts.scopes.remove(s)
 
     # return existing existing_scope or create it
-    tag_tokens = tag.split(":")
     if len(tag_tokens) - 1 == nesting_level:
         util.logging.log_debug(opts.log_prefix,"create_scope",\
           "found existing scope for tag '{}'".format(tag))
@@ -302,13 +303,13 @@ def search_scope_for_var(scope,
                 (var for var in scope_vars if var["name"] == var_name),
                 None)
             if result == None:
-                raise util.error.LookupError("no index record found for variable '{}' in scope".format(var_expr))
+                raise util.error.LookupError("no index record found for variable tag '{}' in scope".format(variable_tag))
         else:
             matching_type_var = next((
                 var for var in scope_vars if var["name"] == var_name),
                                      None)
             if matching_type_var == None:
-                raise util.error.LookupError("no index record found for variable '{}' in scope".format(var_expr))
+                raise util.error.LookupError("no index record found for variable tag '{}' in scope".format(variable_tag))
             matching_type = next(
                 (typ for typ in scope_types
                  if typ["name"] == matching_type_var["kind"]), None)
@@ -325,6 +326,7 @@ def search_scope_for_var(scope,
         # if scope["implicit"] == "none"
         # elif scope["implicit"] == "default"
         # elif scope["implicit"] == ... 
+        #print("vars in scope: "+str([ivar["name"] for ivar in scope["variables"]]),file=sys.stderr)
         result = __lookup_implicitly_declared_var(var_expr,implicit_none=True,type_map={})
     # resolve
     if resolve:
@@ -362,7 +364,7 @@ def search_scope_for_var(scope,
     #            result[entry] = entry_value
 
     util.logging.log_debug2(opts.log_prefix,"search_scope_for_var",\
-      "entry found for variable '{}'".format(variable_tag))
+      "entry found for variable tag '{}'".format(variable_tag))
     util.logging.log_leave_function(opts.log_prefix,
                                     "search_scope_for_var")
     return result

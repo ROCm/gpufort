@@ -47,7 +47,7 @@ def __lookup_implicitly_declared_var(var_expr,implicit_none,type_map={}):
 
 def _condense_only_groups(iused_modules):
     """Group consecutive used modules with same name
-       if both have non-empty 'only' list.
+    if both have non-empty 'only' list.
     """
     result = []
     for iused_module in iused_modules:
@@ -59,26 +59,46 @@ def _condense_only_groups(iused_modules):
             if (iused_module["name"] == last["name"]
                and (len(iused_module["only"])>0) 
                    and (len(last["only"])>0)):
-                last["only"] += iused_module["only"]
+                last["only"] += iused_module["only"] # TODO check for duplicates
             else:
                 result.append(iused_module)
     return result
 
-def _condense_renamings_groups(iused_modules):
-    result1 = []
+def _condense_non_only_groups(iused_modules):
+    """Group consecutive used modules with same name
+    if both have no 'only' list.
+
+    Example 1:
+
+    ```
+    use a, b1 => a1 ! use all of a with orig. name except a1 which shall be named b1
+    use a, b2 => a2 ! use all of a with orig. name except a2 which shall be named b2; 
+                    ! now a1 is accessible via orig. name too but not a2
+
+    ```
+    can be transformed to
+
+    ```
+    use a, only: b1 => a1
+    use a, b2 => a2
+    ```
+    """
+
+
+    groups = []
     for iused_module in iused_modules:
-        if not len(result):
-            record = (iused_module["name"],[])
-            if len(iused_module["renamings"]):
-                record[1].append(
+        if not len(groups):
+            groups.append([iused_module])
         else:
-            name, entries = result[-1]
-            if (iused_module["name"] == name 
-               and (len(iused_module["renamings"])>0) 
-                   and (len()>0)):
-                result1.
+            last = groups[-1]
+            if (iused_module["name"] == last[0]["name"] 
+               and (len(iused_module["only"])==0) 
+                   and (len(last[0]["only"])==0)):
+                last.append(iused_module)
             else:
-                result.append(iused_module)
+                groups.append([iused_module])
+    for group in groups:
+        pass
     return result
 
 @util.logging.log_entry_and_exit(opts.log_prefix)

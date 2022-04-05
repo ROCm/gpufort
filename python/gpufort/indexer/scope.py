@@ -45,6 +45,42 @@ def __lookup_implicitly_declared_var(var_expr,implicit_none,type_map={}):
     f_type, kind = __implicit_type(var_expr,implicit_none,type_map)
     return types.create_index_var(f_type,kind,var_expr)
 
+def _condense_only_groups(iused_modules):
+    """Group consecutive used modules with same name
+       if both have non-empty 'only' list.
+    """
+    result = []
+    for iused_module in iused_modules:
+        if not len(result):
+            result.append(iused_module)
+        else:
+            print(iused_module)
+            last = result[-1]
+            if (iused_module["name"] == last["name"]
+               and (len(iused_module["only"])>0) 
+                   and (len(last["only"])>0)):
+                last["only"] += iused_module["only"]
+            else:
+                result.append(iused_module)
+    return result
+
+def _condense_renamings_groups(iused_modules):
+    result1 = []
+    for iused_module in iused_modules:
+        if not len(result):
+            record = (iused_module["name"],[])
+            if len(iused_module["renamings"]):
+                record[1].append(
+        else:
+            name, entries = result[-1]
+            if (iused_module["name"] == name 
+               and (len(iused_module["renamings"])>0) 
+                   and (len()>0)):
+                result1.
+            else:
+                result.append(iused_module)
+    return result
+
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def _resolve_dependencies(scope,
                           index_record,
@@ -55,66 +91,79 @@ def _resolve_dependencies(scope,
     :param dict scope: the scope that you updated with information from the used modules.
     :param dict index_record: a module/program/procedure index record
     :param list index: list of module/program index records
-
-    TODO must be recursive!!!
     """
+    list_of_already_read_dependencies = []
 
-    @util.logging.log_entry_and_exit(opts.log_prefix)
-    def handle_use_statements_(scope, imodule):
+    def handle_use_statements_(scope, icurrent,indent=""):
         """
         recursive function
-        :param dict imodule: 
+        :param dict icurrent: 
         """
         nonlocal index
-        for used_module in imodule["used_modules"]:
+        nonlocal list_of_already_read_dependencies
+
+        util.logging.log_debug2(
+            opts.log_prefix,
+            "_resolve_dependencies.handle_use_statements",
+            "{}process use statements of module '{}'".format(
+                indent,
+                icurrent["name"]))
+
+        for used_module in _group_used_modules(icurrent["used_modules"]):
+            if used_module["name"] == "esmf_mod":
+                print(used_module["only"])
+            # include definitions from other modules
             used_module_found = ("intrinsic" in used_module["qualifiers"]
                                 or used_module["name"] in opts.module_ignore_list)
-            # include definitions from other modules
-            for module in index:
-                if module["name"] == used_module["name"]:
-                    handle_use_statements_(scope, module) # recursivie call
-
-                    used_module_found = True
-                    include_all_entries = not len(used_module["only"])
-                    if include_all_entries: # simple include
-                        util.logging.log_debug2(
-                            opts.log_prefix,
-                            "_resolve_dependencies.handle_use_statements",
-                            "use all definitions from module '{}'".format(
-                                imodule["name"]))
+            if not used_module_found:
+                iother = next((imod for imod in index if imod["name"]==used_module["name"]),None)
+                used_module_found = iother != None
+            if used_module_found:
+                handle_use_statements_(scope, iother,indent+"-"*1) # recursive call
+                include_all_entries = not len(used_module["only"])
+                if include_all_entries: # simple include
+                    util.logging.log_debug2(
+                        opts.log_prefix,
+                        "_resolve_dependencies.handle_use_statements",
+                        "{}use all definitions from module '{}'".format(
+                            indent,
+                            iother["name"]))
+                    for entry_type in types.SCOPE_ENTRY_TYPES:
+                        scope[entry_type] += copy.deepcopy(iother[entry_type])
+                    if len(used_module["renamings"]):
+                        for mapping in used_module["renamings"]:
+                            for entry_type in types.SCOPE_ENTRY_TYPES:
+                                entry = next((entry for entry in scope[entry_type] 
+                                             if entry["name"] == mapping["original"]),None)
+                            if entry != None:
+                                entry["name"] = mapping["renamed"]
+                                util.logging.log_debug2(opts.log_prefix,
+                                  "_resolve_dependencies.handle_use_statements",
+                                  "{}use {} '{}' from module '{}' as '{}'".format(
+                                  indent,
+                                  entry_type[0:-1],mapping["original"],
+                                  iother["name"],
+                                  mapping["renamed"]))
+                                break
+                else:
+                    for mapping in used_module["only"]:
                         for entry_type in types.SCOPE_ENTRY_TYPES:
-                            scope[entry_type] += copy.deepcopy(module[entry_type])
-                        if len(used_module["renamings"]):
-                            for mapping in used_module["renamings"]:
-                                for entry_type in types.SCOPE_ENTRY_TYPES:
-                                    entry = next((entry for entry in scope[entry_type] 
-                                                 if entry["name"] == mapping["original"]),None)
-                                if entry != None:
-                                    entry["name"] = mapping["renamed"]
+                            for entry in iother[entry_type]:
+                                if entry["name"] == mapping["original"]:
                                     util.logging.log_debug2(opts.log_prefix,
                                       "_resolve_dependencies.handle_use_statements",
-                                      "use {} '{}' from module '{}' as '{}'".format(
+                                      "{}only use {} '{}' from module '{}' as '{}'".format(
+                                      indent,
                                       entry_type[0:-1],mapping["original"],
-                                      imodule["name"],
+                                      iother["name"],
                                       mapping["renamed"]))
-                                    break
-                    else:
-                        for mapping in used_module["only"]:
-                            for entry_type in types.SCOPE_ENTRY_TYPES:
-                                for entry in module[entry_type]:
-                                    if entry["name"] == mapping["original"]:
-                                        util.logging.log_debug2(opts.log_prefix,
-                                          "_resolve_dependencies.handle_use_statements",
-                                          "only use {} '{}' from module '{}' as '{}'".format(
-                                          entry_type[0:-1],mapping["original"],
-                                          imodule["name"],
-                                          mapping["renamed"]))
-                                        copied_entry = copy.deepcopy(entry)
-                                        copied_entry["name"] = mapping[
-                                            "renamed"]
-                                        scope[entry_type].append(copied_entry)
-            if not used_module_found:
-                msg = "no index record for module '{}' could be found".format(
+                                    copied_entry = copy.deepcopy(entry)
+                                    copied_entry["name"] = mapping[
+                                        "renamed"]
+                                    scope[entry_type].append(copied_entry)
+            else:
+                msg = "{}no index record for module '{}' could be found".format(
+                    indent,
                     used_module["name"])
                 raise util.error.LookupError(msg)
 

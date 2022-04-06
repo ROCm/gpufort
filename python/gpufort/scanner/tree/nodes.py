@@ -341,17 +341,26 @@ class STNode:
                the last line map. Otherwise, epilog / prolog are appended/prepended
                directly to the statement.
         """
-        if not self.ignore_in_s2s_translation:
-            have_first_in_first_linemap = self._first_statement_index == 0
-            have_last_in_last_linemap     = self._last_statement_index  == -1 or\
-                                            self._last_statement_index  == len(self._linemaps[-1]["statements"])-1
-            joined_statements = "\n".join(self.statements())
-            joined_lines = "".join(self.lines())
-            statements_fully_cover_lines = have_first_in_first_linemap and have_last_in_last_linemap
-            transformed_code, transformed = \
-              self.transform(joined_lines,joined_statements,statements_fully_cover_lines,index)
-            if transformed:
-                self._modify_linemaps(transformed_code)
+        try:
+            if not self.ignore_in_s2s_translation:
+                have_first_in_first_linemap = self._first_statement_index == 0
+                have_last_in_last_linemap     = self._last_statement_index  == -1 or\
+                                                self._last_statement_index  == len(self._linemaps[-1]["statements"])-1
+                joined_statements = "\n".join(self.statements())
+                joined_lines = "".join(self.lines())
+                statements_fully_cover_lines = have_first_in_first_linemap and have_last_in_last_linemap
+                transformed_code, transformed = \
+                  self.transform(joined_lines,joined_statements,statements_fully_cover_lines,index)
+                if transformed:
+                    self._modify_linemaps(transformed_code)
+        except (util.error.SyntaxError,
+                util.error.LimitationError,
+                util.error.LookupError) as err:
+            filepath = self._linemaps[0]["file"]
+            lineno   = self.min_lineno()
+            msg = "".join([filepath,":",str(lineno),":"," ",str(err.args[0])])
+            err.args = (msg,)
+            raise
 
 
 class IDeclListEntry:

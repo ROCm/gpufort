@@ -743,23 +743,11 @@ def run(infile_path,outfile_path,outfile_cpp_path,preproc_options):
 def run_checked(*args,**kwargs):
     try:
         run(*args,**kwargs)
-    except IOError as e:
-        msg = str(e)
-        print("ERROR: "+msg)
-        util.logging.log_exception(opts.log_prefix, "run_checked", msg)
-    except FileNotFoundError as e:
-        msg = str(e)
-        print("ERROR: "+msg)
-        util.logging.log_exception(opts.log_prefix, "run_checked", msg)
-    except util.error.SyntaxError as e:
-        msg = str(e)
-        print("ERROR: "+msg)
-        util.logging.log_exception(opts.log_prefix, "run_checked", msg)
-    except util.error.LimitationError as e:
-        msg = str(e)
-        print("ERROR: "+msg)
-        util.logging.log_exception(opts.log_prefix, "run_checked", msg)
-    except util.error.LookupError as e:
+    except (IOError,
+            FileNotFoundError,
+            util.error.SyntaxError,
+            util.error.LimitationError,
+            util.error.LookupError) as e:
         msg = str(e)
         print("ERROR: "+msg)
         util.logging.log_exception(opts.log_prefix, "run_checked", msg)

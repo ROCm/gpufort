@@ -23,6 +23,9 @@ only_create_gpufort_module_files = False
         # Only create and write GPUFORT module files and no other output.
 skip_create_gpufort_module_files = False
         # Skip creating and writing GPUFORT module files.
+touch_cpp_file_per_module = False
+        # Emit empty C++ files per Fortran module found
+        # by the indexer.
 
 only_modify_translation_source = False
         # Do only modify the translation source.

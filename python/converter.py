@@ -3,11 +3,12 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import os
 import sys
+import io
+import pathlib
 import argparse
 import hashlib
 import cProfile
 import pstats
-import io
 import textwrap
 
 # local imports
@@ -288,6 +289,15 @@ def populate_cl_arg_parser(parser,for_converter=True):
         action="store_true",
         help=
         "Skip creating GPUFORT modules, e.g. if they already exist. Mutually exclusive with '-c' option.",
+    )
+    parser.add_argument(
+        "--touch-cpp-files",
+        dest="touch_cpp_file_per_module",
+        action="store_true",
+        help="""Per module found in the index derived from the current file emit an empty C++ file 
+if it does not exist yet. This is realized via a touch action, i.e. the file is not overwritten if it already exists.
+This step is skipped if no GPUFORT module files are created.
+        """,
     )
 
     # fort2x.hip.codegen
@@ -584,6 +594,8 @@ def map_args_to_opts(args,for_converter=True):
         opts.only_create_gpufort_module_files = True
     if args.skip_create_gpufort_module_files:
         opts.skip_create_gpufort_module_files = True
+    if args.touch_cpp_file_per_module:
+        opts.touch_cpp_file_per_module = True
     # fort2x.hip.codegen
     # only generate kernels / modify source
     if args.only_emit_kernels_and_launchers:
@@ -662,11 +674,23 @@ def create_index(linemaps, output_dir, search_dirs):
     index = []
     if not opts.skip_create_gpufort_module_files:
         indexer.update_index_from_linemaps(linemaps, index)
+        if opts.touch_cpp_file_per_module:
+            touch_cpp_file_per_module(index, output_dir)
         indexer.write_gpufort_module_files(index, output_dir)
     if not opts.only_create_gpufort_module_files:
         index.clear()
         indexer.load_gpufort_module_files(search_dirs, index)
     return index
+
+@util.logging.log_entry_and_exit(opts.log_prefix)
+def touch_cpp_file_per_module(index, output_dir):
+    for irecord in index:
+        if irecord["kind"] == "module":
+            cpp_file_name = "".join([irecord["name"],fortx.opts.cpp_file_ext])
+            cpp_file_path = os.path.join(output_dir,cpp_file_name)
+            pathlib.Path(cpp_file_path).touch()
+            msg = "Touch C++ file: ".ljust(40) + cpp_file_path
+            util.logging.log_info(opts.log_prefix, "touch_cpp_file_per_module", msg)
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def translate_source(infile_path, outfile_path, stree, linemaps, index, preamble):

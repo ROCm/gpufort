@@ -62,6 +62,58 @@ class TestScoper(unittest.TestCase):
     def test_6_scope_search_for_top_level_procedures(self):
         func2 = indexer.scope.search_index_for_procedure(index,"test1","top_level_subroutine")
         indexer.opts.scopes.clear()
+    def test_7_condense_only_groups(self):
+        use_statements=[
+          "use a, only: b1 => a1",
+          "use a, only: b2 => a2",
+          "use a, only: b3 => a3",
+        ]
+        result = [
+          {'name': 'a',
+          'only': [{'original': 'a1', 'renamed': 'b1'},
+                   {'original': 'a2', 'renamed': 'b2'},
+                   {'original': 'a3', 'renamed': 'b3'}],
+          'qualifiers': [],
+          'renamings': []}
+        ]
+        iused_modules = []
+        for stmt in use_statements:
+            iused_modules.append(indexer.create_index_record_from_use_statement(stmt))
+        iused_modules = indexer.scope.condense_only_groups(iused_modules)
+        self.assertEqual(len(iused_modules),len(result))
+        for i in range(0,len(iused_modules)):
+            self.assertEqual(iused_modules[i]["name"],result[i]["name"])
+            self.assertEqual(iused_modules[i]["qualifiers"],result[i]["qualifiers"])
+            self.assertEqual(iused_modules[i]["renamings"],result[i]["renamings"])
+            self.assertEqual(iused_modules[i]["only"],result[i]["only"])
+    def test_8_condense_non_only_groups(self):
+        use_statements=[
+          "use a, b1 => a1",
+          "use a, b2 => a2",
+          "use a",
+          "use a, b3 => a3",
+        ]
+        result = [
+          {'name': 'a',
+           'only': [{'original': 'a1', 'renamed': 'b1'},
+                    {'original': 'a2', 'renamed': 'b2'}],
+           'qualifiers': [],
+           'renamings': []},
+          {'name': 'a',
+           'only': [],
+           'qualifiers': [],
+           'renamings': [{'original': 'a3', 'renamed': 'b3'}]}
+        ]
+        iused_modules = []
+        for stmt in use_statements:
+            iused_modules.append(indexer.create_index_record_from_use_statement(stmt))
+        iused_modules = indexer.scope.condense_non_only_groups(iused_modules)
+        self.assertEqual(len(iused_modules),len(result))
+        for i in range(0,len(iused_modules)):
+            self.assertEqual(iused_modules[i]["name"],result[i]["name"])
+            self.assertEqual(iused_modules[i]["qualifiers"],result[i]["qualifiers"])
+            self.assertEqual(iused_modules[i]["renamings"],result[i]["renamings"])
+            self.assertEqual(iused_modules[i]["only"],result[i]["only"])
 
 if __name__ == '__main__':
     unittest.main() 

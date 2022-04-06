@@ -233,7 +233,7 @@ def arrays_in_subtree(ttnode, scope):
 def inout_arrays_in_subtree(ttnode, scope):
 
     def search_filter(node):
-        cond1 = (isinstance(node,tree.LValue) 
+        cond1 = (isinstance(node,tree.TTLValue) 
                 and isinstance(node._value, tree.TTFunctionCallOrTensorAccess))
         if cond1 and isinstance(node._value, tree.TTFunctionCallOrTensorAccess):
             return node._value.is_tensor()

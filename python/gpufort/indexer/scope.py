@@ -45,7 +45,7 @@ def __lookup_implicitly_declared_var(var_expr,implicit_none,type_map={}):
     f_type, kind = __implicit_type(var_expr,implicit_none,type_map)
     return types.create_index_var(f_type,kind,var_expr)
 
-def _condense_only_groups(iused_modules):
+def condense_only_groups(iused_modules):
     """Group consecutive used modules with same name
     if both have non-empty 'only' list.
     """
@@ -54,9 +54,10 @@ def _condense_only_groups(iused_modules):
         if not len(result):
             result.append(iused_module)
         else:
-            print(iused_module)
+            #print(iused_module)
             last = result[-1]
             if (iused_module["name"] == last["name"]
+               and iused_module["qualifiers"] == last["qualifiers"]
                and (len(iused_module["only"])>0) 
                    and (len(last["only"])>0)):
                 last["only"] += iused_module["only"] # TODO check for duplicates
@@ -64,27 +65,36 @@ def _condense_only_groups(iused_modules):
                 result.append(iused_module)
     return result
 
-def _condense_non_only_groups(iused_modules):
+def condense_non_only_groups(iused_modules):
     """Group consecutive used modules with same name
     if both have no 'only' list.
 
-    Example 1:
+    Background:
+
+    Given a consecutive list of use statements that include the
+    same module, one can group them together to just two use statements.
+
+    Example (as seen in WRF):
 
     ```
     use a, b1 => a1 ! use all of a with orig. name except a1 which shall be named b1
-    use a, b2 => a2 ! use all of a with orig. name except a2 which shall be named b2; 
-                    ! now a1 is accessible via orig. name too but not a2
+    use a, b2 => a2 ! use all of a with orig. name except a2 which shall be named b2
+    use a, b3 => a3 ! use all of a with orig. name except a3 which shall be named b3; 
+                    ! now a1,a2 are accessible via orig. name too but not a3
 
     ```
     can be transformed to
 
     ```
-    use a, only: b1 => a1
-    use a, b2 => a2
+    use a, only: b1 => a1, b2 => a2
+    use a, b3 => a3
     ```
     """
 
-
+    # - remove `use <mod>` statements before the end of the list
+    # - combine renamings of `use <mod>`, statements before the end of the list
+    # - for the time being, ignore `use <mod>, only: <only-list>` statements in the interior of the list (no use case)
+    # group
     groups = []
     for iused_module in iused_modules:
         if not len(groups):
@@ -92,13 +102,25 @@ def _condense_non_only_groups(iused_modules):
         else:
             last = groups[-1]
             if (iused_module["name"] == last[0]["name"] 
+               and iused_module["qualifiers"] == last[0]["qualifiers"]
                and (len(iused_module["only"])==0) 
                    and (len(last[0]["only"])==0)):
                 last.append(iused_module)
             else:
                 groups.append([iused_module])
+    # combine
+    result = []
     for group in groups:
-        pass
+        if len(group) == 1:
+            result.append(group[0])
+        else:
+            entry1 = copy.copy(group[0])
+            entry1["renamings"] = []
+            for iused_module in group[:-1]: # exclude last
+                 entry1["only"] += iused_module["renamings"]
+            entry2 = group[-1]
+            result.append(entry1)
+            result.append(entry2)
     return result
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
@@ -112,15 +134,12 @@ def _resolve_dependencies(scope,
     :param dict index_record: a module/program/procedure index record
     :param list index: list of module/program index records
     """
-    list_of_already_read_dependencies = []
-
     def handle_use_statements_(scope, icurrent,indent=""):
         """
         recursive function
         :param dict icurrent: 
         """
         nonlocal index
-        nonlocal list_of_already_read_dependencies
 
         util.logging.log_debug2(
             opts.log_prefix,
@@ -129,9 +148,11 @@ def _resolve_dependencies(scope,
                 indent,
                 icurrent["name"]))
 
-        for used_module in _group_used_modules(icurrent["used_modules"]):
-            if used_module["name"] == "esmf_mod":
-                print(used_module["only"])
+        for used_module in condense_non_only_groups(
+                             condense_only_groups(
+                               icurrent["used_modules"])):
+            #if used_module["name"] == "esmf_mod":
+            #    #print(used_module["only"])
             # include definitions from other modules
             used_module_found = ("intrinsic" in used_module["qualifiers"]
                                 or used_module["name"] in opts.module_ignore_list)

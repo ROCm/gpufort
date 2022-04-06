@@ -57,6 +57,26 @@ def create_index_records_from_declaration(statement):
         context.append(ivar)
     return context
 
+def create_index_record_from_use_statement(statement):
+    module, qualifiers, renamings, only = util.parsing.parse_use_statement(statement)
+    
+    used_module = {}
+    used_module["name"] = module 
+    used_module["qualifiers"] = qualifiers
+    used_module["renamings"] = []
+    for pair in renamings:
+        used_module["renamings"].append({
+            "original": pair[1],
+           "renamed": pair[0],
+        })
+    used_module["only"] = []
+    for pair in only:
+        used_module["only"].append({
+            "original": pair[1],
+           "renamed": pair[0],
+        })
+    return used_module
+
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def _parse_statements(linemaps, file_path,**kwargs):
     modern_fortran,_ = util.kwargs.get_value("modern_fortran",opts.modern_fortran,**kwargs)
@@ -244,25 +264,8 @@ def _parse_statements(linemaps, file_path,**kwargs):
         log_detection_("use statement")
         
         if current_node._kind != "root":
-            module, qualifiers, renamings, only = util.parsing.parse_use_statement(current_statement)
-           
-            used_module = {}
-            used_module["name"] = module 
-            used_module["qualifiers"] = qualifiers
-            used_module["renamings"] = []
-            for pair in renamings:
-                used_module["renamings"].append({
-                    "original": pair[1],
-                   "renamed": pair[0],
-                })
-            used_module["only"] = []
-            for pair in only:
-                used_module["only"].append({
-                    "original": pair[1],
-                   "renamed": pair[0],
-                })
             current_node._data["used_modules"].append(
-                used_module)
+                create_index_record_from_use_statement(current_statement))
 
     # delayed parsing
     def Declaration():

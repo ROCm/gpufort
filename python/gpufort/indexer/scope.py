@@ -114,7 +114,7 @@ def condense_non_only_groups(iused_modules):
         if len(group) == 1:
             result.append(group[0])
         else:
-            entry1 = copy.copy(group[0])
+            entry1 = copy.deepcopy(group[0])
             entry1["renamings"] = []
             for iused_module in group[:-1]: # exclude last
                  entry1["only"] += iused_module["renamings"]

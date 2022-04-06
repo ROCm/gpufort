@@ -572,7 +572,7 @@ def preprocess_and_normalize(fortran_file_lines,
             statements3 = []
             for stmt2 in statements2:
                 for stmt3 in _convert_lines_to_statements([stmt2]):
-                    statement = copy.copy(EMPTY_STATEMENT)
+                    statement = copy.deepcopy(EMPTY_STATEMENT)
                     statement["body"] = stmt3
                     # treat statements such as "!@cuf ierr = hipStreamSynchronize(stream)
                     stmt4 = re.sub(r"[!*c]@gpufort\s*","",stmt3)

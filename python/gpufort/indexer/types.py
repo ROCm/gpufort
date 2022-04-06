@@ -40,7 +40,7 @@ EMPTY_VAR = {
 }
 
 def create_index_var(f_type,kind,name,qualifiers=[],bounds=[],rhs=None):
-    ivar = copy.copy(EMPTY_VAR)
+    ivar = copy.deepcopy(EMPTY_VAR)
     # basic
     ivar["name"]   = name
     ivar["f_type"] = f_type

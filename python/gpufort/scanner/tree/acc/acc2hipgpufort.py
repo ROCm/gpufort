@@ -361,13 +361,10 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def _add_implicit_region(stcontainer):
-    last_decl_list_node = stcontainer.last_entry_in_decl_list()
-    indent = last_decl_list_node.first_line_indent()
-    last_decl_list_node.add_to_epilog(textwrap.indent(_ACC_ENTER_REGION.format(\
-        options="implicit_region=.true."),indent))
-    for stendorreturn in stcontainer.return_or_end_statements():
-        stendorreturn.add_to_prolog(textwrap.indent(_ACC_EXIT_REGION.format(\
-            options="implicit_region=.true."),indent))
+    stcontainer.append_to_decl_list([_ACC_ENTER_REGION.format(\
+        options="implicit_region=.true.")])
+    stcontainer.prepend_to_return_or_end_statements([_ACC_EXIT_REGION.format(\
+            options="implicit_region=.true.")])
 
 def AllocateHipGpufortRT(stallocate, joined_statements, index):
     stcontainer = stallocate.parent

@@ -103,7 +103,7 @@ def handle_declaration_cuf(stdeclaration, joined_statements, index=[]):
     if len(index):
         index = index
     else:
-        index = copy.copy(indexer.scope.EMPTY)
+        index = copy.deepcopy(indexer.scope.EMPTY)
         variables = create_index_records_from_declaration(stmt.lower())
         index["variables"] += variables
 

@@ -250,6 +250,7 @@ class STNode:
                 prolog.insert(0, line_preproc)
             else:
                 prolog.append(line_preproc)
+        print(prolog)
 
     def add_to_epilog(self, line, prepend=False):
         """Add some epilog lines to the first linemap."""

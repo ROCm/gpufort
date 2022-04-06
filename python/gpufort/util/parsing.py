@@ -8,6 +8,15 @@ from . import error
 
 COMMENT_CHARS = "!cCdD*"
 
+def compare_tokens_ignore_case(tokens1,tokens2):
+    if len(tokens1) != len(tokens2):
+        return False
+    else:
+        for i,tk in enumerate(tokens1):
+            if tk.lower() != tokens2[i].lower():
+                return False
+        return True
+
 def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
     """Splits string at whitespaces and substrings such as
     'end', '$', '!', '(', ')', '=>', '=', ',' and "::".
@@ -322,14 +331,17 @@ def parse_use_statement(statement):
     mappings = []
     have_only      = False
     have_renamings = False
-    if len(tokens) > 3 and tokens[0:3] == [",","only",":"]:
+    if (len(tokens) > 3 
+       and tokens[0] == ","
+       and tokens[1].lower() == "only"
+       and tokens[2] == ":"):
         have_only = True
     elif (len(tokens) > 3 
          and tokens[0] == ","):
         have_renamings = True
     if have_only:    
         for i in range(0,3):
-                tokens.pop(0)
+            tokens.pop(0)
     if have_only or have_renamings:
         is_local_name = True
         while len(tokens):
@@ -344,7 +356,7 @@ def parse_use_statement(statement):
                 local_name,_ = mappings[-1]
                 mappings[-1] = (local_name, tk)
             elif tk != "":
-                raise error.SyntaxError("could not parse 'use' statement")
+                raise error.SyntaxError("could not parse 'use' statement. Unexpected token '{}'".format(tk))
     if have_only:
         only = mappings
         renamings = []

@@ -108,14 +108,23 @@ class TTDo(base.TTContainer):
         elif opts.all_unspecified_do_loop_step_sizes_are_positive:
             args.append("1")
         return "int {idx} = outermost_index({args});\n".format(\
-               idx=idx,args=",".join(args))
+               idx=idx,args=", ".join(args))
 
     def problem_size(self, converter=base.make_f_str):
         if self._step == None:
-            return "(1 + abs(({end}) - ({begin})))".format(\
+            return "(1 + abs( -({begin}) + ({end}) ))".format(\
                 begin=converter(self._begin._rhs),end=converter(self._end),step=converter(self._step) )
         else:
-            return "(1 + abs(({end}) - ({begin}))/abs({step}))".format(\
+            return "(1 + abs( -({begin}) + ({end}) )/abs( {step} ))".format(\
+                begin=converter(self._begin._rhs),end=converter(self._end),step=converter(self._step))
+    
+    def problem_size_c_str(self):
+        converter = base.make_c_str
+        if self._step == None:
+            return "loop_length({begin}, {end})".format(\
+                begin=converter(self._begin._rhs),end=converter(self._end),step=converter(self._step) )
+        else:
+            return "loop_length({begin}, {end}, {step})".format(\
                 begin=converter(self._begin._rhs),end=converter(self._end),step=converter(self._step))
 
     def hip_thread_bound_c_str(self):

@@ -807,6 +807,56 @@ def parse_cuf_kernel_call(statement):
 # TODO
 #     pass
 
+def parse_do_statement(statement):
+    """ High-level parser for `[label:] do var = lbound, ubound [,stride]`
+    where `label`, `var` are identifiers and `lbound`, `ubound`, and `stride` are
+    arithmetic expressions.
+
+    :return: Tuple consisting of label, var, lbound, ubound, stride (in that order).
+             label and stride are None if these optional parts could not be found.
+
+    :Example:
+
+    `mylabel: do i = 1,N+m`
+
+    results in
+
+    ('mylabel', 'i', '1', 'N+m', None)
+    """
+    tokens = tokenize(statement)
+    label = None
+    if tokens[0].lower() == "do":
+        tokens.pop(0)
+    elif (tokens[0].isidentifier()
+         and tokens[1] == ":"
+         and tokens[2].lower() == "do"):
+        label = tokens.pop(0)
+        for i in range(0,2): tokens.pop(0)
+    else:
+        raise error.SyntaxError("expected 'do' or identifier + ':' + 'do'")
+    #
+    var = tokens.pop(0) 
+    if not var.isidentifier():
+        raise error.SyntaxError("expected identifier")
+    if not tokens.pop(0) == "=":
+        raise error.SyntaxError("expected '='")
+    range_vals,consumed_tokens  = get_highest_level_args(tokens) 
+    lbound = None
+    ubound = None
+    stride = None
+    if len(range_vals) < 2:
+        raise error.SyntaxError("invalid loop range: expected at least first and last loop index")
+    elif len(range_vals) > 3:
+        raise error.SyntaxError("invalid loop range: expected not more than three values (first index, last index, stride)")
+    elif len(range_vals) == 2:
+        lbound = range_vals[0]
+        ubound = range_vals[1]
+    elif len(range_vals) == 3:
+        lbound = range_vals[0]
+        ubound = range_vals[1]
+        stride = None
+    return (label, var, lbound, ubound, stride)
+
 def parse_deallocate_statement(statement):
     """ Parses `deallocate ( var-list [, stat=stat-variable] )`
     

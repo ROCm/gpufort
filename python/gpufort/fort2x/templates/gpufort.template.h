@@ -125,6 +125,25 @@ namespace {
     }
   }{{"\n" if not loop.last}}{% endfor %}
   
+  /** 
+   * Overloaded variant that assumes that the step size is 1 or -1.
+   */ 
+  __device__ __forceinline__ bool loop_length(int begin,int end) {
+    return 1 + abs( -begin + end );
+  }
+  
+  /**
+   * Number of iterations of a loop that runs from 'begin' to 'end' (both inclusive)
+   * with step size 'step'. Note that 'step' might be negative and 'begin' > 'end'.
+   *
+   * \param[in] begin begin of the loop iteration range
+   * \param[in] end end of the loop iteration range
+   * \param[in] step step size of the loop iteration range
+   */
+  __device__ __forceinline__ bool loop_length(int begin,int end,int step) {
+    return loop_length(begin,end)/abs(step);
+  }
+  
   /**
    * Checks if `idx` has reached the end of the loop iteration
    * range yet. 

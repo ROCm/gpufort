@@ -376,7 +376,7 @@ def AllocateHipGpufortRT(stallocate, joined_statements, index):
         index)
     acc_present_calls = []
     implicit_region = False
-    for var in stallocate.variable_names:
+    for var in [a[0] for a in stallocate.allocations]:
         ivar = indexer.scope.search_index_for_var(index, parent_tag, var)
         var_expr = ivar["name"]
         is_local_var = var_expr in local_var_names

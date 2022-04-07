@@ -20,11 +20,11 @@ gpufort_sources:
 	make -C $(GPUFORT_DIR)/src gpufort_sources
 
 share/gpufort_sources: gpufort_headers gpufort_sources
-	mv src/gpufort_array.cpp share/gpufort_sources
-	mv src/gpufort_array.f03 share/gpufort_sources
-	mv include/gpufort.h share/gpufort_sources
-	mv include/gpufort_array.h share/gpufort_sources
-	mv include/gpufort_reduction.h share/gpufort_sources
+	cp src/gpufort_array.cpp share/gpufort_sources
+	cp src/gpufort_array.f03 share/gpufort_sources
+	cp include/gpufort.h share/gpufort_sources
+	cp include/gpufort_array.h share/gpufort_sources
+	cp include/gpufort_reduction.h share/gpufort_sources
 
 lib/$(LIBGPUFORT): | gpufort_templates gpufort_headers gpufort_sources make_directories
 	make -C $(GPUFORT_DIR)/src $(LIBGPUFORT)

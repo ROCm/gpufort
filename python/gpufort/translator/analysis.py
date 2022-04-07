@@ -190,16 +190,20 @@ def find_all_matching_exclude_directives(ttnode,
     return result
 
 def search_lrvalue_exprs_in_subtree(ttnode, search_filter, scope, min_rank=-1):
-    
+    """All lvalue and ralue exprs in the subtree.
+    :note: Returns simplified expressions, stripped off all array indexing syntax.
+    :note: Excludes device predefined variables such as `threadidx%x` etc.
+    """
     tags = []
     for ttvalue in find_all_matching_exclude_directives(
             ttnode.body,
-            search_filter): # includes the identifiers of the function calls
+            search_filter): # includes the identifiers of the function calls 
         tag = indexer.scope.create_index_search_tag_for_var(ttvalue.f_str()) # TODO 
-        ivar = indexer.scope.search_scope_for_var(scope, tag)
-        if ivar["rank"] >= min_rank and\
-           not tag in tags: # ordering important
-            tags.append(tag)
+        if tag not in tree.grammar.DEVICE_PREDEFINED_VARIABLES:
+            ivar = indexer.scope.search_scope_for_var(scope, tag)
+            if ivar["rank"] >= min_rank and\
+               not tag in tags: # ordering important
+                tags.append(tag)
     return tags
 
 

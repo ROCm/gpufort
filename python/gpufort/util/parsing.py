@@ -807,14 +807,56 @@ def parse_cuf_kernel_call(statement):
 # TODO
 #     pass
 
+def parse_deallocate_statement(statement):
+    """ Parses `deallocate ( var-list [, stat=stat-variable] )`
+    
+    where var-list is a comma-separated list of pointers or allocatable
+    arrays.
+   
+    :return: Tuple consisting of list of variable names plus a status variable expression.
+             The latter is None if no status var expression was detected.
+
+    :Example:
+    
+    `allocate(a(1:N),b(-1:m:2,n))`
+
+    will result in the tuple:
+
+    (['a','b'], 'ierr')
+    """
+    result1 = [] 
+    result2 = None
+    tokens = tokenize(statement)
+    if not tokens.pop(0).lower() == "deallocate":
+        raise error.SyntaxError("expected 'deallocate'")
+    if tokens.pop(0) != "(":
+        raise error.SyntaxError("expected '('")
+    args,_  = get_highest_level_args(tokens) # : [...,"b(-1:m,n)"]
+    for arg in args:
+        parts,_ = get_highest_level_args(tokenize(arg),separators=["%"])
+        child_tokens = tokenize(parts[-1])
+        if child_tokens[0].lower() == "stat":
+            if result2 != None:
+                raise error.SyntaxError("expected only a single 'stat' expression")
+            child_tokens.pop(0)
+            if child_tokens.pop(0) != "=":
+                raise error.SyntaxError("expected '='")
+            result2 = "".join(child_tokens)
+        else:
+            varname = child_tokens.pop(0) # : "b"
+            if not varname.isidentifier():
+                raise error.SyntaxError("expected identifier")
+            if len(parts) > 1:
+                varname = "%".join(parts[:-1]+[varname])
+            result1.append(varname)
+    return result1, result2
+
 def parse_allocate_statement(statement):
-    """Parses:
-  
-      (deallocate|allocate) (allocation-list [, stat=stat-variable])
+    """Parses `allocate ( allocation-list [, stat=stat-variable] )`
 
     where each entry in allocation-list has the following syntax:
 
-      name( [lower-bound :] upper-bound [, ...] )  
+      name( [lower-bound :] upper-bound [:stride] [, ...] )  
 
     :return: List of tuples pairing variable names and bound information plus
              a status variable expression if the `stat` variable is set. Otherwise
@@ -822,44 +864,45 @@ def parse_allocate_statement(statement):
 
     :Example:
     
-    `allocate(a(1:N),b(-1:m:2,n))`
+    `allocate(a(1:N),b(-1:m:2,n), stat=ierr)`
 
-    will result in the list:
+    will result in the tuple:
 
-    [("a",[("1","N",None)]),("b",[("-1","m",2),("1","n",None)])]
-
-    where `1` is the default lower bound if none is present.
+    ([("a",[(None,"N",None)]),("b",[("-1","m",2),(None,"n",None)])], 'ierr')
     """
     result1 = [] 
     result2 = None
     tokens = tokenize(statement)
-    if not tokens.pop(0).lower() in ["allocate","deallocate"]:
-        raise error.SyntaxError("expected 'allocate' or 'deallocate'")
+    if not tokens.pop(0).lower() == "allocate":
+        raise error.SyntaxError("expected 'allocate'")
     if tokens.pop(0) != "(":
         raise error.SyntaxError("expected '('")
     args,_  = get_highest_level_args(tokens) # : [...,"b(-1:m,n)"]
     for arg in args:
-        arg_tokens = tokenize(arg)
-        if arg_tokens[0].lower() == "stat":
+        parts,_ = get_highest_level_args(tokenize(arg),separators=["%"])
+        child_tokens = tokenize(parts[-1])
+        if child_tokens[0].lower() == "stat":
             if result2 != None:
                 raise error.SyntaxError("expected only a single 'stat' expression")
-            arg_tokens.pop(0)
-            if arg_tokens.pop(0) != "=":
+            child_tokens.pop(0)
+            if child_tokens.pop(0) != "=":
                 raise error.SyntaxError("expected '='")
-            result2 = "".join(arg_tokens)
+            result2 = "".join(child_tokens)
         else:
-            varname = arg_tokens.pop(0) # : "b"
+            varname = child_tokens.pop(0) # : "b"
             if not varname.isidentifier():
-                raise error.SyntaxError("expected '='")
-            if arg_tokens.pop(0) != "(":
+                raise error.SyntaxError("expected identifier")
+            if child_tokens.pop(0) != "(":
                 raise error.SyntaxError("expected '('")
-            ranges,_  = get_highest_level_args(arg_tokens) # : ["-1:m", "n"]
+            ranges,_  = get_highest_level_args(child_tokens) # : ["-1:m", "n"]
+            if len(parts) > 1:
+                varname = "%".join(parts[:-1]+[varname])
             var_tuple = (varname, [])
             for r in ranges:
                 range_tokens,_  = get_highest_level_args(tokenize(r),
                                                       separators=[":"])
                 if len(range_tokens) == 1:
-                    range_tuple = ("1",range_tokens[0],None)
+                    range_tuple = (None,range_tokens[0],None)
                 elif len(range_tokens) == 2:
                     range_tuple = (range_tokens[0],range_tokens[1],None)
                 elif len(range_tokens) == 3:

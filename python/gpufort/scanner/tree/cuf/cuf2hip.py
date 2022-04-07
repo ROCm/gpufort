@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+import copy
 import textwrap
 
 from gpufort import translator
@@ -32,43 +33,144 @@ def CufLoopNest2Hip(stloopnest,*args,**kwargs):
     return nodes.STLoopNest.transform(stloopnest,*args,**kwargs)
 
 # backends for standard nodes
+def hip_f_str(self,
+              bytes_per_element,
+              array_qualifiers,
+              vars_are_c_ptrs=False):
+    """Generate HIP ISO C Fortran expression for all
+    device and pinned host allocations.
+    Use standard allocate for all other allocations.
+    :param array_qualifiers: List storing per variable, one of 'managed', 'constant', 'shared', 'pinned', 'texture', 'device' or None.
+    :see: variable_names(self) 
+    """
+    assert len(bytes_per_element) is len(self._vars)
+    assert len(array_qualifiers) is len(self._vars)
+    result = []
+    other_arrays = []
+    for i, array in enumerate(self._vars):
+        if vars_are_c_ptrs:
+            size = array.size(bytes_per_element[i],
+                              base.make_f_str) # total size in bytes
+        else:
+            size = ",".join(
+                array.counts_f_str()) # element counts per dimension
+        if array_qualifiers[i] == "device":
+            line = "call hipCheck(hipMalloc({0}, {1}))".format(
+                array.var_name(), size)
+            result.append(line)
+        elif array_qualifiers[i] == "pinned":
+            line = "call hipCheck(hipHostMalloc({0}, {1}, 0))".format(
+                array.var_name(), size)
+            result.append(line)
+        else:
+            other_arrays.append(base.make_f_str(array))
+        if vars_are_c_ptrs and not array_qualifiers[i] in [
+                "pinned", "device"
+        ]:
+            result += array.bound_var_assignments(array.var_name())
+    if len(other_arrays):
+        line = "allocate({0})".format(",".join(other_arrays))
+        result.append(line)
+    return "\n".join(result)
+
+def _render_allocation_f_str(name,bounds):
+    args = []
+    for alloc_range in bounds:
+        args.append(":".join([el for el in alloc_range if el != None]))
+    return "".join([name,"(",",".join(args),")"])
+
+def _render_allocation_hipfort_f_str(api,name,bounds,stat):
+    counts  = []
+    lbounds = []
+    for alloc_range in bounds:
+        lbound, ubound, stride = alloc_range
+        if stride != None:
+            try:
+                step_as_int = int(stride)
+                if step_as_int != 1:
+                    raise error.LimitationError("stride != 1 not supported")
+            except ValueError:
+                    raise error.LimitationError("non-numeric stride not supported")
+        # can assume stride = 1 below
+        all_lbounds_are_one = True
+        if lbound == None:
+            counts.append(ubound)
+            lbounds.append("1")
+        else:
+            all_lbounds_are_one = False
+            counts.append("1+(({1})-({0}))".format(lbound,ubound))
+            lbounds.append(lbound)
+    if all_lbounds_are_one:
+        args = copy.copy(counts)
+    else:
+        args = []
+        args.append("".join(["[",",".join(counts),"]"]))
+        args.append("".join(["lbounds=[",",".join(lbounds),"]"]))
+    if stat != None:
+        prefix = "".join([stat,"="])
+        suffix = ""
+    else:
+        prefix = "call hipCheck("
+        suffix = ")"
+    return "".join([prefix,api,"(",name,",",",".join(args),")",suffix])
+
 def handle_allocate_cuf(stallocate, joined_statements, index):
     indent = stallocate.first_line_indent()
-    # CUF
-    transformed = False
-    bytes_per_element = []
-    array_qualifiers = []
-    for array_name in stallocate.parse_result.variable_names():
+    unchanged_allocation_args = []
+    hipfort_allocations = []
+    stat = stallocate.stat
+    for name, bounds in stallocate.allocations:
         ivar  = indexer.scope.search_index_for_var(index,stallocate.parent.tag(),\
-          array_name)
-        bytes_per_element.append(ivar["bytes_per_element"])
-        qualifier, transformation_required = nodes.pinned_or_on_device(ivar)
-        transformed |= transformation_required
-        array_qualifiers.append(qualifier)
-    subst = stallocate.parse_result.hip_f_str(bytes_per_element,
-                                              array_qualifiers).lstrip(" ")
-    return (textwrap.indent(subst,indent), transformed)
+          name)
+        if "pinned" in ivar["qualifiers"]:
+            hipfort_allocations.append(_render_allocation_hipfort_f_str("hipHostMalloc",name,bounds,stat))
+        elif "device" in ivar["qualifiers"]:
+            hipfort_allocations.append(_render_allocation_hipfort_f_str("hipMalloc",name,bounds,stat))
+        else:
+            unchanged_allocation_args.append(_render_allocation_f_str(name,bounds))
+    result = []
+    if len(unchanged_allocation_args):
+        if stat != None:
+            unchanged_allocation_args.append("".join(["stat=",stat]))
+        result.append("".join(["allocate","(",",".join(unchanged_allocation_args),")"]))
+    result += hipfort_allocations
+    return (textwrap.indent("\n".join(result),indent), len(hipfort_allocations))
 
+def _render_deallocation_hipfort_f_str(api,name,stat):
+    if stat != None:
+        prefix = "".join([stat,"="])
+        suffix = ""
+    else:
+        prefix = "call hipCheck("
+        suffix = ")"
+    return "".join([prefix,api,"(",name,")",suffix])
 
 def handle_deallocate_cuf(stdeallocate, joined_statements, index):
     indent = stdeallocate.first_line_indent()
-    transformed = False
-    array_qualifiers = []
-    for array_name in stdeallocate.parse_result.variable_names():
+    unchanged_deallocation_args = []
+    hipfort_deallocations = []
+    stat = stdeallocate.stat
+    for name in stdeallocate.variable_names:
         ivar  = indexer.scope.search_index_for_var(index,stdeallocate.parent.tag(),\
-          array_name)
-        on_device = nodes.index_var_is_on_device(ivar)
-        qualifier, transformed1 = nodes.pinned_or_on_device(ivar)
-        transformed |= transformed1
-        array_qualifiers.append(qualifier)
-    subst = stdeallocate.parse_result.hip_f_str(array_qualifiers).lstrip(" ")
-    return (textwrap.indent(subst,indent), transformed)
+          name)
+        if "pinned" in ivar["qualifiers"]:
+            hipfort_deallocations.append(_render_deallocation_hipfort_f_str("hipHostFree",name,stat))
+        elif "device" in ivar["qualifiers"]:
+            hipfort_deallocations.append(_render_deallocation_hipfort_f_str("hipFree",name,stat))
+        else:
+            unchanged_deallocation_args.append(name)
+    result = []
+    if len(unchanged_deallocation_args):
+        if stat != None:
+            unchanged_deallocation_args.append("".join(["stat=",stat]))
+        result.append("".join(["deallocate","(",",".join(unchanged_deallocation_args),")"]))
+    result += hipfort_deallocations
+    return (textwrap.indent("\n".join(result),indent), len(hipfort_deallocations))
 
 def handle_use_statement_cuf(stuse, joined_statements, index):
     """Removes CUDA Fortran use statements and 
     adds hipfort use statements instead. 
     """
-    print(joined_statements)
     mod, qualifiers, renamings, only = util.parsing.parse_use_statement(joined_statements)
 
     cuf_2_hipfort = {

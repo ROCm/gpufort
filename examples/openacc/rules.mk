@@ -1,7 +1,7 @@
 FC     ?= gfortran
 CFLAGS ?= $(shell gpufort --gfortran-config)
 
-HIPCC ?= hipcc -fPIC 
+HIPCC ?= hipcc 
 
 HIPCC_CFLAGS = $(shell gpufort --cpp-config) -std=c++14
 

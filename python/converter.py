@@ -464,7 +464,7 @@ def get_basic_cflags():
     return cflags
 
 def get_hipcc_cflags():
-    return ["-fPIC"]
+    return get_basic_cflags() + ["-fPIC"]
 
 def get_gfortran_cflags():
     return ["-cpp","-std=f2008","-ffree-line-length-none"]
@@ -489,7 +489,7 @@ def parse_cl_args(parser,for_converter=True):
         print(__GPUFORT_ROOT_DIR, file=sys.stdout)
         sys.exit()
     if args.print_cpp_config:
-        print(" ".join(get_basic_cflags()), file=sys.stdout)
+        print(" ".join(get_hipcc_cflags()), file=sys.stdout)
         sys.exit()
     if args.print_gfortran_config:
         print(" ".join(get_gfortran_cflags()+get_basic_cflags()), file=sys.stdout)

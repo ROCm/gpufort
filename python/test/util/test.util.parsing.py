@@ -139,18 +139,21 @@ class TestParsingUtils(unittest.TestCase):
           "a,b(i,j),c(i,j,k))",
           "a,b(i,j),c(i,j,k)))",
           "-1:2*(m+b)*c:k", # 14 tokens
+          "a%b(i%a(5)%i3(mm%i4),j)%c(i%k%n,j,k%k%j)",
         ]
         separators = [
           [","],
           [","],
           [","],
           [":"],
+          ["%"],
         ]
         results = [
           (['a', 'b(i,j)', 'c(i,j,k)'],17),
           (['a', 'b(i,j)', 'c(i,j,k)'],17),
           (['a', 'b(i,j)', 'c(i,j,k)'],17),
           (['-1', '2*(m+b)*c', 'k'],14),
+          (['a', 'b(i%a(5)%i3(mm%i4),j)', 'c(i%k%n,j,k%k%j)'], 40),
         ]
         for i,stmt in enumerate(statements):
             #print(util.parsing.get_highest_level_args(stmt,
@@ -358,16 +361,36 @@ class TestParsingUtils(unittest.TestCase):
     
     def test_17_parse_allocate_statement(self):
         expressions = [
+          'allocate(a(1:N))',
           'allocate(a(1:N),b(-1:m:2,n))',
           'allocate(a(1:N),b(-1:m:2,n),stat=ierr)',
+          'allocate(grid(domain%num,j)%a(1:N))',
         ]
         results = [
-          ([('a', [('1', 'N', None)]), ('b', [('-1', 'm', '2'), ('1', 'n', None)])], None),
-          ([('a', [('1', 'N', None)]), ('b', [('-1', 'm', '2'), ('1', 'n', None)])], 'ierr'),
+          ([('a', [('1', 'N', None)])], None),
+          ([('a', [('1', 'N', None)]), ('b', [('-1', 'm', '2'), (None, 'n', None)])], None),
+          ([('a', [('1', 'N', None)]), ('b', [('-1', 'm', '2'), (None, 'n', None)])], 'ierr'),
+          ([('grid(domain%num,j)%a', [('1', 'N', None)])], None),
         ]
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_allocate_statement(expr))
             self.assertEqual(util.parsing.parse_allocate_statement(expr),results[i])
+    def test_18_parse_deallocate_statement(self):
+        expressions = [
+          'deallocate(a)',
+          'deallocate(a,b)',
+          'deallocate(a,b,stat=ierr)',
+          'deallocate(grid(domain%num,j)%a)',
+        ]
+        results = [
+          (['a'], None),
+          (['a', 'b'], None),
+          (['a', 'b'], 'ierr'),
+          (['grid(domain%num,j)%a'], None),
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing.parse_deallocate_statement(expr))
+            self.assertEqual(util.parsing.parse_deallocate_statement(expr),results[i])
 
 if __name__ == '__main__':
     unittest.main() 

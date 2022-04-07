@@ -250,7 +250,6 @@ class STNode:
                 prolog.insert(0, line_preproc)
             else:
                 prolog.append(line_preproc)
-        print(prolog)
 
     def add_to_epilog(self, line, prepend=False):
         """Add some epilog lines to the first linemap."""
@@ -867,13 +866,7 @@ class STAllocate(STNode, IWithBackend):
 
     def __init__(self, first_linemap, first_linemap_first_statement):
         STNode.__init__(self, first_linemap, first_linemap_first_statement)
-        self.parse_result = None
-        try:
-            self.parse_result = translator.tree.grammar.allocate.parseString(
-                self.first_statement())[0]
-            self.variable_names = self.parse_result.variable_names()
-        except Exception as e:
-            print(e)
+        self.allocations, self.stat = util.parsing.parse_allocate_statement(self.first_statement())
     
     def transform(self,*args,**kwargs):
         return IWithBackend.transform(self,*args,**kwargs)
@@ -884,9 +877,7 @@ class STDeallocate(STNode, IWithBackend):
 
     def __init__(self, first_linemap, first_linemap_first_statement):
         STNode.__init__(self, first_linemap, first_linemap_first_statement)
-        self.parse_result = translator.tree.grammar.deallocate.parseString(
-            self.statements()[0])[0]
-        self.variable_names = self.parse_result.variable_names()
+        self.variable_names, self.stat = util.parsing.parse_deallocate_statement(self.first_statement())
     
     def transform(self,*args,**kwargs):
         return IWithBackend.transform(self,*args,**kwargs)

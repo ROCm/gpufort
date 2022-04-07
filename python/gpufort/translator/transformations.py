@@ -141,10 +141,11 @@ def collapse_loopnest(ttdos):
             ttdo.problem_size(converter=tree.make_c_str)))
         ttdo.thread_index = "_remainder,_denominator" # side effects
         indices.append(ttdo.collapsed_loop_index_c_str())
-    conditions = [ ttdos[0].hip_thread_bound_c_str() ]
-    indices.insert(0,"int _denominator = {};\n".format("*".join(problem_sizes)))
+    # conditions = [ ttdos[0].hip_thread_bound_c_str() ]
+    indices.insert(0,"int _denominator = _problem_size;\n")
     indices.insert(0,"int _remainder = __gidx1;\n")
-    return indices, conditions
+    indices.insert(0,"const int _problem_size = {};\n".format("*".join(problem_sizes)))
+    return indices, [ "__gidx1 < _problem_size" ]
 
 def map_loopnest_to_grid(ttdos):
     thread_indices = ["x", "y", "z"]

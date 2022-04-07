@@ -68,7 +68,7 @@ class TestLinemapper(unittest.TestCase):
         numTests = len(testdata_true) + len(testdata_false)
         self.extra = ", performed {} checks".format(numTests)
     def test_2_full_test(self):
-        preproc_options = "-DCUDA -DCUDA2"
+        preproc_options = "-DCUDA -DCUDA2 -DCUDA4"
         linemaps                  = linemapper.read_file("test1.f90",preproc_options=preproc_options)
         result_lines              = linemapper.render_file(linemaps,stage="lines")
         result_raw_statements     = linemapper.render_file(linemaps,stage="raw_statements")
@@ -152,6 +152,6 @@ enddo
 end program
 """
         self.assertEqual(self.clean(result_statements),self.clean(testdata_statements))
-      
+         
 if __name__ == '__main__':
     unittest.main() 

@@ -131,9 +131,10 @@ def _handle_preprocessor_directive(lines, file_path, macro_stack,
     handled = False
     # strip away whitespace chars
     try:
-        stripped_first_line = lines[0].lstrip("# \t").lower()
-        single_line_statement = _convert_lines_to_statements(lines)[
-            0] # does not make sense for define
+        stripped_first_line = lines[0].lstrip("# \t").lower() # TODO tokenize
+        #single_line_statement = _convert_lines_to_statements(lines)[
+        #    0] # does not make sense for define
+        single_line_statement = lines[0] # assume no line breaks in C preproc directives in Fortran
         if region_stack1[-1]:
             if stripped_first_line.startswith("define"):
                 util.logging.log_debug3(

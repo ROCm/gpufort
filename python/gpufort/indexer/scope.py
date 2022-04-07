@@ -154,9 +154,10 @@ def _resolve_dependencies(scope,
             #if used_module["name"] == "esmf_mod":
             #    #print(used_module["only"])
             # include definitions from other modules
-            used_module_found = ("intrinsic" in used_module["qualifiers"]
+            used_module_ignored = ("intrinsic" in used_module["qualifiers"]
                                 or used_module["name"] in opts.module_ignore_list)
-            if not used_module_found:
+            used_module_found = False 
+            if not used_module_ignored:
                 iother = next((imod for imod in index if imod["name"]==used_module["name"]),None)
                 used_module_found = iother != None
             if used_module_found:
@@ -202,7 +203,7 @@ def _resolve_dependencies(scope,
                                     copied_entry["name"] = mapping[
                                         "renamed"]
                                     scope[entry_type].append(copied_entry)
-            else:
+            elif not used_module_ignored:
                 msg = "{}no index record for module '{}' could be found".format(
                     indent,
                     used_module["name"])

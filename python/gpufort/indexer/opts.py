@@ -18,6 +18,7 @@ module_ignore_list = [ # these modules are ignored when checking dependencies
     "ieee_arithmetic",
     "openacc",
     "openacc_lib",
+    "mpi",
     "cudafor",
     "cublas",
     "cusparse",

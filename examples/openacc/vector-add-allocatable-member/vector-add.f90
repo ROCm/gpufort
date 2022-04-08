@@ -8,10 +8,12 @@ program main
   integer :: i
   integer(4) :: y(N), y_exact(N)
   type struct_t
+    integer(4) :: coeff
     integer(4),allocatable :: x(:)
   end type
   type(struct_t) :: struct
 
+  struct%coeff = 1
   allocate(struct%x(N))
 
   do i = 1, N
@@ -28,7 +30,7 @@ program main
   
   !$acc parallel loop
   do i = 1, N
-    y(i) = struct%x(i) + y(i)
+    y(i) = struct%x(i) + struct%coeff*y(i)
   end do
   !$acc end data
   

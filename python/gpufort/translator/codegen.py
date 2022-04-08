@@ -79,6 +79,7 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
     """
     loop_collapse_strategy,_ = util.kwargs.get_value("loop_collapse_strategy",opts.loop_collapse_strategy,**kwargs)
     map_to_flat_arrays,_     = util.kwargs.get_value("map_to_flat_arrays",opts.map_to_flat_arrays,**kwargs)
+    map_to_flat_scalars,_     = util.kwargs.get_value("map_to_flat_scalars",opts.map_to_flat_scalars,**kwargs)
     fortran_style_tensor_access,_ = util.kwargs.get_value("fortran_style_tensor_access",opts.fortran_style_tensor_access,**kwargs)
 
     lrvalues = analysis.find_all_matching_exclude_directives(ttloopnest.body,
@@ -93,7 +94,9 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
     loop_vars = analysis.loop_vars_in_loopnest(ttdos)
     substitutions = {}
     if map_to_flat_arrays:
-        substitutions = transformations.map_allocatable_pointer_derived_type_members_to_flat_arrays(lrvalues,loop_vars,scope)
+        substitutions.update(transformations.map_allocatable_pointer_derived_type_members_to_flat_arrays(lrvalues,loop_vars,scope))
+    if map_to_flat_scalars:
+        substitutions.update(transformations.map_scalar_derived_type_members_to_flat_scalars(lrvalues,loop_vars,scope))
     
     num_loops_to_map = len(ttdos)
     if loop_collapse_strategy == "grid" and num_loops_to_map <= 3:

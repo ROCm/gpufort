@@ -16,6 +16,7 @@ integer :: i,j,k
 integer(4) :: y(N), y_exact(N)
 
 type grid_t
+  integer(4) :: alpha
   integer(4),allocatable :: x(:,:)
 end type
 
@@ -30,7 +31,7 @@ do j = 1, M, 2
     y(i,j) = 2
 
     do while ( k < 10 )
-      y(i,j) = grid%x(i,j) * k
+      y(i,j) = grid%alpha * grid%x(i,j) * k
       k = k + 1
     end do
     y(j,i:i+2) = grid%x(j,i:i+2)

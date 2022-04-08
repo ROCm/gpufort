@@ -5,7 +5,7 @@ program main
       
   implicit none
   integer, parameter :: N = 1000
-  integer :: i
+  integer :: i,j
   integer(4) :: x(N), y(N), y_exact(N)
 
   do i = 1, N
@@ -13,11 +13,14 @@ program main
   end do
 
   !$acc data copy(x(1:N),y(1:N))
- 
-  !$acc parallel loop present(x,y)
-  do i = 1, N
-    x(i) = 1
-    y(i) = 2
+
+  ! just an unnecessarily complicated way to fill 1D arrays
+  !$acc parallel loop present(x,y) collapse(2)
+  do j = 4, -4, -8
+    do i = 1, N/2
+      x( ((j-4)/-8)*N/2+i ) = 1
+      y( ((j-4)/-8)*N/2+i ) = 2
+    end do
   end do
   
   !$acc parallel loop

@@ -24,7 +24,7 @@ type(grid_t) :: grid
 
 annotated_loop_nest = """\
 !$acc parallel loop present(grid%x,y) private(k,i) collapse(2)
-do j = 1, M
+do j = 1, M, 2
   do i = 1, N
     grid%x(i,j) = 1
     y(i,j) = 2
@@ -34,6 +34,17 @@ do j = 1, M
       k = k + 1
     end do
     y(j,i:i+2) = grid%x(j,i:i+2)
+
+    select case (i)
+      case (1)
+        k = 1*i
+      case (2)
+        k = 2*i
+      case default
+        k = i
+    end select
+
+    return
   end do
 end do
 """

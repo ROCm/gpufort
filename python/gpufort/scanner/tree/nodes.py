@@ -568,24 +568,19 @@ class STProcedure(STContainerBase):
                 ], None)
                 if ivar_result != None:
                     self.c_result_type = ivar_result["c_type"]
-                    # TODO catch errors here
-                    # statements must contain filename and line numbers as well
                     self.parse_result = translator.parse_procedure_body(
                         self.code, scope, ivar_result["name"])
                 else:
                     raise util.error.LookupError("could not identify return value for function ''")
             else:
                 self.c_result_type = "void"
-                # TODO catch errors here
-                # statements must contain filename and line numbers as well
                 self.parse_result = translator.parse_procedure_body(
-                    self.code, scope)
-        except util.error.SyntaxError as e:
-            raise util.error.SyntaxError("{}:{}:{}".format(
-                    self._linemaps[0]["file"],self._linemaps["0"]["lineno"],e.msg)) from e
-        except util.error.LimitationError as e:
-            raise util.error.LimitationError("{}:{}:{}".format(
-                    self._linemaps[0]["file"],self._linemaps["0"]["lineno"],e.msg)) from e
+                    self.code, scope, None)
+        except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:
+            msg = "{}:[{}-{}]:{}".format(
+                    self._linemaps[0]["file"],self.min_lineno(),self.max_lineno(),e.args[0])
+            e.args = (msg,)
+            raise
 
     def is_function(self):
         """:return: If the procedure is a function. Otherwise, it is a subroutine."""
@@ -676,12 +671,11 @@ class STLoopNest(STNode):
         scope = indexer.scope.create_scope(index, parent_tag)
         try:
             self.parse_result = translator.parse_loopnest(self.code, scope)
-        except util.error.SyntaxError as e:
-            raise util.error.SyntaxError("{}:{}:{}".format(
-                    self._linemaps[0]["file"],self._linemaps["0"]["lineno"],e.msg)) from e
-        except util.error.LimitationError as e:
-            raise util.error.LimitationError("{}:{}:{}".format(
-                    self._linemaps[0]["file"],self._linemaps["0"]["lineno"],e.msg)) from e
+        except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:
+            msg = "{}:[{}-{}]:{}".format(
+                    self._linemaps[0]["file"],self.min_lineno(),self.max_lineno(),e.args[0])
+            e.args = (msg,)
+            raise
 
     def kernel_name(self):
         """derive a name for the kernel"""

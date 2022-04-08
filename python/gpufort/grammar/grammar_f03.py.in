@@ -150,9 +150,9 @@ fortran_else       = ELSE
 #   ...
 #end select [name]
 fortran_select_case     = Regex(r"(\w+\s*:)?\s*select\s+case\s*\(",re.IGNORECASE).suppress() + arithmetic_logical_expression + RPAR
-fortran_case            = Regex(r"case\s*\(") + arithmetic_logical_expression + RPAR
-fortran_case_default    = Regex(r"case\s+default")
-fortran_end_select_case = Regex(r"end\s*select(\s+\w+)?",re.IGNORECASE).suppress()
+fortran_case            = Regex(r"case\s*\(",re.IGNORECASE).suppress() + arithmetic_logical_expression + RPAR
+fortran_case_default    = Regex(r"case\s+default",re.IGNORECASE).suppress() # TODO not sure if still needed
+fortran_end_select_case = Regex(r"end\s*select(\s+\w+)?",re.IGNORECASE).suppress() # TODO not sure if still needed
 
 ## Do/while Loop
 do_loop_start    = Regex(r"(\w+\s*:)?\s*do",re.IGNORECASE).suppress()

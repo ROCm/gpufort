@@ -6,6 +6,7 @@ from gpufort import indexer
 from . import tree
 from . import analysis
 from . import parser
+from . import opts
 
 def _collect_ranges(function_call_args,include_none_values=False):
         ttranges = []
@@ -29,7 +30,7 @@ def _collect_ranges_in_lrvalue(lrvalue,include_none_values=False):
         return _collect_ranges(current._args,include_none_values)
     elif isinstance(current,tree.TTDerivedTypeMember):
         result = []
-        while current == tree.TTDerivedTypeMember:
+        while isinstance(current,tree.TTDerivedTypeMember):
             if isinstance(current._type,tree.TTFunctionCallOrTensorAccess):
                 result += _collect_ranges(current._type._args,include_none_values)
             if isinstance(current._element,tree.TTFunctionCallOrTensorAccess):
@@ -133,18 +134,54 @@ def move_statements_into_loopnest_body(ttloopnest):
     # or inout, out arguments of function call
     pass 
 
+
+def _loop_len_c_str(has_step,counter):
+    if has_step:
+        return "_len{0} = loop_length(_begin{0},_end{0},_step{0})".format(counter)
+    else:
+        return "_len{0} = loop_length(_begin{0},_end{0})".format(counter)
+
+def _loop_range_c_str(ttdo,counter):
+    result = [
+      "_begin{} = {}".format(counter,ttdo.begin_c_str()),
+      "_end{} = {}".format(counter,ttdo.end_c_str()),
+    ]
+    if ttdo.has_step():
+        result.append("_step{} = {}".format(counter,ttdo.step_c_str()))
+    elif opts.all_unspecified_do_loop_step_sizes_are_positive:
+        result.append("_step{} = 1".format(counter))
+    else:
+        result.append("_step{0} = ( _begin{0} <= _end{0} ) ? 1 : -1".format(counter))
+    result.append(_loop_len_c_str(ttdo.has_step(),counter))
+    return "".join(["const int ",",\n          ".join(result),";\n"])
+
+def _collapsed_loop_index_c_str(ttdo,counter):
+    idx = ttdo.loop_var()
+    args = [
+      ttdo.thread_index,
+      "_begin{}".format(counter),
+      "_end{}".format(counter), # end not needed
+      "_len{}".format(counter),
+      "_step{}".format(counter),
+    ]
+    return "int {idx} = outermost_index_w_len({args});\n".format(\
+           idx=idx,args=", ".join(args))
+
+
 def collapse_loopnest(ttdos):
+    preamble = []
     indices = []
     problem_sizes = []
-    indices.append("int _rem = __gidx1;\n")
-    indices.append("int _denom = _problem_size;\n")
-    for ttdo in ttdos:
-        problem_sizes.append(ttdo.problem_size_c_str())
+    for i,ttdo in enumerate(ttdos,1):
         ttdo.thread_index = "_rem,_denom" # side effects
-        indices.append(ttdo.collapsed_loop_index_c_str())
+        preamble.append(_loop_range_c_str(ttdo,i))
+        problem_sizes.append("_len{}".format(i))
+        indices.append(_collapsed_loop_index_c_str(ttdo,i))
     # conditions = [ ttdos[0].hip_thread_bound_c_str() ]
-    indices.insert(0,"const int _problem_size = \n    {};\n".format(" *\n    ".join(problem_sizes)))
-    return indices, [ "__gidx1 < _problem_size" ]
+    preamble.append("const int _problem_size = {};\n\n".format("*".join(problem_sizes)))
+    preamble.append("int _rem = __gidx1;\n")
+    preamble.append("int _denom = _problem_size;\n")
+    return (preamble + indices), [ "__gidx1 < _problem_size" ]
 
 def map_loopnest_to_grid(ttdos):
     thread_indices = ["x", "y", "z"]
@@ -190,6 +227,40 @@ def map_allocatable_pointer_derived_type_members_to_flat_arrays(lrvalues,loop_va
                 substitute = ttnode.f_str().replace(ident,c_name)
                 ttnode.overwrite_c_str(substitute)
                 substitutions[var_expr] = c_name
+    return substitutions
+
+def map_scalar_derived_type_members_to_flat_scalars(lrvalues,loop_vars,scope):
+    r"""Converts derived type expressions whose innermost element is a basic
+    scalar type to flat arrays in expectation that these will be provided
+    to kernel as flat scalars too via first private.
+    :return: A dictionary containing substitutions for the identifier part of the 
+             original variable expressions.
+    """
+    substitutions = {}
+    for lrvalue in lrvalues:
+        ttnode = lrvalue.get_value()
+        if isinstance(ttnode,tree.TTDerivedTypeMember):
+            ident = ttnode.identifier_part()
+            ivar = indexer.scope.search_scope_for_var(scope,ident)
+            if (ivar["rank"] == 0
+               and ivar["f_type"] != "type"):
+                # TODO 
+                # search through the subtree and ensure that only
+                # the last element is an array indexed by the loop
+                # variables 
+                # Deep copy required for expressions that do not match
+                # this criterion
+                if (":" in ident 
+                   or "(" in ident): # TODO hack
+                    return util.error.LimitationError("cannot map expression '{}'".format(ident))
+                var_expr = util.parsing.strip_array_indexing(ident)
+                c_name = util.parsing.mangle_fortran_var_expr(var_expr) 
+                substitute = ttnode.f_str().replace(ident,c_name)
+                ttnode.overwrite_c_str(substitute)
+                substitutions[var_expr] = c_name
+            elif (ivar["rank"] == 0
+               and ivar["f_type"] == "type"):
+                return util.error.LimitationError("cannot map derived type members of derived type '{}'".format(ident))
     return substitutions
 
 def flag_tensors(lrvalues, scope):

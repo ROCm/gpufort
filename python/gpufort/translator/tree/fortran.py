@@ -44,7 +44,7 @@ class TTReturn(base.TTNode):
         self._result_name = ""
 
     def c_str(self):
-        if len(self._result_name):
+        if self._result_name != None and len(self._result_name):
             return "return " + self._result_name + ";"
         else:
             return "return;"
@@ -294,7 +294,10 @@ class TTRValue(base.TTNode, IValue):
         self._reduction_index = ""
         #print("{0}: {1}".format(self.c_str(),self.location))
     def f_str(self):
-        return self._sign + base.make_f_str(self._value)
+        if self._sign != None and len(self._sign):
+            return "".join(["(",self._sign,base.make_f_str(self._value),")"])
+        else:
+            return base.make_f_str(self._value)
 
     def c_str(self):
         result = self._sign + base.make_c_str(self._value)
@@ -1125,7 +1128,7 @@ class TTIfElseIf(base.TTContainer):
 
     def c_str(self):
         body_content = base.TTContainer.c_str(self)
-        return "{0}if ({1}) {{\n{2}\n}}".format(\
+        return "{}if ({}) {{\n{}\n}}".format(\
             self._else,base.make_c_str(self._condition),body_content)
 
 
@@ -1133,9 +1136,42 @@ class TTElse(base.TTContainer):
 
     def c_str(self):
         body_content = base.TTContainer.c_str(self)
-        return "else {{\n{0}\n}}".format(\
+        return "else {{\n{}\n}}".format(\
             body_content)
 
+class TTSelectCase(base.TTContainer):
+    def _assign_fields(self, tokens):
+        self.selector = tokens[0]
+        self.indent = "" # container of if/elseif/else branches, so no indent
+    
+    def c_str(self):
+        body_content = base.TTContainer.c_str(self)
+        return "switch ({}) {{\n{}\n}}".format(\
+            base.make_c_str(self.selector),body_content)
+
+class TTCase(base.TTContainer):
+
+    def _assign_fields(self, tokens):
+        self.case, self.body = tokens
+
+    def children(self):
+        return [self.case, self.body]
+
+    def c_str(self):
+        body_content = base.TTContainer.c_str(self)
+        return "case {}:\n{}\n  break;".format(base.make_c_str(self.case),body_content)
+
+class TTCaseDefault(base.TTContainer):
+
+    def _assign_fields(self, tokens):
+        self.body = tokens[0]
+
+    def children(self):
+        return [self.body]
+
+    def c_str(self):
+        body_content = base.TTContainer.c_str(self)
+        return "default:\n{}\n  break;".format(body_content)
 
 class TTDoWhile(base.TTContainer):
 

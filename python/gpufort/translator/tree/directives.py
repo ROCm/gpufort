@@ -82,6 +82,19 @@ class TTDo(base.TTContainer):
     def children(self):
         return [self.annotation, self.body, self._begin, self._end, self._step]
 
+    def begin_c_str(self):
+        return base.make_c_str(self._begin._rhs)
+    
+    def end_c_str(self):
+        return base.make_c_str(self._end)
+   
+    def has_step(self):
+        return self._step != None
+
+    def step_c_str(self):
+        return base.make_c_str(self._step)
+
+    # TODO clean up
     def hip_thread_index_c_str(self):
         idx = self.loop_var()
         begin = base.make_c_str(
@@ -127,6 +140,7 @@ class TTDo(base.TTContainer):
             return "loop_length({begin}, {end}, {step})".format(\
                 begin=converter(self._begin._rhs),end=converter(self._end),step=converter(self._step))
 
+    # TODO rename
     def hip_thread_bound_c_str(self):
         args = [
           self.loop_var(),

@@ -464,7 +464,7 @@ def get_basic_cflags():
     return cflags
 
 def get_hipcc_cflags():
-    return get_basic_cflags() + ["-fPIC"]
+    return get_basic_cflags() + ["-fPIC","-std=c++14"]
 
 def get_gfortran_cflags():
     return ["-cpp","-std=f2008","-ffree-line-length-none"]

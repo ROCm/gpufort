@@ -8,12 +8,16 @@ from . import parser
 from . import transformations
 
 def _modify_array_expressions(ttnode,lrvalues,scope,**kwargs):
+    """:return: If any array expressions have been converted to loops.
+    """
     fortran_style_tensor_access,_ = util.kwargs.get_value("fortran_style_tensor_access",opts.fortran_style_tensor_access,**kwargs)
     
-    transformations.expand_all_array_expressions(ttnode, scope, fortran_style_tensor_access)
+    loop_ctr = transformations.expand_all_array_expressions(ttnode, scope, fortran_style_tensor_access)
     
     # TODO pass Fortran style access option down here too
     transformations.flag_tensors(lrvalues, scope)
+
+    return loop_ctr > 1
 
 def translate_procedure_body_to_hip_kernel_body(ttprocedurebody, scope, **kwargs):
     """
@@ -23,16 +27,15 @@ def translate_procedure_body_to_hip_kernel_body(ttprocedurebody, scope, **kwargs
     """
     lrvalues = analysis.find_all_matching_exclude_directives(ttprocedurebody.body,
                                                              lambda ttnode: isinstance(ttnode,tree.IValue))
-    _modify_array_expressions(ttprocedurebody, lrvalues, scope, **kwargs)
- 
-    # 1. Propagate result variable name to return statements
-    if len(ttprocedurebody.result_name):
-        for expr in tree.find_all(ttprocedurebody.body, tree.TTReturn):
-            expr._result_name = result_name
+    loops_generated = _modify_array_expressions(ttprocedurebody, lrvalues, scope, **kwargs)
+    if loops_generated: # tree was modified
+        lrvalues = analysis.find_all_matching_exclude_directives(ttloopnest.body,
+                                                                 lambda ttnode: isinstance(ttnode,tree.IValue))
     c_body = tree.make_c_str(ttprocedurebody.body)
 
-    if len(ttprocedurebody.result_name):
-        c_body += "\nreturn " + result_name + ";"
+    # Append return statement if this is a function
+    if ttprocedurebody != None and len(ttprocedurebody.result_name):
+        c_body += "\nreturn " + ttprocedurebody.result_name + ";"
     return prepostprocess.postprocess_c_snippet(c_body)
 
 def _handle_reductions(ttloopnest,grid_dim):
@@ -80,7 +83,10 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
 
     lrvalues = analysis.find_all_matching_exclude_directives(ttloopnest.body,
                                                              lambda ttnode: isinstance(ttnode,tree.IValue))
-    _modify_array_expressions(ttloopnest,lrvalues,scope,**kwargs)   
+    loops_generated = _modify_array_expressions(ttloopnest,lrvalues,scope,**kwargs)
+    if loops_generated: # tree was modified
+        lrvalues = analysis.find_all_matching_exclude_directives(ttloopnest.body,
+                                                                 lambda ttnode: isinstance(ttnode,tree.IValue))
  
     ttdos = analysis.perfectly_nested_do_loops_to_map(ttloopnest) 
     problem_size = analysis.problem_size(ttdos,**kwargs)

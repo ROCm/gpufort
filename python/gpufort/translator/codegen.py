@@ -1,3 +1,7 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+import textwrap
+
 from gpufort import util
 
 from . import opts
@@ -110,12 +114,21 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
     if (num_loops_to_map <= 1 
        or (loop_collapse_strategy == "grid" 
           and num_loops_to_map <= 3)):
+        if len(reduction_preamble):
+            reduction_preamble += "\n"
         indices, conditions = transformations.map_loopnest_to_grid(ttdos)
-    else: # collapse strategy or num_loops_to_map > 3
-        indices, conditions = transformations.collapse_loopnest(ttdos)
-    
-    c_snippet = "{0}\n{2}if ({1}) {{\n{3}\n}}".format(\
+        c_snippet = "{0}\n{2}if ({1}) {{\n{3}\n}}".format(\
         "".join(indices),"&&".join(conditions),reduction_preamble,tree.make_c_str(ttloopnest.body[0]))
+    else: # collapse strategy or num_loops_to_map > 3
+        if len(reduction_preamble):
+            reduction_preamble += "\n"
+        preamble, indices, conditions = transformations.collapse_loopnest(ttdos)
+        c_snippet = "{2}{4}{0}if ({1}) {{\n{3}\n}}".format(
+            "".join(indices),
+            "&&".join(conditions),
+            reduction_preamble,
+            tree.make_c_str(ttloopnest.body[0]),
+            "".join(preamble))
 
     return prepostprocess.postprocess_c_snippet(c_snippet), problem_size, loop_vars, substitutions
 

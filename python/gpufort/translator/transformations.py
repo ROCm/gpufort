@@ -135,12 +135,6 @@ def move_statements_into_loopnest_body(ttloopnest):
     pass 
 
 
-def _loop_len_c_str(has_step,counter):
-    if has_step:
-        return "_len{0} = loop_length(_begin{0},_end{0},_step{0})".format(counter)
-    else:
-        return "_len{0} = loop_length(_begin{0},_end{0})".format(counter)
-
 def _loop_range_c_str(ttdo,counter):
     result = [
       "_begin{} = {}".format(counter,ttdo.begin_c_str()),
@@ -152,8 +146,7 @@ def _loop_range_c_str(ttdo,counter):
         result.append("_step{} = 1".format(counter))
     else:
         result.append("_step{0} = ( _begin{0} <= _end{0} ) ? 1 : -1".format(counter))
-    result.append(_loop_len_c_str(ttdo.has_step(),counter))
-    return "".join(["const int ",",\n          ".join(result),";\n"])
+    return "".join(["const int ",", ".join(result),";\n"])
 
 def _collapsed_loop_index_c_str(ttdo,counter):
     idx = ttdo.loop_var()
@@ -165,23 +158,25 @@ def _collapsed_loop_index_c_str(ttdo,counter):
       "_step{}".format(counter),
     ]
     return "int {idx} = outermost_index_w_len({args});\n".format(\
-           idx=idx,args=", ".join(args))
+           idx=idx,args=",".join(args))
 
 
 def collapse_loopnest(ttdos):
-    preamble = []
+    preamble1 = []
+    preamble2 = []
     indices = []
     problem_sizes = []
+    indices.append("int _rem = __gidx1;\n")
+    indices.append("int _denom = _problem_size;\n")
     for i,ttdo in enumerate(ttdos,1):
         ttdo.thread_index = "_rem,_denom" # side effects
-        preamble.append(_loop_range_c_str(ttdo,i))
+        preamble1.append(_loop_range_c_str(ttdo,i))
+        preamble2.append("const int _len{0} = loop_length(_begin{0},_end{0},_step{0});\n".format(i))
         problem_sizes.append("_len{}".format(i))
         indices.append(_collapsed_loop_index_c_str(ttdo,i))
     # conditions = [ ttdos[0].hip_thread_bound_c_str() ]
-    preamble.append("const int _problem_size = {};\n\n".format("*".join(problem_sizes)))
-    preamble.append("int _rem = __gidx1;\n")
-    preamble.append("int _denom = _problem_size;\n")
-    return (preamble + indices), [ "__gidx1 < _problem_size" ]
+    preamble2.append("const int _problem_size = {};\n".format("*".join(problem_sizes)))
+    return preamble1+preamble2, indices, [ "__gidx1 < _problem_size" ]
 
 def map_loopnest_to_grid(ttdos):
     thread_indices = ["x", "y", "z"]

@@ -12,18 +12,20 @@ from . import grammar
 
 def flatten_arithmetic_expression(expr, converter=base.make_c_str):
 
-    def descend(element, depth=0):
-        term = ""
-        if isinstance(element, pyparsing.ParseResults):
-            for el in element:
-                term += "(" if isinstance(el, pyparsing.ParseResults) else ""
-                term += descend(el, depth)
-                term += ")" if isinstance(el, pyparsing.ParseResults) else ""
-            return term
+    def descend_(current, depth=0):
+        if isinstance(current, (list,pyparsing.ParseResults)):
+            result = ""
+            if (depth > 0): result += "("
+            for element in current:
+                result += descend_(element, depth+1)
+            if (depth > 0): result += ")"
+            return result
+        elif isinstance(current,(TTArithmeticExpression)):
+            return descend_(current._expr,depth) 
         else:
-            return converter(element)
+            return converter(current)
 
-    return descend(expr)
+    return descend_(expr)
 
 
 class TTSimpleToken(base.TTNode):
@@ -666,16 +668,16 @@ class TTOperator(base.TTNode):
 class TTArithmeticExpression(base.TTNode):
 
     def _assign_fields(self, tokens):
-        self._expr = tokens
+        self._expr = tokens[0]
 
     def children(self):
         return [self._expr]
 
     def c_str(self):
-        return flatten_arithmetic_expression(self._expr)
+        return flatten_arithmetic_expression(self)
 
     def f_str(self):
-        return flatten_arithmetic_expression(self._expr, base.make_f_str)
+        return flatten_arithmetic_expression(self, base.make_f_str)
 
 
 class TTComplexArithmeticExpression(base.TTNode):

@@ -31,14 +31,13 @@ def translate_procedure_body_to_hip_kernel_body(ttprocedurebody, scope, **kwargs
     """
     lrvalues = analysis.find_all_matching_exclude_directives(ttprocedurebody.body,
                                                              lambda ttnode: isinstance(ttnode,tree.IValue))
-    loops_generated = _modify_array_expressions(ttprocedurebody, lrvalues, scope, **kwargs)
-    if loops_generated: # tree was modified
-        lrvalues = analysis.find_all_matching_exclude_directives(ttloopnest.body,
-                                                                 lambda ttnode: isinstance(ttnode,tree.IValue))
+    _modify_array_expressions(ttprocedurebody, lrvalues, scope, **kwargs)
+    
     c_body = tree.make_c_str(ttprocedurebody.body)
 
     # Append return statement if this is a function
-    if ttprocedurebody != None and len(ttprocedurebody.result_name):
+    if (ttprocedurebody.result_name != None
+       and len(ttprocedurebody.result_name)):
         c_body += "\nreturn " + ttprocedurebody.result_name + ";"
     return prepostprocess.postprocess_c_snippet(c_body)
 

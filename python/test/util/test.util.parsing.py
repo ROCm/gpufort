@@ -133,13 +133,14 @@ class TestParsingUtils(unittest.TestCase):
         result = util.parsing.relocate_inline_comments(\
                    testdata2.splitlines())
         self.assertEqual(self.clean("\n".join(result)),self.clean(testdata2_result))
-    def test_03_get_highest_level_args(self):
+    def test_03_get_top_level_operands(self):
         statements = [
           "a,b(i,j),c(i,j,k)",  # 17 tokens
           "a,b(i,j),c(i,j,k))",
           "a,b(i,j),c(i,j,k)))",
           "-1:2*(m+b)*c:k", # 14 tokens
           "a%b(i%a(5)%i3(mm%i4),j)%c(i%k%n,j,k%k%j)",
+          "a%b(a,:) = myfunc(a,f=3)*b(:)",
         ]
         separators = [
           [","],
@@ -147,19 +148,21 @@ class TestParsingUtils(unittest.TestCase):
           [","],
           [":"],
           ["%"],
+          ["="],
         ]
         results = [
           (['a', 'b(i,j)', 'c(i,j,k)'],17),
           (['a', 'b(i,j)', 'c(i,j,k)'],17),
           (['a', 'b(i,j)', 'c(i,j,k)'],17),
           (['-1', '2*(m+b)*c', 'k'],14),
-          (['a', 'b(i%a(5)%i3(mm%i4),j)', 'c(i%k%n,j,k%k%j)'], 40),
+          (['a', 'b(i%a(5)%i3(mm%i4),j)', 'c(i%k%n,j,k%k%j)'], 37),
+          (['a%b(a,:)', 'myfunc(a,f=3)*b(:)'], 22),
         ]
         for i,stmt in enumerate(statements):
-            #print(util.parsing.get_highest_level_args(stmt,
-            #                                          separators=separators[i]))
-            self.assertEqual(util.parsing.get_highest_level_args(stmt,
-                             separators=separators[i]),results[i])
+           #print(util.parsing.get_top_level_operands(util.parsing.tokenize(stmt),
+           #                                          separators=separators[i]))
+           self.assertEqual(util.parsing.get_top_level_operands(util.parsing.tokenize(stmt),
+                            separators=separators[i]),results[i])
 
     def test_04_extract_function_calls(self):
         for c in ["a","b","c","d","f","g","h","i","j","k"]:

@@ -7,69 +7,13 @@ import copy
 import orjson
 
 from gpufort import util
+
 from . import grammar
 from . import opts
 
 _ERR_LINEMAPPER_MACRO_DEFINITION_NOT_FOUND = 11001
 
 EMPTY_STATEMENT = {"epilog": [], "prolog": [], "body": ""}
-
-def _evaluate_defined(input_string, macro_names):
-    # expand macro; one at a time
-    result = input_string
-    iterate = True
-    while iterate:
-        iterate = False
-        for match, start, end in grammar.pp_defined.scanString(result):
-            substring = result[start:end].strip(" \t\n")
-            subst = "1" if match.name in macro_names else "0"
-            result = result.replace(substring, subst)
-            iterate = True
-            break
-    return result
-
-
-def _expand_macros(input_string, macro_stack):
-    # expand macro; one at a time
-    macro_names = [macro["name"] for macro in macro_stack]
-    # check if macro identifiers appear in string before scanning the result
-    iterate = True
-    for name in macro_names:
-        if name in input_string:
-            iterate = True
-    if iterate or "defined" in input_string:
-        result = _evaluate_defined(input_string, macro_names)
-    else:
-        result = input_string
-    while iterate:
-        # Requires N+1 iterations to perform N replacements
-        iterate = False
-        for macro in macro_stack:
-            name = macro["name"]
-            if name in result:
-                if len(macro["args"]):
-                    calls = util.parsing.extract_function_calls(result, name)
-                    if len(calls):
-                        substring = calls[-1][
-                            0] # always start from right-most (=inner-most) call site
-                        args = calls[-1][1]
-                        subst = macro["subst"].strip(" \n\t")
-                        for n, placeholder in enumerate(macro["args"]):
-                            subst = re.sub(r"\b{}\b".format(placeholder),
-                                           args[n], subst)
-                        result = result.replace(substring,
-                                                subst) # result has changed
-                        iterate = True
-                        break
-                else:
-                    old_result = result
-                    subst = macro["subst"].strip(" \n\t")
-                    result = re.sub(r"\b{}\b".format(name), subst, result)
-                    if result != old_result:
-                        iterate = True
-                    break
-    return result
-
 
 def _linearize_statements(linemap):
     result = []
@@ -78,32 +22,6 @@ def _linearize_statements(linemap):
         result.append(stmt["body"])
         result += stmt["epilog"]
     return result
-
-
-def _convert_operators(input_string):
-    """Converts Fortran and C logical operators to python ones.
-    :note: Adds whitespace around the operators as they 
-    """
-    return input_string.replace(r".and."," and ").\
-                        replace(r".or."," or ").\
-                        replace(r".not.","not ").\
-                        replace(r"&&"," and ").\
-                        replace(r"||"," or ").\
-                        replace(r"!","not ")
-
-
-def evaluate_condition(input_string, macro_stack):
-    """
-    Evaluates preprocessor condition.
-    :param str input_string: Expression as text.
-    :note: Input validation performed according to:
-           https://realpython.com/python-eval-function/#minimizing-the-security-issues-of-eval
-    """
-    transformed_input_string = _convert_operators(
-        _expand_macros(input_string, macro_stack))
-    code = compile(transformed_input_string, "<string>", "eval")
-    return eval(code, {"__builtins__": {}}, {}) > 0
-
 
 def _handle_preprocessor_directive(lines, file_path, macro_stack,
                                    region_stack1, region_stack2):
@@ -119,7 +37,7 @@ def _handle_preprocessor_directive(lines, file_path, macro_stack,
     def region_stack_format(stack):
         return "-".join([str(int(el)) for el in stack])
 
-    macro_names = ",".join([macro["name"] for macro in macro_stack])
+    macro_names = ",".join([macro[0] for macro in macro_stack])
     util.logging.log_enter_function(opts.log_prefix,"_handle_preprocessor_directive",\
       {"fortran-file-path": file_path,\
        "region-stack-1":    region_stack_format(region_stack1),\
@@ -152,7 +70,7 @@ def _handle_preprocessor_directive(lines, file_path, macro_stack,
                     args = result.args.replace(" ", "").split(",")
                 else:
                     args = []
-                new_macro = {"name": result.name, "args": args, "subst": subst}
+                new_macro = ( result.name, args, subst )
                 macro_stack.append(new_macro)
                 handled = True
             elif stripped_first_line.startswith("undef"):
@@ -162,7 +80,7 @@ def _handle_preprocessor_directive(lines, file_path, macro_stack,
                 result = grammar.pp_dir_define.parseString(
                     single_line_statement, parseAll=True)
                 for macro in list(macro_stack): # shallow copy
-                    if macro["name"] == result.name:
+                    if macro[0] == result.name:
                         macro_stack.remove(macro)
                 handled = True
             elif stripped_first_line.startswith("include"):
@@ -203,7 +121,7 @@ def _handle_preprocessor_directive(lines, file_path, macro_stack,
                 condition = result.condition
             else:
                 condition = "0"
-            active = evaluate_condition(condition, macro_stack)
+            active = util.macros.evaluate_condition(condition, macro_stack)
             region_stack1.append(active)
             any_if_elif_active = active
             region_stack2.append(any_if_elif_active)
@@ -221,7 +139,7 @@ def _handle_preprocessor_directive(lines, file_path, macro_stack,
                 condition = result.condition
             else:
                 condition = "0"
-            active = evaluate_condition(condition, macro_stack)
+            active = util.macros.evaluate_condition(condition, macro_stack)
             region_stack1.append(active)
             region_stack2[-1] = region_stack2[-1] or active
             handled = True
@@ -476,20 +394,13 @@ def _group_modified_linemaps(linemaps, wrap_in_ifdef):
 
 # API
 
-
 def init_macros(options):
     """init macro stack from compiler options and user-prescribed config values."""
 
     macro_stack = []
     macro_stack += opts.user_defined_macros
-    for result, _, __ in grammar.pp_compiler_option.scanString(options):
-        value = result.value
-        if value == None:
-            value == "1"
-        macro = {"name": result.name, "args": [], "subst": result.value}
-        macro_stack.append(macro)
+    macro_stack += util.macros.init_cpp_macros(options)
     return macro_stack
-
 
 def preprocess_and_normalize(fortran_file_lines,
                              **kwargs):
@@ -567,7 +478,7 @@ def preprocess_and_normalize(fortran_file_lines,
             # 2. Apply macros to statements
             statements2 = []
             for stmt1 in statements1:
-                statements2.append(_expand_macros(stmt1, macro_stack))
+                statements2.append(util.macros.expand_macros(stmt1, macro_stack, False))
             # 3. Above processing might introduce multiple statements per line againa.
             # Hence, convert each element of statements2 to single statements again
             statements3 = []
@@ -839,17 +750,3 @@ def get_statement_bodies(linemaps,
             linemaps, "statements", first_linemap_first_elem,
             last_linemap_last_elem)
     ]
-
-
-def init_macros(options):
-    """init macro stack from compiler options and user-prescribed config values."""
-
-    macro_stack = []
-    macro_stack += opts.user_defined_macros
-    for result, _, __ in grammar.pp_compiler_option.scanString(options):
-        value = result.value
-        if value == None:
-            value == "1"
-        macro = {"name": result.name, "args": [], "subst": result.value}
-        macro_stack.append(macro)
-    return macro_stack

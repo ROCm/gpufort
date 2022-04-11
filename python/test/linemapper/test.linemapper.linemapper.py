@@ -43,8 +43,8 @@ class TestLinemapper(unittest.TestCase):
         pass 
     def test_1_macro_substitution(self):
         macro_stack = [
-          { "name": "b", "args": [], "subst": "5" },
-          { "name": "a", "args": ["x"], "subst": "(5*x)" },
+          ( "b", [], "5" ),
+          ( "a", ["x"], "(5*x)" ),
         ]
         
         testdata_true = [
@@ -60,10 +60,10 @@ class TestLinemapper(unittest.TestCase):
           "!(defined(a) && !defined(x) && a(b) > 4)"
         ]
         for text in testdata_true:
-            condition = linemapper.evaluate_condition(text,macro_stack)
+            condition = util.macros.evaluate_condition(text,macro_stack)
             self.assertTrue(condition)
         for text in testdata_false:
-            condition = linemapper.evaluate_condition(text,macro_stack)
+            condition = util.macros.evaluate_condition(text,macro_stack)
             self.assertFalse(condition)
         numTests = len(testdata_true) + len(testdata_false)
         self.extra = ", performed {} checks".format(numTests)

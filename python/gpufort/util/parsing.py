@@ -227,10 +227,11 @@ def next_tokens_till_open_bracket_is_closed(tokens, open_brackets=0, brackets=("
         result.pop()
     return result
 
-def get_highest_level_args(tokens,
+def get_top_level_operands(tokens,
                            separators=[","],
                            terminators=["::", "\n", "!",""],
-                           brackets=("(",")")):
+                           brackets=("(",")"),
+                           keep_separators=False):
     """
     :return: Tuple of highest level arguments and number of consumed tokens
              in that order.
@@ -246,6 +247,7 @@ def get_highest_level_args(tokens,
     num_consumed_tokens = 0
     while criterion:
         tk = tokens[idx]
+        tk_lower = tk.lower()
         idx += 1
         criterion = idx < len(tokens)
         #
@@ -255,11 +257,13 @@ def get_highest_level_args(tokens,
             open_brackets -= 1
         #
         num_consumed_tokens += 1
-        if tk in separators and open_brackets == 0:
+        if tk_lower in separators and open_brackets == 0:
             if len(current_substr):
                 result.append(current_substr)
+            if keep_separators:
+                result.append(tk)
             current_substr = ""
-        elif tk in terminators or open_brackets < 0:
+        elif tk_lower in terminators or open_brackets < 0:
             criterion = False
             num_consumed_tokens -= 1
         else: 
@@ -280,7 +284,7 @@ def extract_function_calls(text, func_name):
     for m in re.finditer(r"{}\s*\(".format(func_name), text):
         rest_substr = next_tokens_till_open_bracket_is_closed(
             text[m.end():], open_brackets=1)
-        args,_  = get_highest_level_args(rest_substr[:], [","],
+        args,_  = get_top_level_operands(rest_substr[:], [","],
                                            [])
         end = m.end() + len(rest_substr)
         result.append((text[m.start():end], args))
@@ -318,7 +322,7 @@ def parse_use_statement(statement):
     if tk.isidentifier():
         module_name = tk
     elif tk == ",":
-        qualifiers,num_consumed_tokens = get_highest_level_args(tokens)
+        qualifiers,num_consumed_tokens = get_top_level_operands(tokens)
         for i in range(0,num_consumed_tokens):
             tokens.pop(0)
         if tokens.pop(0) != "::":
@@ -496,7 +500,7 @@ def parse_declaration(statement):
         tokens = tokens[idx_last_consumed_token + 1:] # remove type part tokens
         idx_last_consumed_token = None
         if tokens[0] == "," and DOUBLE_COLON in tokens: # qualifier list
-            qualifiers_raw,_  = get_highest_level_args(tokens)
+            qualifiers_raw,_  = get_top_level_operands(tokens)
             idx_last_consumed_token = tokens.index(DOUBLE_COLON)
         elif tokens[0] == DOUBLE_COLON: # variables begin afterwards
             idx_last_consumed_token = 0
@@ -506,7 +510,7 @@ def parse_declaration(statement):
             raise error.SyntaxError("could not parse qualifier list")
         # handle variables list
         tokens = tokens[idx_last_consumed_token+1:] # remove qualifier list tokens
-        variables_raw,_  = get_highest_level_args(tokens)
+        variables_raw,_  = get_top_level_operands(tokens)
     except IndexError:
         raise error.SyntaxError("could not parse qualifier list")
     # analyze qualifiers
@@ -522,7 +526,7 @@ def parse_declaration(statement):
                or qualifier_tokens_lower[0:2] != ["dimension","("]
                or qualifier_tokens[-1] != ")"):
                 raise error.SyntaxError("could not parse 'dimension' qualifier")
-            dimension_bounds,_  = get_highest_level_args(qualifier_tokens[2:-1])
+            dimension_bounds,_  = get_top_level_operands(qualifier_tokens[2:-1])
         elif qualifier_tokens_lower[0] == "intent":
             # ex: intent ( inout )
             qualifier_tokens = tokenize(qualifier)
@@ -549,7 +553,7 @@ def parse_declaration(statement):
             if len(dimension_bounds):
                 raise error.SyntaxError("'dimension' and variable cannot be specified both")
             bounds_tokens = next_tokens_till_open_bracket_is_closed(var_tokens)
-            var_bounds,_  = get_highest_level_args(bounds_tokens[1:-1])
+            var_bounds,_  = get_top_level_operands(bounds_tokens[1:-1])
             for i in range(0,len(bounds_tokens)):
                 var_tokens.pop(0)
         if (len(var_tokens) > 1 and
@@ -605,7 +609,7 @@ def parse_derived_type_statement(statement):
         raise error.SyntaxError("expected ',','::', or identifier")
     parameters = []
     if parse_attributes:
-        attributes,_  = get_highest_level_args(tokens)
+        attributes,_  = get_top_level_operands(tokens)
         if not len(attributes):
             raise error.SyntaxError("expected at least one derived type attribute")
         while tokens.pop(0) != "::":
@@ -621,7 +625,7 @@ def parse_derived_type_statement(statement):
     if tk == "(": # qualifier list
         if not len(tokens):
             raise error.SyntaxError("expected list of parameters")
-        parameters,_  = get_highest_level_args(tokens[:-1])
+        parameters,_  = get_top_level_operands(tokens[:-1])
         if not len(parameters):
             raise error.SyntaxError("expected at least one derived type parameter")
         tk = tokens.pop(0)
@@ -739,7 +743,7 @@ def parse_acc_clauses(clauses):
              and tokens[0].isidentifier()
              and tokens[1] == "(" 
              and tokens[-1] == ")"):
-            args1,_  = get_highest_level_args(tokens[2:-1], [","],[]) # clip the ')' at the end
+            args1,_  = get_top_level_operands(tokens[2:-1], [","],[]) # clip the ')' at the end
             args = []
             current_group = None
             for arg in args1:
@@ -794,8 +798,8 @@ def parse_cuf_kernel_call(statement):
         tokens.pop(0)
     if tokens.pop(0) != ")":
         return error.SyntaxError("could not parse CUDA Fortran kernel call: expected ')'")
-    params,_  = get_highest_level_args(params_tokens,terminators=[])
-    args,_  = get_highest_level_args(args_tokens,terminators=[])
+    params,_  = get_top_level_operands(params_tokens,terminators=[])
+    args,_  = get_top_level_operands(args_tokens,terminators=[])
     if len(tokens):
         return error.SyntaxError("could not parse CUDA Fortran kernel call: trailing text")
     return kernel_name, params, args
@@ -840,7 +844,7 @@ def parse_do_statement(statement):
         raise error.SyntaxError("expected identifier")
     if not tokens.pop(0) == "=":
         raise error.SyntaxError("expected '='")
-    range_vals,consumed_tokens  = get_highest_level_args(tokens) 
+    range_vals,consumed_tokens  = get_top_level_operands(tokens) 
     lbound = None
     ubound = None
     stride = None
@@ -881,9 +885,9 @@ def parse_deallocate_statement(statement):
         raise error.SyntaxError("expected 'deallocate'")
     if tokens.pop(0) != "(":
         raise error.SyntaxError("expected '('")
-    args,_  = get_highest_level_args(tokens) # : [...,"b(-1:m,n)"]
+    args,_  = get_top_level_operands(tokens) # : [...,"b(-1:m,n)"]
     for arg in args:
-        parts,_ = get_highest_level_args(tokenize(arg),separators=["%"])
+        parts,_ = get_top_level_operands(tokenize(arg),separators=["%"])
         child_tokens = tokenize(parts[-1])
         if child_tokens[0].lower() == "stat":
             if result2 != None:
@@ -927,9 +931,9 @@ def parse_allocate_statement(statement):
         raise error.SyntaxError("expected 'allocate'")
     if tokens.pop(0) != "(":
         raise error.SyntaxError("expected '('")
-    args,_  = get_highest_level_args(tokens) # : [...,"b(-1:m,n)"]
+    args,_  = get_top_level_operands(tokens) # : [...,"b(-1:m,n)"]
     for arg in args:
-        parts,_ = get_highest_level_args(tokenize(arg),separators=["%"])
+        parts,_ = get_top_level_operands(tokenize(arg),separators=["%"])
         child_tokens = tokenize(parts[-1])
         if child_tokens[0].lower() == "stat":
             if result2 != None:
@@ -944,12 +948,12 @@ def parse_allocate_statement(statement):
                 raise error.SyntaxError("expected identifier")
             if child_tokens.pop(0) != "(":
                 raise error.SyntaxError("expected '('")
-            ranges,_  = get_highest_level_args(child_tokens) # : ["-1:m", "n"]
+            ranges,_  = get_top_level_operands(child_tokens) # : ["-1:m", "n"]
             if len(parts) > 1:
                 varname = "%".join(parts[:-1]+[varname])
             var_tuple = (varname, [])
             for r in ranges:
-                range_tokens,_  = get_highest_level_args(tokenize(r),
+                range_tokens,_  = get_top_level_operands(tokenize(r),
                                                       separators=[":"])
                 if len(range_tokens) == 1:
                     range_tuple = (None,range_tokens[0],None)
@@ -963,12 +967,64 @@ def parse_allocate_statement(statement):
             result1.append(var_tuple)
     return result1, result2
 
+#def parse_arithmetic_expression(statement,logical_ops=False,max_recursions=0):
+#    separators = []
+#    R_ARITH_OPERATOR = ["**"]
+#    L_ARITH_OPERATOR = "+ - * /".split(" ")
+#    COMP_OPERATOR_LOWER = [
+#"<= >= == /= < > .eq. .ne. .lt. .gt. .le. .ge. .and. .or. .xor. .and. .or. .not. .eqv. .neqv."
+#]
+#    separators +=R_ARITH_OPERATOR + L_ARITH_OPERATOR
+#    if logical_ops:
+#        separators += COMP_OPERATOR_LOWER
+#    depth = 0
+#    def inner_(statement):
+#        tokens = tokenize(statement)
+#        open_bracket = tokens[0] == "(":
+#        top_level_operands,_ = get_top_level_operands(tokens,separators=separators,keep_separators=True)
+#        if len(top_level_operands) == 1 and open_bracket:
+#             if tokens[-1] == ")":
+#                 raise error.SyntaxError("missing ')'")
+#             result = []
+#             # TODO could be complex value
+#             result.append(inner_(tokens[1:-1]))
+#             return
+#        elif len(top_level_operands) == 1:
+#            return top_level_operands
+#        elif depth < max_recursions:
+#            inner_(
+
+def parse_assignment(statement,parse_rhs=False):
+    tokens = tokenize(statement)
+    parts,_ = get_top_level_operands(tokens,separators=["="])
+    if len(parts) != 2:
+        raise error.SyntaxError("expected left-hand side and right-hand side separated by '='")
+    return (parts[0], parts[1])
+
+def parse_statement_function(statement):
+    lhs_expr, rhs_expr = parse_assignment(statement)
+    lhs_tokens = tokenize(lhs_expr)
+    name = lhs_tokens.pop(0)
+    if not name.isidentifier():
+        raise error.SyntaxError("expected identifier")
+    if not lhs_tokens.pop(0) == "(":
+        raise error.SyntaxError("expected '('")
+    args, consumed_tokens = get_top_level_operands(lhs_tokens)
+    for arg in args:
+        if not arg.isidentifier():
+            raise error.SyntaxError("expected identifier")
+    for i in range(0,consumed_tokens): lhs_tokens.pop(0)
+    if not lhs_tokens.pop(0) == ")":
+        raise error.SyntaxError("expected ')'")
+    return (name, args, rhs_expr)
+
 # rules
 def is_declaration(tokens):
+    """No 'function' must be in the tokens.
+    """
     return\
         tokens[0] in ["type","integer","real","complex","logical","character"] or\
         tokens[0:1+1] == ["double","precision"]
-
 
 def is_ignored_statement(tokens):
     """All statements beginning with the tokens below are ignored.
@@ -1026,17 +1082,18 @@ def is_fortran_offload_loop_directive(tokens):
     return\
         tokens[1:2+1] == ["acc","loop"]
 
+def is_derived_type_member_access(tokens):
+    return len(get_top_level_operands(tokens,separators=["%"])[0]) > 1
 
 def is_assignment(tokens):
     #assert not is_declaration_(tokens)
     #assert not is_do_(tokens)
-    return "=" in tokens
-
+    return len(get_top_level_operands(tokens,separators=["="])[0]) == 2
 
 def is_pointer_assignment(tokens):
     #assert not is_ignored_statement_(tokens)
     #assert not is_declaration_(tokens)
-    return "=>" in tokens
+    return len(get_top_level_operands(tokens,separators=["=>"])[0]) == 2
 
 
 def is_subroutine_call(tokens):

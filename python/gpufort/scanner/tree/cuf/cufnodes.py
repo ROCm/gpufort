@@ -156,3 +156,42 @@ class STCufAttributes(nodes.STNode):
     """
     def transform(self,*args,**kwargs): # TODO
         return "", True 
+
+class STCufMemcpy(nodes.STNode):
+
+    def __init__(self, *args, **kwargs):
+        nodes.STNode.__init__(self, *args, **kwargs)
+        self._parse_result = translator.tree.grammar.memcpy.parseString(
+            self.statements()[0])[0]
+
+    def transform(self,
+                  joined_lines,
+                  joined_statements,
+                  statements_fully_cover_lines,
+                  index=[]): 
+        # TODO backend specific, move to cuf subpackage
+        # TODO remove completely and make subcase of assignment
+        # TODO set index vars from outside
+        if "cuf" in opts.source_dialects and isinstance(self.parent, nodes.STContainerBase):
+            indent = self.first_line_indent()
+            def repl_memcpy_(parse_result):
+                dest_name = parse_result.dest_name_f_str()
+                src_name = parse_result.src_name_f_str()
+                try:
+                    dest_indexed_var = indexer.scope.search_index_for_var(index,self.parent.tag(),\
+                      dest_name)
+                    src_indexed_var  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
+                      src_name)
+                    dest_on_device = "device" in dest_indexed_var["qualifiers"]
+                    src_on_device  = "device" in src_indexed_var["qualifiers"] 
+                except util.error.LookupError:
+                    dest_on_device = False 
+                    src_on_device  = False
+                if dest_on_device or src_on_device:
+                    subst = parse_result.hip_f_str(dest_on_device, src_on_device)
+                    return (textwrap.indent(subst,indent), True)
+                else:
+                    return ("", False) # no transformation; will not be considered
+            return repl_memcpy_(self._parse_result)
+        else:
+            return ("", False)

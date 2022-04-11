@@ -45,7 +45,8 @@ def _parse_file(linemaps, index, **kwargs):
     current_tokens = None
     derived_type_parent = None
     acc_kernels_directive = None
-
+    statement_functions = []
+    
     def log_detection_(kind):
         nonlocal current_node
         nonlocal current_linemap
@@ -328,18 +329,18 @@ def _parse_file(linemaps, index, **kwargs):
         new.ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
 
-    def Memcpy(tokens):
+    def CufMemcpy():
         nonlocal translation_enabled
         nonlocal current_node
         nonlocal current_linemap
         nonlocal current_statement_no
         log_detection_("memcpy")
-        new = tree.STMemcpy(current_linemap, current_statement_no)
+        new = tree.STCufMemcpy(current_linemap, current_statement_no)
         new.ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
 
     def CufLibCall(tokens):
-        #TODO scan for cudaMemcpy calls
+        #TODO scan for cudaCufMemcpy calls
         nonlocal translation_enabled
         nonlocal current_node
         nonlocal current_linemap
@@ -424,27 +425,47 @@ def _parse_file(linemaps, index, **kwargs):
         descend_(new)
         keep_recording = True
 
-    def Assignment(tokens):
+    def Assignment(lhs_ivar,lhs_expr):
         nonlocal current_node
         nonlocal translation_enabled
         nonlocal current_linemap
         nonlocal current_statement_no
         nonlocal current_statement
+        nonlocal current_tokens
         nonlocal acc_kernels_directive
         nonlocal index
         log_detection_("assignment")
-        if in_kernels_acc_region_and_not_recording():
+        if in_kernels_acc_region_and_not_recording() or lhs_ivar["rank"] == 0:
             parse_result = translator.tree.grammar.assignment_begin.parseString(
                 current_statement["body"])
             lvalue = translator.tree.find_first(parse_result, translator.tree.TTLValue)
             # TODO
-            if not lvalue is None and lvalue.has_range_args():
+            if lvalue.has_range_args() and lhs_ivar["rank"] > 0:
                 new = tree.acc.STAccLoopNest(current_linemap,
                                              current_statement_no,
                                              acc_kernels_directive)
                 new.ignore_in_s2s_translation = not translation_enabled
                 append_if_not_recording_(new)
                 new.complete_init(index)
+            elif lvalue.has_args() and not in_kernels_acc_region_and_not_recording() and lhs_ivar["rank"] == 0:
+                # statement function
+                if lhs_ivar["f_type"] not in ["integer","real","logical"]:
+                    raise util.error.SyntaxError("result type of statement function must be 'integer', 'real' or 'logical'")
+                elif util.parsing.is_derived_type_member_access(util.parsing.tokenize(lhs_expr)):
+                    raise util.error.SyntaxError("result of statement function must not be derived type member")
+                name, args, rhs_expr =\
+                    util.parsing.parse_statement_function(current_statement["body"])
+                name = name.lower()
+                existing_record = next((entry for entry in statement_functions
+                                       if entry[0] == name),None)
+                if existing_record == None:
+                    statement_functions.append((name,args,rhs_expr))
+                else:
+                    # TODO currently does not make sense as the statement variables are only 
+                    # TODOc applied on the LHS of a statement; should only be applied to RHS
+                    # of assignments
+                    raise util.error.SyntaxError("redefinition of statement funtion")
+
 
     def GpufortControl():
         nonlocal current_statement
@@ -470,8 +491,6 @@ def _parse_file(linemaps, index, **kwargs):
     tree.grammar.ALLOCATED.setParseAction(Allocated)
     tree.grammar.ALLOCATE.setParseAction(Allocate)
     tree.grammar.DEALLOCATE.setParseAction(Deallocate)
-    tree.grammar.memcpy.setParseAction(Memcpy)
-    #pointer_assignment.setParseAction(pointer_assignment)
     tree.grammar.non_zero_check.setParseAction(NonZeroCheck)
 
     # CUDA Fortran
@@ -480,7 +499,6 @@ def _parse_file(linemaps, index, **kwargs):
 
     # OpenACC
     tree.grammar.ACC_START.setParseAction(AccDirective)
-    tree.grammar.assignment_begin.setParseAction(Assignment)
 
     # GPUFORT control
     tree.grammar.gpufort_control.setParseAction(GpufortControl)
@@ -488,7 +506,14 @@ def _parse_file(linemaps, index, **kwargs):
     current_file = str(fortran_file_path)
     current_node.children.clear()
 
-    def scan_string(expression_name, expression):
+    def expand_statement_functions_(statement):
+        """Expands Fortran statement functions in the given statement."""
+        if len(statement_functions):
+            stmt = statement["body"]
+            statement["body"] = util.macros.expand_macros(stmt,statement_functions,
+                    ignore_case=True)
+
+    def scan_string_(expression_name, expression):
         """
         These expressions might be hidden behind a single-line if.
         """
@@ -511,7 +536,7 @@ def _parse_file(linemaps, index, **kwargs):
                     current_linemap["lines"][0].rstrip()))
         return matched
 
-    def try_to_parse_string(expression_name, expression, parseAll=False):
+    def try_to_parse_string_(expression_name, expression, parseAll=False):
         """
         These expressions might never be hidden behind a single-line if or might
         never be an argument of another calls.
@@ -526,18 +551,18 @@ def _parse_file(linemaps, index, **kwargs):
             expression.parseString(current_statement_stripped_no_comments,
                                    parseAll)
             util.logging.log_debug3(
-                opts.log_prefix, "parse_file.try_to_parse_string",
+                opts.log_prefix, "parse_file.try_to_parse_string_",
                 "found expression '{}' in line {}: '{}'".format(
                     expression_name, current_linemap["lineno"],
                     current_linemap["lines"][0].rstrip()))
             return True
         except pyparsing.ParseBaseException as e:
             util.logging.log_debug4(
-                opts.log_prefix, "parse_file.try_to_parse_string",
+                opts.log_prefix, "parse_file.try_to_parse_string_",
                 "did not find expression '{}' in line '{}'".format(
                     expression_name, current_linemap["lines"][0]))
             util.logging.log_debug5(opts.log_prefix,
-                                    "parse_file.try_to_parse_string", str(e))
+                                    "parse_file.try_to_parse_string_", str(e))
             return False
 
     def is_end_statement_(tokens, kind):
@@ -554,100 +579,120 @@ def _parse_file(linemaps, index, **kwargs):
         if condition1 and condition2:
             for current_statement_no, current_statement in enumerate(
                     current_linemap["statements"]):
-                original_statement_lower = current_statement["body"].lower()
-                util.logging.log_debug4(opts.log_prefix,"parse_file","parsing statement '{}' associated with lines [{},{}]".format(original_statement_lower.rstrip(),\
-                    current_linemap["lineno"],current_linemap["lineno"]+len(current_linemap["lines"])-1))
-                current_tokens = util.parsing.tokenize(original_statement_lower, padded_size=6)
-                current_statement_stripped = " ".join([tk for tk in current_tokens if len(tk)])
-                current_statement_stripped_no_comments = current_statement_stripped.split(
-                    "!")[0]
-                # constructs
-                if current_tokens[0] == "end":
-                    if current_tokens[1] in [
-                         "program", "module", "subroutine", "function"
-                       ]: # ignore types/interfaces here
-                        End()
-                    elif current_tokens[1] == "do":
-                        DoLoopEnd()
-                    elif current_tokens[1] == "type":
-                        TypeEnd()
-                elif util.parsing.is_do(current_tokens):
-                    DoLoopStart()
-                # single-statements
-                if not keep_recording:
-                    if util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
-                        if current_tokens[1] == "acc":
-                            AccDirective()
-                        elif current_tokens[1] == "gpufort":
-                            GpufortControl()
-                    if cuda_fortran:
-                        if "attributes" in current_tokens:
-                            try_to_parse_string("attributes",
-                                                tree.grammar.attributes)
-                        if "cu" in current_statement_stripped_no_comments:
-                            scan_string("cuda_lib_call",
-                                        tree.grammar.cuda_lib_call)
-                        if "<<<" in current_tokens:
-                            try_to_parse_string(
-                                "cuf_kernel_call",
-                                tree.grammar.cuf_kernel_call)
+                try:
+                    expand_statement_functions_(current_statement)
+                    original_statement_lower = current_statement["body"].lower()
+                    util.logging.log_debug4(opts.log_prefix,"parse_file","parsing statement '{}' associated with lines [{},{}]".format(original_statement_lower.rstrip(),\
+                        current_linemap["lineno"],current_linemap["lineno"]+len(current_linemap["lines"])-1))
+                    current_tokens = util.parsing.tokenize(original_statement_lower, padded_size=6)
+                    current_statement_stripped = " ".join([tk for tk in current_tokens if len(tk)])
+                    current_statement_stripped_no_comments = current_statement_stripped.split(
+                        "!")[0]
+                    # constructs
+                    if current_tokens[0] == "end":
+                        if current_tokens[1] in [
+                             "program", "module", "subroutine", "function"
+                           ]: # ignore types/interfaces here
+                            End()
+                        elif current_tokens[1] == "do":
+                            DoLoopEnd()
+                        elif current_tokens[1] == "type":
+                            TypeEnd()
+                    elif util.parsing.is_do(current_tokens):
+                        DoLoopStart()
+                    # single-statements
+                    if not keep_recording:
                         if util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
-                            if current_tokens[1:4] == ["cuf","kernel","do"]:
-                                CufLoopNest()
-                    if "=" in current_tokens:
-                        if not try_to_parse_string("memcpy",
-                                                   tree.grammar.memcpy,
-                                                   parseAll=True):
-                            try_to_parse_string(
-                                "assignment",
-                                tree.grammar.assignment_begin)
-                            scan_string("non_zero_check",
+                            if current_tokens[1] == "acc":
+                                AccDirective()
+                            elif current_tokens[1] == "gpufort":
+                                GpufortControl()
+                        if cuda_fortran:
+                            if "attributes" in current_tokens:
+                                try_to_parse_string_("attributes",
+                                                    tree.grammar.attributes)
+                            if "cu" in current_statement_stripped_no_comments:
+                                scan_string_("cuda_lib_call",
+                                            tree.grammar.cuda_lib_call)
+                            if "<<<" in current_tokens:
+                                try_to_parse_string_(
+                                    "cuf_kernel_call",
+                                    tree.grammar.cuf_kernel_call)
+                            if util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
+                                if current_tokens[1:4] == ["cuf","kernel","do"]:
+                                    CufLoopNest()
+                        if (not util.parsing.is_do(current_tokens) # TODO
+                           and util.parsing.is_assignment(current_tokens)):
+                            lhs_expr, rhs_expr = util.parsing.parse_assignment(current_statement["body"])
+                            lhs_ivar = indexer.scope.search_index_for_var(index,current_node.tag(),lhs_expr)
+                            cuf_implicit_memcpy = "device" in lhs_ivar["qualifiers"]
+                            if cuda_fortran:
+                                try:
+                                    rhs_ivar = indexer.scope.search_index_for_var(index,current_node.tag(),
+                                            rhs_expr)
+                                    cuf_implicit_memcpy = cuf_implicit_memcpy or "device" in rhs_ivar["qualifiers"]
+                                except util.error.LookupError as e:
+                                    if cuf_implicit_memcpy: 
+                                        raise util.error.LimitationError("implicit to-device memcpy does not support arithmetic expression as right-hand side value") from e
+                            if cuf_implicit_memcpy:
+                                CufMemcpy()
+                            elif not cuf_implicit_memcpy:
+                                Assignment(lhs_ivar,lhs_expr)
+                                # TODO
+                        elif ("/=" in current_statement_stripped_no_comments
+                             or ".ne." in current_statement_stripped_no_comments.lower()):
+                            scan_string_("non_zero_check",
                                         tree.grammar.non_zero_check)
-                    if "allocated" in current_tokens:
-                        scan_string("allocated", tree.grammar.ALLOCATED)
-                    if current_tokens[0] == "deallocate":
-                        try_to_parse_string("deallocate",
-                                            tree.grammar.DEALLOCATE)
-                    elif current_tokens[0] == "allocate":
-                        try_to_parse_string("allocate",
-                                            tree.grammar.ALLOCATE)
-                    if "function" in current_tokens:
-                        try_to_parse_string("function",
-                                            tree.grammar.function_start)
-                    if "subroutine" in current_tokens:
-                        try_to_parse_string("subroutine",
-                                            tree.grammar.subroutine_start)
-                    #
-                    if current_tokens[0] == "use":
-                        try_to_parse_string("use", tree.grammar.use)
-                    elif current_tokens[0] == "implicit":
-                        PlaceHolder()
-                    elif current_tokens[0] == "contains":
-                        Contains()
-                    elif current_tokens[0] == "module" and current_tokens[1] != "procedure":
-                        ModuleStart()
-                    elif current_tokens[0] == "program":
-                        ProgramStart()
-                    elif current_tokens[0] == "return":
-                        Return()
-                    # TODO build proper parser of function / subroutine
-                    # plus corresponding detection criterion
-                    elif (not "function" in current_tokens 
-                         and current_tokens[0] in [
-                            "character", "integer", "logical", "real",
-                            "complex", "double"
-                        ]):
-                        try_to_parse_string("declaration", datatype_reg)
-                        break
-                    elif (not "function" in current_tokens 
-                         and current_tokens[0] == "type" 
-                         and current_tokens[1] == "("):
-                        try_to_parse_string("declaration", datatype_reg)
-                    elif current_tokens[0] == "type":
-                        TypeStart()
-                else:
-                    current_node.add_linemap(current_linemap)
-                    current_node._last_statement_index = current_statement_no
+                        if "allocated" in current_tokens:
+                            scan_string_("allocated", tree.grammar.ALLOCATED)
+                        if current_tokens[0] == "deallocate":
+                            try_to_parse_string_("deallocate",
+                                                tree.grammar.DEALLOCATE)
+                        elif current_tokens[0] == "allocate":
+                            try_to_parse_string_("allocate",
+                                                tree.grammar.ALLOCATE)
+                        if "function" in current_tokens:
+                            try_to_parse_string_("function",
+                                                tree.grammar.function_start)
+                        if "subroutine" in current_tokens:
+                            try_to_parse_string_("subroutine",
+                                                tree.grammar.subroutine_start)
+                        #
+                        if current_tokens[0] == "use":
+                            try_to_parse_string_("use", tree.grammar.use)
+                        elif current_tokens[0] == "implicit":
+                            PlaceHolder()
+                        elif current_tokens[0] == "contains":
+                            Contains()
+                        elif current_tokens[0] == "module" and current_tokens[1] != "procedure":
+                            ModuleStart()
+                        elif current_tokens[0] == "program":
+                            ProgramStart()
+                        elif current_tokens[0] == "return":
+                            Return()
+                        # TODO build proper parser of function / subroutine
+                        # plus corresponding detection criterion
+                        elif (not "function" in current_tokens 
+                             and current_tokens[0] in [
+                                "character", "integer", "logical", "real",
+                                "complex", "double"
+                            ]):
+                            try_to_parse_string_("declaration", datatype_reg)
+                            break
+                        elif (not "function" in current_tokens 
+                             and current_tokens[0] == "type" 
+                             and current_tokens[1] == "("):
+                            try_to_parse_string_("declaration", datatype_reg)
+                        elif current_tokens[0] == "type":
+                            TypeStart()
+                    else:
+                        current_node.add_linemap(current_linemap)
+                        current_node._last_statement_index = current_statement_no
+                except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:
+                    msg = "{}:{}:{}".format(
+                            current_linemap["file"],current_linemap["lineno"],e.args[0])
+                    e.args = (msg,)
+                    raise
 
     assert type(current_node) is tree.STRoot
     return current_node

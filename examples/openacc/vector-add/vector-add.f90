@@ -8,6 +8,10 @@ program main
   integer :: i,j
   integer(4) :: x(N), y(N), y_exact(N)
 
+  integer :: add, mult, a, b
+  add(a,b)=a+b ! statement functions
+  mult(a,b)=a*b ! statement functions
+
   do i = 1, N
     y_exact(i) = 3
   end do
@@ -25,7 +29,7 @@ program main
   
   !$acc parallel loop
   do i = 1, N
-    y(i) = x(i) + y(i)
+    y(i) = add(x(i),mult(1,y(i)))
   end do
   !$acc end data
   

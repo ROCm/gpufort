@@ -789,6 +789,7 @@ class STDeclaration(STNode, IWithBackend, IDeclListEntry):
             statement_no  = self._first_statement_index
             msg = "{}:{}:{}(stmt-no):{}".format(filepath,lineno,statement_no+1,str(e))
             raise util.error.SyntaxError(msg) from e
+
 def index_var_is_on_device(ivar):
     return "device" in ivar["qualifiers"]
 
@@ -810,7 +811,7 @@ class STNonZeroCheck(STNode):
                   joined_statements,
                   statements_fully_cover_lines,
                   index=[]): # TODO
-        result = snippet
+        result = joined_statements
         transformed = False
         for tokens, start, end in translator.tree.grammar.non_zero_check.scanString(
                 result):
@@ -875,41 +876,3 @@ class STDeallocate(STNode, IWithBackend):
     
     def transform(self,*args,**kwargs):
         return IWithBackend.transform(self,*args,**kwargs)
-
-class STMemcpy(STNode):
-
-    def __init__(self, *args, **kwargs):
-        STNode.__init__(self, *args, **kwargs)
-        self._parse_result = translator.tree.grammar.memcpy.parseString(
-            self.statements()[0])[0]
-
-    def transform(self,
-                  joined_lines,
-                  joined_statements,
-                  statements_fully_cover_lines,
-                  index=[]): 
-        # TODO backend specific, move to cuf subpackage
-        # TODO remove completely and make subcase of assignment
-        if "cuf" in opts.source_dialects and isinstance(self.parent, STContainerBase):
-            indent = self.first_line_indent()
-            def repl_memcpy_(parse_result):
-                dest_name = parse_result.dest_name_f_str()
-                src_name = parse_result.src_name_f_str()
-                try:
-                    dest_indexed_var = indexer.scope.search_index_for_var(index,self.parent.tag(),\
-                      dest_name)
-                    src_indexed_var  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
-                      src_name)
-                    dest_on_device = index_var_is_on_device(dest_indexed_var)
-                    src_on_device = index_var_is_on_device(src_indexed_var)
-                except util.error.LookupError:
-                    dest_on_device = False 
-                    src_on_device  = False
-                if dest_on_device or src_on_device:
-                    subst = parse_result.hip_f_str(dest_on_device, src_on_device)
-                    return (textwrap.indent(subst,indent), True)
-                else:
-                    return ("", False) # no transformation; will not be considered
-            return repl_memcpy_(self._parse_result)
-        else:
-            return ("", False)

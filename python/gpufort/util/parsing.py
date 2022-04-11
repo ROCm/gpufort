@@ -198,7 +198,7 @@ def relocate_inline_comments(lines):
             if len(stmt_or_dir):
                 result.append("".join([indent, stmt_or_dir, trailing_ws]))
             comment_buffer.append("".join([indent, comment, trailing_ws]))
-        else:
+        elif len(line.strip()): # only append non-empty lines
             result.append(line)
         if len(stmt_or_dir) and stmt_or_dir[-1] != "&":
             result += comment_buffer

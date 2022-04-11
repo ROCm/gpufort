@@ -19,7 +19,8 @@ program main
   !$acc data copy(x(1:N),y(1:N))
 
   ! just an unnecessarily complicated way to fill 1D arrays
-  !$acc parallel loop present(x,y) collapse(2)
+  !$acc parallel loop present(x,y) & ! inline comment 
+    collapse(2) ! continuation of the above directive
   do j = 4, -4, -8
     do i = 1, N/2
       x( ((j-4)/-8)*N/2+i ) = 1

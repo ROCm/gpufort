@@ -6,8 +6,6 @@ import re
 
 from . import error
 
-COMMENT_CHARS = "!cCdD*"
-
 def compare_tokens_ignore_case(tokens1,tokens2):
     if len(tokens1) != len(tokens2):
         return False
@@ -42,8 +40,9 @@ def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
         r"-",
         r"\*",
         r"\/",
+        r"\&",
         r"\.\w+\.",
-        r"\s+|\t+",
+        r"[\s\t\r\n]+",
     ]
     if modern_fortran:
         TOKENS_KEEP.append(r"![@\$]?")
@@ -53,15 +52,14 @@ def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
     # is not captured.
     keep_pattern = "".join(["(","|".join(TOKENS_KEEP),")"])
     
-    tokens1 = re.split(keep_pattern, statement, 0, re.IGNORECASE)
-    tokens = []
-    for tk in tokens1:
+    tokens = re.split(keep_pattern, statement, 0, re.IGNORECASE)
+    result = []
+    for tk in tokens:
         if tk.lower() in ["endif", "elseif", "enddo"]:
-            tokens.append(tk[:-2])
-            tokens.append(tk[-2:])
-        else:
-            tokens.append(tk)
-    result = [tk for tk in tokens if tk != None and (keepws or len(tk.strip()))]
+            result.append(tk[:-2])
+            result.append(tk[-2:])
+        elif len(tk) and (keepws or len(tk.strip())):
+            result.append(tk)
     if padded_size > 0 and len(result) < padded_size:
         return result + [""] * (padded_size - len(result))
     else:
@@ -134,34 +132,66 @@ def strip_array_indexing(var_expr):
         result.append(curr)
         return "%".join(result)
 
-def split_fortran_line(line):
-    global COMMENT_CHARS
+def split_fortran_line(line,modern_fortran=True):
     """Decomposes a Fortran line into preceding whitespace,
      statement part, comment part, and trailing whitespace (including newline char).
      """
-    len_line = len(line)
-    len_preceding_ws = len_line - len(line.lstrip(" \n\t"))
-    len_trailing_ws = len_line - len(line.rstrip(" \n\t"))
-    content = line[len_preceding_ws:len_line - len_trailing_ws]
-
-    statement = ""
-    comment = ""
-    if len(content):
-        if len_preceding_ws == 0 and content[0] in COMMENT_CHARS or\
-           content[0] == "!":
-            if len(content) > 1 and content[1] in "$@":
-                statement = content
-            else:
-                comment = content
+    tokens = tokenize(line,modern_fortran=modern_fortran,keepws=True)
+    if len(tokens) and not len(tokens[0].strip("  \r\t\n")):
+        preceding_ws = tokens.pop(0)
+    else: 
+        preceding_ws = ""
+    if len(tokens) and not len(tokens[-1].strip("  \r\t\n")):
+        trailing_ws = tokens.pop(-1)
+    else: 
+        trailing_ws = ""
+    statement_tokens = []
+    comment_tokens = []
+    if len(tokens):
+        if (not modern_fortran and tokens[0].lower() in ["c","*"]
+             or modern_fortran and tokens[0] == "!"):
+            comment_tokens = tokens
+        elif modern_fortran:
+            while len(tokens):
+                if tokens[0] == "!": 
+                    break
+                else:
+                    statement_tokens.append(tokens.pop(0))
+            comment_tokens = tokens # what is left must be an inline comment
         else:
-            content_parts = content.split("!", maxsplit=1)
-            if len(content_parts) > 0:
-                statement = content_parts[0]
-            if len(content_parts) == 2:
-                comment = "!" + content_parts[1]
-    preceding_ws = line[0:len_preceding_ws]
-    trailing_ws = line[len_line - len_trailing_ws:]
-    return preceding_ws, statement.rstrip(" \t"), comment, trailing_ws
+            statement_tokens = tokens
+    return preceding_ws, "".join(statement_tokens), "".join(comment_tokens), trailing_ws
+
+def detect_line_starts(lines,modern_fortran=True):
+    """Fortran statements can be broken into multiple lines 
+    via the '&' characters. This routine detects in which line a statement
+    (or multiple statements per line) begins.
+    The difference between the line numbers of consecutive entries
+    is the number of lines the first statement occupies.
+    """
+    p_directive_continuation = re.compile(r"[!c\*][@\$]\w+\&")
+
+    # 1. save multi-line statements (&) in buffer
+    buffering = False
+    line_starts = []
+    for lineno, line in enumerate(lines, start=0):
+        # Continue buffering if multiline CUF/ACC/OMP statement
+        _,stmt_or_dir,comment,_ = split_fortran_line(line)
+        stmt_or_dir_tokens = tokenize(stmt_or_dir)
+        # continuation at line begin
+        if (len(stmt_or_dir_tokens) > 3
+           and (modern_fortran and stmt_or_dir_tokens[0] in ["!$","!@"]
+               or not modern_fortran and stmt_or_dir_tokens[0].lower() in ["c$","c@","*$","*@"])):
+            buffering = stmt_or_dir_tokens[2] == "&" 
+        if not buffering:
+            line_starts.append(lineno)
+        if len(stmt_or_dir) and stmt_or_dir_tokens[-1] in ['&', '\\']:
+            buffering = True
+        elif len(stmt_or_dir):
+            buffering = False
+    line_starts.append(len(lines))
+    return line_starts
+
 
 def relocate_inline_comments(lines):
     """Move comments that follow after a line continuation char ('&')
@@ -192,7 +222,8 @@ def relocate_inline_comments(lines):
     for line in lines:
         indent,stmt_or_dir,comment,trailing_ws = \
           split_fortran_line(line)
-        if len(stmt_or_dir) and stmt_or_dir[-1] == "&":
+        stmt_or_dir_tokens = tokenize(stmt_or_dir)
+        if len(stmt_or_dir_tokens) and stmt_or_dir_tokens[-1] == "&":
             in_multiline_statement = True
         if in_multiline_statement and len(comment):
             if len(stmt_or_dir):
@@ -200,7 +231,7 @@ def relocate_inline_comments(lines):
             comment_buffer.append("".join([indent, comment, trailing_ws]))
         elif len(line.strip()): # only append non-empty lines
             result.append(line)
-        if len(stmt_or_dir) and stmt_or_dir[-1] != "&":
+        if len(stmt_or_dir_tokens) and stmt_or_dir_tokens[-1] != "&":
             result += comment_buffer
             comment_buffer.clear()
             in_multiline_statement = False

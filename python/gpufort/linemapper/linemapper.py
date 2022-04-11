@@ -167,8 +167,8 @@ def _handle_preprocessor_directive(lines, file_path, macro_stack,
 
     return included_linemaps
 
-
-def _convert_lines_to_statements(lines):
+# TODO get rid of the regexes here and work with tokens
+def _convert_lines_to_statements(lines,modern_fortran):
     """Fortran lines can contain multiple statements that
     are separated by a semicolon.
     This routine unrolls such lines into multiple single statements.
@@ -199,7 +199,7 @@ def _convert_lines_to_statements(lines):
     comment_parts = []
     for line in lines:
         indent,stmt_or_dir_part,comment,_ = \
-           util.parsing.split_fortran_line(line)
+           util.parsing.split_fortran_line(line,modern_fortran=modern_fortran)
         if len(stmt_or_dir_part):
             statement_parts.append(stmt_or_dir_part)
         if len(comment):
@@ -236,33 +236,6 @@ def _convert_lines_to_statements(lines):
             unrolled_statements.append(indent_offset
                                        + stmt.lstrip(indent_char))
     return unrolled_statements
-
-
-def _detect_line_starts(lines):
-    """Fortran statements can be broken into multiple lines 
-    via the '&' characters. This routine detects in which line a statement
-    (or multiple statements per line) begins.
-    The difference between the line numbers of consecutive entries
-    is the number of lines the first statement occupies.
-    """
-    p_directive_continuation = re.compile(r"[!c\*][@\$]\w+\&")
-
-    # 1. save multi-line statements (&) in buffer
-    buffering = False
-    line_starts = []
-    for lineno, line in enumerate(lines, start=0):
-        # Continue buffering if multiline CUF/ACC/OMP statement
-        _,stmt_or_dir,comment,_ = \
-           util.parsing.split_fortran_line(line)
-        buffering |= p_directive_continuation.match(stmt_or_dir) != None
-        if not buffering:
-            line_starts.append(lineno)
-        if len(stmt_or_dir) and stmt_or_dir[-1] in ['&', '\\']:
-            buffering = True
-        else:
-            buffering = False
-    line_starts.append(len(lines))
-    return line_starts
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def _preprocess_and_normalize_fortran_file(file_path, **kwargs):
@@ -451,7 +424,7 @@ def preprocess_and_normalize(fortran_file_lines,
                     
 
     # 1. detect line starts
-    line_starts = _detect_line_starts(fortran_file_lines)
+    line_starts = util.parsing.detect_line_starts(fortran_file_lines,modern_fortran=modern_fortran)
 
     # 2. go through the blocks of buffered lines
     linemaps = []
@@ -474,7 +447,7 @@ def preprocess_and_normalize(fortran_file_lines,
                 raise e
         elif region_stack1[-1]: # in_active_region
             # Convert line to statememts
-            statements1 = _convert_lines_to_statements(lines)
+            statements1 = _convert_lines_to_statements(lines,modern_fortran)
             # 2. Apply macros to statements
             statements2 = []
             for stmt1 in statements1:
@@ -483,7 +456,7 @@ def preprocess_and_normalize(fortran_file_lines,
             # Hence, convert each element of statements2 to single statements again
             statements3 = []
             for stmt2 in statements2:
-                for stmt3 in _convert_lines_to_statements([stmt2]):
+                for stmt3 in _convert_lines_to_statements([stmt2],modern_fortran):
                     statement = copy.deepcopy(EMPTY_STATEMENT)
                     statement["body"] = stmt3
                     # treat statements such as "!@cuf ierr = hipStreamSynchronize(stream)

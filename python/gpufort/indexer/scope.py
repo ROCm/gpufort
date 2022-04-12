@@ -299,9 +299,10 @@ def create_scope(index, tag):
     for s in opts.scopes:
         existing_tag = s["tag"]
         existing_tag_tokens = existing_tag.split(":")
-        if tag_tokens == existing_tag_tokens:
+        len_existing_tag_tokens=len(existing_tag_tokens)
+        if tag_tokens[0:len_existing_tag_tokens] == existing_tag_tokens[0:len_existing_tag_tokens]:
             existing_scope = s
-            nesting_level = len(existing_tag_tokens) - 1
+            nesting_level = len_existing_tag_tokens - 1
         else:
             scopes_to_delete.append(s)
     # clean up scopes that are not used anymore
@@ -348,17 +349,19 @@ def create_scope(index, tag):
               "add {} top-level procedures to scope".format(len(new_scope["procedures"])))
         begin = nesting_level + 1 #
 
+    
         for d in range(begin, len(tag_tokens)):
             searched_name = tag_tokens[d]
             for current_record in current_record_list:
                 if current_record["name"] == searched_name:
-                    # 1. first include variables from included
+                    # 1. first include definitions from used records
                     _resolve_dependencies(new_scope, current_record,
                                                  index)
-                    # 2. now include the current record's
+                    # 2. now include the current record's definitions
                     for entry_type in types.SCOPE_ENTRY_TYPES:
                         if entry_type in current_record:
                             new_scope[entry_type] += current_record[entry_type]
+                    #print("{}:{}".format(":".join(tag_tokens),[p["name"] for p in new_scope["procedures"]]))
                     current_record_list = current_record["procedures"]
                     break
         opts.scopes.append(new_scope)

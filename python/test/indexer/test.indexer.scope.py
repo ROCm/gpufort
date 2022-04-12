@@ -57,6 +57,8 @@ class TestScoper(unittest.TestCase):
     def test_5_scope_search_for_procedures(self):
         func2 = indexer.scope.search_index_for_procedure(index,"test1","func2")
         func3 = indexer.scope.search_index_for_procedure(index,"nested_procedures:func2","func3")
+        func4 = indexer.scope.search_index_for_procedure(index,"nested_procedures:func2","func4")
+        func4 = indexer.scope.search_index_for_procedure(index,"nested_procedures:func2:func3","func4")
         type1 = indexer.scope.search_index_for_type(index,"complex_types","type1")
         indexer.opts.scopes.clear()
     def test_6_scope_search_for_top_level_procedures(self):

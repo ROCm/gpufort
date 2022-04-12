@@ -6,14 +6,24 @@ import re
 
 from . import error
 
-def compare_tokens_ignore_case(tokens1,tokens2):
-    if len(tokens1) != len(tokens2):
-        return False
+def compare_ignore_case(tokens1,tokens2):
+    if isinstance(tokens1,str):
+        assert isinstance(tokens2,str)
+        return tokens1.lower() == tokens2.lower()
     else:
-        for i,tk in enumerate(tokens1):
-            if tk.lower() != tokens2[i].lower():
-                return False
-        return True
+        if len(tokens1) != len(tokens2):
+            return False
+        else:
+            for i,tk in enumerate(tokens1):
+                if tk.lower() != tokens2[i].lower():
+                    return False
+            return True
+
+def all_tokens_blank(tokens):
+    for tk in tokens:
+        if len(tk.strip()):
+            return False
+    return True
 
 def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
     """Splits string at whitespaces and substrings such as
@@ -321,6 +331,122 @@ def extract_function_calls(text, func_name):
         result.append((text[m.start():end], args))
     return result
 
+def parse_function_statement(statement):
+    """Fortran function and subroutine statements can take
+    various forms, e.g.:
+    ```
+    function f1(i) result (j)
+    integer function f2(i) result (j)
+    integer function f3(i)
+    function f4(i)
+    ```
+    where, in case of function statements, a return value type and name might be specified
+    as part of the signature or not.
+
+    Additionally, there might be other attributes in the prefix part in front of `function` keyword, 
+    such as `pure` or `recursive`. Return value type and all other attributes might 
+    only occur once in the prefix part.
+    In addition to the `result(<varname>)` modifier there could also
+    be a `bind(c,"<cname>")` qualifier.
+    """
+    name, kind, dummy_args, modifiers, attributes = None, None, None, [], []
+    result_type, result_type_kind, result_name = None, None, None
+    bind_c, bind_c_name = False, None
+    #
+    type_begin = [
+      "character", "integer", "logical", "real",
+      "complex", "double", "type"
+    ]
+    anchors = ["subroutine","function"]
+    simple_modifiers = ["recursive","pure","elemental"]
+
+    tokens = tokenize(statement,padded_size=10)
+    criterion = len(tokens)
+    # prefix
+    while criterion:
+        if tokens[0].lower() in type_begin:
+            result_type, result_type_kind, num_consumed_tokens =\
+                    _parse_datatype(tokens)
+            tokens=tokens[num_consumed_tokens:]
+        else:
+            tk = tokens.pop(0)
+            criterion = len(tokens)
+            if tk.lower() in simple_modifiers:
+                modifiers.append(tk)
+            elif tk.lower() == "attributes":
+                if not tokens.pop(0) == "(":
+                    raise error.SyntaxError("expected '(' after 'attributes'")
+                attributes, num_consumed_tokens =  get_top_level_operands(tokens)
+                if not len(attributes):
+                    raise error.SyntaxError("expected at least one attribute in the 'attributes' list")
+                tokens = tokens[num_consumed_tokens:]
+                if not tokens.pop(0) == ")":
+                    raise error.SyntaxError("expected ')' after 'attributes' list")
+                criterion = len(tokens)
+            elif tk.lower() in anchors:
+                kind = tk
+                break
+            elif len(tk.strip()):
+                raise error.SyntaxError("unexpected prefix token: {}".format(tk))
+    # name and dummy args
+    if kind == None:
+        raise error.SyntaxError("expected 'function' or 'subroutine'")
+    name = tokens.pop(0)
+    if kind.lower() == "function":
+        result_name = name
+    if not name.isidentifier():
+        raise error.SyntaxError("expected identifier after '{}'".format(kind))
+    if len(tokens):
+        if tokens.pop(0) == "(":
+            dummy_args, num_consumed_tokens = get_top_level_operands(tokens)  
+            tokens = tokens[num_consumed_tokens:]
+            if not tokens.pop(0) == ")":
+                raise error.SyntaxError("expected ')' after dummy argument list")
+    # result and bind
+    criterion = len(tokens)
+    while criterion:
+        tk = tokens.pop(0)
+        criterion = len(tokens)
+        suffix_kind = tk.lower()
+        if suffix_kind in ["bind","result"]:
+            if not tokens.pop(0) == "(":
+                raise error.SyntaxError("expected '(' after '{}'".format(suffix_kind))
+            operands, num_consumed_tokens =  get_top_level_operands(tokens)
+            if suffix_kind == "bind":
+                if not len(operands) == 2:
+                    raise error.SyntaxError("'bind' takes two arguments")
+                if not operands[0].lower() == "c":
+                    raise error.SyntaxError("expected 'c' as first 'bind' argument")
+                bind_c_name_parts = operands[1].split("=")
+                if len(bind_c_name_parts) != 2:
+                    raise error.SyntaxError("expected 'name=\"<label>\"' (or single quotes) as 2nd argument of 'bind'")
+                else:
+                    bind_c_name = bind_c_name_parts[1].strip("\"'")
+                    if (bind_c_name_parts[0].lower() != "name"
+                            or not bind_c_name.isidentifier()):
+                        raise error.SyntaxError("expected 'name=\"<label>\"' as 2nd argument of 'bind'")
+                    bind_c = True
+            elif suffix_kind == "result":
+                if not len(operands) == 1:
+                    raise error.SyntaxError("'result' takes one argument")
+                if not operands[0].isidentifier():
+                    raise error.SyntaxError("'result' argument must be identifier")
+                result_name = operands[0]
+            tokens = tokens[num_consumed_tokens:]
+            if not tokens.pop(0) == ")":
+                raise error.SyntaxError("expected ')' after 'attributes' list")
+        elif len(tk.strip()):
+            raise error.SyntaxError("unexpected suffix token: {}".format(tk))
+        criterion = len(tokens)
+    if not all_tokens_blank(tokens):
+        raise error.SyntaxError("unexpected tokens at end of statement: ".format(
+            ",".join(["'{}'".format(tk) for tk in tokens if len(tk.strip())] )))
+    return (
+        kind, name, dummy_args, modifiers, attributes,
+        (result_type, result_type_kind, result_name),
+        (bind_c, bind_c_name)
+    )
+
 def parse_use_statement(statement):
     """Extracts module name, qualifiers, renamings and 'only' mappings
     from the statement.
@@ -457,6 +583,59 @@ def parse_attributes_statement(statement):
                 raise error.SyntaxError("expected ','")
     return attributes, variables    
 
+def _parse_datatype(tokens):
+    # handle datatype
+    datatype = tokens[0]
+    kind = None
+    DOUBLE_COLON = "::"
+    
+    if compare_ignore_case(tokens[0],"type"):
+        # ex: type ( dim3 )
+        kind = tokens[2]
+        idx_last_consumed_token = 3
+    elif compare_ignore_case(tokens[0:2],["double", "precision"]):
+        datatype = " ".join(tokens[0:2])
+        idx_last_consumed_token = 1
+    elif tokens[1] == "*":
+        # ex: integer * 4
+        # ex: integer * ( 4*2 )
+        if tokens[2] == "(":
+            kind_tokens = next_tokens_till_open_bracket_is_closed(
+                tokens[3:], open_brackets=1)[:-1]
+            kind = "".join(kind_tokens)
+            idx_last_consumed_token = 2 + len(kind_tokens) + 1 # )
+        else:
+            kind = tokens[2] 
+            idx_last_consumed_token = 2
+    elif compare_ignore_case(tokens[1:4],["(","kind","("]):
+        # ex: integer ( kind ( 4 ) )
+        kind_tokens = next_tokens_till_open_bracket_is_closed(
+            tokens[4:], open_brackets=2)
+        kind = "".join(tokens[2:4]+kind_tokens[:-1])
+        idx_last_consumed_token = 4 + len(kind_tokens) - 1
+    elif (compare_ignore_case(tokens[1:4], ["(","kind","="])
+         or compare_ignore_case(tokens[1:4],["(","len","="])):
+        # ex: integer ( kind = 4 )
+        kind_tokens = next_tokens_till_open_bracket_is_closed(
+            tokens[4:], open_brackets=1)
+        kind = "".join(kind_tokens[:-1])
+        idx_last_consumed_token = 4 + len(kind_tokens) - 1
+    elif tokens[1] == "(":
+        # ex: integer ( 4 )
+        # ex: integer ( 4*2 )
+        kind_tokens = next_tokens_till_open_bracket_is_closed(
+            tokens[2:], open_brackets=1)
+        kind = "".join(kind_tokens[:-1])
+        idx_last_consumed_token = 2 + len(kind_tokens) - 1
+    elif tokens[1] in [",", DOUBLE_COLON] or tokens[1].isidentifier():
+        # ex: integer ,
+        # ex: integer ::
+        # ex: integer a
+        idx_last_consumed_token = 0
+    else:
+        raise error.SyntaxError("could not parse datatype")
+    return datatype, kind, idx_last_consumed_token+1
+
 def parse_declaration(statement):
     """Decomposes a Fortran declaration into its individual
     parts.
@@ -470,65 +649,17 @@ def parse_declaration(statement):
     :raise error.SyntaxError: If the syntax of the expression is not as expected.
     """
     tokens = tokenize(statement,10)
+    tokens_lower = tokenize(statement.lower(),10) 
 
-    idx_last_consumed_token = None
     # handle datatype
-    datatype = tokens[0]
-    kind = None
+    datatype, kind, num_consumed_tokens =\
+            _parse_datatype(tokens)
     DOUBLE_COLON = "::"
-    try:
-        tokens_lower = list(map(str.lower, tokens))
-        if tokens_lower[0] == "type":
-            # ex: type ( dim3 )
-            kind = tokens[2]
-            idx_last_consumed_token = 3
-        elif tokens_lower[0:2] == ["double", "precision"]:
-            datatype = " ".join(tokens[0:2])
-            idx_last_consumed_token = 1
-        elif tokens[1] == "*":
-            # ex: integer * 4
-            # ex: integer * ( 4*2 )
-            if tokens[2] == "(":
-                kind_tokens = next_tokens_till_open_bracket_is_closed(
-                    tokens[3:], open_brackets=1)[:-1]
-                kind = "".join(kind_tokens)
-                idx_last_consumed_token = 2 + len(kind_tokens) + 1 # )
-            else:
-                kind = tokens[2] 
-                idx_last_consumed_token = 2
-        elif tokens_lower[1:4] == ["(","kind","("]:
-            # ex: integer ( kind ( 4 ) )
-            kind_tokens = next_tokens_till_open_bracket_is_closed(
-                tokens[4:], open_brackets=2)
-            kind = "".join(tokens[2:4]+kind_tokens[:-1])
-            idx_last_consumed_token = 4 + len(kind_tokens) - 1
-        elif (tokens_lower[1:4] == ["(","kind","="] 
-             or tokens_lower[1:4] == ["(","len","="]):
-            # ex: integer ( kind = 4 )
-            kind_tokens = next_tokens_till_open_bracket_is_closed(
-                tokens[4:], open_brackets=1)
-            kind = "".join(kind_tokens[:-1])
-            idx_last_consumed_token = 4 + len(kind_tokens) - 1
-        elif tokens[1] == "(":
-            # ex: integer ( 4 )
-            # ex: integer ( 4*2 )
-            kind_tokens = next_tokens_till_open_bracket_is_closed(
-                tokens[2:], open_brackets=1)
-            kind = "".join(kind_tokens[:-1])
-            idx_last_consumed_token = 2 + len(kind_tokens) - 1
-        elif tokens[1] in [",", DOUBLE_COLON] or tokens[1].isidentifier():
-            # ex: integer ,
-            # ex: integer ::
-            # ex: integer a
-            idx_last_consumed_token = 0
-        else:
-            raise error.SyntaxError("could not parse datatype")
-    except IndexError:
-        raise error.SyntaxError("could not parse datatype")
+    
     qualifiers_raw = []
     try:
-        datatype_raw = "".join(tokens[:idx_last_consumed_token+1])
-        tokens = tokens[idx_last_consumed_token + 1:] # remove type part tokens
+        datatype_raw = "".join(tokens[:num_consumed_tokens])
+        tokens = tokens[num_consumed_tokens:] # remove type part tokens
         idx_last_consumed_token = None
         if tokens[0] == "," and DOUBLE_COLON in tokens: # qualifier list
             qualifiers_raw,_  = get_top_level_operands(tokens)

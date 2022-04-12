@@ -32,27 +32,29 @@ C$acc stmt_or_dir
 # whitespace at begin is important to
 # as [cC] in first column indicates a comment
 # line in Fortran 77.
-testdata2 = \
-"""  call myroutine( & ! comment 1
+testdata2 = """\
+    call myroutine( & ! comment 1
         arg1,&
         ! comment 2
 
 
         arg2) ! comment 3
     !$acc directive & ! comment 4
-      clause(var) async
+    !$acc clause1(var) &
+    !$acc& clause2(var)\
 """
 
-testdata2_result = \
-"""  call myroutine( &
+testdata2_result = """\
+    call myroutine( &
         arg1,&
         arg2)
-  ! comment 1
+    ! comment 1
         ! comment 2
         ! comment 3
     !$acc directive &
-      clause(var) async
-    ! comment 4
+    !$acc clause1(var) &
+    !$acc& clause2(var)
+    ! comment 4\
 """
 
 testdata3="k () + a ( b, c(d)+e(f)) + g(h(i,j+a(k(),2)))"""
@@ -133,8 +135,12 @@ class TestParsingUtils(unittest.TestCase):
                 self.assertFalse(len(comment))
         # 
     def test_03_detect_line_starts(self):
-        result = util.parsing.detect_line_starts(\
-                   testdata2.splitlines())
+        input_lines = testdata2.splitlines()
+        linenos = util.parsing.detect_line_starts(\
+                   input_lines)
+        #print(linenos)
+        #print([a for i,a in enumerate(input_lines) if i in linenos]) 
+        self.assertEqual(linenos,[0,6,9])
     def test_04_relocate_inline_comments(self):
         result = util.parsing.relocate_inline_comments(\
                    testdata2.splitlines())

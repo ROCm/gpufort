@@ -167,7 +167,6 @@ def _handle_preprocessor_directive(lines, file_path, macro_stack,
 
     return included_linemaps
 
-# TODO get rid of the regexes here and work with tokens
 def _convert_lines_to_statements(lines,modern_fortran):
     """Fortran lines can contain multiple statements that
     are separated by a semicolon.
@@ -175,7 +174,6 @@ def _convert_lines_to_statements(lines,modern_fortran):
     Additionally, it converts single-line Fortran if statements
     into multi-line if-then-endif statements.
     """
-
     p_continuation = re.compile(r"\&\s*([!c\*][@\$]\w+)?|([!c\*][@\$]\w+\&)",
                                 re.IGNORECASE)
     # we look for a sequence ") <word>" were word != "then".
@@ -663,7 +661,7 @@ def render_file(linemaps, **kwargs):
         nonlocal include_inactive
         nonlocal keep_preprocessor_directives
 
-        result = ""
+        result = []
         for linemap in linemaps:
             condition1 = include_inactive or (linemap["is_active"])
             condition2 = keep_preprocessor_directives or (
@@ -673,12 +671,12 @@ def render_file(linemaps, **kwargs):
                 if len(linemap["included_linemaps"]):
                     result += render_file_(linemap["included_linemaps"])
                 elif stage == "statements":
-                    result += "".join(_linearize_statements(linemap))
+                    result += _linearize_statements(linemap)
                 else:
-                    result += "".join(linemap[stage])
+                    result += linemap[stage]
         return result
 
-    return render_file_(linemaps).strip("\n")
+    return "\n".join([l.strip("\n") for l in render_file_(linemaps)])
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)

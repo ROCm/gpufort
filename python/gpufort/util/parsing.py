@@ -182,7 +182,7 @@ def detect_line_starts(lines,modern_fortran=True):
         if (len(stmt_or_dir_tokens) > 3
            and (modern_fortran and stmt_or_dir_tokens[0] in ["!$","!@"]
                or not modern_fortran and stmt_or_dir_tokens[0].lower() in ["c$","c@","*$","*@"])):
-            buffering = stmt_or_dir_tokens[2] == "&" 
+            buffering = buffering or stmt_or_dir_tokens[2] == "&" 
         if not buffering:
             line_starts.append(lineno)
         if len(stmt_or_dir) and stmt_or_dir_tokens[-1] in ['&', '\\']:
@@ -193,7 +193,7 @@ def detect_line_starts(lines,modern_fortran=True):
     return line_starts
 
 
-def relocate_inline_comments(lines):
+def relocate_inline_comments(lines,modern_fortran=True):
     """Move comments that follow after a line continuation char ('&')
     before the 
     Example. Input:
@@ -221,7 +221,7 @@ def relocate_inline_comments(lines):
     in_multiline_statement = False
     for line in lines:
         indent,stmt_or_dir,comment,trailing_ws = \
-          split_fortran_line(line)
+          split_fortran_line(line,modern_fortran)
         stmt_or_dir_tokens = tokenize(stmt_or_dir)
         if len(stmt_or_dir_tokens) and stmt_or_dir_tokens[-1] == "&":
             in_multiline_statement = True

@@ -46,6 +46,18 @@ def _parse_file(linemaps, index, **kwargs):
     derived_type_parent = None
     acc_kernels_directive = None
     statement_functions = []
+
+    def set_keep_recording_(state):
+        nonlocal keep_recording
+        nonlocal current_node
+        nonlocal current_linemap
+        if state:
+            util.logging.log_debug(opts.log_prefix,"parse_file","[current-node={}:{}] start recording lines in line {}".format(
+                current_node.kind,current_node.name,current_linemap["lineno"]))
+        else:
+            util.logging.log_debug(opts.log_prefix,"parse_file","[current-node={}:{}] stop recording lines in line {}".format(
+                current_node.kind,current_node.name,current_linemap["lineno"]))
+        keep_recording = state
     
     def log_detection_(kind):
         nonlocal current_node
@@ -146,7 +158,7 @@ def _parse_file(linemaps, index, **kwargs):
         new = tree.STProcedure(tokens[1],current_node.tag(),"function",\
             current_linemap,current_statement_no,index)
         new.ignore_in_s2s_translation = not translation_enabled
-        keep_recording = new.keep_recording()
+        set_keep_recording_(new.keep_recording())
         descend_(new)
 
     def SubroutineStart(tokens):
@@ -159,7 +171,7 @@ def _parse_file(linemaps, index, **kwargs):
         new = tree.STProcedure(tokens[1],current_node.tag(),"subroutine",\
             current_linemap,current_statement_no,index)
         new.ignore_in_s2s_translation = not translation_enabled
-        keep_recording = new.keep_recording()
+        set_keep_recording_(new.keep_recording())
         descend_(new)
 
     def End():
@@ -179,7 +191,7 @@ def _parse_file(linemaps, index, **kwargs):
             current_node.add_linemap(current_linemap)
             current_node._last_statement_index = current_statement_no
             current_node.complete_init(index)
-            keep_recording = False
+            set_keep_recording_(False)
         if not keep_recording:
             new = tree.STEnd(current_linemap, current_statement_no)
             append_if_not_recording_(new)
@@ -215,7 +227,7 @@ def _parse_file(linemaps, index, **kwargs):
             new.ignore_in_s2s_translation = not translation_enabled
             new._do_loop_ctr_memorised = do_loop_ctr
             descend_(new)
-            keep_recording = True
+            set_keep_recording_(True)
         do_loop_ctr += 1
 
     def DoLoopEnd():
@@ -233,7 +245,7 @@ def _parse_file(linemaps, index, **kwargs):
                 current_node._last_statement_index = current_statement_no
                 current_node.complete_init(index)
                 ascend_()
-                keep_recording = False
+                set_keep_recording_(False)
 
     def Declaration():
         nonlocal translation_enabled
@@ -401,7 +413,7 @@ def _parse_file(linemaps, index, **kwargs):
             new.ignore_in_s2s_translation = not translation_enabled
             new._do_loop_ctr_memorised = do_loop_ctr
             descend_(new) # descend also appends
-            keep_recording = True
+            set_keep_recording_(True)
         elif new.is_directive(["acc","kernels"]):
             acc_kernels_directive = new.first_statement()
             append_if_not_recording_(new)
@@ -423,7 +435,7 @@ def _parse_file(linemaps, index, **kwargs):
         new.ignore_in_s2s_translation = not translation_enabled
         new._do_loop_ctr_memorised = do_loop_ctr
         descend_(new)
-        keep_recording = True
+        set_keep_recording_(True)
 
     def Assignment(lhs_ivar,lhs_expr):
         nonlocal current_node

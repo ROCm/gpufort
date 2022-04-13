@@ -354,7 +354,7 @@ def parse_function_statement(statement):
     In addition to the `result(<varname>)` modifier there could also
     be a `bind(c,"<cname>")` qualifier.
     """
-    name, kind, dummy_args, modifiers, attributes = None, None, None, [], []
+    name, kind, dummy_args, modifiers, attributes = None, None, [], [], []
     result_type, result_type_kind, result_name = None, None, None
     bind_c, bind_c_name = False, None
     #

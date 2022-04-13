@@ -281,14 +281,14 @@ def populate_cl_arg_parser(parser,for_converter=True):
         "--only-create-mod-files",
         dest="only_create_gpufort_module_files",
         action="store_true",
-        help="Only create GPUFORT modules files. No other output is created.",
+        help="Only create GPUFORT module files. Do not translate input file and generate C++ files.",
     )
     parser.add_argument(
         "--skip-create-mod-files",
         dest="skip_create_gpufort_module_files",
         action="store_true",
         help=
-        "Skip creating GPUFORT modules, e.g. if they already exist. Mutually exclusive with '-c' option.",
+        "Skip creating GPUFORT modules, e.g. if they already exist. Mutually exclusive with '--only-create-mod-files' option.",
     )
     parser.add_argument(
         "--touch-cpp-files",

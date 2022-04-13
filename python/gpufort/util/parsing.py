@@ -19,11 +19,16 @@ def compare_ignore_case(tokens1,tokens2):
                     return False
             return True
 
-def all_tokens_blank(tokens):
+def all_tokens_are_blank(tokens):
     for tk in tokens:
-        if len(tk.strip()):
+        if len(tk.strip("\n\r\t ")):
             return False
     return True
+
+def check_if_all_tokens_are_blank(tokens):
+    if not all_tokens_are_blank(tokens):
+        raise error.SyntaxError("unexpected tokens at end of statement: ".format(
+            ",".join(["'{}'".format(tk) for tk in tokens if len(tk.strip())] )))
 
 def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
     """Splits string at whitespaces and substrings such as
@@ -273,9 +278,9 @@ def get_top_level_operands(tokens,
                            terminators=["::", "\n", "!",""],
                            brackets=("(",")"),
                            keep_separators=False):
-    """
-    :return: Tuple of highest level arguments and number of consumed tokens
+    """:return: Tuple of highest level arguments and number of consumed tokens
              in that order.
+       :note: terminators are excluded from the number of consumed tokens.
     """
     # ex:
     # input: ["parameter",",","intent","(","inout",")",",","dimension","(",":",",",":",")","::"]
@@ -438,14 +443,14 @@ def parse_function_statement(statement):
         elif len(tk.strip()):
             raise error.SyntaxError("unexpected suffix token: {}".format(tk))
         criterion = len(tokens)
-    if not all_tokens_blank(tokens):
-        raise error.SyntaxError("unexpected tokens at end of statement: ".format(
-            ",".join(["'{}'".format(tk) for tk in tokens if len(tk.strip())] )))
+    check_if_all_tokens_are_blank(tokens)
     return (
         kind, name, dummy_args, modifiers, attributes,
         (result_type, result_type_kind, result_name),
         (bind_c, bind_c_name)
     )
+
+
 
 def parse_use_statement(statement):
     """Extracts module name, qualifiers, renamings and 'only' mappings
@@ -636,6 +641,60 @@ def _parse_datatype(tokens):
         raise error.SyntaxError("could not parse datatype")
     return datatype, kind, idx_last_consumed_token+1
 
+def _parse_raw_qualifiers_and_rhs(tokens):
+    """:return: Triple of qualifiers and variables as list of raw strings plus
+                the number of consumed tokens (in that order).
+    """
+    DOUBLE_COLON = "::"
+    try:
+        qualifiers_raw = []
+        idx_last_consumed_token = None
+        if tokens[0] == "," and DOUBLE_COLON in tokens: # qualifier list
+            qualifiers_raw,_  = get_top_level_operands(tokens)
+            idx_last_consumed_token = tokens.index(DOUBLE_COLON)
+        elif tokens[0] == DOUBLE_COLON: # variables begin afterwards
+            idx_last_consumed_token = 0
+        elif tokens[0].isidentifier(): # variables begin directly
+            idx_last_consumed_token = -1
+        else:
+            raise error.SyntaxError("could not parse qualifiers and right-hand side")
+        # handle variables list
+        num_consumed_tokens = idx_last_consumed_token+1
+        tokens = tokens[num_consumed_tokens:]
+        variables_raw, num_consumed_tokens2  = get_top_level_operands(tokens)
+        num_consumed_tokens += num_consumed_tokens2
+        if not len(variables_raw):
+            raise error.SyntaxError("expected at least one entry in right-hand side")
+        return qualifiers_raw, variables_raw, num_consumed_tokens
+    except IndexError:
+        raise error.SyntaxError("could not parse qualifiers and right-hand side")
+
+def parse_type_statement(statement):
+    """Parse a Fortran type statement.
+    :return: List 
+    """
+    tokens = tokenize(statement,10)
+    if tokens.pop(0).lower() != "type":
+        raise error.SyntaxError("expected 'type'")
+    attributes, rhs, num_consumed_tokens = _parse_raw_qualifiers_and_rhs(tokens)
+    tokens = tokens[num_consumed_tokens:] # remove qualifier list tokens
+    check_if_all_tokens_are_blank(tokens)
+    if len(rhs) != 1:
+        raise error.SyntaxError("expected 1 identifier with optional parameter list")
+    rhs_tokens = tokenize(rhs[0])
+    name = rhs_tokens.pop(0)
+    if not name.isidentifier():
+        raise error.SyntaxError("expected identifier")
+    params = []
+    if len(rhs_tokens) and rhs_tokens.pop(0)=="(":
+        params,num_consumed_tokens2 = get_top_level_operands(rhs_tokens)  
+        rhs_tokens = rhs_tokens[num_consumed_tokens2:]
+        if not rhs_tokens.pop(0) == ")":
+            raise error.SyntaxError("expected ')'")
+        if not len(params):
+            raise error.SyntaxError("expected at least 1 parameter")
+    return name, attributes, params
+
 def parse_declaration(statement):
     """Decomposes a Fortran declaration into its individual
     parts.
@@ -649,53 +708,37 @@ def parse_declaration(statement):
     :raise error.SyntaxError: If the syntax of the expression is not as expected.
     """
     tokens = tokenize(statement,10)
-    tokens_lower = tokenize(statement.lower(),10) 
 
     # handle datatype
-    datatype, kind, num_consumed_tokens =\
-            _parse_datatype(tokens)
-    DOUBLE_COLON = "::"
+    datatype, kind, num_consumed_tokens = _parse_datatype(tokens)
     
-    qualifiers_raw = []
-    try:
-        datatype_raw = "".join(tokens[:num_consumed_tokens])
-        tokens = tokens[num_consumed_tokens:] # remove type part tokens
-        idx_last_consumed_token = None
-        if tokens[0] == "," and DOUBLE_COLON in tokens: # qualifier list
-            qualifiers_raw,_  = get_top_level_operands(tokens)
-            idx_last_consumed_token = tokens.index(DOUBLE_COLON)
-        elif tokens[0] == DOUBLE_COLON: # variables begin afterwards
-            idx_last_consumed_token = 0
-        elif tokens[0].isidentifier(): # variables begin directly
-            idx_last_consumed_token = -1
-        else:
-            raise error.SyntaxError("could not parse qualifier list")
-        # handle variables list
-        tokens = tokens[idx_last_consumed_token+1:] # remove qualifier list tokens
-        variables_raw,_  = get_top_level_operands(tokens)
-    except IndexError:
-        raise error.SyntaxError("could not parse qualifier list")
+    datatype_raw = "".join(tokens[:num_consumed_tokens])
+    tokens = tokens[num_consumed_tokens:] # remove type part tokens
+   
+    # parse raw qualifiers and variables
+    qualifiers_raw, variables_raw, num_consumed_tokens = _parse_raw_qualifiers_and_rhs(tokens)
+    tokens = tokens[num_consumed_tokens:] # remove qualifier list tokens
+    check_if_all_tokens_are_blank(tokens)
     # analyze qualifiers
     qualifiers = []
     dimension_bounds = []
     for qualifier in qualifiers_raw:
         qualifier_tokens       = tokenize(qualifier)
-        qualifier_tokens_lower = list(map(str.lower, qualifier_tokens))
-        if qualifier_tokens_lower[0] == "dimension":
+        if qualifier_tokens[0].lower() == "dimension":
             # ex: dimension ( 1, 2, 1:n )
             qualifier_tokens = tokenize(qualifier)
             if (len(qualifier_tokens) < 4
-               or qualifier_tokens_lower[0:2] != ["dimension","("]
+               or not compare_ignore_case(qualifier_tokens[0:2],["dimension","("])
                or qualifier_tokens[-1] != ")"):
                 raise error.SyntaxError("could not parse 'dimension' qualifier")
             dimension_bounds,_  = get_top_level_operands(qualifier_tokens[2:-1])
-        elif qualifier_tokens_lower[0] == "intent":
+        elif qualifier_tokens[0].lower() == "intent":
             # ex: intent ( inout )
             qualifier_tokens = tokenize(qualifier)
             if (len(qualifier_tokens) != 4 
-               or qualifier_tokens_lower[0:2] != ["intent","("]
+               or not compare_ignore_case(qualifier_tokens[0:2],["intent","("])
                or qualifier_tokens[-1] != ")"
-               or qualifier_tokens_lower[2] not in ["out","inout","in"]):
+               or qualifier_tokens[2].lower() not in ["out","inout","in"]):
                 raise error.SyntaxError("could not parse 'intent' qualifier")
             qualifiers.append("".join(qualifier_tokens))
         elif len(qualifier_tokens)==1 and qualifier_tokens[0].isidentifier():
@@ -796,8 +839,8 @@ def parse_derived_type_statement(statement):
             pass
         if not tk == ")":
             raise error.SyntaxError("expected ')'")
-    elif not tk == "":
-        raise error.SyntaxError("expected ')'")
+    elif len(tk.strip()):
+        raise error.SyntaxError("unexpected token: '{}'".format(tk))
     return name, attributes, parameters
 
 def parse_directive(directive,tokens_to_omit_at_begin=0):

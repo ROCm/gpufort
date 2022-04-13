@@ -129,47 +129,59 @@ class HipCodeGenerator(codegen.CodeGenerator):
         # if derived type access in kernel
         # Further tree modification required if no parent type is passed down
         # but an error expression instead
-        mykernelgen = hipkernelgen.HipKernelGenerator4LoopNest(
-            stloopnest.parse_result, scope,
-            kernel_name = stloopnest.kernel_name(),
-            kernel_hash = stloopnest.kernel_hash(),
-            fortran_snippet = "".join(stloopnest.lines()))
 
-        self.__render_kernel(mykernelgen,
-                             cpp_filegen,
-                             fortran_filegen,
-                             is_loopnest=True)
-        # feed back arguments; TODO see above
-        stloopnest.kernel_args_tavars = mykernelgen.get_kernel_args()
-        stloopnest.problem_size = mykernelgen.problem_size
+        try:
+            mykernelgen = hipkernelgen.HipKernelGenerator4LoopNest(
+                stloopnest.parse_result, scope,
+                kernel_name = stloopnest.kernel_name(),
+                kernel_hash = stloopnest.kernel_hash(),
+                fortran_snippet = "".join(stloopnest.lines()))
+        
+            self.__render_kernel(mykernelgen,
+                                 cpp_filegen,
+                                 fortran_filegen,
+                                 is_loopnest=True)
+            # feed back arguments; TODO see above
+            stloopnest.kernel_args_tavars = mykernelgen.get_kernel_args()
+
+            stloopnest.problem_size = mykernelgen.problem_size
+        except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:
+            msg = "{}:[{}-{}]:{}".format(
+                    stloopnest._linemaps[0]["file"],stloopnest.min_lineno(),stloopnest.max_lineno(),e.args[0])
+            e.args = (msg,)
+            raise
 
     @util.logging.log_entry_and_exit(opts.log_prefix+".HipCodeGenerator")
     def _render_device_procedure(self, stprocedure, cpp_filegen, fortran_filegen):
         iprocedure = stprocedure.index_record
         kernel_name = iprocedure["name"]
         scope = indexer.scope.create_scope(self.index, stprocedure.tag())
-        if stprocedure.is_kernel_subroutine():
-            mykernelgen = hipkernelgen.HipKernelGenerator4CufKernel(
-                stprocedure.parse_result, iprocedure, scope,
-                kernel_name = iprocedure["name"],
-                kernel_hash = "", 
-                fortran_snippet = "".join(stprocedure.lines()))
-        else:
-            mykernelgen = hipkernelgen.HipKernelGenerator4AcceleratorRoutine(
-                stprocedure.parse_result, iprocedure, scope,
-                kernel_name = iprocedure["name"],
-                kernel_hash = "", 
-                return_type = stprocedure.c_result_type,
-                fortran_snippet = "".join(stprocedure.lines()))
+        try:
+            if stprocedure.is_kernel_subroutine():
+                mykernelgen = hipkernelgen.HipKernelGenerator4CufKernel(
+                    stprocedure.parse_result, iprocedure, scope,
+                    kernel_name = iprocedure["name"],
+                    kernel_hash = "", 
+                    fortran_snippet = "".join(stprocedure.lines()))
+            else:
+                mykernelgen = hipkernelgen.HipKernelGenerator4AcceleratorRoutine(
+                    stprocedure.parse_result, iprocedure, scope,
+                    kernel_name = iprocedure["name"],
+                    kernel_hash = "", 
+                    return_type = stprocedure.c_result_type,
+                    fortran_snippet = "".join(stprocedure.lines()))
 
-        self.__render_kernel(mykernelgen,
-                             cpp_filegen,
-                             fortran_filegen,
-                             is_loopnest=False)
-        
-        stprocedure.kernel_args_tavars = mykernelgen.get_kernel_args()
-
-        util.logging.log_leave_function(opts.log_prefix, "self._render_loop_nest")
+            self.__render_kernel(mykernelgen,
+                                 cpp_filegen,
+                                 fortran_filegen,
+                                 is_loopnest=False)
+            
+            stprocedure.kernel_args_tavars = mykernelgen.get_kernel_args()
+        except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:
+            msg = "{}:[{}-{}]:{}".format(
+                    stloopnest._linemaps[0]["file"],stloopnest.min_lineno(),stloopnest.max_lineno(),e.args[0])
+            e.args = (msg,)
+            raise
 
     @util.logging.log_entry_and_exit(opts.log_prefix+".HipCodeGenerator")
     def _render_derived_types(self, itypes, cpp_filegen, fortran_modulegen):

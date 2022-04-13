@@ -73,7 +73,10 @@ def create_index_records_from_declaration(statement):
     context = []
     for var in variables:
         name, bounds, rhs = var
-        ivar = types.create_index_var(f_type,kind,name,qualifiers,bounds+dimension_bounds,rhs)
+        if len(bounds):
+            ivar = types.create_index_var(f_type,kind,name,qualifiers,bounds,rhs)
+        else:
+            ivar = types.create_index_var(f_type,kind,name,qualifiers,dimension_bounds,rhs)
         context.append(ivar)
     return context
 

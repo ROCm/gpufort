@@ -198,7 +198,9 @@ def search_lrvalue_exprs_in_subtree(ttnode, search_filter, scope, min_rank=-1):
     for ttvalue in find_all_matching_exclude_directives(
             ttnode.body,
             search_filter): # includes the identifiers of the function calls 
-        tag = indexer.scope.create_index_search_tag_for_var(ttvalue.f_str()) # TODO 
+        # TODO Search tag creation strips array brackets
+        # TODO provide clean interface to value
+        tag = indexer.scope.create_index_search_tag_for_var(ttvalue._value.f_str()) # TODO 
         if tag not in tree.grammar.DEVICE_PREDEFINED_VARIABLES:
             ivar = indexer.scope.search_scope_for_var(scope, tag)
             if ivar["rank"] >= min_rank and\
@@ -217,7 +219,6 @@ def vars_in_subtree(ttnode, scope):
             return node._value.is_tensor()
         else:
             return cond1 
-
     result = search_lrvalue_exprs_in_subtree(ttnode, search_filter, scope)
     return result
 

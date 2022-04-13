@@ -686,7 +686,7 @@ def create_index(linemaps, output_dir, search_dirs):
 def touch_cpp_file_per_module(index, output_dir):
     for irecord in index:
         if irecord["kind"] == "module":
-            cpp_file_name = "".join([irecord["name"],fortx.opts.cpp_file_ext])
+            cpp_file_name = "".join([irecord["name"],fort2x.opts.cpp_file_ext])
             cpp_file_path = os.path.join(output_dir,cpp_file_name)
             pathlib.Path(cpp_file_path).touch()
             msg = "Touch C++ file: ".ljust(40) + cpp_file_path

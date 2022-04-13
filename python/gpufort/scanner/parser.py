@@ -129,6 +129,8 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal current_statement_no
         nonlocal current_tokens
         log_detection_("program")
+        # TODO workaround, this will only allow local statement functions
+        statement_functions.clear()
         new = tree.STProgram(current_tokens[1], current_linemap, current_statement_no)
         new.ignore_in_s2s_translation = not translation_enabled
         descend_(new)
@@ -155,6 +157,8 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal keep_recording
         nonlocal index
         log_detection_("function")
+        # TODO workaround, this will only allow local statement functions
+        statement_functions.clear()
         new = tree.STProcedure(tokens[1],current_node.tag(),"function",\
             current_linemap,current_statement_no,index)
         new.ignore_in_s2s_translation = not translation_enabled
@@ -168,6 +172,8 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal keep_recording
         nonlocal index
         log_detection_("subroutine")
+        # TODO workaround, this will only allow local statement functions
+        statement_functions.clear()
         new = tree.STProcedure(tokens[1],current_node.tag(),"subroutine",\
             current_linemap,current_statement_no,index)
         new.ignore_in_s2s_translation = not translation_enabled

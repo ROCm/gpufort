@@ -204,7 +204,7 @@ def _resolve_dependencies(scope,
                                         "renamed"]
                                     scope[entry_type].append(copied_entry)
             elif not used_module_ignored:
-                msg = "{}no index record for module '{}' could be found".format(
+                msg = "{}no index record found for module '{}'".format(
                     indent,
                     used_module["name"])
                 raise util.error.LookupError(msg)
@@ -231,11 +231,11 @@ def _search_scope_for_type_or_procedure(scope,
     result = next((entry for entry in scope_entities
                    if entry["name"] == entry_name_lower), None)
     if result is None:
-        msg = "no entry found for {} '{}'.".format(entry_type[:-1], entry_name)
+        msg = "no index record found for {} '{}'".format(entry_type[:-1], entry_name)
         raise util.error.LookupError(msg)
     else:
         util.logging.log_debug2(opts.log_prefix,"_search_scope_for_type_or_procedure",\
-          "entry found for {} '{}'".format(entry_type[:-1],entry_name))
+          "index record found for {} '{}'".format(entry_type[:-1],entry_name))
         util.logging.log_leave_function(
             opts.log_prefix, "_search_scope_for_type_or_procedure")
         return result
@@ -497,10 +497,15 @@ def search_index_for_var(index,
       {"parent_tag": parent_tag,"var_expr": var_expr})
 
     scope = create_scope(index, parent_tag)
-    return search_scope_for_var(scope, var_expr, resolve)
+    try:
+        result = search_scope_for_var(scope, var_expr, resolve)
+        util.logging.log_leave_function(opts.log_prefix, "search_index_for_var")
+        return result
+    except util.error.LookupError as e:
+        msg = e.args[0]+" (scope tag: '{}')".format(parent_tag)
+        e.args = (msg, )
+        raise
 
-
-@util.logging.log_entry_and_exit(opts.log_prefix)
 def search_index_for_type(index, parent_tag, type_name):
     """
     :param str parent_tag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
@@ -508,13 +513,16 @@ def search_index_for_type(index, parent_tag, type_name):
     """
     util.logging.log_enter_function(opts.log_prefix,"search_index_for_type",\
       {"parent_tag": parent_tag,"type_name": type_name})
-    result = _search_index_for_type_or_procedure(
-        index, parent_tag, type_name, "types", types.EMPTY_TYPE)
-    util.logging.log_leave_function(opts.log_prefix, "search_index_for_type")
-    return result
+    try:
+        result = _search_index_for_type_or_procedure(
+            index, parent_tag, type_name, "types", types.EMPTY_TYPE)
+        util.logging.log_leave_function(opts.log_prefix, "search_index_for_type")
+        return result
+    except util.error.LookupError as e:
+        msg = e.args[0]+" (scope tag: '{}')".format(parent_tag)
+        e.args = (msg, )
+        raise
 
-
-@util.logging.log_entry_and_exit(opts.log_prefix)
 def search_index_for_procedure(index, parent_tag, procedure_name):
     """
     :param str parent_tag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
@@ -522,8 +530,13 @@ def search_index_for_procedure(index, parent_tag, procedure_name):
     """
     util.logging.log_enter_function(opts.log_prefix,"search_index_for_procedure",\
       {"parent_tag": parent_tag,"procedure_name": procedure_name})
-    result = _search_index_for_type_or_procedure(
-        index, parent_tag, procedure_name, "procedures", types.EMPTY_PROCEDURE)
-    util.logging.log_leave_function(opts.log_prefix,
-                                    "search_index_for_procedure")
-    return result
+    try:
+        result = _search_index_for_type_or_procedure(
+            index, parent_tag, procedure_name, "procedures", types.EMPTY_PROCEDURE)
+        util.logging.log_leave_function(opts.log_prefix,
+                                        "search_index_for_procedure")
+        return result
+    except util.error.LookupError as e:
+        msg = e.args[0]+" (scope tag: '{}')".format(parent_tag)
+        e.args = (msg, )
+        raise

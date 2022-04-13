@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+import copy
+
 from . import render
 
+from gpufort import translator
 
 class DerivedTypeGenerator:
 
@@ -11,7 +14,10 @@ class DerivedTypeGenerator:
         :param list used_modules: The used modules that should appear as use statements in the declaration list of 
                                   the copy routines.
         """
-        self.itypes = itypes
+        self.itypes = copy.deepcopy(itypes)
+        for itype in self.itypes:
+            for ivar in itype["variables"]:
+                translator.analysis.append_c_type(ivar)
         self.used_modules = used_modules
         self.synchronize_queue = "hipStreamSynchronize"
         self.error_check = "hipCheck"

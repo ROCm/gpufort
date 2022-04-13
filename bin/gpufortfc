@@ -26,5 +26,5 @@ fi
 # all dependencies are met and we can continue
 
 if [ -z ${USED_DEVELOPER_TOOL} ]; then
-  python3 $GPUFORT_BIN_DIR/../python/fc.hip.py --working-dir $(pwd) "${@}" ${GPUFORT_FC_APPEND_FLAGS}
+  python3 $GPUFORT_BIN_DIR/../python/fc.hip.py --working-dir $(pwd) "${@}" ${GPUFORTFC_FLAGS_APPEND}
 fi

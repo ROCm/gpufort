@@ -18,6 +18,26 @@ from . import opts
 from . import types
 from . import grammar
 
+considered_constructs = [
+  "program", "module", "subroutine", "function",
+  "type"
+]
+
+ignored_constructs = [
+  "associate",
+  "block",
+  "case",
+  "do",
+  "forall",
+  "if",
+  "select",
+  #"type",
+  "where",
+  "while",
+  
+  "interface",
+]
+
 class Node():
 
     def __init__(self, kind, name, data, parent=None):
@@ -179,17 +199,20 @@ def _parse_statements(linemaps, file_path,**kwargs):
         log_enter_node_()
 
     #host|device,name,[args]
-    def SubroutineStart(tokens):
+    def SubroutineStart():
         nonlocal current_statement
         nonlocal current_node
         log_detection_("start of subroutine")
         if current_node._kind in [
                 "root", "module", "program", "subroutine", "function"
         ]:
-            name = tokens[1]
+            kind, name, dummy_args, modifiers, attributes,\
+            result_triple, bind_tuple = util.parsing.parse_function_statement(current_statement)
+            result_type, result_type_kind, result_name = result_triple
+            bind_c, bind_c_name = bind_tuple
             subroutine = create_base_entry_("subroutine", name, file_path)
-            subroutine["attributes"] = [q.lower() for q in tokens[0]]
-            subroutine["dummy_args"] = list(tokens[2])
+            subroutine["attributes"] = modifiers + attributes 
+            subroutine["dummy_args"] = dummy_args
             if current_node._kind == "root":
                 current_node._data.append(subroutine)
             else:
@@ -205,18 +228,27 @@ def _parse_statements(linemaps, file_path,**kwargs):
               format(current_statement,current_node._kind))
 
     #host|device,name,[args],result
-    def FunctionStart(tokens):
+    def FunctionStart():
         nonlocal current_statement
         nonlocal current_node
         log_detection_("start of function")
         if current_node._kind in [
                 "root", "module", "program", "subroutine", "function"
         ]:
-            name = tokens[1]
+            kind, name, dummy_args, modifiers, attributes,\
+            result_triple, bind_tuple = util.parsing.parse_function_statement(current_statement)
+            result_type, result_type_kind, result_name = result_triple
+            bind_c, bind_c_name = bind_tuple
             function = create_base_entry_("function", name, file_path)
-            function["attributes"] = [q.lower() for q in tokens[0]]
-            function["dummy_args"] = list(tokens[2])
-            function["result_name"] = name if tokens[3] is None else tokens[3]
+            function["attributes"] = modifiers + attributes 
+            function["dummy_args"] = dummy_args
+            function["result_name"] = result_name
+            if result_type != None:
+                result_var_decl = result_type
+                if result_type_kind != None:
+                    result_var_decl += "(" + result_type_kind + ")"
+                result_var_decl += result_name
+                function["variables"] += create_index_records_from_declaration(result_var_decl)
             if current_node._kind == "root":
                 current_node._data.append(function)
             else:
@@ -231,7 +263,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
             util.logging.log_warning(opts.log_prefix,"_parse_statements","found function in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
               format(current_statement,current_node._kind))
 
-    def TypeStart(tokens):
+    def TypeStart():
         nonlocal current_linemap_no
         nonlocal current_statement
         nonlocal current_statement_no
@@ -240,11 +272,13 @@ def _parse_statements(linemaps, file_path,**kwargs):
         if current_node._kind in [
                 "module", "program", "subroutine", "function"
         ]:
-            assert len(tokens) == 2
-            name = tokens[1]
+            name,attributes,params = util.parsing.parse_type_statement(
+                    current_statement)
             derived_type = {}
             derived_type["name"] = name
             derived_type["kind"] = "type"
+            derived_type["qualifiers"] = attributes
+            derived_type["params"] = params
             derived_type["variables"] = []
             derived_type["types"] = []
             current_node._data["types"].append(derived_type)
@@ -365,23 +399,6 @@ def _parse_statements(linemaps, file_path,**kwargs):
             msg = "finished to parse acc routine directive '{}'".format(current_statement)
             log_end_task(current_node, msg)
 
-    grammar.type_start.setParseAction(TypeStart)
-    grammar.function_start.setParseAction(FunctionStart)
-    grammar.subroutine_start.setParseAction(SubroutineStart)
-
-    def try_to_parse_string(expression_name, expression):
-        try:
-            expression.parseString(current_statement)
-            return True
-        except pyparsing.ParseBaseException as e:
-            util.logging.log_debug3(
-                opts.log_prefix, "_parse_statements",
-                "did not find expression '{}' in statement '{}'".format(
-                    expression_name, current_statement))
-            util.logging.log_debug4(opts.log_prefix,
-                                    "_parse_statements", str(e))
-            return False
-
     # parser loop
     try:
         for current_linemap_no, current_linemap in enumerate(linemaps):
@@ -395,10 +412,8 @@ def _parse_statements(linemaps, file_path,**kwargs):
                     util.logging.log_debug3(
                         opts.log_prefix, "_parse_statements",
                         "process statement '{}'".format(current_statement))
-                    if (current_tokens[0]=="end" and 
-                       current_tokens[1] in [
-                        "program", "module", "subroutine", "function",
-                        "type"]):
+                    if (current_tokens[0]=="end" and
+                       current_tokens[1] not in ignored_constructs):
                         End()
                     elif openacc and util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
                         if current_tokens[1:3] == ["acc","declare"]:
@@ -414,13 +429,13 @@ def _parse_statements(linemaps, file_path,**kwargs):
                     elif current_tokens[0] == "program":
                         ProgramStart()
                     elif current_tokens[0] == "type" and current_tokens[1] != "(": # type a ; type, bind(c) :: a
-                        try_to_parse_string("type", grammar.type_start)
+                        TypeStart()
                     # cannot be combined with above checks in current form
                     # TODO parse functions, subroutine signatures more carefully
-                    if "function" in current_tokens:
-                        try_to_parse_string("function", grammar.function_start)
-                    elif "subroutine" in current_tokens:
-                        try_to_parse_string("subroutine", grammar.subroutine_start)
+                    if current_tokens[0] != "end" and "function" in current_tokens:
+                        FunctionStart()
+                    if current_tokens[0] != "end" and "subroutine" in current_tokens:
+                        SubroutineStart()
                     elif current_tokens[0] == "attributes" and "::" in current_tokens: # attributes(device) :: a
                         Attributes() 
                     elif current_tokens[0] in [

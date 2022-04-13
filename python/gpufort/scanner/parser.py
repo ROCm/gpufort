@@ -449,22 +449,21 @@ def _parse_file(linemaps, index, **kwargs):
                 new.complete_init(index)
             elif lvalue.has_args() and not in_kernels_acc_region_and_not_recording() and lhs_ivar["rank"] == 0:
                 # statement function
-                if lhs_ivar["f_type"] not in ["integer","real","logical"]:
-                    raise util.error.SyntaxError("result type of statement function must be 'integer', 'real' or 'logical'")
-                elif util.parsing.is_derived_type_member_access(util.parsing.tokenize(lhs_expr)):
-                    raise util.error.SyntaxError("result of statement function must not be derived type member")
-                name, args, rhs_expr =\
-                    util.parsing.parse_statement_function(current_statement["body"])
-                name = name.lower()
-                existing_record = next((entry for entry in statement_functions
-                                       if entry[0] == name),None)
-                if existing_record == None:
-                    statement_functions.append((name,args,rhs_expr))
-                else:
-                    # TODO currently does not make sense as the statement variables are only 
-                    # TODOc applied on the LHS of a statement; should only be applied to RHS
-                    # of assignments
-                    raise util.error.SyntaxError("redefinition of statement funtion")
+                if lhs_ivar["f_type"] in ["integer","real","logical"]:
+                    if util.parsing.is_derived_type_member_access(util.parsing.tokenize(lhs_expr)):
+                        raise util.error.SyntaxError("result of statement function must not be derived type member")
+                    name, args, rhs_expr =\
+                        util.parsing.parse_statement_function(current_statement["body"])
+                    name = name.lower()
+                    existing_record = next((entry for entry in statement_functions
+                                           if entry[0] == name),None)
+                    if existing_record == None:
+                        statement_functions.append((name,args,rhs_expr))
+                    else:
+                        # TODO currently does not make sense as the statement variables are only 
+                        # TODOc applied on the LHS of a statement; should only be applied to RHS
+                        # of assignments
+                        raise util.error.SyntaxError("redefinition of statement funtion")
 
 
     def GpufortControl():
@@ -590,14 +589,12 @@ def _parse_file(linemaps, index, **kwargs):
                         "!")[0]
                     # constructs
                     if current_tokens[0] == "end":
-                        if current_tokens[1] in [
-                             "program", "module", "subroutine", "function"
-                           ]: # ignore types/interfaces here
-                            End()
+                        if current_tokens[1] == "type":
+                            TypeEnd()
                         elif current_tokens[1] == "do":
                             DoLoopEnd()
-                        elif current_tokens[1] == "type":
-                            TypeEnd()
+                        elif current_tokens[1] not in indexer.ignored_constructs: 
+                            End()
                     elif util.parsing.is_do(current_tokens):
                         DoLoopStart()
                     # single-statements

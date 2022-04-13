@@ -653,8 +653,8 @@ class TTOperator(base.TTNode):
             ".gt.": ">",
             ".le.": "<=",
             ".ge.": ">=",
-            ".and.": "&",
-            ".or.": "|",
+            ".and.": "&&",
+            ".or.": "||",
             ".xor.": "^",
             ".not.": "!",
             ".eqv.": "==",
@@ -1130,8 +1130,9 @@ class TTIfElseIf(base.TTContainer):
 
     def c_str(self):
         body_content = base.TTContainer.c_str(self)
+        prefix = self._else+" " if self._else.lower() == "else" else ""
         return "{}if ({}) {{\n{}\n}}".format(\
-            self._else,base.make_c_str(self._condition),body_content)
+            prefix,base.make_c_str(self._condition),body_content)
 
 
 class TTElse(base.TTContainer):

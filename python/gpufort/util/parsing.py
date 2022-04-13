@@ -1352,6 +1352,11 @@ def is_do(tokens):
             tokens[2] == "do"
     return cond1 or cond2
 
+def is_where(tokens):
+    cond1 = tokens[0] == "where"
+    cond2 = tokens[0].isidentifier() and tokens[1] == ":" and\
+            tokens[2] == "where"
+    return cond1 or cond2
 
 def is_end(tokens, kinds=[]):
     cond1 = tokens[0] == "end"

@@ -644,7 +644,8 @@ def _parse_file(linemaps, index, **kwargs):
                                      or ".ne." in current_statement_stripped_no_comments.lower()):
                                     scan_string_("non_zero_check",
                                                 tree.grammar.non_zero_check)
-                            if (not util.parsing.is_do(current_tokens) # TODO
+                            if (not util.parsing.is_do(current_tokens) # TODO Can user name the variables after keywords?
+                               and not util.parsing.is_where(current_tokens) 
                                and util.parsing.is_assignment(current_tokens)):
                                 lhs_expr, rhs_expr = util.parsing.parse_assignment(current_statement["body"])
                                 lhs_ivar = indexer.scope.search_index_for_var(index,current_node.tag(),lhs_expr)

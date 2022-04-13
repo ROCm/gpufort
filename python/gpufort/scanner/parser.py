@@ -528,7 +528,7 @@ def _parse_file(linemaps, index, **kwargs):
         if len(statement_functions):
             stmt = statement["body"]
             statement["body"] = util.macros.expand_macros(stmt,statement_functions,
-                    ignore_case=True)
+                    ignore_case=True,wrap_in_brackets=True)
 
     def scan_string_(expression_name, expression):
         """

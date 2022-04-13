@@ -130,6 +130,8 @@ class HipKernelGenerator4LoopNest(HipKernelGeneratorBase):
 
     def __init__(self, ttloopnest, scope, **kwargs):
         HipKernelGeneratorBase.__init__(self, scope, **kwargs)
+        # TODO tensors must be flagged before before lookup index entries
+        # translate_loopnest_to_hip_kernel_body does this (side effect)
         self.c_body, self.problem_size, loop_vars, substitutions = translator.codegen.translate_loopnest_to_hip_kernel_body(ttloopnest,scope,**kwargs)
         self.kernel = self._create_kernel_context()
        

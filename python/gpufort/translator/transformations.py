@@ -263,7 +263,7 @@ def flag_tensors(lrvalues, scope):
     for value in lrvalues:
         if isinstance(value._value, tree.TTFunctionCallOrTensorAccess):
            try:
-              _ = indexer.scope.search_scope_for_var(scope, value.f_str()) # just check if the var exists
+              _ = indexer.scope.search_scope_for_var(scope, value._value.f_str()) # just check if the var exists
               value._value._is_tensor_access = tree.True3
            except util.error.LookupError:
               pass

@@ -20,7 +20,7 @@ OPTSIGN    = Optional(Regex("[-+]") | CASELESS_LITERAL(".not."),default="")
 # arithmetic logical expressions and assignments
 func_rvalue = Forward()
 
-func_kind = COMMA + ( KIND + EQ + Regex(r"[0-9]+|([sSdDqQ][pP])") ) | Regex(r"[sSdDqQ][pP]") # ! emits one token
+func_kind = COMMA + ( KIND + EQ + Regex(r"[0-9]+|([sSdDqQ][pP])") ) # ! emits one token
 arglist = Group(delimitedList(Group(~func_kind + func_rvalue)))
 func_call = identifier + LPAR + Optional(arglist, default=[]) + RPAR # emits 2 tokens: *,*,*
 

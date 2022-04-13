@@ -15,7 +15,7 @@ from . import tree
 from . import conv
 from . import opts
 
-def _append_c_type(tavar):
+def append_c_type(tavar):
     f_type = tavar["f_type"]
     kind = tavar["kind"]
     if f_type == "type":
@@ -34,7 +34,7 @@ def _create_analysis_var(scope, var_expr):
     tavar["expr"] = util.parsing.strip_array_indexing(var_expr).lower()
     tavar["c_name"] = tavar["name"] 
     tavar["op"]   = ""
-    _append_c_type(tavar)
+    append_c_type(tavar)
     return tavar
 
 def _lookup_index_vars(scope, var_exprs, consumed_var_exprs=[]):

@@ -587,102 +587,107 @@ def _parse_file(linemaps, index, **kwargs):
                     current_statement_stripped = " ".join([tk for tk in current_tokens if len(tk)])
                     current_statement_stripped_no_comments = current_statement_stripped.split(
                         "!")[0]
-                    # constructs
-                    if current_tokens[0] == "end":
-                        if current_tokens[1] == "type":
-                            TypeEnd()
-                        elif current_tokens[1] == "do":
+                    if (not keep_recording 
+                       and util.parsing.is_fortran_directive(original_statement_lower,modern_fortran)):
+                        if openacc and current_tokens[1] == "acc":
+                            AccDirective()
+                        elif cuda_fortran and current_tokens[1:4] == ["cuf","kernel","do"]:
+                            CufLoopNest()
+                        elif current_tokens[1] == "gpufort":
+                            GpufortControl()
+                    elif not util.parsing.is_fortran_comment(original_statement_lower,modern_fortran):
+                        # constructs
+                        if util.parsing.is_do(current_tokens):
+                            DoLoopStart()
+                        elif current_tokens[0:2] == ["end","do"]:
                             DoLoopEnd()
-                        elif current_tokens[1] not in indexer.ignored_constructs: 
+                        elif (current_tokens[0] == "end"
+                             and current_tokens[1] != "type"
+                             and  current_tokens[1] not in indexer.ignored_constructs): 
                             End()
-                    elif util.parsing.is_do(current_tokens):
-                        DoLoopStart()
-                    # single-statements
-                    if not keep_recording:
-                        if util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
-                            if current_tokens[1] == "acc":
-                                AccDirective()
-                            elif current_tokens[1] == "gpufort":
-                                GpufortControl()
-                        if cuda_fortran:
-                            if "attributes" in current_tokens:
-                                try_to_parse_string_("attributes",
-                                                    tree.grammar.attributes)
-                            if "cu" in current_statement_stripped_no_comments:
-                                scan_string_("cuda_lib_call",
-                                            tree.grammar.cuda_lib_call)
-                            if "<<<" in current_tokens:
-                                try_to_parse_string_(
-                                    "cuf_kernel_call",
-                                    tree.grammar.cuf_kernel_call)
-                            if util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
-                                if current_tokens[1:4] == ["cuf","kernel","do"]:
-                                    CufLoopNest()
-                        if (not util.parsing.is_do(current_tokens) # TODO
-                           and util.parsing.is_assignment(current_tokens)):
-                            lhs_expr, rhs_expr = util.parsing.parse_assignment(current_statement["body"])
-                            lhs_ivar = indexer.scope.search_index_for_var(index,current_node.tag(),lhs_expr)
-                            cuf_implicit_memcpy = "device" in lhs_ivar["qualifiers"]
+                        # single-statements
+                        elif not keep_recording:
+                            # TODO parse Fortran statements and apply these 
+                            # constructs as cuda_fortran-specific postprocessing
                             if cuda_fortran:
-                                try:
-                                    rhs_ivar = indexer.scope.search_index_for_var(index,current_node.tag(),
-                                            rhs_expr)
-                                    cuf_implicit_memcpy = cuf_implicit_memcpy or "device" in rhs_ivar["qualifiers"]
-                                except util.error.LookupError as e:
-                                    if cuf_implicit_memcpy: 
-                                        raise util.error.LimitationError("implicit to-device memcpy does not support arithmetic expression as right-hand side value") from e
-                            if cuf_implicit_memcpy:
-                                CufMemcpy()
-                            elif not cuf_implicit_memcpy:
-                                Assignment(lhs_ivar,lhs_expr)
-                                # TODO
-                        elif ("/=" in current_statement_stripped_no_comments
-                             or ".ne." in current_statement_stripped_no_comments.lower()):
-                            scan_string_("non_zero_check",
-                                        tree.grammar.non_zero_check)
-                        if "allocated" in current_tokens:
-                            scan_string_("allocated", tree.grammar.ALLOCATED)
-                        if current_tokens[0] == "deallocate":
-                            try_to_parse_string_("deallocate",
-                                                tree.grammar.DEALLOCATE)
-                        elif current_tokens[0] == "allocate":
-                            try_to_parse_string_("allocate",
-                                                tree.grammar.ALLOCATE)
-                        if "function" in current_tokens:
-                            try_to_parse_string_("function",
-                                                tree.grammar.function_start)
-                        if "subroutine" in current_tokens:
-                            try_to_parse_string_("subroutine",
-                                                tree.grammar.subroutine_start)
-                        #
-                        if current_tokens[0] == "use":
-                            try_to_parse_string_("use", tree.grammar.use)
-                        elif current_tokens[0] == "implicit":
-                            PlaceHolder()
-                        elif current_tokens[0] == "contains":
-                            Contains()
-                        elif current_tokens[0] == "module" and current_tokens[1] != "procedure":
-                            ModuleStart()
-                        elif current_tokens[0] == "program":
-                            ProgramStart()
-                        elif current_tokens[0] == "return":
-                            Return()
-                        # TODO build proper parser of function / subroutine
-                        # plus corresponding detection criterion
-                        elif (not "function" in current_tokens 
-                             and current_tokens[0] in [
-                                "character", "integer", "logical", "real",
-                                "complex", "double"
-                            ]):
-                            try_to_parse_string_("declaration", datatype_reg)
-                            break
-                        elif (not "function" in current_tokens 
-                             and current_tokens[0] == "type" 
-                             and current_tokens[1] == "("):
-                            try_to_parse_string_("declaration", datatype_reg)
-                        elif current_tokens[0] == "type":
-                            TypeStart()
-                    else:
+                                if current_tokens[0] == "attributes":
+                                    try_to_parse_string_("attributes",
+                                                        tree.grammar.attributes)
+                                elif "<<<" in current_tokens:
+                                    try_to_parse_string_(
+                                        "cuf_kernel_call",
+                                        tree.grammar.cuf_kernel_call)
+                                if "cu" in current_statement_stripped_no_comments:
+                                    scan_string_("cuda_lib_call",
+                                                tree.grammar.cuda_lib_call)
+                                if "allocated" in current_tokens:
+                                    scan_string_("allocated", tree.grammar.ALLOCATED)
+                                if ("/=" in current_statement_stripped_no_comments
+                                     or ".ne." in current_statement_stripped_no_comments.lower()):
+                                    scan_string_("non_zero_check",
+                                                tree.grammar.non_zero_check)
+                            if (not util.parsing.is_do(current_tokens) # TODO
+                               and util.parsing.is_assignment(current_tokens)):
+                                lhs_expr, rhs_expr = util.parsing.parse_assignment(current_statement["body"])
+                                lhs_ivar = indexer.scope.search_index_for_var(index,current_node.tag(),lhs_expr)
+                                cuf_implicit_memcpy = "device" in lhs_ivar["qualifiers"]
+                                if cuda_fortran:
+                                    try:
+                                        rhs_ivar = indexer.scope.search_index_for_var(index,current_node.tag(),
+                                                rhs_expr)
+                                        cuf_implicit_memcpy = cuf_implicit_memcpy or "device" in rhs_ivar["qualifiers"]
+                                    except util.error.LookupError as e:
+                                        if cuf_implicit_memcpy: 
+                                            raise util.error.LimitationError("implicit to-device memcpy does not support arithmetic expression as right-hand side value") from e
+                                if cuf_implicit_memcpy:
+                                    CufMemcpy()
+                                elif not cuf_implicit_memcpy:
+                                    Assignment(lhs_ivar,lhs_expr)
+                                    # TODO
+                            elif current_tokens[0] == "deallocate":
+                                try_to_parse_string_("deallocate",
+                                                    tree.grammar.DEALLOCATE)
+                            elif current_tokens[0] == "allocate":
+                                try_to_parse_string_("allocate",
+                                                    tree.grammar.ALLOCATE)
+                            elif current_tokens[0] == "end":
+                                if current_tokens[1] == "type":
+                                    TypeEnd()
+                            elif current_tokens[0] == "use":
+                                try_to_parse_string_("use", tree.grammar.use)
+                            elif current_tokens[0] == "implicit":
+                                PlaceHolder()
+                            elif current_tokens[0] == "contains":
+                                Contains()
+                            elif current_tokens[0] == "module" and current_tokens[1] != "procedure":
+                                ModuleStart()
+                            elif current_tokens[0] == "program":
+                                ProgramStart()
+                            elif "function" in current_tokens:
+                                try_to_parse_string_("function",
+                                                    tree.grammar.function_start)
+                            elif "subroutine" in current_tokens:
+                                try_to_parse_string_("subroutine",
+                                                    tree.grammar.subroutine_start)
+                            elif current_tokens[0] == "return":
+                                Return()
+                            #
+                            # TODO build proper parser of function / subroutine
+                            # plus corresponding detection criterion
+                            elif (not "function" in current_tokens 
+                                 and current_tokens[0] in [
+                                    "character", "integer", "logical", "real",
+                                    "complex", "double"
+                                ]):
+                                try_to_parse_string_("declaration", datatype_reg)
+                                break
+                            elif (not "function" in current_tokens 
+                                 and current_tokens[0] == "type" 
+                                 and current_tokens[1] == "("):
+                                try_to_parse_string_("declaration", datatype_reg)
+                            elif current_tokens[0] == "type": # must come after declarations
+                                TypeStart()
+                    if keep_recording:
                         current_node.add_linemap(current_linemap)
                         current_node._last_statement_index = current_statement_no
                 except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:

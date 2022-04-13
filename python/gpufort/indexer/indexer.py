@@ -408,43 +408,50 @@ def _parse_statements(linemaps, file_path,**kwargs):
                     original_statement_lower = stmt["body"].lower()
                     current_tokens = util.parsing.tokenize(original_statement_lower,padded_size=6)
                     current_statement = " ".join([tk for tk in current_tokens if len(tk)])
-
                     util.logging.log_debug3(
                         opts.log_prefix, "_parse_statements",
                         "process statement '{}'".format(current_statement))
-                    if (current_tokens[0]=="end" and
-                       current_tokens[1] not in ignored_constructs):
-                        End()
-                    elif openacc and util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
+                    if openacc and util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
                         if current_tokens[1:3] == ["acc","declare"]:
                             AccDeclare()
                         elif current_tokens[1:3] == ["acc","routine"]:
                             AccRoutine()
-                    elif current_tokens[0] == "use":
-                        Use()
-                    #elif current_tokens[0] == "implicit":
-                    #    try_to_parse_string("implicit",grammar.IMPLICIT)
-                    elif current_tokens[0] == "module" and current_tokens[1] != "procedure":
-                        ModuleStart()
-                    elif current_tokens[0] == "program":
-                        ProgramStart()
-                    elif current_tokens[0] == "type" and current_tokens[1] != "(": # type a ; type, bind(c) :: a
-                        TypeStart()
-                    # cannot be combined with above checks in current form
-                    # TODO parse functions, subroutine signatures more carefully
-                    if current_tokens[0] != "end" and "function" in current_tokens:
-                        FunctionStart()
-                    if current_tokens[0] != "end" and "subroutine" in current_tokens:
-                        SubroutineStart()
-                    elif current_tokens[0] == "attributes" and "::" in current_tokens: # attributes(device) :: a
-                        Attributes() 
-                    elif current_tokens[0] in [
-                         "character", "integer", "logical", "real",
-                         "complex", "double"
-                       ]:
-                        Declaration()
-                    elif current_tokens[0:2] == ["type","("]: # type(dim3) :: a
-                        Declaration()
+                    elif util.parsing.is_fortran_comment(original_statement_lower,modern_fortran):
+                        pass
+                    else: # fortran statements
+                        if (current_tokens[0]=="end" and
+                           current_tokens[1] not in ignored_constructs):
+                            End()
+                        elif openacc and util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
+                            if current_tokens[1:3] == ["acc","declare"]:
+                                AccDeclare()
+                            elif current_tokens[1:3] == ["acc","routine"]:
+                                AccRoutine()
+                        elif current_tokens[0] == "use":
+                            Use()
+                        #elif current_tokens[0] == "implicit":
+                        #    try_to_parse_string("implicit",grammar.IMPLICIT)
+                        elif current_tokens[0] == "module" and current_tokens[1] != "procedure":
+                            ModuleStart()
+                        elif current_tokens[0] == "program":
+                            ProgramStart()
+                        elif current_tokens[0] == "type" and current_tokens[1] != "(": # type a ; type, bind(c) :: a
+                            TypeStart()
+                        # cannot be combined with above checks in current form
+                        # TODO parse functions, subroutine signatures more carefully
+                        if current_tokens[0] != "end" and "function" in current_tokens:
+                            FunctionStart()
+                        elif current_tokens[0] != "end" and "subroutine" in current_tokens:
+                            SubroutineStart()
+                        elif current_tokens[0] == "attributes" and "::" in current_tokens: # attributes(device) :: a
+                            Attributes() 
+                        elif current_tokens[0] in [
+                             "character", "integer", "logical", "real",
+                             "complex", "double"
+                           ]:
+                            Declaration()
+                        elif current_tokens[0:2] == ["type","("]: # type(dim3) :: a
+                            Declaration()
     except util.error.SyntaxError as e:
         filepath = current_linemap["file"]
         lineno = current_linemap["lineno"]

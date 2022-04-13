@@ -101,7 +101,7 @@ def _expand_array_expression(ttassignment,scope,int_counter,fortran_style_tensor
                     pass
             # TODO externalize routine
             if isinstance(ttassignment._lhs._value,tree.TTDerivedTypeMember):
-                f_expr = ttassignment.identifier_part(tree.make_f_str)
+                f_expr = ttassignment._lhs._value.identifier_part(tree.make_f_str)
             else:
                 f_expr = ttassignment._lhs._value.name_c_str()
             do_loop_statements, end_do_statements = _create_do_loop_statements(f_expr,lvalue_ranges,loop_indices,fortran_style_tensors)
@@ -123,6 +123,7 @@ def expand_all_array_expressions(ttnode,scope,fortran_style_tensors=True):
         statements, int_counter, modified =\
           _expand_array_expression(ttassignment,scope,int_counter,
                                    fortran_style_tensors)
+        print("\n".join(statements))
         if modified:
             ttdo = parser.parse_fortran_code(statements).body[0] # parse returns ttroot
             ttstatement._statement = ttdo

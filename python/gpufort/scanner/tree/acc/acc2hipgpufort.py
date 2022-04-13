@@ -103,7 +103,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             result.append(_ACC_WAIT.format(queue=",".join(wait_queues),options=""))
         return result
  
-    def _handle_data_clauses(self,async_expr,finalize_expr):
+    def _handle_data_clauses(self,index,async_expr,finalize_expr):
         result = [] 
         #
         for kind, args in self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP.keys()):
@@ -115,7 +115,12 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             for var_expr in args:
                 template = _DATA_CLAUSE_2_TEMPLATE_MAP[kind.lower()]
                 options_str =_create_options_str(options)
-                result.append(template.format(var=var_expr,options=options_str))
+                if opts.acc_map_derived_types: 
+                    result.append(template.format(var=var_expr,options=options_str))
+                else:
+                    ivar = indexer.scope.search_index_for_var(index,self.stnode.parent.tag(),var_expr)
+                    if ivar["f_type"] != "type":
+                        result.append(template.format(var=var_expr,options=options_str))
         return result
 
     def _handle_if_clause(self,result):
@@ -255,7 +260,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             finalize_expr = self._get_finalize_clause_expr();
             if len(finalize_expr) and not stnode.is_directive(["acc","exit","data"]):
                 raise util.error.SyntaxError("finalize clause may only appear on 'exit data' directive.")
-            result += self._handle_data_clauses(async_expr,finalize_expr)
+            result += self._handle_data_clauses(index,async_expr,finalize_expr)
 
         ## Exit region commands must come last
         if stnode.is_directive(["acc","exit","data"]):
@@ -378,22 +383,23 @@ def AllocateHipGpufortRT(stallocate, joined_statements, index):
     implicit_region = False
     for var in [a[0] for a in stallocate.allocations]:
         ivar = indexer.scope.search_index_for_var(index, parent_tag, var)
-        var_expr = ivar["name"]
-        is_local_var = var_expr in local_var_names
-        is_arg = var_expr in dummy_arg_names
-        is_used_module_var = not is_local_var and not is_arg
-        is_allocatable_or_pointer = "allocatable" in ivar["qualifiers"] or\
-                             "pointer" in ivar["qualifiers"]
-        assert is_allocatable_or_pointer # TODO emit error
-        module_var = ",module_var=.true." if is_used_module_var else ""
-        if not is_used_module_var:
-            implicit_region = True
-        declare = ivar["declare_on_target"]
-        if declare in _CLAUSES_OMP2ACC.keys():
-            map_kind = "".join(["present_or_",_CLAUSES_OMP2ACC[declare]])
-            acc_present_template =  _DATA_CLAUSE_2_TEMPLATE_MAP[map_kind]
-            acc_present_calls.append(acc_present_template.format(
-                var=var_expr,options=module_var))
+        if opts.acc_map_derived_types or ivar["f_type"] != "type":
+            var_expr = ivar["name"]
+            is_local_var = var_expr in local_var_names
+            is_arg = var_expr in dummy_arg_names
+            is_used_module_var = not is_local_var and not is_arg
+            is_allocatable_or_pointer = "allocatable" in ivar["qualifiers"] or\
+                                 "pointer" in ivar["qualifiers"]
+            assert is_allocatable_or_pointer # TODO emit error
+            module_var = ",module_var=.true." if is_used_module_var else ""
+            if not is_used_module_var:
+                implicit_region = True
+            declare = ivar["declare_on_target"]
+            if declare in _CLAUSES_OMP2ACC.keys():
+                map_kind = "".join(["present_or_",_CLAUSES_OMP2ACC[declare]])
+                acc_present_template =  _DATA_CLAUSE_2_TEMPLATE_MAP[map_kind]
+                acc_present_calls.append(acc_present_template.format(
+                    var=var_expr,options=module_var))
     if len(acc_present_calls):
         if implicit_region:
             _add_implicit_region(stcontainer)
@@ -413,17 +419,18 @@ def DeallocateHipGpufortRT(stdeallocate, joined_statements, index):
     acc_delete_calls = []
     for var in stdeallocate.variable_names:
         ivar = indexer.scope.search_index_for_var(index, parent_tag, var)
-        var_expr = ivar["name"]
-        is_local_var = var_expr in local_var_names
-        is_arg = var_expr in dummy_arg_names
-        is_used_module_var = not is_local_var and not is_arg
-        is_allocatable_or_pointer = "allocatable" in ivar["qualifiers"] or\
-                             "pointer" in ivar["qualifiers"]
-        assert is_allocatable_or_pointer
-        module_var = ",module_var=.true." if is_used_module_var else ""
-        if ivar["declare_on_target"] in ["alloc", "to", "tofrom"]:
-            acc_delete_calls.append(_ACC_DELETE.format(\
-              var=var_expr,options=module_var))
+        if opts.acc_map_derived_types or ivar["f_type"] != "type":
+            var_expr = ivar["name"]
+            is_local_var = var_expr in local_var_names
+            is_arg = var_expr in dummy_arg_names
+            is_used_module_var = not is_local_var and not is_arg
+            is_allocatable_or_pointer = "allocatable" in ivar["qualifiers"] or\
+                                 "pointer" in ivar["qualifiers"]
+            assert is_allocatable_or_pointer
+            module_var = ",module_var=.true." if is_used_module_var else ""
+            if ivar["declare_on_target"] in ["alloc", "to", "tofrom"]:
+                acc_delete_calls.append(_ACC_DELETE.format(\
+                  var=var_expr,options=module_var))
     for line in acc_delete_calls:
         stdeallocate.add_to_prolog(textwrap.indent(line,indent))
     return joined_statements, False
@@ -453,24 +460,25 @@ def Acc2HipGpufortRTPostprocess(stree, index):
         implicit_region = False
         for ivar in scope_vars:
             var_expr = ivar["name"]
-            is_local_var = var_expr in local_var_names
-            is_arg = var_expr in dummy_arg_names
-            is_used_module_var = not is_local_var and not is_arg
-            is_allocatable = "allocatable" in ivar["qualifiers"]
-            is_pointer = "pointer" in ivar["qualifiers"]
-            if not is_allocatable:
-                if not is_used_module_var:
-                    implicit_region = True
-                module_var = ",module_var=.true." if is_used_module_var else ""
-                # find return and end, emit 1 new implicit region for all
-                declare = ivar["declare_on_target"]
-                if declare in _CLAUSES_OMP2ACC.keys():
-                    map_kind = "".join(["present_or_",_CLAUSES_OMP2ACC[declare]])
-                    acc_present_template =  _DATA_CLAUSE_2_TEMPLATE_MAP[map_kind]
-                    if is_pointer:
-                        acc_present_template = "".join(["if (associated({var})) ",acc_present_template])
-                    acc_present_calls.append(acc_present_template.format(
-                        var=var_expr,options=module_var))
+            if opts.acc_map_derived_types or ivar["f_type"] != "type":
+                is_local_var = var_expr in local_var_names
+                is_arg = var_expr in dummy_arg_names
+                is_used_module_var = not is_local_var and not is_arg
+                is_allocatable = "allocatable" in ivar["qualifiers"]
+                is_pointer = "pointer" in ivar["qualifiers"]
+                if not is_allocatable:
+                    if not is_used_module_var:
+                        implicit_region = True
+                    module_var = ",module_var=.true." if is_used_module_var else ""
+                    # find return and end, emit 1 new implicit region for all
+                    declare = ivar["declare_on_target"]
+                    if declare in _CLAUSES_OMP2ACC.keys():
+                        map_kind = "".join(["present_or_",_CLAUSES_OMP2ACC[declare]])
+                        acc_present_template =  _DATA_CLAUSE_2_TEMPLATE_MAP[map_kind]
+                        if is_pointer:
+                            acc_present_template = "".join(["if (associated({var})) ",acc_present_template])
+                        acc_present_calls.append(acc_present_template.format(
+                            var=var_expr,options=module_var))
         if len(acc_present_calls):
             if implicit_region:
                 _add_implicit_region(stcontainer)

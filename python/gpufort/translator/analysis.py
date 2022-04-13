@@ -101,7 +101,6 @@ def lookup_index_entries_for_vars_in_kernel_body(scope,
     for var_expr in all_vars2:
         tavar = _create_analysis_var(scope, var_expr)
         taglobal_vars.append(tavar)
-
     return taglobal_vars, taglobal_reduced_vars, tashared_vars, talocal_vars
 
 def _apply_substitions(tavars,substitutions):

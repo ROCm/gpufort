@@ -20,7 +20,7 @@ loop_kernel_name_template = "{parent}_{lineno}" # parent: name of parent module,
         # lineno: line number
         # hash: Hash of the kernel (whitespaces are removed beforehand)
 
-loop_kernel_default_launcher = "auto" # "auto" or "cpu"
+loop_kernel_default_launcher = "hip_ps" # "hip" "hip_ps" or "cpu"
 
 hip_module_name = "hipfort"
 hip_math_module_prefix = hip_module_name + "_"
@@ -28,6 +28,10 @@ hip_math_module_prefix = hip_module_name + "_"
 cuda_ifdef = "CUDA"
 cublas_version = 1
 keep_cuda_lib_names = False
+
+acc_map_derived_types = False
+        # Map derived types in data directives.
+        # If set to False, this assumes that members are mapped individually.
 
 line_groups_enable = True # group modified lines such that they appear in the block when wrapping them in ifdefs.
 line_groups_include_blank_lines = True # Include intermediate blank lines into a line group.

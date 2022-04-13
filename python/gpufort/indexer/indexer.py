@@ -247,7 +247,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
                 result_var_decl = result_type
                 if result_type_kind != None:
                     result_var_decl += "(" + result_type_kind + ")"
-                result_var_decl += result_name
+                result_var_decl += " "+result_name
                 function["variables"] += create_index_records_from_declaration(result_var_decl)
             if current_node._kind == "root":
                 current_node._data.append(function)
@@ -448,8 +448,9 @@ def _parse_statements(linemaps, file_path,**kwargs):
     except util.error.SyntaxError as e:
         filepath = current_linemap["file"]
         lineno = current_linemap["lineno"]
-        msg = "{}:{}:{}(stmt-no):{}".format(filepath,lineno,current_statement_no+1,str(e))
-        raise util.error.SyntaxError(msg) from e
+        msg = "{}:{}:{}(stmt-no):{}".format(filepath,lineno,current_statement_no+1,e.args[0])
+        e.args = (msg,)
+        raise
 
     return index
 

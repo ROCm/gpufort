@@ -272,6 +272,7 @@ class TestParsingUtils(unittest.TestCase):
         statements = [
           "function foo",
           "function foo()",
+          "logical function foo ( arg1, arg2, arg3 )",
           "attributes(device) function foo()",
           "function foo( arg1, arg2, arg3 ) result(i5) bind(c,name=\"cname\")",
           "integer * 5 pure recursive function foo( arg1, arg2, arg3 ) result(i5) bind(c,name=\"cname\")",
@@ -281,6 +282,7 @@ class TestParsingUtils(unittest.TestCase):
         results = [
             ('function', 'foo', None, [], [], (None, None, 'foo'), (False, None)),
             ('function', 'foo', [], [], [], (None, None, 'foo'), (False, None)),
+            ('function', 'foo', ['arg1', 'arg2', 'arg3'], [], [], ('logical', None, 'foo'), (False, None)),
             ('function', 'foo', [], [], ['device'], (None, None, 'foo'), (False, None)),
             ('function', 'foo', ['arg1', 'arg2', 'arg3'], [], [], (None, None, 'i5'), (True, 'cname')),
             ('function', 'foo', ['arg1', 'arg2', 'arg3'], ['pure', 'recursive'], [], ('integer', '5', 'i5'), (True, 'cname')),

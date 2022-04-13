@@ -1061,7 +1061,7 @@ def parse_do_statement(statement):
     elif len(range_vals) == 3:
         lbound = range_vals[0]
         ubound = range_vals[1]
-        stride = None
+        stride = range_vals[2]
     return (label, var, lbound, ubound, stride)
 
 def parse_deallocate_statement(statement):

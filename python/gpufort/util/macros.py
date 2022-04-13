@@ -36,7 +36,7 @@ def _evaluate_defined(input_string, macro_names):
             break
     return result
 
-def expand_macros(input_string, macro_stack, is_cpp_directive=False, ignore_case=False):
+def expand_macros(input_string, macro_stack, is_cpp_directive=False, ignore_case=False,wrap_in_brackets=False):
     """Recursively expand expressions in the input string
     by substitutions described by the macro stack.
     :param bool is_cpp_directive: If the input_string is a C preprocessor
@@ -45,6 +45,7 @@ def expand_macros(input_string, macro_stack, is_cpp_directive=False, ignore_case
     :param bool ignore_case: If the case of the macro names and parameters should be ignored
                              when expanding macros. Defaults to False. If `is_cpp_directive` is set, this parameter
                              has no effect as C preproc. directives are case sensitive.
+    :param bool wrap_in_brackets: Wrap macro arguments and replacement in '(' and ')'.
     """
     # expand macro; one at a time
     if is_cpp_directive:
@@ -80,6 +81,8 @@ def expand_macros(input_string, macro_stack, is_cpp_directive=False, ignore_case
                         substring = calls[-1][
                             0] # always start from right-most (=inner-most) call site
                         params = calls[-1][1]
+                        if wrap_in_brackets:
+                            params = ["({})".format(p) for p in params]
                         for n, placeholder in enumerate(args):
                             if ignore_case:
                                 subst = re.sub(r"\b{}\b".format(placeholder),
@@ -87,12 +90,16 @@ def expand_macros(input_string, macro_stack, is_cpp_directive=False, ignore_case
                             else:
                                 subst = re.sub(r"\b{}\b".format(placeholder),
                                                params[n], subst)
+                        if wrap_in_brackets:
+                            subst = "({})".format(subst)
                         result = result.replace(substring,
                                                 subst) # result has changed
                         iterate = True
                         break
                 else:
                     old_result = result
+                    if wrap_in_brackets:
+                        subst = "({})".format(subst)
                     if ignore_case:
                         result = re.sub(r"\b{}\b".format(name), subst, result, re.IGNORECASE)
                     else:

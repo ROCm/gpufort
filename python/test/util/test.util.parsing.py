@@ -106,6 +106,7 @@ class TestParsingUtils(unittest.TestCase):
           "endif",
           "else if",
           "elseif",
+          "!$acc enter data copyin(a) copyout(b(-1:))",
         ]
         results = [
           ['a', ',', 'b', '(', 'i', ',', 'j', ')', ',', 'c', '(', 'i', ',', 'j', ',', 'k', ')'],
@@ -117,6 +118,7 @@ class TestParsingUtils(unittest.TestCase):
           ['end', 'if'],
           ['else', 'if'],
           ['else', 'if'],
+          ['!$', 'acc', 'enter', 'data', 'copyin', '(', 'a', ')', 'copyout', '(', 'b', '(', '-', '1', ':', ')', ')'],
         ]
         for i,stmt in enumerate(statements):
             #print(util.parsing.tokenize(stmt))
@@ -240,7 +242,19 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_declaration(stmt))
             self.assertEqual(util.parsing.parse_declaration(stmt),results[i])
-    def test_09_parse_type_statement(self):
+    def test_09_parse_do_statement(self):
+        statements = [
+          "DO jj = MAX(jts,1) , MIN(jte,jde-1,spec_bdy_width)",
+          "label: do j = min(x,y,z,k), max(M,n), min(a0,a1,2)"
+        ]
+        results = [
+          (None, 'jj', 'MAX(jts,1)', 'MIN(jte,jde-1,spec_bdy_width)', None),
+          ('label', 'j', 'min(x,y,z,k)', 'max(M,n)', 'min(a0,a1,2)'),
+        ]
+        for i,stmt in enumerate(statements):
+            #print(util.parsing.parse_do_statement(stmt))
+            self.assertEqual(util.parsing.parse_do_statement(stmt),results[i])
+    def test_10_parse_type_statement(self):
         statements = [
           "type a",
           "type :: a",
@@ -258,7 +272,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_type_statement(stmt))
             self.assertEqual(util.parsing.parse_type_statement(stmt),results[i])
-    def test_10_parse_attributes_statement(self):
+    def test_11_parse_attributes_statement(self):
         statements = [
           "attributes(device,constant) :: a_d, b_d"
         ]
@@ -268,7 +282,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_attributes_statement(stmt))
             self.assertEqual(util.parsing.parse_attributes_statement(stmt),results[i])
-    def test_11_parse_function_statements(self):
+    def test_12_parse_function_statement(self):
         statements = [
           "function foo",
           "function foo()",
@@ -280,7 +294,7 @@ class TestParsingUtils(unittest.TestCase):
           "attributes(host,device) pure recursive subroutine foo( arg1, arg2, arg3 ) bind(c,name=\"cname\")",
         ]
         results = [
-            ('function', 'foo', None, [], [], (None, None, 'foo'), (False, None)),
+            ('function', 'foo', [], [], [], (None, None, 'foo'), (False, None)),
             ('function', 'foo', [], [], [], (None, None, 'foo'), (False, None)),
             ('function', 'foo', ['arg1', 'arg2', 'arg3'], [], [], ('logical', None, 'foo'), (False, None)),
             ('function', 'foo', [], [], ['device'], (None, None, 'foo'), (False, None)),
@@ -292,7 +306,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
            #print(util.parsing.parse_function_statement(stmt))
            self.assertEqual(util.parsing.parse_function_statement(stmt),results[i])
-    def test_12_strip_array_indexing(self):
+    def test_13_strip_array_indexing(self):
         expressions = [
           "a",
           "a(1)",
@@ -310,7 +324,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.strip_array_indexing(expr))
             self.assertEqual(util.parsing.strip_array_indexing(expr),results[i])
-    def test_13_derived_type_parents(self):
+    def test_14_derived_type_parents(self):
         expressions = [
           "a",
           "a(1)",
@@ -328,16 +342,6 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.derived_type_parents(expr))
             self.assertEqual(util.parsing.derived_type_parents(expr),results[i])
-    def test_14_tokenize(self):
-        expressions = [
-          "!$acc enter data copyin(a) copyout(b(-1:))",
-        ]
-        results = [
-          ['!$', 'acc', 'enter', 'data', 'copyin', '(', 'a', ')', 'copyout', '(', 'b', '(', '-', '1', ':', ')', ')'],
-        ]
-        for i,expr in enumerate(expressions):
-            #print(util.parsing.tokenize(expr))
-            self.assertEqual(util.parsing.tokenize(expr),results[i])
     def test_15_parse_directive(self):
         expressions = [
           "!$acc enter data copyin(a,b,c(:)) copyout(b(-1:))",

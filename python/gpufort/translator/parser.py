@@ -177,23 +177,34 @@ def parse_fortran_code(statements,result_name=None):
             except pyparsing.ParseException as e:
                 error_("do-while loop", e)
         elif util.parsing.is_do(tokens):
+            result = util.parsing.parse_do_statement(stmt_no_comment)
+            label, var, lbound_str, ubound_str, stride_str = result
+            begin, end, stride = None, None, None
             try:
-                parse_result = tree.grammar.fortran_do.parseString(
-                    stmt_no_comment, parseAll=True)
-                do_loop_tokens = [curr_offload_loop
-                                 ] + parse_result.asList() + [[]]
-                do_loop = tree.TTDo(stmt, 0, do_loop_tokens)
-                if curr_offload_region != None:
-                    descend_(tree.TTLoopNest(stmt_no_comment,"", [curr_offload_region, [do_loop]]),\
-                            "offloaded do loop")
-                    do_loop.parent = curr
-                    curr = do_loop
-                    curr_offload_region = None
-                else:
-                    descend_(do_loop, "do loop")
-                curr_offload_loop = None
+                begin = tree.grammar.assignment.parseString(
+                        "".join([var,"=",lbound_str]))[0]
             except pyparsing.ParseException as e:
-                error_("do loop", e)
+                error_("do loop: begin", e)
+            try:
+                end = tree.grammar.arithmetic_expression.parseString(ubound_str)[0]
+            except pyparsing.ParseException as e:
+                error_("do loop: end", e)
+            if stride_str != None and len(stride_str):
+                try:
+                    stride = tree.grammar.arithmetic_expression.parseString(stride_str)[0]
+                except pyparsing.ParseException as e:
+                    error_("do loop: stride", e)
+            do_loop_tokens = [curr_offload_loop, begin, end, stride, []]
+            do_loop = tree.TTDo(stmt, 0, do_loop_tokens)
+            if curr_offload_region != None:
+                descend_(tree.TTLoopNest(stmt_no_comment,"", [curr_offload_region, [do_loop]]),\
+                        "offloaded do loop")
+                do_loop.parent = curr
+                curr = do_loop
+                curr_offload_region = None
+            else:
+                descend_(do_loop, "do loop")
+            curr_offload_loop = None
         # if-then-else
         elif util.parsing.is_if_then(tokens):
             try:

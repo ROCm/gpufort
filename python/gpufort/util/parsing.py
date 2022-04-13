@@ -755,10 +755,12 @@ def parse_declaration(statement):
         # handle bounds
         if (len(var_tokens) > 2
            and var_tokens[0] == "("):
-            if len(dimension_bounds):
-                raise error.SyntaxError("'dimension' and variable cannot be specified both")
             bounds_tokens = next_tokens_till_open_bracket_is_closed(var_tokens)
             var_bounds,_  = get_top_level_operands(bounds_tokens[1:-1])
+            # TODO compare both bounds and emit error if they are different
+            if len(dimension_bounds):
+                var_bounds = []
+                #raise error.SyntaxError("'dimension' and variable cannot be specified both")
             for i in range(0,len(bounds_tokens)):
                 var_tokens.pop(0)
         if (len(var_tokens) > 1 and

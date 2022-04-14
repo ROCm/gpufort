@@ -12,20 +12,12 @@ def preprocess_fortran_statement(statement):
     """
     result = statement
     if "**" in result:
-        result = tree.grammar.power.transformString(result)
+        criterion = True
+        while criterion:
+            old_result = result
+            result = tree.grammar.power.transformString(result)
+            criterion = old_result != result
     return result
-
-
-def prepare_fortran_snippet(fortran_snippet):
-    """Converts the Fortran snippet to lower case as
-    we convert into a case-sensitive C language (preserves case in comments).
-    Furthermore, applies a number of hacks that were necessary to get the parser work.
-    """
-    result = pIgnore.sub("", fortran_snippet)
-    result = p_else_if.sub("else if", result)
-    result = power.transformString(result)
-    return result
-
 
 def postprocess_c_snippet(c_snippet):
     to_hip = opts.gpufort_cpp_symbols

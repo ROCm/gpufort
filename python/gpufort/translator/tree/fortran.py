@@ -226,7 +226,27 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
             return "max" + str(num_args)
         elif raw_name in ["min", "amin1"]:
             return "min" + str(num_args)
-        return raw_name
+        else:
+            result = raw_name
+            for name in [
+              "abs",
+              "sqrt",
+              "sin",
+              "cos",
+              "tan",
+              "exp",
+              "log",
+              ]:
+                if raw_name == "".join([name,"1"]):
+                    result = raw_name[:-1]
+                    break
+                elif raw_name == "".join(["a",name]):
+                    result = raw_name[1:]
+                    break
+                elif raw_name == "".join(["a",name,"1"]):
+                    result = raw_name[1:-1]
+                    break
+            return result
 
     def c_str(self):
         name = self.name_c_str()
@@ -567,8 +587,7 @@ class TTDerivedTypeMember(base.TTNode):
             current = current._element
             result += "%"+converter(self._type)
         if isinstance(current,TTFunctionCallOrTensorAccess):
-            # TODO 
-            result += "%"+current.name_c_str()
+            result += "%"+converter(current._name)
         else: # TTIdentifier
             result += "%"+converter(current)
         return result             

@@ -77,8 +77,8 @@ complex_assignment = lvalue + EQ + complex_arithmetic_expression
 
 fortran_assignment = matrix_assignment | complex_assignment | assignment
 
-single_colon   = (Literal(":") + ~Literal(":")).suppress()
-stride         = single_colon + arithmetic_expression
+single_colon  = (Literal(":") + ~Literal(":")).suppress()
+stride        = single_colon + arithmetic_expression
 array_range0  = single_colon.copy().setParseAction(lambda tokens: [None,None])           
 array_range1a = (arithmetic_expression + single_colon).setParseAction(lambda tokens: [None,tokens[0]]) 
 array_range1b = (single_colon + arithmetic_expression).setParseAction(lambda tokens: [tokens[0],None])
@@ -200,8 +200,7 @@ PUBLIC,PRIVATE,EXTERNAL,INTRINSIC = makeCaselessLiteral(\
 simple_attribute = Regex(r"\b(public|private|external|intrinsic|value|parameter|allocatable|pointer|save|target|shared|device|pinned|managed|optional|vartype|contiguous)\b",re.IGNORECASE)
 # TODO identify how many what dimension(5) means. Range 1:5?
 dimension_value     = array_range | arithmetic_expression | Literal("*")
-bounds              = Group(LPAR + delimitedList(dimension_value) + RPAR)
-bounds       = Group(LPAR + delimitedList(array_range) + RPAR)
+bounds              = Group(LPAR + delimitedList(array_range|arithmetic_expression) + RPAR)
 dimension_qualifier = Group(DIMENSION + bounds) # emits [*]
 intent_qualifier    = Group(INTENT + LPAR + (INOUT|IN|OUT) + RPAR)   # emits *
 qualifier           = intent_qualifier | dimension_qualifier | simple_attribute

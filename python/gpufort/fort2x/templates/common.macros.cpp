@@ -41,11 +41,11 @@ gpufort::array{{rvar.rank+1}}<{{c_type}}>{{suffix}} {{rvar.c_name}}
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_all_global_param_decls(tavars,rvars,is_device_routine=False,is_kernel=False) -%}
-{%- if tavars|length > 0 -%}
+{%- if tavars|length -%}
 {{ render_global_param_decls(tavars,",\n",is_device_routine,is_kernel)}}{{ ",\n" if rvars|length }}
 {%- endif -%}
-{%- if rvars|length > 0 -%}
-{{ render_global_reduced_param_decls(rvars,"\n",is_device_routine,is_kernel) }}
+{%- if rvars|length -%}
+{{ render_global_reduced_param_decls(rvars,",\n",is_device_routine,is_kernel) }}
 {%- endif -%}
 {%- endmacro -%}
 {########################################################################################}

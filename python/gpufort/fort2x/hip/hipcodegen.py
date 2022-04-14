@@ -138,7 +138,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
                 fortran_snippet = "".join(stloopnest.lines()))
         
             self.__render_kernel(mykernelgen,
-                                 cpp_filegen,
+                                 self.cpp_filegen,
                                  fortran_filegen,
                                  is_loopnest=True)
             # feed back arguments; TODO see above
@@ -163,6 +163,11 @@ class HipCodeGenerator(codegen.CodeGenerator):
                     kernel_name = iprocedure["name"],
                     kernel_hash = "", 
                     fortran_snippet = "".join(stprocedure.lines()))
+
+                self.__render_kernel(mykernelgen,
+                                     self.cpp_filegen,
+                                     fortran_filegen,
+                                     is_loopnest=False)
             else:
                 mykernelgen = hipkernelgen.HipKernelGenerator4AcceleratorRoutine(
                     stprocedure.parse_result, iprocedure, scope,
@@ -171,10 +176,11 @@ class HipCodeGenerator(codegen.CodeGenerator):
                     return_type = stprocedure.c_result_type,
                     fortran_snippet = "".join(stprocedure.lines()))
 
-            self.__render_kernel(mykernelgen,
-                                 cpp_filegen,
-                                 fortran_filegen,
-                                 is_loopnest=False)
+                # might be used and inlined (assumption) in other modules!
+                self.__render_kernel(mykernelgen,
+                                     cpp_filegen,
+                                     fortran_filegen,
+                                     is_loopnest=False)
             
             stprocedure.kernel_args_tavars = mykernelgen.get_kernel_args()
         except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:

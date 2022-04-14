@@ -27,7 +27,11 @@ class TestParseLoopAnnotation(unittest.TestCase):
           "!$acc kernels loop create(b) copy(a(:)) reduction(+:c) async(1)",
           "!$acc parallel loop",
           "!$acc loop gang worker",
-          "!$acc loop gang"
+          "!$acc loop gang",
+          "!$acc parallel loop copyin(moist(:,:,:,:))",
+          "!$acc parallel loop copyin(moist(:,:,:,1))",
+          "!$acc parallel loop copyin(moist(:,:,:,P_QV))",
+          "!$acc parallel loop collapse(3) gang vector copy(grid%alt,grid%p,grid%p_hyd) copyin(grid%al,grid%alb,grid%pb,grid%t_1) copyin(moist(:,:,:,P_QV))",
         ]
         self.started_at = time.time()
     def tearDown(self):

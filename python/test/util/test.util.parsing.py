@@ -372,12 +372,14 @@ class TestParsingUtils(unittest.TestCase):
         expressions = [
           "!$acc enter data copyin(a,b,c(:)) copyout(b(-1:))",
           "!$acc wait(i,j) async(c)",
-          "!$acc kernels loop reduction(+:x)"
+          "!$acc kernels loop reduction(+:x)",
+          "!$acc parallel loop collapse(3) gang vector copyin(grid%al,grid%alb,grid%pb,grid%t_1) copyin(moist(:,:,:,p_qv))"
         ]
         results = [
           ('!$', ['acc', 'enter', 'data'], [], ['copyin(a,b,c(:))', 'copyout(b(-1:))']),
           ('!$', ['acc', 'wait'], ['i', 'j'], ['async(c)']),
           ('!$', ['acc', 'kernels', 'loop'], [], ['reduction(+:x)']),
+          ('!$', ['acc', 'parallel', 'loop'], [], ['collapse(3)', 'gang', 'vector', 'copyin(grid%al,grid%alb,grid%pb,grid%t_1)', 'copyin(moist(:,:,:,p_qv))']),
         ]
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_acc_directive(expr))

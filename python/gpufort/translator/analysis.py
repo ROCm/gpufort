@@ -427,7 +427,7 @@ def kernel_args_to_acc_mappings_no_types(acc_clauses,tavars,present_by_default,c
                 else:
                     mappings.append((tavar["expr"], callback("present_or_copy",tavar["expr"],tavar,**kwargs)))
             elif not explicitly_mapped:
-                return util.parsing.SyntaxError("no mapping specified for expression: {}".format(tavar["expr"]))
+                raise util.parsing.SyntaxError("no mapping specified for expression: {}".format(tavar["expr"]))
         elif tavar["f_type"] == "type": # map type
             raise util.error.LimitationError("mapping of derived types and their members not supported (yet)")
         else: # basic type scalars

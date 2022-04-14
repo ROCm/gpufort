@@ -878,8 +878,8 @@ def parse_directive(directive,tokens_to_omit_at_begin=0):
     return result[tokens_to_omit_at_begin:]
 
 def parse_acc_directive(directive):
-    """Parses an OpenACC directive, returns a triple of its sentinel, its kind (as list of tokens)
-    plus its clauses (as list of tokens). 
+    """Parses an OpenACC directive, returns a 4-tuple of its sentinel, its kind (as list of tokens),
+    its arguments and its clauses (as list of tokens). 
 
     :Example:
 
@@ -983,30 +983,30 @@ def parse_cuf_kernel_call(statement):
     """
     tokens = tokenize(statement)
     if tokens.pop(0).lower() != "call":
-        return error.SyntaxError("could not parse CUDA Fortran kernel call: expected 'call'")
+        raise error.SyntaxError("could not parse CUDA Fortran kernel call: expected 'call'")
     kernel_name = tokens.pop(0)
     # parameters
     if not kernel_name.isidentifier():
-        return error.SyntaxError("could not parse CUDA Fortran kernel call: expected 'identifier'")
+        raise error.SyntaxError("could not parse CUDA Fortran kernel call: expected 'identifier'")
     if tokens.pop(0) != "<<<":
-        return error.SyntaxError("could not parse CUDA Fortran kernel call: expected '<<<'")
+        raise error.SyntaxError("could not parse CUDA Fortran kernel call: expected '<<<'")
     params_tokens = next_tokens_till_open_bracket_is_closed(tokens, open_brackets=1, brackets=("<<<",">>>"), keepend=False)
     for i in range(0,len(params_tokens)):
         tokens.pop(0)
     if tokens.pop(0) != ">>>":
-        return error.SyntaxError("could not parse CUDA Fortran kernel call: expected '>>>'")
+        raise error.SyntaxError("could not parse CUDA Fortran kernel call: expected '>>>'")
     # arguments
     if tokens.pop(0) != "(":
-        return error.SyntaxError("could not parse CUDA Fortran kernel call: expected '('")
+        raise error.SyntaxError("could not parse CUDA Fortran kernel call: expected '('")
     args_tokens = next_tokens_till_open_bracket_is_closed(tokens, open_brackets=1, keepend=False)
     for i in range(0,len(args_tokens)):
         tokens.pop(0)
     if tokens.pop(0) != ")":
-        return error.SyntaxError("could not parse CUDA Fortran kernel call: expected ')'")
+        raise error.SyntaxError("could not parse CUDA Fortran kernel call: expected ')'")
     params,_  = get_top_level_operands(params_tokens,terminators=[])
     args,_  = get_top_level_operands(args_tokens,terminators=[])
     if len(tokens):
-        return error.SyntaxError("could not parse CUDA Fortran kernel call: trailing text")
+        raise error.SyntaxError("could not parse CUDA Fortran kernel call: trailing text")
     return kernel_name, params, args
 
 # def parse_implicit_statement(statement):

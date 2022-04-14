@@ -9,14 +9,14 @@ from . import parser
 from . import opts
 
 def _collect_ranges(function_call_args,include_none_values=False):
-        ttranges = []
-        for i,elem in enumerate(function_call_args):
-            ttnode = elem[0]
-            if isinstance(ttnode, tree.TTRange):
-                ttranges.append(ttnode)
-            elif include_none_values:
-                ttranges.append(None)
-        return ttranges
+    ttranges = []
+    for i,elem in enumerate(function_call_args):
+        ttnode = elem[0]
+        if isinstance(ttnode, tree.TTRange):
+            ttranges.append(ttnode)
+        elif include_none_values:
+            ttranges.append(None)
+    return ttranges
 
 def _collect_ranges_in_lrvalue(lrvalue,include_none_values=False):
     """
@@ -37,6 +37,8 @@ def _collect_ranges_in_lrvalue(lrvalue,include_none_values=False):
                 result += _collect_ranges(current._element._args,include_none_values)
             current = current._element
         return result
+    else:
+        return []
 
 def _create_do_loop_statements(name,ranges,loop_indices,fortran_style_tensors):
     do_statements     = []
@@ -216,7 +218,7 @@ def map_allocatable_pointer_derived_type_members_to_flat_arrays(lrvalues,loop_va
                 # this criterion
                 if (":" in ident 
                    or "(" in ident): # TODO hack
-                    return util.error.LimitationError("cannot map expression '{}'".format(ident))
+                    raise util.error.LimitationError("cannot map expression '{}'".format(ident))
                 var_expr = util.parsing.strip_array_indexing(ident)
                 c_name = util.parsing.mangle_fortran_var_expr(var_expr) 
                 substitute = ttnode.f_str().replace(ident,c_name)
@@ -247,7 +249,7 @@ def map_scalar_derived_type_members_to_flat_scalars(lrvalues,loop_vars,scope):
                 # this criterion
                 if (":" in ident 
                    or "(" in ident): # TODO hack
-                    return util.error.LimitationError("cannot map expression '{}'".format(ident))
+                    raise util.error.LimitationError("cannot map expression '{}'".format(ident))
                 var_expr = util.parsing.strip_array_indexing(ident)
                 c_name = util.parsing.mangle_fortran_var_expr(var_expr) 
                 substitute = ttnode.f_str().replace(ident,c_name)
@@ -255,7 +257,7 @@ def map_scalar_derived_type_members_to_flat_scalars(lrvalues,loop_vars,scope):
                 substitutions[var_expr] = c_name
             elif (ivar["rank"] == 0
                and ivar["f_type"] == "type"):
-                return util.error.LimitationError("cannot map derived type members of derived type '{}'".format(ident))
+                raise util.error.LimitationError("cannot map derived type members of derived type '{}'".format(ident))
     return substitutions
 
 def flag_tensors(lrvalues, scope):

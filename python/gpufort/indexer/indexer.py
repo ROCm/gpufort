@@ -389,16 +389,24 @@ def _parse_statements(linemaps, file_path,**kwargs):
         if current_node != root:
             msg = "begin to parse acc routine directive '{}'".format(
                 current_statement)
-            parse_result = translator.tree.grammar.acc_routine.parseString( # TODO switch to token based parser
-                current_statement)[0]
-            if parse_result.parallelism() == "seq":
-                current_node._data["attributes"] += ["host", "device"]
-            elif parse_result.parallelism() == "gang":
-                current_node._data["attributes"] += ["host", "device:gang"]
-            elif parse_result.parallelism() == "worker":
-                current_node._data["attributes"] += ["host", "device:worker"]
-            elif parse_result.parallelism() == "vector":
-                current_node._data["attributes"] += ["host", "device:vector"]
+           # parse_result = translator.tree.grammar.acc_routine.parseString( # TODO switch to token based parser
+           #     current_statement)[0]
+            _, _, directive_args, clauses = util.parsing.parse_acc_directive(
+                    current_statement)
+            if len(clauses) != 1:
+                raise util.error.SyntaxError("expected one of 'gang', 'worker', 'vector', 'seq'")
+            if not len(directive_args): # TODO len(directive_args) applies to external or included routine
+                parallelism = clauses[0]
+                if parallelism == "seq":
+                    current_node._data["attributes"] += ["host", "device"]
+                elif parallelism == "gang":
+                    current_node._data["attributes"] += ["host", "device:gang"]
+                elif parallelism == "worker":
+                    current_node._data["attributes"] += ["host", "device:worker"]
+                elif parallelism == "vector":
+                    current_node._data["attributes"] += ["host", "device:vector"]
+                else:
+                    raise util.error.SyntaxError("expected one of 'gang', 'worker', 'vector', 'seq'")
             msg = "finished to parse acc routine directive '{}'".format(current_statement)
             log_end_task(current_node, msg)
 

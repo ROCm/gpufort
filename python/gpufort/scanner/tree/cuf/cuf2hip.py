@@ -259,7 +259,7 @@ def handle_declaration_cuf(stdeclaration, joined_statements, index=[]):
             # fixed size arrays
             if is_fixed_size_array:
                 if isinstance(stdeclaration.parent,nodes.STModule):
-                    return util.error.LimitationError("device array without pointer or allocatable qualifier not supported in module")
+                    raise util.error.LimitationError("device array without pointer or allocatable qualifier not supported in module")
                 malloc_tokens = ["call hipCheck(","hipMalloc","(",var_name,",",",".join(var_bounds+dimension_bounds),"))"]
                 free_tokens   = ["call hipCheck(","hipFree","(",var_name,"))"]
                 if has_pinned: 

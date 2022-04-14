@@ -418,19 +418,21 @@ def parse_function_statement(statement):
                 raise error.SyntaxError("expected '(' after '{}'".format(suffix_kind))
             operands, num_consumed_tokens =  get_top_level_operands(tokens)
             if suffix_kind == "bind":
-                if not len(operands) == 2:
-                    raise error.SyntaxError("'bind' takes two arguments")
+                if len(operands) in [1,2]:
+                    bind_c = True
+                else:
+                    raise error.SyntaxError("'bind' takes one or two arguments")
                 if not operands[0].lower() == "c":
                     raise error.SyntaxError("expected 'c' as first 'bind' argument")
-                bind_c_name_parts = operands[1].split("=")
-                if len(bind_c_name_parts) != 2:
-                    raise error.SyntaxError("expected 'name=\"<label>\"' (or single quotes) as 2nd argument of 'bind'")
-                else:
-                    bind_c_name = bind_c_name_parts[1].strip("\"'")
-                    if (bind_c_name_parts[0].lower() != "name"
-                            or not bind_c_name.isidentifier()):
-                        raise error.SyntaxError("expected 'name=\"<label>\"' as 2nd argument of 'bind'")
-                    bind_c = True
+                if len(operands) == 2:
+                    bind_c_name_parts = operands[1].split("=")
+                    if len(bind_c_name_parts) != 2:
+                        raise error.SyntaxError("expected 'name=\"<label>\"' (or single quotes) as 2nd argument of 'bind'")
+                    else:
+                        bind_c_name = bind_c_name_parts[1].strip("\"'")
+                        if (bind_c_name_parts[0].lower() != "name"
+                                or not bind_c_name.isidentifier()):
+                            raise error.SyntaxError("expected 'name=\"<label>\"' as 2nd argument of 'bind'")
             elif suffix_kind == "result":
                 if not len(operands) == 1:
                     raise error.SyntaxError("'result' takes one argument")

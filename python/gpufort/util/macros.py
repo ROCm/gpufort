@@ -128,7 +128,16 @@ def evaluate_condition(input_string, macro_stack):
     :note: Input validation performed according to:
            https://realpython.com/python-eval-function/#minimizing-the-security-issues-of-eval
     """
-    transformed_input_string = _convert_operators(
+    transformed_input_string1 = _convert_operators(
         expand_macros(input_string, macro_stack, True))
+    input_tokens = parsing.tokenize(transformed_input_string1)
+    # all existing symbols in the expression are replaced by 0 
+    modified_tokens = []
+    for tk in input_tokens:
+        if tk.isidentifier() and tk not in ["and","or","not"]:
+            modified_tokens.append("0")
+        else:
+            modified_tokens.append(tk)
+    transformed_input_string = " ".join(modified_tokens) # white space important
     code = compile(transformed_input_string, "<string>", "eval")
     return eval(code, {"__builtins__": {}}, {}) > 0

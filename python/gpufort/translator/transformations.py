@@ -123,7 +123,6 @@ def expand_all_array_expressions(ttnode,scope,fortran_style_tensors=True):
         statements, int_counter, modified =\
           _expand_array_expression(ttassignment,scope,int_counter,
                                    fortran_style_tensors)
-        print("\n".join(statements))
         if modified:
             ttdo = parser.parse_fortran_code(statements).body[0] # parse returns ttroot
             ttstatement._statement = ttdo

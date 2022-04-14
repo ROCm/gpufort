@@ -728,7 +728,9 @@ def run(infile_path,outfile_path,outfile_cpp_path,preproc_options):
         profiler = cProfile.Profile()
         profiler.enable()
 
-    linemaps = linemapper.read_file(infile_path, preproc_options=preproc_options)
+    linemaps = linemapper.read_file(infile_path,
+            preproc_options=preproc_options,
+            include_dirs=opts.include_dirs)
     if opts.dump_linemaps:
         util.logging.log_info(opts.log_prefix, "__main__",
                               "dump linemaps (before translation)")
@@ -788,7 +790,7 @@ def set_include_dirs(working_dir, include_dirs):
         if not os.path.exists(opts.include_dirs[i]):
             msg = "search directory '{}' cannot be found".format(
                 opts.include_dirs[i])
-            util.logging.log_error(msg, verbose=False)
+            util.logging.log_error(opts.log_prefix,"set_include_dirs",msg)
             one_or_more_search_dirs_not_found = True
     opts.include_dirs.append(working_dir)
     if one_or_more_search_dirs_not_found:
@@ -806,7 +808,7 @@ if __name__ == "__main__":
     args, unknown_args = parse_cl_args(parser)
     if len(opts.post_cli_actions):
         msg = "run registered actions"
-        util.logging.log_info(msg, verbose=False)
+        util.logging.log_info(opts.log_prefix,"__main__",msg, verbose=False)
         for action in opts.post_cli_actions:
             if callable(action):
                 action(args, unknown_args)

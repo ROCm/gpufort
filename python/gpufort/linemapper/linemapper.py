@@ -23,7 +23,24 @@ def _linearize_statements(linemap):
         result += stmt["epilog"]
     return result
 
-def _handle_preprocessor_directive(lines, file_path, macro_stack,
+def _find_file(filename,current_dir,include_dirs):
+    # check absolute path
+    # check working dir
+    # check include dirs
+    absolute_path = None
+    if os.path.isabs(filename) and os.path.exists(filename):
+        absolute_path = filename
+    elif not os.path.isabs(filename):
+        search_dirs = [current_dir] + include_dirs
+        for folder in search_dirs:
+            path = os.path.join(folder,filename)
+            if os.path.exists(path):
+                absolute_path = path
+    if absolute_path == None:
+        raise util.error.LookupError("could not find file '{}' in include directories".format(filename))
+    return absolute_path
+
+def _handle_preprocessor_directive(lines, file_path, include_dirs, macro_stack,
                                    region_stack1, region_stack2):
     """
     :param str file_path: needed to load included files where only relative path is specified
@@ -50,6 +67,7 @@ def _handle_preprocessor_directive(lines, file_path, macro_stack,
     # strip away whitespace chars
     try:
         stripped_first_line = lines[0].lstrip("# \t").lower() # TODO tokenize
+        tokens = util.parsing.tokenize(stripped_first_line)
         #single_line_statement = _convert_lines_to_statements(lines)[
         #    0] # does not make sense for define
         single_line_statement = lines[0] # assume no line breaks in C preproc directives in Fortran
@@ -89,11 +107,9 @@ def _handle_preprocessor_directive(lines, file_path, macro_stack,
                     "found include in line '{}'".format(lines[0].rstrip("\n")))
                 result = grammar.pp_dir_include.parseString(
                     single_line_statement, parseAll=True)
-                filename = result.filename.strip(" \t")
-                current_dir = os.path.dirname(file_path)
-                if not os.path.isabs(filename) and len(current_dir):
-                    filename = os.path.join(os.path.dirname(
-                        file_path),filename)
+                filename = _find_file(result.filename.strip(),
+                        os.path.dirname(file_path),
+                        include_dirs)
                 included_linemaps = _preprocess_and_normalize_fortran_file(
                     file_path=filename, 
                     macro_stack = macro_stack,
@@ -158,9 +174,9 @@ def _handle_preprocessor_directive(lines, file_path, macro_stack,
             region_stack2.pop()
             handled = True
     except Exception as e:
-        raise e
+        raise
 
-    if not handled:
+    if region_stack1[-1] and not handled:
         # TODO add ignore filter
         util.logging.log_warning(opts.log_prefix,"_handle_preprocessor_directive",\
           "preprocessor directive '{}' was ignored".format(single_line_statement))
@@ -388,6 +404,9 @@ def preprocess_and_normalize(fortran_file_lines,
     * *preproc_options* (`str`):
         Preprocessor options that are translated to macros
         if no macro stack is found.
+    * *include_dirs* (`list`):
+        Include directories for searching
+        files included by the preprocessor.
     
     :Keyword Arguments (Internal):
     
@@ -407,6 +426,7 @@ def preprocess_and_normalize(fortran_file_lines,
     region_stack1,_ = util.kwargs.get_value("region_stack1",[True],**kwargs)
     region_stack2,_ = util.kwargs.get_value("region_stack2",[True],**kwargs)
     file_path,_ = util.kwargs.get_value("file_path","<unknown>",**kwargs)
+    include_dirs,_ = util.kwargs.get_value("include_dirs",[],**kwargs)
     
     only_apply_user_defined_macros,_ = util.kwargs.get_value("only_apply_user_defined_macros",
                                            opts.only_apply_user_defined_macros,**kwargs)
@@ -437,7 +457,7 @@ def preprocess_and_normalize(fortran_file_lines,
         if is_preprocessor_directive and not only_apply_user_defined_macros:
             try:
                 included_linemaps = _handle_preprocessor_directive(
-                    lines, file_path, macro_stack, region_stack1,
+                    lines, file_path, include_dirs, macro_stack, region_stack1,
                     region_stack2)
                 statements1 = []
                 statements3 = []

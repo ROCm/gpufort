@@ -88,7 +88,7 @@ def parse_fortran_code(statements,result_name=None):
 
     def warn_(expr, exception=None):
         nonlocal stmt1
-        util.logging.log_warn(opts.log_prefix, "parse_fortran_code",
+        util.logging.log_warning(opts.log_prefix, "parse_fortran_code",
                               "ignored {} expression '{}'".format(expr, stmt))
         if exception != None:
             util.logging.log_debug(opts.log_prefix,
@@ -158,7 +158,7 @@ def parse_fortran_code(statements,result_name=None):
                         "found {} in statement '{}'".format(
                             "loop directive", stmt))
                 else:
-                    warn_("directive", e)
+                    warn_("directive")
             except pyparsing.ParseException as e:
                 error_("directive", e)
                 pass

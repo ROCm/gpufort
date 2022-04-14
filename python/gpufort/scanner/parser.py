@@ -499,11 +499,6 @@ def _parse_file(linemaps, index, **kwargs):
 
     tree.grammar.use.setParseAction(UseStatement)
 
-    datatype_reg = pyparsing.Regex(
-        r"\s*\b(type\s*\(\s*\w+\s*\)|character|integer|logical|real|complex|double\s+precision)\b"
-    )
-    datatype_reg.setParseAction(Declaration)
-
     tree.grammar.attributes.setParseAction(Attributes)
     tree.grammar.ALLOCATED.setParseAction(Allocated)
     tree.grammar.ALLOCATE.setParseAction(Allocate)
@@ -698,12 +693,11 @@ def _parse_file(linemaps, index, **kwargs):
                                     "character", "integer", "logical", "real",
                                     "complex", "double"
                                 ]):
-                                try_to_parse_string_("declaration", datatype_reg)
-                                break
+                                Declaration() 
                             elif (not "function" in current_tokens 
                                  and current_tokens[0] == "type" 
                                  and current_tokens[1] == "("):
-                                try_to_parse_string_("declaration", datatype_reg)
+                                Declaration() 
                             elif current_tokens[0] == "type": # must come after declarations
                                 TypeStart()
                     if keep_recording:

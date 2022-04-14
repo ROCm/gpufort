@@ -7,11 +7,11 @@ import os,sys
 import time
 import unittest
 import addtoplevelpath
-from gpufort import grammar
+from gpufort import translator
 
 print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.stderr)
 
-class TestGramarNummber(unittest.TestCase):
+class TestTranslatorPower(unittest.TestCase):
     def setUp(self):
         global index
         self.started_at = time.time()
@@ -19,28 +19,21 @@ class TestGramarNummber(unittest.TestCase):
         elapsed = time.time() - self.started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 9)))
     def test_0_type_start_pass(self):
-        testdata = """-1
-         +1
-         -12
-         +12
-         .1
-         +1
-         -1.
-         +1.
-         -12.3
-         +12.3
-         -12.3e0
-         -12.3d0
-         -12.3d1.
-         -12.3d1.5
-         -12.3d-1.5
-         -12.3d-1.5_dp
-         -12.3d-1.5_4
-         .5e-4_w
-         .5_w4""".splitlines()
+        testdata = [
+          "a**0.5",
+          "(t00/a)**2",
+          "EXP(3) **0.5",
+          "p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )",
+        ]
         for snippet in testdata:
             try:
-                grammar.number.parseString(snippet)
+                criterion = True
+                result = snippet
+                while criterion:
+                    old_result = result
+                    result = translator.tree.grammar.power.transformString(result)
+                    criterion = old_result != result
+                print(result)
             except Exception as e:
                 self.assertTrue(False, "failed to parse '{}'".format(snippet)) 
 

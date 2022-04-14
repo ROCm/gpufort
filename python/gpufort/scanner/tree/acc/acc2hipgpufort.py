@@ -135,6 +135,11 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         #if self.stnode.is_directive(["acc","update"]):
         result = []
         options = [ async_expr ]
+        for kind, args in self.stnode.get_matching_clauses(["if","if_present"]):
+            if kind == "if":
+                options.append("=".join(["condition",args[0]]))
+            elif kind == "if_present":
+                options.append("if_present=.true.")
         for kind, args in self.stnode.get_matching_clauses(["self", "host", "device"]):
             for var_expr in args:
                 result.append(_ACC_UPDATE.format(
@@ -157,7 +162,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         options = []
         for kind, args in self.stnode.get_matching_clauses(["if","if_present"]):
             if kind == "if":
-                options.append("=".join(["if",args[0]]))
+                options.append("=".join(["condition",args[0]]))
             elif kind == "if_present":
                 options.append("if_present=.true.")
         for kind, args in self.stnode.get_matching_clauses(["use_device"]):

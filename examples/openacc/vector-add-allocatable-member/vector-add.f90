@@ -41,7 +41,7 @@ program main
     y(i) = struct%x(i) + struct%coeff*y(i)
   end do
   
-  !$acc update host(struct%x) ! translate
+  !$acc update host(struct%x) if_present ! translate
   
   !$acc end data
   

@@ -36,16 +36,18 @@ do j = 1, max(M,n), min(m,n,2)
     end do
     y(j,i:i+2) = grid%x(j,i:i+2)
 
-    select case (i)
-      case (1)
-        k = 1*i
-      case (2)
-        k = 2*i
-      case default
-        k = i
-    end select
-
-    return
+    if ( i == 5 .and. j > 2 ) then 
+      k = 2*k
+    else
+      select case (i)
+        case (1)
+          k = 1*i
+        case (2)
+          k = 2*i
+        case default
+          k = i
+      end select
+    endif
   end do
 end do
 """

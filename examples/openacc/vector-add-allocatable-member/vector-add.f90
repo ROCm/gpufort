@@ -22,12 +22,15 @@ program main
     y_exact(i) = 3
   end do
 
-  !$acc data copy(struct%x(1:N),y(1:N))
+  !$acc data copy(struct%x(1:N),y(1:N)) copyin(struct)
  
-  !$acc parallel loop present(struct%x(1:N),y(1:N))
+  !$acc parallel loop present(y(1:N))
   do i = 1, N
     y(i) = 2
   end do
+
+
+  !$acc update device(struct%n) ! ignore
  
   !$acc kernels
   struct%x(1:struct%N) = 1
@@ -37,6 +40,9 @@ program main
   do i = 1, N
     y(i) = struct%x(i) + struct%coeff*y(i)
   end do
+  
+  !$acc update host(struct%x) ! translate
+  
   !$acc end data
   
   do i = 1, N

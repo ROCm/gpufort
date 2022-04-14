@@ -115,12 +115,11 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             for var_expr in args:
                 template = _DATA_CLAUSE_2_TEMPLATE_MAP[kind.lower()]
                 options_str =_create_options_str(options)
-                if opts.acc_map_derived_types: 
-                    result.append(template.format(var=var_expr,options=options_str))
-                else:
+                result.append(template.format(var=var_expr,options=options_str))
+                if not opts.acc_map_derived_types: 
                     ivar = indexer.scope.search_index_for_var(index,self.stnode.parent.tag(),var_expr)
-                    if ivar["f_type"] != "type":
-                        result.append(template.format(var=var_expr,options=options_str))
+                    if ivar["f_type"] == "type":
+                        result.pop(-1)
         return result
 
     def _handle_if_clause(self,result):
@@ -130,7 +129,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             result.insert(0,"if ( {} ) then\n".format(condition))
             result.append("endif\n".format(condition))
     
-    def _update_directive(self,async_expr):
+    def _update_directive(self,index,async_expr):
         """Emits a acc_clause_update command for every variable in the list
         """
         #if self.stnode.is_directive(["acc","update"]):
@@ -142,6 +141,12 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
                     var=var_expr,
                     options=_create_options_str(options),
                     kind=kind.lower()))
+                if not opts.acc_map_derived_types: 
+                    tag = indexer.scope.create_index_search_tag_for_var(var_expr)
+                    ivar = indexer.scope.search_index_for_var(index,self.stnode.parent.tag(),tag)
+                    if ("%" in tag and ivar["rank"] == 0
+                       or ivar["f_type"] == "type"):
+                            result.pop(-1)
         return result
     
     def _host_data_directive(self):
@@ -219,7 +224,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         elif stnode.is_directive(["acc","update"]):
             result += self._handle_wait_clause()
             async_expr = self._get_async_clause_expr()
-            result += self._update_directive(async_expr)
+            result += self._update_directive(index,async_expr)
         elif stnode.is_directive(["acc","wait"]):
             result += self._wait_directive()
         elif stnode.is_directive(["acc","host_data"]):

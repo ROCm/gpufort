@@ -101,7 +101,7 @@ def _expand_array_expression(ttassignment,scope,int_counter,fortran_style_tensor
                                 raise util.error.LimitationError("failed to expand colon operator expression to loopnest: not enough colon expressions in rvalue argument list")
                 except util.error.LookupError:
                     pass
-            f_expr = ttassignment._lhs._value.identifier_part(tree.make_f_str)
+            f_expr = ttassignment._lhs.identifier_part(tree.make_f_str)
             do_loop_statements, end_do_statements = _create_do_loop_statements(f_expr,lvalue_ranges,loop_indices,fortran_style_tensors)
             statements = do_loop_statements + [ttassignment.f_str()] + end_do_statements
             return statements, int_counter + len(loop_indices), True

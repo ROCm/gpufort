@@ -230,9 +230,9 @@ def handle_declaration_cuf(stdeclaration, joined_statements, index=[]):
                 index,stdeclaration.parent.tag(),
                 stdeclaration.derived_type_parent)
             ivar = next(
-                (v for v in parent_type["variables"] if v["name"] == var_name),
+                (v for v in parent_type["variables"] if v["name"] == var_name.lower()),
                 None)
-            if result == None:
+            if ivar == None:
                 raise util.error.LookupError("no index record found for variable '{}' in scope".format(var_name))
         rank = ivar["rank"]
         has_device = "device" in ivar["qualifiers"]

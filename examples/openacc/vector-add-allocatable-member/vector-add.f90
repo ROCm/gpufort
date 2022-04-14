@@ -10,10 +10,12 @@ program main
   type struct_t
     integer(4) :: coeff
     integer(4),allocatable :: x(:)
+    integer(4) :: N
   end type
   type(struct_t) :: struct
 
   struct%coeff = 1
+  struct%N = N
   allocate(struct%x(N))
 
   do i = 1, N
@@ -24,10 +26,13 @@ program main
  
   !$acc parallel loop present(struct%x(1:N),y(1:N))
   do i = 1, N
-    struct%x(i) = 1
     y(i) = 2
   end do
-  
+ 
+  !$acc kernels
+  struct%x(1:struct%N) = 1
+  !$acc end kernels
+
   !$acc parallel loop
   do i = 1, N
     y(i) = struct%x(i) + struct%coeff*y(i)

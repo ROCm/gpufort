@@ -45,13 +45,13 @@ def _create_do_loop_statements(name,ranges,loop_indices,fortran_style_tensors):
     end_do_statements = []
     for i, ttrange in enumerate(ranges,1):
         loop_idx = loop_indices[i-1]
-        lbound = ttrange.l_bound()
+        lbound = ttrange.l_bound(tree.make_f_str)
         if not len(lbound):
             if fortran_style_tensors:
                 lbound = "lbound({name},{i})".format(name=name, i=i)
             else:
                 lbound = "{name}_lb{i}".format(name=name, i=i)
-        ubound = ttrange.u_bound()
+        ubound = ttrange.u_bound(tree.make_f_str)
         if not len(ubound):
             if fortran_style_tensors:
                 ubound = "ubound({name},{i})".format(name=name, i=i)
@@ -101,11 +101,7 @@ def _expand_array_expression(ttassignment,scope,int_counter,fortran_style_tensor
                                 raise util.error.LimitationError("failed to expand colon operator expression to loopnest: not enough colon expressions in rvalue argument list")
                 except util.error.LookupError:
                     pass
-            # TODO externalize routine
-            if isinstance(ttassignment._lhs._value,tree.TTDerivedTypeMember):
-                f_expr = ttassignment._lhs._value.identifier_part(tree.make_f_str)
-            else:
-                f_expr = ttassignment._lhs._value.name_c_str()
+            f_expr = ttassignment._lhs._value.identifier_part(tree.make_f_str)
             do_loop_statements, end_do_statements = _create_do_loop_statements(f_expr,lvalue_ranges,loop_indices,fortran_style_tensors)
             statements = do_loop_statements + [ttassignment.f_str()] + end_do_statements
             return statements, int_counter + len(loop_indices), True
@@ -125,6 +121,8 @@ def expand_all_array_expressions(ttnode,scope,fortran_style_tensors=True):
         statements, int_counter, modified =\
           _expand_array_expression(ttassignment,scope,int_counter,
                                    fortran_style_tensors)
+        # TODO add some log statements
+        #print("\n".join(statements))
         if modified:
             ttdo = parser.parse_fortran_code(statements).body[0] # parse returns ttroot
             ttstatement._statement = ttdo
@@ -135,7 +133,6 @@ def move_statements_into_loopnest_body(ttloopnest):
     # subsequent loop ranges must not depend on LHS of assignment
     # or inout, out arguments of function call
     pass 
-
 
 def _loop_range_c_str(ttdo,counter):
     result = [

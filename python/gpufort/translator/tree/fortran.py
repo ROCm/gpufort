@@ -247,7 +247,15 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
 class IValue:
 
     def is_identifier(self):
-        return isinstace(self._value, TTIdentifier)
+        return isinstance(self._value, TTIdentifier)
+
+    def identifier_part(self,converter=base.make_f_str):
+        if type(self._value) is TTFunctionCallOrTensorAccess:
+            return converter(self._value._name)
+        elif type(self._value) is TTDerivedTypeMember:
+            return self._value.identifier_part(converter)
+        else:
+            return converter(self._value)
 
     def get_value(self):
         return self._value 

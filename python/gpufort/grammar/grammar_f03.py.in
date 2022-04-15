@@ -13,15 +13,15 @@ CALL,ATTRIBUTES,LEN,KIND,DIM = makeCaselessLiteral("call,attributes,len,kind,dim
 identifier = pyparsing_common.identifier.copy()
 integer    = pyparsing_common.integer.copy()
 number     = Regex(r"[+-]?(\.\d+|\d+(\.\d*)?)([eEdD]([+-]?\d+(\.\d*)?))?(_\w+)?")
-logical    = Regex(r"\.[tT][rR][uU][eE]\.|\.[fF][aA][lL][sS][eE]\.")
+logical    = Regex(r"\.(true|false)\.", re.IGNORECASE)
 character  = QuotedString('"', escQuote='\\') | QuotedString("'", escQuote="\\")
-OPTSIGN    = Optional(Regex("[-+]") | CASELESS_LITERAL(".not."),default="")
+OPTSIGN    = Optional(Regex("[-+]|\.not\.",re.IGNORECASE),default="")
 
 # arithmetic logical expressions and assignments
+arithmetic_expression = Forward()
 func_rvalue = Forward()
-
-func_kind = COMMA + ( KIND + EQ + Regex(r"[0-9]+|([sSdDqQ][pP])") ) # ! emits one token
-arglist = Group(delimitedList(Group(~func_kind + func_rvalue)))
+func_kind = COMMA + ( KIND + EQ + arithmetic_expression ) # ! emits one token # TODO generalize to named args
+arglist = Group(delimitedList(Group(func_rvalue)))
 func_call = identifier + LPAR + Optional(arglist, default=[]) + RPAR # emits 2 tokens: *,*,*
 
 # derived_types
@@ -37,22 +37,25 @@ complex_arithmetic_expression = Forward()
 conversion      = Forward()
 inquiry_function = Forward()
 
-rvalue = OPTSIGN + (conversion | inquiry_function | complex_arithmetic_expression | derived_type_elem | func_call | identifier | logical | character | number)  # |: ordered OR, order is important
+#rvalue = OPTSIGN + (conversion | inquiry_function | complex_arithmetic_expression | derived_type_elem | func_call | identifier | logical | character | number)  # |: ordered OR, order is important
+rvalue = ( conversion | inquiry_function | complex_arithmetic_expression | derived_type_elem | func_call | identifier | logical | character | number)  # |: ordered OR, order is important
 fortran_subroutine_call = CALL + func_call
 
 # assignments
-l_arith_operator  = MatchFirst(L_ARITH_OPERATOR);
-#r_arith_operator  = MatchFirst(R_ARITH_OPERATOR_STR);
-condition_op=oneOf(COMP_OPERATOR_LOWER_STR,caseless=CASELESS)
-arithmetic_expression = infixNotation(rvalue,
+l_arith_operator_1 = Regex(r"[+-]")
+l_arith_operator_2 = Regex(r"[+\-*/]")
+condition_op_1 = Regex(r".not.",re.IGNORECASE)
+condition_op_2 = Regex(r"[<>=/]=|[<>]|\.(eqv|neqv|eq|ne|lt|gt|le|ge|and|or|xor)\.",re.IGNORECASE)
+arithmetic_expression <<= infixNotation(rvalue,
     [
-      (l_arith_operator, 2, opAssoc.LEFT),
+      (l_arith_operator_1, 1, opAssoc.RIGHT),
+      (l_arith_operator_2, 2, opAssoc.LEFT),
     ],
 )
-arithmetic_logical_expression = infixNotation(rvalue, #NOTE: Slower because of the additional operators
+arithmetic_logical_expression = infixNotation(arithmetic_expression, #NOTE: Slower because of the additional operators
     [
-      (l_arith_operator, 2, opAssoc.LEFT),
-      (condition_op, 2, opAssoc.LEFT),
+      (condition_op_1, 1, opAssoc.RIGHT),
+      (condition_op_2, 2, opAssoc.LEFT),
     ],
 )
 
@@ -85,7 +88,7 @@ array_range1b = (single_colon + arithmetic_expression).setParseAction(lambda tok
 array_range2  = (arithmetic_expression + single_colon + arithmetic_expression)
 array_range   = (array_range2 | array_range1b | array_range1a | array_range0) + Optional(stride,default=None)
 # define forward declared tokens
-func_rvalue       <<= array_range | arithmetic_logical_expression
+func_rvalue <<= array_range | arithmetic_logical_expression
 
 # conversion functions
 # TODO check type of variable when translating

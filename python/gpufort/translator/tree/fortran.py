@@ -319,8 +319,8 @@ class IValue:
 class TTRValue(base.TTNode, IValue):
 
     def _assign_fields(self, tokens):
-        self._sign = tokens[0]
-        self._value = tokens[1]
+        self._sign = ""
+        self._value = tokens[0]
         self._reduction_index = ""
         #print("{0}: {1}".format(self.c_str(),self.location))
     def f_str(self):
@@ -1225,9 +1225,11 @@ grammar.comment.setParseAction(TTCommentedOut)
 grammar.logical.setParseAction(TTLogical)
 grammar.integer.setParseAction(TTNumber)
 grammar.number.setParseAction(TTNumber)
-grammar.l_arith_operator.setParseAction(TTOperator)
+grammar.l_arith_operator_1.setParseAction(TTOperator)
+grammar.l_arith_operator_2.setParseAction(TTOperator)
 #r_arith_operator.setParseAction(TTOperator)
-grammar.condition_op.setParseAction(TTOperator)
+grammar.condition_op_1.setParseAction(TTOperator)
+grammar.condition_op_2.setParseAction(TTOperator)
 grammar.identifier.setParseAction(TTIdentifier)
 grammar.rvalue.setParseAction(TTRValue)
 grammar.lvalue.setParseAction(TTLValue)

@@ -107,8 +107,9 @@ def parse_fortran_code(statements,result_name=None):
     curr_offload_loop = None
     level = 0
     for stmt1 in statements:
-        stmt = prepostprocess.preprocess_fortran_statement(stmt1)
-        tokens = util.parsing.tokenize(stmt.lower(), padded_size=6)
+        tokens = util.parsing.tokenize(stmt1.lower(), padded_size=6)
+        stmt = " ".join(tokens) # ensure whitespace between operators and operands
+        stmt = prepostprocess.preprocess_fortran_statement(stmt)
         # strip of ! from tokens.index("!")
         if "!" in stmt:
             stmt_no_comment = stmt.split("!")[0].lower()

@@ -36,7 +36,7 @@ do j = 1, max(M,n), min(m,n,2)
     end do
     y(j,i:i+2) = grid%x(j,i:i+2)
 
-    if ( i == 5 .and. j > 2 ) then 
+    if (i == 5.and.j > 2) then 
       k = 2*k
     else
       select case (i)

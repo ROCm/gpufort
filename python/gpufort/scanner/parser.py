@@ -458,13 +458,17 @@ def _parse_file(linemaps, index, **kwargs):
                 current_statement["body"])
             lvalue = translator.tree.find_first(parse_result, translator.tree.TTLValue)
             # TODO
-            if lvalue.has_range_args() and lhs_ivar["rank"] > 0:
-                new = tree.acc.STAccLoopNest(current_linemap,
-                                             current_statement_no,
-                                             acc_kernels_directive)
-                new.ignore_in_s2s_translation = not translation_enabled
-                append_if_not_recording_(new)
-                new.complete_init(index)
+            
+            if lhs_ivar["rank"] > 0: # TODO or does not have args at all
+                if lvalue.has_range_args(): 
+                    new = tree.acc.STAccLoopNest(current_linemap,
+                                                 current_statement_no,
+                                                 acc_kernels_directive)
+                    new.ignore_in_s2s_translation = not translation_enabled
+                    append_if_not_recording_(new)
+                    new.complete_init(index)
+                elif not lvalue.has_args():
+                    raise util.error.LimitationError("offloading of array assignments without explicit range arguments is currently not supported")
             elif lvalue.has_args() and not in_kernels_acc_region_and_not_recording() and lhs_ivar["rank"] == 0:
                 # statement function
                 if lhs_ivar["f_type"] in ["integer","real","logical"]:

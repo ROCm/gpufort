@@ -20,6 +20,9 @@ class TestGrammarArithmeticExpression(unittest.TestCase):
         print('{} ({}s)'.format(self.id(), round(elapsed, 9)))
     def test_0(self):
         testdata = [
+          "- ( max ( m , n ) )",
+          "MIN( jte )",
+          "MIN( jte, jde-1 )",
           "MIN(jte,jde-1,spec_bdy_width)",
         ]
         for snippet in testdata:

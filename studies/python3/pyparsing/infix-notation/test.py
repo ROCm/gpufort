@@ -7,9 +7,10 @@ identifier = pyp.pyparsing_common.identifier
 terminal   = identifier | number
 
 expr = pyp.infixNotation(terminal, [
-    (pyp.oneOf('* /'), 2, pyp.opAssoc.LEFT),
-    (pyp.oneOf('+ -'), 2, pyp.opAssoc.LEFT),
-    (pyp.oneOf('-'), 1, pyp.opAssoc.LEFT),
+    (pyp.Regex('[\-+]'), 1, pyp.opAssoc.RIGHT),
+    (pyp.Regex('[*/+\-]'), 2, pyp.opAssoc.LEFT),
 ]) + pyp.stringEnd()
 
 print(expr.parseString("-5 + 3"))
+print(expr.parseString("-5"))
+print(expr.parseString("-( a + (b-1))"))

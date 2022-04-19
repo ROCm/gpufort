@@ -625,6 +625,21 @@ class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase,directives.ICom
             self, arrays_in_body, inout_arrays_in_body, depend, "")
         return result + data_part
 
+class TTAccSerial(TTAccComputeConstructBase):
+
+    def map_outer_loops_to_threads(self):
+        """:return: If the outer loops should be mapped
+                    to threads. 
+        """
+        return False
+
+    def omp_f_str(self,
+                  arrays_in_body=[],
+                  inout_arrays_in_body=[],
+                  depend={},
+                  prefix="!$omp target"):
+        raise util.error.LimitationError("conversion of acc serial construct to OpenMP is not implemented!")
+
 
 class TTAccParallel(TTAccComputeConstructBase):
 

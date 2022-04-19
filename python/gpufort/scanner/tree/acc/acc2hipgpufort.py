@@ -283,7 +283,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         indent = stnode.first_line_indent()
         return textwrap.indent("".join(result),indent), len(result)
 
-class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
+class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
 
     def _map_array(clause_kind1,var_expr,tavar,**kwargs):
         asyncr,_   = util.kwargs.get_value("asyncr","",**kwargs)
@@ -327,7 +327,7 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
                        acc_clauses,
                        self.stnode.kernel_args_tavars,
                        self.stnode.get_vars_present_per_default(),
-                       AccLoopNest2HipGpufortRT._map_array,
+                       AccComputeConstruct2HipGpufortRT._map_array,
                        **kwargs)
         for var_expr, argument in mappings:
             result.append(argument)
@@ -361,7 +361,7 @@ class AccLoopNest2HipGpufortRT(Acc2HipGpufortRT):
         stloopnest.async_launch_f_str = ".{}.".format(str(found_async)).lower()
        
         stloopnest.kernel_args_names = self.derive_kernel_call_arguments()
-        result_loopnest, _ = nodes.STLoopNest.transform(
+        result_loopnest, _ = nodes.STComputeConstruct.transform(
                                  stloopnest, joined_lines, joined_statements,
                                  statements_fully_cover_lines, index)
         result.append(textwrap.dedent(result_loopnest))
@@ -496,7 +496,7 @@ def Acc2HipGpufortRTPostprocess(stree, index):
 
 dest_dialects = ["hipgpufort"]
 accnodes.STAccDirective.register_backend(dest_dialects,Acc2HipGpufortRT()) # instance
-accnodes.STAccLoopNest.register_backend(dest_dialects,AccLoopNest2HipGpufortRT())
+accnodes.STAccComputeConstruct.register_backend(dest_dialects,AccComputeConstruct2HipGpufortRT())
 
 nodes.STAllocate.register_backend("acc", dest_dialects, AllocateHipGpufortRT) # function
 nodes.STDeallocate.register_backend("acc", dest_dialects, DeallocateHipGpufortRT)

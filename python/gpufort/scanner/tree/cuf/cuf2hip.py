@@ -30,7 +30,7 @@ def CufLoopNest2Hip(stloopnest,*args,**kwargs):
             stloopnest.kernel_args_names.append("".join(tokens))
         else:
             stloopnest.kernel_args_names.append(tavar["expr"])
-    return nodes.STLoopNest.transform(stloopnest,*args,**kwargs)
+    return nodes.STComputeConstruct.transform(stloopnest,*args,**kwargs)
 
 # backends for standard nodes
 def hip_f_str(self,

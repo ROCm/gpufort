@@ -29,7 +29,7 @@ class STCufDirective(nodes.STDirective):
                   index=[]):
         assert False, "Currently, there are only CUF parallel directives"
 
-class STCufLoopNest(STCufDirective, nodes.STLoopNest):
+class STCufLoopNest(STCufDirective, nodes.STComputeConstruct):
     _backends = []
 
     @classmethod
@@ -38,7 +38,7 @@ class STCufLoopNest(STCufDirective, nodes.STLoopNest):
 
     def __init__(self, first_linemap, first_linemap_first_statement):
         STCufDirective.__init__(self, first_linemap, first_linemap_first_statement)
-        nodes.STLoopNest.__init__(self, first_linemap, first_linemap_first_statement)
+        nodes.STComputeConstruct.__init__(self, first_linemap, first_linemap_first_statement)
         self.dest_dialect = opts.destination_dialect
 
     def transform(self,joined_lines,joined_statements,*args,**kwargs):

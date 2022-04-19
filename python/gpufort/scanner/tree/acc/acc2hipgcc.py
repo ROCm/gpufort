@@ -224,7 +224,7 @@ class Acc2HipGccRT(accbackends.AccBackendBase):
             return f_snippet, False
 
 
-class AccLoopNest2HipGccRT(Acc2HipGccRT):
+class AccComputeConstruct2HipGccRT(Acc2HipGccRT):
 
     def transform(self,
                   joined_lines,
@@ -244,7 +244,7 @@ class AccLoopNest2HipGccRT(Acc2HipGccRT):
                 index,
                 handle_if=False)
             result = partial_result
-        partial_result, _ = nodes.STLoopNest.transform(
+        partial_result, _ = nodes.STComputeConstruct.transform(
             stnode, joined_lines, joined_statements,
             statements_fully_cover_lines, index)
         result += partial_result
@@ -281,7 +281,7 @@ def Acc2HipGccRTPostprocess(stree, index):
 
 dest_dialects = ["hipgcc"]
 accnodes.STAccDirective.register_backend(dest_dialects,Acc2HipGccRT()) # instance
-accnodes.STAccLoopNest.register_backend(dest_dialects,AccLoopNest2HipGccRT())
+accnodes.STAccComputeConstruct.register_backend(dest_dialects,AccComputeConstruct2HipGccRT())
 
 nodes.STAllocate.register_backend("acc", dest_dialects, AllocateHipGccRT) # function
 nodes.STDeallocate.register_backend("acc", dest_dialects, DeallocateHipGccRT)

@@ -264,12 +264,24 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
             name, ",".join([base.make_f_str(s) for s in self._args]))
 
 
-class IValue:
-
+class TTValue(base.TTNode):
+    
+    def _assign_fields(self, tokens):
+        self._value           = tokens[0]
+        self._reduction_index = None
+        self._f_str           = None
+   
     def is_identifier(self):
         return isinstance(self._value, TTIdentifier)
 
     def identifier_part(self,converter=base.make_f_str):
+        """
+        :return: The identifier part of the expression. In case
+                 of a function call/tensor access expression, 
+                 excludes the argument list.
+                 In case of a derived type, excludes the argument
+                 list of the innermost member.
+        """
         if type(self._value) is TTFunctionCallOrTensorAccess:
             return converter(self._value._name)
         elif type(self._value) is TTDerivedTypeMember:
@@ -287,7 +299,7 @@ class IValue:
         if type(self._value) is TTFunctionCallOrTensorAccess:
             return self._value.has_range_args()
         elif type(self._value) is TTDerivedTypeMember:
-            return self._value.last_element_has_range_args()
+            return self._value.innermost_member_has_range_args()
         else:
             return False
 
@@ -295,15 +307,19 @@ class IValue:
         if type(self._value) is TTFunctionCallOrTensorAccess:
             return self._value.bounds()
         elif type(self._value) is TTDerivedTypeMember:
-            return self._value.last_element_bounds()
+            return self._value.innermost_member_bounds()
         else:
             return []
     
     def has_args(self):
+        """:return If the value type expression has an argument list. In
+                   case of a derived type member, if the inner most derived
+                   type member has an argument list.
+        """
         if type(self._value) is TTFunctionCallOrTensorAccess:
             return True
         elif type(self._value) is TTDerivedTypeMember:
-            return self._value.last_element_has_args()
+            return self._value.innermost_member_has_args()
         else:
             return False
     
@@ -311,51 +327,33 @@ class IValue:
         if type(self._value) is TTFunctionCallOrTensorAccess:
             return self._value._args
         elif type(self._value) is TTDerivedTypeMember:
-            return self._value.last_element_has_args()
+            return self._value.innermost_member_args()
         else:
             return False
-
-
-class TTRValue(base.TTNode, IValue):
-
-    def _assign_fields(self, tokens):
-        self._sign = ""
-        self._value = tokens[0]
-        self._reduction_index = ""
-        #print("{0}: {1}".format(self.c_str(),self.location))
+    
+    def overwrite_f_str(self,f_str):
+        self._f_str = f_str
+    
     def f_str(self):
-        if self._sign != None and len(self._sign):
-            return "".join(["(",self._sign,base.make_f_str(self._value),")"])
+        if self._f_str != None:
+            return self._f_str
         else:
             return base.make_f_str(self._value)
 
     def c_str(self):
-        result = self._sign + base.make_c_str(self._value)
-        if len(self._reduction_index):
+        result = base.make_c_str(self._value)
+        if self._reduction_index != None:
             if opts.fortran_style_tensor_access:
                 result += "({idx})".format(idx=self._reduction_index)
             else:
                 result += "[{idx}]".format(idx=self._reduction_index)
         return result.lower()
 
+class TTLValue(TTValue):
+    pass
 
-class TTLValue(base.TTNode, IValue):
-
-    def _assign_fields(self, tokens):
-        self._value = tokens[0]
-        self._reduction_index = ""
-    def f_str(self):
-        return base.make_f_str(self._value)
-
-    def c_str(self):
-        result = base.make_c_str(self._value)
-        if len(self._reduction_index):
-            if opts.fortran_style_tensor_access:
-                result += "({idx})".format(idx=self._reduction_index)
-            else:
-                result += "[{idx}]".format(idx=self._reduction_index)
-        return result
-
+class TTRValue(TTValue):
+    pass
 
 def _inquiry_str(prefix,ref,dim,kind=""):
     result = prefix + "(" + ref
@@ -592,7 +590,7 @@ class TTDerivedTypeMember(base.TTNode):
             result += "%"+converter(current)
         return result             
 
-    def last_element_bounds(self):
+    def innermost_member_bounds(self):
         """Returns all range args in the order of their appeareance.
         """
         result = []
@@ -604,7 +602,7 @@ class TTDerivedTypeMember(base.TTNode):
         else:
             return []
 
-    def last_element_has_range_args(self):
+    def innermost_member_has_range_args(self):
         """If any range args are present in the argument list.
         """
         result = []
@@ -616,7 +614,7 @@ class TTDerivedTypeMember(base.TTNode):
         else:
             return False
     
-    def last_element_has_args(self):
+    def innermost_member_has_args(self):
         """If any range args are present in the argument list.
         """
         result = []
@@ -628,7 +626,7 @@ class TTDerivedTypeMember(base.TTNode):
         else:
             return False
     
-    def last_element_args(self):
+    def innermost_member_args(self):
         """If any range args are present in the argument list.
         """
         result = []

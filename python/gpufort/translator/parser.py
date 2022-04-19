@@ -138,18 +138,14 @@ def parse_fortran_code(statements,result_name=None):
                         stmt, parseAll=True)
                     curr_offload_region = parse_result[0]
                     curr_offload_loop = parse_result[0]
-                    util.logging.log_debug2(
-                        opts.log_prefix, "parse_fortran_code.append_",
-                        "found {} in statement '{}'".format(
-                            "loop offloading directive", stmt))
+                    descend_(tree.TTComputeConstruct(stmt_no_comment,"", [curr_offload_region, []]),\
+                            "compute construct plus loop directive")
                 elif util.parsing.is_fortran_offload_region_directive(tokens):
-                    parse_result = tree.grammar.parallel_region_start.parseString(
+                    parse_result = tree.grammar.offload_region_start.parseString(
                         stmt, parseAll=True)
                     curr_offload_region = parse_result[0]
-                    util.logging.log_debug2(
-                        opts.log_prefix, "parse_fortran_code.append_",
-                        "found {} in statement '{}'".format(
-                            "begin of offloaded region", stmt))
+                    descend_(tree.TTComputeConstruct(stmt_no_comment,"", [curr_offload_region, []]),\
+                            "compute construct")
                 elif util.parsing.is_fortran_offload_loop_directive(tokens):
                     parse_result = tree.grammar.loop_annotation.parseString(
                         stmt, parseAll=True)
@@ -197,14 +193,7 @@ def parse_fortran_code(statements,result_name=None):
                     error_("do loop: stride", e)
             do_loop_tokens = [curr_offload_loop, begin, end, stride, []]
             do_loop = tree.TTDo(stmt, 0, do_loop_tokens)
-            if curr_offload_region != None:
-                descend_(tree.TTLoopNest(stmt_no_comment,"", [curr_offload_region, [do_loop]]),\
-                        "offloaded do loop")
-                do_loop.parent = curr
-                curr = do_loop
-                curr_offload_region = None
-            else:
-                descend_(do_loop, "do loop")
+            descend_(do_loop, "do loop")
             curr_offload_loop = None
         # if-then-else
         elif util.parsing.is_if_then(tokens):
@@ -276,7 +265,7 @@ def parse_fortran_code(statements,result_name=None):
                 if (level == 0
                    and curr_offload_region != None 
                    and curr_offload_loop == None):
-                    append_(tree.TTLoopNest(stmt_no_comment, 0, [curr_offload_region, [statement]]),\
+                    append_(tree.TTComputeConstruct(stmt_no_comment, 0, [curr_offload_region, [statement]]),\
                             "offloaded array assignment")
                 else:
                     append_(statement, "assignment")

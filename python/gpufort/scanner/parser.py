@@ -229,7 +229,7 @@ def _parse_file(linemaps, index, **kwargs):
         log_detection_("do loop")
         if (in_kernels_acc_region_and_not_recording() 
            and not util.parsing.is_do_while(current_tokens)):
-            new = tree.acc.STAccLoopNest(current_linemap, current_statement_no, acc_kernels_directive)
+            new = tree.acc.STAccComputeConstruct(current_linemap, current_statement_no, acc_kernels_directive)
             new.ignore_in_s2s_translation = not translation_enabled
             new._do_loop_ctr_memorised = do_loop_ctr
             descend_(new)
@@ -245,7 +245,7 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal index
         log_detection_("end of do loop")
         do_loop_ctr -= 1
-        if isinstance(current_node, tree.STLoopNest):
+        if isinstance(current_node, tree.STComputeConstruct):
             if keep_recording and current_node._do_loop_ctr_memorised == do_loop_ctr:
                 current_node.add_linemap(current_linemap)
                 current_node._last_statement_index = current_statement_no
@@ -409,12 +409,13 @@ def _parse_file(linemaps, index, **kwargs):
             append_if_not_recording_(new)
             util.logging.log_debug(opts.log_prefix,"_parse_file","leave acc kernels region")
         # descend in constructs or new node
-        elif (new.is_directive(["acc","parallel"]) # TODO this assumes that there will be always an acc loop afterwards
+        elif (new.is_directive(["acc","serial"]) # TODO this assumes that there will be always an acc loop afterwards
+             or  new.is_directive(["acc","parallel"]) # TODO this assumes that there will be always an acc loop afterwards
              or new.is_directive(["acc","parallel","loop"])
              or new.is_directive(["acc","kernels","loop"])
              or (acc_kernels_directive != None
                 and new.is_directive(["acc","loop"]))):
-            new = tree.acc.STAccLoopNest(current_linemap, current_statement_no, acc_kernels_directive)
+            new = tree.acc.STAccComputeConstruct(current_linemap, current_statement_no, acc_kernels_directive)
             new.kind = "acc-compute-construct"
             new.ignore_in_s2s_translation = not translation_enabled
             new._do_loop_ctr_memorised = do_loop_ctr
@@ -459,19 +460,18 @@ def _parse_file(linemaps, index, **kwargs):
             lvalue = translator.tree.find_first(parse_result, translator.tree.TTLValue)
             # TODO
             
-            if lhs_ivar["rank"] > 0: # TODO or does not have args at all
-                if lvalue.has_range_args(): 
-                    new = tree.acc.STAccLoopNest(current_linemap,
-                                                 current_statement_no,
-                                                 acc_kernels_directive)
-                    new.ignore_in_s2s_translation = not translation_enabled
-                    append_if_not_recording_(new)
-                    new.complete_init(index)
-                elif not lvalue.has_args():
-                    raise util.error.LimitationError("offloading of array assignments without explicit range arguments is currently not supported")
-            elif lvalue.has_args() and not in_kernels_acc_region_and_not_recording() and lhs_ivar["rank"] == 0:
-                # statement function
-                if lhs_ivar["f_type"] in ["integer","real","logical"]:
+            if (lhs_ivar["rank"] > 0 
+               and lvalue.has_range_args() or not lvalue.has_args()):
+                new = tree.acc.STAccComputeConstruct(current_linemap,
+                                             current_statement_no,
+                                             acc_kernels_directive)
+                new.ignore_in_s2s_translation = not translation_enabled
+                append_if_not_recording_(new)
+                new.complete_init(index)
+            elif (lhas_ivar["rank"] == 0 
+                 and lvalue.has_args() 
+                 and not in_kernels_acc_region_and_not_recording()
+                 and lhs_ivar["f_type"] in ["integer","real","logical"]):
                     if util.parsing.is_derived_type_member_access(util.parsing.tokenize(lhs_expr)):
                         raise util.error.SyntaxError("result of statement function must not be derived type member")
                     name, args, rhs_expr =\

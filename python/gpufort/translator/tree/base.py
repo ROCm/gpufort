@@ -181,7 +181,7 @@ def make_f_str(obj):
         elif type(obj) in [int, float, str]:
             return str(obj)
         else:
-            raise e
+            raise
 
 
 def flatten_body(body):

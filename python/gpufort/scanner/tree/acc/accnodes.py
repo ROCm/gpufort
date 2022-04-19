@@ -145,7 +145,7 @@ class STAccDirective(nodes.STDirective):
         return "", False
 
 
-class STAccLoopNest(STAccDirective, nodes.STLoopNest):
+class STAccComputeConstruct(STAccDirective, nodes.STComputeConstruct):
     _backends = []
 
     @classmethod
@@ -155,7 +155,7 @@ class STAccLoopNest(STAccDirective, nodes.STLoopNest):
     def __init__(self, first_linemap, first_linemap_first_statement, top_level_directive = None):
         STAccDirective.__init__(self, first_linemap,
                                 first_linemap_first_statement, top_level_directive)
-        nodes.STLoopNest.__init__(self, first_linemap,
+        nodes.STComputeConstruct.__init__(self, first_linemap,
                                   first_linemap_first_statement)
         self.dest_dialect = opts.destination_dialect
     

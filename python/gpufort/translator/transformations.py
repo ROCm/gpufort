@@ -43,15 +43,21 @@ def _collect_ranges_in_lrvalue(lrvalue,include_none_values=False):
 def _create_do_loop_statements(name,ranges,loop_indices,fortran_style_tensors):
     do_statements     = []
     end_do_statements = []
-    for i, ttrange in enumerate(ranges,1):
-        loop_idx = loop_indices[i-1]
-        lbound = ttrange.l_bound(tree.make_f_str)
+    for i, loop_idx in enumerate(loop_indices,1):
+        if len(ranges):
+            ttrange = ranges[i-1]
+            lbound = ttrange.l_bound(tree.make_f_str)
+            ubound = ttrange.u_bound(tree.make_f_str)
+            stride = ttrange.stride()
+        else:
+            lbound = ""
+            ubound = ""
+            stride = ""
         if not len(lbound):
             if fortran_style_tensors:
                 lbound = "lbound({name},{i})".format(name=name, i=i)
             else:
                 lbound = "{name}_lb{i}".format(name=name, i=i)
-        ubound = ttrange.u_bound(tree.make_f_str)
         if not len(ubound):
             if fortran_style_tensors:
                 ubound = "ubound({name},{i})".format(name=name, i=i)
@@ -59,46 +65,61 @@ def _create_do_loop_statements(name,ranges,loop_indices,fortran_style_tensors):
                 ubound = "({ubound} + {name}_n{i} - 1)".format(ubound=ubound,
                                                                name=name,
                                                                i=i)
-        stride = ttrange.stride()
         if len(stride):
             stride = "," + stride
-        do_statements.insert(0,"do {var}={lb},{ub}{step}".format(
+        do_statements.insert(0,"do {var}={lb},{ub}{stride}".format(
             var=loop_idx, lb=lbound, ub=ubound,
-            step=stride))
+            stride=stride))
         end_do_statements.insert(0,"end do")
     return do_statements, end_do_statements
 
 def _expand_array_expression(ttassignment,scope,int_counter,fortran_style_tensors):
+    """Expand expressions such as 
+    `a = b`
+    or 
+    `a(:) = b(1,1:n)`,
+    where a and b are arrays, to a nest of do - loops
+    that sets the individual elements.
+
+    :note: Currently, the code generator only if number of array
+    range expressions is equal for rvalues and lvalue.
+    No further checks are performed, e.g. if function calls
+    are present in the expression.
     """
-    - step through bounds
-    - if type is range
-      - get upper bound
-        - not found: use a_lb<i>+a_n<i>-1
-      - get lower bound
-         - not found: use a_lb<i>
-    """
-    lvalue_f_str = tree.make_f_str(ttassignment._lhs._value)
+    ttlvalue = ttassignment._lhs
+    lvalue_f_str = ttlvalue.f_str()
     livar = indexer.scope.search_scope_for_var(scope,lvalue_f_str)
     loop_indices = [] 
     if livar["rank"] > 0:
-        lvalue_ranges = _collect_ranges_in_lrvalue(ttassignment._lhs)
+        lvalue_ranges = _collect_ranges_in_lrvalue(ttlvalue)
         if len(lvalue_ranges):
-            loop_indices = [ "".join(["_i",str(int_counter+i)]) for i in range(0,len(lvalue_ranges)) ]
-            for i,idx in enumerate(loop_indices):
-                lvalue_ranges[i].overwrite_f_str(idx)
-            rvalue_ranges = []
+            num_implicit_loops = len(lvalue_ranges)
+        else:
+            num_implicit_loops = livar["rank"]
+        if num_implicit_loops > 0:
+            loop_indices = [ "".join(["_i",str(int_counter+i)]) for i in range(0,num_implicit_loops) ]
+            if len(lvalue_ranges):
+                for i,idx in enumerate(loop_indices):
+                    lvalue_ranges[i].overwrite_f_str(idx)
+            else:
+                ttlvalue.overwrite_f_str(
+                        "".join([ttlvalue.identifier_part(tree.make_f_str),
+                            "(",",".join(loop_indices),")"]))
             for ttrvalue in tree.find_all(ttassignment._rhs, searched_type=tree.TTRValue):
                 try:
-                    rvalue_f_str = tree.make_f_str(ttrvalue._value)
+                    rvalue_f_str = ttrvalue.f_str()
                     rivar = indexer.scope.search_scope_for_var(scope,rvalue_f_str)
                     if rivar["rank"] > 0:
                         rvalue_ranges = _collect_ranges_in_lrvalue(ttrvalue)
-                        if len(rvalue_ranges):
-                            if len(lvalue_ranges) == len(rvalue_ranges):
-                                for i,idx in enumerate(loop_indices):
-                                    rvalue_ranges[i].overwrite_f_str(idx)
-                            else:
-                                raise util.error.LimitationError("failed to expand colon operator expression to loopnest: not enough colon expressions in rvalue argument list")
+                        if len(rvalue_ranges) == num_implicit_loops:
+                            for i,idx in enumerate(loop_indices):
+                                rvalue_ranges[i].overwrite_f_str(idx)
+                        elif not len(rvalue_ranges) and rivar["rank"] == num_implicit_loops:
+                            ttrvalue.overwrite_f_str(
+                                    "".join([ttrvalue.identifier_part(tree.make_f_str),
+                                        "(",",".join(loop_indices),")"])) 
+                        elif len(rvalue_ranges) or rivar["rank"] != num_implicit_loops:
+                            raise util.error.LimitationError("failed to expand colon operator expression to loopnest: not enough colon expressions in rvalue argument list")
                 except util.error.LookupError:
                     pass
             f_expr = ttassignment._lhs.identifier_part(tree.make_f_str)
@@ -118,6 +139,7 @@ def expand_all_array_expressions(ttnode,scope,fortran_style_tensors=True):
     int_counter = 1
     for ttstatement in statements:
         ttassignment = ttstatement._statement
+
         statements, int_counter, modified =\
           _expand_array_expression(ttassignment,scope,int_counter,
                                    fortran_style_tensors)

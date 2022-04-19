@@ -337,11 +337,17 @@ class IComputeConstruct():
         """ only ACC parallel """
         return True
 
+    def map_outer_loops_to_threads(self):
+        """:return: If the outer loops should be mapped
+                    to threads. 
+        """
+        return True
+
     def c_str(self):
         return ""
 
 
-class TTLoopNest(base.TTContainer, IComputeConstruct):
+class TTComputeConstruct(base.TTContainer, IComputeConstruct):
 
     def _assign_fields(self, tokens):
         self._parent_directive, self.body = tokens

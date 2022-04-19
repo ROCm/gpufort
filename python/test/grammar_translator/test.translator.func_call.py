@@ -8,6 +8,7 @@ import time
 import unittest
 import addtoplevelpath
 from gpufort import grammar
+from gpufort import translator
 
 print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.stderr)
 
@@ -33,10 +34,14 @@ class TestGrammarFunctionCall(unittest.TestCase):
           "foo(jte,jde,spec_bdy_width)",
           "foo(jte,jde-1,spec_bdy_width)",
           "MIN(jte,jde-1,spec_bdy_width)",
+          "b(:,i:i+2)"
         ]
         for snippet in testdata:
             try:
                 grammar.func_call.parseString(snippet,parseAll=True)
+                translator.tree.grammar.func_call.parseString(snippet,parseAll=True)[0].f_str()
+                #print(grammar.func_call.parseString(snippet,parseAll=True))
+                #print(translator.tree.grammar.func_call.parseString(snippet,parseAll=True)[0].f_str())
                 print("successfully parsed '{}'".format(snippet))
             except Exception as e:
                 self.assertTrue(False, "failed to parse '{}'".format(snippet)) 

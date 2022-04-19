@@ -1271,6 +1271,7 @@ def is_ignored_fortran_directive(tokens):
 
 def is_fortran_offload_region_directive(tokens):
     return\
+        tokens[1:2+1] == ["acc","serial"] or\
         tokens[1:2+1] == ["acc","parallel"] or\
         tokens[1:2+1] == ["acc","kernels"]
 
@@ -1281,7 +1282,6 @@ def is_fortran_offload_region_plus_loop_directive(tokens):
         tokens[1:3+1] == ["acc","parallel","loop"] or\
         tokens[1:3+1] == ["acc","kernels","loop"] or\
         tokens[1:3+1] == ["acc","kernels","loop"]
-
 
 def is_fortran_offload_loop_directive(tokens):
     return\

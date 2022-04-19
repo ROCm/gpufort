@@ -96,7 +96,7 @@ class CodeGenerator():
 
     def _loop_kernel_filter(self, child):
         return isinstance(
-            child, scanner.tree.STLoopNest) and self._consider_kernel(child)
+            child, scanner.tree.STComputeConstruct) and self._consider_kernel(child)
 
     def _device_procedure_filter(self, stprocedure):
         return isinstance(stprocedure, scanner.tree.STProcedure) and\

@@ -639,7 +639,7 @@ class STDirective(STNode):
         STNode.__init__(self, first_linemap, first_linemap_first_statement)
         self._sentinel = sentinel
 
-class STLoopNest(STNode):
+class STComputeConstruct(STNode):
 
     def __init__(self, *args, **kwargs):
         STNode.__init__(self, *args, **kwargs)

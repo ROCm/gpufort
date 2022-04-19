@@ -120,8 +120,8 @@ class TTCufKernelDo(base.TTNode, directives.IComputeConstruct,
     def num_gangs_teams_blocks(self, converter=base.make_f_str):
         if self._grid == "*":
             return [grammar.CLAUSE_NOT_FOUND] * self._num_outer_loops_to_map
-        elif isinstance(self._block, fortran.IValue):
-            # TODO Check if IValue is actually a dim3 or not
+        elif isinstance(self._block, fortran.TTValue):
+            # TODO Check if TTValue is actually a dim3 or not
             result = []
             for i in range(0, self._num_outer_loops_to_map):
                 result.append(converter(self._grid) + "%" + chr(ord('x') + i))
@@ -132,8 +132,8 @@ class TTCufKernelDo(base.TTNode, directives.IComputeConstruct,
     def num_threads_in_block(self, converter=base.make_f_str):
         if self._block == "*":
             return [grammar.CLAUSE_NOT_FOUND] * self._num_outer_loops_to_map
-        elif isinstance(self._block, fortran.IValue):
-            # TODO Check if IValue is actually a dim3 or not
+        elif isinstance(self._block, fortran.TTValue):
+            # TODO Check if TTValue is actually a dim3 or not
             result = []
             for i in range(0, self._num_outer_loops_to_map):
                 result.append(converter(self._block) + "%" + chr(ord('x') + i))

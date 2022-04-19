@@ -15,7 +15,10 @@ def _modify_array_expressions(ttnode,lrvalues,scope,**kwargs):
     """:return: If any array expressions have been converted to loops.
     """
     fortran_style_tensor_access,_ = util.kwargs.get_value("fortran_style_tensor_access",opts.fortran_style_tensor_access,**kwargs)
-    
+
+    # TODO 
+
+
     loop_ctr = transformations.expand_all_array_expressions(ttnode, scope, fortran_style_tensor_access)
     
     # TODO pass Fortran style access option down here too
@@ -30,7 +33,7 @@ def translate_procedure_body_to_hip_kernel_body(ttprocedurebody, scope, **kwargs
     all return statements.
     """
     lrvalues = analysis.find_all_matching_exclude_directives(ttprocedurebody.body,
-                                                             lambda ttnode: isinstance(ttnode,tree.IValue))
+                                                             lambda ttnode: isinstance(ttnode,tree.TTValue))
     _modify_array_expressions(ttprocedurebody, lrvalues, scope, **kwargs)
     
     c_body = tree.make_c_str(ttprocedurebody.body)
@@ -46,7 +49,7 @@ def _handle_reductions(ttloopnest,grid_dim):
     # 2. Identify reduced variables
     for expr in tree.find_all(ttloopnest.body[0], tree.TTAssignment):
         for value in tree.find_all_matching(
-                expr, lambda x: isinstance(x, tree.IValue)):
+                expr, lambda x: isinstance(x, tree.TTValue)):
             if type(value._value) in [
                     tree.TTDerivedTypeMember, tree.TTIdentifier
             ]:
@@ -86,15 +89,19 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
     fortran_style_tensor_access,_ = util.kwargs.get_value("fortran_style_tensor_access",opts.fortran_style_tensor_access,**kwargs)
 
     lrvalues = analysis.find_all_matching_exclude_directives(ttloopnest.body,
-                                                             lambda ttnode: isinstance(ttnode,tree.IValue))
+                                                             lambda ttnode: isinstance(ttnode,tree.TTValue))
     loops_generated = _modify_array_expressions(ttloopnest,lrvalues,scope,**kwargs)
     if loops_generated: # tree was modified
         lrvalues = analysis.find_all_matching_exclude_directives(ttloopnest.body,
-                                                                 lambda ttnode: isinstance(ttnode,tree.IValue))
+                                                                 lambda ttnode: isinstance(ttnode,tree.TTValue))
  
     ttdos = analysis.perfectly_nested_do_loops_to_map(ttloopnest) 
     problem_size = analysis.problem_size(ttdos,**kwargs)
-    loop_vars = analysis.loop_vars_in_loopnest(ttdos)
+    if ttloopnest.map_outer_loops_to_threads():
+        loop_vars = analysis.loop_vars_in_loopnest(ttdos)
+    else:
+        loop_vars = []
+
     substitutions = {}
     if map_to_flat_arrays:
         substitutions.update(transformations.map_allocatable_pointer_derived_type_members_to_flat_arrays(lrvalues,loop_vars,scope))
@@ -107,27 +114,33 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
     else: # "collapse" or num_loops_to_map > 3
         grid_dim = 1
     
-    reduction_preamble = _handle_reductions(ttloopnest,grid_dim)
+    if ttloopnest.map_outer_loops_to_threads():
+        reduction_preamble = _handle_reductions(ttloopnest,grid_dim)
+    else:
+        reduction_preamble = ""
     
     # collapse and transform do-loops
-    if (num_loops_to_map <= 1 
-       or (loop_collapse_strategy == "grid" 
-          and num_loops_to_map <= 3)):
-        if len(reduction_preamble):
-            reduction_preamble += "\n"
-        indices, conditions = transformations.map_loopnest_to_grid(ttdos)
-        c_snippet = "{0}\n{2}if ({1}) {{\n{3}\n}}".format(\
-        "".join(indices),"&&".join(conditions),reduction_preamble,tree.make_c_str(ttloopnest.body[0]))
-    else: # collapse strategy or num_loops_to_map > 3
-        if len(reduction_preamble):
-            reduction_preamble += "\n"
-        preamble, indices, conditions = transformations.collapse_loopnest(ttdos)
-        c_snippet = "{2}{4}{0}if ({1}) {{\n{3}\n}}".format(
-            "".join(indices),
-            "&&".join(conditions),
-            reduction_preamble,
-            tree.make_c_str(ttloopnest.body[0]),
-            "".join(preamble))
+    if ttloopnest.map_outer_loops_to_threads(): 
+        if (num_loops_to_map <= 1 
+           or (loop_collapse_strategy == "grid" 
+              and num_loops_to_map <= 3)):
+            if len(reduction_preamble):
+                reduction_preamble += "\n"
+            indices, conditions = transformations.map_loopnest_to_grid(ttdos)
+            c_snippet = "{0}\n{2}if ({1}) {{\n{3}\n}}".format(\
+              "".join(indices),"&&".join(conditions),reduction_preamble,tree.make_c_str(ttloopnest.body[0]))
+        else: # collapse strategy or num_loops_to_map > 3
+            if len(reduction_preamble):
+                reduction_preamble += "\n"
+            preamble, indices, conditions = transformations.collapse_loopnest(ttdos)
+            c_snippet = "{2}{4}{0}if ({1}) {{\n{3}\n}}".format(
+                "".join(indices),
+                "&&".join(conditions),
+                reduction_preamble,
+                tree.make_c_str(ttloopnest.body[0]),
+                "".join(preamble))
+    else:
+        c_snippet = tree.make_c_str(ttloopnest.body[0]) 
 
     return prepostprocess.postprocess_c_snippet(c_snippet), problem_size, loop_vars, substitutions
 

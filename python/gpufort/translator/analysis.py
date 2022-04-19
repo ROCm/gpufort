@@ -212,7 +212,7 @@ def vars_in_subtree(ttnode, scope):
     """:return: all identifiers of LValue and RValues in the body."""
 
     def search_filter(node):
-        cond1 = (isinstance(node,tree.IValue)
+        cond1 = (isinstance(node,tree.TTValue)
                 and isinstance(node._value, (tree.TTDerivedTypeMember,tree.TTIdentifier,tree.TTFunctionCallOrTensorAccess)))
         if cond1 and isinstance(node._value, tree.TTFunctionCallOrTensorAccess):
             return node._value.is_tensor()
@@ -224,7 +224,7 @@ def vars_in_subtree(ttnode, scope):
 def arrays_in_subtree(ttnode, scope):
 
     def search_filter(node):
-        cond1 = (isinstance(node,tree.IValue) 
+        cond1 = (isinstance(node,tree.TTValue) 
                 and isinstance(node._value, tree.TTFunctionCallOrTensorAccess))
         if cond1 and isinstance(node._value, tree.TTFunctionCallOrTensorAccess):
             return node._value.is_tensor()

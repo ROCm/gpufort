@@ -36,7 +36,7 @@ class Acc2Omp(accbackends.AccBackendBase):
                 "failed parse directive " + str(snippet))
 
 
-class AccLoopNest2Omp(accbackends.AccBackendBase):
+class AccComputeConstruct2Omp(accbackends.AccBackendBase):
 
     def transform(self,
                   joined_lines,
@@ -54,4 +54,4 @@ class AccLoopNest2Omp(accbackends.AccBackendBase):
         return translator.codegen.translate_loopnest_to_omp(snippet, ttloopnest, inout_arrays_in_body, arrays_in_body), True
 
 accnodes.STAccDirective.register_backend(dest_dialects,Acc2Omp())
-accnodes.STAccLoopNest.register_backend(dest_dialects,AccLoopNest2Omp())
+accnodes.STAccComputeConstruct.register_backend(dest_dialects,AccComputeConstruct2Omp())

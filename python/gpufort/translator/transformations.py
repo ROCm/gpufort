@@ -131,6 +131,7 @@ def _expand_array_expression(ttassignment,scope,int_counter,fortran_style_tensor
     else:
         return [], int_counter, False
 
+
 def expand_all_array_expressions(ttnode,scope,fortran_style_tensors=True):
     def isassignmentstatement_(ttnode):
         return (isinstance(ttnode,tree.TTStatement) 
@@ -149,6 +150,16 @@ def expand_all_array_expressions(ttnode,scope,fortran_style_tensors=True):
             ttdo = parser.parse_fortran_code(statements).body[0] # parse returns ttroot
             ttstatement._statement = ttdo
     return int_counter
+
+def reduce_explicitly_mapped_arrays_in_rank(lrvalues,explicitly_mapped_vars,scope):
+    """
+        explicitly_mapped_vars = ttloopnest.explicitly_mapped_vars()
+    """
+    for ttvalue in lrvalues:
+        for var_expr in explicitly_mapped_vars():
+            if indexer.call
+    for 
+
 
 def move_statements_into_loopnest_body(ttloopnest):
     # TODO

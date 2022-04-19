@@ -33,6 +33,7 @@ def _create_analysis_var(scope, var_expr):
     tavar = copy.deepcopy(ivar)
     tavar["expr"] = util.parsing.strip_array_indexing(var_expr).lower()
     tavar["c_name"] = tavar["name"] 
+    tavar["c_rank"] = tavar["rank"]
     tavar["op"]   = ""
     append_c_type(tavar)
     return tavar
@@ -52,15 +53,13 @@ def lookup_index_entries_for_vars_in_kernel_body(scope,
                                                  reductions,
                                                  shared_vars,
                                                  local_vars,
-                                                 loop_vars,
-                                                 explicitly_mapped_vars=[]):
+                                                 loop_vars):
     """Lookup index variables
     :param list all_vars: List of all variable expressions (var)
     :param list reductions: List of tuples pairing a reduction operation with the associated
                              variable expressions
     :param list shared:     List of variable expressions that are shared by the workitems/threads in a workgroup/threadblock
     :param list local_vars: List of variable expressions that can be mapped to local variables per workitem/thread
-    :param list explicitly_mapped_vars: List of explicitly mapped vars.
     :note: Emits errors (or warning) if a variable in another list is not present in all_vars
     :note: Emits errors (or warning) if a reduction variable is part of a struct.
     :return: A tuple containing (in this order): global variables, reduced global variables, shared variables, local variables
@@ -416,10 +415,9 @@ def kernel_args_to_acc_mappings_no_types(acc_clauses,tavars,present_by_default,c
                     if tavar["expr"] == var_tag:
                         if tavar["f_type"]=="type":
                             raise util.error.LimitationError("mapping of derived type scalars and arrays not supported (yet)")
-                        else:
-                            mappings.append((var_expr, callback(kind,var_expr,tavar,**kwargs)))
-                            explicitly_mapped = True
-                            break
+                        mappings.append((var_expr, callback(kind,var_expr,tavar,**kwargs)))
+                        explicitly_mapped = True
+                        break
                 if explicitly_mapped: break
             if not explicitly_mapped and present_by_default:
                 if tavar["f_type"]=="type": # TODO refine

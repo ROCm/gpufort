@@ -186,6 +186,7 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
         self._args = tokens[1]
         self._is_tensor_access = base.Unknown3
 
+
     def bounds(self):
         """Returns all range args in the order of their appeareance.
         """
@@ -194,8 +195,7 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
     def has_range_args(self):
         """If any range args are present in the argument list.
         """
-        return not base.find_first(self._args,
-                                   searched_type=TTRange) is None
+        return base.find_first(self._args,searched_type=TTRange) != None
 
     def __guess_it_is_function(self):
         """ 
@@ -250,19 +250,19 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
 
     def c_str(self):
         name = self.name_c_str()
-        if (not opts.fortran_style_tensor_access) and self.is_tensor():
-            return "{0}[_idx_{0}({1})]".format(name, ",".join([
-                base.make_c_str(s) for s in self._args
-            ])) # Fortran identifiers cannot start with "_"
-        else:
-            return "{}({})".format(
-                name, ",".join([base.make_c_str(s) for s in self._args]))
+        return "".join([
+            name,
+            self._args.c_str(name,
+                             self.is_tensor(),
+                             opts.fortran_style_tensor_access)
+            ])
 
     def f_str(self):
         name = base.make_f_str(self._name)
-        return "{0}({1})".format(
-            name, ",".join([base.make_f_str(s) for s in self._args]))
-
+        return "".join([
+            name,
+            self._args.f_str()
+            ])
 
 class TTValue(base.TTNode):
     
@@ -891,8 +891,10 @@ class TTBounds(base.TTNode):
 
     def _assign_fields(self, tokens):
         self._bounds = []
+        self.max_rank = -1
         if tokens != None:
             self._bounds = tokens[0]
+            self.max_rank = len(self._bounds)
 
     def has_unspecified_bounds(self, converter=base.make_c_str):
         """
@@ -1074,20 +1076,39 @@ class TTBounds(base.TTNode):
                                     use_place_holders)
 
     def c_str(self):
-        """
-        Returns '[size(n)][size(n-1)]...[size1]' for all n sizes corresponding to specified bounds
-        """
         #print("{0}".format(self._bounds))
         #print("{0}".format(self.specified_counts(base.make_c_str)))
         return "".join(
             ["[{0}]".format(base.make_c_str(el)) for el in self._bounds])
 
+    def __max_rank_adjusted_bounds(self):
+        if self.max_rank > 0:
+            assert self.max_rank <= len(self._result)
+            result = self._bounds[0:self.max_rank]
+        else:
+            result = []
+        return result
+
+    def c_str(self,name,is_tensor=False,fortran_style_tensor_access=True):
+        args = self.__max_rank_adjusted_bounds()
+        if len(args):
+            if (not fortran_style_tensor_access and is_tensor):
+                return "{0}[_idx_{0}({1})]".format(name, ",".join([
+                    base.make_c_str(s) for s in args
+                ])) # Fortran identifiers cannot start with "_"
+            else:
+                return "{}({})".format(
+                    name, ",".join([base.make_c_str(s) for s in args]))
+        else:
+            return ""
+
     def f_str(self):
-        """
-        Returns '(<bound1.f_str()>,<bound2.f_str()>,...,<bound(n).f_str()>)' for all n sizes corresponding to specified bounds
-        """
-        return "({0})".format(",".join(
-            base.make_f_str(el) for el in self._bounds))
+        args = self.__max_rank_adjusted_bounds()
+        if len(args):
+            return "({0})".format(",".join(
+                base.make_f_str(el) for el in args))
+        else:
+            return ""
 
 
 class TTDimensionQualifier(base.TTNode):

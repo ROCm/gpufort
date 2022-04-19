@@ -16,9 +16,6 @@ def _modify_array_expressions(ttnode,lrvalues,scope,**kwargs):
     """
     fortran_style_tensor_access,_ = util.kwargs.get_value("fortran_style_tensor_access",opts.fortran_style_tensor_access,**kwargs)
 
-    # TODO 
-
-
     loop_ctr = transformations.expand_all_array_expressions(ttnode, scope, fortran_style_tensor_access)
     
     # TODO pass Fortran style access option down here too

@@ -460,17 +460,20 @@ def _parse_file(linemaps, index, **kwargs):
             lvalue = translator.tree.find_first(parse_result, translator.tree.TTLValue)
             # TODO
             
-            if (lhs_ivar["rank"] > 0 
-               and lvalue.has_range_args() or not lvalue.has_args()):
-                new = tree.acc.STAccComputeConstruct(current_linemap,
-                                             current_statement_no,
-                                             acc_kernels_directive)
+            if (in_kernels_acc_region_and_not_recording()
+               and lhs_ivar["rank"] > 0 
+               and (lvalue.has_range_args() 
+                   or not lvalue.has_args())):
+                new = tree.acc.STAccComputeConstruct(
+                        current_linemap,
+                        current_statement_no,
+                        acc_kernels_directive)
                 new.ignore_in_s2s_translation = not translation_enabled
                 append_if_not_recording_(new)
                 new.complete_init(index)
-            elif (lhas_ivar["rank"] == 0 
+            elif (not in_kernels_acc_region_and_not_recording()
+                 and lhs_ivar["rank"] == 0 
                  and lvalue.has_args() 
-                 and not in_kernels_acc_region_and_not_recording()
                  and lhs_ivar["f_type"] in ["integer","real","logical"]):
                     if util.parsing.is_derived_type_member_access(util.parsing.tokenize(lhs_expr)):
                         raise util.error.SyntaxError("result of statement function must not be derived type member")

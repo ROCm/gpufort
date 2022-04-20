@@ -157,6 +157,7 @@ class TTDo(base.TTContainer):
         return converter(self._begin._lhs)
 
     def c_str(self):
+        print(self.body)
         body = textwrap.dedent(base.TTContainer.c_str(self))
         if self.thread_index == None:
             idx = self.loop_var()

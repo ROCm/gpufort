@@ -26,16 +26,13 @@ class TestTranslatorPower(unittest.TestCase):
           "p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )",
         ]
         for snippet in testdata:
-            try:
-                criterion = True
-                result = snippet
-                while criterion:
-                    old_result = result
-                    result = translator.tree.grammar.power.transformString(result)
-                    criterion = old_result != result
-                print(result)
-            except Exception as e:
-                self.assertTrue(False, "failed to parse '{}'".format(snippet)) 
+            criterion = True
+            result = snippet
+            while criterion:
+                old_result = result
+                result = translator.tree.grammar.power.transformString(result)
+                criterion = old_result != result
+            print(result)
 
 if __name__ == '__main__':
     unittest.main() 

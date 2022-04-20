@@ -191,8 +191,7 @@ def parse_fortran_code(statements,result_name=None):
                     stride = tree.grammar.arithmetic_expression.parseString(stride_str)[0]
                 except pyparsing.ParseException as e:
                     error_("do loop: stride", e)
-            do_loop_tokens = [curr_offload_loop, begin, end, stride, []]
-            do_loop = tree.TTDo(stmt, 0, do_loop_tokens)
+            do_loop = tree.TTDo(stmt, 0, [curr_offload_loop, begin, end, stride, []])
             descend_(do_loop, "do loop")
             curr_offload_loop = None
         # if-then-else
@@ -259,16 +258,9 @@ def parse_fortran_code(statements,result_name=None):
             error_("pointer assignment")
         elif util.parsing.is_assignment(tokens):
             try:
-                parse_result = tree.grammar.fortran_assignment.parseString(
-                    stmt_no_comment, parseAll=True)
-                statement = tree.TTStatement(stmt_no_comment, 0, parse_result[0])
-                if (level == 0
-                   and curr_offload_region != None 
-                   and curr_offload_loop == None):
-                    append_(tree.TTComputeConstruct(stmt_no_comment, 0, [curr_offload_region, [statement]]),\
-                            "offloaded array assignment")
-                else:
-                    append_(statement, "assignment")
+                assignment_variant = tree.grammar.fortran_assignment.parseString(
+                    stmt_no_comment, parseAll=True)[0]
+                append_(parse_result[0], "assignment")
             except pyparsing.ParseException as e:
                 error_("assignment", e)
         elif tokens[0] == "return":

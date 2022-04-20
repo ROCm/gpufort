@@ -48,7 +48,13 @@ class TTContainer(TTNode):
         self.body   = []
         self.indent = opts.indent 
         self._assign_fields(tokens)
-    
+   
+    def __len__(self):
+        return len(self.body)
+
+    def __iter__(self):
+        return iter(self.body)
+ 
     def append(self, node):
         self.body.append(node)
 
@@ -163,7 +169,7 @@ def make_c_str(obj):
         elif type(obj) in [bool, int, float, str]:
             return str(obj).lower()
         else:
-            raise e
+            raise Exception("cannot convert object of type '{}' to C expression".format(type(obj))) from e
 
 
 def make_f_str(obj):
@@ -181,7 +187,7 @@ def make_f_str(obj):
         elif type(obj) in [int, float, str]:
             return str(obj)
         else:
-            raise
+            raise Exception("cannot convert object of type '{}' to Fortran expression".format(type(obj))) from e
 
 
 def flatten_body(body):

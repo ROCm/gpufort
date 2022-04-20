@@ -91,7 +91,6 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
     if loops_generated: # tree was modified
         lrvalues = analysis.find_all_matching_exclude_directives(ttloopnest.body,
                                                                  lambda ttnode: isinstance(ttnode,tree.TTValue))
- 
     ttdos = analysis.perfectly_nested_do_loops_to_map(ttloopnest) 
     problem_size = analysis.problem_size(ttdos,**kwargs)
     if ttloopnest.map_outer_loops_to_threads():
@@ -125,7 +124,7 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
                 reduction_preamble += "\n"
             indices, conditions = transformations.map_loopnest_to_grid(ttdos)
             c_snippet = "{0}\n{2}if ({1}) {{\n{3}\n}}".format(\
-              "".join(indices),"&&".join(conditions),reduction_preamble,tree.make_c_str(ttloopnest.body[0]))
+              "".join(indices),"&&".join(conditions),reduction_preamble,tree.make_c_str(ttloopnest))
         else: # collapse strategy or num_loops_to_map > 3
             if len(reduction_preamble):
                 reduction_preamble += "\n"
@@ -134,7 +133,7 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
                 "".join(indices),
                 "&&".join(conditions),
                 reduction_preamble,
-                tree.make_c_str(ttloopnest.body[0]),
+                tree.make_c_str(ttloopnest),
                 "".join(preamble))
     else:
         c_snippet = tree.make_c_str(ttloopnest.body[0]) 

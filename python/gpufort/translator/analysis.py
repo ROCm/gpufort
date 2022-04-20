@@ -327,37 +327,33 @@ def loop_vars_in_loopnest(ttdos):
     return identifier_names
 
 def _perfectly_nested_outer_do_loops(ttloopnest):
-    """TODO 
+    """:return: Perfectly nested do loops, comments are ignored. 
     """
-    if isinstance(ttloopnest.body[0],tree.TTStatement):
-        # in this case, an array expression was unpacked.
-        # The result is always a perfect loopnest
-        return tree.find_all(ttloopnest.body[0], tree.TTDo), True
-    elif isinstance(ttloopnest.body[0],tree.TTDo):
-        ttdos = []
-        # check for interdependent loops
-        current = ttloopnest.body[0]
-        ttdos.append(current)
-        
-        def condition_(current):
-            return (len(current.body) == 1
-                   and (isinstance(current.body[0],tree.TTDo)
-                       or (isinstance(current.body[0],tree.TTStatement)
-                          and isinstance(current.body[0]._statement,tree.TTDo))))
-        while condition_(current):
-            if isinstance(current.body[0],tree.TTDo):
-                current = current.body[0]
-            else:
-                current = current.body[0]._statement
-            ttdos.append(current)
-        return ttdos, False
+    ttdos = []
+    def descend_(ttcontainer,depth=1):
+        nonlocal ttdos
+        for child in ttcontainer:
+            if isinstance(child,tree.TTDo):
+                ttdos.append(child)
+                descend_(child,depth+1)
+            elif not isinstance(child,tree.TTCommentedOut):
+                # if there are other statements on the same level
+                # and a do loop was added, remove it and its
+                # inner loops. Then break the loop.
+                while len(ttdos) >= depth:
+                    ttdos.pop(-1)
+                break
+    descend_(ttloopnest)
+    return ttdos
 
 def perfectly_nested_do_loops_to_map(ttloopnest):
-    num_loops_to_map = max(1,int(ttloopnest.parent_directive().num_collapse()))
-    ttdos, from_array_expression = _perfectly_nested_outer_do_loops(ttloopnest)
-    if from_array_expression:
-        num_loops_to_map = len(ttdos)
-    return ttdos[0:num_loops_to_map]
+    num_loops_to_map = int(ttloopnest.parent_directive().num_collapse())
+    ttdos = _perfectly_nested_outer_do_loops(ttloopnest)
+    if (num_loops_to_map <= 0
+       or num_loops_to_map > len(ttdos)):
+        return ttdos
+    else:
+        return ttdos[0:num_loops_to_map]
 
 def problem_size(ttdos,**kwargs):
     loop_collapse_strategy,_ = util.kwargs.get_value("loop_collapse_strategy",opts.loop_collapse_strategy,**kwargs)

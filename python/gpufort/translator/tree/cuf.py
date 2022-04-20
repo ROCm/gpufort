@@ -204,55 +204,6 @@ class TTCufKernelDo(base.TTNode, directives.IComputeConstruct,
                         inout_arrays_in_body) + ")"
         return result
 
-
-class TTAllocateRValue(base.TTNode):
-
-    def _assign_fields(self, tokens):
-        self._var = tokens[0]
-        self._bounds = None
-        if len(tokens) == 2:
-            self._bounds = tokens[1]
-
-    def var_name(self, converter=base.make_f_str):
-        """
-        A name that can be used to generate macros
-        and to look up the corresponding definitions.
-        Derived type elements return the full identifier name, e.g.
-        `mytype%myothertype%myvar`.
-        """
-        return converter(self._var)
-
-    def bound_var_assignments(self, array_name):
-        if self._bounds != None:
-            return self._bounds.bound_var_assignments(array_name)
-        else:
-            # TODO(gpufort): Add Warning
-            return "TODO(gpufort): UNKNOWN"
-
-    def size(self, bytes_per_element=1, converter=base.make_c_str):
-        if self._bounds != None:
-            return self._bounds.size(bytes_per_element, converter)
-        else:
-            # TODO(gpufort): Add Warning
-            return "TODO(gpufort): UNKNOWN"
-
-    def counts_f_str(self):
-        if self._bounds != None:
-            return self._bounds.specified_counts(base.make_f_str)
-        else:
-            # TODO(gpufort): Add Warning
-            return "TODO(gpufort): UNKNOWN"
-
-    def c_str(self):
-        assert False, "TTAllocateRValue: 'c_str(self)' not implemented"
-
-    def f_str(self):
-        if self._bounds != None:
-            return base.make_f_str(self._var) + base.make_f_str(self._bounds)
-        else:
-            return base.make_f_str(self._var)
-
-
 class TTCufAllocated(base.TTNode):
     """
      
@@ -266,8 +217,8 @@ class TTCufAllocated(base.TTNode):
     def _assign_fields(self, tokens):
         self._var = tokens[0]
 
-    def var_name(self):
-        return self._var.var_name()
+    def var_name(self,converter=base.make_f_str):
+        return self._var.identifier_part(converter)
 
     def f_str(self, var_is_c_ptr=False):
         if var_is_c_ptr:
@@ -327,125 +278,6 @@ class TTCufPointerAssignment(base.TTNode):
             return "{0} => {1}\n{2}".format(lhs_name, rhs_name)
 
 
-class TTCufAllocate(base.TTNode): # TODO not specific to CUF
-    """
-    This statement has nearly no context except the bounds (in elements, not bytes)
-    of the array that is allocated.
-    Most information needs to be provided from calling function in order
-    to convert this call to a hipMalloc.
-    """
-
-    def _assign_fields(self, tokens):
-        self._vars = tokens
-
-    def variable_names(self):
-        """
-        :return: names of the variables appearing on the right-hand-side.
-        :return type: list of str
-        """
-        return [array.var_name() for array in self._vars]
-
-    def omp_f_str(self,
-                  bytes_per_element,
-                  array_qualifiers,
-                  indent="",
-                  vars_are_c_ptrs=False):
-        assert False, "Not implemented!" # TODO omp target alloc
-
-    def hip_f_str(self,
-                  bytes_per_element,
-                  array_qualifiers,
-                  vars_are_c_ptrs=False):
-        """Generate HIP ISO C Fortran expression for all
-        device and pinned host allocations.
-        Use standard allocate for all other allocations.
-        :param array_qualifiers: List storing per variable, one of 'managed', 'constant', 'shared', 'pinned', 'texture', 'device' or None.
-        :see: variable_names(self) 
-        """
-        assert len(bytes_per_element) is len(self._vars)
-        assert len(array_qualifiers) is len(self._vars)
-        result = []
-        other_arrays = []
-        for i, array in enumerate(self._vars):
-            if vars_are_c_ptrs:
-                size = array.size(bytes_per_element[i],
-                                  base.make_f_str) # total size in bytes
-            else:
-                size = ",".join(
-                    array.counts_f_str()) # element counts per dimension
-            if array_qualifiers[i] == "device":
-                line = "call hipCheck(hipMalloc({0}, {1}))".format(
-                    array.var_name(), size)
-                result.append(line)
-            elif array_qualifiers[i] == "pinned":
-                line = "call hipCheck(hipHostMalloc({0}, {1}, 0))".format(
-                    array.var_name(), size)
-                result.append(line)
-            else:
-                other_arrays.append(base.make_f_str(array))
-            if vars_are_c_ptrs and not array_qualifiers[i] in [
-                    "pinned", "device"
-            ]:
-                result += array.bound_var_assignments(array.var_name())
-        if len(other_arrays):
-            line = "allocate({0})".format(",".join(other_arrays))
-            result.append(line)
-        return "\n".join(result)
-
-
-class TTCufDeallocate(base.TTNode): # TODO not specific to CUF
-    """
-    This statement has nearly no context except the bounds (in elements, not bytes)
-    of the array that is allocated.
-    Most information needs to be provided from calling function in order
-    to convert this call to a hip malloc.
-    """
-
-    def _assign_fields(self, tokens):
-        self._vars = tokens
-
-    def configure(self, bytes_per_element, array_qualifiers):
-        self._array_qualifiers = array_qualifiers
-
-    def variable_names(self):
-        """
-        :return: names of the variables appearing on the right-hand-side.
-        :return type: list of str
-        """
-        return [array.var_name() for array in self._vars]
-
-    def omp_f_str(self, array_qualifiers, indent="", vars_are_c_ptrs=False):
-        assert False, "Not implemented!" # TODO omp target free
-
-    def hip_f_str(self, array_qualifiers):
-        """
-        Generate HIP ISO C Fortran expression for all
-        device and pinned host allocations.
-        Use standard allocate for all other allocations.
-        :param array_qualifiers: List storing per variable, one of 'managed', 'constant', 'shared', 'pinned', 'texture', 'device', None
-        or no entry at all.
-        :see: variable_names(self) 
-        """
-        result = []
-        other_arrays = []
-
-        for i, array in enumerate(self._vars):
-            if array_qualifiers[i] == "device":
-                line = "call hipCheck(hipFree({0}))".format(
-                    array.var_name())
-                result.append(line)
-            elif array_qualifiers[i] == "pinned":
-                line = "call hipCheck(hipHostFree({0}))".format(
-                    array.var_name())
-                result.append(line)
-            else:
-                other_arrays.append(base.make_f_str(array))
-        if len(other_arrays):
-            line = "deallocate({0})".format(",".join(other_arrays))
-            result.append(line)
-        return "\n".join(result)
-
-
 class CufMemcpyBase():
     """
     Abstract base class.
@@ -471,25 +303,25 @@ class CufMemcpyBase():
         """
         :return: name of destination variable; may contain '%' if derived type member.
         """
-        return base.make_f_str(self._dest._var)
+        return base.make_f_str(self._dest.identifier_part(base.make_f_str))
 
     def src_name_f_str(self):
         """
         :return: name of source variable; may contain '%' if derived type member.
         """
-        return base.make_f_str(self._src._var)
+        return base.make_f_str(self._src.identifier_part(base.make_f_str))
 
     def dest_has_args(self):
         """
         :return: name of destination variable; may contain '%' if derived type member.
         """
-        return self._dest._bounds != None
+        return self._dest.bounds() != None
 
     def src_has_args(self):
         """
         :return: name of source variable; may contain '%' if derived type member.
         """
-        return self._src._bounds != None
+        return self._src.bounds() != None
 
     def size_f_str(self, name, bytes_per_element=1):
         """
@@ -525,7 +357,7 @@ class TTCufMemcpyIntrinsic(base.TTNode, CufMemcpyBase):
     def _assign_fields(self, tokens):
         self._dest = tokens[0]
         self._src = tokens[1]
-        self._bounds = tokens[0]._bounds
+        self._bounds = tokens[0].bounds()
         self._memcpy_kind = None
 
     def hip_f_str(self,
@@ -651,11 +483,7 @@ class TTCufCublasCall(base.TTNode):
 grammar.cuf_kernel_do.setParseAction(TTCufKernelDo)
 #cuf_loop_kernel.setParseAction(TTCufKernelDo)
 grammar.attributes.setParseAction(TTAttributes)
-grammar.allocate_rvalue.setParseAction(TTAllocateRValue)
-grammar.memcpy_value.setParseAction(TTAllocateRValue)
-grammar.allocate.setParseAction(TTCufAllocate)
 grammar.allocated.setParseAction(TTCufAllocated)
-grammar.deallocate.setParseAction(TTCufDeallocate)
 grammar.memcpy.setParseAction(TTCufMemcpyIntrinsic)
 grammar.non_zero_check.setParseAction(TTCufNonZeroCheck)
 #pointer_assignment.setParseAction(TTCufPointerAssignment)

@@ -7,8 +7,8 @@ from gpufort import util
 from gpufort import fort2x
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
-util.logging.opts.verbose = False
-util.logging.init_logging("log.log", LOG_FORMAT, "debug")
+util.logging.opts.verbose = True
+util.logging.init_logging("log.log", LOG_FORMAT, "debug2")
 
 declaration_list = """\
 integer, parameter :: N = 1000, M=2000

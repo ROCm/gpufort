@@ -10,22 +10,21 @@ from . import opts
 
 def _collect_ranges(function_call_args,include_none_values=False):
     ttranges = []
-    for i,elem in enumerate(function_call_args):
-        ttnode = elem[0]
+    for i,ttnode in enumerate(function_call_args):
         if isinstance(ttnode, tree.TTRange):
             ttranges.append(ttnode)
         elif include_none_values:
             ttranges.append(None)
     return ttranges
 
-def _collect_ranges_in_lrvalue(lrvalue,include_none_values=False):
+def _collect_ranges_in_ttvalue(ttvalue,include_none_values=False):
     """
     :return A list of range objects. If the list is empty, no function call
             or tensor access has been found. If the list contains a None element
             this implies that a function call or tensor access has been found 
             was scalar index argument was used.
     """
-    current = lrvalue._value
+    current = ttvalue._value
     if isinstance(current,tree.TTFunctionCallOrTensorAccess):
         return _collect_ranges(current._args,include_none_values)
     elif isinstance(current,tree.TTDerivedTypeMember):
@@ -52,7 +51,7 @@ def _create_do_loop_statements(name,ranges,loop_indices,fortran_style_tensors):
         else:
             lbound = ""
             ubound = ""
-            stride = ""
+            stride = "1"
         if not len(lbound):
             if fortran_style_tensors:
                 lbound = "lbound({name},{i})".format(name=name, i=i)
@@ -91,8 +90,9 @@ def _expand_array_expression(ttassignment,scope,int_counter,fortran_style_tensor
     livar = indexer.scope.search_scope_for_var(scope,lvalue_f_str)
     loop_indices = [] 
     if livar["rank"] > 0:
-        lvalue_ranges = _collect_ranges_in_lrvalue(ttlvalue)
-        if len(lvalue_ranges):
+        lvalue_ranges_or_none = _collect_ranges_in_ttvalue(ttlvalue,include_none_values=True)
+        lvalue_ranges = [r for r in lvalue_ranges_or_none if r != None]
+        if len(lvalue_ranges_or_none):
             num_implicit_loops = len(lvalue_ranges)
         else:
             num_implicit_loops = livar["rank"]
@@ -110,11 +110,12 @@ def _expand_array_expression(ttassignment,scope,int_counter,fortran_style_tensor
                     rvalue_f_str = ttrvalue.f_str()
                     rivar = indexer.scope.search_scope_for_var(scope,rvalue_f_str)
                     if rivar["rank"] > 0:
-                        rvalue_ranges = _collect_ranges_in_lrvalue(ttrvalue)
+                        rvalue_ranges_or_none = _collect_ranges_in_ttvalue(ttrvalue,include_none_values=True)
+                        rvalue_ranges = [r for r in rvalue_ranges_or_none if r != None] 
                         if len(rvalue_ranges) == num_implicit_loops:
                             for i,idx in enumerate(loop_indices):
                                 rvalue_ranges[i].overwrite_f_str(idx)
-                        elif not len(rvalue_ranges) and rivar["rank"] == num_implicit_loops:
+                        elif not len(rvalue_ranges_or_none) and rivar["rank"] == num_implicit_loops:
                             ttrvalue.overwrite_f_str(
                                     "".join([ttrvalue.identifier_part(tree.make_f_str),
                                         "(",",".join(loop_indices),")"])) 
@@ -130,35 +131,38 @@ def _expand_array_expression(ttassignment,scope,int_counter,fortran_style_tensor
             return [], int_counter, False
     else:
         return [], int_counter, False
+    
+def _traverse_tree(current,idx,parent,callback):
+    callback(current,idx,parent)
+    if isinstance(current,tree.TTContainer):
+        for i,child in enumerate(current):
+            _traverse_tree(child,i,parent,callback)
 
-
-def expand_all_array_expressions(ttnode,scope,fortran_style_tensors=True):
-    def isassignmentstatement_(ttnode):
-        return (isinstance(ttnode,tree.TTStatement) 
-               and isinstance(ttnode._statement,tree.TTAssignment))
-    statements = analysis.find_all_matching_exclude_directives(ttnode,isassignmentstatement_)
+def expand_all_array_expressions(ttcontainer,scope,fortran_style_tensors=True):
     int_counter = 1
-    for ttstatement in statements:
-        ttassignment = ttstatement._statement
-
-        statements, int_counter, modified =\
-          _expand_array_expression(ttassignment,scope,int_counter,
-                                   fortran_style_tensors)
-        # TODO add some log statements
-        #print("\n".join(statements))
-        if modified:
-            ttdo = parser.parse_fortran_code(statements).body[0] # parse returns ttroot
-            ttstatement._statement = ttdo
+    def callback_(current,idx,parent):
+        nonlocal int_counter
+        if isinstance(current,tree.TTAssignment):
+            statements, int_counter, modified =\
+              _expand_array_expression(current,scope,int_counter,
+                                       fortran_style_tensors)
+            if modified:
+                ttdo = parser.parse_fortran_code(statements).body[0] # parse returns ttroot
+                parent.body[idx] = ttdo
+    assert isinstance(ttcontainer,tree.TTContainer)
+    _traverse_tree(ttcontainer,0,ttcontainer.parent,callback_)
     return int_counter
 
-def reduce_explicitly_mapped_arrays_in_rank(lrvalues,explicitly_mapped_vars,scope):
-    """
-        explicitly_mapped_vars = ttloopnest.explicitly_mapped_vars()
-    """
-    for ttvalue in lrvalues:
-        for var_expr in explicitly_mapped_vars():
-            if indexer.call
-    for 
+#def adjust_explicitly_mapped_arrays_in_rank(ttvalues,explicitly_mapped_vars,scope):
+#    """
+#    explicitly_mapped_vars = ttloopnest.explicitly_mapped_vars()
+#    """
+#    for ttvalue in ttvalues:
+#        value_tag   = indexer.scope.create_index_search_tag_for_var(ttvalue.f_str())
+#        for var_expr in explicitly_mapped_vars():
+#            mapping_tag = indexer.scope.create_index_search_tag_for_var(var_expr.f_str())
+#            if value_tag == mapping_tag:
+#                if var_expr.has_step     
 
 
 def move_statements_into_loopnest_body(ttloopnest):
@@ -224,7 +228,7 @@ def map_loopnest_to_grid(ttdos):
             break
     return indices, conditions
 
-def map_allocatable_pointer_derived_type_members_to_flat_arrays(lrvalues,loop_vars,scope):
+def map_allocatable_pointer_derived_type_members_to_flat_arrays(ttvalues,loop_vars,scope):
     r"""Converts derived type expressions whose innermost element is an array of allocatable or pointer
     type to flat arrays in expectation that these will be provided
     to kernel as flat arrays too.
@@ -232,8 +236,8 @@ def map_allocatable_pointer_derived_type_members_to_flat_arrays(lrvalues,loop_va
              original variable expressions.
     """
     substitutions = {}
-    for lrvalue in lrvalues:
-        ttnode = lrvalue.get_value()
+    for ttvalue in ttvalues:
+        ttnode = ttvalue.get_value()
         if isinstance(ttnode,tree.TTDerivedTypeMember):
             ident = ttnode.identifier_part()
             ivar = indexer.scope.search_scope_for_var(scope,ident)
@@ -256,7 +260,7 @@ def map_allocatable_pointer_derived_type_members_to_flat_arrays(lrvalues,loop_va
                 substitutions[var_expr] = c_name
     return substitutions
 
-def map_scalar_derived_type_members_to_flat_scalars(lrvalues,loop_vars,scope):
+def map_scalar_derived_type_members_to_flat_scalars(ttvalues,loop_vars,scope):
     r"""Converts derived type expressions whose innermost element is a basic
     scalar type to flat arrays in expectation that these will be provided
     to kernel as flat scalars too via first private.
@@ -264,8 +268,8 @@ def map_scalar_derived_type_members_to_flat_scalars(lrvalues,loop_vars,scope):
              original variable expressions.
     """
     substitutions = {}
-    for lrvalue in lrvalues:
-        ttnode = lrvalue.get_value()
+    for ttvalue in ttvalues:
+        ttnode = ttvalue.get_value()
         if isinstance(ttnode,tree.TTDerivedTypeMember):
             ident = ttnode.identifier_part()
             ivar = indexer.scope.search_scope_for_var(scope,ident)
@@ -290,9 +294,9 @@ def map_scalar_derived_type_members_to_flat_scalars(lrvalues,loop_vars,scope):
                 raise util.error.LimitationError("cannot map derived type members of derived type '{}'".format(ident))
     return substitutions
 
-def flag_tensors(lrvalues, scope):
+def flag_tensors(ttvalues, scope):
     """Clarify types of function calls / tensor access that are not members of a struct."""
-    for value in lrvalues:
+    for value in ttvalues:
         if isinstance(value._value, tree.TTFunctionCallOrTensorAccess):
            try:
               _ = indexer.scope.search_scope_for_var(scope, value._value.f_str()) # just check if the var exists

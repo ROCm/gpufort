@@ -14,7 +14,7 @@ ASYNC,WAIT,NUM_GANGS,NUM_WORKERS,VECTOR_LENGTH,DEVICE_TYPE,COPY,COPYIN,COPYOUT,C
 GANG,VECTOR,WORKER = makeCaselessLiteral("gang,vector,worker",suppress=True)
 ACC_REDUCTION_OP   = oneOf("+ * max min iand ior ieor .and. .or. .eqv. .neqv.",caseless=CASELESS)
 
-acc_var_list = LPAR + Group(delimitedList(allocate_rvalue)) + RPAR
+acc_var_list = LPAR + Group(delimitedList(rvalue)) + RPAR
 
 # clauses
 acc_clause_gang          = GANG + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
@@ -31,7 +31,7 @@ acc_clause_if            = IF + LPAR + arithmetic_logical_expression + RPAR
 acc_mapping_clause  = identifier.copy() + acc_var_list
 
 acc_clause_default   = DEFAULT   + LPAR + (CASELESS_LITERAL("none") | CASELESS_LITERAL("present")) + RPAR # do not suppress
-acc_clause_reduction = REDUCTION + LPAR + ACC_REDUCTION_OP + Suppress(":") + Group(delimitedList(allocate_rvalue)) + RPAR
+acc_clause_reduction = REDUCTION + LPAR + ACC_REDUCTION_OP + Suppress(":") + Group(delimitedList(rvalue)) + RPAR
 acc_clause_collapse  = COLLAPSE  + LPAR + integer + RPAR
 acc_clause_self      = SELF      + LPAR + arithmetic_logical_expression + RPAR # for compute constructs; not for update
 acc_clause_bind      = BIND      + LPAR + identifier + RPAR

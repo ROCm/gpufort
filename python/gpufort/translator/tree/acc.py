@@ -72,7 +72,7 @@ class TTAccMappingClause(base.TTNode):
         self.var_list = tokens[1].asList()
 
     def var_names(self, converter=base.make_f_str):
-        return [var.var_name(converter) for var in self.var_list]
+        return [var.identifier_part(converter) for var in self.var_list]
 
     def var_expressions(self, converter=base.make_f_str):
         return [converter(var) for var in self.var_list]

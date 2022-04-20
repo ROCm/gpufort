@@ -254,9 +254,8 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
             name,
             self._args.c_str(name,
                              self.is_tensor(),
-                             opts.fortran_style_tensor_access)
-            ])
-
+                             opts.fortran_style_tensor_access)])
+    
     def f_str(self):
         name = base.make_f_str(self._name)
         return "".join([
@@ -727,27 +726,21 @@ class TTComplexArithmeticExpression(base.TTNode):
 class TTPower(base.TTNode):
 
     def _assign_fields(self, tokens):
-        self._base, self._exp = tokens
+        self.base, self.exp = tokens
 
     def children(self):
-        return [self._base, self._exp]
+        return [self.base, self.exp]
 
     def gpufort_f_str(self, scope=None):
-        sign = ""
-        thebase = self._base
-        if type(self._base) is TTRValue:
-            thebase = self._base._value
-            sign = self._base._sign
-        return "{sign}__pow({base},{exp})".format(\
-            sign=base.make_f_str(sign),base=base.make_f_str(thebase),
-            exp=base.make_f_str(self._exp))
+        return "__pow({base},{exp})".format(base=base.make_f_str(self.base),
+            exp=base.make_f_str(self.exp))
 
-    __str__ = gpufort_f_str
+    def __str__(self):
+        return self.gpufort_f_str()
 
     def f_str(self):
         return "({base})**({exp})".format(\
-            base=base.make_c_str(self._base),exp=base.make_c_str(self._exp))
-
+            base=base.make_c_str(self.base),exp=base.make_c_str(self.exp))
 
 class TTAssignment(base.TTNode):
 
@@ -874,242 +867,57 @@ class TTRange(base.TTNode):
             return result
 
 
-class TTBounds(base.TTNode):
-    """
-    Spawned from grammar:
-    
-    ```python
-    dimension_list  = delimitedList(dimension_value)
-    ```
- 
-    where
-    
-    ```python 
-    dimension_value = ( range | arithmetic_expression | Literal("*"))
-    ```
-    """
-
+class TTArgumentList(base.TTNode):
     def _assign_fields(self, tokens):
-        self._bounds = []
+        self.items = []
         self.max_rank = -1
         if tokens != None:
-            self._bounds = tokens[0]
-            self.max_rank = len(self._bounds)
-
-    def has_unspecified_bounds(self, converter=base.make_c_str):
-        """
-        Typically the case if the declaration variable has
-        a ALLOCATABLE or POINTER qualifier.
-        """
-        result = False
-        for dim in self._bounds:
-            result |= type(dim) is str and dim == "*"
-            result |= type(dim) in [
-                TTRange
-            ] and (dim.unspecified_l_bound() or dim.unspecified_u_bound())
-        return result
-
-    def rank(self):
-        """
-        :return: the rank, i.e. the number of dimensions.
-        """
-        return len(self._bounds)
-
-    def specified_bounds(self, converter=base.make_c_str):
-        """
-        :return: list that contains a list [lower, upper] per specified dimension of the array.
-        Note that in Fortran the fastest running ("stride(1)")
-        index is on the left in expressions `(i0,i1,..,in)`, while in C the fastest
-        running index is on the right in expressions `[in][in-1]...[i0]`.
-        """
-        result = []
-        for el in self._bounds:
-            if type(el) is TTArithmeticExpression:
-                result.append(["1", converter(el)])
-            elif type(el) is TTRange:
-                result.append([el.l_bound(converter), el.u_bound(converter)])
-            elif el in [":", "*"]:
-                pass
-        return result
-
-    def specified_counts(self, converter=base.make_c_str):
-        """
-        Used for mallocs. These are just the counts.
-        (Number of bytes requires knowledge of datatype too.)
-        """
-        result = [
-            "{0}".format(el[1]) if el[0] == "1" else "{1} - ({0}) + 1".format(
-                el[0], el[1]) for el in self.specified_bounds(converter)
-        ]
-        for i, el in enumerate(result):
             try:
-                result[i] = str(ast.literal_eval(el))
-            except:
-                result[i] = el
-        return result
-
-    def specified_lower_bounds(self, converter=base.make_c_str):
-        """
-        Used for mallocs. These are just the counts.
-        (Number of bytes requires knowledge of datatype too.)
-        """
-        result = [el[0] for el in self.specified_bounds(converter)]
-        return result
-
-    def size(self, bytes_per_element="1", converter=base.make_c_str):
-        """
-        Used for mallocs. These are just the counts.
-        (Number of bytes requires knowledge of datatype too.)
-        """
-        result = "*".join(
-            ["({0})".format(dim) for dim in self.specified_counts(converter)])
-        if bytes_per_element != "1":
-            result = "(" + bytes_per_element + ")*" + result
-        if converter is base.make_f_str:
-            result = "1_8*" + result
-        return result
-
-    def bound_var_names(self, variable_name, converter=base.make_c_str):
-        """
-        Used for function arguments and declarations
-        """
-        result = [
-            "{0}_n{1}".format(variable_name, i + 1)
-            for i in range(0, len(self._bounds))
-        ]
-        result += [
-            "{0}_lb{1}".format(variable_name, i + 1)
-            for i in range(0, len(self._bounds))
-        ]
-        return result
-
-    def bound_var_assignments(self,
-                                   variable_name,
-                                   converter=base.make_c_str):
-        """
-        Used for assigning values to the bound variables. Can in general not be put in
-        declaration as rhs may not be constant.
-        """
-        counts = self.specified_counts(converter)
-        lower_bounds = self.specified_lower_bounds(converter)
-        result = [
-            "{0}_n{1} = {2}".format(variable_name, i + 1, val)
-            for i, val in enumerate(counts)
-        ]
-        result += [
-            "{0}_lb{1} = {2}".format(variable_name, i + 1, val)
-            for i, val in enumerate(lower_bounds)
-        ]
-        return result
-
-    def index_str(self, variable_name, use_place_holders=False, macro_args=[]):
-        """
-        Linearises the multivariate index required to access the original Fortran array.
-        :param variable_name: Name of the array this bound is associated with.
-        :type variable_name: str
-        :return: an expression for the index (as string) or None if no bounds were specified.
-        """
-        bounds_specified = not self.has_unspecified_bounds()
-        bounds = self.specified_bounds(
-            base.make_c_str) if bounds_specified else self._bounds
-        lower_bounds = self.specified_lower_bounds(
-            base.make_c_str) if bounds_specified else ["1"] * len(
-                self._bounds) # TODO
-        if bounds_specified:
-            counts = self.specified_counts()
-        if len(bounds):
-            if not len(macro_args):
-                macro_args = [chr(ord('a') + i) for i in range(0, len(bounds))]
-            assert len(macro_args) == len(bounds)
-            if not bounds_specified or use_place_holders:
-                bound_args = [
-                    "{0}_n{1}".format(variable_name, i + 1)
-                    for i in range(0, len(bounds))
-                ]
-                lower_bound_args = [
-                    "{0}_lb{1}".format(variable_name, i + 1)
-                    for i in range(0, len(bounds))
-                ]
-            else:
-                bound_args = counts
-                lower_bound_args = lower_bounds
-            stride = ""
-            prod = ""
-            index = ""
-            for i, mvar in enumerate(macro_args):
-                index += "{0}({1}-({2}))".format(stride, mvar,
-                                                 lower_bound_args[i])
-                prod = "{}{}*".format(prod, bound_args[i])
-                stride = "+{0}".format(prod)
-            return index
-        else:
-            return None
-
-    def index_macro_str(self,
-                        variable_name,
-                        converter=base.make_c_str,
-                        use_place_holders=False):
-        """
-        Linearizes the multivariate index required to access the original Fortran array.
-        :param variable_name: Name of the array this bound is associated with.
-        :type variable_name: str
-        :return: an expression for the index (as string) or None if no bounds were specified.
-        """
-        bounds_specified = not self.has_unspecified_bounds()
-        bounds = list(self.specified_bounds(
-            base.make_c_str)) if bounds_specified else self._bounds
-        macro_args = [chr(ord('a') + i) for i in range(0, len(bounds))]
-        index = self.index_str(variable_name, use_place_holders)
-        if converter is base.make_f_str:
-            return "#undef {0}\n#define {0}({1}) inc_c_ptr({0}, {2})".format(
-                variable_name, ",".join(macro_args), index)
-        else:
-            return "#undef _idx_{0}\n#define _idx_{0}({1}) ({2})".format(
-                variable_name, ",".join(macro_args), index)
-
-    def index_macro_f_str(self, variable_name, use_place_holders=False):
-        return self.index_macro_str(variable_name, base.make_f_str,
-                                    use_place_holders)
-
-    def index_macro_c_str(self, variable_name, use_place_holders=False):
-        return self.index_macro_str(variable_name, base.make_c_str,
-                                    use_place_holders)
+                self.items = tokens[0].asList()
+            except AttributeError:
+                if isinstance(tokens[0],list):
+                    self.items = tokens[0]
+                else:
+                    raise
+            self.max_rank = len(self.items)
+        self.__next_idx = 0
+    def __len__(self):
+        return len(self.items)
+    def __iter__(self):
+        return iter(self.items)
 
     def c_str(self):
-        #print("{0}".format(self._bounds))
-        #print("{0}".format(self.specified_counts(base.make_c_str)))
         return "".join(
-            ["[{0}]".format(base.make_c_str(el)) for el in self._bounds])
+            ["[{0}]".format(base.make_c_str(el)) for el in self.items])
 
-    def __max_rank_adjusted_bounds(self):
+    def __max_rank_adjusted_items(self):
         if self.max_rank > 0:
-            assert self.max_rank <= len(self._result)
-            result = self._bounds[0:self.max_rank]
+            assert self.max_rank <= len(self.items)
+            result = self.items[0:self.max_rank]
         else:
             result = []
         return result
 
     def c_str(self,name,is_tensor=False,fortran_style_tensor_access=True):
-        args = self.__max_rank_adjusted_bounds()
+        args = self.__max_rank_adjusted_items()
         if len(args):
             if (not fortran_style_tensor_access and is_tensor):
-                return "{0}[_idx_{0}({1})]".format(name, ",".join([
+                return "[_idx_{0}({1})]".format(name, ",".join([
                     base.make_c_str(s) for s in args
                 ])) # Fortran identifiers cannot start with "_"
             else:
-                return "{}({})".format(
-                    name, ",".join([base.make_c_str(s) for s in args]))
+                return "({})".format(
+                    ",".join([base.make_c_str(s) for s in args]))
         else:
             return ""
 
     def f_str(self):
-        args = self.__max_rank_adjusted_bounds()
+        args = self.__max_rank_adjusted_items()
         if len(args):
             return "({0})".format(",".join(
                 base.make_f_str(el) for el in args))
         else:
             return ""
-
 
 class TTDimensionQualifier(base.TTNode):
 
@@ -1142,25 +950,6 @@ class Attributed():
 
     def has_dimension(self):
         return len(base.find_all(self.qualifiers, TTDimensionQualifier))
-
-class TTStatement(base.TTNode):
-    """
-    Mainly used for searching expressions and replacing them in the translator AST.
-    One example is converting to colon operations to do loops.
-    """
-
-    def _assign_fields(self, token):
-        self._statement = token
-
-    def children(self):
-        return [self._statement]
-
-    def c_str(self):
-        return base.make_c_str(self._statement)
-
-    def f_str(self):
-        return base.make_f_str(self._statement)
-
 
 class TTIfElseBlock(base.TTContainer):
     def _assign_fields(self, tokens):
@@ -1266,7 +1055,7 @@ grammar.size_inquiry.setParseAction(TTSizeInquiry)
 grammar.lbound_inquiry.setParseAction(TTLboundInquiry)
 grammar.ubound_inquiry.setParseAction(TTUboundInquiry)
 grammar.array_range.setParseAction(TTRange)
-grammar.bounds.setParseAction(TTBounds)
+grammar.arglist.setParseAction(TTArgumentList)
 grammar.dimension_qualifier.setParseAction(TTDimensionQualifier)
 grammar.intent_qualifier.setParseAction(TTIntentQualifier)
 grammar.arithmetic_expression.setParseAction(TTArithmeticExpression)

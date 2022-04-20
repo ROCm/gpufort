@@ -20,9 +20,9 @@ OPTSIGN    = Optional(Regex("[-+]|\.not\.",re.IGNORECASE),default="")
 # arithmetic logical expressions and assignments
 arithmetic_expression = Forward()
 func_rvalue = Forward()
-func_kind = COMMA + ( KIND + EQ + arithmetic_expression ) # ! emits one token # TODO generalize to named args
-arglist = Group(delimitedList(Group(func_rvalue)))
-func_call = identifier + LPAR + Optional(arglist, default=[]) + RPAR # emits 2 tokens: *,*,*
+func_kind = COMMA + ( KIND + EQ + arithmetic_expression ) # emits one token # TODO generalize to named args
+arglist   = Optional(Group(delimitedList(func_rvalue)),default=[]) #  emits one token
+func_call = identifier + LPAR + arglist + RPAR # emits 2 tokens: *,
 
 # derived_types
 simple_struct_rvalue = Forward()
@@ -203,8 +203,7 @@ PUBLIC,PRIVATE,EXTERNAL,INTRINSIC = makeCaselessLiteral(\
 simple_attribute = Regex(r"\b(public|private|external|intrinsic|value|parameter|allocatable|pointer|save|target|shared|device|pinned|managed|optional|vartype|contiguous)\b",re.IGNORECASE)
 # TODO identify how many what dimension(5) means. Range 1:5?
 dimension_value     = array_range | arithmetic_expression | Literal("*")
-bounds              = Group(LPAR + delimitedList(array_range|arithmetic_expression) + RPAR)
-dimension_qualifier = Group(DIMENSION + bounds) # emits [*]
+dimension_qualifier = Group(DIMENSION + arglist) # emits [*]
 intent_qualifier    = Group(INTENT + LPAR + (INOUT|IN|OUT) + RPAR)   # emits *
 qualifier           = intent_qualifier | dimension_qualifier | simple_attribute
 qualifier_list      = Group(delimitedList(qualifier))

@@ -337,12 +337,6 @@ class IComputeConstruct():
         """ only ACC parallel """
         return True
 
-    def map_outer_loops_to_threads(self):
-        """:return: If the outer loops should be mapped
-                    to threads. 
-        """
-        return True
-
     def c_str(self):
         return ""
 
@@ -416,6 +410,9 @@ class TTComputeConstruct(base.TTContainer, IComputeConstruct):
 
     def present_by_default(self):
         return self.parent_directive().present_by_default()
+
+    def map_outer_loops_to_threads(self):
+        return self.parent_directive().map_outer_loops_to_threads()
 
     def grid_expr_f_str(self):
         """ only CUF """

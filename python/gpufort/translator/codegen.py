@@ -139,7 +139,7 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
                 tree.make_c_str(ttloopnest),
                 "".join(preamble))
     else:
-        c_snippet = tree.make_c_str(ttloopnest.body[0]) 
+        c_snippet = tree.make_c_str(ttloopnest) 
 
     return prepostprocess.postprocess_c_snippet(c_snippet), problem_size, loop_vars, c_names, c_ranks
 

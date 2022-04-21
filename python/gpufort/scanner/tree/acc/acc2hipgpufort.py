@@ -237,13 +237,15 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         elif stnode.is_directive(["acc","end","host_data"]):
             result.append("end associate")
         elif (stnode.is_directive(["acc","end","parallel"])
+             or stnode.is_directive(["acc","serial"])
              or stnode.is_directive(["acc","end","parallel","loop"])
              or stnode.is_directive(["acc","end","kernels","loop"])):
             pass
         elif (stnode.is_directive(["acc","parallel"])
+             or stnode.is_directive(["acc","serial"])
              or stnode.is_directive(["acc","parallel","loop"])
              or stnode.is_directive(["acc","kernels","loop"])):
-            assert False, "should not be called for parallel (loop) and kernels loop directive"
+            assert False, "should not be called for serial, parallel (loop) and kernels loop directive"
         elif (stnode.is_directive(["acc","end","kernels"])
              or stnode.is_directive(["acc","end","data"])):
             result.append(_ACC_EXIT_REGION.format(
@@ -345,9 +347,10 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
         # if kernels loop / parallel / parallel loop -> enter_region
         # if kernels -> do not emit enter_region
         emit_enter_exit_region = \
-           (stloopnest.is_directive(["acc","kernels","loop"])
-           or stloopnest.is_directive(["acc","kernels","loop"])
-           or stloopnest.is_directive(["acc","parallel","loop"]))
+           (stloopnest.is_directive(["acc","serial"])
+           or stloopnest.is_directive(["acc","parallel"])
+           or stloopnest.is_directive(["acc","parallel","loop"])
+           or stloopnest.is_directive(["acc","kernels","loop"]))
         
         if emit_enter_exit_region:
             result += self._handle_wait_clause()  

@@ -731,6 +731,7 @@ grammar.acc_declare.setParseAction(TTAccDeclare)
 grammar.acc_loop.setParseAction(TTAccLoop)
 # kernels / parallels
 #acc_serial #TODO
+grammar.acc_serial.setParseAction(TTAccSerial)
 grammar.acc_kernels.setParseAction(TTAccKernels)
 grammar.acc_parallel.setParseAction(TTAccParallel)
 grammar.acc_parallel_loop.setParseAction(TTAccParallelLoop)

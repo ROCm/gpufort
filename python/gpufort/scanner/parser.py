@@ -249,7 +249,6 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal keep_recording
         nonlocal index
         log_detection_("end of do loop")
-        do_loop_labels.pop(-1)
         if isinstance(current_node, tree.STComputeConstruct):
             if keep_recording and current_node._do_loop_ctr_memorised == len(do_loop_labels):
                 current_node.add_linemap(current_linemap)
@@ -625,9 +624,16 @@ def _parse_file(linemaps, index, **kwargs):
                         if util.parsing.is_do(current_tokens):
                             DoLoopStart()
                         elif current_tokens[0:2] == ["end","do"]:
+                            do_loop_labels.pop(-1)
                             DoLoopEnd()
                         elif (len(do_loop_labels) 
                              and current_tokens[0:2] == [do_loop_labels[-1],"continue"]):
+                            # continue can be shared by multiple loops, e.g.:
+                            # do 10 i = ...
+                            # do 10 j = ...
+                            # 10 continue
+                            while len(do_loop_labels) and do_loop_labels[-1] == current_tokens[0]:
+                                do_loop_labels.pop(-1)
                             DoLoopEnd()
                         elif (current_tokens[0] == "end"
                              and current_tokens[1] != "type"

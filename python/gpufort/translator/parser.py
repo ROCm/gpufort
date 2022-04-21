@@ -106,8 +106,15 @@ def parse_fortran_code(statements,result_name=None):
     curr_offload_region = None
     curr_offload_loop = None
     level = 0
+    do_loop_labels = []
     for stmt1 in statements:
         tokens = util.parsing.tokenize(stmt1.lower(), padded_size=6)
+        try:
+            numeric_label = str(int(tokens[0]))
+            tokens.pop(0)
+            append_(tree.TTLabel(stmt_no_comment,"", [numeric_label]))
+        except:
+            numeric_label = None
         stmt = " ".join(tokens) # ensure whitespace between operators and operands
         stmt = prepostprocess.preprocess_fortran_statement(stmt)
         # strip of ! from tokens.index("!")
@@ -162,10 +169,12 @@ def parse_fortran_code(statements,result_name=None):
         elif util.parsing.is_fortran_comment(stmt,modern_fortran):
             if type(curr) != tree.TTRoot:
                 comment = re.split("!|^[c*]", stmt1, 1, re.IGNORECASE)[1]
-                append_("// " + comment + "\n", "comment")
+                append_(tree.TTCommentedOut(stmt_no_comment,"",[comment]), "comment")
         # do/while
         elif util.parsing.is_do_while(tokens):
+            # TODO parse do while with statement number ('numeric label')
             try:
+                do_loop_labels.append(None)
                 parse_result = tree.grammar.fortran_do_while.parseString(
                     stmt_no_comment, parseAll=True)
                 descend_(tree.TTDoWhile(stmt, 0,
@@ -176,6 +185,7 @@ def parse_fortran_code(statements,result_name=None):
         elif util.parsing.is_do(tokens):
             result = util.parsing.parse_do_statement(stmt_no_comment)
             label, var, lbound_str, ubound_str, stride_str = result
+            do_loop_labels.append(label)
             begin, end, stride = None, None, None
             try:
                 begin = tree.grammar.assignment.parseString(
@@ -249,9 +259,18 @@ def parse_fortran_code(statements,result_name=None):
             descend_(tree.TTCaseDefault(stmt_no_comment, 0, [[]]), "case default")
         # end
         elif util.parsing.is_end(tokens, ["do"]):
+            do_loop_labels.pop(-1)
             ascend_(tokens[1])
-        elif util.parsing.is_continue(tokens) and tokens[1] == "continue":
-            ascend_(tokens[1])
+        elif tokens[0] == "continue":
+            ttcontinue = tree.TTContinue(stmt_no_comment, 0, [[]])
+            ttcontinue._result_name = result_name
+            append_(ttcontinue,"continue statement")
+            if numeric_label != None:
+                while len(do_loop_labels) and do_loop_labels[-1] == numeric_label:
+                    do_loop_labels.pop(-1)
+                    ascend_(tokens[1])
+        elif tokens[0] == "goto":
+            append_(tree.TTGoto(stmt_no_comment, 0, [tokens[1]]),"goto statement")
         elif util.parsing.is_end(tokens, ["if", "select"]):
             ascend_(tokens[1])
             ascend_(tokens[1])

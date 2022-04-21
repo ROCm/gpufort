@@ -54,6 +54,41 @@ class TTReturn(base.TTNode):
     def f_str(self):
         return "return"
 
+class TTLabel(base.TTNode):
+
+    def _assign_fields(self, tokens):
+        self._label = tokens[0]
+
+    def c_str(self):
+        return "_{}:".format(self._label)
+
+class TTContinue(base.TTNode):
+
+    def _assign_fields(self, tokens):
+        self._result_name = ""
+        self._in_loop = True
+
+    def c_str(self):
+        if self._in_loop:
+            return "continue;"
+        elif self._result_name != None and len(self._result_name):
+            return "return " + self._result_name + ";"
+        else:
+            return "return;"
+
+    def f_str(self):
+        if self._in_loop:
+            return "continue;"
+        else:
+            return "return"
+
+class TTGoto(base.TTNode):
+
+    def _assign_fields(self, tokens):
+        self._label = tokens[0]
+
+    def c_str(self):
+        return "goto _{};".format(self._label.rstrip("\n"))
 
 class TTCommentedOut(base.TTNode):
 
@@ -61,7 +96,7 @@ class TTCommentedOut(base.TTNode):
         self._text = " ".join(tokens)
 
     def c_str(self):
-        return "// {}\n".format(self._text)
+        return "// {}".format(self._text)
 
 
 class TTIgnore(base.TTNode):

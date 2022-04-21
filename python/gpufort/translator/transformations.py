@@ -206,7 +206,7 @@ def _collapsed_loop_index_c_str(ttdo,counter):
     return "int {idx} = outermost_index_w_len({args});\n".format(\
            idx=idx,args=",".join(args))
 
-
+# TODO make use of parallelism-level here
 def collapse_loopnest(ttdos):
     preamble1 = []
     preamble2 = []
@@ -219,6 +219,9 @@ def collapse_loopnest(ttdos):
         preamble1.append(_loop_range_c_str(ttdo,i))
         preamble2.append("const int _len{0} = loop_length(_begin{0},_end{0},_step{0});\n".format(i))
         problem_sizes.append("_len{}".format(i))
+        for child in ttdo:
+            if isinstance(child,tree.TTContinue):
+                child._in_loop = False
         indices.append(_collapsed_loop_index_c_str(ttdo,i))
     # conditions = [ ttdos[0].hip_thread_bound_c_str() ]
     preamble2.append("const int _problem_size = {};\n".format("*".join(problem_sizes)))

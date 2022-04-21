@@ -132,7 +132,8 @@ class HipKernelGenerator4LoopNest(HipKernelGeneratorBase):
         HipKernelGeneratorBase.__init__(self, scope, **kwargs)
         # TODO tensors must be flagged before before lookup index entries
         # translate_loopnest_to_hip_kernel_body does this (side effect)
-        self.c_body, self.problem_size, loop_vars, substitutions = translator.codegen.translate_loopnest_to_hip_kernel_body(ttloopnest,scope,**kwargs)
+        self.c_body, self.problem_size, loop_vars, c_names, c_ranks = \
+            translator.codegen.translate_loopnest_to_hip_kernel_body(ttloopnest,scope,**kwargs)
         self.kernel = self._create_kernel_context()
        
         self.kernel["global_vars"],\
@@ -141,15 +142,9 @@ class HipKernelGenerator4LoopNest(HipKernelGeneratorBase):
         self.kernel["local_vars"] = translator.analysis.lookup_index_entries_for_vars_in_loopnest(self.scope,
                                                                                        ttloopnest,
                                                                                        loop_vars,
-                                                                                       substitutions,
-                                                                                       )
+                                                                                       c_names,
+                                                                                       c_ranks)
         self._create_shared_and_local_array_vars()
- 
-        #util.logging.log_debug2(opts.log_prefix+".HipKernelGenerator4CufKernel","__init__","".join(
-        #    [
-        #      "all_vars=",str(self.all_vars),"global_reductions=",str(self.global_reductions),
-        #      ",","all_vars=",str(self.shared_vars),",","local_vars=",str(self.local_vars),
-        #    ]))
 
 class HipKernelGenerator4CufKernel(HipKernelGeneratorBase):
 

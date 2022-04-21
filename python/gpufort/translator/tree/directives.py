@@ -79,7 +79,7 @@ class TTDo(base.TTContainer):
             self.annotation = ILoopAnnotation()
         self.thread_index = None # "z","y","x"
 
-    def children(self):
+    def child_nodes(self):
         return [self.annotation, self.body, self._begin, self._end, self._step]
 
     def begin_c_str(self):
@@ -157,7 +157,6 @@ class TTDo(base.TTContainer):
         return converter(self._begin._lhs)
 
     def c_str(self):
-        print(self.body)
         body = textwrap.dedent(base.TTContainer.c_str(self))
         if self.thread_index == None:
             idx = self.loop_var()
@@ -285,7 +284,7 @@ class IComputeConstruct():
         """ OMP,ACC: run on current CPU / device (and do not offload) """
         return ""
 
-    def deviceptrs(self, scope):
+    def deviceptrs(self):
         return []
 
     def create_alloc_vars(self):
@@ -354,7 +353,7 @@ class TTComputeConstruct(base.TTContainer, IComputeConstruct):
         self._parent_directive, self.body = tokens
         self.scope = indexer.types.EMPTY_SCOPE
 
-    def children(self):
+    def child_nodes(self):
         return [self._parent_directive, self.body]
 
     def __first_loop_annotation(self):

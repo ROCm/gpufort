@@ -136,7 +136,7 @@ def _traverse_tree(current,idx,parent,callback):
     callback(current,idx,parent)
     if isinstance(current,tree.TTContainer):
         for i,child in enumerate(current):
-            _traverse_tree(child,i,parent,callback)
+            _traverse_tree(child,i,current,callback)
 
 def expand_all_array_expressions(ttcontainer,scope,fortran_style_tensors=True):
     int_counter = 1
@@ -153,17 +153,27 @@ def expand_all_array_expressions(ttcontainer,scope,fortran_style_tensors=True):
     _traverse_tree(ttcontainer,0,ttcontainer.parent,callback_)
     return int_counter
 
-#def adjust_explicitly_mapped_arrays_in_rank(ttvalues,explicitly_mapped_vars,scope):
-#    """
-#    explicitly_mapped_vars = ttloopnest.explicitly_mapped_vars()
-#    """
-#    for ttvalue in ttvalues:
-#        value_tag   = indexer.scope.create_index_search_tag_for_var(ttvalue.f_str())
-#        for var_expr in explicitly_mapped_vars():
-#            mapping_tag = indexer.scope.create_index_search_tag_for_var(var_expr.f_str())
-#            if value_tag == mapping_tag:
-#                if var_expr.has_step     
-
+def adjust_explicitly_mapped_arrays_in_rank(ttvalues,explicitly_mapped_vars):
+    """
+    :note: Must be applied after array expression expansion has
+           completed.
+    :note: Must be ensured that all value types with arguments are 
+           flagged as tensor or not. 
+    """
+    c_ranks = {}
+    for ttvalue in ttvalues:
+        value_tag  = indexer.scope.create_index_search_tag_for_var(ttvalue.f_str())
+        for var_expr in explicitly_mapped_vars:
+            mapping_tag  = indexer.scope.create_index_search_tag_for_var(var_expr)
+            if value_tag == mapping_tag:
+                var_ttvalue = tree.grammar.lvalue.parseString(var_expr,parseAll=True)[0] # TODO analyse usage and directly return as type?
+                if len(var_ttvalue.range_args()) < len(var_ttvalue.args()): # implies there is a fixed dimension
+                    assert ttvalue.has_args()
+                    if len(var_ttvalue.args()) > len(ttvalue.args()):
+                        raise util.error.SyntaxError("Explicitly mapped expression has higher rank than actual variable")
+                    ttvalue.args().max_rank   = len(var_ttvalue.range_args())
+                    c_ranks[value_tag] = ttvalue.args().max_rank
+    return c_ranks
 
 def move_statements_into_loopnest_body(ttloopnest):
     # TODO
@@ -253,7 +263,7 @@ def map_allocatable_pointer_derived_type_members_to_flat_arrays(ttvalues,loop_va
                 if (":" in ident 
                    or "(" in ident): # TODO hack
                     raise util.error.LimitationError("cannot map expression '{}'".format(ident))
-                var_expr = util.parsing.strip_array_indexing(ident)
+                var_expr = indexer.scope.create_index_search_tag_for_var(ident)
                 c_name = util.parsing.mangle_fortran_var_expr(var_expr) 
                 substitute = ttnode.f_str().replace(ident,c_name)
                 ttnode.overwrite_c_str(substitute)
@@ -284,7 +294,7 @@ def map_scalar_derived_type_members_to_flat_scalars(ttvalues,loop_vars,scope):
                 if (":" in ident 
                    or "(" in ident): # TODO hack
                     raise util.error.LimitationError("cannot map expression '{}'".format(ident))
-                var_expr = util.parsing.strip_array_indexing(ident)
+                var_expr = indexer.scope.create_index_search_tag_for_var(ident)
                 c_name = util.parsing.mangle_fortran_var_expr(var_expr) 
                 substitute = ttnode.f_str().replace(ident,c_name)
                 ttnode.overwrite_c_str(substitute)

@@ -7,34 +7,34 @@ from gpufort import util
 from gpufort import fort2x
 
 LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
-util.logging.opts.verbose = True
-util.logging.init_logging("log.log", LOG_FORMAT, "debug2")
+util.logging.opts.verbose = False
+util.logging.init_logging("log.log", LOG_FORMAT, "debug")
 
 declaration_list = """\
-integer, parameter :: N = 1000, M=2000
+integer, parameter :: N = 1000, M=2000, P = 10
 integer :: i,j,k
-integer(4) :: y(N), y_exact(N)
+integer(4) :: y(N,M,P), y_exact(N)
 
 type grid_t
   integer(4) :: alpha
-  integer(4),allocatable :: x(:,:)
+  integer(4),allocatable :: x(:,:,:)
 end type
 
 type(grid_t) :: grid
 """
 
 annotated_loop_nest = """\
-!$acc parallel loop present(grid%x,y) private(k,i) collapse(2)
+!$acc parallel loop present(grid%x(:,:,5),y(:,:,7)) private(k,i) collapse(2)
 do j = 1, -(max(M,n)), min(m,n,2)
   do i = 1, N
-    grid%x(i,j) = 1
-    y(i,j) = 2
+    grid%x(i,j,5) = 1
+    y(i,j,7) = 2
 
     do while ( k < 10 )
-      y(i,j) = grid%alpha * grid%x(i,j) * k
+      y(i,j,7) = grid%alpha * grid%x(i,j,5) * k
       k = k + 1
     end do
-    y(j,i:i+2) = grid%x(j,i:i+2)
+    y(j,i:i+2,7) = grid%x(j,i:i+2,5)
 
     if (i == 5.and.j > 2) then 
       k = 2*k

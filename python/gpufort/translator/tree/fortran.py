@@ -186,8 +186,7 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
         self._args = tokens[1]
         self._is_tensor_access = base.Unknown3
 
-
-    def bounds(self):
+    def range_args(self):
         """Returns all range args in the order of their appeareance.
         """
         return base.find_all(self._args, searched_type=TTRange)
@@ -196,6 +195,16 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
         """If any range args are present in the argument list.
         """
         return base.find_first(self._args,searched_type=TTRange) != None
+    
+    def args(self):
+        """Returns all args in the order of their appeareance.
+        """
+        return self._args
+
+    def has_args(self):
+        """If any args are present.
+        """
+        return len(self._args) 
 
     def __guess_it_is_function(self):
         """ 
@@ -302,11 +311,11 @@ class TTValue(base.TTNode):
         else:
             return False
 
-    def bounds(self):
+    def range_args(self):
         if type(self._value) is TTFunctionCallOrTensorAccess:
-            return self._value.bounds()
+            return self._value.range_args()
         elif type(self._value) is TTDerivedTypeMember:
-            return self._value.innermost_member_bounds()
+            return self._value.innermost_member_range_args()
         else:
             return []
     
@@ -328,7 +337,7 @@ class TTValue(base.TTNode):
         elif type(self._value) is TTDerivedTypeMember:
             return self._value.innermost_member_args()
         else:
-            return False
+            return []
     
     def overwrite_f_str(self,f_str):
         self._f_str = f_str
@@ -589,7 +598,7 @@ class TTDerivedTypeMember(base.TTNode):
             result += "%"+converter(current)
         return result             
 
-    def innermost_member_bounds(self):
+    def innermost_member_range_args(self):
         """Returns all range args in the order of their appeareance.
         """
         result = []
@@ -597,7 +606,7 @@ class TTDerivedTypeMember(base.TTNode):
         while isinstance(current,TTDerivedTypeMember):
             current = current._element
         if type(current) is TTFunctionCallOrTensorAccess:
-            return current.bounds()
+            return current.range_args()
         else:
             return []
 
@@ -621,7 +630,7 @@ class TTDerivedTypeMember(base.TTNode):
         while isinstance(current,TTDerivedTypeMember):
             current = current._element
         if type(current) is TTFunctionCallOrTensorAccess:
-            return True
+            return current.has_args()
         else:
             return False
     
@@ -633,9 +642,9 @@ class TTDerivedTypeMember(base.TTNode):
         while isinstance(current,TTDerivedTypeMember):
             current = current._element
         if type(current) is TTFunctionCallOrTensorAccess:
-            return current._args
+            return current.args()
         else:
-            return False
+            return []
 
     def overwrite_c_str(self,expr):
         self._c_str = expr
@@ -694,7 +703,7 @@ class TTArithmeticExpression(base.TTNode):
     def _assign_fields(self, tokens):
         self._expr = tokens[0]
 
-    def children(self):
+    def child_nodes(self):
         return [self._expr]
 
     def c_str(self):
@@ -709,7 +718,7 @@ class TTComplexArithmeticExpression(base.TTNode):
     def _assign_fields(self, tokens):
         self._real, self._imag = tokens[0]
 
-    def children(self):
+    def child_nodes(self):
         return [self._real, self._imag]
 
     def c_str(self):
@@ -728,7 +737,7 @@ class TTPower(base.TTNode):
     def _assign_fields(self, tokens):
         self.base, self.exp = tokens
 
-    def children(self):
+    def child_nodes(self):
         return [self.base, self.exp]
 
     def gpufort_f_str(self, scope=None):
@@ -922,13 +931,13 @@ class TTArgumentList(base.TTNode):
 class TTDimensionQualifier(base.TTNode):
 
     def _assign_fields(self, tokens):
-        self._bounds = tokens[0][0]
+        self.args = tokens[0][0]
 
     def c_str(self):
-        return base.make_c_str(self._bounds)
+        return base.make_c_str(self.args)
 
     def f_str(self):
-        return "dimension{0}".format(base.make_f_str(self._bounds))
+        return "dimension{0}".format(base.make_f_str(self.args))
 
 
 class Attributed():
@@ -960,7 +969,7 @@ class TTIfElseIf(base.TTContainer):
     def _assign_fields(self, tokens):
         self._else, self._condition, self.body = tokens
 
-    def children(self):
+    def child_nodes(self):
         return [self._condition, self.body]
 
     def c_str(self):
@@ -992,7 +1001,7 @@ class TTCase(base.TTContainer):
     def _assign_fields(self, tokens):
         self.case, self.body = tokens
 
-    def children(self):
+    def child_nodes(self):
         return [self.case, self.body]
 
     def c_str(self):
@@ -1004,7 +1013,7 @@ class TTCaseDefault(base.TTContainer):
     def _assign_fields(self, tokens):
         self.body = tokens[0]
 
-    def children(self):
+    def child_nodes(self):
         return [self.body]
 
     def c_str(self):
@@ -1016,7 +1025,7 @@ class TTDoWhile(base.TTContainer):
     def _assign_fields(self, tokens):
         self._condition, self.body = tokens
 
-    def children(self):
+    def child_nodes(self):
         return [self._condition, self.body]
 
     def c_str(self):

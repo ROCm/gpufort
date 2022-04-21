@@ -102,13 +102,19 @@ def lookup_index_entries_for_vars_in_kernel_body(scope,
         taglobal_vars.append(tavar)
     return taglobal_vars, taglobal_reduced_vars, tashared_vars, talocal_vars
 
-def _apply_substitions(tavars,substitutions):
+def _apply_c_names(tavars,c_names):
     for i,tavar in enumerate(tavars):
         var_expr = tavar["expr"]
-        if var_expr in substitutions:
-            tavar["c_name"] = substitutions[var_expr]
+        if var_expr in c_names:
+            tavar["c_name"] = c_names[var_expr]
 
-def lookup_index_entries_for_vars_in_loopnest(scope,ttloopnest,loop_vars,substitutions={}):
+def _apply_c_ranks(tavars,c_ranks):
+    for i,tavar in enumerate(tavars):
+        var_expr = tavar["expr"]
+        if var_expr in c_ranks:
+            tavar["c_rank"] = c_ranks[var_expr]
+
+def lookup_index_entries_for_vars_in_loopnest(scope,ttloopnest,loop_vars,c_names={},c_ranks={}):
     all_vars       = vars_in_subtree(ttloopnest, scope)
     local_scalars_ = local_scalars(ttloopnest,scope)
     local_vars     = [v for v in (local_scalars_+ttloopnest.gang_team_private_vars())
@@ -125,7 +131,8 @@ def lookup_index_entries_for_vars_in_loopnest(scope,ttloopnest,loop_vars,substit
                                                           local_vars,
                                                           loop_vars)
     for i in range(0,4):
-        _apply_substitions(result[i],substitutions)
+        _apply_c_names(result[i],c_names)
+        _apply_c_ranks(result[i],c_ranks)
     return result
 
 def lookup_index_entries_for_vars_in_procedure_body(scope,ttprocedurebody,iprocedure):
@@ -181,7 +188,7 @@ def find_all_matching_exclude_directives(ttnode,
             for el in curr:
                 traverse_(el)
         elif isinstance(curr, tree.TTNode):
-            for el in curr.children():
+            for el in curr.child_nodes():
                 traverse_(el)
 
     traverse_(ttnode)
@@ -336,7 +343,7 @@ def _perfectly_nested_outer_do_loops(ttloopnest):
             if isinstance(child,tree.TTDo):
                 ttdos.append(child)
                 descend_(child,depth+1)
-            elif not isinstance(child,tree.TTCommentedOut):
+            elif not isinstance(child,(str,tree.TTCommentedOut)):
                 # if there are other statements on the same level
                 # and a do loop was added, remove it and its
                 # inner loops. Then break the loop.

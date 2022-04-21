@@ -312,16 +312,10 @@ class CufMemcpyBase():
         return base.make_f_str(self._src.identifier_part(base.make_f_str))
 
     def dest_has_args(self):
-        """
-        :return: name of destination variable; may contain '%' if derived type member.
-        """
-        return self._dest.bounds() != None
+        return self._dest.args() != None
 
     def src_has_args(self):
-        """
-        :return: name of source variable; may contain '%' if derived type member.
-        """
-        return self._src.bounds() != None
+        return self._src.args() != None
 
     def size_f_str(self, name, bytes_per_element=1):
         """
@@ -357,7 +351,6 @@ class TTCufMemcpyIntrinsic(base.TTNode, CufMemcpyBase):
     def _assign_fields(self, tokens):
         self._dest = tokens[0]
         self._src = tokens[1]
-        self._bounds = tokens[0].bounds()
         self._memcpy_kind = None
 
     def hip_f_str(self,

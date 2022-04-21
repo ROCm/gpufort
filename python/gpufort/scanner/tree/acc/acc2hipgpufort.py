@@ -303,7 +303,7 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
                 runtime_call_tokens += [",",finalize]
             runtime_call_tokens.append(")") 
             tokens = [
-              "gpufort_array",str(tavar["rank"]),"_wrap_device_cptr(&\n",
+              "gpufort_array",str(tavar["c_rank"]),"_wrap_device_cptr(&\n",
               " "*4,"".join(runtime_call_tokens),
               ",shape(",var_expr,",kind=c_int),lbound(",var_expr,",kind=c_int))",
             ]

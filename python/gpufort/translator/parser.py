@@ -260,7 +260,7 @@ def parse_fortran_code(statements,result_name=None):
             try:
                 assignment_variant = tree.grammar.fortran_assignment.parseString(
                     stmt_no_comment, parseAll=True)[0]
-                append_(parse_result[0], "assignment")
+                append_(assignment_variant, "assignment")
             except pyparsing.ParseException as e:
                 error_("assignment", e)
         elif tokens[0] == "return":

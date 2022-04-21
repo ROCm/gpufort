@@ -26,7 +26,7 @@ class TTNode(object):
     def _assign_fields(self, tokens):
         pass
 
-    def children(self):
+    def child_nodes(self):
         result = []
         for key, value in self.__dict__.items():
             if key != "parent":
@@ -58,7 +58,7 @@ class TTContainer(TTNode):
     def append(self, node):
         self.body.append(node)
 
-    def children(self):
+    def child_nodes(self):
         return self.body
 
     def c_str(self):
@@ -88,7 +88,7 @@ KEYWORDS = " ".join([
 KEYWORDS = KEYWORDS.lower().split(" ")
 
 
-def find_all_matching(body, filter_expr=lambda x: True, N=-1):
+def find_all_matching(obj, filter_expr=lambda x: True, N=-1):
     """
     Find all nodes in tree of type 'searched_type'.
     """
@@ -104,25 +104,25 @@ def find_all_matching(body, filter_expr=lambda x: True, N=-1):
             for el in curr:
                 descend_(el)
         elif isinstance(curr, TTNode):
-            for child in curr.children():
+            for child in curr.child_nodes():
                 descend_(child)
 
-    descend_(body)
+    descend_(obj)
     return result
 
 
-def find_first_matching(body, filter_expr=lambda x: True):
+def find_first_matching(obj, filter_expr=lambda x: True):
     """
     Find first node in tree where the filte returns true.
     """
-    result = find_all_matching(body, filter_expr, N=1)
+    result = find_all_matching(obj, filter_expr, N=1)
     if len(result):
         return result[0]
     else:
         return None
 
 
-def find_all(body, searched_type, N=-1):
+def find_all(obj, searched_type, N=-1):
     """Find all nodes in tree of type 'searched_type'.
     """
     result = []
@@ -137,17 +137,17 @@ def find_all(body, searched_type, N=-1):
             for el in curr:
                 descend(el)
         elif isinstance(curr, TTNode):
-            for child in curr.children():
+            for child in curr.child_nodes():
                 descend(child)
 
-    descend(body)
+    descend(obj)
     return result
 
 
-def find_first(body, searched_type):
+def find_first(obj, searched_type):
     """Find first node in tree of type 'searched_type'.
     """
-    result = find_all(body, searched_type, N=1)
+    result = find_all(obj, searched_type, N=1)
     if len(result):
         return result[0]
     else:

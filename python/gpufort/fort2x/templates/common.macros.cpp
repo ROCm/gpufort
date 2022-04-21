@@ -3,15 +3,16 @@
 {########################################################################################}
 {%- macro render_global_param_decl(tavar,is_device_routine=False,is_kernel=False) -%}
 {%- set c_type = tavar.kind if tavar.f_type=="type" else tavar.c_type -%}
+{%- set rank = tavar.c_rank if tavar.c_rank is defined else tavar.rank -%}
+{%- set name = tavar.c_name if tavar.c_name is defined else tavar.name -%}
 {%- set suffix = "&" if (not is_device_routine
-                        or not is_kernel 
-                        and (tavar.rank > 0
-                            or tavar.f_type == "type"
-                            or "intent(out)" in tavar.qualifiers
-                            or "intent(inout)" in tavar.qualifiers)) else "" -%}
-{% set name = tavar.c_name if tavar.c_name is defined else tavar.name %}
-{%- if tavar.rank > 0 -%}
-gpufort::array{{tavar.rank}}<{{c_type}}>{{suffix}} {{name}}
+                        or (not is_kernel 
+                           and (rank > 0
+                               or tavar.f_type == "type"
+                               or "intent(out)" in tavar.qualifiers
+                               or "intent(inout)" in tavar.qualifiers))) else "" -%}
+{%- if rank > 0 -%}
+gpufort::array{{rank}}<{{c_type}}>{{suffix}} {{name}}
 {%- else -%}
 {{c_type}}{{suffix}} {{name}}
 {%- endif -%}

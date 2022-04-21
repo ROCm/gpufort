@@ -24,10 +24,10 @@ program main
   !$acc parallel loop present(x,y(1:N,1)) & ! inline comment 
   !$acc collapse(2) ! continuation of the above directive
   do j = 4, -4, -8
-    do i = 1, N/2
+    do 50 i = 1, N/2
       x( ((j-4)/-8)*N/2+i ) = 1
       y( ((j-4)/-8)*N/2+i, 1 ) = 2
-    end do
+ 50 continue
   end do
   
   !$acc parallel loop present(x,y(1:N,1))

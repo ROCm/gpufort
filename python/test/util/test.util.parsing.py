@@ -245,11 +245,13 @@ class TestParsingUtils(unittest.TestCase):
     def test_09_parse_do_statement(self):
         statements = [
           "DO jj = MAX(jts,1) , MIN(jte,jde-1,spec_bdy_width)",
-          "label: do j = min(x,y,z,k), max(M,n), min(a0,a1,2)"
+          "label: do j = min(x,y,z,k), max(M,n), min(a0,a1,2)",
+          "DO 2000 IIM=1,NF"
         ]
         results = [
           (None, 'jj', 'MAX(jts,1)', 'MIN(jte,jde-1,spec_bdy_width)', None),
           ('label', 'j', 'min(x,y,z,k)', 'max(M,n)', 'min(a0,a1,2)'),
+          ('2000', 'IIM', '1', 'NF', None),
         ]
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_do_statement(stmt))

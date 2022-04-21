@@ -250,6 +250,8 @@ def parse_fortran_code(statements,result_name=None):
         # end
         elif util.parsing.is_end(tokens, ["do"]):
             ascend_(tokens[1])
+        elif util.parsing.is_continue(tokens) and tokens[1] == "continue":
+            ascend_(tokens[1])
         elif util.parsing.is_end(tokens, ["if", "select"]):
             ascend_(tokens[1])
             ascend_(tokens[1])

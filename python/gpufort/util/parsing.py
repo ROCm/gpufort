@@ -1046,7 +1046,11 @@ def parse_do_statement(statement):
     #
     var = tokens.pop(0) 
     if not var.isidentifier():
-        raise error.SyntaxError("expected identifier")
+        try:
+            label = str(int(var))
+            var = tokens.pop(0)
+        except ValueError as e:
+            raise error.SyntaxError("expected identifier or numeric label after 'do'") from e
     if not tokens.pop(0) == "=":
         raise error.SyntaxError("expected '='")
     range_vals,consumed_tokens  = get_top_level_operands(tokens) 
@@ -1227,15 +1231,14 @@ def parse_statement_function(statement):
 def is_declaration(tokens):
     """No 'function' must be in the tokens.
     """
-    return\
-        tokens[0] in ["type","integer","real","complex","logical","character"] or\
-        tokens[0:1+1] == ["double","precision"]
+    return (tokens[0].lower() in ["type","integer","real","complex","logical","character"]
+           or compare_ignore_case(tokens[0:2],["double","precision"]))
 
 def is_ignored_statement(tokens):
     """All statements beginning with the tokens below are ignored.
     """
-    return tokens[0] in ["write","print","character","use","implicit"] or\
-           is_declaration(tokens)
+    return (tokens[0].lower() in ["write","print","character","use","implicit"]
+           or is_declaration(tokens))
 
 
 def is_blank_line(statement):
@@ -1245,12 +1248,12 @@ def is_blank_line(statement):
 def is_fortran_directive(statement,modern_fortran):
     """If the statement is a directive."""
     return len(statement) > 2 and (modern_fortran and statement.lstrip()[0:2] == "!$" 
-       or (not modern_fortran and statement[0:2] in ["c$","*$"]))
+       or (not modern_fortran and statement[0:2].lower() in ["c$","*$"]))
 
 def is_cuda_fortran_conditional_code(statement,modern_fortran):
     """If the statement is a directive."""
-    return len(statement) > 2 and (modern_fortran and statement.lstrip()[0:5] == "!@cuf" 
-       or (not modern_fortran and statement[0:5] in ["c@cuf","*@cuf"]))
+    return len(statement) > 2 and (modern_fortran and statement.lstrip()[0:5].lower() == "!@cuf" 
+       or (not modern_fortran and statement[0:5].lower() in ["c@cuf","*@cuf"]))
 
 def is_fortran_comment(statement,modern_fortran):
     """If the statement is a directive.
@@ -1258,34 +1261,32 @@ def is_fortran_comment(statement,modern_fortran):
            `is_fortran_directive` are checked before.
     """
     return len(statement) and (modern_fortran and statement.lstrip()[0] == "!" 
-       or (not modern_fortran and statement[0] in "c*"))
+       or (not modern_fortran and statement[0].lower() in "c*"))
 
 
 def is_cpp_directive(statement):
     return statement[0] == "#"
 
 def is_ignored_fortran_directive(tokens):
-    return tokens[1:2+1] == ["acc","end"] and\
-           tokens[3] in ["kernels","parallel","loop"]
+    return compare_ignore_case(tokens[1:3],["acc","end"]) and\
+           tokens[3].lower() in ["kernels","parallel","loop"]
 
 
 def is_fortran_offload_region_directive(tokens):
     return\
-        tokens[1:2+1] == ["acc","serial"] or\
-        tokens[1:2+1] == ["acc","parallel"] or\
-        tokens[1:2+1] == ["acc","kernels"]
-
+        compare_ignore_case(tokens[1:3],["acc","serial"]) or\
+        compare_ignore_case(tokens[1:3],["acc","parallel"]) or\
+        compare_ignore_case(tokens[1:3],["acc","kernels"])
 
 def is_fortran_offload_region_plus_loop_directive(tokens):
     return\
-        tokens[1:3+1] == ["cuf","kernel","do"]  or\
-        tokens[1:3+1] == ["acc","parallel","loop"] or\
-        tokens[1:3+1] == ["acc","kernels","loop"] or\
-        tokens[1:3+1] == ["acc","kernels","loop"]
+        compare_ignore_case(tokens[1:4],["cuf","kernel","do"])  or\
+        compare_ignore_case(tokens[1:4],["acc","parallel","loop"]) or\
+        compare_ignore_case(tokens[1:4],["acc","kernels","loop"]) or\
+        compare_ignore_case(tokens[1:4],["acc","kernels","loop"])
 
 def is_fortran_offload_loop_directive(tokens):
-    return\
-        tokens[1:2+1] == ["acc","loop"]
+    return compare_ignore_case(tokens[1:3],["acc","loop"])
 
 def is_derived_type_member_access(tokens):
     return len(get_top_level_operands(tokens,separators=["%"])[0]) > 1
@@ -1300,53 +1301,39 @@ def is_pointer_assignment(tokens):
     #assert not is_declaration_(tokens)
     return len(get_top_level_operands(tokens,separators=["=>"])[0]) == 2
 
-
 def is_subroutine_call(tokens):
     return tokens[0] == "call" and tokens[1].isidentifier()
 
-
 def is_select_case(tokens):
-    cond1 = tokens[0:1 + 1] == ["select", "case"]
+    cond1 = compare_ignore_case(tokens[0:2],["select", "case"])
     cond2 = tokens[0].isidentifier() and tokens[1] == ":" and\
-            tokens[2:3+1] == ["select","case"]
+            compare_ignore_case(tokens[2:4],["select","case"])
     return cond1 or cond2
 
-
 def is_case(tokens):
-    return tokens[0:1 + 1] == ["case", "("]
+    return compare_ignore_case(tokens[0:2],["case", "("])
 
 
 def is_case_default(tokens):
-    return tokens[0:1 + 1] == ["case", "default"]
-
-
-def is_if_then(tokens):
-    """:note: we assume single-line if have been
-    transformed in preprocessing step."""
-    return tokens[0:1 + 1] == ["if", "("]
-
+    return compare_ignore_case(tokens[0:2],["case", "default"])
 
 def is_if_then(tokens):
     """:note: we assume single-line if have been
     transformed in preprocessing step."""
-    return tokens[0:1 + 1] == ["if", "("]
-
+    return compare_ignore_case(tokens[0:2],["if", "("])
 
 def is_else_if_then(tokens):
-    return tokens[0:2 + 1] == ["else", "if", "("]
-
+    return compare_ignore_case(tokens[0:3],["else", "if", "("])
 
 def is_else(tokens):
     #assert not is_else_if_then_(tokens)
     return tokens[0] == "else"
 
-
 def is_do_while(tokens):
-    cond1 = tokens[0:1 + 1] == ["do", "while"]
+    cond1 = compare_ignore_case(tokens[0:2],["do", "while"])
     cond2 = tokens[0].isidentifier() and tokens[1] == ":" and\
-            tokens[2:3+1] == ["do","while"]
+            compare_ignore_case(tokens[2:4],["do","while"])
     return cond1 or cond2
-
 
 def is_do(tokens):
     cond1 = tokens[0] == "do"
@@ -1354,13 +1341,23 @@ def is_do(tokens):
             tokens[2] == "do"
     return cond1 or cond2
 
+def is_continue(tokens):
+    if tokens[0].lower() == "continue":
+        return True
+    elif tokens[1].lower() == "continue":
+        try:
+            int(tokens[0])
+            return True
+        except:
+            return False 
+
 def is_where(tokens):
-    cond1 = tokens[0] == "where"
+    cond1 = tokens[0].lower() == "where"
     cond2 = tokens[0].isidentifier() and tokens[1] == ":" and\
-            tokens[2] == "where"
+            tokens[2].lower() == "where"
     return cond1 or cond2
 
 def is_end(tokens, kinds=[]):
-    cond1 = tokens[0] == "end"
-    cond2 = not len(kinds) or tokens[1] in kinds
+    cond1 = tokens[0].lower() == "end"
+    cond2 = not len(kinds) or tokens[1].lower() in kinds
     return cond1 and cond2

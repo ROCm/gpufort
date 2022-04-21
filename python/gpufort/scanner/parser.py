@@ -37,7 +37,7 @@ def _parse_file(linemaps, index, **kwargs):
     
     translation_enabled = translation_enabled_by_default
     current_node = tree.STRoot()
-    do_loop_ctr = 0
+    do_loop_labels = []
     keep_recording = False
     fortran_file_path = linemaps[0]["file"]
     current_file = str(fortran_file_path)
@@ -223,30 +223,35 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal current_node
         nonlocal current_tokens
         nonlocal current_linemap
-        nonlocal do_loop_ctr
+        nonlocal do_loop_labels
         nonlocal keep_recording
         nonlocal acc_kernels_directive
         log_detection_("do loop")
-        if (in_kernels_acc_region_and_not_recording() 
-           and not util.parsing.is_do_while(current_tokens)):
+        if not util.parsing.is_do_while(current_tokens):
+            parse_result = util.parsing.parse_do_statement(" ".join(current_tokens))
+            label = parse_result[0]
+        else:
+            label = None
+        if (in_kernels_acc_region_and_not_recording() and
+           not util.parsing.is_do_while(current_tokens)):
             new = tree.acc.STAccComputeConstruct(current_linemap, current_statement_no, acc_kernels_directive)
             new.ignore_in_s2s_translation = not translation_enabled
-            new._do_loop_ctr_memorised = do_loop_ctr
+            new._do_loop_ctr_memorised = len(do_loop_labels)
             descend_(new)
             set_keep_recording_(True)
-        do_loop_ctr += 1
+        do_loop_labels.append(label)
 
     def DoLoopEnd():
         nonlocal current_node
         nonlocal current_linemap
         nonlocal current_statement_no
-        nonlocal do_loop_ctr
+        nonlocal do_loop_labels
         nonlocal keep_recording
         nonlocal index
         log_detection_("end of do loop")
-        do_loop_ctr -= 1
+        do_loop_labels.pop(-1)
         if isinstance(current_node, tree.STComputeConstruct):
-            if keep_recording and current_node._do_loop_ctr_memorised == do_loop_ctr:
+            if keep_recording and current_node._do_loop_ctr_memorised == len(do_loop_labels):
                 current_node.add_linemap(current_linemap)
                 current_node._last_statement_index = current_statement_no
                 current_node.complete_init(index)
@@ -326,7 +331,7 @@ def _parse_file(linemaps, index, **kwargs):
         new.ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
 
-    def Allocate(tokens):
+    def Allocate():
         nonlocal translation_enabled
         nonlocal current_node
         nonlocal current_linemap
@@ -336,7 +341,7 @@ def _parse_file(linemaps, index, **kwargs):
         new.ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
 
-    def Deallocate(tokens):
+    def Deallocate():
         nonlocal translation_enabled
         nonlocal current_node
         nonlocal current_linemap
@@ -397,7 +402,7 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal current_linemap
         nonlocal current_statement_no
         nonlocal keep_recording
-        nonlocal do_loop_ctr
+        nonlocal do_loop_labels
         nonlocal acc_kernels_directive
         log_detection_("OpenACC directive")
         new = tree.acc.STAccDirective(current_linemap, current_statement_no)
@@ -418,7 +423,7 @@ def _parse_file(linemaps, index, **kwargs):
             new = tree.acc.STAccComputeConstruct(current_linemap, current_statement_no, acc_kernels_directive)
             new.kind = "acc-compute-construct"
             new.ignore_in_s2s_translation = not translation_enabled
-            new._do_loop_ctr_memorised = do_loop_ctr
+            new._do_loop_ctr_memorised = len(do_loop_labels)
             descend_(new) # descend also appends
             set_keep_recording_(True)
         elif new.is_directive(["acc","kernels"]):
@@ -434,13 +439,13 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal current_node
         nonlocal current_linemap
         nonlocal current_statement_no
-        nonlocal do_loop_ctr
+        nonlocal do_loop_labels
         nonlocal keep_recording
         log_detection_("CUDA Fortran loop kernel directive")
         new = tree.cuf.STCufLoopNest(current_linemap, current_statement_no)
         new.kind = "cuf-kernel-do"
         new.ignore_in_s2s_translation = not translation_enabled
-        new._do_loop_ctr_memorised = do_loop_ctr
+        new._do_loop_ctr_memorised = len(do_loop_labels)
         descend_(new)
         set_keep_recording_(True)
 
@@ -508,8 +513,6 @@ def _parse_file(linemaps, index, **kwargs):
 
     tree.grammar.attributes.setParseAction(Attributes)
     tree.grammar.ALLOCATED.setParseAction(Allocated)
-    tree.grammar.ALLOCATE.setParseAction(Allocate)
-    tree.grammar.DEALLOCATE.setParseAction(Deallocate)
     tree.grammar.non_zero_check.setParseAction(NonZeroCheck)
 
     # CUDA Fortran
@@ -617,9 +620,14 @@ def _parse_file(linemaps, index, **kwargs):
                             GpufortControl()
                     elif not util.parsing.is_fortran_comment(original_statement_lower,modern_fortran):
                         # constructs
+                        if util.parsing.is_do_while(current_tokens):
+                            pass # do nothing
                         if util.parsing.is_do(current_tokens):
                             DoLoopStart()
                         elif current_tokens[0:2] == ["end","do"]:
+                            DoLoopEnd()
+                        elif (len(do_loop_labels) 
+                             and current_tokens[0:2] == [do_loop_labels[-1],"continue"]):
                             DoLoopEnd()
                         elif (current_tokens[0] == "end"
                              and current_tokens[1] != "type"
@@ -666,11 +674,9 @@ def _parse_file(linemaps, index, **kwargs):
                                     Assignment(lhs_ivar,lhs_expr)
                                     # TODO
                             elif current_tokens[0] == "deallocate":
-                                try_to_parse_string_("deallocate",
-                                                    tree.grammar.DEALLOCATE)
+                                Deallocate()
                             elif current_tokens[0] == "allocate":
-                                try_to_parse_string_("allocate",
-                                                    tree.grammar.ALLOCATE)
+                                Allocate()
                             elif current_tokens[0] == "end":
                                 if current_tokens[1] == "type":
                                     TypeEnd()

@@ -145,6 +145,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
             stloopnest.kernel_args_tavars = mykernelgen.get_kernel_args()
 
             stloopnest.problem_size = mykernelgen.problem_size
+            stloopnest.block_size = mykernelgen.block_size
         except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:
             msg = "{}:[{}-{}]:{}".format(
                     stloopnest._linemaps[0]["file"],stloopnest.min_lineno(),stloopnest.max_lineno(),e.args[0])

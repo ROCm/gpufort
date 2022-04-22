@@ -627,11 +627,11 @@ class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase,directives.ICom
 
 class TTAccSerial(TTAccComputeConstructBase):
 
-    def map_outer_loops_to_threads(self):
+    def is_serial_construct(self):
         """:return: If the outer loops should be mapped
                     to threads. 
         """
-        return False
+        return True
 
     def omp_f_str(self,
                   arrays_in_body=[],

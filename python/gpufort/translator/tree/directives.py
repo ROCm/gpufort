@@ -65,6 +65,24 @@ class ILoopAnnotation():
         """ only OMP """
         return []
 
+    #def map_to_blocks(self):
+    #    """If the (collapsed) outer loop should be mapped to blocks.
+    #    :note: Only one or none of the map_outer_loop_(blocks|wavefronts|threads)
+    #          routines may return True."""
+    #    return False
+    #
+    #def map_to_wavefronts(self):
+    #    """If the (collapsed) outer loop should be mapped to warps/wavefronts.
+    #    :note: Only one or none of the map_outer_loop_(blocks|wavefronts|threads)
+    #          routines may return True."""
+    #    return False
+
+    #def map_to_threads(self):
+    #    """If the (collapsed) outer loop should be mapped to threads.
+    #    :note: Only one or none of the map_outer_loop_(blocks|wavefronts|threads)
+    #          routines may return True."""
+    #    return True
+
     def all_arrays_are_on_device(self):
         """ only True for CUF kernel do directive """
         return False
@@ -301,7 +319,7 @@ class IComputeConstruct():
     def delete_release_vars(self):
         return []
 
-    def copy_map_to_from_vars(self):
+    def copy_map_tofrom_vars(self):
         return []
 
     def copyin_map_to_vars(self):
@@ -326,7 +344,7 @@ class IComputeConstruct():
         result += self.no_create_vars()
         result += self.present_vars()
         result += self.delete_release_vars()
-        result += self.copy_map_to_from_vars()
+        result += self.copy_map_tofrom_vars()
         result += self.copyin_map_to_vars()
         result += self.copyout_map_from_vars()
         result += self.attach_vars()
@@ -336,6 +354,9 @@ class IComputeConstruct():
     def present_by_default(self):
         """ only ACC parallel """
         return True
+    
+    def is_serial_construct(self):
+        return False 
 
     def c_str(self):
         return ""
@@ -393,8 +414,8 @@ class TTComputeConstruct(base.TTContainer, IComputeConstruct):
     def delete_release_vars(self):
         return self.parent_directive().delete_release_vars()
 
-    def copy_map_to_from_vars(self):
-        return self.parent_directive().copy_map_to_from_vars()
+    def copy_map_tofrom_vars(self):
+        return self.parent_directive().copy_map_tofrom_vars()
 
     def copyin_map_to_vars(self):
         return self.parent_directive().copyin_map_to_vars()
@@ -411,8 +432,17 @@ class TTComputeConstruct(base.TTContainer, IComputeConstruct):
     def present_by_default(self):
         return self.parent_directive().present_by_default()
 
-    def map_outer_loops_to_threads(self):
-        return self.parent_directive().map_outer_loops_to_threads()
+    def is_serial_construct(self):
+        return self.parent_directive().is_serial_construct()
+    # TODO move to analysis
+    #def map_outer_loop_to_blocks(self):
+    #    return self.parent_directive().map_outer_loop_to_blocks()
+    #
+    #def map_outer_loop_to_wavefronts(self):
+    #    return self.parent_directive().map_outer_loop_to_wavefronts()
+
+    #def map_outer_loop_to_threads(self):
+    #    return self.parent_directive().map_outer_loop_to_threads()
 
     def grid_expr_f_str(self):
         """ only CUF """

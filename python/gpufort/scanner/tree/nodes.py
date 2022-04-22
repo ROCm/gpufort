@@ -653,6 +653,7 @@ class STComputeConstruct(STNode):
         #
         self.kernel_args_tavars = [] # set from extraction routine
         self.problem_size = [] # set from extraction routine
+        self.block_size = [] # set from extraction routine
         #
         self.kernel_args_names = [] # set from subclass
         self.code = []
@@ -706,7 +707,7 @@ class STComputeConstruct(STNode):
             grid_or_ps_f_str  = self.parse_result.grid_expr_f_str()
             if grid_or_ps_f_str == None and self.parse_result.num_gangs_teams_blocks_specified():
                 grid = self.parse_result.num_gangs_teams_blocks()
-                grid_or_ps_f_str = "dim3({})".format(",".join(grid))
+                grid_or_ps_f_str = "dim3({})".format(",".join(grid)) # TODO remove
             elif grid_or_ps_f_str == None:
                 launcher_name_suffix = "_hip_ps"
                 grid_or_ps_f_str = "dim3({})".format(",".join(self.problem_size))
@@ -715,7 +716,9 @@ class STComputeConstruct(STNode):
             block_f_str = self.parse_result.block_expr_f_str()
             if block_f_str == None and self.parse_result.num_threads_in_block_specified():
                 block = self.parse_result.num_threads_in_block()
-                block_f_str = "dim3({})".format(",".join(block))
+                block_f_str = "dim3({})".format(",".join(block)) # TODO remove
+            elif block_f_str == None and len(self.block_size):
+                block_f_str = "dim3({})".format(",".join(self.block_size))
             elif block_f_str == None:
                 block_f_str = "dim3(128)" # use config values 
             kernel_args.append(grid_or_ps_f_str)

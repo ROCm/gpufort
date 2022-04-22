@@ -94,12 +94,16 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
     c_ranks = transformations.adjust_explicitly_mapped_arrays_in_rank(ttvalues,ttloopnest.all_mapped_vars())
     #TODO Investigate what happens if such an array is mapped to flat array
 
-    ttdos = analysis.perfectly_nested_do_loops_to_map(ttloopnest) 
-    problem_size = analysis.problem_size(ttdos,**kwargs)
-    if ttloopnest.map_outer_loops_to_threads():
-        loop_vars = analysis.loop_vars_in_loopnest(ttdos)
+    if ttloopnest.is_serial_construct():
+        ttdos        = []
+        problem_size = ["1"]
+        block_size   = ["1"]
+        loop_vars    = []
     else:
-        loop_vars = []
+        ttdos = analysis.perfectly_nested_do_loops_to_map(ttloopnest) 
+        problem_size = analysis.problem_size(ttdos,**kwargs)
+        block_size = [] # TODO
+        loop_vars = analysis.loop_vars_in_loopnest(ttdos)
 
     c_names = {}
     if map_to_flat_arrays:
@@ -108,18 +112,21 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
         c_names.update(transformations.map_scalar_derived_type_members_to_flat_scalars(ttvalues,loop_vars,scope))
     
     num_loops_to_map = len(ttdos)
-    if loop_collapse_strategy == "grid" and num_loops_to_map <= 3:
+    if (loop_collapse_strategy == "grid" 
+       and num_loops_to_map <= 3
+       and num_loops_to_map > 0):
         grid_dim = num_loops_to_map
     else: # "collapse" or num_loops_to_map > 3
         grid_dim = 1
     
-    if ttloopnest.map_outer_loops_to_threads():
-        reduction_preamble = _handle_reductions(ttloopnest,grid_dim)
-    else:
-        reduction_preamble = ""
+    reduction_preamble = _handle_reductions(ttloopnest,grid_dim)
     
     # collapse and transform do-loops
-    if ttloopnest.map_outer_loops_to_threads(): 
+    if ttloopnest.is_serial_construct(): 
+        if len(reduction_preamble):
+            reduction_preamble += "\n"
+        c_snippet = "{0}if ( threadIdx.x==0 ) {{\n{1}\n}}".format(reduction_preamble,tree.make_c_str(ttloopnest))
+    else:
         if (num_loops_to_map <= 1 
            or (loop_collapse_strategy == "grid" 
               and num_loops_to_map <= 3)):
@@ -138,10 +145,8 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
                 reduction_preamble,
                 tree.make_c_str(ttloopnest),
                 "".join(preamble))
-    else:
-        c_snippet = tree.make_c_str(ttloopnest) 
 
-    return prepostprocess.postprocess_c_snippet(c_snippet), problem_size, loop_vars, c_names, c_ranks
+    return prepostprocess.postprocess_c_snippet(c_snippet), problem_size, block_size, loop_vars, c_names, c_ranks
 
 def translate_loopnest_to_omp(fortran_snippet, ttloopnest, inout_arrays_in_body, arrays_in_body):
     """

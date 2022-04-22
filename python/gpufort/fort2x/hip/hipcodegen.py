@@ -71,7 +71,8 @@ class HipCodeGenerator(codegen.CodeGenerator):
                         mykernelgen,
                         cpp_filegen,
                         fortran_filegen,
-                        is_loopnest=False):
+                        is_loopnest=False,
+                        is_kernel_subroutine=False):
         if self.emit_gpu_kernel:
             cpp_filegen.rendered_kernels += (
                 mykernelgen.render_begin_kernel_comment_cpp()
@@ -79,20 +80,21 @@ class HipCodeGenerator(codegen.CodeGenerator):
                 + mykernelgen.render_end_kernel_comment_cpp())
         rendered_launchers_cpp = []
         rendered_interfaces_f03 = []
-  
-        if self.emit_grid_launcher:
-            grid_launcher = mykernelgen.create_launcher_context(
-                "hip", self.emit_debug_code, fortran_filegen.used_modules)
-            rendered_launchers_cpp  += mykernelgen.render_gpu_launcher_cpp(grid_launcher)
-            rendered_interfaces_f03 += mykernelgen.render_launcher_interface_f03(grid_launcher)
-        
-        if self.emit_problem_size_launcher:
-            problem_size_launcher = mykernelgen.create_launcher_context(
-                "hip_ps", self.emit_debug_code, fortran_filegen.used_modules)
-            rendered_launchers_cpp += mykernelgen.render_gpu_launcher_cpp(
-                problem_size_launcher)
-            rendered_interfaces_f03 += mykernelgen.render_launcher_interface_f03(
-                problem_size_launcher)
+ 
+        if is_loopnest or is_kernel_subroutine: 
+            if self.emit_grid_launcher:
+                grid_launcher = mykernelgen.create_launcher_context(
+                    "hip", self.emit_debug_code, fortran_filegen.used_modules)
+                rendered_launchers_cpp  += mykernelgen.render_gpu_launcher_cpp(grid_launcher)
+                rendered_interfaces_f03 += mykernelgen.render_launcher_interface_f03(grid_launcher)
+            
+            if self.emit_problem_size_launcher:
+                problem_size_launcher = mykernelgen.create_launcher_context(
+                    "hip_ps", self.emit_debug_code, fortran_filegen.used_modules)
+                rendered_launchers_cpp += mykernelgen.render_gpu_launcher_cpp(
+                    problem_size_launcher)
+                rendered_interfaces_f03 += mykernelgen.render_launcher_interface_f03(
+                    problem_size_launcher)
 
         if is_loopnest and self.emit_cpu_launcher:
             cpu_launcher = mykernelgen.create_launcher_context(
@@ -168,7 +170,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
                 self.__render_kernel(mykernelgen,
                                      self.cpp_filegen,
                                      fortran_filegen,
-                                     is_loopnest=False)
+                                     is_kernel_subroutine=True)
             else:
                 mykernelgen = hipkernelgen.HipKernelGenerator4AcceleratorRoutine(
                     stprocedure.parse_result, iprocedure, scope,
@@ -180,8 +182,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
                 # might be used and inlined (assumption) in other modules!
                 self.__render_kernel(mykernelgen,
                                      cpp_filegen,
-                                     fortran_filegen,
-                                     is_loopnest=False)
+                                     fortran_filegen)
             
             stprocedure.kernel_args_tavars = mykernelgen.get_kernel_args()
         except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:

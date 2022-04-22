@@ -150,7 +150,7 @@ class CodeGenerator():
     def _traverse_scanner_tree(self):
         """Traverse scanner tree and call subcalls render methods.
         """
-        cpp_filegen = None
+        cpp_filegen = self.cpp_filegen # for top-level device procedures
         fortran_modulegen = None
 
         def traverse_node_(stnode):

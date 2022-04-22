@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-import re
 import sys
+import re
 import hashlib
 import textwrap
+import copy
 
 from gpufort import util
 from gpufort import linemapper
@@ -562,14 +563,16 @@ class STProcedure(STContainerBase):
         try:
             if self.is_function():
                 result_name = iprocedure["result_name"]
-                ivar_result = next([
+                ivar_result = next((
                     var for var in iprocedure["variables"]
                     if var["name"] == iprocedure["result_name"]
-                ], None)
+                ), None)
                 if ivar_result != None:
-                    self.c_result_type = ivar_result["c_type"]
-                    self.parse_result = translator.parse_procedure_body(
-                        self.code, scope, ivar_result["name"])
+                    ivar = copy.deepcopy(ivar_result)
+                    translator.analysis.append_c_type(ivar)
+                    self.c_result_type = ivar["c_type"]
+                    self.parse_result  = translator.parse_procedure_body(
+                        self.code, scope, ivar["name"])
                 else:
                     raise util.error.LookupError("could not identify return value for function ''")
             else:
@@ -626,6 +629,8 @@ class STProcedure(STContainerBase):
             elif must_be_available_on_device: # and not must_be_available_on_host
                 indent = self.first_line_indent()
                 return "{0}! extracted to HIP C++ file".format(indent), True
+            else: # other attributes such as 'pure', 'recursive'
+                return original, False
         else:
             return original, False
 

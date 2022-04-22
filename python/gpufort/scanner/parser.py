@@ -43,21 +43,22 @@ def _parse_file(linemaps, index, **kwargs):
     current_file = str(fortran_file_path)
     current_linemap = None
     current_tokens = None
+    current_statement_stripped = None
     derived_type_parent = None
     acc_kernels_directive = None
     statement_functions = []
 
-    def set_keep_recording_(state):
+    def set_keep_recording_(enable):
         nonlocal keep_recording
         nonlocal current_node
         nonlocal current_linemap
-        if state:
+        if enable and not keep_recording:
             util.logging.log_debug(opts.log_prefix,"parse_file","[current-node={}:{}] start recording lines in line {}".format(
                 current_node.kind,current_node.name,current_linemap["lineno"]))
-        else:
+        elif not enable and keep_recording:
             util.logging.log_debug(opts.log_prefix,"parse_file","[current-node={}:{}] stop recording lines in line {}".format(
                 current_node.kind,current_node.name,current_linemap["lineno"]))
-        keep_recording = state
+        keep_recording = enable
     
     def log_detection_(kind):
         nonlocal current_node
@@ -137,9 +138,9 @@ def _parse_file(linemaps, index, **kwargs):
     
     def TypeStart():
         nonlocal derived_type_parent
-        nonlocal current_statement_stripped_no_comments
+        nonlocal current_statement_stripped
         log_detection_("type")
-        name, _, __ = util.parsing.parse_derived_type_statement(current_statement_stripped_no_comments)
+        name, _, __ = util.parsing.parse_derived_type_statement(current_statement_stripped)
         derived_type_parent = name
     
     def TypeEnd():
@@ -150,31 +151,19 @@ def _parse_file(linemaps, index, **kwargs):
         new.ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
 
-    def FunctionStart(tokens):
+    def ProcedureStart(kind):
         nonlocal translation_enabled
+        nonlocal current_statement_stripped
         nonlocal current_node
         nonlocal current_linemap
         nonlocal keep_recording
         nonlocal index
         log_detection_("function")
-        # TODO workaround, this will only allow local statement functions
+        # TODO workaround, this will only allow local statement functions but parent's can be inherited
         statement_functions.clear()
-        new = tree.STProcedure(tokens[1],current_node.tag(),"function",\
-            current_linemap,current_statement_no,index)
-        new.ignore_in_s2s_translation = not translation_enabled
-        set_keep_recording_(new.keep_recording())
-        descend_(new)
-
-    def SubroutineStart(tokens):
-        nonlocal translation_enabled
-        nonlocal current_node
-        nonlocal current_linemap
-        nonlocal keep_recording
-        nonlocal index
-        log_detection_("subroutine")
-        # TODO workaround, this will only allow local statement functions
-        statement_functions.clear()
-        new = tree.STProcedure(tokens[1],current_node.tag(),"subroutine",\
+        parsed_kind, name, dummy_args, modifiers, attributes, result_triple, bind_tuple =\
+            util.parsing.parse_function_statement(current_statement_stripped)
+        new = tree.STProcedure(name,current_node.tag(),kind,\
             current_linemap,current_statement_no,index)
         new.ignore_in_s2s_translation = not translation_enabled
         set_keep_recording_(new.keep_recording())
@@ -505,9 +494,6 @@ def _parse_file(linemaps, index, **kwargs):
             translation_enabled = False
 
     # TODO completely remove / comment out !$acc end kernels
-    tree.grammar.function_start.setParseAction(FunctionStart)
-    tree.grammar.subroutine_start.setParseAction(SubroutineStart)
-
     tree.grammar.use.setParseAction(UseStatement)
 
     tree.grammar.attributes.setParseAction(Attributes)
@@ -566,10 +552,10 @@ def _parse_file(linemaps, index, **kwargs):
         """
         nonlocal current_linemap
         nonlocal current_statement_no
-        nonlocal current_statement_stripped_no_comments
+        nonlocal current_statement_stripped
 
         try:
-            expression.parseString(current_statement_stripped_no_comments,
+            expression.parseString(current_statement_stripped,
                                    parseAll)
             util.logging.log_debug3(
                 opts.log_prefix, "parse_file.try_to_parse_string_",
@@ -607,8 +593,6 @@ def _parse_file(linemaps, index, **kwargs):
                         current_linemap["lineno"],current_linemap["lineno"]+len(current_linemap["lines"])-1))
                     current_tokens = util.parsing.tokenize(original_statement_lower, padded_size=6)
                     current_statement_stripped = " ".join([tk for tk in current_tokens if len(tk)])
-                    current_statement_stripped_no_comments = current_statement_stripped.split(
-                        "!")[0]
                     if (not keep_recording 
                        and util.parsing.is_fortran_directive(original_statement_lower,modern_fortran)):
                         if openacc and current_tokens[1] == "acc":
@@ -651,13 +635,13 @@ def _parse_file(linemaps, index, **kwargs):
                                     try_to_parse_string_(
                                         "cuf_kernel_call",
                                         tree.grammar.cuf_kernel_call)
-                                if "cu" in current_statement_stripped_no_comments:
+                                if "cu" in current_statement_stripped:
                                     scan_string_("cuda_lib_call",
                                                 tree.grammar.cuda_lib_call)
                                 if "allocated" in current_tokens:
                                     scan_string_("allocated", tree.grammar.ALLOCATED)
-                                if ("/=" in current_statement_stripped_no_comments
-                                     or ".ne." in current_statement_stripped_no_comments.lower()):
+                                if ("/=" in current_statement_stripped
+                                     or ".ne." in current_statement_stripped.lower()):
                                     scan_string_("non_zero_check",
                                                 tree.grammar.non_zero_check)
                             if (not util.parsing.is_do(current_tokens) # TODO Can user name the variables after keywords?
@@ -697,11 +681,9 @@ def _parse_file(linemaps, index, **kwargs):
                             elif current_tokens[0] == "program":
                                 ProgramStart()
                             elif "function" in current_tokens:
-                                try_to_parse_string_("function",
-                                                    tree.grammar.function_start)
+                                ProcedureStart("function")
                             elif "subroutine" in current_tokens:
-                                try_to_parse_string_("subroutine",
-                                                    tree.grammar.subroutine_start)
+                                ProcedureStart("subroutine")
                             elif current_tokens[0] == "return":
                                 Return()
                             #

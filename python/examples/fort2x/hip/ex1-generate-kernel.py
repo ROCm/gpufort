@@ -34,7 +34,8 @@ do j = 1, -(max(M,n)), min(m,n,2)
       y(i,j,7) = grid%alpha * grid%x(i,j,5) * k
       k = k + 1
     end do
-    y(j,i:i+2,7) = grid%x(j,i:i+2,5)
+    y(j,i:i+2,7) = grid%x(j,i:i+2,5); k &
+                                        = 1
 
     if (i == 5.and.j > 2) then 
       k = 2*k

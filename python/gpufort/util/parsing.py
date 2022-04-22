@@ -44,7 +44,7 @@ def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
         r"[\'](?:\\.|[^\'\\])*[\']",
         r"\bend(?:if|do)?\b",
         r"\belse(?:if)?\b",
-        r"[(),%]",
+        r"[();,%]",
         r"::?",
         r"<<<",
         r">>>",

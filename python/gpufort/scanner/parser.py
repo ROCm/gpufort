@@ -647,7 +647,8 @@ def _parse_file(linemaps, index, **kwargs):
                             if (not util.parsing.is_do(current_tokens) # TODO Can user name the variables after keywords?
                                and not util.parsing.is_where(current_tokens) 
                                and util.parsing.is_assignment(current_tokens)):
-                                lhs_expr, rhs_expr = util.parsing.parse_assignment(current_statement["body"])
+                                lhs_expr, rhs_expr = util.parsing.parse_assignment(current_statement_stripped)
+                                # TODO
                                 lhs_ivar = indexer.scope.search_index_for_var(index,current_node.tag(),lhs_expr)
                                 cuf_implicit_memcpy = "device" in lhs_ivar["qualifiers"]
                                 if cuda_fortran:

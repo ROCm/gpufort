@@ -25,9 +25,11 @@ program main
     do 20 j = 4, -4, -8
       do 20 i = 1, N/2
         if ( k .neqv. 1 ) goto 20
-        x( ((j-4)/-8)*N/2+i ) = 1
-        y( ((j-4)/-8)*N/2+i, 3 ) = 2
-  20 continue
+        x( ((j-4)/-8)*N/2+i ) = 1; y( ((j-4)/-8)*N/2+i, 3 ) &
+
+                ! another inline comment
+                = 2
+  20 continue ! a shared statement number
   10 continue
   
   !$acc parallel loop present(x,y(1:N,3))

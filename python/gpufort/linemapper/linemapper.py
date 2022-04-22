@@ -221,8 +221,13 @@ def _convert_lines_to_statements(lines,modern_fortran):
     single_line_statements = []
     if len(statement_parts):
         combined_statements = "".join(statement_parts)
-        single_line_statements +=\
-          p_continuation.sub(" ",combined_statements).split(";")
+        combined_statements = p_continuation.sub(" ",combined_statements)
+        combined_statements_tokens = util.parsing.tokenize(combined_statements,keepws=True)
+        operands,_ = util.parsing.get_top_level_operands(combined_statements_tokens,
+            separators=[";"],
+            brackets=(None,None),
+            terminators=[])
+        single_line_statements += operands
     if len(comment_parts):
         if len(single_line_statements):
             single_line_statements[-1] = single_line_statements[-1].rstrip(

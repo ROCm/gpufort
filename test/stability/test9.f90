@@ -2,7 +2,8 @@ REAL FUNCTION lagrange_quad ( x , x0, x1, x2, y0, y1, y2 )
 
   IMPLICIT NONE
 
-  REAL :: x , x0, x1, x2, y0, y1, y2
+  REAL :: x , x0, x1, x2, y0, y1, y2, c
+  PARAMETER c = 5.0
   !$acc routine seq
 
   lagrange_quad = &

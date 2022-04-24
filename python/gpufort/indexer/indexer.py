@@ -323,10 +323,36 @@ def _parse_statements(linemaps, file_path,**kwargs):
             current_node._data["variables"] += variables
             msg = "finished to parse declaration '{}'".format(current_statement)
             log_end_task(current_node, msg)
+    
+    def Parameter():
+        """Add parameter attribute to previously declared variables in same scope/declaration list.
+        Does not modify variables in other scopes.
+        """
+        nonlocal root
+        nonlocal current_node
+        nonlocal current_statement
+        # TODO need to parse implicit statements too
+        log_detection_("attributes statement")
+        if current_node != root:
+            msg = "begin to parse parameter statement '{}'".format(
+                current_statement)
+            log_begin_task(current_node, msg)
+            #
+            parameters = util.parsing.parse_parameter_statement(current_statement)
+            for pair in parameters:
+                var_name, rhs = pair 
+                for var_context in current_node._data["variables"]:
+                    if var_context["name"] == var_name:
+                        if not "parameter" in var_context["qualifiers"]:
+                            var_context["qualifiers"].append("parameter")
+                            var_context["rhs"] = rhs
+            #
+            msg = "finished to parse parameter statement '{}'".format(current_statement)
+            log_end_task(current_node, msg)
 
     def Attributes():
         """Add attributes to previously declared variables in same scope/declaration list.
-        Does not modify scope of other variables.
+        Does not modify variables in other scopes.
         """
         nonlocal root
         nonlocal current_node
@@ -454,6 +480,8 @@ def _parse_statements(linemaps, file_path,**kwargs):
                             FunctionStart()
                         elif current_tokens[0] != "end" and "subroutine" in current_tokens:
                             SubroutineStart()
+                        elif current_tokens[0] == "parameter":
+                            Parameter()
                         elif current_tokens[0] == "attributes" and "::" in current_tokens: # attributes(device) :: a
                             Attributes() 
                         elif current_tokens[0] in [

@@ -1227,19 +1227,47 @@ def parse_statement_function(statement):
         raise error.SyntaxError("expected ')'")
     return (name, args, rhs_expr)
 
+def parse_parameter_statement(statement):
+    """:return: List of tuples consisting of parameter name and assigned value.
+    ```
+    PARAMETER( a = 5, b = 3)
+    PARAMETER b = 5, b = 3   ! legacy version
+    ```
+    will both result in :
+    [('a','5'),('b','3')]
+    """
+    tokens = tokenize(statement)
+    result = []
+    if tokens.pop(0).lower() != "parameter":
+        raise error.SyntaxError("expected 'parameter'")
+    if tokens[0] == "(":
+        # modern variant
+        tokens.pop(0)
+        variables_raw, num_consumed_tokens  = get_top_level_operands(tokens)
+        tokens = tokens[num_consumed_tokens:]
+        if tokens.pop(0) != ")":
+            raise error.SyntaxError("expected ')'")
+    elif tokens[0].isidentifier():
+        variables_raw, num_consumed_tokens  = get_top_level_operands(tokens)
+        tokens = tokens[num_consumed_tokens:]
+    else:
+        raise error.SyntaxError("expected '(' or identifier")
+    check_if_all_tokens_are_blank(tokens)
+    if not len(variables_raw):
+        raise error.SyntaxError("expected at least one assignment expression")
+    for expr in variables_raw: 
+        lhs,rhs = parse_assignment(expr)
+        if not lhs.isidentifier():
+            raise error.SyntaxError("expected identifier")
+        result.append((lhs,rhs))
+    return result
+
 # rules
 def is_declaration(tokens):
     """No 'function' must be in the tokens.
     """
     return (tokens[0].lower() in ["type","integer","real","complex","logical","character"]
            or compare_ignore_case(tokens[0:2],["double","precision"]))
-
-def is_ignored_statement(tokens):
-    """All statements beginning with the tokens below are ignored.
-    """
-    return (tokens[0].lower() in ["write","print","character","use","implicit"]
-           or is_declaration(tokens))
-
 
 def is_blank_line(statement):
     return not len(statement.strip())
@@ -1266,10 +1294,6 @@ def is_fortran_comment(statement,modern_fortran):
 
 def is_cpp_directive(statement):
     return statement[0] == "#"
-
-def is_ignored_fortran_directive(tokens):
-    return compare_ignore_case(tokens[1:3],["acc","end"]) and\
-           tokens[3].lower() in ["kernels","parallel","loop"]
 
 
 def is_fortran_offload_region_directive(tokens):

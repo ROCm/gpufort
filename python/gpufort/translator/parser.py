@@ -16,6 +16,19 @@ from . import opts
 from . import conv
 from . import prepostprocess
 
+def _is_ignored_statement(tokens):
+    """All statements beginning with the tokens below are ignored.
+    """
+    return (tokens[0].lower() in ["write","print","character","use","implicit","parameter"]
+           or util.parsing.is_declaration(tokens))
+
+def _is_ignored_fortran_directive(tokens):
+    return (util.parsing.compare_ignore_case(tokens[1:4],["acc","end","serial"])
+           or util.parsing.compare_ignore_case(tokens[1:4],["acc","end","kernels"])
+           or util.parsing.compare_ignore_case(tokens[1:4],["acc","end","parallel"])
+           or util.parsing.compare_ignore_case(tokens[1:4],["acc","end","loop"])
+           or util.parsing.compare_ignore_case(tokens[1:3],["acc","routine"]))
+
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def parse_fortran_code(statements,result_name=None):
     """
@@ -133,11 +146,11 @@ def parse_fortran_code(statements,result_name=None):
         if util.parsing.is_blank_line(stmt):
             if type(curr) != tree.TTRoot:
                 append_(stmt, "blank line")
-        elif util.parsing.is_ignored_statement(tokens):
+        elif _is_ignored_statement(tokens):
             ignore_("statement")
         elif util.parsing.is_fortran_directive(stmt,modern_fortran):
             try:
-                if util.parsing.is_ignored_fortran_directive(tokens):
+                if _is_ignored_fortran_directive(tokens):
                     ignore_("directive")
                 elif util.parsing.is_fortran_offload_region_plus_loop_directive(
                         tokens): # most complex first

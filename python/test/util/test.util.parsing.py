@@ -457,6 +457,18 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_deallocate_statement(expr))
             self.assertEqual(util.parsing.parse_deallocate_statement(expr),results[i])
+    def test_23_parse_parameter_statement(self):
+        expressions = [
+          "PARAMETER( a = 5, b = 3)",
+          "PARAMETER a = 5, b = 3", # legacy version
+        ]
+        results = [
+          [('a','5'), ('b','3')],
+          [('a','5'), ('b','3')],
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing.parse_parameter_statement(expr))
+            self.assertEqual(util.parsing.parse_parameter_statement(expr),results[i])
 
 if __name__ == '__main__':
     unittest.main() 

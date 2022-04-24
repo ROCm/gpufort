@@ -46,9 +46,9 @@ def create_index_var(f_type,kind,name,qualifiers=[],bounds=[],rhs=None):
     ivar["f_type"] = f_type
     ivar["kind"]   = kind
     # TODO bytes per element can be computed on the fly
-    ivar["qualifiers"] = qualifiers
+    ivar["qualifiers"] += qualifiers
     # arrays
-    ivar["bounds"] = bounds
+    ivar["bounds"] += bounds
     ivar["rank"]   = len(bounds)
     # handle parameters
     #ivar["value"] = None # TODO parse rhs if necessary

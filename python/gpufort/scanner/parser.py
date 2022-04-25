@@ -602,106 +602,105 @@ def _parse_file(linemaps, index, **kwargs):
                         elif current_tokens[1] == "gpufort":
                             GpufortControl()
                     elif not util.parsing.is_fortran_comment(original_statement_lower,modern_fortran):
-                        # constructs
-                        if util.parsing.is_do_while(current_tokens):
-                            pass # do nothing
-                        if util.parsing.is_do(current_tokens):
-                            DoLoopStart()
-                        elif current_tokens[0:2] == ["end","do"]:
-                            do_loop_labels.pop(-1)
-                            DoLoopEnd()
-                        elif (len(do_loop_labels) 
-                             and current_tokens[0:2] == [do_loop_labels[-1],"continue"]):
-                            # continue can be shared by multiple loops, e.g.:
-                            # do 10 i = ...
-                            # do 10 j = ...
-                            # 10 continue
-                            while len(do_loop_labels) and do_loop_labels[-1] == current_tokens[0]:
-                                do_loop_labels.pop(-1)
-                            DoLoopEnd()
-                        elif (current_tokens[0] == "end"
-                             and current_tokens[1] != "type"
-                             and  current_tokens[1] not in indexer.ignored_constructs): 
-                            End()
-                        # single-statements
-                        elif not keep_recording:
-                            # TODO parse Fortran statements and apply these 
-                            # constructs as cuda_fortran-specific postprocessing
+                        if not keep_recording and util.parsing.is_assignment(current_tokens):
+                            lhs_expr, rhs_expr = util.parsing.parse_assignment(current_statement_stripped)
+                            # TODO
+                            lhs_ivar = indexer.scope.search_index_for_var(index,current_node.tag(),lhs_expr)
+                            cuf_implicit_memcpy = "device" in lhs_ivar["qualifiers"]
                             if cuda_fortran:
-                                if current_tokens[0] == "attributes":
-                                    try_to_parse_string_("attributes",
-                                                        tree.grammar.attributes)
-                                elif "<<<" in current_tokens:
-                                    try_to_parse_string_(
-                                        "cuf_kernel_call",
-                                        tree.grammar.cuf_kernel_call)
-                                if "cu" in current_statement_stripped:
-                                    scan_string_("cuda_lib_call",
-                                                tree.grammar.cuda_lib_call)
-                                if "allocated" in current_tokens:
-                                    scan_string_("allocated", tree.grammar.ALLOCATED)
-                                if ("/=" in current_statement_stripped
-                                     or ".ne." in current_statement_stripped.lower()):
-                                    scan_string_("non_zero_check",
-                                                tree.grammar.non_zero_check)
-                            if (not util.parsing.is_do(current_tokens) # TODO Can user name the variables after keywords?
-                               and not util.parsing.is_where(current_tokens) 
-                               and util.parsing.is_assignment(current_tokens)):
-                                lhs_expr, rhs_expr = util.parsing.parse_assignment(current_statement_stripped)
+                                try:
+                                    rhs_ivar = indexer.scope.search_index_for_var(index,current_node.tag(),
+                                            rhs_expr)
+                                    cuf_implicit_memcpy = cuf_implicit_memcpy or "device" in rhs_ivar["qualifiers"]
+                                except util.error.LookupError as e:
+                                    if cuf_implicit_memcpy: 
+                                        raise util.error.LimitationError("implicit to-device memcpy does not support arithmetic expression as right-hand side value") from e
+                            if cuf_implicit_memcpy:
+                                CufMemcpy()
+                            elif not cuf_implicit_memcpy:
+                                Assignment(lhs_ivar,lhs_expr)
                                 # TODO
-                                lhs_ivar = indexer.scope.search_index_for_var(index,current_node.tag(),lhs_expr)
-                                cuf_implicit_memcpy = "device" in lhs_ivar["qualifiers"]
+                        else:
+                            # constructs
+                            if util.parsing.is_do_while(current_tokens):
+                                pass # do nothing
+                            elif util.parsing.is_do(current_tokens):
+                                DoLoopStart()
+                            elif current_tokens[0:2] == ["end","do"]:
+                                do_loop_labels.pop(-1)
+                                DoLoopEnd()
+                            elif (len(do_loop_labels) 
+                                 and current_tokens[0:2] == [do_loop_labels[-1],"continue"]):
+                                # continue can be shared by multiple loops, e.g.:
+                                # do 10 i = ...
+                                # do 10 j = ...
+                                # 10 continue
+                                while len(do_loop_labels) and do_loop_labels[-1] == current_tokens[0]:
+                                    do_loop_labels.pop(-1)
+                                DoLoopEnd()
+                            elif (current_tokens[0] == "end"
+                                 and current_tokens[1] != "type"
+                                 and  current_tokens[1] not in indexer.ignored_constructs): 
+                                End()
+                            # single-statements
+                            elif not keep_recording:
+                                # TODO parse Fortran statements and apply these 
+                                # constructs as cuda_fortran-specific postprocessing
                                 if cuda_fortran:
-                                    try:
-                                        rhs_ivar = indexer.scope.search_index_for_var(index,current_node.tag(),
-                                                rhs_expr)
-                                        cuf_implicit_memcpy = cuf_implicit_memcpy or "device" in rhs_ivar["qualifiers"]
-                                    except util.error.LookupError as e:
-                                        if cuf_implicit_memcpy: 
-                                            raise util.error.LimitationError("implicit to-device memcpy does not support arithmetic expression as right-hand side value") from e
-                                if cuf_implicit_memcpy:
-                                    CufMemcpy()
-                                elif not cuf_implicit_memcpy:
-                                    Assignment(lhs_ivar,lhs_expr)
-                                    # TODO
-                            elif current_tokens[0] == "deallocate":
-                                Deallocate()
-                            elif current_tokens[0] == "allocate":
-                                Allocate()
-                            elif current_tokens[0] == "end":
-                                if current_tokens[1] == "type":
-                                    TypeEnd()
-                            elif current_tokens[0] == "use":
-                                try_to_parse_string_("use", tree.grammar.use)
-                            elif current_tokens[0] == "implicit":
-                                PlaceHolder()
-                            elif current_tokens[0] == "contains":
-                                Contains()
-                            elif current_tokens[0] == "module" and current_tokens[1] != "procedure":
-                                ModuleStart()
-                            elif current_tokens[0] == "program":
-                                ProgramStart()
-                            elif "function" in current_tokens:
-                                ProcedureStart("function")
-                            elif "subroutine" in current_tokens:
-                                ProcedureStart("subroutine")
-                            elif current_tokens[0] == "return":
-                                Return()
-                            #
-                            # TODO build proper parser of function / subroutine
-                            # plus corresponding detection criterion
-                            elif (not "function" in current_tokens 
-                                 and current_tokens[0] in [
-                                    "character", "integer", "logical", "real",
-                                    "complex", "double"
-                                ]):
-                                Declaration() 
-                            elif (not "function" in current_tokens 
-                                 and current_tokens[0] == "type" 
-                                 and current_tokens[1] == "("):
-                                Declaration() 
-                            elif current_tokens[0] == "type": # must come after declarations
-                                TypeStart()
+                                    if current_tokens[0] == "attributes":
+                                        try_to_parse_string_("attributes",
+                                                            tree.grammar.attributes)
+                                    elif "<<<" in current_tokens:
+                                        try_to_parse_string_(
+                                            "cuf_kernel_call",
+                                            tree.grammar.cuf_kernel_call)
+                                    if "cu" in current_statement_stripped:
+                                        scan_string_("cuda_lib_call",
+                                                    tree.grammar.cuda_lib_call)
+                                    if "allocated" in current_tokens:
+                                        scan_string_("allocated", tree.grammar.ALLOCATED)
+                                    if ("/=" in current_statement_stripped
+                                         or ".ne." in current_statement_stripped.lower()):
+                                        scan_string_("non_zero_check",
+                                                    tree.grammar.non_zero_check)
+                                if current_tokens[0] == "deallocate":
+                                    Deallocate()
+                                elif current_tokens[0] == "allocate":
+                                    Allocate()
+                                elif current_tokens[0] == "end":
+                                    if current_tokens[1] == "type":
+                                        TypeEnd()
+                                elif current_tokens[0] == "use":
+                                    try_to_parse_string_("use", tree.grammar.use)
+                                elif current_tokens[0] == "implicit":
+                                    PlaceHolder()
+                                elif current_tokens[0] == "contains":
+                                    Contains()
+                                elif current_tokens[0] == "module" and current_tokens[1] != "procedure":
+                                    ModuleStart()
+                                elif current_tokens[0] == "program":
+                                    ProgramStart()
+                                elif "function" in current_tokens:
+                                    ProcedureStart("function")
+                                elif "subroutine" in current_tokens:
+                                    ProcedureStart("subroutine")
+                                elif current_tokens[0] == "return":
+                                    Return()
+                                #
+                                # TODO build proper parser of function / subroutine
+                                # plus corresponding detection criterion
+                                elif (not "function" in current_tokens 
+                                     and current_tokens[0] in [
+                                        "character", "integer", "logical", "real",
+                                        "complex", "double"
+                                    ]):
+                                    Declaration() 
+                                elif (not "function" in current_tokens 
+                                     and current_tokens[0] == "type" 
+                                     and current_tokens[1] == "("):
+                                    Declaration() 
+                                elif current_tokens[0] == "type": # must come after declarations
+                                    TypeStart()
                     if keep_recording:
                         current_node.add_linemap(current_linemap)
                         current_node._last_statement_index = current_statement_no

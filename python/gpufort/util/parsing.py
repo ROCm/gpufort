@@ -273,13 +273,35 @@ def next_tokens_till_open_bracket_is_closed(tokens, open_brackets=0, brackets=("
         result.pop()
     return result
 
+def _join_tokens(tokens,no_ws=True):
+    """Join tokens, insert whitespace between identifiers if
+    the tokens do not contain whitespace.
+    :param bool no_ws: The tokens contain whitespace, defaults to True.
+    """
+    if no_ws:
+        result = ""
+        last = ""
+        for tk in tokens:
+            if tk.isidentifier() and last.isidentifier():
+                result += " "
+            result += tk
+            last = tk
+        return result
+    else:
+        return "".join(tokens)
+
 def get_top_level_operands(tokens,
                            separators=[","],
                            terminators=["::", "\n", "!",""],
                            brackets=("(",")"),
-                           keep_separators=False):
+                           keep_separators=False,
+                           join_operand_tokens=True,
+                           no_ws=True):
     """:return: Tuple of highest level arguments and number of consumed tokens
              in that order.
+       :param bool join_operand_tokens: If the tokens of the individual operands should
+              be joined (or be returned as list). Defaults to True.
+        :param bool no_ws: The tokens contain whitespace, defaults to True.
        :note: terminators are excluded from the number of consumed tokens.
     """
     # ex:
@@ -287,7 +309,7 @@ def get_top_level_operands(tokens,
     # result : ["parameter", "intent(inout)", "dimension(:,:)" ], i.e. terminators are excluded
     result = []
     idx = 0
-    current_substr = ""
+    current_operand = []
     criterion = len(tokens)
     open_brackets = 0
     num_consumed_tokens = 0
@@ -304,18 +326,24 @@ def get_top_level_operands(tokens,
         #
         num_consumed_tokens += 1
         if tk_lower in separators and open_brackets == 0:
-            if len(current_substr):
-                result.append(current_substr)
+            if len(current_operand):
+                if join_operand_tokens:
+                    result.append(_join_tokens(current_operand,no_ws))
+                else:
+                    result.append(current_operand)
             if keep_separators:
                 result.append(tk)
-            current_substr = ""
+            current_operand = []
         elif tk_lower in terminators or open_brackets < 0:
             criterion = False
             num_consumed_tokens -= 1
         else: 
-            current_substr += tk
-    if len(current_substr):
-        result.append(current_substr)
+            current_operand.append(tk)
+    if len(current_operand):
+        if join_operand_tokens:
+            result.append(_join_tokens(current_operand,no_ws))
+        else:
+            result.append(current_operand)
     return result, num_consumed_tokens
 
 def extract_function_calls(text, func_name):
@@ -331,7 +359,7 @@ def extract_function_calls(text, func_name):
         rest_substr = next_tokens_till_open_bracket_is_closed(
             text[m.end():], open_brackets=1)
         args,_  = get_top_level_operands(rest_substr[:], [","],
-                                           [])
+                                           [], no_ws=False)
         end = m.end() + len(rest_substr)
         result.append((text[m.start():end], args))
     return result
@@ -1210,6 +1238,30 @@ def parse_assignment(statement,parse_rhs=False):
         raise error.SyntaxError("expected left-hand side and right-hand side separated by '='")
     return (parts[0], parts[1])
 
+def parse_lvalue(statement):
+    tokens = tokenize(statement)
+    parts,_ = get_top_level_operands(tokens,separators=["%"],
+                    join_operand_tokens=False)
+    result = []
+    for part_tokens in parts:
+        ident = part_tokens.pop(0)
+        if not ident.isidentifier():
+            raise error.SyntaxError("expected identifier")
+        if len(part_tokens) and part_tokens[0] == "(":
+            part_tokens.pop(0)
+            args,num_argument_tokens = get_top_level_operands(part_tokens)
+            part_tokens = part_tokens[num_argument_tokens:]
+            if len(part_tokens) and part_tokens.pop(0) != ")":
+                raise error.SyntaxError("expected ')'")
+            if not len(args):
+                raise error.SyntaxError("expected at least one argument")
+        elif len(part_tokens):
+            raise error.SyntaxError("expected '(' or no token")
+        else:
+            args = []
+        result.append((ident,args))
+    return result
+
 def parse_statement_function(statement):
     lhs_expr, rhs_expr = parse_assignment(statement)
     lhs_tokens = tokenize(lhs_expr)
@@ -1316,9 +1368,25 @@ def is_derived_type_member_access(tokens):
     return len(get_top_level_operands(tokens,separators=["%"])[0]) > 1
 
 def is_assignment(tokens):
+    """:return if the statement tokens can be split into two
+               parts w.r.t. "=" and the left-hand operand
+               is an lvalue expression.
+    """
     #assert not is_declaration_(tokens)
     #assert not is_do_(tokens)
-    return len(get_top_level_operands(tokens,separators=["="])[0]) == 2
+    if "=" in tokens:
+        operands,_ = get_top_level_operands(tokens,separators=["="])
+        if len(operands) == 2:
+            lhs = operands[0]
+            try:
+                parse_lvalue(lhs)
+                return True
+            except:
+                return False
+        else:
+            return False
+    else:
+        return False
 
 def is_pointer_assignment(tokens):
     #assert not is_ignored_statement_(tokens)

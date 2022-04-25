@@ -33,3 +33,22 @@ cpp_default_includes = [
     "gpufort_reduction.h",
     "gpufort_array.h",
 ]
+
+#namespace_per_scope_create = True
+#        # Create a namespace per scope that can store parameters and other lines.
+#
+#def default_namespace_per_scope_render_parameters(f_type,f_kind,max_rank=0):
+#    return False
+#namespace_per_scope_render_parameters_callback = default_namespace_per_scope_render_parameters_callback
+#        # Convert all parameters in the given scope to 
+#        # 
+#def default_namespace_per_scope_prepend_callback(scope_tag):
+#    """:return C++ code lines to prepend to the
+#    body of the namespace mapped to the scope tag."""
+#    return []
+#def default_namespace_per_scope_append_callback(scope_tag):
+#    """:return C++ code lines to prepend to the
+#    body of the namespace mapped to the scope tag."""
+#    return []
+#render_scope_prepend_callback = default_render_scope_prepend_callback
+#render_scope_append_callback = default_render_scope_append_callback

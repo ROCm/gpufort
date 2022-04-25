@@ -457,7 +457,63 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_deallocate_statement(expr))
             self.assertEqual(util.parsing.parse_deallocate_statement(expr),results[i])
-    def test_23_parse_parameter_statement(self):
+    def test_23_parse_lvalue(self):
+        expressions = [
+          "a",
+          "a(i,j)",
+          "a(i,j)%b",
+          "a(i,j)%b(m,n,k)",
+          "a(i,j)%b(2*m+k,n**3,k**4+1+6*k)",
+        ]
+        results = [
+          [('a', [])],
+          [('a', ['i', 'j'])],
+          [('a', ['i', 'j']), ('b', [])],
+          [('a', ['i', 'j']), ('b', ['m', 'n', 'k'])],
+          [('a', ['i', 'j']), ('b', ['2*m+k', 'n**3', 'k**4+1+6*k'])],
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing.parse_lvalue(expr))
+            self.assertEqual(util.parsing.parse_lvalue(expr),results[i])
+        # expressions that should fail
+        expressions_fail = [
+          "a b",
+          "where(a(i,j)>0) a",
+          "do i",
+        ]
+        for expr in expressions_fail:
+            try:
+                util.parsing.parse_lvalue(expr)
+                raise Exception("parsing '{}' should have failed".format(expr))
+            except:
+                pass
+    def test_24_is_assignment(self):
+        expressions = [
+          "a = 1",
+          "a(i,j) = 1",
+          "a(i,j)%b = 1",
+          "a(i,j)%b(m,n,k) = 1",
+          "a(i,j)%b(2*m+k,n**3,k**4+1+6*k) = 1",
+          "a b = 1",
+          "do i = 1,2",
+          "REAL real = 5",
+          "parameter c = 5.0",
+        ]
+        results = [
+          True,
+          True,
+          True,
+          True,
+          True,
+          False,
+          False,
+          False,
+          False,
+        ]
+        for i,expr in enumerate(expressions):
+            self.assertEqual(util.parsing.is_assignment(expr),results[i])
+
+    def test_25_parse_parameter_statement(self):
         expressions = [
           "PARAMETER( a = 5, b = 3)",
           "PARAMETER a = 5, b = 3", # legacy version

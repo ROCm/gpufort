@@ -125,16 +125,12 @@ def parse_fortran_code(statements,result_name=None):
         try:
             numeric_label = str(int(tokens[0]))
             tokens.pop(0)
-            append_(tree.TTLabel(stmt_no_comment,"", [numeric_label]))
+            append_(tree.TTLabel(stmt,"", [numeric_label]))
         except:
             numeric_label = None
         stmt = " ".join(tokens) # ensure whitespace between operators and operands
         stmt = prepostprocess.preprocess_fortran_statement(stmt)
         # strip of ! from tokens.index("!")
-        if "!" in stmt:
-            stmt_no_comment = stmt.split("!")[0].lower()
-        else:
-            stmt_no_comment = stmt.lower()
         util.logging.log_debug3(
             opts.log_prefix, "parse_fortran_code",
             "process statement '{}' (preprocessed: '{}')".format(stmt1, stmt))
@@ -158,13 +154,13 @@ def parse_fortran_code(statements,result_name=None):
                         stmt, parseAll=True)
                     curr_offload_region = parse_result[0]
                     curr_offload_loop = parse_result[0]
-                    descend_(tree.TTComputeConstruct(stmt_no_comment,"", [curr_offload_region, []]),\
+                    descend_(tree.TTComputeConstruct(stmt,"", [curr_offload_region, []]),\
                             "compute construct plus loop directive")
                 elif util.parsing.is_fortran_offload_region_directive(tokens):
                     parse_result = tree.grammar.offload_region_start.parseString(
                         stmt, parseAll=True)
                     curr_offload_region = parse_result[0]
-                    descend_(tree.TTComputeConstruct(stmt_no_comment,"", [curr_offload_region, []]),\
+                    descend_(tree.TTComputeConstruct(stmt,"", [curr_offload_region, []]),\
                             "compute construct")
                 elif util.parsing.is_fortran_offload_loop_directive(tokens):
                     parse_result = tree.grammar.loop_annotation.parseString(
@@ -182,21 +178,21 @@ def parse_fortran_code(statements,result_name=None):
         elif util.parsing.is_fortran_comment(stmt,modern_fortran):
             if type(curr) != tree.TTRoot:
                 comment = re.split("!|^[c*]", stmt1, 1, re.IGNORECASE)[1]
-                append_(tree.TTCommentedOut(stmt_no_comment,"",[comment]), "comment")
+                append_(tree.TTCommentedOut(stmt,"",[comment]), "comment")
         # do/while
         elif util.parsing.is_do_while(tokens):
             # TODO parse do while with statement number ('numeric label')
             try:
                 do_loop_labels.append(None)
                 parse_result = tree.grammar.fortran_do_while.parseString(
-                    stmt_no_comment, parseAll=True)
+                    stmt, parseAll=True)
                 descend_(tree.TTDoWhile(stmt, 0,
                                         parse_result.asList() + [[]]),
                          "do-while loop")
             except pyparsing.ParseException as e:
                 error_("do-while loop", e)
         elif util.parsing.is_do(tokens):
-            result = util.parsing.parse_do_statement(stmt_no_comment)
+            result = util.parsing.parse_do_statement(stmt)
             label, var, lbound_str, ubound_str, stride_str = result
             do_loop_labels.append(label)
             begin, end, stride = None, None, None
@@ -222,9 +218,9 @@ def parse_fortran_code(statements,result_name=None):
             try:
                 descend_(tree.TTIfElseBlock(), "if block", inc_level=False)
                 parse_result = tree.grammar.fortran_if_else_if.parseString(
-                    stmt_no_comment, parseAll=True)
+                    stmt, parseAll=True)
                 descend_(
-                    tree.TTIfElseIf(stmt_no_comment, 0,
+                    tree.TTIfElseIf(stmt, 0,
                                     parse_result.asList() + [[]]), "if branch")
             except pyparsing.ParseException as e:
                 error_("if", e)
@@ -233,10 +229,10 @@ def parse_fortran_code(statements,result_name=None):
             ascend_("if")
             try:
                 parse_result = tree.grammar.fortran_if_else_if.parseString(
-                    stmt_no_comment, parseAll=True)
+                    stmt, parseAll=True)
                 #print(parse_result)
                 descend_(
-                    tree.TTIfElseIf(stmt_no_comment, 0,
+                    tree.TTIfElseIf(stmt, 0,
                                     parse_result.asList() + [[]]),
                     "else-if branch")
             except pyparsing.ParseException as e:
@@ -244,14 +240,14 @@ def parse_fortran_code(statements,result_name=None):
         elif util.parsing.is_else(tokens):
             assert type(curr) is tree.TTIfElseIf, type(curr)
             ascend_("if/else-if")
-            descend_(tree.TTElse(stmt_no_comment, 0, []), "else branch")
+            descend_(tree.TTElse(stmt, 0, []), "else branch")
         # select-case
         elif util.parsing.is_select_case(tokens):
             try:
                 parse_result = tree.grammar.fortran_select_case.parseString(
-                    stmt_no_comment, parseAll=True)
+                    stmt, parseAll=True)
                 descend_(
-                    tree.TTSelectCase(stmt_no_comment, 0, parse_result.asList() + [[]]),
+                    tree.TTSelectCase(stmt, 0, parse_result.asList() + [[]]),
                     "select-case")
             except pyparsing.ParseException as e:
                 error_("select-case", e)
@@ -260,22 +256,22 @@ def parse_fortran_code(statements,result_name=None):
                 ascend_("case")
             try:
                 parse_result = tree.grammar.fortran_case.parseString(
-                    stmt_no_comment, parseAll=True)
+                    stmt, parseAll=True)
                 descend_(
-                    tree.TTCase(stmt_no_comment, 0,
+                    tree.TTCase(stmt, 0,
                                 parse_result.asList() + [[]]), "case")
             except pyparsing.ParseException as e:
                 error_("case", e)
         elif util.parsing.is_case_default(tokens):
             if type(curr) is tree.TTCase:
                 ascend_("case-default")
-            descend_(tree.TTCaseDefault(stmt_no_comment, 0, [[]]), "case default")
+            descend_(tree.TTCaseDefault(stmt, 0, [[]]), "case default")
         # end
         elif util.parsing.is_end(tokens, ["do"]):
             do_loop_labels.pop(-1)
             ascend_(tokens[1])
         elif tokens[0] == "continue":
-            ttcontinue = tree.TTContinue(stmt_no_comment, 0, [[]])
+            ttcontinue = tree.TTContinue(stmt, 0, [[]])
             ttcontinue._result_name = result_name
             append_(ttcontinue,"continue statement")
             if numeric_label != None:
@@ -283,7 +279,7 @@ def parse_fortran_code(statements,result_name=None):
                     do_loop_labels.pop(-1)
                     ascend_(tokens[1])
         elif tokens[0] == "goto":
-            append_(tree.TTGoto(stmt_no_comment, 0, [tokens[1]]),"goto statement")
+            append_(tree.TTGoto(stmt, 0, [tokens[1]]),"goto statement")
         elif util.parsing.is_end(tokens, ["if", "select"]):
             ascend_(tokens[1])
             ascend_(tokens[1])
@@ -293,18 +289,18 @@ def parse_fortran_code(statements,result_name=None):
         elif util.parsing.is_assignment(tokens):
             try:
                 assignment_variant = tree.grammar.fortran_assignment.parseString(
-                    stmt_no_comment, parseAll=True)[0]
+                    stmt, parseAll=True)[0]
                 append_(assignment_variant, "assignment")
             except pyparsing.ParseException as e:
                 error_("assignment", e)
         elif tokens[0] == "return":
-            ttreturn = tree.TTReturn(stmt_no_comment, 0, [])
+            ttreturn = tree.TTReturn(stmt, 0, [])
             ttreturn._result_name = result_name
             append_(ttreturn,"return statement")
         elif util.parsing.is_subroutine_call(tokens):
             try:
                 parse_result = tree.grammar.fortran_subroutine_call.parseString(
-                    stmt_no_comment, parseAll=True)
+                    stmt, parseAll=True)
                 append_(parse_result[0], "subroutine call")
             except pyparsing.ParseException as e:
                 error_("subroutine call", e)

@@ -29,15 +29,15 @@ class CodeGenerator():
             to extract all kernels [default: ['*']]
         * *cpp_file_preamble* (`str`):
             A preamble to write at the top of the files produced by the C++ generators
-            that can be created by this class [default: .optscpp_file_preamble].
+            that can be created by this class [default: .opts.cpp_file_preamble].
         * *cpp_file_ext* (`str`):
-            File extension for the generated C++ files [default: .optscpp_file_ext].
+            File extension for the generated C++ files [default: .opts.cpp_file_ext].
         * *default_modules* (`list`):
-            Default modules to use by any interface or modified Fortran module, program, or procedure. [default: .optsfortran_default_modules].
+            Default modules to use by any interface or modified Fortran module, program, or procedure. [default: .opts.fortran_default_modules].
         * *default_includes* (`list`):
-            Default includes for generated C++ files. [default: .optscpp_default_includes].
+            Default includes for generated C++ files. [default: .opts.cpp_default_includes].
         * *fortran_module_suffix* (`str`):
-            Suffix for generated Fortran modules [default: .optsfortran_module_suffix].
+            Suffix for generated Fortran modules [default: .opts.fortran_module_suffix].
         """
         self.stree = stree
         self.index = index
@@ -104,11 +104,43 @@ class CodeGenerator():
 
     def _make_module_dicts(self, module_names):
         return [{"name": mod, "only": []} for mod in module_names]
+    
+    @util.logging.log_entry_and_exit(opts.log_prefix+".CodeGenerator")
+    def _render_scope(self, stnode, cpp_filegen):
+        scope_tag = stnode.tag()
+        scope = indexer.scope.create_scope(self.index, scope_tag)
+        result = [ "namespace {} {{".format(scope_tag.replace(":","_"))]
+        result += opts.namespace_per_scope_prepend_callback(scope_tag)
+        for ivar1 in scope["variables"]:
+            if (ivar1["rank"] == 0 # TODO remove constraint later on
+               and "parameter" in ivar1["qualifiers"]
+               and opts.namespace_per_scope_parameter_filter(
+                    scope_tag,ivar1["f_type"],ivar1["kind"],ivar1["name"],ivar1["rank"])):
+                ivar = copy.deepcopy(ivar1)
+                translator.analysis.append_c_type(ivar)
+                rhs_expr = translator.tree.arithmetic_expression.parseString(
+                            ivar["rhs"],parseAll=True)[0]
+                entry = "".join([
+                    " "*2,"constexpr ",ivar["c_type"]," ",[ivar["name"],
+                    " = ",rhs_expr.c_str(),";"]
+                ])
+                result.append(entry)
+        result += opts.namespace_per_scope_append_callback(scope_tag)
+        result.append("}")
+        cpp_filegen.rendered_types.append("\n".join(result))
 
+    @util.logging.log_entry_and_exit(opts.log_prefix+".CodeGenerator")
     def _render_derived_types(self, itypes, cpp_filegen, fortran_modulegen):
-        pass
+        if self.emit_interop_types:
+            derivedtypegen = hipderivedtypegen.HipDerivedTypeGenerator(itypes, [])
+            cpp_filegen.rendered_types += derivedtypegen.render_derived_type_definitions_cpp(
+            )
+            fortran_modulegen.rendered_types += derivedtypegen.render_derived_type_definitions_f03(
+            )
+            fortran_modulegen.rendered_routines += derivedtypegen.render_derived_type_routines_f03(
+            )
 
-    def _render_loop_nest(self, stkernel, cpp_filegen, fortran_modulegen):
+    def _render_loop_nest(self, stkernel, fortran_modulegen):
         pass
 
     def _render_device_procedure(self, stnode, cpp_filegen, fortran_modulegen):
@@ -165,12 +197,17 @@ class CodeGenerator():
                 for stchildnode in stnode.children:
                     traverse_node_(stchildnode)
             elif self._loop_kernel_filter(stnode):
-                self._render_loop_nest(stnode, cpp_filegen, fortran_modulegen)
+                self._render_loop_nest(stnode, fortran_modulegen)
             elif self._device_procedure_filter(
                     stnode
             ): # handle before STProcedure (without attributes) is handled
-                self._render_device_procedure(stnode, cpp_filegen, fortran_modulegen)
-                cpp_filegen.includes += self._create_includes_from_used_modules(
+                if stprocedure.is_kernel_subroutine():
+                    cpp_filegen_to_pass = self.cpp_filegen
+                else:
+                    cpp_filegen_to_pass = cpp_filegen
+                self._render_scope(stnode, cpp_filegen_to_pass)
+                self._render_device_procedure(stnode, cpp_filegen_to_pass, fortran_modulegen)
+                cpp_filegen_to_pass.includes += self._create_includes_from_used_modules(
                     stnode.index_record)
             elif isinstance(stnode,
                             (scanner.tree.STProgram, scanner.tree.STModule,
@@ -200,6 +237,8 @@ class CodeGenerator():
                                 self.default_modules))
                 if inode == None:
                     raise util.error.LookupError("could not find self.index record for scanner tree node '{}'.".format(stnode_name))
+                if isinstance(stnode,(scanner.tree.STProcedure,scanner.tree.STProgram)):
+                    self._render_scope(stnode, self.cpp_filegen) # must be in main C++ file
 
                 cpp_filegen.includes += self._create_includes_from_used_modules(
                     inode)

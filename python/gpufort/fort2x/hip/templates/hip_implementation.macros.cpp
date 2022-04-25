@@ -76,6 +76,7 @@ GPUFORT_PRINT_ARGS({% if is_gpu_launcher %}{% if have_problem_size %}problem_siz
 {% if routine.shared_vars|length %}
 {{ cm.render_shared_var_decls(routine.shared_vars) | indent(2,True) }}
 {% endif %}
+  using namespace {{ routine.namespace }};
 {{routine.c_body | indent(2, True)}}
 }
 {%- endmacro -%}

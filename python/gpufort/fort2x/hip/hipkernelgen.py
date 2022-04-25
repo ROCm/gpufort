@@ -59,6 +59,7 @@ class HipKernelGeneratorBase(kernelgen.KernelGeneratorBase):
         kernel["shared_vars"] = []
         kernel["local_vars"] = []
         kernel["shared_and_local_array_vars"] = []
+        kernel["namespace"] = self.scope["tag"]
         return kernel
 
     def __create_launcher_base_context(self,

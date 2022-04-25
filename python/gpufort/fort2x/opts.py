@@ -34,21 +34,23 @@ cpp_default_includes = [
     "gpufort_array.h",
 ]
 
-#namespace_per_scope_create = True
-#        # Create a namespace per scope that can store parameters and other lines.
-#
-#def default_namespace_per_scope_render_parameters(f_type,f_kind,max_rank=0):
-#    return False
-#namespace_per_scope_render_parameters_callback = default_namespace_per_scope_render_parameters_callback
-#        # Convert all parameters in the given scope to 
-#        # 
-#def default_namespace_per_scope_prepend_callback(scope_tag):
-#    """:return C++ code lines to prepend to the
-#    body of the namespace mapped to the scope tag."""
-#    return []
-#def default_namespace_per_scope_append_callback(scope_tag):
-#    """:return C++ code lines to prepend to the
-#    body of the namespace mapped to the scope tag."""
-#    return []
-#render_scope_prepend_callback = default_render_scope_prepend_callback
-#render_scope_append_callback = default_render_scope_append_callback
+def default_namespace_per_scope_parameter_filter(scope_tag,f_type,f_kind,name,rank):
+    return False
+def default_namespace_per_scope_prepend_callback(scope_tag):
+    """:return C++ code lines to prepend to the
+    body of the namespace mapped to the scope tag."""
+    return []
+def default_namespace_per_scope_append_callback(scope_tag):
+    """:return C++ code lines to prepend to the
+    body of the namespace mapped to the scope tag."""
+    return []
+
+namespace_per_scope_parameter_filter = default_namespace_per_scope_parameter_filter
+        # Selector for parameter types that should be mapped to the C++ namespace derived
+        # from the scope with the given tag. 
+namespace_per_scope_prepend_callback = default_namespace_per_scope_prepend_callback
+        # C++ code lines to prepend to the
+        # body of the namespace derived from the scope tag."""
+namespace_per_scope_append_callback = default_namespace_per_scope_append_callback
+        # C++ code lines to append to the
+        # body of the namespace derived from the scope tag."""

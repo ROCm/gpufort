@@ -36,6 +36,48 @@ def _create_analysis_var(scope, var_expr):
     tavar["c_rank"] = tavar["rank"]
     tavar["op"]   = ""
     append_c_type(tavar)
+    if tavar["rank"] > 0:
+        tavar["lbounds"]    = []
+        tavar["ubounds"]    = []
+        tavar["size"]       = []
+        unknown_size = False
+        for arg in tavar["bounds"]:
+            lbound,ubound,stride,size = None,None,None,None
+            tokens = util.parsing.tokenize(arg)
+            parts,_ = util.parsing.get_top_level_operands(tokens,
+                        separators=[":"])
+            if len(parts) == 0:
+                lbound = None
+                ubound = None
+                stride = None
+                size = None
+                unknown_size = True
+            elif len(parts) == 1:
+                lbound = "1"
+                ubound = parts[0]
+                stride = "1"
+                size = ubound
+            elif len(parts) == 2:
+                lbound = parts[0]
+                ubound = parts[1]
+                stride = "1"
+                size = "1+(({}) - ({}))".format(ubound,lbound)
+            elif len(parts) == 3:
+                lbound = parts[0]
+                ubound = parts[1]
+                stride = parts[2]
+                if stride != "1":
+                    raise util.error.LimitationError("cannot map arrays with stride other than '1'")
+                size = "1+(({}) - ({}))".format(ubound,lbound)
+            else:
+                raise util.error.SyntaxError("expected 1,2,or 3 colon-separated expressions")
+            tavar["lbounds"].append(lbound)
+            tavar["ubounds"].append(ubound)
+            tavar["size"].append(size)
+        if unknown_size:
+            tavar["c_size_bytes"] = None
+        else:
+            tavar["c_size_bytes"] = "sizeof({})*{}".format(tavar["c_type"],"*".join(tavar["size"]))
     return tavar
 
 def _lookup_index_vars(scope, var_exprs, consumed_var_exprs=[]):

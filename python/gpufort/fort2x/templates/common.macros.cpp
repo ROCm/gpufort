@@ -76,7 +76,11 @@ gpufort::array{{rvar.rank+1}}<{{c_type}}>{{suffix}} {{rvar.c_name}}
 {%- set c_type = tavar.kind if tavar.f_type=="type" else tavar.c_type -%}
 {% if tavar.rank > 0 %}
 {#    todo add local C array init here too, that one gets a __shared__ prefix if needed #}
-gpufort::array{{tavar.rank}}<{{c_type}}> {{tavar.c_name}};
+{{prefix}}{{c_type}} _{{tavar.c_name}}[{{tavar.size|join("*")}}];
+gpufort::array_descr{{tavar.rank}}<{{c_type}}> {{tavar.c_name}};
+{{tavar.c_name}}.wrap(nullptr,&_{{tavar.c_name}}[0],
+  {{tavar["size"] | join(",")}},
+  {{tavar["lbounds"] | join(",")}}):
 {% else %}
 {{prefix}}{{c_type}} {{tavar.c_name}};
 {% endif %}

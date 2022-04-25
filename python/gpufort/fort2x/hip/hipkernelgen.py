@@ -145,7 +145,7 @@ class HipKernelGenerator4LoopNest(HipKernelGeneratorBase):
                                                                                        loop_vars,
                                                                                        c_names,
                                                                                        c_ranks)
-        self._create_shared_and_local_array_vars()
+        #self._create_shared_and_local_array_vars()
 
 class HipKernelGenerator4CufKernel(HipKernelGeneratorBase):
 
@@ -162,7 +162,7 @@ class HipKernelGenerator4CufKernel(HipKernelGeneratorBase):
                                                                                                         ttprocedurebody,
                                                                                                         iprocedure,
                                                                                                         )
-        self._create_shared_and_local_array_vars()
+        #self._create_shared_and_local_array_vars()
 
     def render_cpu_routine_f03(self, launcher):
         return []

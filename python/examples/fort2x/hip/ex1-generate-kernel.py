@@ -10,10 +10,16 @@ LOG_FORMAT = "[%(levelname)s]\tgpufort:%(message)s"
 util.logging.opts.verbose = False
 util.logging.init_logging("log.log", LOG_FORMAT, "debug")
 
+def my_parameter_filter(*args):
+    return True
+
+fort2x.opts.namespace_per_scope_parameter_filter = my_parameter_filter
+
 declaration_list = """\
-integer, parameter :: N = 1000, M=2000, P = 10
+integer, parameter :: N = 1000, M=2000, P = 10, amp = 2
 integer :: i,j,k
 integer(4) :: y(N,M,P), y_exact(N)
+integer, dimension(-amp:amp) :: coeffs
 
 type grid_t
   integer(4) :: alpha
@@ -24,7 +30,7 @@ type(grid_t) :: grid
 """
 
 annotated_loop_nest = """\
-!$acc parallel loop present(grid%x(:,:,5),y(:,:,7)) private(k,i) collapse(2)
+!$acc parallel loop present(grid%x(:,:,5),y(:,:,7)) private(k,i,coeffs) collapse(2)
 do j = 1, -(max(M,n)), min(m,n,2)
   do i = 1, N
     grid%x(i,j,5) = 1

@@ -1037,12 +1037,9 @@ def parse_cuf_kernel_call(statement):
         raise error.SyntaxError("could not parse CUDA Fortran kernel call: trailing text")
     return kernel_name, params, args
 
-# def parse_implicit_statement(statement):
-# TODO
-#     pass
-# def parse_dimension_statement(statement):
-# TODO
-#     pass
+def parse_implicit_statement(statement):
+    
+    pass
 
 def parse_do_statement(statement):
     """ High-level parser for `[label:] do var = lbound, ubound [,stride]`

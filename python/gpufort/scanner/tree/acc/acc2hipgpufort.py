@@ -125,8 +125,13 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
     def _handle_if_clause(self,result):
         condition, found_if = self.stnode.get_if_clause_condition()
         if found_if:
-            result = [textwrap.dedent(l," "*2) for l in result]
-            result.insert(0,"if ( {} ) then\n".format(condition))
+            result2 = [textwrap.indent(l," "*2) for l in result]
+            result.clear()
+            result.append("if ( {} ) then\n".format(condition))
+            result += result2
+            result.append("else\n".format(condition))
+            original_snippet = textwrap.indent(textwrap.dedent("\n".join([l.rstrip("\n") for l in self.stnode.lines()]))," "*2)
+            result += original_snippet + "\n"
             result.append("endif\n".format(condition))
     
     def _update_directive(self,index,async_expr):
@@ -211,8 +216,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
                   joined_lines,
                   joined_statements,
                   statements_fully_cover_lines,
-                  index=[],
-                  handle_if=True):
+                  index=[]):
         """
         :param line: An excerpt from a Fortran file, possibly multiple lines
         :type line: str
@@ -279,8 +283,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             result.append(_ACC_EXIT_REGION.format(
                 options="unstructured=.true."))
         # _handle if
-        if handle_if:
-            self._handle_if_clause(result)
+        self._handle_if_clause(result)
 
         indent = stnode.first_line_indent()
         return textwrap.indent("".join(result),indent), len(result)

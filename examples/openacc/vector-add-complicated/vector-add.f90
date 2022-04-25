@@ -7,6 +7,7 @@ program main
   integer, parameter :: N = 1000
   integer :: i,j,k
   integer(4) :: x(N), y(N,5), y_exact(N)
+  logical :: use_gpu = .true.
 
   integer :: add, mult, a, b
   add(a,b)=a+b ! statement functions
@@ -32,7 +33,7 @@ program main
   20 continue ! a shared statement number
   10 continue
   
-  !$acc parallel loop present(x,y(1:N,3))
+  !$acc parallel loop present(x,y(1:N,3)) if(use_gpu)
   do i = 1, N
     y(i,1) = add(x(i),mult(1,y(i,3)))
   end do

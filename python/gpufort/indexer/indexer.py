@@ -68,15 +68,15 @@ def create_index_records_from_declaration(statement):
     """:raise util.errorSyntaxError: If the syntax of the declaration statement is not
                                      as expected.
     """
-    f_type, kind, qualifiers, dimension_bounds, variables, _, __ = util.parsing.parse_declaration(statement.lower())
+    f_type, kind, qualifiers, dimension_bounds, variables, f_type_full, _ = util.parsing.parse_declaration(statement.lower())
 
     context = []
     for var in variables:
         name, bounds, rhs = var
         if len(bounds):
-            ivar = types.create_index_var(f_type,kind,name,qualifiers,bounds,rhs)
+            ivar = types.create_index_var(f_type_full,f_type,kind,name,qualifiers,bounds,rhs)
         else:
-            ivar = types.create_index_var(f_type,kind,name,qualifiers,dimension_bounds,rhs)
+            ivar = types.create_index_var(f_type_full,f_type,kind,name,qualifiers,dimension_bounds,rhs)
         context.append(ivar)
     return context
 

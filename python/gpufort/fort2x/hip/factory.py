@@ -6,6 +6,9 @@ from gpufort import linemapper
 from gpufort import translator
 from gpufort import scanner
 from gpufort import util
+
+from .. import namespacegen
+
 from . import hipkernelgen
 from . import hipderivedtypegen
 from . import hipcodegen
@@ -39,7 +42,7 @@ def create_kernel_generator_from_loop_nest(declaration_list_snippet,
     * *kernel_hash* (`str`):
         Hash code encoding the significant kernel content (expressions and directives).
     """
-    preproc_options = util.kwargs.get_value("preproc_options", "", **kwargs)
+    preproc_options,_ = util.kwargs.get_value("preproc_options", "", **kwargs)
     scope = indexer.scope.create_scope_from_declaration_list(
         declaration_list_snippet, preproc_options=preproc_options)
     linemaps = linemapper.read_lines(

@@ -10,6 +10,7 @@ from gpufort import scanner
 from gpufort import util
 
 from . import filegen
+from . import namespacegen
 from . import opts
 
 class CodeGenerator():
@@ -109,25 +110,8 @@ class CodeGenerator():
     def _render_scope(self, stnode, cpp_filegen):
         scope_tag = stnode.tag()
         scope = indexer.scope.create_scope(self.index, scope_tag)
-        result = [ "namespace {} {{".format(scope_tag.replace(":","_"))]
-        result += opts.namespace_per_scope_prepend_callback(scope_tag)
-        for ivar1 in scope["variables"]:
-            if (ivar1["rank"] == 0 # TODO remove constraint later on
-               and "parameter" in ivar1["qualifiers"]
-               and opts.namespace_per_scope_parameter_filter(
-                    scope_tag,ivar1["f_type"],ivar1["kind"],ivar1["name"],ivar1["rank"])):
-                ivar = copy.deepcopy(ivar1)
-                translator.analysis.append_c_type(ivar)
-                rhs_expr = translator.tree.arithmetic_expression.parseString(
-                            ivar["rhs"],parseAll=True)[0]
-                entry = "".join([
-                    " "*2,"constexpr ",ivar["c_type"]," ",[ivar["name"],
-                    " = ",rhs_expr.c_str(),";"]
-                ])
-                result.append(entry)
-        result += opts.namespace_per_scope_append_callback(scope_tag)
-        result.append("}")
-        cpp_filegen.rendered_types.append("\n".join(result))
+        nsgen = namespacegen.NamespaceGenerator(scope)
+        cpp_filegen.rendered_types.append("\n".join(nsgen.render_namespace_cpp()))
 
     @util.logging.log_entry_and_exit(opts.log_prefix+".CodeGenerator")
     def _render_derived_types(self, itypes, cpp_filegen, fortran_modulegen):

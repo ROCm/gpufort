@@ -63,6 +63,9 @@ end do
 kernelgen = fort2x.hip.create_kernel_generator_from_loop_nest(
     declaration_list, annotated_loop_nest, kernel_name="mykernel")
 
+nsgen = fort2x.namespacegen.NamespaceGenerator(kernelgen.scope)
+print("\n".join(nsgen.render_namespace_cpp()))
+
 print("\n".join(kernelgen.render_gpu_kernel_cpp()))
 launcher = kernelgen.create_launcher_context(kind="hip",
                                              debug_code=False,

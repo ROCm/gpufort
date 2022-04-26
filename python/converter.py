@@ -92,14 +92,16 @@ def parse_config(config_file_path):
 def print_config_defaults():
     gpufort_python_dir = os.path.dirname(os.path.realpath(__file__))
     options_files = [
-        "opts.py",
-        "gpufort/fort2x/opts.py",
-        "gpufort/fort2x/hip/opts.py",
-        "gpufort/indexer/opts.py",
-        "gpufort/linemapper/opts.py",
-        "gpufort/scanner/opts.py",
-        "gpufort/translator/opts.py",
-        "gpufort/util/logging/opts.py",
+      "opts.py",
+      "gpufort/fort2x/namespacegen/opts.py",
+      "gpufort/fort2x/hip/opts.py",
+      "gpufort/fort2x/opts.py",
+      "gpufort/fort2x/gpufort_sources/opts.py",
+      "gpufort/indexer/opts.py",
+      "gpufort/linemapper/opts.py",
+      "gpufort/scanner/opts.py",
+      "gpufort/translator/opts.py",
+      "gpufort/util/logging/opts.py",
     ]
     print("\nConfigurable GPUFORT options (default values):")
     for options_file in options_files:

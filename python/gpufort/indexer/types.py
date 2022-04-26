@@ -26,6 +26,7 @@ EMPTY_VAR = {
         "name"   : __UNKNOWN,
         "f_type" : __UNKNOWN,
         "kind"   : __UNKNOWN,
+        "f_type_full" : __UNKNOWN,
         # TODO bytes per element can be computed on the fly
         "bytes_per_element" : __UNKNOWN,
         "c_type" : __UNKNOWN,
@@ -39,12 +40,13 @@ EMPTY_VAR = {
         "rhs" : __UNKNOWN,
 }
 
-def create_index_var(f_type,kind,name,qualifiers=[],bounds=[],rhs=None):
+def create_index_var(f_type_full,f_type,kind,name,qualifiers=[],bounds=[],rhs=None):
     ivar = copy.deepcopy(EMPTY_VAR)
     # basic
-    ivar["name"]   = name
-    ivar["f_type"] = f_type
-    ivar["kind"]   = kind
+    ivar["name"]        = name
+    ivar["f_type_full"] = f_type_full
+    ivar["f_type"]      = f_type
+    ivar["kind"]        = kind
     # TODO bytes per element can be computed on the fly
     ivar["qualifiers"] += qualifiers
     # arrays

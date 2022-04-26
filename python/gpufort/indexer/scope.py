@@ -43,7 +43,11 @@ def __lookup_implicitly_declared_var(var_expr,implicit_none,type_map={}):
     :param bool implicit_none: 
     """
     f_type, kind = __implicit_type(var_expr,implicit_none,type_map)
-    return types.create_index_var(f_type,kind,var_expr)
+    if kind != None:
+        f_type_full = "".join([f_type,"(",kind,")"])
+    else:
+        f_type_full = f_type
+    return types.create_index_var(f_type_full,f_type,kind,var_expr)
 
 def condense_only_groups(iused_modules):
     """Group consecutive used modules with same name

@@ -33,24 +33,3 @@ cpp_default_includes = [
     "gpufort_reduction.h",
     "gpufort_array.h",
 ]
-
-def default_namespace_per_scope_parameter_filter(scope_tag,f_type,f_kind,name,rank):
-    return False
-def default_namespace_per_scope_prepend_callback(scope_tag):
-    """:return C++ code lines to prepend to the
-    body of the namespace mapped to the scope tag."""
-    return []
-def default_namespace_per_scope_append_callback(scope_tag):
-    """:return C++ code lines to prepend to the
-    body of the namespace mapped to the scope tag."""
-    return []
-
-namespace_per_scope_parameter_filter = default_namespace_per_scope_parameter_filter
-        # Selector for parameter types that should be mapped to the C++ namespace derived
-        # from the scope with the given tag. 
-namespace_per_scope_prepend_callback = default_namespace_per_scope_prepend_callback
-        # C++ code lines to prepend to the
-        # body of the namespace derived from the scope tag."""
-namespace_per_scope_append_callback = default_namespace_per_scope_append_callback
-        # C++ code lines to append to the
-        # body of the namespace derived from the scope tag."""

@@ -4,7 +4,8 @@ program main
   ! begin of program
       
   implicit none
-  integer, parameter :: N = 1000
+  integer, parameter :: N = 1000, magnitude = 1
+  integer :: coeffs(-magnitude:magnitude)
   integer :: i,j,k
   integer(4) :: x(N), y(N,5), y_exact(N)
   logical :: use_gpu = .true.
@@ -19,14 +20,18 @@ program main
 
   !$acc data copy(x(1:N),y(1:N,3))
 
-  ! just an unnecessarily complicated way to fill 1D arrays
-  !$acc parallel loop present(x,y(1:N,3)) & ! inline comment 
+  !just an unnecessarily complicated way to fill 1D arrays
+  !$acc parallel loop present(x,y(1:N,3)) private(coeffs) & ! inline comment 
   !$acc collapse(3) ! continuation of the above directive
   do 10 k = 1,10 
     do 20 j = 4, -4, -8
       do 20 i = 1, N/2
+        coeffs(-1) = 4
+        coeffs(-0) = 8
+        coeffs(1)  = 2
+        
         if ( k .neqv. 1 ) goto 20
-        x( ((j-4)/-8)*N/2+i ) = 1; y( ((j-4)/-8)*N/2+i, 3 ) &
+        x( ((j-coeffs(-1))/-coeffs(0))*N/coeffs(1)+i ) = 1; y( ((j-coeffs(-1))/-coeffs(0))*N/coeffs(1)+i, 3 ) &
 
                 ! another inline comment
                 = 2

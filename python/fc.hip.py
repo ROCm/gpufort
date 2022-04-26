@@ -151,23 +151,6 @@ def get_object_path(source_path):
     return result
 
 
-def run_subprocess(cmd,verbose=False):
-    """Run the subprocess in a blocking manner, collect error code,
-    standard output and error output. 
-    """
-    util.logging.log_info(opts.log_prefix, "run_subprocess", " ".join(cmd))
-    if verbose:
-        print(" ".join(cmd))
-     
-    p = subprocess.Popen(cmd,
-                         shell=False,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    status = p.wait()
-    return status, p.stdout.read().decode("utf-8"), p.stderr.read().decode(
-        "utf-8")
-
-
 def handle_subprocess_output(triple):
     status, output, errors = triple
     sys.stdout.write(output)
@@ -272,7 +255,7 @@ have a '--' prefix while this tool's options have a '-' prefix."""))
                    + host_and_target_compiler_options["-target-cflags"]
                    + ["-c", cpp_file_path]
                    + ["-o", cpp_object_path])
-        handle_subprocess_output(run_subprocess(cpp_cmd,args.verbose))
+        handle_subprocess_output(util.subprocess.run_subprocess(cpp_cmd,args.verbose))
         # fortran compilation
         modified_object_path = get_object_path(modified_fortran_file_path)
         # emit a single object combining the Fortran and C++ objects
@@ -281,10 +264,10 @@ have a '--' prefix while this tool's options have a '-' prefix."""))
                            + host_and_target_compiler_options["-host-cflags"]
                            + ["-c", modified_fortran_file_path]
                            + ["-o", modified_object_path])
-            handle_subprocess_output(run_subprocess(fortran_cmd,args.verbose))
+            handle_subprocess_output(util.subprocess.run_subprocess(fortran_cmd,args.verbose))
             # merge object files; produces: outfile_path
             handle_subprocess_output(
-                run_subprocess([
+                util.subprocess.run_subprocess([
                     "ld", "-r", "-o", outfile_path, modified_object_path,
                     cpp_object_path
                 ],args.verbose))
@@ -298,7 +281,7 @@ have a '--' prefix while this tool's options have a '-' prefix."""))
                            + ldflags
                            + host_and_target_compiler_options["-ldflags"]
                            + ["-o", outfile_path])
-            handle_subprocess_output(run_subprocess(fortran_cmd,args.verbose))
+            handle_subprocess_output(util.subprocess.run_subprocess(fortran_cmd,args.verbose))
             # merge object files; produces: outfile_path
             remove_file(cpp_object_path)
         if not args.save_temps:

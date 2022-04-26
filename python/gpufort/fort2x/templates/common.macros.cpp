@@ -80,7 +80,7 @@ gpufort::array{{rvar.rank+1}}<{{c_type}}>{{suffix}} {{rvar.c_name}}
 gpufort::array_descr{{tavar.rank}}<{{c_type}}> {{tavar.c_name}};
 {{tavar.c_name}}.wrap(nullptr,&_{{tavar.c_name}}[0],
   {{tavar["size"] | join(",")}},
-  {{tavar["lbounds"] | join(",")}}):
+  {{tavar["lbounds"] | join(",")}});
 {% else %}
 {{prefix}}{{c_type}} {{tavar.c_name}};
 {% endif %}

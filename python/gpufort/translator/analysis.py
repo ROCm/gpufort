@@ -210,13 +210,11 @@ def lookup_index_entries_for_vars_in_procedure_body(scope,ttprocedurebody,iproce
 def get_kernel_args(taglobal_vars, taglobal_reduced_vars, tashared_vars, talocal_vars):
     """:return: index records for the variables
                 that must be passed as kernel arguments.
-    :note: Shared_vars and local_vars must be passed as kernel argument
-           as well if the respective variable is an array. 
     """
     return (taglobal_vars
-            + taglobal_reduced_vars
-            + [tavar for tavar in tashared_vars if tavar["rank"] > 0]
-            + [tavar for tavar in talocal_vars if tavar["rank"] > 0])
+            + taglobal_reduced_vars)
+            #+ [tavar for tavar in tashared_vars if tavar["rank"] > 0]
+            #+ [tavar for tavar in talocal_vars if tavar["rank"] > 0])
     
 def find_all_matching_exclude_directives(ttnode,
                                          filter_expr=lambda x: True):

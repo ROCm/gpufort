@@ -30,6 +30,12 @@ def check_if_all_tokens_are_blank(tokens):
         raise error.SyntaxError("unexpected tokens at end of statement: ".format(
             ",".join(["'{}'".format(tk) for tk in tokens if len(tk.strip())] )))
 
+def pad_to_size(tokens,padded_size):
+    if padded_size > 0 and len(tokens) < padded_size:
+        return tokens + [""] * (padded_size - len(tokens))
+    else:
+        return tokens
+
 def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
     """Splits string at whitespaces and substrings such as
     'end', '$', '!', '(', ')', '=>', '=', ',' and "::".
@@ -75,10 +81,7 @@ def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
             result.append(tk[-2:])
         elif len(tk) and (keepws or len(tk.strip())):
             result.append(tk)
-    if padded_size > 0 and len(result) < padded_size:
-        return result + [""] * (padded_size - len(result))
-    else:
-        return result
+    return pad_to_size(result,padded_size)
 
 def mangle_fortran_var_expr(var_expr):
     """Unsophisticated name mangling routine that
@@ -619,8 +622,11 @@ def parse_attributes_statement(statement):
     return attributes, variables    
 
 def _parse_datatype(tokens):
+    # TODO treat len of CHARACTER explicitly
     # handle datatype
+    tokens = pad_to_size(tokens,6)
     datatype = tokens[0]
+    idx_last_consumed_token = 0
     kind = None
     DOUBLE_COLON = "::"
     
@@ -667,7 +673,7 @@ def _parse_datatype(tokens):
         # ex: integer ::
         # ex: integer a
         idx_last_consumed_token = 0
-    else:
+    elif not all_tokens_are_blank(tokens[1:]):
         raise error.SyntaxError("could not parse datatype")
     return datatype, kind, idx_last_consumed_token+1
 
@@ -871,6 +877,131 @@ def parse_derived_type_statement(statement):
         raise error.SyntaxError("unexpected token: '{}'".format(tk))
     return name, attributes, parameters
 
+def _parse_public_or_private_statement(statement,kind):
+    """Parses statements of the form:
+    ```
+    private
+    public
+    private :: identifier-list
+    public  :: identifier-list
+    ```
+    :return: tuple of visibility kind ('private','public')
+             and the list of identifier strings (might be empty).
+    """
+    tokens      = tokenize(statement,padded_size=1)
+    kind_expr   = tokens.pop(0)
+    identifiers = []
+    if kind_expr.lower() != kind:
+        raise error.SyntaxError("expected '{}'".format(kind))
+    if len(tokens) > 1 and tokens[0] == "::":
+        tokens.pop(0)
+        operands, num_consumed_tokens = get_top_level_operands(tokens)
+        for expr in operands: 
+            if not expr.isidentifier():
+                raise error.SyntaxError("expected identifier")
+            identifiers.append(expr)
+        tokens = tokens[num_consumed_tokens:] 
+    check_if_all_tokens_are_blank(tokens)
+    return kind_expr, identifiers
+
+def parse_public_statement(statement):
+    """:see: _parse_public_or_private_statement"""
+    return _parse_public_or_private_statement(statement,"public")
+
+def parse_private_statement(statement):
+    """:see: _parse_public_or_private_statement"""
+    return _parse_public_or_private_statement(statement,"private")
+
+def expand_letter_range(expr):
+    """Expand expressions such as 'a-z' and trivial cases such as 'a'.
+    :return: The expanded list of characters in the given range.
+    """
+    result = set()
+    parts = expr.split("-")
+    if (len(parts) == 1
+       and len(parts[0])==1 and parts[0].isalpha()):
+        return parts
+    if (len(parts) == 2
+       and len(parts[0])==1 and parts[0].isalpha()
+       and len(parts[1])==1 and parts[1].isalpha()):
+        ord1 = ord(parts[0])
+        ord2 = ord(parts[1])
+        if ord2 == ord1:
+            return [parts[0]]
+        elif ord1 < ord2:
+            return [chr(i) for i in range(ord1,ord2+1)]
+        else:
+            raise error.SyntaxError("do not support parameter expressions in letter range."
+                                    +"Did you mean to write '{1}-{0}' instead of '{0}-{1}'?".format(
+                                        parts[0],parts[1]))
+        
+    else:
+        raise error.SyntaxError("expected expression '<letter>' or '<letter1>-<letter2>'")
+    
+def parse_implicit_statement(statement):
+    """Parses statements of the form:
+    ```
+    implicit none
+    implicit type(mytype) (a,e,i,o,u)
+    implicit character (c)           
+    implicit integer(mykind) (j,k,m,n)       
+    implicit real (b, d, f-h, p-t, v-z)
+    ```
+    :return: A tuple consisting of a bool if implicit rules are used for
+             naming variables plus a list of implicit naming rules. Each naming
+             rule is a tuple of the Fortran type, length, and kind plus the associated first letters.
+    """
+    tokens = tokenize(statement,padded_size=2)    
+    implicit_rules_active = True
+    implicit_specs = []
+    if tokens.pop(0).lower() != "implicit":
+        raise error.SyntaxError("expected 'implicit'")
+    rules,num_consumed_tokens = get_top_level_operands(tokens)
+    tokens = tokens[num_consumed_tokens:]
+    check_if_all_tokens_are_blank(tokens)
+    if len(rules) and rules[0].lower() == "none":
+        implicit_rules_active = False
+        check_if_all_tokens_are_blank(rules[1:])
+    elif len(rules):
+        taken_letters = set()
+        # example: implicit character (c), integer(mykind) (j,k,m,n)       
+        for rule in rules:
+            rule_tokens  = tokenize(rule)
+            datatype_tokens = next_tokens_till_open_bracket_is_closed(
+                    rule_tokens,open_brackets=1,brackets=(None,")"))
+            if len(datatype_tokens) == len(rule_tokens):
+                # example: implicit character (c)           
+                datatype_tokens = rule_tokens[:1]
+                first_letter_tokens = rule_tokens[1:]
+            else:
+                # example: implicit integer(mykind) (j,k,m,n)       
+                first_letter_tokens = rule_tokens[len(datatype_tokens):]
+            f_type, f_kind, num_consumed_tokens = _parse_datatype(datatype_tokens)
+            assigned_first_letters = []
+            check_if_all_tokens_are_blank(datatype_tokens[num_consumed_tokens:])
+            #rule_tokens = rule_tokens[num_consumed_tokens:]
+            #letters = []
+            if (len(first_letter_tokens) and first_letter_tokens[0] == "("
+               and first_letter_tokens[-1] == ")"):
+                letter_range_expressions,num_consumed_tokens = get_top_level_operands(first_letter_tokens[1:-1])
+                check_if_all_tokens_are_blank(first_letter_tokens[num_consumed_tokens+2:])
+                
+                for expr in letter_range_expressions:
+                    letter_range = expand_letter_range(expr)
+                    for letter in letter_range:
+                        if letter not in taken_letters:
+                            assigned_first_letters.append(letter) 
+                        else:
+                            raise error.SyntaxError("letter '{}' already has an implicit type".format(letter))
+                        taken_letters.add(letter)
+                implicit_specs.append((f_type,None,f_kind,assigned_first_letters))
+            else:
+                raise error.SyntaxError("expected list of implicit naming rules")
+        pass
+    else:
+        raise error.SyntaxError("expected 'none' or at least one implicit rule specification")
+    return implicit_rules_active, implicit_specs
+
 def parse_directive(directive,tokens_to_omit_at_begin=0):
     """Splits a directive in directive sentinel, 
     identifiers and clause-like expressions.
@@ -1036,10 +1167,6 @@ def parse_cuf_kernel_call(statement):
     if len(tokens):
         raise error.SyntaxError("could not parse CUDA Fortran kernel call: trailing text")
     return kernel_name, params, args
-
-def parse_implicit_statement(statement):
-    
-    pass
 
 def parse_do_statement(statement):
     """ High-level parser for `[label:] do var = lbound, ubound [,stride]`

@@ -123,7 +123,40 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
             #print(util.parsing.tokenize(stmt))
             self.assertEqual(util.parsing.tokenize(stmt),results[i])
-    def test_02_split_fortran_line(self):
+    def test_02_next_tokens_till_open_bracket_is_closed(self):
+        expressions = [
+         "a,b,c) f(g,h)",  
+         "a,b,c) f(g,h)",  
+         "(a,b,c))) f(g,h)",  
+         "(a,b,c))) f(g,h)",  
+         "integer (a,b,c)",  
+         "integer(kind=8) (a,b,c)",  
+        ]
+        params = [
+          #(open_brackets,brackets,keepend)
+          (1,("(",")"),True),
+          (1,("(",")"),False),
+          (2,("(",")"),True),
+          (2,("(",")"),False),
+          (1,(None,")"),True),
+          (1,(None,")"),True),
+        ] 
+        results = [
+          ["a",",","b",",","c",")"],
+          ["a",",","b",",","c"],
+          ["(","a",",","b",",","c",")",")",")"],
+          ["(","a",",","b",",","c",")",")",],
+          ['integer', '(', 'a', ',', 'b', ',', 'c', ')'],
+          ['integer', '(', 'kind', '=', '8', ')'],
+        ]
+        for i,stmt in enumerate(expressions):
+            result = util.parsing.next_tokens_till_open_bracket_is_closed(util.parsing.tokenize(stmt),
+                                                                       params[i][0],
+                                                                       params[i][1],
+                                                                       params[i][2])
+            #print(result)
+            self.assertEqual(result,results[i])
+    def test_03_split_fortran_line(self):
         for line in self.prepare(testdata1):
             indent,stmt_or_dir,comment,trailing_ws =\
               util.parsing.split_fortran_line(line)
@@ -136,18 +169,18 @@ class TestParsingUtils(unittest.TestCase):
             else:
                 self.assertFalse(len(comment))
         # 
-    def test_03_detect_line_starts(self):
+    def test_04_detect_line_starts(self):
         input_lines = testdata2.splitlines()
         linenos = util.parsing.detect_line_starts(\
                    input_lines)
         #print(linenos)
         #print([a for i,a in enumerate(input_lines) if i in linenos]) 
         self.assertEqual(linenos,[0,6,9])
-    def test_04_relocate_inline_comments(self):
+    def test_05_relocate_inline_comments(self):
         result = util.parsing.relocate_inline_comments(\
                    testdata2.splitlines())
         self.assertEqual(self.clean("\n".join(result)),self.clean(testdata2_result))
-    def test_05_get_top_level_operands(self):
+    def test_06_get_top_level_operands(self):
         statements = [
           "a,b(i,j),c(i,j,k)",  # 17 tokens
           "a,b(i,j),c(i,j,k))",
@@ -179,13 +212,13 @@ class TestParsingUtils(unittest.TestCase):
            self.assertEqual(util.parsing.get_top_level_operands(util.parsing.tokenize(stmt),
                             separators=separators[i]),results[i])
 
-    def test_06_extract_function_calls(self):
+    def test_07_extract_function_calls(self):
         for c in ["a","b","c","d","f","g","h","i","j","k"]:
         #for c in ["a"]:
             result = util.parsing.extract_function_calls(testdata3,c)
             #print(result)
             self.assertEqual(result,testdata3_result[c])
-    def test_07_parse_use_statement(self):
+    def test_08_parse_use_statement(self):
         statements = [
           "use mymod",
           "use mymod, only: var1",
@@ -211,7 +244,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_use_statement(stmt))
             self.assertEqual(util.parsing.parse_use_statement(stmt),results[i])
-    def test_08_parse_declaration(self):
+    def test_09_parse_declaration(self):
         statements = [
           "integer,parameter :: a(1) = (/1/), b = 5*2**3",
           "integer(kind(hipSuccess)),parameter :: ierr = hipSuccess",
@@ -242,7 +275,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_declaration(stmt))
             self.assertEqual(util.parsing.parse_declaration(stmt),results[i])
-    def test_09_parse_do_statement(self):
+    def test_10_parse_do_statement(self):
         statements = [
           "DO jj = MAX(jts,1) , MIN(jte,jde-1,spec_bdy_width)",
           "label: do j = min(x,y,z,k), max(M,n), min(a0,a1,2)",
@@ -256,7 +289,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_do_statement(stmt))
             self.assertEqual(util.parsing.parse_do_statement(stmt),results[i])
-    def test_10_parse_type_statement(self):
+    def test_11_parse_type_statement(self):
         statements = [
           "type a",
           "type :: a",
@@ -274,7 +307,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_type_statement(stmt))
             self.assertEqual(util.parsing.parse_type_statement(stmt),results[i])
-    def test_11_parse_attributes_statement(self):
+    def test_12_parse_attributes_statement(self):
         statements = [
           "attributes(device,constant) :: a_d, b_d"
         ]
@@ -284,7 +317,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_attributes_statement(stmt))
             self.assertEqual(util.parsing.parse_attributes_statement(stmt),results[i])
-    def test_12_parse_function_statement(self):
+    def test_13_parse_function_statement(self):
         statements = [
           "function foo",
           "function foo()",
@@ -308,7 +341,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
            #print(util.parsing.parse_function_statement(stmt))
            self.assertEqual(util.parsing.parse_function_statement(stmt),results[i])
-    def test_13_strip_array_indexing(self):
+    def test_14_strip_array_indexing(self):
         expressions = [
           "a",
           "a(1)",
@@ -326,7 +359,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.strip_array_indexing(expr))
             self.assertEqual(util.parsing.strip_array_indexing(expr),results[i])
-    def test_14_derived_type_parents(self):
+    def test_15_derived_type_parents(self):
         expressions = [
           "a",
           "a(1)",
@@ -344,7 +377,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.derived_type_parents(expr))
             self.assertEqual(util.parsing.derived_type_parents(expr),results[i])
-    def test_15_parse_directive(self):
+    def test_16_parse_directive(self):
         expressions = [
           "!$acc enter data copyin(a,b,c(:)) copyout(b(-1:))",
         ]
@@ -355,7 +388,7 @@ class TestParsingUtils(unittest.TestCase):
             #print(util.parsing.parse_directive(expr))
             self.assertEqual(util.parsing.parse_directive(expr),results[i])
     
-    def test_16_parse_acc_clauses(self):
+    def test_17_parse_acc_clauses(self):
         expressions = [
           ["copyin(a,b,c(:))","copyout(b(-1:))","async"],
           ["copyin(a,b,c(:))","copyout(b(-1:))","reduction(+:a)","async"],
@@ -370,7 +403,7 @@ class TestParsingUtils(unittest.TestCase):
             #print(util.parsing.parse_acc_clauses(expr))
             self.assertEqual(util.parsing.parse_acc_clauses(expr),results[i])
     
-    def test_17_parse_acc_directive(self):
+    def test_18_parse_acc_directive(self):
         expressions = [
           "!$acc enter data copyin(a,b,c(:)) copyout(b(-1:))",
           "!$acc wait(i,j) async(c)",
@@ -386,7 +419,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_acc_directive(expr))
             self.assertEqual(util.parsing.parse_acc_directive(expr),results[i])
-    def test_18_parse_cuf_kernel_call(self):
+    def test_19_parse_cuf_kernel_call(self):
         expressions = [
           "call mykernel<<<grid,block>>>(arg1,arg2,arg3(1:n))",
           "call mykernel<<<grid,block,0,stream>>>(arg1,arg2,arg3(1:n))",
@@ -398,7 +431,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_cuf_kernel_call(expr))
             self.assertEqual(util.parsing.parse_cuf_kernel_call(expr),results[i])
-    def test_19_mangle_fortran_var_expr(self):
+    def test_20_mangle_fortran_var_expr(self):
         expressions = [
           "a(i,j)%b%arg3(1:n)",
         ]
@@ -408,7 +441,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.mangle_fortran_var_expr(expr))
             self.assertEqual(util.parsing.mangle_fortran_var_expr(expr),results[i])
-    def test_20_parse_derived_type_statement(self):
+    def test_21_parse_derived_type_statement(self):
         expressions = [
           'type mytype',
           'type :: mytype',
@@ -425,7 +458,7 @@ class TestParsingUtils(unittest.TestCase):
             #print(util.parsing.parse_derived_type_statement(expr))
             self.assertEqual(util.parsing.parse_derived_type_statement(expr),results[i])
     
-    def test_21_parse_allocate_statement(self):
+    def test_22_parse_allocate_statement(self):
         expressions = [
           'allocate(a(1:N))',
           'allocate(a(1:N),b(-1:m:2,n))',
@@ -441,7 +474,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_allocate_statement(expr))
             self.assertEqual(util.parsing.parse_allocate_statement(expr),results[i])
-    def test_22_parse_deallocate_statement(self):
+    def test_23_parse_deallocate_statement(self):
         expressions = [
           'deallocate(a)',
           'deallocate(a,b)',
@@ -457,7 +490,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_deallocate_statement(expr))
             self.assertEqual(util.parsing.parse_deallocate_statement(expr),results[i])
-    def test_23_parse_lvalue(self):
+    def test_24_parse_lvalue(self):
         expressions = [
           "a",
           "a(i,j)",
@@ -487,7 +520,7 @@ class TestParsingUtils(unittest.TestCase):
                 raise Exception("parsing '{}' should have failed".format(expr))
             except:
                 pass
-    def test_24_is_assignment(self):
+    def test_25_is_assignment(self):
         expressions = [
           "a = 1",
           "a(i,j) = 1",
@@ -513,7 +546,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             self.assertEqual(util.parsing.is_assignment(expr),results[i])
 
-    def test_25_parse_parameter_statement(self):
+    def test_26_parse_parameter_statement(self):
         expressions = [
           "PARAMETER( a = 5, b = 3)",
           "PARAMETER a = 5, b = 3", # legacy version
@@ -525,6 +558,54 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_parameter_statement(expr))
             self.assertEqual(util.parsing.parse_parameter_statement(expr),results[i])
-
+    def test_27_parse_public_statement(self):
+        expressions = [
+          "public",
+          "PUBLIC :: a",
+          "public :: a,b",
+        ]
+        results = [
+          ("public",[]),
+          ("PUBLIC",["a"]),
+          ("public",["a","b"]),
+        ]
+        for i,expr in enumerate(expressions):
+            self.assertEqual(util.parsing.parse_public_statement(expr),results[i])
+    def test_28_expand_letter_range(self):
+        expressions = [
+         "a",
+         "a-a",
+         "a-d", 
+         "g-h",
+        ]
+        results = [
+          ["a"],
+          ["a"],
+          ["a","b","c","d"],
+          ["g","h"],
+        ]
+        for i,expr in enumerate(expressions):
+            self.assertEqual(util.parsing.expand_letter_range(expr),results[i])
+    def test_29_parse_implicit_statement(self):
+        expressions = [
+          "implicit none",
+          "IMPLICIT NONE",
+          "IMPLICIT integer (i)",
+          "IMPLICIT integer (i,m-p)",
+          "IMPLICIT integer(kind=8) (i,m-p,a)",
+          "IMPLICIT integer(kind=8) (i,m-p,a), character (c), type(mytype) (d)",
+        ]
+        results = [
+          (False, []),
+          (False, []),
+          (True, [('integer', None, None, ['i'])]),
+          (True, [('integer', None, None, ['i', 'm', 'n', 'o', 'p'])]),
+          (True, [('integer', None, '8', ['i', 'm', 'n', 'o', 'p', 'a'])]),
+          (True, [('integer', None, '8', ['i', 'm', 'n', 'o', 'p', 'a']), ('character', None, None, ['c']), ('type', None, 'mytype', ['d'])]) ,
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing.parse_implicit_statement(expr))
+            self.assertEqual(util.parsing.parse_implicit_statement(expr),results[i])
+    
 if __name__ == '__main__':
     unittest.main() 

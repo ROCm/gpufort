@@ -799,14 +799,14 @@ class STDeclaration(STNode, IWithBackend, IDeclListEntry):
             raise util.error.SyntaxError(msg) from e
 
 def index_var_is_on_device(ivar):
-    return "device" in ivar["qualifiers"]
+    return "device" in ivar["attributes"]
 
 
 def pinned_or_on_device(ivar):
     """:return: Qualifier and if special treatment is necessary."""
-    if "device" in ivar["qualifiers"]:
+    if "device" in ivar["attributes"]:
         return "device", True
-    elif "pinned" in ivar["qualifiers"]:
+    elif "pinned" in ivar["attributes"]:
         return "pinned", True
     else:
         return None, False

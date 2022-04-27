@@ -54,7 +54,7 @@ class NamespaceGenerator():
 
     def __consider_parameter(self,ivar,already_considered):
         return (ivar["rank"] == 0 # TODO remove constraint later on
-               and "parameter" in ivar["qualifiers"]
+               and "parameter" in ivar["attributes"]
                and ivar["f_type"] in ["logical","integer","real"]
                and ivar["name"] not in already_considered # hiding, input must be reversed
                and self.parameter_filter(

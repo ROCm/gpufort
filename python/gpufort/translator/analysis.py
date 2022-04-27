@@ -86,7 +86,7 @@ def _lookup_index_vars(scope, var_exprs, consumed_var_exprs=[]):
     tavars = []
     for var_expr in var_exprs:
         tavar = _create_analysis_var(scope,var_expr)
-        if not "parameter" in tavar["qualifiers"] or tavar["rank"] > 0:
+        if not "parameter" in tavar["attributes"] or tavar["rank"] > 0:
             tavars.append(tavar)
         consumed_var_exprs.append(var_expr)
     return tavars
@@ -132,7 +132,7 @@ def lookup_index_entries_for_vars_in_kernel_body(scope,
                 tavar1 = _create_analysis_var(scope,var_expr)
                 if tavar1["rank"] > 0:
                     raise util.error.LimitationError("reduction of arrays or array members not supported")
-                elif "parameter" in tavar1["qualifiers"]:
+                elif "parameter" in tavar1["attributes"]:
                     raise util.error.SyntaxError("parameters cannot be reduced")
                 tavar = copy.deepcopy(tavar1)
                 tavar["op"] = conv.get_operator_name(reduction_op)
@@ -144,7 +144,7 @@ def lookup_index_entries_for_vars_in_kernel_body(scope,
 
     for var_expr in all_vars2:
         tavar = _create_analysis_var(scope, var_expr)
-        if not "parameter" in tavar["qualifiers"] or tavar["rank"] > 0:
+        if not "parameter" in tavar["attributes"] or tavar["rank"] > 0:
             taglobal_vars.append(tavar)
     return taglobal_vars, taglobal_reduced_vars, tashared_vars, talocal_vars
 
@@ -185,7 +185,7 @@ def lookup_index_entries_for_vars_in_procedure_body(scope,ttprocedurebody,iproce
     shared_vars = [
         ivar["name"]
         for ivar in iprocedure["variables"]
-        if "shared" in ivar["qualifiers"]
+        if "shared" in ivar["attributes"]
     ]
     local_vars = [
         ivar["name"]

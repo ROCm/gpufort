@@ -61,7 +61,7 @@ def condense_only_groups(iused_modules):
             #print(iused_module)
             last = result[-1]
             if (iused_module["name"] == last["name"]
-               and iused_module["qualifiers"] == last["qualifiers"]
+               and iused_module["attributes"] == last["attributes"]
                and (len(iused_module["only"])>0) 
                    and (len(last["only"])>0)):
                 last["only"] += iused_module["only"] # TODO check for duplicates
@@ -106,7 +106,7 @@ def condense_non_only_groups(iused_modules):
         else:
             last = groups[-1]
             if (iused_module["name"] == last[0]["name"] 
-               and iused_module["qualifiers"] == last[0]["qualifiers"]
+               and iused_module["attributes"] == last[0]["attributes"]
                and (len(iused_module["only"])==0) 
                    and (len(last[0]["only"])==0)):
                 last.append(iused_module)
@@ -158,7 +158,7 @@ def _resolve_dependencies(scope,
             #if used_module["name"] == "esmf_mod":
             #    #print(used_module["only"])
             # include definitions from other modules
-            used_module_ignored = ("intrinsic" in used_module["qualifiers"]
+            used_module_ignored = ("intrinsic" in used_module["attributes"]
                                 or used_module["name"] in opts.module_ignore_list)
             used_module_found = False 
             if not used_module_ignored:
@@ -175,7 +175,8 @@ def _resolve_dependencies(scope,
                             indent,
                             iother["name"]))
                     for entry_type in types.SCOPE_ENTRY_TYPES:
-                        scope[entry_type] += copy.deepcopy(iother[entry_type])
+                        scope[entry_type] += copy.deepcopy([irecord for irecord in iother[entry_type] 
+                                                           if "public" in irecord["attributes"]])
                     if len(used_module["renamings"]):
                         for mapping in used_module["renamings"]:
                             for entry_type in types.SCOPE_ENTRY_TYPES:
@@ -191,10 +192,12 @@ def _resolve_dependencies(scope,
                                   iother["name"],
                                   mapping["renamed"]))
                                 break
+                            # TODO emit error if nothing could be found
                 else:
                     for mapping in used_module["only"]:
                         for entry_type in types.SCOPE_ENTRY_TYPES:
-                            for entry in iother[entry_type]:
+                            for entry in [irecord for irecord in iother[entry_type] 
+                                          if "public" in irecord["attributes"]]:
                                 if entry["name"] == mapping["original"]:
                                     util.logging.log_debug2(opts.log_prefix,
                                       "_resolve_dependencies.handle_use_statements",
@@ -207,6 +210,7 @@ def _resolve_dependencies(scope,
                                     copied_entry["name"] = mapping[
                                         "renamed"]
                                     scope[entry_type].append(copied_entry)
+                            # TODO emit error if nothing could be found
             elif not used_module_ignored:
                 msg = "{}no index record found for module '{}'".format(
                     indent,
@@ -431,7 +435,7 @@ def search_scope_for_var(scope,
         pass
     # TODO revisit
     #    for ivar in reversed(scope["variables"]):
-    #        if "parameter" in ivar["qualifiers"]:
+    #        if "parameter" in ivar["attributes"]:
     #            for entry in [
     #                    "kind", "unspecified_bounds", "lbounds", "counts",
     #                    "total_count", "total_bytes", "index_macro"
@@ -444,7 +448,7 @@ def search_scope_for_var(scope,
     #                        modified_entry += tk.replace(
     #                            ivar["name"], "(" + ivar["value"] + ")")
     #                    result[entry] = modified_entry
-    #        if "parameter" in result["qualifiers"]:
+    #        if "parameter" in result["attributes"]:
     #            if not result["f_type"] in ["character", "type"]:
     #                result["value"].replace(ivar["value"],
     #                                        "(" + ivar["value"] + ")")

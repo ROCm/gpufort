@@ -9,8 +9,8 @@
                         or (not is_kernel 
                            and (rank > 0
                                or tavar.f_type == "type"
-                               or "intent(out)" in tavar.qualifiers
-                               or "intent(inout)" in tavar.qualifiers))) else "" -%}
+                               or "intent(out)" in tavar.attributes
+                               or "intent(inout)" in tavar.attributes))) else "" -%}
 {%- if rank > 0 -%}
 gpufort::array{{rank}}<{{c_type}}>{{suffix}} {{name}}
 {%- else -%}
@@ -28,8 +28,8 @@ gpufort::array{{rank}}<{{c_type}}>{{suffix}} {{name}}
                         or not is_kernel 
                         and (tavar.rank > 0
                             or tavar.f_type == "type"
-                            or "intent(out)" in tavar.qualifiers
-                            or "intent(inout)" in tavar.qualifiers)) else "" -%}
+                            or "intent(out)" in tavar.attributes
+                            or "intent(inout)" in tavar.attributes)) else "" -%}
 {%- if is_device_routine -%}
 gpufort::array{{rvar.rank+1}}<{{c_type}}>{{suffix}} {{rvar.c_name}}
 {%- else -%}
@@ -72,7 +72,7 @@ gpufort::array{{rvar.rank+1}}<{{c_type}}>{{suffix}} {{rvar.c_name}}
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_local_var_decl(tavar) -%}
-{%- set prefix = "__shared__ " if "shared" in tavar.qualifiers else "" -%}
+{%- set prefix = "__shared__ " if "shared" in tavar.attributes else "" -%}
 {%- set c_type = tavar.kind if tavar.f_type=="type" else tavar.c_type -%}
 {% if tavar.rank > 0 %}
 {#    todo add local C array init here too, that one gets a __shared__ prefix if needed #}

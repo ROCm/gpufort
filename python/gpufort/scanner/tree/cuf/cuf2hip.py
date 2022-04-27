@@ -122,9 +122,9 @@ def handle_allocate_cuf(stallocate, joined_statements, index):
     for name, bounds in stallocate.allocations:
         ivar  = indexer.scope.search_index_for_var(index,stallocate.parent.tag(),\
           name)
-        if "pinned" in ivar["qualifiers"]:
+        if "pinned" in ivar["attributes"]:
             hipfort_allocations.append(_render_allocation_hipfort_f_str("hipHostMalloc",name,bounds,stat))
-        elif "device" in ivar["qualifiers"]:
+        elif "device" in ivar["attributes"]:
             hipfort_allocations.append(_render_allocation_hipfort_f_str("hipMalloc",name,bounds,stat))
         else:
             unchanged_allocation_args.append(_render_allocation_f_str(name,bounds))
@@ -153,9 +153,9 @@ def handle_deallocate_cuf(stdeallocate, joined_statements, index):
     for name in stdeallocate.variable_names:
         ivar  = indexer.scope.search_index_for_var(index,stdeallocate.parent.tag(),\
           name)
-        if "pinned" in ivar["qualifiers"]:
+        if "pinned" in ivar["attributes"]:
             hipfort_deallocations.append(_render_deallocation_hipfort_f_str("hipHostFree",name,stat))
-        elif "device" in ivar["qualifiers"]:
+        elif "device" in ivar["attributes"]:
             hipfort_deallocations.append(_render_deallocation_hipfort_f_str("hipFree",name,stat))
         else:
             unchanged_deallocation_args.append(name)
@@ -235,11 +235,11 @@ def handle_declaration_cuf(stdeclaration, joined_statements, index=[]):
             if ivar == None:
                 raise util.error.LookupError("no index record found for variable '{}' in scope".format(var_name))
         rank = ivar["rank"]
-        has_device = "device" in ivar["qualifiers"]
-        has_pinned = "pinned" in ivar["qualifiers"]
-        has_pointer = "pointer" in ivar["qualifiers"]
+        has_device = "device" in ivar["attributes"]
+        has_pinned = "pinned" in ivar["attributes"]
+        has_pointer = "pointer" in ivar["attributes"]
         is_fixed_size_array = (rank > 0
-                              and "allocatable" not in ivar["qualifiers"]
+                              and "allocatable" not in ivar["attributes"]
                               and not has_pointer)
         # 
         if has_device or has_pinned:

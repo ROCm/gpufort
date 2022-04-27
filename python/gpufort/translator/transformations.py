@@ -255,8 +255,8 @@ def map_allocatable_pointer_derived_type_members_to_flat_arrays(ttvalues,loop_va
             ident = ttnode.identifier_part()
             ivar = indexer.scope.search_scope_for_var(scope,ident)
             if (ivar["rank"] > 0
-                and ("allocatable" in ivar["qualifiers"]
-                    or "pointer" in ivar["qualifiers"])):
+                and ("allocatable" in ivar["attributes"]
+                    or "pointer" in ivar["attributes"])):
                 # TODO 
                 # search through the subtree and ensure that only
                 # the last element is an array indexed by the loop

@@ -30,7 +30,7 @@ EMPTY_VAR = {
         # TODO bytes per element can be computed on the fly
         "bytes_per_element" : __UNKNOWN,
         "c_type" : __UNKNOWN,
-        "qualifiers" : [],
+        "attributes" : [],
         # ACC/OMP
         "declare_on_target" : False,
         # arrays
@@ -48,7 +48,7 @@ def create_index_var(f_type_full,f_type,kind,name,qualifiers=[],bounds=[],rhs=No
     ivar["f_type"]      = f_type
     ivar["kind"]        = kind
     # TODO bytes per element can be computed on the fly
-    ivar["qualifiers"] += qualifiers
+    ivar["attributes"] += qualifiers
     # arrays
     ivar["bounds"] += bounds
     ivar["rank"]   = len(bounds)

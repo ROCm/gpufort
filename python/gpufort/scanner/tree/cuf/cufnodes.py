@@ -182,8 +182,8 @@ class STCufMemcpy(nodes.STNode):
                       dest_name)
                     src_indexed_var  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
                       src_name)
-                    dest_on_device = "device" in dest_indexed_var["qualifiers"]
-                    src_on_device  = "device" in src_indexed_var["qualifiers"] 
+                    dest_on_device = "device" in dest_indexed_var["attributes"]
+                    src_on_device  = "device" in src_indexed_var["attributes"] 
                 except util.error.LookupError:
                     dest_on_device = False 
                     src_on_device  = False

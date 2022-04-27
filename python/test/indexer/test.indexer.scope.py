@@ -32,7 +32,8 @@ class TestScoper(unittest.TestCase):
     def test_0_donothing(self):
         pass 
     def test_1_indexer_scan_files(self):
-        indexer.update_index_from_linemaps(linemapper.read_file("test_modules.f90",preproc_options=preproc_options),index)
+        indexer.update_index_from_linemaps(linemapper.read_file("test_modules_1.f90",preproc_options=preproc_options),index)
+        indexer.update_index_from_linemaps(linemapper.read_file("test_modules_2.f90",preproc_options=preproc_options),index)
         indexer.update_index_from_linemaps(linemapper.read_file("test1.f90",preproc_options=preproc_options),index)
     def test_2_scope_search_for_vars(self):
         c   = indexer.scope.search_index_for_var(index,"test1","c") # included from module 'simple'
@@ -64,7 +65,30 @@ class TestScoper(unittest.TestCase):
     def test_6_scope_search_for_top_level_procedures(self):
         func2 = indexer.scope.search_index_for_procedure(index,"test1","top_level_subroutine")
         indexer.opts.scopes.clear()
-    def test_7_condense_only_groups(self):
+    def test_7_scope_check_accessibility(self):
+        public_proc1  = indexer.scope.search_index_for_procedure(index,"test1","public_proc1")
+        try:
+            private_proc1 = indexer.scope.search_index_for_procedure(index,"test1","private_proc1")
+            self.assertTrue(False)
+        except util.error.LookupError:
+            pass
+        # types
+        public_type1 = indexer.scope.search_index_for_type(index,"test1","public_type1")
+        public_type2 = indexer.scope.search_index_for_type(index,"test1","public_type1")
+        try:
+            private_type1 = indexer.scope.search_index_for_type(index,"test1","private_type1")
+            self.assertTrue(False)
+        except util.error.LookupError:
+            pass
+        public_var1  = indexer.scope.search_index_for_var(index,"test1","public_var1")
+        public_var2  = indexer.scope.search_index_for_var(index,"test1","public_var1")
+        try:
+            private_var1 = indexer.scope.search_index_for_var(index,"test1","private_var1")
+            self.assertTrue(False)
+        except util.error.LookupError:
+            pass
+        indexer.opts.scopes.clear()
+    def test_8_condense_only_groups(self):
         use_statements=[
           "use a, only: b1 => a1",
           "use a, only: b2 => a2",
@@ -75,7 +99,7 @@ class TestScoper(unittest.TestCase):
           'only': [{'original': 'a1', 'renamed': 'b1'},
                    {'original': 'a2', 'renamed': 'b2'},
                    {'original': 'a3', 'renamed': 'b3'}],
-          'qualifiers': [],
+          'attributes': [],
           'renamings': []}
         ]
         iused_modules = []
@@ -85,10 +109,10 @@ class TestScoper(unittest.TestCase):
         self.assertEqual(len(iused_modules),len(result))
         for i in range(0,len(iused_modules)):
             self.assertEqual(iused_modules[i]["name"],result[i]["name"])
-            self.assertEqual(iused_modules[i]["qualifiers"],result[i]["qualifiers"])
+            self.assertEqual(iused_modules[i]["attributes"],result[i]["attributes"])
             self.assertEqual(iused_modules[i]["renamings"],result[i]["renamings"])
             self.assertEqual(iused_modules[i]["only"],result[i]["only"])
-    def test_8_condense_non_only_groups(self):
+    def test_9_condense_non_only_groups(self):
         use_statements=[
           "use a, b1 => a1",
           "use a, b2 => a2",
@@ -99,11 +123,11 @@ class TestScoper(unittest.TestCase):
           {'name': 'a',
            'only': [{'original': 'a1', 'renamed': 'b1'},
                     {'original': 'a2', 'renamed': 'b2'}],
-           'qualifiers': [],
+           'attributes': [],
            'renamings': []},
           {'name': 'a',
            'only': [],
-           'qualifiers': [],
+           'attributes': [],
            'renamings': [{'original': 'a3', 'renamed': 'b3'}]}
         ]
         iused_modules = []
@@ -113,7 +137,7 @@ class TestScoper(unittest.TestCase):
         self.assertEqual(len(iused_modules),len(result))
         for i in range(0,len(iused_modules)):
             self.assertEqual(iused_modules[i]["name"],result[i]["name"])
-            self.assertEqual(iused_modules[i]["qualifiers"],result[i]["qualifiers"])
+            self.assertEqual(iused_modules[i]["attributes"],result[i]["attributes"])
             self.assertEqual(iused_modules[i]["renamings"],result[i]["renamings"])
             self.assertEqual(iused_modules[i]["only"],result[i]["only"])
 

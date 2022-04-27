@@ -9,6 +9,7 @@ program test1
  use simple
  use nested_procedures, only: func2
  use complex_types
+ use private_mod1
  implicit none
  
  real                   :: float_scalar

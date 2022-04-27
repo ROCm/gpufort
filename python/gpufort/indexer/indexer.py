@@ -85,7 +85,7 @@ def create_index_record_from_use_statement(statement):
     
     used_module = {}
     used_module["name"] = module 
-    used_module["qualifiers"] = qualifiers
+    used_module["attributes"] = qualifiers
     used_module["renamings"] = []
     for pair in renamings:
         used_module["renamings"].append({
@@ -123,6 +123,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
     root = Node("root", "root", data=index, parent=None)
     current_node = root
     current_statement = None
+    accessibility_statement_stack = []
 
     def create_base_entry_(kind, name, file_path):
         entry = {}
@@ -164,6 +165,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_linemap_no
         nonlocal current_statement_no
         nonlocal current_statement
+        nonlocal accessibility_statement_stack
         log_detection_("end of program/module/subroutine/function/type")
         if current_node._kind != "root":
             log_leave_node_()
@@ -177,14 +179,41 @@ def _parse_statements(linemaps, file_path,**kwargs):
                 end = (current_linemap_no, current_statement_no)
                 current_node._data["statements"] = current_node.statements(
                     linemaps, end)
+            if current_node._kind == "module":
+                # apply public/private visibility
+                general_accessibility = "public"
+                modes = ["public","private"]
+                explicitly_set_accessibility = {"public": [], "private": []}
+                for kind,identifiers in accessibility_statement_stack:
+                    if not len(identifiers):
+                        general_accessibility = kind
+                    explicitly_set_accessibility[kind] += identifiers 
+                
+                for entry_type in types.SCOPE_ENTRY_TYPES:
+                    # procedures have cannot "public"/"private" in the attributes list
+                    # When rendering the routine from the index record, this must be considered
+                    for ivar in current_node._data[entry_type]:
+                        if not len([mode for mode in modes 
+                                   if mode in ivar["attributes"]]):
+                            set_explicitly = False
+                            for mode, identifiers in explicitly_set_accessibility.items():
+                                if ivar["name"] in identifiers:
+                                    set_explicitly = True
+                                    ivar["attributes"].append(mode)
+                                    break
+                            if not set_explicitly: 
+                                ivar["attributes"].append(general_accessibility)     
+                pass
             current_node = current_node._parent
 
     def ModuleStart():
         nonlocal root
         nonlocal current_node
         nonlocal current_tokens
+        nonlocal accessibility_statement_stack
         name = current_tokens[1]
         module = create_base_entry_("module", name, file_path)
+        accessibility_statement_stack.clear()
         assert current_node == root
         current_node._data.append(module)
         current_node = Node("module", name, data=module, parent=current_node)
@@ -200,6 +229,30 @@ def _parse_statements(linemaps, file_path,**kwargs):
         current_node._data.append(program)
         current_node = Node("program", name, data=program, parent=current_node)
         log_enter_node_()
+
+
+    def PublicOrPrivate():
+        nonlocal current_node
+        nonlocal current_tokens
+        if current_node._kind == "module":
+            kind, identifiers = util.parsing.parse_public_or_private_statement(current_statement,current_tokens[0])
+            for entry in accessibility_statement_stack:
+                other_kind, other_identifiers = entry
+                if not len(identifiers) and not len(other_identifiers):
+                    raise util.error.SyntaxError("'{}' two 'private' or 'public' statements without variables list in same module")
+                identifiers_subject_to_other_statement = [ident for ident in identifiers if ident in other_identifiers]
+                if len(identifiers_subject_to_other_statement):
+                    raise util.error.SyntaxError("variables '{}' have already been subject to another "+
+                                            "'private' or 'public' statement with variables list".format(
+                                                "','".join(identifiers_subject_to_other_statement)))
+            accessibility_statement_stack.append((kind,identifiers))
+        else:
+            raise util.error.SyntaxError("'{}' statements only allowed in module")
+    
+    def Implicit():
+        nonlocal current_node
+        nonlocal current_tokens
+        pass
 
     #host|device,name,[args]
     def SubroutineStart():
@@ -280,7 +333,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
             derived_type = {}
             derived_type["name"] = name
             derived_type["kind"] = "type"
-            derived_type["qualifiers"] = attributes
+            derived_type["attributes"] = attributes
             derived_type["params"] = params
             derived_type["variables"] = []
             derived_type["types"] = []
@@ -343,8 +396,8 @@ def _parse_statements(linemaps, file_path,**kwargs):
                 var_name, rhs = pair 
                 for var_context in current_node._data["variables"]:
                     if var_context["name"] == var_name:
-                        if not "parameter" in var_context["qualifiers"]:
-                            var_context["qualifiers"].append("parameter")
+                        if not "parameter" in var_context["attributes"]:
+                            var_context["attributes"].append("parameter")
                             var_context["rhs"] = rhs
             #
             msg = "finished to parse parameter statement '{}'".format(current_statement)
@@ -367,7 +420,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
             attributes, modified_vars = util.parsing.parse_attributes_statement(current_statement)
             for var_context in current_node._data["variables"]:
                 if var_context["name"] in modified_vars:
-                    var_context["qualifiers"] += attributes
+                    var_context["attributes"] += attributes
             #
             msg = "finished to parse attributes statement '{}'".format(current_statement)
             log_end_task(current_node, msg)
@@ -444,6 +497,11 @@ def _parse_statements(linemaps, file_path,**kwargs):
                         current_linemap["statements"]):
                     original_statement_lower = stmt["body"].lower()
                     current_tokens = util.parsing.tokenize(original_statement_lower,padded_size=6)
+                    try:
+                        numeric_label = str(int(current_tokens[0]))
+                        current_tokens.pop(0)
+                    except:
+                        numeric_label = None
                     current_statement = " ".join([tk for tk in current_tokens if len(tk)])
                     util.logging.log_debug3(
                         opts.log_prefix, "_parse_statements",
@@ -457,6 +515,11 @@ def _parse_statements(linemaps, file_path,**kwargs):
                         pass
                     else: # fortran statements
                         if util.parsing.is_assignment(current_tokens):
+                            # Fortran allows that variables can be named after keywords, e.g. 'function', 'real'.
+                            # We must exclude that a keyword-named variable
+                            # appears in an assignment before trying to detect
+                            # another Fortran statement. Hence we first check if a statement
+                            # is an assignment.
                             pass
                         else:
                             if (current_tokens[0]=="end" and
@@ -477,16 +540,20 @@ def _parse_statements(linemaps, file_path,**kwargs):
                                 ProgramStart()
                             elif current_tokens[0] == "type" and current_tokens[1] != "(": # type a ; type, bind(c) :: a
                                 TypeStart()
-                            # cannot be combined with above checks in current form
-                            # TODO parse functions, subroutine signatures more carefully
-                            if current_tokens[0] != "end" and "function" in current_tokens:
-                                FunctionStart()
-                            elif current_tokens[0] != "end" and "subroutine" in current_tokens:
-                                SubroutineStart()
+                            elif current_tokens[0] in ["public","private"]:
+                                PublicOrPrivate()
+                            elif current_tokens[0] == "implicit":
+                                Implicit()
                             elif current_tokens[0] == "parameter":
                                 Parameter()
                             elif current_tokens[0] == "attributes" and "::" in current_tokens: # attributes(device) :: a
                                 Attributes() 
+                            # TODO parse functions, subroutine signatures more carefully
+                            elif current_tokens[0] != "end" and "function" in current_tokens:
+                                # Functions must be checked before the 
+                                FunctionStart()
+                            elif current_tokens[0] != "end" and "subroutine" in current_tokens:
+                                SubroutineStart()
                             elif current_tokens[0] in [
                                  "character", "integer", "logical", "real",
                                  "complex", "double"

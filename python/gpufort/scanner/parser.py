@@ -172,12 +172,14 @@ def _parse_file(linemaps, index, **kwargs):
     def End():
         nonlocal current_node
         nonlocal current_linemap
+        nonlocal current_statement_no
         nonlocal keep_recording
         nonlocal index
         log_detection_("end of module/program/function/subroutine")
         assert type(current_node) in [
             tree.STModule, tree.STProgram, tree.STProcedure
-        ], "In file {}: line {}: type is {}".format(current_file,
+        ], "{}:{}:{}(stmt-no): type is {}".format(current_file,
+                                                    current_linemap["lineno"],
                                                     current_statement_no,
                                                     type(current_node))
         if type(
@@ -592,6 +594,11 @@ def _parse_file(linemaps, index, **kwargs):
                     util.logging.log_debug4(opts.log_prefix,"parse_file","parsing statement '{}' associated with lines [{},{}]".format(original_statement_lower.rstrip(),\
                         current_linemap["lineno"],current_linemap["lineno"]+len(current_linemap["lines"])-1))
                     current_tokens = util.parsing.tokenize(original_statement_lower, padded_size=6)
+                    try:
+                        numeric_label = str(int(current_tokens[0]))
+                        current_tokens.pop(0)
+                    except:
+                        numeric_label = None
                     current_statement_stripped = " ".join([tk for tk in current_tokens if len(tk)])
                     if (not keep_recording 
                        and util.parsing.is_fortran_directive(original_statement_lower,modern_fortran)):
@@ -606,12 +613,12 @@ def _parse_file(linemaps, index, **kwargs):
                             lhs_expr, rhs_expr = util.parsing.parse_assignment(current_statement_stripped)
                             # TODO
                             lhs_ivar = indexer.scope.search_index_for_var(index,current_node.tag(),lhs_expr)
-                            cuf_implicit_memcpy = "device" in lhs_ivar["qualifiers"]
+                            cuf_implicit_memcpy = "device" in lhs_ivar["attributes"]
                             if cuda_fortran:
                                 try:
                                     rhs_ivar = indexer.scope.search_index_for_var(index,current_node.tag(),
                                             rhs_expr)
-                                    cuf_implicit_memcpy = cuf_implicit_memcpy or "device" in rhs_ivar["qualifiers"]
+                                    cuf_implicit_memcpy = cuf_implicit_memcpy or "device" in rhs_ivar["attributes"]
                                 except util.error.LookupError as e:
                                     if cuf_implicit_memcpy: 
                                         raise util.error.LimitationError("implicit to-device memcpy does not support arithmetic expression as right-hand side value") from e
@@ -630,12 +637,13 @@ def _parse_file(linemaps, index, **kwargs):
                                 do_loop_labels.pop(-1)
                                 DoLoopEnd()
                             elif (len(do_loop_labels) 
-                                 and current_tokens[0:2] == [do_loop_labels[-1],"continue"]):
+                                 and numeric_label != None
+                                 and [numeric_label,current_tokens[0]] == [do_loop_labels[-1],"continue"]):
                                 # continue can be shared by multiple loops, e.g.:
                                 # do 10 i = ...
                                 # do 10 j = ...
                                 # 10 continue
-                                while len(do_loop_labels) and do_loop_labels[-1] == current_tokens[0]:
+                                while len(do_loop_labels) and do_loop_labels[-1] == numeric_label:
                                     do_loop_labels.pop(-1)
                                 DoLoopEnd()
                             elif (current_tokens[0] == "end"

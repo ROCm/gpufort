@@ -1,10 +1,17 @@
 ! SPDX-License-Identifier: MIT
 ! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+module params
+  private
+
+  integer, parameter, public :: N = 1000,&
+                                magnitude = 1
+end module
+
 program main
   ! begin of program
-      
+  use params  
+    
   implicit none
-  integer, parameter :: N = 1000, magnitude = 1
   integer :: coeffs(-magnitude:magnitude)
   integer :: i,j,k
   integer(4) :: x(N), y(N,5), y_exact(N)

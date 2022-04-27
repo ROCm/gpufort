@@ -404,8 +404,8 @@ def AllocateHipGpufortRT(stallocate, joined_statements, index):
             is_local_var = var_expr in local_var_names
             is_arg = var_expr in dummy_arg_names
             is_used_module_var = not is_local_var and not is_arg
-            is_allocatable_or_pointer = "allocatable" in ivar["qualifiers"] or\
-                                 "pointer" in ivar["qualifiers"]
+            is_allocatable_or_pointer = "allocatable" in ivar["attributes"] or\
+                                 "pointer" in ivar["attributes"]
             assert is_allocatable_or_pointer # TODO emit error
             module_var = ",module_var=.true." if is_used_module_var else ""
             if not is_used_module_var:
@@ -440,8 +440,8 @@ def DeallocateHipGpufortRT(stdeallocate, joined_statements, index):
             is_local_var = var_expr in local_var_names
             is_arg = var_expr in dummy_arg_names
             is_used_module_var = not is_local_var and not is_arg
-            is_allocatable_or_pointer = "allocatable" in ivar["qualifiers"] or\
-                                 "pointer" in ivar["qualifiers"]
+            is_allocatable_or_pointer = "allocatable" in ivar["attributes"] or\
+                                 "pointer" in ivar["attributes"]
             assert is_allocatable_or_pointer
             module_var = ",module_var=.true." if is_used_module_var else ""
             if ivar["declare_on_target"] in ["alloc", "to", "tofrom"]:
@@ -480,8 +480,8 @@ def Acc2HipGpufortRTPostprocess(stree, index):
                 is_local_var = var_expr in local_var_names
                 is_arg = var_expr in dummy_arg_names
                 is_used_module_var = not is_local_var and not is_arg
-                is_allocatable = "allocatable" in ivar["qualifiers"]
-                is_pointer = "pointer" in ivar["qualifiers"]
+                is_allocatable = "allocatable" in ivar["attributes"]
+                is_pointer = "pointer" in ivar["attributes"]
                 if not is_allocatable:
                     if not is_used_module_var:
                         implicit_region = True

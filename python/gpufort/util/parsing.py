@@ -27,7 +27,7 @@ def all_tokens_are_blank(tokens):
 
 def check_if_all_tokens_are_blank(tokens):
     if not all_tokens_are_blank(tokens):
-        raise error.SyntaxError("unexpected tokens at end of statement: ".format(
+        raise error.SyntaxError("unexpected tokens at end of statement: {}".format(
             ",".join(["'{}'".format(tk) for tk in tokens if len(tk.strip())] )))
 
 def pad_to_size(tokens,padded_size):
@@ -877,7 +877,7 @@ def parse_derived_type_statement(statement):
         raise error.SyntaxError("unexpected token: '{}'".format(tk))
     return name, attributes, parameters
 
-def _parse_public_or_private_statement(statement,kind):
+def parse_public_or_private_statement(statement,kind):
     """Parses statements of the form:
     ```
     private
@@ -895,6 +895,7 @@ def _parse_public_or_private_statement(statement,kind):
         raise error.SyntaxError("expected '{}'".format(kind))
     if len(tokens) > 1 and tokens[0] == "::":
         tokens.pop(0)
+    if len(tokens) and tokens[0].isidentifier():
         operands, num_consumed_tokens = get_top_level_operands(tokens)
         for expr in operands: 
             if not expr.isidentifier():
@@ -905,12 +906,12 @@ def _parse_public_or_private_statement(statement,kind):
     return kind_expr, identifiers
 
 def parse_public_statement(statement):
-    """:see: _parse_public_or_private_statement"""
-    return _parse_public_or_private_statement(statement,"public")
+    """:see: parse_public_or_private_statement"""
+    return parse_public_or_private_statement(statement,"public")
 
 def parse_private_statement(statement):
-    """:see: _parse_public_or_private_statement"""
-    return _parse_public_or_private_statement(statement,"private")
+    """:see: parse_public_or_private_statement"""
+    return parse_public_or_private_statement(statement,"private")
 
 def expand_letter_range(expr):
     """Expand expressions such as 'a-z' and trivial cases such as 'a'.

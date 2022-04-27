@@ -561,11 +561,15 @@ class TestParsingUtils(unittest.TestCase):
     def test_27_parse_public_statement(self):
         expressions = [
           "public",
+          "PUBLIC a",
+          "public a,b",
           "PUBLIC :: a",
           "public :: a,b",
         ]
         results = [
           ("public",[]),
+          ("PUBLIC",["a"]),
+          ("public",["a","b"]),
           ("PUBLIC",["a"]),
           ("public",["a","b"]),
         ]

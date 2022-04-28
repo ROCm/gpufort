@@ -45,43 +45,51 @@ def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
                Disable padding by specifying value <= 0.
     :param bool keepws: keep whitespaces in the resulting list of tokens.
     """
-    TOKENS_KEEP = [
-        r"[\"](?:\\.|[^\"\\])*[\"]",
-        r"[\'](?:\\.|[^\'\\])*[\']",
-        r"\bend(?:if|do)?\b",
-        r"\belse(?:if)?\b",
-        r"[();,%]",
-        r"::?",
-        r"<<<",
-        r">>>",
-        r"[<>]=?",
-        r"[\/=]=",
-        r"=>?",
-        r"\+",
-        r"-",
-        r"\*",
-        r"\/",
-        r"\&",
-        r"\.\w+\.",
-        r"[\s\t\r\n]+",
-    ]
-    if modern_fortran:
-        TOKENS_KEEP.append(r"![@\$]?")
+    if isinstance(statement,str):
+        TOKENS_KEEP = [
+            r"[\"](?:\\.|[^\"\\])*[\"]",
+            r"[\'](?:\\.|[^\'\\])*[\']",
+            r"\bend(?:if|do)?\b",
+            r"\belse(?:if)?\b",
+            r"[();,%]",
+            r"::?",
+            r"<<<",
+            r">>>",
+            r"[<>]=?",
+            r"[\/=]=",
+            r"=>?",
+            r"\+",
+            r"-",
+            r"\*",
+            r"\/",
+            r"\&",
+            r"\.\w+\.",
+            r"[\s\t\r\n]+",
+        ]
+        if modern_fortran:
+            TOKENS_KEEP.append(r"![@\$]?")
+        else:
+            TOKENS_KEEP.append(r"^[c\*][@\$]?")
+        # IMPORTANT: Use non-capturing groups (?:<expr>) to ensure that an inner group in TOKENS_KEEP
+        # is not captured.
+        keep_pattern = "".join(["(","|".join(TOKENS_KEEP),")"])
+        
+        tokens = re.split(keep_pattern, statement, 0, re.IGNORECASE)
+        result = []
+        for tk in tokens:
+            if tk.lower() in ["endif", "elseif", "enddo"]:
+                result.append(tk[:-2])
+                result.append(tk[-2:])
+            elif len(tk) and (keepws or len(tk.strip())):
+                result.append(tk)
+        return pad_to_size(result,padded_size)
+    elif isinstance(statement,list):
+        if keepws:
+            return pad_to_size(statement,padded_size)
+        else:
+            return pad_to_size([tk for tk in statement if len(tk.strip())],padded_size)
     else:
-        TOKENS_KEEP.append(r"^[c\*][@\$]?")
-    # IMPORTANT: Use non-capturing groups (?:<expr>) to ensure that an inner group in TOKENS_KEEP
-    # is not captured.
-    keep_pattern = "".join(["(","|".join(TOKENS_KEEP),")"])
-    
-    tokens = re.split(keep_pattern, statement, 0, re.IGNORECASE)
-    result = []
-    for tk in tokens:
-        if tk.lower() in ["endif", "elseif", "enddo"]:
-            result.append(tk[:-2])
-            result.append(tk[-2:])
-        elif len(tk) and (keepws or len(tk.strip())):
-            result.append(tk)
-    return pad_to_size(result,padded_size)
+        raise Exception("input must be either a str or a list of strings")
 
 def mangle_fortran_var_expr(var_expr):
     """Unsophisticated name mangling routine that
@@ -730,6 +738,32 @@ def parse_type_statement(statement):
         if not len(params):
             raise error.SyntaxError("expected at least 1 parameter")
     return name, attributes, params
+
+def _parse_f77_character_type(statement):
+    tokens = tokenize(statement,padded_size=2)
+    char_kind = None 
+    char_len  = "1"
+    if compare_ignore_case(tokens[0:3],["character","*","("])
+        tokens = tokens[3:]
+        args,num_consumed_tokens = get_top_level_operands(tokens)
+        if len(args) == 1
+        else:
+                    
+
+def _parse_character_type(statement):
+    tokens = tokenize(statement,padded_size=2)
+    if compare_ignore_case(tokens[0:2],["character","*"]):
+        return _parse_f77_character_type(tokens)
+    elif tokens[1] == "(":
+        arguments, num_consumed_tokens = 
+
+def _parse_f77_basic_type(statement):
+    pass
+
+def _parse_basic_type(statement):
+    tokens = tokenize(statement,padded_size=2)
+    if compare_ignore_case(tokens[1],"*"):
+        return _parse_f77_character()
 
 def parse_declaration(statement):
     """Decomposes a Fortran declaration into its individual

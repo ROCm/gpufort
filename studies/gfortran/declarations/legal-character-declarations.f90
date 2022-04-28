@@ -16,6 +16,7 @@ program character_declarations
   ! character*(4,kind=c_char) :: f77_c(3,4)*5 
   
   character :: f77_c1a(3,4) ! len=1
+  ! character*() :: foo(3,4) illegal
   character*1 :: f77_c1b(3,4) ! 
   ! character*(len=1) :: f77_c1(3,4) ! illegal
   ! character*(len=1) :: f77_c1(3,4) ! illegal
@@ -33,6 +34,7 @@ program character_declarations
   ! the order of arguments can be interchanged.
   
   character :: c1a(3,4)
+  !character() :: foo(3,4) illegal
   character(kind=c_char) :: c1b(3,4)
   character(kind=c_char,len=1) :: c1c(3,4)
   character(2) :: c2a(3,4)
@@ -80,7 +82,7 @@ contains
 subroutine mysub(arg1,arg2,arg3,arg4)
   character(*) :: arg1
   character(len=*) :: arg2
-  character(-2:*) :: arg1
-  character(len=-2:*) :: arg2
+  !character(-2:*) :: arg1 ! illegal
+  !character(len=-2:*) :: arg2 ! illegal
 end subroutine
 end program

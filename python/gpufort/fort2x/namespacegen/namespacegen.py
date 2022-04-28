@@ -90,7 +90,17 @@ class NamespaceGenerator():
         already_considered = set()
         decl_list = []
         print_statements = []
-        for ivar in reversed(self.scope["variables"]):
+        for ivar1 in reversed(self.scope["variables"]):
+            ivar = copy.deepcopy(ivar1)
+            # public,private may only appear in module
+            try:
+                ivar["attributes"].remove("public")
+            except:
+                pass 
+            try:
+                ivar["attributes"].remove("private")
+            except:
+                pass 
             if self.__consider_parameter(ivar,already_considered):#
                 already_considered.add(ivar["name"])
                 decl_list.append(indexer.types.render_declaration(ivar))
@@ -101,16 +111,26 @@ class NamespaceGenerator():
                     " "*2,"print *,",
                     "'",ivar["name"],"'",              # name
                     ",',",ivar["f_type"],"'",          # f_type
-                    ",',',len(",ivar["name"],")",      # len
+                ]
+                if ivar["f_type"] == "character":
+                    print_tokens.append(
+                        ",',',len(",ivar["name"],")",      # len
+                    )
+                else:
+                    print_tokens.append(
+                        ",',','<none>'",      # len
+                    )
+                print_tokens += [
                     ",',',kind(",ivar["name"],")",     # kind
                     ",',',c_sizeof(",ivar["name"],")", # size in bytes
                     ",',',",ivar["name"],              # value/rhs 
                 ]
                 print_statements.append("".join(print_tokens))
         fortran_snippet = "\n".join(["program main",
-                                    "  implicit none",
                                     "  use iso_c_binding",
-                                    "  use iso_fortran_env"]
+                                    "  use iso_fortran_env",
+                                    "  implicit none",
+                                    ]
                                     +decl_list
                                     +print_statements
                                     +["end program"])
@@ -125,7 +145,6 @@ class NamespaceGenerator():
         cmd_compile = [self.fortran_compiler,self.fortran_compiler_flags,temp_infile.name,"-o",temp_outfile_path]
         status,_,err_out = util.subprocess.run_subprocess(cmd_compile,True)
         if status != 0:
-            print(temp_infile.read())
             raise util.error.LookupError("failed resolving parameters in scope '{}' as compilation with compiler '{}' and flags '{}' failed for the following reason: {}".format(
                 self.scope["tag"],self.fortran_compiler," ".join(self.fortran_compiler_flags),err_out))
         if os.path.exists(temp_infile.name):
@@ -138,6 +157,8 @@ class NamespaceGenerator():
         body = []
         for line in std_out.splitlines():
             name, f_type, f_len, kind, size, rhs_expr = [col.strip() for col in line.split(",")]
+            if f_len == "<none>":
+                f_len == None
             ivar = indexer.types.create_index_var(f_type,f_len,kind,[],name,[],[],rhs_expr)
             translator.analysis.append_c_type(ivar)
             tokens = [" "*2,"constexpr ",ivar["c_type"]]

@@ -83,7 +83,7 @@ def render_declaration(ivar):
     result = [render_datatype(ivar)]
     if len(ivar["attributes"]):
         result += [", ",", ".join(ivar["attributes"])]
-    result += ["::",ivar["name"]]
+    result += [" :: ",ivar["name"]]
     if len(ivar["bounds"]):
         result += ["(",", ".join(ivar["bounds"]),")"]
     if ivar["rhs"] != None:

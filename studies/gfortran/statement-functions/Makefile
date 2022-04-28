@@ -1,4 +1,4 @@
-TEST     ?= legal-declarations legal-character-declarations
+TEST     ?= statement-functions
 DEPS     ?= 
 SOURCES  ?= $(TEST).f90 $(DEPS)
 DEPS_OBJ  = $(DEPS:.f90=.o)

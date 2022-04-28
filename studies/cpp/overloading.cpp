@@ -10,7 +10,7 @@ void foo(double b) {
   std::cout << "double" << std::endl;
 }
 
-//void foo(float& a) { // no ption for literals
+//void foo(float& a) { // no option for literals
 //  std::cout << "float reference" << std::endl;
 //}
 //

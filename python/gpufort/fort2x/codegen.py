@@ -115,14 +115,7 @@ class CodeGenerator():
 
     @util.logging.log_entry_and_exit(opts.log_prefix+".CodeGenerator")
     def _render_derived_types(self, itypes, cpp_filegen, fortran_modulegen):
-        if self.emit_interop_types:
-            derivedtypegen = hipderivedtypegen.HipDerivedTypeGenerator(itypes, [])
-            cpp_filegen.rendered_types += derivedtypegen.render_derived_type_definitions_cpp(
-            )
-            fortran_modulegen.rendered_types += derivedtypegen.render_derived_type_definitions_f03(
-            )
-            fortran_modulegen.rendered_routines += derivedtypegen.render_derived_type_routines_f03(
-            )
+        pass
 
     def _render_loop_nest(self, stkernel, fortran_modulegen):
         pass
@@ -185,7 +178,7 @@ class CodeGenerator():
             elif self._device_procedure_filter(
                     stnode
             ): # handle before STProcedure (without attributes) is handled
-                if stprocedure.is_kernel_subroutine():
+                if stnode.is_kernel_subroutine():
                     cpp_filegen_to_pass = self.cpp_filegen
                 else:
                     cpp_filegen_to_pass = cpp_filegen

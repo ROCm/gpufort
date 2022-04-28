@@ -15,6 +15,21 @@ def compare_ignore_case(tokens1,tokens2):
             return False
         else:
             for i,tk in enumerate(tokens1):
+                #if (tk.isidentifier() and tokens2[i]=="<ident>"
+                #   or tk=="<ident>" and tokens2[i].isidentifier): 
+                #    pass
+                #elif tokens2[i]=="<int>":
+                #    try:
+                #        int(tk)
+                #    except:
+                #        return False 
+                #elif tk=="<int>":
+                #    try:
+                #        int(tokens2[i])
+                #    except:
+                #        return False 
+                #elif tk.lower() != tokens2[i].lower():
+                #    return False
                 if tk.lower() != tokens2[i].lower():
                     return False
             return True
@@ -25,8 +40,8 @@ def all_tokens_are_blank(tokens):
             return False
     return True
 
-def check_if_all_tokens_are_blank(tokens):
-    if not all_tokens_are_blank(tokens):
+def check_if_all_tokens_are_blank(tokens,enable=True):
+    if enable and not all_tokens_are_blank(tokens):
         raise error.SyntaxError("unexpected tokens at end of statement: {}".format(
             ",".join(["'{}'".format(tk) for tk in tokens if len(tk.strip())] )))
 
@@ -409,7 +424,7 @@ def parse_function_statement(statement):
     # prefix
     while criterion:
         if tokens[0].lower() in type_begin:
-            result_type, result_type_kind, num_consumed_tokens =\
+            result_type, f_len, result_type_kind, params, num_consumed_tokens =\
                     _parse_datatype(tokens)
             tokens=tokens[num_consumed_tokens:]
         else:
@@ -629,61 +644,61 @@ def parse_attributes_statement(statement):
                 raise error.SyntaxError("expected ','")
     return attributes, variables    
 
-def _parse_datatype(tokens):
-    # TODO treat len of CHARACTER explicitly
-    # handle datatype
-    tokens = pad_to_size(tokens,6)
-    datatype = tokens[0]
-    idx_last_consumed_token = 0
-    kind = None
-    DOUBLE_COLON = "::"
-    
-    if compare_ignore_case(tokens[0],"type"):
-        # ex: type ( dim3 )
-        kind = tokens[2]
-        idx_last_consumed_token = 3
-    elif compare_ignore_case(tokens[0:2],["double", "precision"]):
-        datatype = " ".join(tokens[0:2])
-        idx_last_consumed_token = 1
-    elif tokens[1] == "*":
-        # ex: integer * 4
-        # ex: integer * ( 4*2 )
-        if tokens[2] == "(":
-            kind_tokens = next_tokens_till_open_bracket_is_closed(
-                tokens[3:], open_brackets=1)[:-1]
-            kind = "".join(kind_tokens)
-            idx_last_consumed_token = 2 + len(kind_tokens) + 1 # )
-        else:
-            kind = tokens[2] 
-            idx_last_consumed_token = 2
-    elif compare_ignore_case(tokens[1:4],["(","kind","("]):
-        # ex: integer ( kind ( 4 ) )
-        kind_tokens = next_tokens_till_open_bracket_is_closed(
-            tokens[4:], open_brackets=2)
-        kind = "".join(tokens[2:4]+kind_tokens[:-1])
-        idx_last_consumed_token = 4 + len(kind_tokens) - 1
-    elif (compare_ignore_case(tokens[1:4], ["(","kind","="])
-         or compare_ignore_case(tokens[1:4],["(","len","="])):
-        # ex: integer ( kind = 4 )
-        kind_tokens = next_tokens_till_open_bracket_is_closed(
-            tokens[4:], open_brackets=1)
-        kind = "".join(kind_tokens[:-1])
-        idx_last_consumed_token = 4 + len(kind_tokens) - 1
-    elif tokens[1] == "(":
-        # ex: integer ( 4 )
-        # ex: integer ( 4*2 )
-        kind_tokens = next_tokens_till_open_bracket_is_closed(
-            tokens[2:], open_brackets=1)
-        kind = "".join(kind_tokens[:-1])
-        idx_last_consumed_token = 2 + len(kind_tokens) - 1
-    elif tokens[1] in [",", DOUBLE_COLON] or tokens[1].isidentifier():
-        # ex: integer ,
-        # ex: integer ::
-        # ex: integer a
-        idx_last_consumed_token = 0
-    elif not all_tokens_are_blank(tokens[1:]):
-        raise error.SyntaxError("could not parse datatype")
-    return datatype, kind, idx_last_consumed_token+1
+#def _parse_datatype_v1(tokens):
+#    # TODO treat len of CHARACTER explicitly
+#    # handle datatype
+#    tokens = pad_to_size(tokens,6)
+#    datatype = tokens[0]
+#    idx_last_consumed_token = 0
+#    kind = None
+#    DOUBLE_COLON = "::"
+#    
+#    if compare_ignore_case(tokens[0],"type"):
+#        # ex: type ( dim3 )
+#        kind = tokens[2]
+#        idx_last_consumed_token = 3
+#    elif compare_ignore_case(tokens[0:2],["double", "precision"]):
+#        datatype = " ".join(tokens[0:2])
+#        idx_last_consumed_token = 1
+#    elif tokens[1] == "*":
+#        # ex: integer * 4
+#        # ex: integer * ( 4*2 )
+#        if tokens[2] == "(":
+#            kind_tokens = next_tokens_till_open_bracket_is_closed(
+#                tokens[3:], open_brackets=1)[:-1]
+#            kind = "".join(kind_tokens)
+#            idx_last_consumed_token = 2 + len(kind_tokens) + 1 # )
+#        else:
+#            kind = tokens[2] 
+#            idx_last_consumed_token = 2
+#    elif compare_ignore_case(tokens[1:4],["(","kind","("]):
+#        # ex: integer ( kind ( 4 ) )
+#        kind_tokens = next_tokens_till_open_bracket_is_closed(
+#            tokens[4:], open_brackets=2)
+#        kind = "".join(tokens[2:4]+kind_tokens[:-1])
+#        idx_last_consumed_token = 4 + len(kind_tokens) - 1
+#    elif (compare_ignore_case(tokens[1:4], ["(","kind","="])
+#         or compare_ignore_case(tokens[1:4],["(","len","="])):
+#        # ex: integer ( kind = 4 )
+#        kind_tokens = next_tokens_till_open_bracket_is_closed(
+#            tokens[4:], open_brackets=1)
+#        kind = "".join(kind_tokens[:-1])
+#        idx_last_consumed_token = 4 + len(kind_tokens) - 1
+#    elif tokens[1] == "(":
+#        # ex: integer ( 4 )
+#        # ex: integer ( 4*2 )
+#        kind_tokens = next_tokens_till_open_bracket_is_closed(
+#            tokens[2:], open_brackets=1)
+#        kind = "".join(kind_tokens[:-1])
+#        idx_last_consumed_token = 2 + len(kind_tokens) - 1
+#    elif tokens[1] in [",", DOUBLE_COLON] or tokens[1].isidentifier():
+#        # ex: integer ,
+#        # ex: integer ::
+#        # ex: integer a
+#        idx_last_consumed_token = 0
+#    elif not all_tokens_are_blank(tokens[1:]):
+#        raise error.SyntaxError("could not parse datatype")
+#    return datatype, kind, idx_last_consumed_token+1
 
 def _parse_raw_qualifiers_and_rhs(tokens):
     """:return: Triple of qualifiers and variables as list of raw strings plus
@@ -739,31 +754,240 @@ def parse_type_statement(statement):
             raise error.SyntaxError("expected at least 1 parameter")
     return name, attributes, params
 
-def _parse_f77_character_type(statement):
-    tokens = tokenize(statement,padded_size=2)
+def _parse_fortran_argument(statement):
+    tokens = tokenize(statement)
+    parts,num_consumed_tokens = get_top_level_operands(tokens,separators="=")
+    if len(parts) == 2:
+        return (parts[0],parts[1])
+    elif len(parts) == 1:
+        return (None,parts[0])
+    else:
+        raise error.SyntaxError("expected single expression or named argument expression")
+
+def _map_fortran_args_to_positional_args(fortran_args,
+                                         positional_args=None,
+                                         defaults=None,
+                                         allow_named_args=True):
+    """:return: List that contains value expressions per detected positional argument or None.
+                If `positional_args` is set to None or not specified, this function
+                returns None too. In this case, the function checks if all named arguments
+                are specified after the last positional argument; it raises an `error.SyntaxError`
+                if not so.
+    :param fortran_args: A Fortran arg list either as string, list of str or 
+                         list of fortran arg tuples.
+    :param list positional_args: List of positional arg names or None.
+    :param list defaults: List of default values to set or None. Only used if
+                          positional arg names are not None.
+ 
+    :throws: error.SyntaxError, ValueError
+    """
+    args1 = None
+    if isinstance(fortran_args, str):
+        args1,_ = get_top_level_operands(tokenize(fortran_args))
+    elif isinstance(fortran_args, list):
+        if len(fortran_args) and isinstance(fortran_args[0],str):
+            args1 = fortran_args
+        elif len(fortran_args) and isinstance(fortran_args[0],tuple):
+            fortran_arg_list = fortran_args 
+        else:
+            raise ValueError("type of 'fortran_args' must be either str, list of str, or list of 2-tuples with str or None elements")
+    else:
+        raise ValueError("type of 'fortran_args' must be either str, list of str, or list of 2-tuples with str or None elements")
+    if args1 != None:
+        fortran_arg_list = [_parse_fortran_argument(expr) for expr in args1]
+    #
+    values = None
+    if positional_args != None:
+        if len(fortran_arg_list) > len(positional_args):
+            raise error.SyntaxError("expected no more than {} arguments, but {} were passed".format(len(positional_args),len(fortran_arg_list)))
+        if defaults == None:
+            values = [None]*len(positional_args)
+        elif len(defaults) != len(positional_args):
+            raise ValueError("len(defaults) != len(positional_args)")
+        else:
+            values = defaults
+            
+    consumed_positional_args = []
+    consumed_named_args = []
+    all_unnamed = True 
+    for i,pair in enumerate(fortran_arg_list):
+        name,value = pair
+        if name == None:
+            if not all_unnamed:
+                raise error.SyntaxError("positional argument after named argument(s)")
+            if positional_args != None:
+               name = positional_args[i]
+               consumed_positional_args.append(name) 
+               values[i] = value 
+        elif not allow_named_args:
+            raise error.SyntaxError("no named arguments allowed")
+        else:
+            all_unnamed = False
+            name_lower = name.lower()
+            if name_lower in consumed_positional_args:
+                raise error.SyntaxError("argument '{}' already appeared as positional argument".format(name_lower))
+            elif name_lower in consumed_named_args:
+                raise error.SyntaxError("argument '{}' already appeared as named argument".format(name_lower))
+            if positional_args != None:
+                if name_lower not in positional_args:
+                    raise error.SyntaxError("invalid argument name '{}'".format(name))
+                idx = positional_args.index(name_lower)
+                values[idx] = value
+            consumed_named_args.append(name_lower)
+    return values
+
+def _parse_f77_character_type(statement,parse_all=False):
+    tokens = tokenize(statement,padded_size=3)
+    char_type = tokens[0]
     char_kind = None 
     char_len  = "1"
-    if compare_ignore_case(tokens[0:3],["character","*","("])
-        tokens = tokens[3:]
-        args,num_consumed_tokens = get_top_level_operands(tokens)
-        if len(args) == 1
+    if compare_ignore_case(tokens[0:3],["character","*","("]):
+        total_num_consumed_tokens = 3
+        args, num_consumed_tokens = get_top_level_operands(tokens[3:])
+        total_num_consumed_tokens += num_consumed_tokens
+        if tokens[total_num_consumed_tokens:total_num_consumed_tokens+1] != [")"]:
+            raise error.SyntaxError("missing ')'")
+        total_num_consumed_tokens += 1
+        check_if_all_tokens_are_blank(tokens[total_num_consumed_tokens:],parse_all)
+        if len(args) == 1:
+            char_len = _map_fortran_args_to_positional_args(args,
+                                                            positional_args=["len"],
+                                                            defaults=["1"],allow_named_args=False)[0]
+            return (char_type, char_len, None, [], total_num_consumed_tokens)
         else:
-                    
-
-def _parse_character_type(statement):
+            raise error.SyntaxError("expected a single unnamed 'len' expression")        
+    elif compare_ignore_case(tokens[0:2],["character","*"]):
+        char_len = tokens[2]
+        if not char_len.isidentifier():
+            try:
+               int(char_len) 
+            except ValueError:
+                raise error.SyntaxError("if no parantheses are used, character len argument must be identifier or integer")
+        check_if_all_tokens_are_blank(tokens[3:],parse_all)
+        return (char_type, char_len, None, [], 3)
+    elif compare_ignore_case(tokens[0],"character"):
+        check_if_all_tokens_are_blank(tokens[1:],parse_all)
+        return (char_type, char_len, None, [], 1)
+    else:
+        raise error.SyntaxError("expected 'character'") 
+            
+def _parse_character_type(statement,parse_all=False):
     tokens = tokenize(statement,padded_size=2)
-    if compare_ignore_case(tokens[0:2],["character","*"]):
-        return _parse_f77_character_type(tokens)
-    elif tokens[1] == "(":
-        arguments, num_consumed_tokens = 
+    if compare_ignore_case(tokens[0:2],["character","("]):
+        total_num_consumed_tokens = 2 
+        args, num_consumed_tokens = get_top_level_operands(tokens[total_num_consumed_tokens:])
+        total_num_consumed_tokens += num_consumed_tokens
+        if tokens[total_num_consumed_tokens:total_num_consumed_tokens+1] != [")"]:
+            raise error.SyntaxError("missing ')'")
+        total_num_consumed_tokens += 1
+        check_if_all_tokens_are_blank(tokens[total_num_consumed_tokens:],parse_all)
+        if len(args) in [1,2]:
+            values = _map_fortran_args_to_positional_args(args,["len","kind"],defaults=["1",None])
+            char_len, char_kind = values
+            return (tokens[0], char_len, char_kind, [], total_num_consumed_tokens)
+        else:
+            raise error.SyntaxError("expected 1 or 2 comma-separated character length and kind expressions")
+    else:
+        return _parse_f77_character_type(tokens,parse_all)
 
-def _parse_f77_basic_type(statement):
-    pass
+__basic_types = ["logical","integer","real","complex"]
 
-def _parse_basic_type(statement):
+def _parse_f77_basic_type(statement,parse_all=False):
+    tokens = tokenize(statement,padded_size=3)
+    if compare_ignore_case(tokens[0:2],["double","precision"]):
+        check_if_all_tokens_are_blank(tokens[2:],parse_all)
+        return ("real", None, "c_double", [], 2)
+    elif compare_ignore_case(tokens[0:2],["double","complex"]):
+        check_if_all_tokens_are_blank(tokens[2:],parse_all)
+        return ("complex", None, "c_double_complex", [], 2)
+    elif tokens[0].lower() in __basic_types:
+        basic_type = tokens[0]
+        if compare_ignore_case(tokens[1:3],["*","("]):
+            total_num_consumed_tokens = 3
+            args, num_consumed_tokens = get_top_level_operands(tokens[3:])
+            total_num_consumed_tokens += num_consumed_tokens
+            if tokens[total_num_consumed_tokens:total_num_consumed_tokens+1] != [")"]:
+                raise error.SyntaxError("missing ')'")
+            total_num_consumed_tokens += 1
+            check_if_all_tokens_are_blank(tokens[total_num_consumed_tokens:],parse_all)
+            if len(args) == 1:
+                basic_kind = _map_fortran_args_to_positional_args(args,
+                                                                  positional_args=["kind"],
+                                                                  defaults=[None],allow_named_args=False)[0]
+                return (basic_type, None, basic_kind, [], total_num_consumed_tokens)
+            else:
+                raise error.SyntaxError("expected a single unnamed 'kind' expression")        
+        elif compare_ignore_case(tokens[1:2],["*"]):
+            basic_kind = tokens[2]
+            if not basic_kind.isidentifier():
+                try:
+                   int(basic_kind) 
+                except ValueError:
+                    raise error.SyntaxError("if no parantheses are used, kind argument must be identifier or integer")
+            check_if_all_tokens_are_blank(tokens[3:],parse_all)
+            return (basic_type, None, basic_kind, [], 3)
+        else:
+            check_if_all_tokens_are_blank(tokens[1:],parse_all)
+            return (basic_type, None, None, [], 1)
+    else:
+            raise error.SyntaxError("expected 'character'") 
+
+def _parse_basic_type(statement,parse_all=False):
+    """:note: character is handleded in a dedicated function."""
     tokens = tokenize(statement,padded_size=2)
-    if compare_ignore_case(tokens[1],"*"):
-        return _parse_f77_character()
+    if (tokens[0].lower() in __basic_types
+       and compare_ignore_case(tokens[1:2],["("])):
+        total_num_consumed_tokens = 2 
+        args, num_consumed_tokens = get_top_level_operands(tokens[total_num_consumed_tokens:])
+        total_num_consumed_tokens += num_consumed_tokens
+        if tokens[total_num_consumed_tokens:total_num_consumed_tokens+1] != [")"]:
+            raise error.SyntaxError("missing ')'")
+        total_num_consumed_tokens += 1
+        check_if_all_tokens_are_blank(tokens[total_num_consumed_tokens:],parse_all)
+        if len(args) == 1:
+            basic_kind = _map_fortran_args_to_positional_args(args,["kind"],defaults=[None])[0]
+            return (tokens[0],None,basic_kind,[],total_num_consumed_tokens)
+        else:
+            raise error.SyntaxError("expected a single kind expressions")
+    else:
+        return _parse_f77_basic_type(tokens,parse_all)
+
+def _parse_derived_type(statement,parse_all=True):
+    tokens = tokenize(statement,padded_size=2)
+    if compare_ignore_case(tokens[0:2],["type","("]):
+        total_num_consumed_tokens = 2
+        types,num_consumed_tokens = get_top_level_operands(tokens[total_num_consumed_tokens:],join_operand_tokens=False)
+        total_num_consumed_tokens += num_consumed_tokens
+        if tokens[total_num_consumed_tokens:total_num_consumed_tokens+1] != [")"]:
+            raise error.SyntaxError("missing ')'")
+        total_num_consumed_tokens += 1
+        check_if_all_tokens_are_blank(tokens[total_num_consumed_tokens:],parse_all)
+        if len(types) == 1:
+            first_entry = types[0]
+            if len(first_entry) == 1 and first_entry[0].isidentifier():
+                return (tokens[0],None,first_entry[0],[],total_num_consumed_tokens)
+            elif len(first_entry) >= 2 and first_entry[0].isidentifier() and first_entry[1] == "(":
+                params,num_params_tokens = get_top_level_operands(first_entry[2:])
+                if first_entry[2+num_params_tokens:] != [")"]:
+                    raise error.SyntaxError("missing ')'")
+                check_if_all_tokens_are_blank(first_entry[2+num_params_tokens+1:],parse_all)
+                return (tokens[0],None,first_entry[0],params,total_num_consumed_tokens)
+            else:
+                raise error.SyntaxError("expected identifier or identifier plus parameter list")
+        else:
+            raise error.SyntaxError("expected single identifier or identifier plus parameter list")
+    else:
+        raise error.SyntaxError("expected 'type ('")
+
+def _parse_datatype(statement,parse_all=False):
+    tokens = tokenize(statement,padded_size=1)
+    if compare_ignore_case(tokens[0],"type"):
+        return _parse_derived_type(tokens,parse_all)
+    elif compare_ignore_case(tokens[0],"character"):
+        return _parse_character_type(tokens,parse_all)
+    else:
+        return _parse_basic_type(tokens,parse_all)
+        
 
 def parse_declaration(statement):
     """Decomposes a Fortran declaration into its individual
@@ -778,16 +1002,26 @@ def parse_declaration(statement):
     :raise error.SyntaxError: If the syntax of the expression is not as expected.
     """
     tokens = tokenize(statement,10)
+    is_character_declaration = tokens[0].lower() == "character"
+    is_f77_character_declaration = compare_ignore_case(tokens[0:2],["character","*"])
 
     # handle datatype
-    datatype, kind, num_consumed_tokens = _parse_datatype(tokens)
+    datatype, length, kind, params, num_consumed_tokens = _parse_datatype(tokens)
     
     datatype_raw = "".join(tokens[:num_consumed_tokens])
-    tokens = tokens[num_consumed_tokens:] # remove type part tokens
    
     # parse raw qualifiers and variables
-    qualifiers_raw, variables_raw, num_consumed_tokens = _parse_raw_qualifiers_and_rhs(tokens)
-    tokens = tokens[num_consumed_tokens:] # remove qualifier list tokens
+    tokens = tokens[num_consumed_tokens:] # remove type part tokens
+    try:
+        qualifiers_raw, variables_raw, num_consumed_tokens = _parse_raw_qualifiers_and_rhs(tokens)
+        tokens = tokens[num_consumed_tokens:] # remove qualifier list tokens
+    except error.SyntaxError: # superfluous comma allowed between character*<expr> and first identifier
+        if is_f77_character_declaration and tokens[0] == ",":
+            tokens = tokens[1:]
+            qualifiers_raw, variables_raw, num_consumed_tokens = _parse_raw_qualifiers_and_rhs(tokens)
+            tokens = tokens[num_consumed_tokens:] # remove qualifier list tokens
+        else:
+            raise
     check_if_all_tokens_are_blank(tokens)
     # analyze qualifiers
     qualifiers = []
@@ -818,25 +1052,38 @@ def parse_declaration(statement):
     # analyze variables
     variables = []
     for var in variables_raw:
-        var_tokens = tokenize(var)
-        var_name   = var_tokens.pop(0)
-        var_bounds = [] 
-        var_rhs    = None
-        # handle bounds
-        if (len(var_tokens) > 2
-           and var_tokens[0] == "("):
-            bounds_tokens = next_tokens_till_open_bracket_is_closed(var_tokens)
-            var_bounds,_  = get_top_level_operands(bounds_tokens[1:-1])
-            for i in range(0,len(bounds_tokens)):
-                var_tokens.pop(0)
-        if (len(var_tokens) > 1 and
-           var_tokens[0] in ["=>","="]):
-            var_tokens.pop(0)
-            var_rhs = "".join(var_tokens)
-        elif len(var_tokens):
-            raise error.SyntaxError("could not parse '{}'".format(var_tokens))
+        separator = "=>" if "pointer" in qualifiers else "="
+        assignment_operands,_ = get_top_level_operands(tokenize(var),
+                                                       separators=[separator])
+        if len(assignment_operands) == 1:
+            var_lhs = assignment_operands[0]
+            var_rhs = None
+        elif len(assignment_operands) == 2:
+            var_lhs,var_rhs = assignment_operands
+        else:
+            raise error.SyntaxError("expected single variable expression or (pointer) assigment")
+        if is_character_declaration:
+            length_operands,_ = get_top_level_operands(tokenize(var_lhs),
+                                                       separators=["*"])
+            if len(length_operands) == 2:
+                var_lhs, length = length_operands 
+        var_lhs_tokens = tokenize(var_lhs)
+        var_name = var_lhs_tokens[0]
+        if not var_name.isidentifier():
+            raise error.SyntaxError("expected identifier")
+        if (len(var_lhs_tokens) > 2
+           and var_lhs_tokens[1] == "("):
+            var_bounds, num_consumed_tokens = get_top_level_operands(var_lhs_tokens[2:])
+            if not len(var_bounds):
+                raise error.SyntaxError("expected at least one argument for variable '{}'".format(var_name))
+            if var_lhs_tokens[2+num_consumed_tokens:] != [")"]:
+                raise error.SyntaxError("missing ')'")
+        elif len(var_lhs_tokens) > 1:
+            raise error.SyntaxError("unexpected tokens after '{}': '{}'".format(var_name,"','".join(var_lhs_tokens[1:])))
+        else:
+            var_bounds = []
         variables.append((var_name,var_bounds,var_rhs))
-    return (datatype, kind, qualifiers, dimension_bounds, variables, datatype_raw, qualifiers_raw) 
+    return (datatype, length, kind, params, qualifiers, dimension_bounds, variables, datatype_raw, qualifiers_raw) 
 
 def parse_derived_type_statement(statement):
     """Parse the first statement of derived type declaration.
@@ -1011,7 +1258,7 @@ def parse_implicit_statement(statement):
             else:
                 # example: implicit integer(mykind) (j,k,m,n)       
                 first_letter_tokens = rule_tokens[len(datatype_tokens):]
-            f_type, f_kind, num_consumed_tokens = _parse_datatype(datatype_tokens)
+            f_type, f_len, f_kind, params, num_consumed_tokens = _parse_datatype(datatype_tokens)
             assigned_first_letters = []
             check_if_all_tokens_are_blank(datatype_tokens[num_consumed_tokens:])
             #rule_tokens = rule_tokens[num_consumed_tokens:]

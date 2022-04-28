@@ -68,15 +68,15 @@ def create_index_records_from_declaration(statement):
     """:raise util.errorSyntaxError: If the syntax of the declaration statement is not
                                      as expected.
     """
-    f_type, kind, qualifiers, dimension_bounds, variables, f_type_full, _ = util.parsing.parse_declaration(statement.lower())
-
+    f_type, f_len, kind, params, qualifiers, dimension_bounds, variables, f_type_full, _ = util.parsing.parse_declaration(statement.lower())
+    # TODO inconsistent, len overwrites character len but bounds do not overwrite dimension_bounds
     context = []
     for var in variables:
         name, bounds, rhs = var
         if len(bounds):
-            ivar = types.create_index_var(f_type_full,f_type,kind,name,qualifiers,bounds,rhs)
+            ivar = types.create_index_var(f_type, f_len, kind, params, name, qualifiers, bounds, rhs)
         else:
-            ivar = types.create_index_var(f_type_full,f_type,kind,name,qualifiers,dimension_bounds,rhs)
+            ivar = types.create_index_var(f_type, f_len, kind, params, name, qualifiers, dimension_bounds,rhs)
         context.append(ivar)
     return context
 

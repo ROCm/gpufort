@@ -209,7 +209,9 @@ def handle_declaration_cuf(stdeclaration, joined_statements, index=[]):
         variables = create_index_records_from_declaration(stmt.lower())
         index["variables"] += variables
 
-    _, _, _, dimension_bounds, variables, original_datatype, original_qualifiers = util.parsing.parse_declaration(stmt)
+    # TODO original_datatype not fully correct if we have character rhs that overrides len via <var-expr>*<int-expr>
+    f_type, f_len, f_kind, params, qualifiers, dimension_bounds, variables,\
+        original_datatype, original_qualifiers = util.parsing.parse_declaration(stmt)
 
     # argument names if declared in procedure
     if isinstance(stdeclaration.parent, nodes.STProcedure):

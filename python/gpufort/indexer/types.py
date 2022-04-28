@@ -25,8 +25,9 @@ SCOPE_ENTRY_TYPES = ["types", "variables", "procedures"]
 EMPTY_VAR = {
         "name"   : __UNKNOWN,
         "f_type" : __UNKNOWN,
+        "len"    : __UNKNOWN,
         "kind"   : __UNKNOWN,
-        "f_type_full" : __UNKNOWN,
+        "params" : [],
         # TODO bytes per element can be computed on the fly
         "bytes_per_element" : __UNKNOWN,
         "c_type" : __UNKNOWN,
@@ -40,13 +41,14 @@ EMPTY_VAR = {
         "rhs" : __UNKNOWN,
 }
 
-def create_index_var(f_type_full,f_type,kind,name,qualifiers=[],bounds=[],rhs=None):
+def create_index_var(f_type,f_len,kind,params,name,qualifiers=[],bounds=[],rhs=None):
     ivar = copy.deepcopy(EMPTY_VAR)
     # basic
     ivar["name"]        = name
-    ivar["f_type_full"] = f_type_full
     ivar["f_type"]      = f_type
     ivar["kind"]        = kind
+    ivar["len"]         = f_len
+    ivar["params"]      = params
     # TODO bytes per element can be computed on the fly
     ivar["attributes"] += qualifiers
     # arrays
@@ -56,3 +58,37 @@ def create_index_var(f_type_full,f_type,kind,name,qualifiers=[],bounds=[],rhs=No
     #ivar["value"] = None # TODO parse rhs if necessary
     ivar["rhs"] = rhs
     return ivar
+
+def render_datatype(ivar):
+    datatype = ivar["f_type"]
+    args = []
+    if datatype == "character":
+        if ivar["len"] != None:
+            args.append(ivar["len"])
+    if datatype != "type" and ivar["kind"] != None:
+        args.append(ivar["kind"])
+    elif datatype == "type":
+        arg1 = ivar["kind"]
+        if len(ivar["params"]):
+            arg1.append("(")
+            arg1.append(",".join(ivar["params"]))
+            arg1.append(")")
+        args.append("".join(arg1))
+    if len(args):
+        return "".join([datatype,"(",",".join(args),")"])
+    else:
+        return datatype
+    
+def render_declaration(ivar):
+    result = [render_datatype(ivar)]
+    if len(ivar["attributes"]):
+        result += [", ",", ".join(ivar["attributes"])]
+    result += ["::",ivar["name"]]
+    if len(ivar["bounds"]):
+        result += ["(",", ".join(ivar["bounds"]),")"]
+    if ivar["rhs"] != None:
+        if "pointer" in ivar["attributes"]:
+            result += [" => ",ivar["rhs"]]
+        else:
+            result += [" = ",ivar["rhs"]]
+    return "".join(result)

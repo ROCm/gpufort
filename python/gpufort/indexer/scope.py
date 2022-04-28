@@ -47,7 +47,9 @@ def __lookup_implicitly_declared_var(var_expr,implicit_none,type_map={}):
         f_type_full = "".join([f_type,"(",kind,")"])
     else:
         f_type_full = f_type
-    return types.create_index_var(f_type_full,f_type,kind,var_expr)
+    # TODO len might not be None if a character is specified
+    # TODO params might not be [] if a type with parameters is specified
+    return types.create_index_var(f_type,None,kind,[],var_expr)
 
 def condense_only_groups(iused_modules):
     """Group consecutive used modules with same name

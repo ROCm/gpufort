@@ -93,16 +93,16 @@ class NamespaceGenerator():
         for ivar in reversed(self.scope["variables"]):
             if self.__consider_parameter(ivar,already_considered):#
                 already_considered.add(ivar["name"])
-                tokens = [" "*2,ivar["f_type_full"],",parameter"," :: ",ivar["name"]," = ",ivar["rhs"]]
-                decl_list.append("".join(tokens))
+                decl_list.append(indexer.types.render_declaration(ivar))
                
                 # if compiled and excecuted prints the following:
-                # name, f_type, kind, size in bytes, rhs 
+                # name, f_type, len, kind, size in bytes, rhs 
                 print_tokens = [
                     " "*2,"print *,",
-                    "'",ivar["name"],"'",             # name
-                    ",',",ivar["f_type"],"'",         # f_type
-                    ",',',kind(",ivar["name"],")",    # kind
+                    "'",ivar["name"],"'",              # name
+                    ",',",ivar["f_type"],"'",          # f_type
+                    ",',',len(",ivar["name"],")",      # len
+                    ",',',kind(",ivar["name"],")",     # kind
                     ",',',c_sizeof(",ivar["name"],")", # size in bytes
                     ",',',",ivar["name"],              # value/rhs 
                 ]
@@ -137,8 +137,8 @@ class NamespaceGenerator():
         # now fill the namespace body with the resolved parameters
         body = []
         for line in std_out.splitlines():
-            name, f_type, kind, size, rhs_expr = [col.strip() for col in line.split(",")]
-            ivar = indexer.types.create_index_var(f_type,f_type,kind,name,[],[],rhs_expr)
+            name, f_type, f_len, kind, size, rhs_expr = [col.strip() for col in line.split(",")]
+            ivar = indexer.types.create_index_var(f_type,f_len,kind,[],name,[],[],rhs_expr)
             translator.analysis.append_c_type(ivar)
             tokens = [" "*2,"constexpr ",ivar["c_type"]]
             tokens += [" ",ivar["name"]," = ",rhs_expr]

@@ -191,3 +191,14 @@ class HipCodeGenerator(codegen.CodeGenerator):
                     stloopnest._linemaps[0]["file"],stloopnest.min_lineno(),stloopnest.max_lineno(),e.args[0])
             e.args = (msg,)
             raise
+    
+    @util.logging.log_entry_and_exit(opts.log_prefix+".HipCodeGenerator")
+    def _render_derived_types(self, itypes, cpp_filegen, fortran_modulegen):
+        if self.emit_interop_types:
+            derivedtypegen = hipderivedtypegen.HipDerivedTypeGenerator(itypes, [])
+            cpp_filegen.rendered_types += derivedtypegen.render_derived_type_definitions_cpp(
+            )
+            fortran_modulegen.rendered_types += derivedtypegen.render_derived_type_definitions_f03(
+            )
+            fortran_modulegen.rendered_routines += derivedtypegen.render_derived_type_routines_f03(
+            )

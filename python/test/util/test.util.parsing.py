@@ -244,7 +244,246 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_use_statement(stmt))
             self.assertEqual(util.parsing.parse_use_statement(stmt),results[i])
-    def test_09_parse_declaration(self):
+    def test_09_parse_fortran_argument(self):
+        statements = [
+          "kind(hipSuccess)",
+          "kind=4",
+          "len=*",
+          "kind=2*dp+size(arr,dim=1)",
+        ]
+        results = [
+          (None, 'kind(hipSuccess)'),
+          ('kind', '4'),
+          ('len', '*'),
+          ('kind', '2*dp+size(arr,dim=1)'),
+        ]
+        for i,stmt in enumerate(statements):
+            #print(util.parsing._parse_fortran_argument(stmt))
+            self.assertEqual(util.parsing._parse_fortran_argument(stmt),results[i])
+    def test_10_map_fortran_args_to_positional_args(self):
+        expressions = [
+          "kind=4",
+          "len=*",
+          "kind=2*dp+size(arr,dim=1)",
+          "kind=a*b,len=5",
+          "5,kind=a*b",
+          "5,a*b",
+          ["5","a*b"],
+          [("len","5"),("kind","a*b")],
+          [(None,"5"),(None,"a*b")],
+          [("kind","a*b"),("len","5")],
+        ]
+        positional_args = ["len","kind"]
+        
+        results = [
+          [None,'4'],
+          ['*',None],
+          [None,'2*dp+size(arr,dim=1)'],
+          ['5', 'a*b'],
+          ['5', 'a*b'],
+          ['5', 'a*b'],
+          ['5', 'a*b'],
+          ['5', 'a*b'],
+          ['5', 'a*b'],
+          ['5', 'a*b'],
+        ]
+        for i,expr in enumerate(expressions):
+            result = util.parsing._map_fortran_args_to_positional_args(expr,positional_args)
+            #print(result)
+            self.assertEqual(result,results[i])
+        expressions_fail = [
+            "len=*,4",    
+            "kind=4,*",    
+        ] 
+        for expr in expressions_fail:
+            try:
+                util.parsing._map_fortran_args_to_positional_args(expr,positional_args)
+                raise Exception("parsing '{}' should have failed".format(expr))
+            except:
+                pass
+    def test_11_parse_character_type(self):
+        expressions = [
+          # f77
+          "character*dp",
+          "character*4",
+          "character*(*)",
+          # modern fortran
+          "character(len=*)",
+          "CHARACTER(KIND=C_CHAR,LEN=*)",
+          "CHARACTER(3,KIND=C_CHAR)",
+          "CHARACTER(3,C_CHAR)",
+        ]
+        results = [
+          ('character', 'dp', None,    [], 3),
+          ('character', '4', None,     [], 3),
+          ('character', '*', None,     [], 5),
+          ('character', '*', None,     [], 6),
+          ('CHARACTER', '*', 'C_CHAR', [], 10),
+          ('CHARACTER', '3', 'C_CHAR', [], 8),
+          ('CHARACTER', '3', 'C_CHAR', [], 6),
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing._parse_character_type(expr,parse_all=True))
+            self.assertEqual(util.parsing._parse_character_type(expr,parse_all=True),results[i])
+        expressions_fail = [
+          "character*dp+1",
+          "character**",
+          "character*:",
+          "character*(len=*)",
+          "character(kind=C_CHAR,*)",
+          "character(len=*,C_CHAR)",
+        ] 
+        for expr in expressions_fail:
+            try:
+                util.parsing._parse_character_type(expr,parse_all=True)
+                raise Exception("parsing '{}' should have failed".format(expr))
+            except:
+                pass
+    def test_12_parse_basic_type(self):
+        expressions = [
+          # f77
+          "logical*1",
+          "real*1",
+          "complex*1",
+          "integer*dp",
+          "integer*4",
+          "integer*(2*2+dp)",
+          # modern fortran
+          "logical(C_BOOL)",
+          "real(C_FLOAT)",
+          "complex(c_double_complex)",
+          "INTEGER(C_INT)",
+          "INTEGER(KIND=C_INT)",
+          "double precision",
+          "DOUBLE COMPLEX",
+        ]
+        results = [
+          ('logical', None, '1', [], 3),
+          ('real', None, '1', [], 3),
+          ('complex', None, '1', [], 3),
+          ('integer', None, 'dp', [], 3),
+          ('integer', None, '4', [], 3),
+          ('integer', None, '2*2+dp', [], 9),
+          ('logical', None, 'C_BOOL', [], 4),
+          ('real', None, 'C_FLOAT', [], 4),
+          ('complex', None, 'c_double_complex', [], 4),
+          ('INTEGER', None, 'C_INT', [], 4),
+          ('INTEGER', None, 'C_INT', [], 6),
+          ('real', None, 'c_double', [], 2),
+          ('complex', None, 'c_double_complex', [], 2),
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing._parse_basic_type(expr,parse_all=True))
+            self.assertEqual(util.parsing._parse_basic_type(expr),results[i])
+        expressions_fail = [
+          "integer*dp+1",
+          "integer**",
+          "integer*:",
+          "integer*(kind=4)",
+          "integer(kind=4",
+          "integer(kind=4))",
+          "double complex (kind=dp)",
+        ] 
+        for expr in expressions_fail:
+            try:
+                util.parsing._parse_basic_type(expr,parse_all=True)
+                raise Exception("parsing '{}' should have failed".format(expr))
+            except:
+                pass
+    def test_13_parse_derived_type(self):
+        expressions = [
+          "type(mytype)",
+          "type(mytype(m))",
+          "type(mytype(m,n,k=a*2+c))",
+          "TYPE(MYTYPE(M,N,K=A*2+C))",
+        ]
+        results = [
+          ('type', None, 'mytype', [], 4),
+          ('type', None, 'mytype', ['m'], 7),
+          ('type', None, 'mytype', ['m', 'n', 'k=a*2+c'], 17),
+          ('TYPE', None, 'MYTYPE', ['M', 'N', 'K=A*2+C'], 17),
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing._parse_derived_type(expr,parse_all=True))
+            self.assertEqual(util.parsing._parse_derived_type(expr),results[i])
+
+        expressions_fail = [
+          "type(mytype",
+          "type(mytype))",
+          "type(kind=mytype(m,n,k))",
+          "TYPE(MYTYPE(M,KIND=N))",
+        ] 
+        for expr in expressions_fail:
+            try:
+                util.parsing._parse_derived_type(expr,parse_all=True)
+                raise Exception("parsing '{}' should have failed".format(expr))
+            except:
+                pass
+    def test_14_parse_data_type(self):
+        expressions = [
+          # f77
+          "character*dp",
+          "character*4",
+          "character*(*)",
+          # modern fortran
+          "character(len=*)",
+          "CHARACTER(KIND=C_CHAR,LEN=*)",
+          "CHARACTER(3,KIND=C_CHAR)",
+          "CHARACTER(3,C_CHAR)",
+          #
+          # f77
+          "logical*1",
+          "real*1",
+          "complex*1",
+          "integer*dp",
+          "integer*4",
+          "integer*(2*2+dp)",
+          # modern fortran
+          "logical(C_BOOL)",
+          "real(C_FLOAT)",
+          "complex(c_double_complex)",
+          "INTEGER(C_INT)",
+          "INTEGER(KIND=C_INT)",
+          "integer(kind(hipSuccess))",
+          "double precision",
+          "DOUBLE COMPLEX",
+          #
+          "type(mytype)",
+          "type(mytype(m))",
+          "type(mytype(m,n,k=a*2+c))",
+          "TYPE(MYTYPE(M,N,K=A*2+C))",
+        ]
+        results = [
+          ('character', 'dp', None, [], 3),
+          ('character', '4', None, [], 3),
+          ('character', '*', None, [], 5),
+          ('character', '*', None, [], 6),
+          ('CHARACTER', '*', 'C_CHAR', [], 10),
+          ('CHARACTER', '3', 'C_CHAR', [], 8),
+          ('CHARACTER', '3', 'C_CHAR', [], 6),
+          ('logical', None, '1', [], 3),
+          ('real', None, '1', [], 3),
+          ('complex', None, '1', [], 3),
+          ('integer', None, 'dp', [], 3),
+          ('integer', None, '4', [], 3),
+          ('integer', None, '2*2+dp', [], 9),
+          ('logical', None, 'C_BOOL', [], 4),
+          ('real', None, 'C_FLOAT', [], 4),
+          ('complex', None, 'c_double_complex', [], 4),
+          ('INTEGER', None, 'C_INT', [], 4),
+          ('INTEGER', None, 'C_INT', [], 6),
+          ('integer', None, 'kind(hipSuccess)', [], 7),
+          ('real', None, 'c_double', [], 2),
+          ('complex', None, 'c_double_complex', [], 2),
+          ('type', None, 'mytype', [], 4),
+          ('type', None, 'mytype', ['m'], 7),
+          ('type', None, 'mytype', ['m', 'n', 'k=a*2+c'], 17),
+          ('TYPE', None, 'MYTYPE', ['M', 'N', 'K=A*2+C'], 17),
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing._parse_datatype(expr,parse_all=True))
+            self.assertEqual(util.parsing._parse_datatype(expr),results[i])
+    def test_15_parse_declaration(self):
         statements = [
           "integer,parameter :: a(1) = (/1/), b = 5*2**3",
           "integer(kind(hipSuccess)),parameter :: ierr = hipSuccess",
@@ -253,29 +492,38 @@ class TestParsingUtils(unittest.TestCase):
           "integer*4,allocatable :: b(:,:,n,-1:5)",
           "integer,dimension(:,:) :: int_array2d",
           "character*(*) :: a",
-          "character*(len=*) :: a",
+          "character(len=*) :: a",
           "integer a( m ), b( m, n )",
           "real*8 a( * ), b( * )",
           "character*(*), intent(in)    :: c",
+          "character*(*), c",
+          "CHARACTER*4, C",
+          "character(len=3,kind=c_char) :: a(3,4*l+3)*k",
+          "TYPE(MYTYPE(M,N,K=A*B+C)) :: A(3,4*L+3)",
+          "character(len=:),pointer :: a(:,:) => b",
         ]
         results = [
-          # type, kind, qualifiers without dimensions, dimension bounds, variables: list of (name, bounds, rhs)
-          ('integer', None, ['parameter'], [], [('a', ['1'], '(/1/)'), ('b', [], '5*2**3')], 'integer', ['parameter']),
-          ('integer', 'kind(hipSuccess)', ['parameter'], [], [('ierr', [], 'hipSuccess')], 'integer(kind(hipSuccess))', ['parameter']),
-          ('integer', '4', ['parameter'], [], [('mykind', [], '3')], 'integer(kind=4)', ['parameter']),
-          ('integer', '4', ['pointer'], [], [('a', [':'], 'null()'), ('b', [], 'null()')], 'integer*4', ['pointer']),
-          ('integer', '4', ['allocatable'], [], [('b', [':', ':', 'n', '-1:5'], None)], 'integer*4', ['allocatable']),
-          ('integer', None, [], [':', ':'], [('int_array2d', [], None)], 'integer', ['dimension(:,:)']) ,
-          ('character', '*', [], [], [('a', [], None)], 'character*(*)', []),
-          ('character', 'len=*', [], [], [('a', [], None)], 'character*(len=*)', []),
-          ('integer', None, [], [], [('a', ['m'], None), ('b', ['m', 'n'], None)], 'integer', []),
-          ('real', '8', [], [], [('a', ['*'], None), ('b', ['*'], None)], 'real*8', []),
-          ('character', '*', ['intent(in)'], [], [('c', [], None)], 'character*(*)', ['intent(in)']),
+          ('integer', None, None, [], ['parameter'], [], [('a', ['1'], '(/1/)'), ('b', [], '5*2**3')], 'integer', ['parameter']),
+          ('integer', None, 'kind(hipSuccess)', [], ['parameter'], [], [('ierr', [], 'hipSuccess')], 'integer(kind(hipSuccess))', ['parameter']),
+          ('integer', None, '4', [], ['parameter'], [], [('mykind', [], '3')], 'integer(kind=4)', ['parameter']),
+          ('integer', None, '4', [], ['pointer'], [], [('a', [':'], 'null()'), ('b', [], 'null()')], 'integer*4', ['pointer']),
+          ('integer', None, '4', [], ['allocatable'], [], [('b', [':', ':', 'n', '-1:5'], None)], 'integer*4', ['allocatable']),
+          ('integer', None, None, [], [], [':', ':'], [('int_array2d', [], None)], 'integer', ['dimension(:,:)']),
+          ('character', '*', None, [], [], [], [('a', [], None)], 'character*(*)', []),
+          ('character', '*', None, [], [], [], [('a', [], None)], 'character(len=*)', []),
+          ('integer', None, None, [], [], [], [('a', ['m'], None), ('b', ['m', 'n'], None)], 'integer', []),
+          ('real', None, '8', [], [], [], [('a', ['*'], None), ('b', ['*'], None)], 'real*8', []),
+          ('character', '*', None, [], ['intent(in)'], [], [('c', [], None)], 'character*(*)', ['intent(in)']),
+          ('character', '*', None, [], [], [], [('c', [], None)], 'character*(*)', []),
+          ('CHARACTER', '4', None, [], [], [], [('C', [], None)], 'CHARACTER*4', []),
+          ('character', 'k', 'c_char', [], [], [], [('a', ['3', '4*l+3'], None)], 'character(len=3,kind=c_char)', []),
+          ('TYPE', None, 'MYTYPE', ['M', 'N', 'K=A*B+C'], [], [], [('A', ['3', '4*L+3'], None)], 'TYPE(MYTYPE(M,N,K=A*B+C))', []),
+          ('character', ':', None, [], ['pointer'], [], [('a', [':', ':'], 'b')], 'character(len=:)', ['pointer']),
         ]
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_declaration(stmt))
             self.assertEqual(util.parsing.parse_declaration(stmt),results[i])
-    def test_10_parse_do_statement(self):
+    def test_16_parse_do_statement(self):
         statements = [
           "DO jj = MAX(jts,1) , MIN(jte,jde-1,spec_bdy_width)",
           "label: do j = min(x,y,z,k), max(M,n), min(a0,a1,2)",
@@ -289,7 +537,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_do_statement(stmt))
             self.assertEqual(util.parsing.parse_do_statement(stmt),results[i])
-    def test_11_parse_type_statement(self):
+    def test_17_parse_type_statement(self):
         statements = [
           "type a",
           "type :: a",
@@ -307,7 +555,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_type_statement(stmt))
             self.assertEqual(util.parsing.parse_type_statement(stmt),results[i])
-    def test_12_parse_attributes_statement(self):
+    def test_18_parse_attributes_statement(self):
         statements = [
           "attributes(device,constant) :: a_d, b_d"
         ]
@@ -317,7 +565,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
             #print(util.parsing.parse_attributes_statement(stmt))
             self.assertEqual(util.parsing.parse_attributes_statement(stmt),results[i])
-    def test_13_parse_function_statement(self):
+    def test_19_parse_function_statement(self):
         statements = [
           "function foo",
           "function foo()",
@@ -341,7 +589,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,stmt in enumerate(statements):
            #print(util.parsing.parse_function_statement(stmt))
            self.assertEqual(util.parsing.parse_function_statement(stmt),results[i])
-    def test_14_strip_array_indexing(self):
+    def test_20_strip_array_indexing(self):
         expressions = [
           "a",
           "a(1)",
@@ -359,7 +607,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.strip_array_indexing(expr))
             self.assertEqual(util.parsing.strip_array_indexing(expr),results[i])
-    def test_15_derived_type_parents(self):
+    def test_21_derived_type_parents(self):
         expressions = [
           "a",
           "a(1)",
@@ -377,7 +625,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.derived_type_parents(expr))
             self.assertEqual(util.parsing.derived_type_parents(expr),results[i])
-    def test_16_parse_directive(self):
+    def test_22_parse_directive(self):
         expressions = [
           "!$acc enter data copyin(a,b,c(:)) copyout(b(-1:))",
         ]
@@ -388,7 +636,7 @@ class TestParsingUtils(unittest.TestCase):
             #print(util.parsing.parse_directive(expr))
             self.assertEqual(util.parsing.parse_directive(expr),results[i])
     
-    def test_17_parse_acc_clauses(self):
+    def test_23_parse_acc_clauses(self):
         expressions = [
           ["copyin(a,b,c(:))","copyout(b(-1:))","async"],
           ["copyin(a,b,c(:))","copyout(b(-1:))","reduction(+:a)","async"],
@@ -403,7 +651,7 @@ class TestParsingUtils(unittest.TestCase):
             #print(util.parsing.parse_acc_clauses(expr))
             self.assertEqual(util.parsing.parse_acc_clauses(expr),results[i])
     
-    def test_18_parse_acc_directive(self):
+    def test_24_parse_acc_directive(self):
         expressions = [
           "!$acc enter data copyin(a,b,c(:)) copyout(b(-1:))",
           "!$acc wait(i,j) async(c)",
@@ -419,7 +667,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_acc_directive(expr))
             self.assertEqual(util.parsing.parse_acc_directive(expr),results[i])
-    def test_19_parse_cuf_kernel_call(self):
+    def test_25_parse_cuf_kernel_call(self):
         expressions = [
           "call mykernel<<<grid,block>>>(arg1,arg2,arg3(1:n))",
           "call mykernel<<<grid,block,0,stream>>>(arg1,arg2,arg3(1:n))",
@@ -431,7 +679,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_cuf_kernel_call(expr))
             self.assertEqual(util.parsing.parse_cuf_kernel_call(expr),results[i])
-    def test_20_mangle_fortran_var_expr(self):
+    def test_26_mangle_fortran_var_expr(self):
         expressions = [
           "a(i,j)%b%arg3(1:n)",
         ]
@@ -441,7 +689,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.mangle_fortran_var_expr(expr))
             self.assertEqual(util.parsing.mangle_fortran_var_expr(expr),results[i])
-    def test_21_parse_derived_type_statement(self):
+    def test_27_parse_derived_type_statement(self):
         expressions = [
           'type mytype',
           'type :: mytype',
@@ -458,7 +706,7 @@ class TestParsingUtils(unittest.TestCase):
             #print(util.parsing.parse_derived_type_statement(expr))
             self.assertEqual(util.parsing.parse_derived_type_statement(expr),results[i])
     
-    def test_22_parse_allocate_statement(self):
+    def test_28_parse_allocate_statement(self):
         expressions = [
           'allocate(a(1:N))',
           'allocate(a(1:N),b(-1:m:2,n))',
@@ -474,7 +722,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_allocate_statement(expr))
             self.assertEqual(util.parsing.parse_allocate_statement(expr),results[i])
-    def test_23_parse_deallocate_statement(self):
+    def test_29_parse_deallocate_statement(self):
         expressions = [
           'deallocate(a)',
           'deallocate(a,b)',
@@ -490,7 +738,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_deallocate_statement(expr))
             self.assertEqual(util.parsing.parse_deallocate_statement(expr),results[i])
-    def test_24_parse_lvalue(self):
+    def test_30_parse_lvalue(self):
         expressions = [
           "a",
           "a(i,j)",
@@ -520,7 +768,7 @@ class TestParsingUtils(unittest.TestCase):
                 raise Exception("parsing '{}' should have failed".format(expr))
             except:
                 pass
-    def test_25_is_assignment(self):
+    def test_31_is_assignment(self):
         expressions = [
           "a = 1",
           "a(i,j) = 1",
@@ -546,7 +794,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             self.assertEqual(util.parsing.is_assignment(expr),results[i])
 
-    def test_26_parse_parameter_statement(self):
+    def test_32_parse_parameter_statement(self):
         expressions = [
           "PARAMETER( a = 5, b = 3)",
           "PARAMETER a = 5, b = 3", # legacy version
@@ -558,7 +806,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_parameter_statement(expr))
             self.assertEqual(util.parsing.parse_parameter_statement(expr),results[i])
-    def test_27_parse_public_statement(self):
+    def test_33_parse_public_statement(self):
         expressions = [
           "public",
           "PUBLIC a",
@@ -575,7 +823,7 @@ class TestParsingUtils(unittest.TestCase):
         ]
         for i,expr in enumerate(expressions):
             self.assertEqual(util.parsing.parse_public_statement(expr),results[i])
-    def test_28_expand_letter_range(self):
+    def test_34_expand_letter_range(self):
         expressions = [
          "a",
          "a-a",
@@ -590,7 +838,7 @@ class TestParsingUtils(unittest.TestCase):
         ]
         for i,expr in enumerate(expressions):
             self.assertEqual(util.parsing.expand_letter_range(expr),results[i])
-    def test_29_parse_implicit_statement(self):
+    def test_35_parse_implicit_statement(self):
         expressions = [
           "implicit none",
           "IMPLICIT NONE",

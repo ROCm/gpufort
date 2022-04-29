@@ -105,10 +105,9 @@ class NamespaceGenerator():
                 pass 
             if self.__consider_parameter(ivar,already_considered):#
                 already_considered.add(ivar["name"])
-                decl_list.append(indexer.types.render_declaration(ivar))
-               
+                decl_list.insert(0,indexer.types.render_declaration(ivar)) # preprend as we have reversed
                 # if compiled and excecuted prints the following:
-                ivars_to_resolve.append(ivar)
+                ivars_to_resolve.insert(0,ivar)
         #print(decl_list)
         #print(ivars_to_resolve)
         fortran_snippet = render.render_resolve_scope_program_f03(decl_list,ivars_to_resolve)

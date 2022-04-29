@@ -3,9 +3,10 @@
 module params
   private
 
+  integer, parameter, public :: prec = selected_real_kind(15, 307) ! double precision
   integer, parameter, public :: N = 1000,&
                                 magnitude = 1
-  real(8), parameter, public :: param = 1.0003d-5
+  real(prec), parameter, public :: param = 1.000e-5_prec
 end module
 
 program main

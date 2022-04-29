@@ -177,8 +177,10 @@ def _resolve_dependencies(scope,
                             indent,
                             iother["name"]))
                     for entry_type in types.SCOPE_ENTRY_TYPES:
+                        # TODO check implications of always including in context of implicit attributes
+                        # TODO introduce workaround visibility type that prevents it from being found in scope by respective routines
                         scope[entry_type] += copy.deepcopy([irecord for irecord in iother[entry_type] 
-                                                           if "public" in irecord["attributes"]])
+                                                           if "public" in irecord["attributes"] or "parameter" in irecord["attributes"]])
                     if len(used_module["renamings"]):
                         for mapping in used_module["renamings"]:
                             for entry_type in types.SCOPE_ENTRY_TYPES:
@@ -199,7 +201,7 @@ def _resolve_dependencies(scope,
                     for mapping in used_module["only"]:
                         for entry_type in types.SCOPE_ENTRY_TYPES:
                             for entry in [irecord for irecord in iother[entry_type] 
-                                          if "public" in irecord["attributes"]]:
+                                          if "public" in irecord["attributes"] or "parameter" in irecord["attributes"]]:
                                 if entry["name"] == mapping["original"]:
                                     util.logging.log_debug2(opts.log_prefix,
                                       "_resolve_dependencies.handle_use_statements",

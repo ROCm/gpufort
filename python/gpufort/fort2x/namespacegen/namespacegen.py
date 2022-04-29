@@ -8,6 +8,8 @@ from gpufort import util
 from gpufort import translator
 from gpufort import indexer
 
+from .. import render
+
 from . import opts
 
 class NamespaceGenerator():
@@ -89,7 +91,7 @@ class NamespaceGenerator():
     def __resolve_all_parameters_via_compiler(self):
         already_considered = set()
         decl_list = []
-        print_statements = []
+        ivars_to_resolve = []
         for ivar1 in reversed(self.scope["variables"]):
             ivar = copy.deepcopy(ivar1)
             # public,private may only appear in module
@@ -106,34 +108,11 @@ class NamespaceGenerator():
                 decl_list.append(indexer.types.render_declaration(ivar))
                
                 # if compiled and excecuted prints the following:
-                # name, f_type, len, kind, size in bytes, rhs 
-                print_tokens = [
-                    " "*2,"print *,",
-                    "'",ivar["name"],"'",              # name
-                    ",',",ivar["f_type"],"'",          # f_type
-                ]
-                if ivar["f_type"] == "character":
-                    print_tokens.append(
-                        ",',',len(",ivar["name"],")",      # len
-                    )
-                else:
-                    print_tokens.append(
-                        ",',','<none>'",      # len
-                    )
-                print_tokens += [
-                    ",',',kind(",ivar["name"],")",     # kind
-                    ",',',c_sizeof(",ivar["name"],")", # size in bytes
-                    ",',',",ivar["name"],              # value/rhs 
-                ]
-                print_statements.append("".join(print_tokens))
-        fortran_snippet = "\n".join(["program main",
-                                    "  use iso_c_binding",
-                                    "  use iso_fortran_env",
-                                    "  implicit none",
-                                    ]
-                                    +decl_list
-                                    +print_statements
-                                    +["end program"])
+                ivars_to_resolve.append(ivar)
+        #print(decl_list)
+        #print(ivars_to_resolve)
+        fortran_snippet = render.render_resolve_scope_program_f03(decl_list,ivars_to_resolve)
+        #print(fortran_snippet)
         temp_infile = tempfile.NamedTemporaryFile(
             delete=False, 
             mode="w",
@@ -156,7 +135,11 @@ class NamespaceGenerator():
         # now fill the namespace body with the resolved parameters
         body = []
         for line in std_out.splitlines():
-            name, f_type, f_len, kind, size, rhs_expr = [col.strip() for col in line.split(",")]
+            #print(line)
+            result,_ =\
+                util.parsing.get_top_level_operands(util.parsing.tokenize(line)) 
+            #print(result)
+            name, f_type, f_len, kind, bpe, rank, sizes, lbounds, rhs_expr = result
             if f_len == "<none>":
                 f_len == None
             ivar = indexer.types.create_index_var(f_type,f_len,kind,[],name,[],[],rhs_expr)

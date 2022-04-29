@@ -5,6 +5,7 @@ module params
 
   integer, parameter, public :: N = 1000,&
                                 magnitude = 1
+  real(8), parameter, public :: param = 1.0003d-5
 end module
 
 program main

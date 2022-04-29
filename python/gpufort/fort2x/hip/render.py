@@ -21,15 +21,12 @@ TEMPLATES = {}
 def generate_code(template_path, context={}):
     global ENV
     global TEMPLATES
-    try:
-        if template_path in TEMPLATES:
-            template = TEMPLATES[template_path]
-        else:
-            template = ENV.get_template(template_path)
-            TEMPLATES[template_path] = template
-        return template.render(context)
-    except Exception as e:
-        raise IOError("could not render template '%s'" % template_path)
+    if template_path in TEMPLATES:
+        template = TEMPLATES[template_path]
+    else:
+        template = ENV.get_template(template_path)
+        TEMPLATES[template_path] = template
+    return template.render(context)
 
 
 def generate_file(output_path, template_path, context={}):

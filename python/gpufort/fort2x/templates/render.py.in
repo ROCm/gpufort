@@ -134,3 +134,14 @@ def render_derived_types_cpp(types):
       }
     return render_derived_types_cpp_ctx(context)
     
+def render_resolve_scope_program_f03_ctx(context):
+    return generate_code("render_resolve_scope_program.template.f03",context)
+    
+def render_resolve_scope_program_f03(declarations,ivars_to_resolve,max_rank=0):
+    context = {
+      "declarations" : declarations,
+      "ivars_to_resolve" : ivars_to_resolve,
+      "max_rank" : max_rank
+      }
+    return render_resolve_scope_program_f03_ctx(context)
+    

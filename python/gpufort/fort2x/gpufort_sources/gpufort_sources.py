@@ -27,7 +27,7 @@ def generate_gpufort_headers(output_dir):
 
     # gpufort arrays
     gpufort_array_context = {
-        "max_rank": opts.max_dim,
+        "max_rank": opts.max_rank,
         "datatypes": opts.datatypes
     }
     gpufort_array_header_file_path = os.path.join(output_dir,
@@ -49,7 +49,7 @@ def generate_gpufort_sources(output_dir):
 
     # gpufort arrays
     gpufort_array_context = {
-        "max_rank": opts.max_dim,
+        "max_rank": opts.max_rank,
         "datatypes": opts.datatypes,
     }
     gpufort_array_source_file_path = os.path.join(output_dir,

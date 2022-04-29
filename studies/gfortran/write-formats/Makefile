@@ -1,2 +1,2 @@
-TEST     ?= print-write-precision
+TEST     ?= write-formats
 include ../Makefile.in

@@ -1,6 +1,6 @@
 module output_mod
   private
-  public :: print_val
+  public    :: print_val
   
   !interface print_type
   !  module procedure :: &
@@ -40,9 +40,10 @@ module output_mod
 
   interface print_val
     module procedure :: &
-      print_val_logical,&
+      print_val_bool,&
       print_val_short,&
       print_val_int,&
+      print_val_int_arr,&
       print_val_long,&
       print_val_float,&
       print_val_double,&
@@ -50,7 +51,7 @@ module output_mod
       print_val_double_complex
   end interface
 contains
-  subroutine print_val_logical(val)
+  subroutine print_val_bool(val)
     use iso_c_binding
     use iso_fortran_env
     implicit none
@@ -76,6 +77,23 @@ contains
     implicit none
     integer(c_int) :: val
     write( output_unit, "(i0)", advance="no") val
+  end subroutine
+  
+  subroutine print_val_int_arr(val)
+    use iso_c_binding
+    use iso_fortran_env
+    implicit none
+    integer(c_int),dimension(:) :: val
+    integer :: i1
+    write( output_unit, "(a)", advance="no" ) "("
+    do i1 = lbound(val,1),ubound(val,1)
+      if ( i1 == ubound(val,1) ) then
+          write( output_unit, "(i0)", advance="no") val(i1)
+      else
+          write( output_unit, "(i0,a)", advance="no") val(i1), ","
+      endif
+    enddo
+    write( output_unit, "(a)", advance="no" ) ")"
   end subroutine
   
   subroutine print_val_long(val)
@@ -107,7 +125,9 @@ contains
     use iso_fortran_env
     implicit none
     complex(c_float_complex) :: val
+    write( output_unit, "(a)", advance="no" ) "("
     write( output_unit, "(:,e13.6e2,:,a:,e13.6e2,:)", advance="no") real(val,kind=c_float),",",aimag(val)
+    write( output_unit, "(a)", advance="no" ) ")"
   end subroutine
   
   subroutine print_val_double_complex(val)
@@ -115,7 +135,9 @@ contains
     use iso_fortran_env
     implicit none
     complex(c_double_complex) :: val
+    write( output_unit, "(a)", advance="no" ) "("
     write( output_unit, "(e23.15e3,a,e23.15e3)", advance="no") real(val,kind=c_double),",",dimag(val)
+    write( output_unit, "(a)", advance="no" ) ")"
   end subroutine
 end module
 
@@ -129,6 +151,7 @@ program main
   logical(c_bool) :: bool_true = .true.
   logical(c_bool) :: bool_false = .false.
   integer(c_short) :: short = 1_c_short
+  integer(c_int),dimension(5) :: int_arr = [1,2,3,4,5]
   real (c_float)  :: float = 1.000001234567890_c_float
   real (c_double) :: double = 1.000001234567890_c_double
   complex (c_float_complex) :: float_cmplx = (1.000001234567890_c_float,2.000001234567890e-3_c_float)
@@ -144,6 +167,8 @@ program main
   call print_val(bool_false)
   print*,""
   call print_val(short)
+  print*,""
+  call print_val(int_arr)
   print*,""
   call print_val(float)
   print*,""

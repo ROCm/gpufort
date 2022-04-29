@@ -813,16 +813,22 @@ class TestParsingUtils(unittest.TestCase):
           "public a,b",
           "PUBLIC :: a",
           "public :: a,b",
+          "public :: operator(.eq.)",
+          "public operator(.eq.), a, operator(-)",
         ]
         results = [
-          ("public",[]),
-          ("PUBLIC",["a"]),
-          ("public",["a","b"]),
-          ("PUBLIC",["a"]),
-          ("public",["a","b"]),
+          ("public",[],[]),
+          ("PUBLIC",["a"],[]),
+          ("public",["a","b"],[]),
+          ("PUBLIC",["a"],[]),
+          ("public",["a","b"],[]),
+          ('public', [], ['.eq.']),
+          ('public', ['a'], ['.eq.', '-']),
         ]
         for i,expr in enumerate(expressions):
-            self.assertEqual(util.parsing.parse_public_statement(expr),results[i])
+            result = util.parsing.parse_public_statement(expr)
+            #print(result)
+            self.assertEqual(result,results[i])
     def test_34_expand_letter_range(self):
         expressions = [
          "a",

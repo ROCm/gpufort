@@ -235,7 +235,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_node
         nonlocal current_tokens
         if current_node._kind == "module":
-            kind, identifiers = util.parsing.parse_public_or_private_statement(current_statement,current_tokens[0])
+            kind, identifiers, operators = util.parsing.parse_public_or_private_statement(current_statement,current_tokens[0])
             for entry in accessibility_statement_stack:
                 other_kind, other_identifiers = entry
                 if not len(identifiers) and not len(other_identifiers):

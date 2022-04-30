@@ -127,7 +127,14 @@ class TTAccClauseCollapse(base.TTNode):
 class TTAccClauseWait(base.TTNode):
 
     def _assign_fields(self, tokens):
-        self.expressions = list(tokens[0])
+        if tokens != None:
+            try:
+                self.expressions = tokens[0].asList()
+            except AttributeError:
+                if isinstance(tokens[0],list):
+                    self.expressions = tokens[0]
+                else:
+                    raise
 
     def expressions(self):
         return [base.make_f_str(expr) for expr in self.expressions]

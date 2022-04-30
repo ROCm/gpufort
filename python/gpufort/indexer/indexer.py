@@ -179,31 +179,30 @@ def _parse_statements(linemaps, file_path,**kwargs):
                 end = (current_linemap_no, current_statement_no)
                 current_node._data["statements"] = current_node.statements(
                     linemaps, end)
-            if current_node._kind == "module":
+            if current_node._kind in ["module","type"]:
                 # apply public/private visibility
                 general_accessibility = "public"
                 modes = ["public","private"]
                 explicitly_set_accessibility = {"public": [], "private": []}
-                for kind,identifiers in accessibility_statement_stack:
-                    if not len(identifiers):
+                for kind,identifiers,operators,assignments in accessibility_statement_stack.pop(-1):
+                    if not len(identifiers) and not len(operators) and not len(assignments):
                         general_accessibility = kind
-                    explicitly_set_accessibility[kind] += identifiers 
+                    explicitly_set_accessibility[kind] += identifiers + operators + assignments
                 
                 for entry_type in types.SCOPE_ENTRY_TYPES:
                     # procedures have cannot "public"/"private" in the attributes list
                     # When rendering the routine from the index record, this must be considered
-                    for ivar in current_node._data[entry_type]:
+                    for ivar in current_node._data.get(entry_type,[]):
                         if not len([mode for mode in modes 
                                    if mode in ivar["attributes"]]):
                             set_explicitly = False
-                            for mode, identifiers in explicitly_set_accessibility.items():
-                                if ivar["name"] in identifiers:
+                            for mode, expressions in explicitly_set_accessibility.items():
+                                if ivar["name"] in expressions:
                                     set_explicitly = True
                                     ivar["attributes"].append(mode)
                                     break
                             if not set_explicitly: 
                                 ivar["attributes"].append(general_accessibility)     
-                pass
             current_node = current_node._parent
 
     def ModuleStart():
@@ -213,10 +212,10 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal accessibility_statement_stack
         name = current_tokens[1]
         module = create_base_entry_("module", name, file_path)
-        accessibility_statement_stack.clear()
         assert current_node == root
         current_node._data.append(module)
         current_node = Node("module", name, data=module, parent=current_node)
+        accessibility_statement_stack.append([])
         log_enter_node_()
 
     def ProgramStart():
@@ -234,20 +233,33 @@ def _parse_statements(linemaps, file_path,**kwargs):
     def PublicOrPrivate():
         nonlocal current_node
         nonlocal current_tokens
-        if current_node._kind == "module":
-            kind, identifiers, operators = util.parsing.parse_public_or_private_statement(current_statement,current_tokens[0])
-            for entry in accessibility_statement_stack:
-                other_kind, other_identifiers = entry
-                if not len(identifiers) and not len(other_identifiers):
-                    raise util.error.SyntaxError("'{}' two 'private' or 'public' statements without variables list in same module")
-                identifiers_subject_to_other_statement = [ident for ident in identifiers if ident in other_identifiers]
+        if current_node._kind in ["module","type"]:
+            kind, identifiers, operators, assignments = util.parsing.parse_public_or_private_statement(
+              current_statement,current_tokens[0])
+            for entry in accessibility_statement_stack[-1]:
+                other_kind, other_identifiers, other_operators, other_assignments = entry
+                if (not len(identifiers) and not len(other_identifiers) 
+                   and not len(operators) and not len(other_operators)
+                   and not len(assignments) and not len(other_assignments)):
+                    raise util.error.SyntaxError("'{}' two 'private' or 'public' statements without symbol list in same module")
+                identifiers_subject_to_other_statement = [expr for expr in identifiers if expr in other_identifiers]
+                operators_subject_to_other_statement = [expr for expr in operators if expr in other_operators]
+                assignments_subject_to_other_statement = [expr for expr in assignments if expr in other_assignments]
                 if len(identifiers_subject_to_other_statement):
                     raise util.error.SyntaxError("variables '{}' have already been subject to another "+
-                                            "'private' or 'public' statement with variables list".format(
+                                            "'private' or 'public' statement with symbol list".format(
                                                 "','".join(identifiers_subject_to_other_statement)))
-            accessibility_statement_stack.append((kind,identifiers))
+                if len(operators_subject_to_other_statement):
+                    raise util.error.SyntaxError("operator '{}' has already been subject to another "+
+                                            "'private' or 'public' statement with symbol list".format(
+                                                "','".join(operators_subject_to_other_statement)))
+                if len(assignments_subject_to_other_statement):
+                    raise util.error.SyntaxError("assignment operator '{}' has already been subject to another "+
+                                            "'private' or 'public' statement with symbol list".format(
+                                                "','".join(assignments_subject_to_other_statement)))
+            accessibility_statement_stack[-1].append((kind,identifiers,operators,assignments))
         else:
-            raise util.error.SyntaxError("'{}' statements only allowed in module")
+            raise util.error.SyntaxError("'{}' statements only allowed in module or type".format(current_tokens[0]))
     
     def Implicit():
         nonlocal current_node
@@ -324,6 +336,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_statement
         nonlocal current_statement_no
         nonlocal current_node
+        nonlocal accessibility_statement_stack
         log_detection_("start of type")
         if current_node._kind in [
                 "module", "program", "subroutine", "function"
@@ -343,6 +356,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
                                 data=derived_type,
                                 parent=current_node)
             current_node._begin = (current_linemap_no, current_statement_no)
+            accessibility_statement_stack.append([])
             log_enter_node_()
         else:
             util.logging.log_warning(opts.log_prefix,"_parse_statements","found derived type in '{}' but parent is {}; expected program/module/subroutine/function parent.".\

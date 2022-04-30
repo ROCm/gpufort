@@ -1167,6 +1167,7 @@ def parse_public_or_private_statement(statement,kind):
     private :: identifier-list
     public  :: identifier-list
     public operator(<op>)
+    public assignment(<assignment-op>)
     ```
     :return: tuple of visibility kind ('private','public')
              and the list of identifier strings (might be empty).
@@ -1175,6 +1176,7 @@ def parse_public_or_private_statement(statement,kind):
     kind_expr   = tokens.pop(0)
     identifiers = []
     operators   = []
+    assignments = []
     if kind_expr.lower() != kind:
         raise error.SyntaxError("expected '{}'".format(kind))
     if len(tokens) > 1 and tokens[0] == "::":
@@ -1189,11 +1191,16 @@ def parse_public_or_private_statement(statement,kind):
                and expr[3] == ")"):
                 # TODO check if operator is valid
                 operators.append(expr[2])
+            elif (len(expr) == 4
+               and compare_ignore_case(expr[0:2],["assignment","("])
+               and expr[3] == ")"):
+                # TODO check if assignment is valid
+                assignments.append(expr[2])
             else:
                 raise error.SyntaxError("expected identifier or 'operator' + '(' + operator expression + ')'")
         tokens = tokens[num_consumed_tokens:] 
     check_if_all_tokens_are_blank(tokens)
-    return kind_expr, identifiers, operators
+    return kind_expr, identifiers, operators, assignments
 
 def parse_public_statement(statement):
     """:see: parse_public_or_private_statement"""

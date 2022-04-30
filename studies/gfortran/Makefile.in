@@ -9,13 +9,13 @@ DEPS_OBJ  = $(DEPS:.f90=.o)
 .PHONY: $(TEST) run clean
 
 $(TEST): %: %.f90 $(DEPS_OBJ)
-	gfortran $(LDFLAGS) -cpp $^ -o $@
+	gfortran $(CFLAGS) $(LDFLAGS) -cpp $^ -o $@
 
 run: test
 	./$(TEST)
 
 $(DEPS_OBJ): %.o: %.f90
-	gfortran $(CFLAGS) -cpp -c $^
+	gfortran $(CFLAGS) -cpp -c $^ -o $@ -J$(shell dirname $@)
 
 clean:
-	rm -rf *.o *.mod $(TEST)
+	rm -rf $(TEST) $(shell find . -name "*.o" -delete) $(shell find . -name "*.mod" -delete)

@@ -1605,25 +1605,30 @@ def parse_allocate_statement(statement):
             varname = child_tokens.pop(0) # : "b"
             if not varname.isidentifier():
                 raise error.SyntaxError("expected identifier")
-            if child_tokens.pop(0) != "(":
-                raise error.SyntaxError("expected '('")
-            ranges,_  = get_top_level_operands(child_tokens) # : ["-1:m", "n"]
             if len(parts) > 1:
                 varname = "%".join(parts[:-1]+[varname])
-            var_tuple = (varname, [])
-            for r in ranges:
-                range_tokens,_  = get_top_level_operands(tokenize(r),
-                                                      separators=[":"])
-                if len(range_tokens) == 1:
-                    range_tuple = (None,range_tokens[0],None)
-                elif len(range_tokens) == 2:
-                    range_tuple = (range_tokens[0],range_tokens[1],None)
-                elif len(range_tokens) == 3:
-                    range_tuple = (range_tokens[0],range_tokens[1],range_tokens[2])
-                else:
-                    raise error.SyntaxError("expected 1,2, or 3 colon-separated range components") 
-                var_tuple[1].append(range_tuple)
-            result1.append(var_tuple)
+            if all_tokens_are_blank(child_tokens):
+                var_tuple = (varname, [])
+                result1.append(var_tuple)
+            elif child_tokens[0] == "(":
+                child_tokens.pop(0)
+                ranges,_  = get_top_level_operands(child_tokens) # : ["-1:m", "n"]
+                var_tuple = (varname, [])
+                for r in ranges:
+                    range_tokens,_  = get_top_level_operands(tokenize(r),
+                                                          separators=[":"])
+                    if len(range_tokens) == 1:
+                        range_tuple = (None,range_tokens[0],None)
+                    elif len(range_tokens) == 2:
+                        range_tuple = (range_tokens[0],range_tokens[1],None)
+                    elif len(range_tokens) == 3:
+                        range_tuple = (range_tokens[0],range_tokens[1],range_tokens[2])
+                    else:
+                        raise error.SyntaxError("expected 1,2, or 3 colon-separated range components") 
+                    var_tuple[1].append(range_tuple)
+                result1.append(var_tuple)
+            else:
+                raise error.SyntaxError("expected end of allocate argument or '('")
     return result1, result2
 
 #def parse_arithmetic_expression(statement,logical_ops=False,max_recursions=0):

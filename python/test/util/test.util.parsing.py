@@ -712,12 +712,16 @@ class TestParsingUtils(unittest.TestCase):
           'allocate(a(1:N),b(-1:m:2,n))',
           'allocate(a(1:N),b(-1:m:2,n),stat=ierr)',
           'allocate(grid(domain%num,j)%a(1:N))',
+          'allocate ( new_grid )',
+          'allocate( new_grid%cell )',
         ]
         results = [
           ([('a', [('1', 'N', None)])], None),
           ([('a', [('1', 'N', None)]), ('b', [('-1', 'm', '2'), (None, 'n', None)])], None),
           ([('a', [('1', 'N', None)]), ('b', [('-1', 'm', '2'), (None, 'n', None)])], 'ierr'),
           ([('grid(domain%num,j)%a', [('1', 'N', None)])], None),
+          ([('new_grid', [])], None),
+          ([('new_grid%cell', [])], None),
         ]
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_allocate_statement(expr))

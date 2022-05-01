@@ -100,7 +100,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         if wait_present and not len(wait_queues):
             result.append(_ACC_WAIT.format(queue="",options=""))
         elif wait_present and len(wait_queues):
-            result.append(_ACC_WAIT.format(queue=",".join(wait_queues),options=""))
+            result.append(_ACC_WAIT.format(queue="["+",".join(wait_queues)+"]",options=""))
         return result
  
     def _handle_data_clauses(self,index,async_expr,finalize_expr):
@@ -302,9 +302,9 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
         if clause_kind in _DATA_CLAUSE_2_TEMPLATE_MAP:
             runtime_call_tokens = ["gpufort_acc_",clause_kind,"("]
             runtime_call_tokens.append(var_expr)
-            if len(asyncr) and clause.kind in _DATA_CLAUSES_WITH_ASYNC:
+            if len(asyncr) and clause_kind in _DATA_CLAUSES_WITH_ASYNC:
                 runtime_call_tokens += [",",asyncr]
-            if len(finalize) and clause.kind in _DATA_CLAUSES_WITH_FINALIZE:
+            if len(finalize) and clause_kind in _DATA_CLAUSES_WITH_FINALIZE:
                 runtime_call_tokens += [",",finalize]
             runtime_call_tokens.append(")") 
             tokens = [

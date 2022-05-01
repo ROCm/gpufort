@@ -2,6 +2,9 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import os
 
+log_prefix = "fort2x.namespacegen"
+        # Prefix for log output that this component writes.
+
 def default_parameter_filter(scope_tag,f_type,f_kind,name,rank):
     return True
 def default_prepend_callback(scope_tag):

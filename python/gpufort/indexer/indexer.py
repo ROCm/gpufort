@@ -64,7 +64,7 @@ class Node():
 
     __repr__ = __str__
 
-def create_index_records_from_declaration(statement):
+def create_index_records_from_declaration(statement,file_path,lineno):
     """:raise util.errorSyntaxError: If the syntax of the declaration statement is not
                                      as expected.
     """
@@ -73,10 +73,8 @@ def create_index_records_from_declaration(statement):
     context = []
     for var in variables:
         name, bounds, rhs = var
-        if len(bounds):
-            ivar = types.create_index_var(f_type, f_len, kind, params, name, qualifiers, bounds, rhs)
-        else:
-            ivar = types.create_index_var(f_type, f_len, kind, params, name, qualifiers, dimension_bounds,rhs)
+        bounds_to_pass = bounds if len(bounds) else dimension_bounds 
+        ivar = types.create_index_var(f_type, f_len, kind, params, name, qualifiers, bounds_to_pass, rhs, file_path, lineno)
         context.append(ivar)
     return context
 
@@ -99,6 +97,18 @@ def create_index_record_from_use_statement(statement):
            "renamed": pair[0],
         })
     return used_module
+
+@util.logging.log_entry_and_exit(opts.log_prefix)
+def create_fortran_construct_record(kind, name, file_path):
+    entry = {}
+    entry["kind"] = kind
+    entry["name"] = name
+    #entry["file"]        = file_path
+    entry["variables"] = []
+    entry["types"] = []
+    entry["procedures"] = []
+    entry["used_modules"] = []
+    return entry
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def _parse_statements(linemaps, file_path,**kwargs):
@@ -124,18 +134,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
     current_node = root
     current_statement = None
     accessibility_statement_stack = []
-
-    def create_base_entry_(kind, name, file_path):
-        entry = {}
-        entry["kind"] = kind
-        entry["name"] = name
-        #entry["file"]        = file_path
-        entry["variables"] = []
-        entry["types"] = []
-        entry["procedures"] = []
-        entry["used_modules"] = []
-        return entry
-
+    
     def log_enter_node_():
         nonlocal current_node
         nonlocal current_statement
@@ -211,7 +210,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_tokens
         nonlocal accessibility_statement_stack
         name = current_tokens[1]
-        module = create_base_entry_("module", name, file_path)
+        module = create_fortran_construct_record("module", name, file_path)
         assert current_node == root
         current_node._data.append(module)
         current_node = Node("module", name, data=module, parent=current_node)
@@ -223,7 +222,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_node
         nonlocal current_tokens
         name = current_tokens[1]
-        program = create_base_entry_("program", name, file_path)
+        program = create_fortran_construct_record("program", name, file_path)
         assert current_node._kind == "root"
         current_node._data.append(program)
         current_node = Node("program", name, data=program, parent=current_node)
@@ -278,7 +277,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
             result_triple, bind_tuple = util.parsing.parse_function_statement(current_statement)
             result_type, result_type_kind, result_name = result_triple
             bind_c, bind_c_name = bind_tuple
-            subroutine = create_base_entry_("subroutine", name, file_path)
+            subroutine = create_fortran_construct_record("subroutine", name, file_path)
             subroutine["attributes"] = modifiers + attributes 
             subroutine["dummy_args"] = dummy_args
             if current_node._kind == "root":
@@ -299,6 +298,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
     def FunctionStart():
         nonlocal current_statement
         nonlocal current_node
+        nonlocal current_linemap
         log_detection_("start of function")
         if current_node._kind in [
                 "root", "module", "program", "subroutine", "function"
@@ -307,7 +307,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
             result_triple, bind_tuple = util.parsing.parse_function_statement(current_statement)
             result_type, result_type_kind, result_name = result_triple
             bind_c, bind_c_name = bind_tuple
-            function = create_base_entry_("function", name, file_path)
+            function = create_fortran_construct_record("function", name, file_path)
             function["attributes"] = modifiers + attributes 
             function["dummy_args"] = dummy_args
             function["result_name"] = result_name
@@ -316,7 +316,9 @@ def _parse_statements(linemaps, file_path,**kwargs):
                 if result_type_kind != None:
                     result_var_decl += "(" + result_type_kind + ")"
                 result_var_decl += " "+result_name
-                function["variables"] += create_index_records_from_declaration(result_var_decl)
+                function["variables"] += create_index_records_from_declaration(result_var_decl,
+                                                                               current_linemap["file"],
+                                                                               current_linemap["lineno"])
             if current_node._kind == "root":
                 current_node._data.append(function)
             else:
@@ -332,6 +334,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
               format(current_statement,current_node._kind))
 
     def TypeStart():
+        nonlocal current_linemap
         nonlocal current_linemap_no
         nonlocal current_statement
         nonlocal current_statement_no
@@ -350,6 +353,8 @@ def _parse_statements(linemaps, file_path,**kwargs):
             derived_type["params"] = params
             derived_type["variables"] = []
             derived_type["types"] = []
+            derived_type["file"] = current_linemap["file"]
+            derived_type["lineno"] = current_linemap["lineno"]  
             current_node._data["types"].append(derived_type)
             current_node = Node("type",
                                 name,
@@ -386,7 +391,9 @@ def _parse_statements(linemaps, file_path,**kwargs):
             msg = "begin to parse declaration '{}'".format(
                 current_statement)
             log_begin_task(current_node, msg)
-            variables = create_index_records_from_declaration(current_statement)
+            variables = create_index_records_from_declaration(current_statement,
+                                                              current_linemap["file"],
+                                                              current_linemap["lineno"])
             current_node._data["variables"] += variables
             msg = "finished to parse declaration '{}'".format(current_statement)
             log_end_task(current_node, msg)
@@ -576,9 +583,9 @@ def _parse_statements(linemaps, file_path,**kwargs):
                             elif current_tokens[0:2] == ["type","("]: # type(dim3) :: a
                                 Declaration()
     except util.error.SyntaxError as e:
-        filepath = current_linemap["file"]
+        file_path = current_linemap["file"]
         lineno = current_linemap["lineno"]
-        msg = "{}:{}:{}(stmt-no):{}".format(filepath,lineno,current_statement_no+1,e.args[0])
+        msg = "{}:{}:{}(stmt-no):{}".format(file_path,lineno,current_statement_no+1,e.args[0])
         e.args = (msg,)
         raise
 

@@ -109,8 +109,7 @@ class CodeGenerator():
     @util.logging.log_entry_and_exit(opts.log_prefix+".CodeGenerator")
     def _render_scope(self, stnode, cpp_filegen):
         scope_tag = stnode.tag()
-        scope = indexer.scope.create_scope(self.index, scope_tag)
-        nsgen = namespacegen.NamespaceGenerator(scope)
+        nsgen = namespacegen.NamespaceGenerator(self.index,scope_tag)
         cpp_filegen.rendered_types.append("\n".join(nsgen.render_namespace_cpp()))
 
     @util.logging.log_entry_and_exit(opts.log_prefix+".CodeGenerator")

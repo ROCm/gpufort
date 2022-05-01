@@ -6,7 +6,12 @@ from gpufort import translator
 
 __UNKNOWN = "UNKNOWN"
 
-EMPTY_TYPE = {"name": __UNKNOWN, "variables": []}
+EMPTY_TYPE = {
+    "name": __UNKNOWN, 
+    "variables": [],
+    "file" : __UNKNOWN,
+    "lineno" : -1,
+}
 
 EMPTY_PROCEDURE = {
     "kind": __UNKNOWN,
@@ -16,7 +21,9 @@ EMPTY_PROCEDURE = {
     "dummy_args": [],
     "variables": [],
     "procedures": [],
-    "used_modules": []
+    "used_modules": [],
+    "file" : __UNKNOWN,
+    "lineno" : -1,
 }
 
 EMPTY_SCOPE = {"tag": "", "types": [], "variables": [], "procedures": []}
@@ -39,9 +46,12 @@ EMPTY_VAR = {
         "rank"   : -1,
         # parse rhs if necessary
         "rhs" : __UNKNOWN,
+        # meta information
+        "file" : __UNKNOWN,
+        "lineno" : -1,
 }
 
-def create_index_var(f_type,f_len,kind,params,name,qualifiers=[],bounds=[],rhs=None):
+def create_index_var(f_type,f_len,kind,params,name,qualifiers=[],bounds=[],rhs=None,filepath="<unknown>",lineno=-1):
     ivar = copy.deepcopy(EMPTY_VAR)
     # basic
     ivar["name"]        = name
@@ -57,6 +67,9 @@ def create_index_var(f_type,f_len,kind,params,name,qualifiers=[],bounds=[],rhs=N
     # handle parameters
     #ivar["value"] = None # TODO parse rhs if necessary
     ivar["rhs"] = rhs
+    # meta information
+    ivar["file"] = filepath
+    ivar["lineno"] = lineno
     return ivar
 
 def render_datatype(ivar):

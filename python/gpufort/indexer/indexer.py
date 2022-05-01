@@ -187,7 +187,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
                     if not len(identifiers) and not len(operators) and not len(assignments):
                         general_accessibility = kind
                     explicitly_set_accessibility[kind] += identifiers + operators + assignments
-                
+                current_node._data["accessibility"] = general_accessibility 
                 for entry_type in types.SCOPE_ENTRY_TYPES:
                     # procedures have cannot "public"/"private" in the attributes list
                     # When rendering the routine from the index record, this must be considered
@@ -211,6 +211,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal accessibility_statement_stack
         name = current_tokens[1]
         module = create_fortran_construct_record("module", name, file_path)
+        module["accessibility"] = "public" # may be overwritten via compiler command
         assert current_node == root
         current_node._data.append(module)
         current_node = Node("module", name, data=module, parent=current_node)
@@ -350,6 +351,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
             derived_type["name"] = name
             derived_type["kind"] = "type"
             derived_type["attributes"] = attributes
+            derived_type["accessibility"] = "public" # may be overwritten via compiler command
             derived_type["params"] = params
             derived_type["variables"] = []
             derived_type["types"] = []

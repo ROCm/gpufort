@@ -253,6 +253,7 @@ end subroutine
 module {{module.name}}
 {{ cm.render_used_modules(module.used_modules) | indent(2,True) -}}
   implicit none ! TODO parse implicit statement
+{{ module.accessibility|indent(2,True) }}
 {% for line in module.declarations %}
 {{line|indent(2,True)}}
 {% endfor %}

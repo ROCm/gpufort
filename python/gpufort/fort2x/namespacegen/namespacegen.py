@@ -193,6 +193,8 @@ class NamespaceGenerator():
         def create_fortran_construct_record_(kind,index_record,scope_tag_tokens):
             name = "_".join(scope_tag_tokens) 
             construct = indexer.create_fortran_construct_record(kind, name, None)
+            if kind == "module":
+                construct["accessibility"] = index_record.get("accessibility","public")
             construct["used_modules"] += index_record["used_modules"]
             construct["types"]        += index_record["types"]
             construct["variables"]    += [var for var in index_record["variables"] if "parameter" in var["attributes"]]

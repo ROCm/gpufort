@@ -1,9 +1,14 @@
 ! SPDX-License-Identifier: MIT
 ! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-module params
-  private
-
+module params1
+  public
   integer, parameter :: prec = selected_real_kind(15, 307) ! double precision
+end module
+
+module params
+  use params1
+  !private
+
   integer, parameter, public :: N = 1000,&
                                 magnitude = 1
   real(prec), parameter, public :: param = 1.000e-5_prec

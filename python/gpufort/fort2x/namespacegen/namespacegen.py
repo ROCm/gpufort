@@ -330,7 +330,8 @@ class NamespaceGenerator():
         temp_infile.write(fortran_snippet)
         temp_infile.close()
         temp_outfile_path = temp_infile.name.replace(".f90",".x")
-        cmd_compile = [self.fortran_compiler,self.fortran_compiler_flags,temp_infile.name,"-o",temp_outfile_path]
+        cmd_compile = [self.fortran_compiler] + self.fortran_compiler_flags + [temp_infile.name,"-o",temp_outfile_path]
+        #print(cmd_compile)
         status,_,err_out = util.subprocess.run_subprocess(cmd_compile,True)
         if status != 0:
             raise util.error.LookupError("failed resolving parameters in scope '{}' as compilation with compiler '{}' and flags '{}' failed for the following reason: {}".format(

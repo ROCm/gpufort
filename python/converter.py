@@ -676,7 +676,7 @@ def map_args_to_opts(args,include_dirs,defines,fortran_and_cpp_compiler_options,
     if len(fortran_and_cpp_compiler_options[arg_cc]):
         fort2x.namespacegen.opts.fortran_compiler=" ".join(fortran_and_cpp_compiler_options[arg_cc])
     if len(fortran_and_cpp_compiler_options[arg_fcflags]) or args.use_default_flags:
-        fort2x.namespacegen.opts.fortran_compiler_flags=" ".join(fcflags)
+        fort2x.namespacegen.opts.fortran_compiler_flags = fcflags # pass as list of string
     # fort2x.hip.codegen
     if opts.only_emit_kernels:
         fort2x.hip.opts.emit_cpu_launcher = False

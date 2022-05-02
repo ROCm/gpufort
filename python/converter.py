@@ -24,9 +24,32 @@ import opts
 __GPUFORT_PYTHON_DIR = os.path.dirname(os.path.abspath(__file__))
 __GPUFORT_ROOT_DIR = os.path.abspath(os.path.join(__GPUFORT_PYTHON_DIR, ".."))
 
-# arg for kernel generator
-# array is split into multiple args
+def parse_raw_cl_compiler_args():
+    """Collect fortran and HIP C++ compiler options.
+    :return: list of fortran and HIP C++ compiler options
+             plus the index where one was found the first time. 
+    """
+    options = sys.argv[1:]
 
+    prefix = "--gpufort"
+    opts   = ["fc", "fcflags","cc","cflags"]
+    compiler_options = ["-".join([prefix, x]) for x in opts]
+    compiler_options.append("-".join([prefix,"ldflags"]))
+    #
+    result = {}
+    for copt in compiler_options:
+        result[copt.replace(prefix,"")] = []
+    copt = None
+    first_arg_index = len(options) + 1
+    for i, opt in enumerate(list(options)):
+        if opt in compiler_options:
+            copt = opt
+            first_arg_index = min(i+1,first_arg_index)
+        else:
+            if copt != None:
+                result[copt.replace(prefix,"")].append(opt)
+    sys.argv = sys.argv[:first_arg_index]
+    return result
 
 def parse_raw_cl_args():
     """Parse command line arguments before using argparse.
@@ -38,6 +61,8 @@ def parse_raw_cl_args():
     working_dir_path = os.getcwd()
     include_dirs = []
     defines = []
+    
+    compiler_args = parse_raw_cl_compiler_args()
     options = sys.argv[1:]
     for i, opt in enumerate(list(options)):
         if opt == "--working-dir":
@@ -63,8 +88,7 @@ def parse_raw_cl_args():
             msg = "config file '{}' cannot be found".format(config_file_path)
             print("ERROR: " + msg, file=sys.stderr)
             sys.exit(2)
-    return config_file_path, include_dirs, defines
-
+    return config_file_path, include_dirs, defines, compiler_args
 
 def parse_config(config_file_path):
     """Load user-supplied config file."""
@@ -190,36 +214,60 @@ def populate_cl_arg_parser(parser,for_converter=True):
             help="One of: {}".format(", ".join(
                 scanner.tree.supported_destination_dialects)),
         )
+    if for_converter:
+        parser.add_argument(
+            "--gpufort-fc",
+            dest="fortran_compiler",
+            default="hipfc",
+            type=str,
+            help=
+            "Compiler for Fortran code, defaults to HIPFORT's gfortran-based 'hipfc'. Use '--gpufort-fcflags <flags>' to set compilation flags and '--gpufort-ldflags <flags>' to set linker flags. Flags to GPUFORT related libraries are added by default if not specified otherwise. Host and C++ compiler and their respective options must be specified after all other GPUFORT options.",
+        )
+        parser.add_argument(
+            "--gpufort-cc",
+            dest="cpp_compiler",
+            default="hipcc",
+            type=str,
+            help=
+            "Compiler for C++ code, defaults to 'hipcc'. Use '--gpufort-cflags <flags>' to set compilation flags and '--gpufort-ldflags <flags>' to set linker flags. Flags to GPUFORT related libraries are added by default if not specified otherwise. Host and C++ compiler and their respective options must be specified after all other GPUFORT options.",
+        )
     parser.add_argument(
-        "--gfortran-config",
+        "--no-gpufort-default-flags",
+        dest="use_default_flags",
+        action="store_false",
+        help=
+        "Do not use any GPUFORT default flags but instead provide all flags explicitly via the '--gpufort-(fcflags|cflags|ldflags)' flags.",
+    )
+    parser.add_argument(
+        "--print-gfortran-config",
         dest="print_gfortran_config",
         action="store_true",
         help=
         "Print include and compile flags; output is influenced by HIP_PLATFORM environment variable.",
     )
     parser.add_argument(
-        "--cpp-config",
+        "--print-cpp-config",
         dest="print_cpp_config",
         action="store_true",
         help=
         "Print include and compile flags; output is influenced by HIP_PLATFORM environment variable.",
     )
     parser.add_argument(
-        "--ldflags",
+        "--print-ldflags",
         dest="print_ldflags",
         action="store_true",
         help=
         "Print linker flags; output is influenced by HIP_PLATFORM environment variable.",
     )
     parser.add_argument(
-        "--ldflags-gpufort-rt",
+        "--print-acc-ldflags",
         dest="print_ldflags_gpufort_rt",
         action="store_true",
         help=
-        "Print GPUFORT OpenACC runtime linker flags; output is influenced by HIP_PLATFORM environment variable.",
+        "Print GPUFORT accelerator runtime linker flags; output is influenced by HIP_PLATFORM environment variable.",
     )
     parser.add_argument(
-        "--path",
+        "--print-path",
         dest="print_path",
         action="store_true",
         help="Print path to the GPUFORT root directory.",
@@ -310,21 +358,21 @@ This step is skipped if no GPUFORT module files are created.
             "--only-modify-source",
             dest="only_modify_translation_source",
             action="store_true",
-            help="Only modify host code; do not generate kernels [default: False].",
+            help="Only modify Fortran code; do not generate kernels [default: False].",
         )
         group_fort2x.add_argument(
             "--only-emit-kernels-and-launchers",
             dest="only_emit_kernels_and_launchers",
             action="store_true",
             help=
-            "Only emit kernels and kernel launchers; do not modify host code [default: False].",
+            "Only emit kernels and kernel launchers; do not modify Fortran code [default: False].",
         )
         group_fort2x.add_argument(
             "--only-emit-kernels",
             dest="only_emit_kernels",
             action="store_true",
             help=
-            "Only emit kernels; do not emit kernel launchers and do not modify host code [default: False].",
+            "Only emit kernels; do not emit kernel launchers and do not modify Fortran code [default: False].",
         )
     group_fort2x_hip = parser.add_argument_group("Fortran-to-HIP")
     group_fort2x_hip.add_argument(
@@ -453,6 +501,7 @@ This step is skipped if no GPUFORT module files are created.
         verbose=False,
         log_traceback=False,
         profiling_enable=False,
+        use_default_flags=True,
     )
 
 def get_basic_cflags():
@@ -522,11 +571,11 @@ def parse_cl_args(parser,for_converter=True):
     # mutually exclusive arguments
     if (int(args.only_emit_kernels_and_launchers) + int(args.only_emit_kernels)
             + int(args.only_modify_translation_source)) > 1:
-        msg = "switches '--only-emit-kernels', '--only-emit-kernels-and-launchers', and 'only-modify-host-code' are mutually exclusive."
+        msg = "switches '--only-emit-kernels', '--only-emit-kernels-and-launchers', and 'only-modify-fortran-code' are mutually exclusive."
         print("ERROR: " + msg, file=sys.stderr)
         sys.exit(2)
     # unknown options
-    if len(unknown_args):
+    if len([u for u in unknown_args if u.replace("--gpufort-","") not in fortran_and_cpp_compiler_options]):
         msg = "unknown arguments (may be used by registered actions): {}".format(
             " ".join(unknown_args))
         print("WARNING: " + msg, file=sys.stderr)
@@ -565,7 +614,7 @@ def parse_cl_args(parser,for_converter=True):
     return args, unknown_args
 
 
-def map_args_to_opts(args,for_converter=True):
+def map_args_to_opts(args,include_dirs,defines,fortran_and_cpp_compiler_options,for_converter=True):
     # OVERWRITE CONFIG VALUES
     # parse file and create index in parallel
     if for_converter: 
@@ -598,7 +647,6 @@ def map_args_to_opts(args,for_converter=True):
         opts.skip_create_gpufort_module_files = True
     if args.touch_cpp_file_per_module:
         opts.touch_cpp_file_per_module = True
-    # fort2x.hip.codegen
     # only generate kernels / modify source
     if args.only_emit_kernels_and_launchers:
         opts.only_emit_kernels_and_launchers = True
@@ -606,7 +654,30 @@ def map_args_to_opts(args,for_converter=True):
         opts.only_emit_kernels = True
     if args.only_modify_translation_source:
         opts.only_modify_translation_source = True
-    # configure fort2x.hip.codegen
+    # TODO move to different location
+    # set default values, add main includes and preprocessor definitions
+    # to fortran and cpp parser options.
+    arg_fc      = "-fc"
+    arg_fcflags = "-fcflags"
+    arg_cc      = "-cc"
+    arg_cflags  = "-cflags"
+    fcflags = fortran_and_cpp_compiler_options[arg_fcflags]
+    if args.use_default_flags:
+        fcflags = ["-I{}".format(inc) for inc in include_dirs] + defines + fcflags
+        fortran_and_cpp_compiler_options[arg_fcflags] = fcflags
+    cflags = fortran_and_cpp_compiler_options[arg_cflags]
+    if args.use_default_flags:
+        cflags = ["-I{}".format(inc) for inc in include_dirs] + defines + cflags
+        fortran_and_cpp_compiler_options[arg_cflags] = cflags
+    #arg_ldflags = "-".join(["","gpufort","ldflags"])
+    # fort2x.namespacegen 
+    if len(fortran_and_cpp_compiler_options[arg_fc]):
+        fort2x.namespacegen.opts.fortran_compiler=" ".join(fortran_and_cpp_compiler_options[arg_fc])
+    if len(fortran_and_cpp_compiler_options[arg_cc]):
+        fort2x.namespacegen.opts.fortran_compiler=" ".join(fortran_and_cpp_compiler_options[arg_cc])
+    if len(fortran_and_cpp_compiler_options[arg_fcflags]) or args.use_default_flags:
+        fort2x.namespacegen.opts.fortran_compiler_flags=" ".join(fcflags)
+    # fort2x.hip.codegen
     if opts.only_emit_kernels:
         fort2x.hip.opts.emit_cpu_launcher = False
         fort2x.hip.opts.emit_grid_launcher = False
@@ -794,13 +865,14 @@ def set_include_dirs(working_dir, include_dirs):
                 opts.include_dirs[i])
             util.logging.log_error(opts.log_prefix,"set_include_dirs",msg)
             one_or_more_search_dirs_not_found = True
-    opts.include_dirs.append(working_dir)
+    opts.include_dirs.insert(0,working_dir)
     if one_or_more_search_dirs_not_found:
         sys.exit(2)
 
 if __name__ == "__main__":
     # parse config
-    config_file_path, include_dirs, defines = parse_raw_cl_args()
+    config_file_path, include_dirs, \
+    defines, fortran_and_cpp_compiler_options = parse_raw_cl_args()
     if config_file_path != None:
         parse_config(config_file_path)
     # parse command line arguments
@@ -814,8 +886,8 @@ if __name__ == "__main__":
         for action in opts.post_cli_actions:
             if callable(action):
                 action(args, unknown_args)
-    map_args_to_opts(args)
     set_include_dirs(args.working_dir, args.search_dirs + include_dirs)
+    map_args_to_opts(args,opts.include_dirs,defines,fortran_and_cpp_compiler_options)
 
     infile_path = os.path.abspath(args.input) 
     outfile_path = os.path.abspath(args.output) 

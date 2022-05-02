@@ -24,33 +24,6 @@ from gpufort import util
 from gpufort import scanner
 from gpufort import linemapper
 
-def parse_raw_cl_args():
-    """Collect host and target compiler options.
-    """
-    options = sys.argv[1:]
-
-    prefix = "-gpufort"
-    targets = ["host", "target"]
-    flags = ["compiler", "cflags"]
-
-    compiler_options = [
-        "-".join([prefix, x, y]) for x in targets for y in flags
-    ]
-    compiler_options.append("-".join([prefix,"ldflags"]))
-    #
-    result = {}
-    for copt in compiler_options:
-        result[copt.replace(prefix,"")] = []
-    copt = None
-    for i, opt in enumerate(list(options)):
-        if opt in compiler_options:
-            copt = opt
-        else:
-            if copt != None:
-                result[copt.replace(prefix,"")].append(opt)
-    return result
-
-
 def populate_cl_arg_parser(parser):
     # General options
     parser.add_argument("inputs",
@@ -68,27 +41,28 @@ def populate_cl_arg_parser(parser):
                         type=str,
                         help="Path/name for the result.")
     parser.add_argument(
-        "-gpufort-host-compiler",
-        dest="host_compiler",
+        "--gpufort-fc",
+        dest="fortran_compiler",
         default="hipfc",
         type=str,
         help=
-        "Compiler for host code, defaults to HIPFORT's gfortran-based 'hipfc'. Use '--gpufort-host-cflags <flags>' to set compilation flags and '--gpufort-ldflags <flags>' to set linker flags. Flags to CPUFORT related libraries are added by default if not specified otherwise. Host and target compiler and their respective options must be specified after all other GPUFORT options.",
+        "Compiler for Fortran code, defaults to HIPFORT's gfortran-based 'hipfc'. Use '--gpufort-fcflags <flags>' to set compilation flags and '--gpufort-ldflags <flags>' to set linker flags. Flags to GPUFORT related libraries are added by default if not specified otherwise. Host and HIP C++ compiler and their respective options must be specified after all other GPUFORT options.",
     )
     parser.add_argument(
-        "-gpufort-target-compiler",
-        dest="target_compiler",
+        "--gpufort-cc",
+        dest="cpp_compiler",
         default="hipcc",
         type=str,
         help=
-        "Compiler for offload target code, defaults to 'hipcc'. Use '--gpufort-target-cflags <flags>' to set compilation flags and '--gpufort-dflags <flags>' to set linker flags. Flags to GPUFORT related libraries are added by default if not specified otherwise. Host and target compiler and their respective options must be specified after all other GPUFORT options.",
+        "Compiler for HIP C++ code, defaults to 'hipcc'. Use '--gpufort-cflags <flags>' to set compilation flags and '--gpufort-ldflags <flags>' to set linker flags. Flags to GPUFORT related libraries are added by default if not specified otherwise. Host and HIP C++ compiler and their respective options must be specified after all other GPUFORT options.",
     )
     parser.add_argument(
-        "-no-gpufort-default-flags",
-        dest="use_default_flags",
-        action="store_false",
+        "--gpufort-ldflags",
+        dest="gpufort_ldflags",
+        default="hipcc",
+        type=str,
         help=
-        "Do not use any GPUFORT default flags but instead provide all flags explicitly via the '--gpufort-(host|target)-(cflags|ldflags)' flags.",
+        "Compiler for HIP C++ code, defaults to 'hipcc'. Use '--gpufort-cflags <flags>' to set compilation flags and '--gpufort-ldflags <flags>' to set linker flags. Flags to GPUFORT related libraries are added by default if not specified otherwise. Host and HIP C++ compiler and their respective options must be specified after all other GPUFORT options.",
     )
     parser.add_argument(
         "-save-temps",
@@ -113,8 +87,7 @@ def populate_cl_arg_parser(parser):
     )
     parser.set_defaults(only_compile=False,
                         only_codegen=False,
-                        no_codegen=False,
-                        use_default_flags=True)
+                        no_codegen=False)
 
 def check_inputs(paths):
     """:return: Typical object file name/path that compilers derive from a Fortran/C++ source file.
@@ -180,8 +153,7 @@ def remove_file(path):
 
 
 if __name__ == "__main__":
-    config_file_path, include_dirs, defines = converter.parse_raw_cl_args()
-    host_and_target_compiler_options = parse_raw_cl_args()
+    config_file_path, include_dirs, defines, fortran_and_cpp_compiler_options = converter.parse_raw_cl_args()
     if config_file_path != None:
         parse_config(config_file_path)
     # parse command line arguments
@@ -198,16 +170,16 @@ have a '--' prefix while this tool's options have a '-' prefix."""))
         util.logging.log_error(opts.log_prefix,"__main__","'-only-codegen' and '-no-codegen' are mutually exclusive")
         sys.exit(2)
 
-    converter.map_args_to_opts(args, False)
+    converter.set_include_dirs(args.working_dir,
+                               args.search_dirs + include_dirs)
+    converter.map_args_to_opts(args,opts.include_dirs,defines,fortran_and_cpp_compiler_options,False)
+    hardcode_pure_converter_opts()
     if len(opts.post_cli_actions):
         msg = "run registered actions"
         util.logging.log_info(msg, verbose=False)
         for action in opts.post_cli_actions:
             if callable(action):
                 action(args, unknown_args)
-    converter.set_include_dirs(args.working_dir,
-                               args.search_dirs + include_dirs)
-    hardcode_pure_converter_opts()
 
     try:
         infile_path, object_files = check_inputs(args.inputs)
@@ -244,15 +216,15 @@ have a '--' prefix while this tool's options have a '-' prefix."""))
             cpp_cflags += converter.get_basic_cflags()
             fortran_cflags += list(cpp_cflags)
             ldflags += converter.get_basic_ldflags(args.openacc)
-            if os.path.basename(args.host_compiler) == "gfortran":
+            if os.path.basename(args.fortran_compiler) == "gfortran":
                 fortran_cflags = converter.get_gfortran_cflags()
-            if os.path.basename(args.target_compiler) in ["hipcc", "hipcc.bin"]:
+            if os.path.basename(args.cpp_compiler) in ["hipcc", "hipcc.bin"]:
                 cpp_cflags += converter.get_hipcc_cflags()
 
         # cpp compilation
         cpp_object_path = get_object_path(cpp_file_path)
-        cpp_cmd = ([args.target_compiler] + cpp_cflags
-                   + host_and_target_compiler_options["-target-cflags"]
+        cpp_cmd = ([args.cpp_compiler] 
+                   + cpp_cflags + fortran_and_cpp_compiler_options["-cflags"]
                    + ["-c", cpp_file_path]
                    + ["-o", cpp_object_path])
         handle_subprocess_output(util.subprocess.run_subprocess(cpp_cmd,args.verbose))
@@ -260,8 +232,8 @@ have a '--' prefix while this tool's options have a '-' prefix."""))
         modified_object_path = get_object_path(modified_fortran_file_path)
         # emit a single object combining the Fortran and C++ objects
         if args.only_compile:
-            fortran_cmd = ([args.host_compiler] + fortran_cflags
-                           + host_and_target_compiler_options["-host-cflags"]
+            fortran_cmd = ([args.fortran_compiler] + fortran_cflags
+                           + fortran_and_cpp_compiler_options["-fcflags"]
                            + ["-c", modified_fortran_file_path]
                            + ["-o", modified_object_path])
             handle_subprocess_output(util.subprocess.run_subprocess(fortran_cmd,args.verbose))
@@ -274,12 +246,12 @@ have a '--' prefix while this tool's options have a '-' prefix."""))
             os.remove(modified_object_path)
         # emit an executable
         else:
-            fortran_cmd = ([args.host_compiler] + fortran_cflags
-                           + host_and_target_compiler_options["-host-cflags"]
+            fortran_cmd = ([args.fortran_compiler] + fortran_cflags
+                           + fortran_and_cpp_compiler_options["-fcflags"]
                            + [modified_fortran_file_path] 
                            + [cpp_object_path] 
                            + ldflags
-                           + host_and_target_compiler_options["-ldflags"]
+                           + fortran_and_cpp_compiler_options["-ldflags"]
                            + ["-o", outfile_path])
             handle_subprocess_output(util.subprocess.run_subprocess(fortran_cmd,args.verbose))
             # merge object files; produces: outfile_path

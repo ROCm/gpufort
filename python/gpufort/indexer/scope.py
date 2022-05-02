@@ -410,7 +410,7 @@ def create_scope(index, tag):
                 if current_record["name"] == searched_name:
                     # 1. first include definitions from used records
                     _resolve_dependencies(new_scope, current_record,
-                                                 index)
+                                          index)
                     # 2. now include the current record's definitions
                     for entry_type in types.SCOPE_ENTRY_TYPES:
                         if entry_type in current_record:
@@ -422,6 +422,26 @@ def create_scope(index, tag):
         util.logging.log_leave_function(opts.log_prefix, "create_scope")
         return new_scope
 
+@util.logging.log_entry_and_exit(opts.log_prefix)
+def _lookup_index_record_hierarchy(scope_tag):
+    """Given a scope tag `tag1:tag2:...:tagn`, this routine
+    will return a list of the n index records beginning from the
+    top level parent program/module/function/subroutine.
+    """
+    scope_tag_tokens = scope_tag.split(":")
+    current = None
+    result = []
+    for i,_ in enumerate(scope_tag_tokens):
+        if i == 0:
+            current = next((ientry for ientry in self.index if ientry["name"] == scope_tag_tokens[0]),None)
+        else:
+            parent = current
+            current = next((ientry for ientry in parent["procedures"] 
+                          if ientry["name"] == scope_tag_tokens[i]),None)
+        if current == None:
+            raise ValueError("could not find index record for tag '{}'".format(scope_tag_tokens[0:i+1]))
+        result.append(current)
+    return result
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def search_scope_for_var(scope,
@@ -470,46 +490,9 @@ def search_scope_for_var(scope,
     try:
         result = lookup_from_left_to_right_(reversed(scope["variables"]))
     except util.error.LookupError as e:
-        # TODO check what implicit rules are set, should be set in index and scope
-        # if scope["implicit"] == "none"
-        # elif scope["implicit"] == "default"
-        # elif scope["implicit"] == ... 
-        #print("vars in scope: "+str([ivar["name"] for ivar in scope["variables"]]),file=sys.stderr)
+        #index_record = _lookup_index_record_hierarchy(scope["tag"])[-1]
+        #implicit_spec = index_record["implicit"]
         result = _lookup_implicitly_declared_var(var_expr,implicit_none=True,type_map={})
-    # resolve
-    if resolve:
-        pass
-    # TODO revisit
-    #    for ivar in reversed(scope["variables"]):
-    #        if "parameter" in ivar["attributes"]:
-    #            for entry in [
-    #                    "kind", "unspecified_bounds", "lbounds", "counts",
-    #                    "total_count", "total_bytes", "index_macro"
-    #            ]:
-    #                if entry in result:
-    #                    dest_tokens = util.parsing.tokenize(result[entry])
-    #                    modified_entry = ""
-    #                    # TODO handle selected kind here
-    #                    for tk in dest_tokens:
-    #                        modified_entry += tk.replace(
-    #                            ivar["name"], "(" + ivar["value"] + ")")
-    #                    result[entry] = modified_entry
-    #        if "parameter" in result["attributes"]:
-    #            if not result["f_type"] in ["character", "type"]:
-    #                result["value"].replace(ivar["value"],
-    #                                        "(" + ivar["value"] + ")")
-    #    for entry in [
-    #            "value", "kind", "unspecified_bounds", "lbounds", "counts",
-    #            "total_count", "total_bytes", "index_macro"
-    #    ]:
-    #        if entry in result:
-    #            entry_value = result[entry]
-    #            try:
-    #                code = compile(entry_value, "<string>", "eval")
-    #                entry_value = str(eval(code, {"_builtins__": {}}, {}))
-    #            except:
-    #                pass
-    #            result[entry] = entry_value
 
     util.logging.log_debug2(opts.log_prefix,"search_scope_for_var",\
       "entry found for variable tag '{}'".format(variable_tag))

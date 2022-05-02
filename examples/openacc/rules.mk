@@ -1,9 +1,9 @@
 FC     ?= gfortran
-CFLAGS ?= $(shell gpufort --gfortran-config)
+CFLAGS ?= $(shell gpufort --print-gfortran-config)
 
 HIPCC ?= hipcc 
 
-HIPCC_CFLAGS = $(shell gpufort --cpp-config) -std=c++14
+HIPCC_CFLAGS = $(shell gpufort --print-cpp-config)
 
 HIPCC += -DGPUFORT_PRINT_KERNEL_ARGS_ALL 
 HIPCC += -DGPUFORT_PRINT_INPUT_ARRAY_NORMS_ALL
@@ -15,4 +15,4 @@ HIPFC ?= hipfc
 OMPFC        ?= /opt/rocm/llvm/bin/flang
 OMPFC_CFLAGS ?= $(CFLAGS) -fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx908
 
-LDFLAGS = $(shell gpufort --ldflags-gpufort-rt) -lgfortran
+LDFLAGS = $(shell gpufort --print-acc-ldflags) -lgfortran

@@ -26,7 +26,7 @@ comment_body = False
         # Only considered if resolve_all_parameters_via_compiler is False.
 resolve_all_parameters_via_compiler = False
         # Resolve all parameters via a Fortran compiler.
-fortran_compiler = os.environ.get("FC","hipfc")
+fortran_compiler = os.environ.get("GPUFORT_FC","hipfc")
         # Compiler to use for resolving parameters via (Fortran) compiler.
-fortran_compiler_flags = os.environ.get("FCFLAGS","")
+fortran_compiler_flags = os.environ.get("GPUFORT_FCFLAGS","")
         # Compiler flags to use for resolving parameters via (Fortran) compiler.

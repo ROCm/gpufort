@@ -193,13 +193,17 @@ class NamespaceGenerator():
         def create_fortran_construct_record_(kind,index_record,scope_tag_tokens):
             name = "_".join(scope_tag_tokens) 
             construct = indexer.create_fortran_construct_record(kind, name, None)
+            construct["used_modules"] += index_record["used_modules"]
+            construct["types"]        += [] # index_record["types"]
+            construct["variables"]    += [var for var in index_record["variables"] 
+                                         if ("parameter" in var["attributes"]
+                                            and var["f_type"] != "type")] # TODO consider types too
+            type_and_parameter_names = ([var["name"] for var in construct["variables"]]
+                                       +[typ["kind"] for typ in construct["types"]])
             if kind == "module":
                 construct["accessibility"] = index_record.get("accessibility","public")
-                construct["public"] = index_record.get("public",[])
-                construct["private"] = index_record.get("private",[])
-            construct["used_modules"] += index_record["used_modules"]
-            construct["types"]        += index_record["types"]
-            construct["variables"]    += [var for var in index_record["variables"] if "parameter" in var["attributes"]]
+                construct["public"]        = [ident for ident in index_record.get("public",[]) if ident in type_and_parameter_names]
+                construct["private"]       = [ident for ident in index_record.get("private",[]) if ident in type_and_parameter_names]
             handle_use_statements_(construct) # take care of duplicates
             # extension
             construct["declarations"] = []
@@ -216,6 +220,9 @@ class NamespaceGenerator():
                         iv += 1
                     else:
                         # TODO render types too
+                        #itype = copy.deepcopy(construct["variables"][it])
+                        #if "device" in itype["attributes"]:
+                        #end  
                         it += 1
                 elif condv:
                     ivar = construct["variables"][iv]

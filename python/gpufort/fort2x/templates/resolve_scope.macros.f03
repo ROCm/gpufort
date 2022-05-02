@@ -256,10 +256,12 @@ module {{module.name}}
   implicit none ! TODO more care about implicit statement in non-modules
 {{ module.accessibility|indent(2,True) }}
 {% if module.public|length %}
-  public :: {{ module.public|join(",") }}
+  public :: &
+    {{ module.public|join(",&\n    ") }}
 {% endif %}
 {% if module.private|length %}
-  private :: {{ module.private|join(",") }}
+  private :: &
+    {{ module.private|join(",&\n    ") }}
 {% endif %}
 {% for line in module.declarations %}
 {{line|indent(2,True)}}

@@ -281,7 +281,7 @@ def parse_fortran_code(statements,result_name=None):
         elif tokens[0] == "cycle":
             ttcontinue = tree.TTContinue(stmt, 0, [[]])
             append_(ttcontinue,"cycle statement")
-        elif tokens[0] in "exit":
+        elif tokens[0] == "exit":
             ttexit = tree.TTExit(stmt, 0, [[]])
             append_(ttexit,"exit statement")
         elif tokens[0] == "goto":

@@ -1,0 +1,1 @@
+size(x,1)size(y,dim=1)size(z,dim=1,kind=4)size(z,dim=1,kind=8)size(z,dim=1,kind=2)lbound(x,2)lbound(y,dim=2)lbound(z,dim=2,kind=4)ubound(x,1)ubound(y,dim=1)ubound(z,dim=1,kind=4)size(a%x,1)size(a%y,dim=1)size(a(i,j)%z,dim=1,kind=4)

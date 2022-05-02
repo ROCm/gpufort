@@ -108,6 +108,8 @@ def create_fortran_construct_record(kind, name, file_path):
     entry["types"] = []
     entry["procedures"] = []
     entry["used_modules"] = []
+    if kind in ["module","program","subroutine","function"]:
+        entry["implicit"] = []
     return entry
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
@@ -116,25 +118,17 @@ def _parse_statements(linemaps, file_path,**kwargs):
     cuda_fortran  ,_ = util.kwargs.get_value("cuda_fortran",opts.cuda_fortran,**kwargs)
     openacc       ,_ = util.kwargs.get_value("openacc",opts.openacc,**kwargs)
     
-    index = []
-
-    # statistics
-    total_num_tasks = 0
-
-    def log_begin_task(parent_node, msg):
-        util.logging.log_debug3(opts.log_prefix,"_parse_statements","[parent-node={0}:{1}] {2}".format(
-              parent_node._kind, parent_node._name, msg))
-
-    def log_end_task(parent_node, msg):
-        util.logging.log_debug2(opts.log_prefix,"_parse_statements","[parent-node={0}:{1}] {2}".format(
-              parent_node._kind, parent_node._name, msg))
+    default_implicit_spec =\
+      util.parsing.parse_implicit_statement(
+        "IMPLICIT integer (i-n), real (a-h,o-z)")
     
-    # Parser events
+    index = []
     root = Node("root", "root", data=index, parent=None)
     current_node = root
     current_statement = None
     accessibility_statement_stack = []
-    
+    implicit_spec_stack = []
+
     def log_enter_node_():
         nonlocal current_node
         nonlocal current_statement
@@ -155,7 +149,22 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_statement
         util.logging.log_debug2(opts.log_prefix,"_parse_statements","[current-node={}:{}] found {} in statement: '{}'".format(\
                 current_node._kind,current_node._name,kind,current_statement))
+    
+    def log_begin_task(parent_node, msg):
+        util.logging.log_debug3(opts.log_prefix,"_parse_statements","[parent-node={0}:{1}] {2}".format(
+              parent_node._kind, parent_node._name, msg))
 
+    def log_end_task(parent_node, msg):
+        util.logging.log_debug2(opts.log_prefix,"_parse_statements","[parent-node={0}:{1}] {2}".format(
+              parent_node._kind, parent_node._name, msg))
+
+    def get_current_implicit_rules_():
+        if not len(implicit_spec_stack[-1]):
+            return default_implicit_spec
+        else:
+            return implicit_spec_stack[-1]
+
+    # Parser events
     # direct parsing
     def End():
         nonlocal root
@@ -165,6 +174,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_statement_no
         nonlocal current_statement
         nonlocal accessibility_statement_stack
+        nonlocal implicit_spec_stack
         log_detection_("end of program/module/subroutine/function/type")
         if current_node._kind != "root":
             log_leave_node_()
@@ -178,6 +188,19 @@ def _parse_statements(linemaps, file_path,**kwargs):
                 end = (current_linemap_no, current_statement_no)
                 current_node._data["statements"] = current_node.statements(
                     linemaps, end)
+            # implicit rules: 
+            # (assumes only 1 rule if first rule is implicit none)
+            # (assumes redundant usage of same letter is not happening)
+            # (Implicit() function performs the necessary checks)
+            if current_node._kind in ["module","program","subroutine","function"]:
+                for f_type,f_len,kind,letters in get_current_implicit_rules_():
+                    if len(letters):
+                        current_node._data["implicit"].append({
+                          "f_type":f_type,"len":f_len,"kind":kind,
+                          "letters": letters
+                        })
+                implicit_spec_stack.pop(-1)
+            # accessibility: public vs private
             if current_node._kind in ["module","type"]:
                 # apply public/private visibility
                 general_accessibility = "public"
@@ -197,6 +220,10 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_node
         nonlocal current_tokens
         nonlocal accessibility_statement_stack
+        nonlocal implicit_spec_stack
+        accessibility_statement_stack.append([])
+        implicit_spec_stack.append([])
+        #
         name = current_tokens[1]
         module = create_fortran_construct_record("module", name, file_path)
         module["accessibility"] = opts.default_module_accessibility
@@ -205,13 +232,15 @@ def _parse_statements(linemaps, file_path,**kwargs):
         assert current_node == root
         current_node._data.append(module)
         current_node = Node("module", name, data=module, parent=current_node)
-        accessibility_statement_stack.append([])
         log_enter_node_()
 
     def ProgramStart():
         nonlocal root
         nonlocal current_node
         nonlocal current_tokens
+        nonlocal implicit_spec_stack
+        implicit_spec_stack.append([])
+        #
         name = current_tokens[1]
         program = create_fortran_construct_record("program", name, file_path)
         assert current_node._kind == "root"
@@ -237,17 +266,31 @@ def _parse_statements(linemaps, file_path,**kwargs):
                                                 "','".join(identifiers_subject_to_other_statement)))
             accessibility_statement_stack[-1].append((kind,identifiers))
         else:
-            raise util.error.SyntaxError("'{}' statements only allowed in module or type".format(current_tokens[0]))
+            raise util.error.SyntaxError("unexpected '{}' statement".format(current_tokens[0]))
     
     def Implicit():
         nonlocal current_node
         nonlocal current_tokens
+        nonlocal current_statement
+        if current_node._kind in ["module","program","subroutine","function"]:
+            new_specs = util.parsing.parse_implicit_statement(current_statement)
+            for _,_,_,letters in new_specs:
+                for _,_,_,other_letters in implicit_spec_stack[-1]:
+                    first_mutual_letter = next((l for l in letters if l in other_letters),None)
+                    if first_mutual_letter != None:
+                        raise util.error.SyntaxError("more than implicit rule found for letter '{}'".format(first_mutual_letter))
+            implicit_spec_stack[-1] += new_specs
+        else:
+            raise util.error.SyntaxError("unexpected 'implicit' statement")
         pass
 
     #host|device,name,[args]
     def SubroutineStart():
-        nonlocal current_statement
         nonlocal current_node
+        nonlocal current_statement
+        nonlocal implicit_spec_stack
+        implicit_spec_stack.append([])
+        #
         log_detection_("start of subroutine")
         if current_node._kind in [
                 "root", "module", "program", "subroutine", "function"
@@ -278,6 +321,9 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_statement
         nonlocal current_node
         nonlocal current_linemap
+        nonlocal implicit_spec_stack
+        implicit_spec_stack.append([])
+        #
         log_detection_("start of function")
         if current_node._kind in [
                 "root", "module", "program", "subroutine", "function"
@@ -365,11 +411,9 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_linemap
         nonlocal current_statement
         nonlocal current_statement_no
-        nonlocal total_num_tasks
         #print(current_statement)
         log_detection_("declaration")
         if current_node != root:
-            total_num_tasks += 1
             msg = "begin to parse declaration '{}'".format(
                 current_statement)
             log_begin_task(current_node, msg)
@@ -397,11 +441,27 @@ def _parse_statements(linemaps, file_path,**kwargs):
             parameters = util.parsing.parse_parameter_statement(current_statement)
             for pair in parameters:
                 var_name, rhs = pair 
-                for var_context in current_node._data["variables"]:
-                    if var_context["name"] == var_name:
-                        if not "parameter" in var_context["attributes"]:
-                            var_context["attributes"].append("parameter")
-                            var_context["rhs"] = rhs
+                found_decl = False
+                for ivar in current_node._data["variables"]:
+                    if ivar["name"] == var_name:
+                        found_decl = True
+                        if "parameter" in ivar["attributes"]:
+                            raise util.error.SyntaxError("variable '{}' has already 'parameter' attribute".format(var_name))
+                        ivar["attributes"].append("parameter")
+                        if ivar["rhs"] != None and len(ivar["rhs"]):
+                            raise util.error.SyntaxError("variable '{}' is already initialized".format(var_name))
+                        ivar["rhs"] = rhs
+                if not found_decl:
+                    #print(get_current_implicit_rules_())
+                    for f_type,f_len,kind,letters in get_current_implicit_rules_():
+                        if var_name[0] in letters:
+                            found_decl = True
+                            ivar = types.create_index_var(f_type, f_len, kind, [], var_name, ["parameter"], [], rhs, 
+                              current_linemap["file"], current_linemap["lineno"])
+                            current_node._data["variables"].append(ivar)
+                            break
+                if not found_decl:
+                    raise util.error.SyntaxError("no declaration or applicable implicit specification found for parameter '{}'".format(var_name))
             #
             msg = "finished to parse parameter statement '{}'".format(current_statement)
             log_end_task(current_node, msg)

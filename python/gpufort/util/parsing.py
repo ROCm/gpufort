@@ -1245,20 +1245,21 @@ def parse_implicit_statement(statement):
     implicit integer(mykind) (j,k,m,n)       
     implicit real (b, d, f-h, p-t, v-z)
     ```
-    :return: A tuple consisting of a bool if implicit rules are used for
-             naming variables plus a list of implicit naming rules. Each naming
+    :return: A list of implicit naming rules. Each naming
              rule is a tuple of the Fortran type, length, and kind plus the associated first letters.
+             Function will return successfully with empty list for statement `implicit none`.
+             If there is no implicit rule or 'none' specified after 'implicit',
+             this method will throw error.SyntaxError.
     """
     tokens = tokenize(statement,padded_size=2)    
-    implicit_rules_active = True
     implicit_specs = []
     if tokens.pop(0).lower() != "implicit":
         raise error.SyntaxError("expected 'implicit'")
     rules,num_consumed_tokens = get_top_level_operands(tokens)
     tokens = tokens[num_consumed_tokens:]
     check_if_all_tokens_are_blank(tokens)
-    if len(rules) and rules[0].lower() == "none":
-        implicit_rules_active = False
+    if len(rules)==1 and rules[0].lower() == "none":
+        implicit_specs.append((None,None,None,[]))
         check_if_all_tokens_are_blank(rules[1:])
     elif len(rules):
         taken_letters = set()
@@ -1298,7 +1299,7 @@ def parse_implicit_statement(statement):
         pass
     else:
         raise error.SyntaxError("expected 'none' or at least one implicit rule specification")
-    return implicit_rules_active, implicit_specs
+    return implicit_specs
 
 def parse_directive(directive,tokens_to_omit_at_begin=0):
     """Splits a directive in directive sentinel, 

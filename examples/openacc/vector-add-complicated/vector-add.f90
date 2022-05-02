@@ -1,8 +1,9 @@
 ! SPDX-License-Identifier: MIT
 ! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 module params1
+  implicit integer (p)
   public
-  integer, parameter :: prec = selected_real_kind(15, 307) ! double precision
+  PARAMETER(prec = selected_real_kind(15, 307)) ! double precision
 end module
 
 module params

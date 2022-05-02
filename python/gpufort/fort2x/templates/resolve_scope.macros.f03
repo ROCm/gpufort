@@ -253,7 +253,7 @@ end subroutine
 {% for module in modules %}
 module {{module.name}}
 {{ cm.render_used_modules(module.used_modules) | indent(2,True) -}}
-  implicit none ! TODO parse implicit statement
+  implicit none ! TODO more care about implicit statement in non-modules
 {{ module.accessibility|indent(2,True) }}
 {% if module.public|length %}
   public :: {{ module.public|join(",") }}
@@ -269,7 +269,7 @@ end module
 
 program {{program.name}}
 {{ cm.render_used_modules(program.used_modules) | indent(2,True) }}
-  implicit none ! TODO parse implicit statement
+  implicit none ! TODO more care about implicit statement in non-modules
 {{ render_interface("print_value",datatypes,max_rank) | indent(2,True) }}
 {% for line in program.declarations %}
 {{line|indent(2,True)}}

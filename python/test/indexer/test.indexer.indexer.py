@@ -61,6 +61,9 @@ class TestIndexer(unittest.TestCase):
         self.assertEqual(len([mod for mod in self.index if mod["name"] == "simple"]),1, "Did not find module 'simple'")
     def test_5_indexer_check_program_test1(self):
         test1 = next((mod for mod in self.index if mod["name"] == "test1"),None)
+        # implicit parameters
+        # TBA
+        # other
         float_scalar = next((var for var in test1["variables"] if var["name"] == "float_scalar".lower()),None)
         self.assertIsNotNone(float_scalar)
 #        self.assertEqual(float_scalar["c_type"],"float")

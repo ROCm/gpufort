@@ -256,7 +256,7 @@ class NamespaceGenerator():
             make_program = i == len(scope_tag_tokens)-1
             kind = "program" if make_program else "module"
             construct = create_fortran_construct_record_(kind,current,scope_tag_tokens[0:i+1])
-            parent_module_name = "_".join(scope_tag_tokens[:-1])
+            parent_module_name = "_".join(scope_tag_tokens[:i])
             # must come afterwards
             if len(parent_module_name):
                 construct["used_modules"].insert(0,indexer.create_index_record_from_use_statement("use {}".format(parent_module_name)))

@@ -82,6 +82,26 @@ class TTContinue(base.TTNode):
         else:
             return "return"
 
+class TTExit(base.TTNode):
+
+    def _assign_fields(self, tokens):
+        self._result_name = ""
+        self._in_loop = True
+
+    def c_str(self):
+        if self._in_loop:
+            return "break;"
+        elif self._result_name != None and len(self._result_name):
+            return "return " + self._result_name + ";"
+        else:
+            return "return;"
+
+    def f_str(self):
+        if self._in_loop:
+            return "break;"
+        else:
+            return "return"
+
 class TTGoto(base.TTNode):
 
     def _assign_fields(self, tokens):

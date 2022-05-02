@@ -324,6 +324,15 @@ def create_scope_from_declaration_list(declaration_list_snippet,
     scope = create_scope(index, "dummy")
     return scope
 
+@util.logging.log_entry_and_exit(opts.log_prefix)
+def create_index_from_scope(scope):
+    """Creates an index that contains a single module
+       that has the scope's tag as module name (':' replaced by '_').
+."""
+    imodule = { "name": scope["tag"].replace(":","_"), "kind": "module" }
+    for entry_type in types.SCOPE_ENTRY_TYPES:
+        imodule[entry_type] = copy.deepcopy(scope[entry_type])
+    return [ imodule ]
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def create_scope(index, tag):

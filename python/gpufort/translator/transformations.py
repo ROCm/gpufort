@@ -222,6 +222,8 @@ def collapse_loopnest(ttdos):
         for child in ttdo:
             if isinstance(child,tree.TTContinue):
                 child._in_loop = False
+            if isinstance(child,tree.TTExit):
+                child._in_loop = False
         indices.append(_collapsed_loop_index_c_str(ttdo,i))
     # conditions = [ ttdos[0].hip_thread_bound_c_str() ]
     preamble2.append("const int _problem_size = {};\n".format("*".join(problem_sizes)))

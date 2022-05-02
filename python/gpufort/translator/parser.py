@@ -278,10 +278,12 @@ def parse_fortran_code(statements,result_name=None):
                 while len(do_loop_labels) and do_loop_labels[-1] == numeric_label:
                     do_loop_labels.pop(-1)
                     ascend_(tokens[1])
-        elif tokens[0] in ["cycle"]:
+        elif tokens[0] == "cycle":
             ttcontinue = tree.TTContinue(stmt, 0, [[]])
-        #elif tokens[0] in ["exit"]:
-        #    ttexit = tree.TTExit(stmt, 0, [[]])
+            append_(ttcontinue,"cycle statement")
+        elif tokens[0] in "exit":
+            ttexit = tree.TTExit(stmt, 0, [[]])
+            append_(ttexit,"exit statement")
         elif tokens[0] == "goto":
             append_(tree.TTGoto(stmt, 0, [tokens[1]]),"goto statement")
         elif util.parsing.is_end(tokens, ["if", "select"]):

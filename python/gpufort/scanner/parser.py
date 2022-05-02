@@ -46,7 +46,7 @@ def _parse_file(linemaps, index, **kwargs):
     current_statement_stripped = None
     derived_type_parent = None
     acc_kernels_directive = None
-    statement_functions = []
+    statement_function_stack = []
 
     def set_keep_recording_(enable):
         nonlocal keep_recording
@@ -129,9 +129,10 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal current_linemap
         nonlocal current_statement_no
         nonlocal current_tokens
+        nonlocal statement_function_stack 
         log_detection_("program")
         # TODO workaround, this will only allow local statement functions
-        statement_functions.clear()
+        statement_function_stack.append([])
         new = tree.STProgram(current_tokens[1], current_linemap, current_statement_no)
         new.ignore_in_s2s_translation = not translation_enabled
         descend_(new)
@@ -158,9 +159,10 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal current_linemap
         nonlocal keep_recording
         nonlocal index
+        nonlocal statement_function_stack 
         log_detection_("function")
         # TODO workaround, this will only allow local statement functions but parent's can be inherited
-        statement_functions.clear()
+        statement_function_stack.append([])
         parsed_kind, name, dummy_args, modifiers, attributes, result_triple, bind_tuple =\
             util.parsing.parse_function_statement(current_statement_stripped)
         new = tree.STProcedure(name,current_node.tag(),kind,\
@@ -182,9 +184,8 @@ def _parse_file(linemaps, index, **kwargs):
                                                     current_linemap["lineno"],
                                                     current_statement_no,
                                                     type(current_node))
-        if type(
-                current_node
-        ) is tree.STProcedure and current_node.must_be_available_on_device():
+        if (isinstance(current_node, tree.STProcedure)
+           and current_node.must_be_available_on_device()):
             current_node.add_linemap(current_linemap)
             current_node._last_statement_index = current_statement_no
             current_node.complete_init(index)
@@ -192,6 +193,8 @@ def _parse_file(linemaps, index, **kwargs):
         if not keep_recording:
             new = tree.STEnd(current_linemap, current_statement_no)
             append_if_not_recording_(new)
+        if isinstance(current_node,(tree.STProgram,tree.STProcedure)):
+            statement_function_stack.pop(-1)
         ascend_()
 
     def Return():
@@ -475,15 +478,13 @@ def _parse_file(linemaps, index, **kwargs):
                     name, args, rhs_expr =\
                         util.parsing.parse_statement_function(current_statement["body"])
                     name = name.lower()
-                    existing_record = next((entry for entry in statement_functions
-                                           if entry[0] == name),None)
-                    if existing_record == None:
-                        statement_functions.append((name,args,rhs_expr))
-                    else:
-                        # TODO currently does not make sense as the statement variables are only 
-                        # TODOc applied on the LHS of a statement; should only be applied to RHS
-                        # of assignments
-                        raise util.error.SyntaxError("redefinition of statement funtion")
+                    for entry in statement_function_stack[-1]:
+                        if entry[0] == name: # existing record found
+                            # TODO currently does not make sense as the statement variables are only 
+                            # TODOc applied on the LHS of a statement; should only be applied to RHS
+                            # of assignments
+                            raise util.error.SyntaxError("redefinition of statement function")
+                    statement_function_stack[-1].append((name,args,rhs_expr))
 
 
     def GpufortControl():
@@ -517,10 +518,12 @@ def _parse_file(linemaps, index, **kwargs):
 
     def expand_statement_functions_(statement):
         """Expands Fortran statement functions in the given statement."""
-        if len(statement_functions):
-            stmt = statement["body"]
-            statement["body"] = util.macros.expand_macros(stmt,statement_functions,
-                    ignore_case=True,wrap_in_brackets=True)
+        for statement_functions in reversed(statement_function_stack):
+            if len(statement_functions):
+                stmt = statement["body"]
+                # TODO should affect text
+                statement["body"] = util.macros.expand_macros(stmt,statement_functions,
+                        ignore_case=True,wrap_in_brackets=True)
 
     def scan_string_(expression_name, expression):
         """

@@ -278,7 +278,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
                 for _,_,_,other_letters in implicit_spec_stack[-1]:
                     first_mutual_letter = next((l for l in letters if l in other_letters),None)
                     if first_mutual_letter != None:
-                        raise util.error.SyntaxError("more than implicit rule found for letter '{}'".format(first_mutual_letter))
+                        raise util.error.SyntaxError("more than one implicit rule found for letter '{}'".format(first_mutual_letter))
             implicit_spec_stack[-1] += new_specs
         else:
             raise util.error.SyntaxError("unexpected 'implicit' statement")
@@ -583,6 +583,8 @@ def _parse_statements(linemaps, file_path,**kwargs):
                             # appears in an assignment before trying to detect
                             # another Fortran statement. Hence we first check if a statement
                             # is an assignment.
+                            # TODO could handle statement functions here 
+                            # TODO handle implicit variables here (problem: scope)
                             pass
                         else:
                             if (current_tokens[0]=="end" and
@@ -655,7 +657,6 @@ def update_index_from_linemaps(linemaps, index,**kwargs):
         index += _parse_statements(linemaps,
                                    file_path=linemaps[0]["file"],
                                    **kwargs)
-
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def update_index_from_snippet(index, snippet, **kwargs):

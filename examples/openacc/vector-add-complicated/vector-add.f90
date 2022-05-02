@@ -28,7 +28,7 @@ program main
 
   integer :: add, mult, a, b
   add(a,b)=a+b ! statement functions
-  mult(a,b)=a*b ! statement functions
+  MULT(a,b)=a*b ! statement functions
 
   do i = 1, N
     y_exact(i) = 3

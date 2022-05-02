@@ -18,6 +18,7 @@ end interface
 {#########################}
 {# name and Fortran type #}
 {#########################}
+! {{ivar.name}}
 write( output_unit, "(a)", advance="no") "{{ivar.name}}"
 write( output_unit, "(a)", advance="no") ","
 write( output_unit, "(a)", advance="no") "{{ivar.f_type}}"
@@ -254,6 +255,12 @@ module {{module.name}}
 {{ cm.render_used_modules(module.used_modules) | indent(2,True) -}}
   implicit none ! TODO parse implicit statement
 {{ module.accessibility|indent(2,True) }}
+{% if module.public|length %}
+  public :: {{ module.public|join(",") }}
+{% endif %}
+{% if module.private|length %}
+  private :: {{ module.private|join(",") }}
+{% endif %}
 {% for line in module.declarations %}
 {{line|indent(2,True)}}
 {% endfor %}

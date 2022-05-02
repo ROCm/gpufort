@@ -183,25 +183,13 @@ def _parse_statements(linemaps, file_path,**kwargs):
                 general_accessibility = "public"
                 modes = ["public","private"]
                 explicitly_set_accessibility = {"public": [], "private": []}
-                for kind,identifiers,operators,assignments in accessibility_statement_stack.pop(-1):
-                    if not len(identifiers) and not len(operators) and not len(assignments):
+                for kind,identifiers in accessibility_statement_stack.pop(-1):
+                    if not len(identifiers):
                         general_accessibility = kind
-                    explicitly_set_accessibility[kind] += identifiers + operators + assignments
-                current_node._data["accessibility"] = general_accessibility 
-                for entry_type in types.SCOPE_ENTRY_TYPES:
-                    # procedures have cannot "public"/"private" in the attributes list
-                    # When rendering the routine from the index record, this must be considered
-                    for ivar in current_node._data.get(entry_type,[]):
-                        if not len([mode for mode in modes 
-                                   if mode in ivar["attributes"]]):
-                            set_explicitly = False
-                            for mode, expressions in explicitly_set_accessibility.items():
-                                if ivar["name"] in expressions:
-                                    set_explicitly = True
-                                    ivar["attributes"].append(mode)
-                                    break
-                            if not set_explicitly: 
-                                ivar["attributes"].append(general_accessibility)     
+                    explicitly_set_accessibility[kind] += identifiers
+                current_node._data["accessibility"] = general_accessibility
+                current_node._data["public"] = explicitly_set_accessibility["public"] 
+                current_node._data["private"] = explicitly_set_accessibility["private"]
             current_node = current_node._parent
 
     def ModuleStart():
@@ -211,7 +199,9 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal accessibility_statement_stack
         name = current_tokens[1]
         module = create_fortran_construct_record("module", name, file_path)
-        module["accessibility"] = "public" # may be overwritten via compiler command
+        module["accessibility"] = opts.default_module_accessibility
+        module["public"] = []
+        module["private"] = []
         assert current_node == root
         current_node._data.append(module)
         current_node = Node("module", name, data=module, parent=current_node)
@@ -234,30 +224,18 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_node
         nonlocal current_tokens
         if current_node._kind in ["module","type"]:
-            kind, identifiers, operators, assignments = util.parsing.parse_public_or_private_statement(
+            kind, identifiers = util.parsing.parse_public_or_private_statement(
               current_statement,current_tokens[0])
             for entry in accessibility_statement_stack[-1]:
-                other_kind, other_identifiers, other_operators, other_assignments = entry
-                if (not len(identifiers) and not len(other_identifiers) 
-                   and not len(operators) and not len(other_operators)
-                   and not len(assignments) and not len(other_assignments)):
+                other_kind, other_identifiers = entry
+                if not len(identifiers) and not len(other_identifiers):
                     raise util.error.SyntaxError("'{}' two 'private' or 'public' statements without symbol list in same module")
                 identifiers_subject_to_other_statement = [expr for expr in identifiers if expr in other_identifiers]
-                operators_subject_to_other_statement = [expr for expr in operators if expr in other_operators]
-                assignments_subject_to_other_statement = [expr for expr in assignments if expr in other_assignments]
                 if len(identifiers_subject_to_other_statement):
-                    raise util.error.SyntaxError("variables '{}' have already been subject to another "+
+                    raise util.error.SyntaxError("symbols '{}' have already been subject to another "+
                                             "'private' or 'public' statement with symbol list".format(
                                                 "','".join(identifiers_subject_to_other_statement)))
-                if len(operators_subject_to_other_statement):
-                    raise util.error.SyntaxError("operator '{}' has already been subject to another "+
-                                            "'private' or 'public' statement with symbol list".format(
-                                                "','".join(operators_subject_to_other_statement)))
-                if len(assignments_subject_to_other_statement):
-                    raise util.error.SyntaxError("assignment operator '{}' has already been subject to another "+
-                                            "'private' or 'public' statement with symbol list".format(
-                                                "','".join(assignments_subject_to_other_statement)))
-            accessibility_statement_stack[-1].append((kind,identifiers,operators,assignments))
+            accessibility_statement_stack[-1].append((kind,identifiers))
         else:
             raise util.error.SyntaxError("'{}' statements only allowed in module or type".format(current_tokens[0]))
     
@@ -351,7 +329,9 @@ def _parse_statements(linemaps, file_path,**kwargs):
             derived_type["name"] = name
             derived_type["kind"] = "type"
             derived_type["attributes"] = attributes
-            derived_type["accessibility"] = "public" # may be overwritten via compiler command
+            derived_type["accessibility"] = opts.default_type_accessibility
+            derived_type["public"] = []
+            derived_type["private"] = []
             derived_type["params"] = params
             derived_type["variables"] = []
             derived_type["types"] = []

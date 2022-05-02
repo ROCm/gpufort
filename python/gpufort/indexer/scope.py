@@ -12,13 +12,13 @@ from . import opts
 from . import indexer
 from . import types
 
-def __default_implicit_type(var_expr):
+def _default_implicit_type(var_expr):
     if var_expr[0] in "ijklmn":
         return "integer", None
     else:
         return "real", None
 
-def __implicit_type(var_expr,implicit_none,type_map):
+def _implicit_type(var_expr,implicit_none,type_map):
     """
     :param dict type_map: contains a tuple of Fortran type and kind
                           for certain letters.
@@ -30,19 +30,19 @@ def __implicit_type(var_expr,implicit_none,type_map):
         elif var_expr[0:2] == "_i":
             return "integer", None
         elif not implicit_none:
-            return __default_implicit_type(var_expr)
+            return _default_implicit_type(var_expr)
         else:
             raise util.error.LookupError("no index record found for variable '{}' in scope".format(var_expr))
     else:
         raise util.error.LookupError("no index record found for variable '{}' in scope".format(var_expr))
 
-def __lookup_implicitly_declared_var(var_expr,implicit_none,type_map={}):
+def _lookup_implicitly_declared_var(var_expr,implicit_none,type_map={}):
     """
     :param dict type_map: contains a tuple of Fortran type and kind
                           for certain letters.
     :param bool implicit_none: 
     """
-    f_type, kind = __implicit_type(var_expr,implicit_none,type_map)
+    f_type, kind = _implicit_type(var_expr,implicit_none,type_map)
     if kind != None:
         f_type_full = "".join([f_type,"(",kind,")"])
     else:
@@ -129,23 +129,48 @@ def condense_non_only_groups(iused_modules):
             result.append(entry2)
     return result
 
+
+@util.logging.log_entry_and_exit(opts.log_prefix)
+def _get_accessibility(ientry,iparent):
+    """
+    """
+    if ("private" in ientry["attributes"]
+       or ientry["name"] in iparent["private"]):
+        return "private"
+    elif ("public" in ientry["attributes"]
+       or ientry["name"] in iparent["public"]):
+        return "public"
+    else:
+        return iparent["accessibility"]
+
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def _resolve_dependencies(scope,
                           index_record,
                           index):
+
+    def add_to_scope_(scope,scope_additions):
+        for entry_type in types.SCOPE_ENTRY_TYPES:
+            scope[entry_type] += scope_additions[entry_type]
+
     """Include variable, type, and procedure records from modules used
     by the current record (module,program or procedure).
+
+    Per used module ('parent'), we need to recursively lookup other modules ('children') whose definitions are used
+    by the parent. Only publicly accessible definitions must be included from the children.
+    Like the parent's own definitions, the childrens' definitions are then subject to the parent's
+    accessibility rules.
 
     :param dict scope: the scope that you updated with information from the used modules.
     :param dict index_record: a module/program/procedure index record
     :param list index: list of module/program index records
     """
-    def handle_use_statements_(scope, icurrent,indent=""):
+    def handle_use_statements_(icurrent,depth=0):
         """
         recursive function
         :param dict icurrent: 
         """
         nonlocal index
+        indent="-"*depth
 
         util.logging.log_debug2(
             opts.log_prefix,
@@ -154,11 +179,10 @@ def _resolve_dependencies(scope,
                 indent,
                 icurrent["name"]))
 
+        current_scope = copy.deepcopy(types.EMPTY_SCOPE)
         for used_module in condense_non_only_groups(
                              condense_only_groups(
                                icurrent["used_modules"])):
-            #if used_module["name"] == "esmf_mod":
-            #    #print(used_module["only"])
             # include definitions from other modules
             used_module_ignored = ("intrinsic" in used_module["attributes"]
                                 or used_module["name"] in opts.module_ignore_list)
@@ -167,7 +191,8 @@ def _resolve_dependencies(scope,
                 iother = next((imod for imod in index if imod["name"]==used_module["name"]),None)
                 used_module_found = iother != None
             if used_module_found:
-                handle_use_statements_(scope, iother,indent+"-"*1) # recursive call
+                # depth first search
+                add_to_scope_(current_scope,handle_use_statements_(iother, depth+1)) # recursive call
                 include_all_entries = not len(used_module["only"])
                 if include_all_entries: # simple include
                     util.logging.log_debug2(
@@ -179,12 +204,12 @@ def _resolve_dependencies(scope,
                     for entry_type in types.SCOPE_ENTRY_TYPES:
                         # TODO check implications of always including in context of implicit attributes
                         # TODO introduce workaround visibility type that prevents it from being found in scope by respective routines
-                        scope[entry_type] += copy.deepcopy([irecord for irecord in iother[entry_type] 
-                                                           if "public" in irecord["attributes"]])
+                        current_scope[entry_type] += copy.deepcopy([irecord for irecord in iother[entry_type] 
+                                                                   if _get_accessibility(irecord,iother) == "public"])
                     if len(used_module["renamings"]):
                         for mapping in used_module["renamings"]:
                             for entry_type in types.SCOPE_ENTRY_TYPES:
-                                entry = next((entry for entry in scope[entry_type] 
+                                entry = next((entry for entry in current_scope[entry_type] 
                                              if entry["name"] == mapping["original"]),None)
                             if entry != None:
                                 entry["name"] = mapping["renamed"]
@@ -201,7 +226,7 @@ def _resolve_dependencies(scope,
                     for mapping in used_module["only"]:
                         for entry_type in types.SCOPE_ENTRY_TYPES:
                             for entry in [irecord for irecord in iother[entry_type] 
-                                          if "public" in irecord["attributes"]]:
+                                          if _get_accessibility(irecord,iother) == "public"]:
                                 if entry["name"] == mapping["original"]:
                                     util.logging.log_debug2(opts.log_prefix,
                                       "_resolve_dependencies.handle_use_statements",
@@ -213,15 +238,23 @@ def _resolve_dependencies(scope,
                                     copied_entry = copy.deepcopy(entry)
                                     copied_entry["name"] = mapping[
                                         "renamed"]
-                                    scope[entry_type].append(copied_entry)
+                                    current_scope[entry_type].append(copied_entry)
                             # TODO emit error if nothing could be found
             elif not used_module_ignored:
                 msg = "{}no index record found for module '{}'".format(
                     indent,
                     used_module["name"])
                 raise util.error.LookupError(msg)
-
-    handle_use_statements_(scope, index_record)
+        if icurrent["kind"] == "module" and depth > 0:
+            # Apply the accessibility of the current module
+            filtered_scope = copy.deepcopy(types.EMPTY_SCOPE)
+            for entry_type in types.SCOPE_ENTRY_TYPES:
+                filtered_scope[entry_type] += [irecord for irecord in current_scope[entry_type] 
+                                              if _get_accessibility(irecord,icurrent) == "public"]
+            return filtered_scope
+        else:
+            return current_scope
+    add_to_scope_(scope, handle_use_statements_(index_record))
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
@@ -433,7 +466,7 @@ def search_scope_for_var(scope,
         # elif scope["implicit"] == "default"
         # elif scope["implicit"] == ... 
         #print("vars in scope: "+str([ivar["name"] for ivar in scope["variables"]]),file=sys.stderr)
-        result = __lookup_implicitly_declared_var(var_expr,implicit_none=True,type_map={})
+        result = _lookup_implicitly_declared_var(var_expr,implicit_none=True,type_map={})
     # resolve
     if resolve:
         pass
@@ -464,7 +497,7 @@ def search_scope_for_var(scope,
     #            entry_value = result[entry]
     #            try:
     #                code = compile(entry_value, "<string>", "eval")
-    #                entry_value = str(eval(code, {"__builtins__": {}}, {}))
+    #                entry_value = str(eval(code, {"_builtins__": {}}, {}))
     #            except:
     #                pass
     #            result[entry] = entry_value

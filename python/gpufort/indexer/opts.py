@@ -10,7 +10,13 @@ cuda_fortran = True
 openacc = True
         # Expect OpenACC directives and runtime calls 
 
-pretty_print_index_file = False # Pretty print index before writing it to disk.
+default_module_accessibility = "public"
+        # if no private/public statement is found
+        # in module, this default value is assumed.
+
+default_type_accessibility = "public"
+        # if no private/public statement is found
+        # in module, this default value is assumed.
 
 module_ignore_list = [ # these modules are ignored when checking dependencies
     "iso_c_binding",
@@ -59,6 +65,8 @@ module_ignore_list = [ # these modules are ignored when checking dependencies
     "hipfort_rocsparse_enums",
     "hipfort_types",
 ]
+
+pretty_print_index_file = False # Pretty print index before writing it to disk.
 
 gpufort_module_file_suffix = ".gpufort_mod"
 

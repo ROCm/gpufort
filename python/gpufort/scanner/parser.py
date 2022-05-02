@@ -629,9 +629,7 @@ def _parse_file(linemaps, index, **kwargs):
                                 # TODO
                         else:
                             # constructs
-                            if util.parsing.is_do_while(current_tokens):
-                                pass # do nothing
-                            elif util.parsing.is_do(current_tokens):
+                            if util.parsing.is_do(current_tokens): # includes do while
                                 DoLoopStart()
                             elif current_tokens[0:2] == ["end","do"]:
                                 do_loop_labels.pop(-1)

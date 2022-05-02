@@ -195,6 +195,8 @@ class NamespaceGenerator():
             construct = indexer.create_fortran_construct_record(kind, name, None)
             if kind == "module":
                 construct["accessibility"] = index_record.get("accessibility","public")
+                construct["public"] = index_record.get("public",[])
+                construct["private"] = index_record.get("private",[])
             construct["used_modules"] += index_record["used_modules"]
             construct["types"]        += index_record["types"]
             construct["variables"]    += [var for var in index_record["variables"] if "parameter" in var["attributes"]]

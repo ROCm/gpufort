@@ -7,11 +7,12 @@ end module
 
 module params
   use params1
-  !private
+  private ! hides params1's prec to users of params
 
-  integer, parameter, public :: N = 1000,&
-                                magnitude = 1
+  integer, parameter :: N = 1000,&
+                        magnitude = 1
   real(prec), parameter, public :: param = 1.000e-5_prec
+  public :: N, magnitude
 end module
 
 program main

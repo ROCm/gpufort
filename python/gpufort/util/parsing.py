@@ -1190,17 +1190,17 @@ def parse_public_or_private_statement(statement,kind):
                and compare_ignore_case(expr[0:2],["operator","("])
                and expr[3] == ")"):
                 # TODO check if operator is valid
-                operators.append(expr[2])
+                identifiers.append("".join(expr))
             elif (len(expr) == 4
                and compare_ignore_case(expr[0:2],["assignment","("])
                and expr[3] == ")"):
                 # TODO check if assignment is valid
-                assignments.append(expr[2])
+                identifiers.append("".join(expr))
             else:
                 raise error.SyntaxError("expected identifier or 'operator' + '(' + operator expression + ')'")
         tokens = tokens[num_consumed_tokens:] 
     check_if_all_tokens_are_blank(tokens)
-    return kind_expr, identifiers, operators, assignments
+    return kind_expr, identifiers
 
 def parse_public_statement(statement):
     """:see: parse_public_or_private_statement"""

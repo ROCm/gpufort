@@ -822,14 +822,14 @@ class TestParsingUtils(unittest.TestCase):
           "public operator(.eq.), a, operator(-), assignment(=), assignment(=>)",
         ]
         results = [
-          ("public",[],[],[]),
-          ("PUBLIC",["a"],[],[]),
-          ("public",["a","b"],[],[]),
-          ("PUBLIC",["a"],[],[]),
-          ("public",["a","b"],[],[]),
-          ('public', [], ['.eq.'],[]),
-          ('public', ['a'], ['.eq.', '-'],[]),
-          ('public', ['a'], ['.eq.', '-'],['=','=>']),
+          ("public",[]),
+          ("PUBLIC",["a"]),
+          ("public",["a","b"]),
+          ("PUBLIC",["a"]),
+          ("public",["a","b"]),
+          ('public', ['operator(.eq.)']),
+          ('public', ['operator(.eq.)','a','operator(-)']),
+          ('public', ['operator(.eq.)','a','operator(-)','assignment(=)','assignment(=>)'])
         ]
         for i,expr in enumerate(expressions):
             result = util.parsing.parse_public_statement(expr)

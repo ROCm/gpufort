@@ -3,5 +3,5 @@
 program test4 
   logical, parameter :: dosfcflx1 = .true.
   logical :: dosfcflx2 = .true.           
-  logical,parameter :: dosfcflx3          
+  logical,parameter :: dosfcflx3 = dosfcflx1
 end program test4

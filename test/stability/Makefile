@@ -1,5 +1,5 @@
 CONV        = gpufort
-CONV_FLAGS ?= --wrap --dest hipgpufort
+CONV_FLAGS ?= --wrap --dest hipgpufort --config-file config.py --log-traceback
 
 SOURCES = $(shell find . -name "test*.f90")
 TESTS=$(SOURCES:.f90=.f90-gpufort.f08)

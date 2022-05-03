@@ -73,6 +73,9 @@ def create_index_records_from_declaration(statement,file_path,lineno):
     context = []
     for var in variables:
         name, bounds, rhs = var
+        if ("parameter" in qualifiers 
+           and (rhs == None or not len(rhs))):
+            raise util.error.SyntaxError("parameter must have right-hand side expression")
         bounds_to_pass = bounds if len(bounds) else dimension_bounds 
         ivar = types.create_index_var(f_type, f_len, kind, params, name, qualifiers, bounds_to_pass, rhs, file_path, lineno)
         context.append(ivar)

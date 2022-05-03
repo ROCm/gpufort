@@ -3,6 +3,7 @@
 import os
 import copy
 import tempfile
+import shutil
 
 from gpufort import util
 from gpufort import translator
@@ -324,12 +325,17 @@ class NamespaceGenerator():
         cpp_parameter_expressions = []
         for line in std_out.splitlines():
             #print(line)
-            result,_ =\
-                util.parsing.get_top_level_operands(util.parsing.tokenize(line)) 
+            result1,_ =\
+                util.parsing.get_top_level_operands(util.parsing.tokenize(line))
+            # remove non-printable characters
+            result = []
+            for column in result1:
+                cleaned = "".join([c for c in column if c.isprintable()])
+                if cleaned == "<none>" or not len(cleaned.strip()):
+                    cleaned == None
+                result.append(cleaned)
             #print(result)
             name, f_type, f_len, kind, bpe, rank, sizes, lbounds, rhs_expr = result
-            if f_len == "<none>":
-                f_len == None
             ivar = indexer.types.create_index_var(f_type,f_len,kind,[],name,[],[],rhs_expr)
             translator.analysis.append_c_type(ivar)
             tokens = [" "*2,"constexpr ",ivar["c_type"]]
@@ -361,12 +367,17 @@ class NamespaceGenerator():
         temp_infile.write(fortran_snippet)
         temp_infile.close()
         temp_outfile_path = temp_infile.name.replace(".f90",".x")
-        cmd_compile = [self.fortran_compiler] + self.fortran_compiler_flags + [temp_infile.name,"-o",temp_outfile_path]
+        temp_module_dir   = tempfile.TemporaryDirectory(
+            prefix="gpufort-namespacegen") # TODO set to True
+        # TODO -J,-o assumes gfortran
+        cmd_compile = [self.fortran_compiler,"".join(["-J",temp_module_dir.name])] + self.fortran_compiler_flags + [temp_infile.name,"-o",temp_outfile_path]
         #print(cmd_compile)
         status,_,err_out = util.subprocess.run_subprocess(cmd_compile,True)
         if status != 0:
             raise util.error.LookupError("failed resolving parameters in scope '{}' as compilation with compiler '{}' and flags '{}' failed for the following reason: {}".format(
                 self.scope["tag"],self.fortran_compiler," ".join(self.fortran_compiler_flags),err_out))
+        # TODO should be cleaned up also in case of error
+        shutil.rmtree(temp_module_dir.name,ignore_errors=False)
         if os.path.exists(temp_infile.name):
             os.remove(temp_infile.name)
         cmd_run     = [temp_outfile_path]

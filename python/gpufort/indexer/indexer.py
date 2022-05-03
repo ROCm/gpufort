@@ -435,7 +435,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_node
         nonlocal current_statement
         # TODO need to parse implicit statements too
-        log_detection_("attributes statement")
+        log_detection_("parameter")
         if current_node != root:
             msg = "begin to parse parameter statement '{}'".format(
                 current_statement)

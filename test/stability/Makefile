@@ -12,4 +12,4 @@ $(TESTS): %.f90-gpufort.f08 : %.f90
 	$(CONV) $(CONV_FLAGS) $^ 
 
 clean:
-	rm -rf *.f90-* *.gpufort_mod *-fort2*.cpp
+	rm -rf *.f90-* *.gpufort_mod *.mod *-fort2*.cpp

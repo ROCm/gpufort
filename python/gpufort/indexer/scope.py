@@ -147,7 +147,7 @@ def _get_accessibility(ientry,iparent):
 def _resolve_dependencies(scope,
                           index_record,
                           index,
-                          strict_checks = False):
+                          strict_checks = True):
     """Include variable, type, and procedure records from modules used
     by the current record (module,program or procedure).
 
@@ -204,47 +204,55 @@ def _resolve_dependencies(scope,
                             iother["name"]))
                     # TODO check implications of always including in context of implicit attributes
                     # 1. rename particular definitions found in the other scope
-                    if len(used_module["renamings"]):
-                        for mapping in used_module["renamings"]:
-                            number_of_entries_found = 0
-                            for entry_type in types.SCOPE_ENTRY_TYPES:
-                                for entry in other_scope_copy[entry_type]:
-                                    if entry["name"] == mapping["original"]:
-                                        entry["name"] = mapping["renamed"]
+                    other_variables_to_rename = set(mapping["original"] for mapping in used_module["renamings"])
+                    for entry_type in types.SCOPE_ENTRY_TYPES:
+                        for entry in other_scope_copy[entry_type]:  # must be the scope
+                            if _get_accessibility(entry,iother) == "public":
+                                if entry["name"] in other_variables_to_rename:
+                                    for mapping in used_module["renamings"]:
+                                        orig_name = mapping["original"]
+                                        if entry["name"] == orig_name:
+                                            util.logging.log_debug2(opts.log_prefix,
+                                              "_resolve_dependencies.handle_use_statements",
+                                              "{}use {} '{}' from module '{}' as '{}'".format(
+                                              indent,
+                                              entry_type[0:-1],orig_name,
+                                              iother["name"],
+                                              mapping["renamed"]))
+                                            if orig_name in other_variables_to_rename: # name might exist multipe times, hiding
+                                                other_variables_to_rename.remove(orig_name)
+                                            entry["name"] = mapping["renamed"]
+                                # always append entries
+                                current_scope[entry_type].append(entry)
+
+                    # emit error if nothing could be found; note that some definitions might
+                    # stem from third-party modules. TODO introduce ignore list
+                    if strict_checks and len(other_variables_to_rename) > 0:
+                        raise util.error.LookupError("no public index record found for '{}' in module '{}'".format("','".join(other_variables_to_rename),iother["name"]))
+#                    add_to_scope_(current_scope,other_scope_copy,iother) 
+                else:#(include_all_entries) - select only particular entries
+                    other_variables_to_use = set(mapping["original"] for mapping in used_module["only"])
+                    for mapping in used_module["only"]:
+                        orig_name = mapping["original"]
+                        for entry_type in types.SCOPE_ENTRY_TYPES:
+                            for entry in other_scope_copy[entry_type]:
+                                if _get_accessibility(entry,iother) == "public":
+                                    if entry["name"] == orig_name:
                                         util.logging.log_debug2(opts.log_prefix,
                                           "_resolve_dependencies.handle_use_statements",
-                                          "{}use {} '{}' from module '{}' as '{}'".format(
+                                          "{}only use {} '{}' from module '{}' as '{}'".format(
                                           indent,
-                                          entry_type[0:-1],mapping["original"],
+                                          entry_type[0:-1],orig_name,
                                           iother["name"],
                                           mapping["renamed"]))
-                                        number_of_entries_found += 1
-                            # emit error if nothing could be found; note that some definitions might
-                            # stem from third-party modules. TODO introduce ignore list
-                            if strict_checks and number_of_entries_found < 1:
-                                raise util.error.LookupError("no public index record found for '{}' in module '{}'".format(mapping["original"],iother["name"]))
-                    add_to_scope_(current_scope,other_scope_copy) 
-                else:#(include_all_entries) - select only particular entries
-                    for mapping in used_module["only"]:
-                        number_of_entries_found = 0
-                        for entry_type in types.SCOPE_ENTRY_TYPES:
-                            for entry in [irecord for irecord in other_scope_copy[entry_type]  # must be the scope
-                                          if _get_accessibility(irecord,iother) == "public"]:
-                                if entry["name"] == mapping["original"]:
-                                    util.logging.log_debug2(opts.log_prefix,
-                                      "_resolve_dependencies.handle_use_statements",
-                                      "{}only use {} '{}' from module '{}' as '{}'".format(
-                                      indent,
-                                      entry_type[0:-1],mapping["original"],
-                                      iother["name"],
-                                      mapping["renamed"]))
-                                    entry["name"] = mapping["renamed"]
-                                    current_scope[entry_type].append(entry)
-                                    number_of_entries_found += 1
-                        # emit error if nothing could be found; note that some definitions might
-                        # stem from third-party modules. TODO introduce ignore list
-                        if strict_checks and number_of_entries_found < 1:
-                            raise util.error.LookupError("no public index record found for '{}' in module '{}'".format(mapping["original"],iother["name"]))
+                                        if orig_name in other_variables_to_use: # name might exist multiple times, hiding
+                                            other_variables_to_use.remove(orig_name)
+                                        entry["name"] = mapping["renamed"]
+                                        current_scope[entry_type].append(entry) # only append if in list
+                    # emit error if nothing could be found; note that some definitions might
+                    # stem from third-party modules. TODO introduce ignore list
+                    if strict_checks and len(other_variables_to_use) > 0:
+                       raise util.error.LookupError("no public index record found for '{}' in module '{}'".format("','".join(other_variables_to_use),iother["name"]))
             elif not used_module_ignored:
                 msg = "{}no index record found for module '{}' and module is not on ignore list".format(
                     indent,

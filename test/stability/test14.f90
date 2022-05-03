@@ -12,7 +12,6 @@ module mymod
 contains
 
 subroutine mysub()
-  use mymod
   integer :: a
   a = 1
 end subroutine

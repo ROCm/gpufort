@@ -1,5 +1,11 @@
-module mymod
+module myothermod
+  private
   integer, parameter :: prec = selected_real_kind(5)
+  public :: prec
+end module
+
+module mymod
+  use myothermod, only: prec
 
 contains
 

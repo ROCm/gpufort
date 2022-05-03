@@ -36,7 +36,28 @@ type(gpufort_array{{tavar.rank}}){{qualifiers}} :: {{name}}
 {########################################################################################}
 {%- macro render_used_modules(used_modules) -%}
 {% for module in used_modules %}
-use {{module.name}}{{(", "+module.renamings|join(",") if module.renamings|length)}}{{(", renamings: "+module.renamings|join(",") if module.renamings|length)}}
+{%   if module.renamings|length %}
+use {{module.name}},&
+{%     for item in module.renamed %}
+{%       if item.renamed != item.original %}
+{{ (item.renamed + " => " + item.original) | indent(2,True) }}{{",&\n" if not loop.last}}
+{%       else %}
+{{ (item.original) | indent(2,True) }}{{",&\n" if not loop.last}}
+{%       endif %}
+{%     endfor %}
+{%   elif module.only|length %}
+use {{module.name}}, only:&
+{%     for item in module.only %}
+{%       if item.renamed != item.original %}
+{{ (item.renamed + " => " + item.original) | indent(2,True) }}{{",&\n" if not loop.last}}
+{%       else %}
+{{ (item.original) | indent(2,True) }}{{",&\n" if not loop.last}}
+{%       endif %}
+{%     endfor %}
+{%   else %}
+use {{module.name}}
+{%   endif %}
+{% else %}
 {% endfor %}
 {%- endmacro -%}
 {########################################################################################}

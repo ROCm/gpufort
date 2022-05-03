@@ -5,15 +5,6 @@ from . import fortran
 from . import grammar
 from . import directives
 
-class TTAttributes(base.TTNode, fortran.Attributed):
-
-    def _assign_fields(self, tokens):
-        self.qualifiers, self._rhs = tokens
-
-    def c_str(self):
-        return ""
-
-
 class TTCufKernelCall(base.TTNode):
 
     def _assign_fields(self, tokens):
@@ -475,7 +466,6 @@ class TTCufCublasCall(base.TTNode):
 ## Link actions
 grammar.cuf_kernel_do.setParseAction(TTCufKernelDo)
 #cuf_loop_kernel.setParseAction(TTCufKernelDo)
-grammar.attributes.setParseAction(TTAttributes)
 grammar.allocated.setParseAction(TTCufAllocated)
 grammar.memcpy.setParseAction(TTCufMemcpyIntrinsic)
 grammar.non_zero_check.setParseAction(TTCufNonZeroCheck)
@@ -484,4 +474,3 @@ grammar.cuf_cudamemcpy.setParseAction(TTCufCudaMemcpy)
 grammar.cuf_cudamemcpy2D.setParseAction(TTCufCudaMemcpy2D)
 grammar.cuf_cudamemcpy3D.setParseAction(TTCufCudaMemcpy3D)
 grammar.cuf_cublas_call.setParseAction(TTCufCublasCall)
-grammar.cuf_kernel_call.setParseAction(TTCufKernelCall)

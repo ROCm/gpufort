@@ -234,11 +234,10 @@ def find_all_matching_exclude_directives(ttnode,
         elif isinstance(curr, tree.TTNode):
             for el in curr.child_nodes():
                 traverse_(el)
-
     traverse_(ttnode)
     return result
 
-def search_lrvalue_exprs_in_subtree(ttnode, search_filter, scope, min_rank=-1):
+def search_value_exprs_in_subtree(ttnode, search_filter, scope, min_rank=-1):
     """All lvalue and ralue exprs in the subtree.
     :note: Returns simplified expressions, stripped off all array indexing syntax.
     :note: Excludes device predefined variables such as `threadidx%x` etc.
@@ -268,7 +267,7 @@ def vars_in_subtree(ttnode, scope):
             return node._value.is_tensor()
         else:
             return cond1 
-    result = search_lrvalue_exprs_in_subtree(ttnode, search_filter, scope)
+    result = search_value_exprs_in_subtree(ttnode, search_filter, scope)
     return result
 
 def arrays_in_subtree(ttnode, scope):
@@ -281,7 +280,7 @@ def arrays_in_subtree(ttnode, scope):
         else:
             return cond1 
 
-    return search_lrvalue_exprs_in_subtree(ttnode, search_filter, scope, 1)
+    return search_value_exprs_in_subtree(ttnode, search_filter, scope, 1)
 
 
 def inout_arrays_in_subtree(ttnode, scope):
@@ -294,7 +293,7 @@ def inout_arrays_in_subtree(ttnode, scope):
         else:
             return cond1 
 
-    return search_lrvalue_exprs_in_subtree(ttnode, search_filter, scope, 1)
+    return search_value_exprs_in_subtree(ttnode, search_filter, scope, 1)
 
 #def all_unmapped_arrays(ttloopnest, scope):
 #    """:return: Name of all unmapped array variables"""

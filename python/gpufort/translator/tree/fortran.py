@@ -330,7 +330,7 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
 class TTValue(base.TTNode):
     
     def _assign_fields(self, tokens):
-        self._value           = tokens[0]
+        self._value           = tokens[0][0]
         self._reduction_index = None
         self._f_str           = None
    
@@ -814,6 +814,9 @@ class TTAssignment(base.TTNode):
     def c_str(self):
         return "".join([self._lhs.c_str(),"=",flatten_arithmetic_expression(self._rhs),";\n"])
 
+    def child_nodes(self):
+        return [self._lhs, self._rhs]
+
     def f_str(self):
         return "".join([self._lhs.f_str(),"=",flatten_arithmetic_expression(
             self._rhs, converter=base.make_f_str),"\n"])
@@ -822,6 +825,9 @@ class TTComplexAssignment(base.TTNode):
 
     def _assign_fields(self, tokens):
         self._lhs, self._rhs = tokens
+
+    def child_nodes(self):
+        return [self._lhs, self._rhs]
 
     def c_str(self):
         """
@@ -840,6 +846,9 @@ class TTMatrixAssignment(base.TTNode):
     def _assign_fields(self, tokens):
         self._lhs, self._rhs = tokens
 
+    def child_nodes(self):
+        return [self._lhs, self._rhs]
+
     def c_str(self):
         """
         Expand the matrix assignment.
@@ -851,22 +860,6 @@ class TTMatrixAssignment(base.TTNode):
                 self._lhs) + argument + "=" + flatten_arithmetic_expression(
                     expression) + ";\n"
         return result
-
-
-class TTIntentQualifier(base.TTNode):
-
-    def _assign_fields(self, tokens):
-        #print("found intent_qualifier")
-        #print(tokens[0])
-        self._intent = tokens[0][0]
-
-    def c_str(self):
-        #print(self._intent)
-        return "const" if self._intent.lower() == "in" else ""
-
-    def f_str(self):
-        return "intent({0})".format(self._intent)
-
 
 class TTRange(base.TTNode):
 
@@ -983,38 +976,6 @@ class TTArgumentList(base.TTNode):
         else:
             return ""
 
-class TTDimensionQualifier(base.TTNode):
-
-    def _assign_fields(self, tokens):
-        self.args = tokens[0][0]
-
-    def c_str(self):
-        return base.make_c_str(self.args)
-
-    def f_str(self):
-        return "dimension{0}".format(base.make_f_str(self.args))
-
-
-class Attributed():
-
-    def get_string_qualifiers(self):
-        """
-        :param name: lower case string qualifier, i.e. no more complex qualifier such as 'dimension' or 'intent'.
-        """
-        return [q.lower() for q in self.qualifiers if type(q) is str]
-
-    def has_string_qualifier(self, name):
-        """
-        :param name: lower case string qualifier, i.e. no more complex qualifier such as 'dimension' or 'intent'.
-        """
-        result = False
-        for q in self.qualifiers:
-            result |= type(q) is str and q.lower() == name.lower()
-        return result
-
-    def has_dimension(self):
-        return len(base.find_all(self.qualifiers, TTDimensionQualifier))
-
 class TTIfElseBlock(base.TTContainer):
     def _assign_fields(self, tokens):
         self.indent = "" # container of if/elseif/else branches, so no indent
@@ -1120,8 +1081,6 @@ grammar.lbound_inquiry.setParseAction(TTLboundInquiry)
 grammar.ubound_inquiry.setParseAction(TTUboundInquiry)
 grammar.array_range.setParseAction(TTRange)
 grammar.arglist.setParseAction(TTArgumentList)
-grammar.dimension_qualifier.setParseAction(TTDimensionQualifier)
-grammar.intent_qualifier.setParseAction(TTIntentQualifier)
 grammar.arithmetic_expression.setParseAction(TTArithmeticExpression)
 grammar.arithmetic_logical_expression.setParseAction(TTArithmeticExpression)
 grammar.complex_arithmetic_expression.setParseAction(
@@ -1132,5 +1091,4 @@ grammar.assignment.setParseAction(TTAssignment)
 grammar.matrix_assignment.setParseAction(TTMatrixAssignment)
 grammar.complex_assignment.setParseAction(TTComplexAssignment)
 # statements
-grammar.return_statement.setParseAction(TTReturn)
 grammar.fortran_subroutine_call.setParseAction(TTSubroutineCall)

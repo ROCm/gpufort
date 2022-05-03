@@ -91,6 +91,7 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
     if loops_generated: # tree was modified
         ttvalues = analysis.find_all_matching_exclude_directives(ttloopnest.body,
                                                                  lambda ttnode: isinstance(ttnode,tree.TTValue))
+    #print([t.f_str() for t in ttvalues])
     c_ranks = transformations.adjust_explicitly_mapped_arrays_in_rank(ttvalues,ttloopnest.all_mapped_vars())
     #TODO Investigate what happens if such an array is mapped to flat array
 

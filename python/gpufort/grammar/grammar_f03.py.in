@@ -38,7 +38,14 @@ conversion      = Forward()
 inquiry_function = Forward()
 
 #rvalue = OPTSIGN + (conversion | inquiry_function | complex_arithmetic_expression | derived_type_elem | func_call | identifier | logical | character | number)  # |: ordered OR, order is important
-rvalue = ( conversion | inquiry_function | complex_arithmetic_expression | derived_type_elem | func_call | identifier | logical | character | number)  # |: ordered OR, order is important
+
+# |: ordered OR, order is import
+# somehow adding the Group is import to prevent that the expression is inlined 
+rvalue = Group(conversion | inquiry_function | complex_arithmetic_expression | derived_type_elem | func_call | identifier | logical | character | number)  # |: ordered OR, order is import
+# Add Group to have same structure as rvalue
+lvalue           = Group(derived_type_elem | func_call | identifier)
+lvalueList       = Group(delimitedList(lvalue))
+
 fortran_subroutine_call = CALL + func_call
 
 # assignments
@@ -65,8 +72,6 @@ power_value2 = LPAR + arithmetic_expression + RPAR
 power_value  = power_value2 | power_value1
 power       = power_value + Suppress("**") + power_value
 
-lvalue           = derived_type_elem | func_call | identifier
-lvalueList       = Group(delimitedList(lvalue))
 assignment_begin = lvalue + EQ
 assignment       = lvalue + EQ + arithmetic_logical_expression # ! emits 2 tokens: *,*
 
@@ -162,82 +167,14 @@ do_loop_start    = Regex(r"(\w+\s*:)?\s*do",re.IGNORECASE).suppress()
 fortran_do       = do_loop_start + assignment + COMMA + arithmetic_expression + Optional(COMMA + arithmetic_expression,default=None)
 fortran_do_while = do_loop_start + WHILE + LPAR + arithmetic_logical_expression + RPAR 
 
-# TODO Dominic: Simplify
-## Declaration  // example: "real(kind=8), device, host, parameter :: rhx, rhy"
-TYPE,CHARACTER,INTEGER,LOGICAL,REAL,COMPLEX,DOUBlE,PRECISION = makeCaselessLiteral(\
-  "type,character,integer,logical,real,complex,double,precision")
-MULT=Literal("*")
-kind_rvalue = MULT | integer | ( ~LEN + identifier )
-kind_list =\
-      LPAR +\
-        Optional(( KIND + EQ + kind_rvalue) |\
-        ( KIND + LPAR + kind_rvalue + RPAR) |\
-        kind_rvalue,default=None) +\
-        OPTCOMMA +\
-        Optional(LEN + EQ + kind_rvalue,default=None) +\
-      RPAR  # emits 2 tokens [kind,len]
-mult_type = ( MULT.suppress() + Optional(LPAR) + kind_rvalue + Optional(RPAR)).setParseAction(lambda tokens: [tokens[0],tokens[0]]) # emits 2 tokens
-
-size_of = Optional( Group(mult_type) | Group(kind_list), default = [None,None] )
-
-logical_type         = LOGICAL + size_of                                                                              # emits 2 tokens
-character_type       = CHARACTER + size_of                                                                            # emits 2 tokens
-integer_type         = INTEGER + size_of                                                                              # emits 2 tokens
-real_type            = REAL + size_of                                                                                 # emits 2 tokens
-double_precision_type = (DOUBlE + PRECISION).setParseAction(lambda tokens: ["real",["8",None]])                       # emits 2 tokens !
-complex_type         = COMPLEX + size_of                                                                              # emits 2 tokens
-type_type            = (TYPE + LPAR + identifier + RPAR).setParseAction(lambda tokens: [tokens[0],[tokens[1],None]]) # emits 2 tokens
-
-datatype_comment = character_type | type_type 
-datatype_convert = logical_type | integer_type | real_type | double_precision_type | complex_type
-datatype         = ( datatype_comment | datatype_convert )
-
 # attributes/qualifiers
 INTENT,IN,OUT,INOUT,DIMENSION = makeCaselessLiteral(\
   "intent,in,out,inout,dimension")
 INTENT = INTENT.suppress()
 DIMENSION = DIMENSION.suppress()
 
-PUBLIC,PRIVATE,EXTERNAL,INTRINSIC = makeCaselessLiteral(\
-  "public,private,external,intrinsic")
-simple_attribute = Regex(r"\b(public|private|external|intrinsic|value|parameter|allocatable|pointer|save|target|shared|device|pinned|managed|optional|vartype|contiguous)\b",re.IGNORECASE)
-# TODO identify how many what dimension(5) means. Range 1:5?
-dimension_value     = array_range | arithmetic_expression | Literal("*")
-dimension_qualifier = Group(DIMENSION + arglist) # emits [*]
-intent_qualifier    = Group(INTENT + LPAR + (INOUT|IN|OUT) + RPAR)   # emits *
-qualifier           = intent_qualifier | dimension_qualifier | simple_attribute
-qualifier_list      = Group(delimitedList(qualifier))
-#precisiondeclared_var = identifier + EQ + CASELESS_LITERAL("selected_kind").suppress() + LPAR + integer + COMMA + integer + RPAR # ! emits [*,[*],*]
-#precision_declaration      = integer_type + COMMA + qualifier_list + COLONS + Group(delimitedList(precisiondeclared_var_var))   # ! emits *,[*],[*]
-
-# Define forward-declared block
+# TODO get rid of this too
 comment            = Combine(Literal("!") + ~(~White()+Literal("$")) + restOfLine())
-print_statement    = Combine(oneOf("print write read format",caseless=CASELESS) + restOfLine)
-return_statement   = CASELESS_LITERAL("return")
-control_statements = return_statement
-
-## Attributes // example: attributes
-attributes = CASELESS_LITERAL("attributes").suppress() + LPAR + qualifier_list + RPAR + COLONS + Group(delimitedList(identifier))
-
-## Program / Subroutine / Function
-PROGRAM,MODULE,PROCEDURE,FUNCTION,SUBROUTINE,ATTRIBUTES,IMPLICIT,NONE,USE,ONLY,CONTAINS,INTERFACE =  makeCaselessLiteral(\
-  "program,module,procedure,function,subroutine,attributes,implicit,none,use,only,contains,interface",suppress=True)
-# preprocessor_directive = "
-
-# Example:
-# attributes(global) subroutine testlibm( a, b )
-#   use libm
-#   real, device :: a(*), b(*)
-#   i = threadIdx%x
-#   b(i) = cbrt(a(i))
-# end subroutine
-# USE namespace [, rename-list], [ONLY: only-list]
-NONSTRUCTURE = DO|IF|SELECT|WHERE|FORALL|FOREACH|TYPE|INTERFACE
-
-# TODO does not consider pointer mappings 'use foo, only: bar => bar2'
-only = Group(identifier + Optional(PEQ + identifier,default=None))
-use = USE + Optional(COMMA + INTRINSIC,default=None) + identifier + Optional(COMMA + ONLY + single_colon.suppress() + Group(delimitedList(only)),default=[]) # emits 3 tokens; [*,*,[*]]
-implicit = IMPLICIT + NONE # TODO no complete description
 
 raw_identifier     = pyparsing_common.identifier.copy() # produces a string instead of a identifier translator tree node
 raw_identifier_list = Group(delimitedList(raw_identifier))

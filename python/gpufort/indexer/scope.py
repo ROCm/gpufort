@@ -211,17 +211,17 @@ def _resolve_dependencies(scope,
                             for entry_type in types.SCOPE_ENTRY_TYPES:
                                 entry = next((entry for entry in current_scope[entry_type] 
                                              if entry["name"] == mapping["original"]),None)
-                            if entry != None:
-                                entry["name"] = mapping["renamed"]
-                                util.logging.log_debug2(opts.log_prefix,
-                                  "_resolve_dependencies.handle_use_statements",
-                                  "{}use {} '{}' from module '{}' as '{}'".format(
-                                  indent,
-                                  entry_type[0:-1],mapping["original"],
-                                  iother["name"],
-                                  mapping["renamed"]))
-                                break
-                            # TODO emit error if nothing could be found
+                                if entry != None:
+                                    entry["name"] = mapping["renamed"]
+                                    util.logging.log_debug2(opts.log_prefix,
+                                      "_resolve_dependencies.handle_use_statements",
+                                      "{}use {} '{}' from module '{}' as '{}'".format(
+                                      indent,
+                                      entry_type[0:-1],mapping["original"],
+                                      iother["name"],
+                                      mapping["renamed"]))
+                                    break
+                                # TODO emit error if nothing could be found
                 else: # include_all_entries
                     for mapping in used_module["only"]:
                         for entry_type in types.SCOPE_ENTRY_TYPES:

@@ -40,18 +40,18 @@ type(gpufort_array{{tavar.rank}}){{qualifiers}} :: {{name}}
 use {{module.name}},&
 {%     for item in module.renamings %}
 {%       if item.renamed != item.original %}
-{{ (item.renamed + " => " + item.original) | indent(2,True) }}{{",&\n" if not loop.last}}
+{{ (item.renamed + " => " + item.original) | indent(2,True) }}{{",&" if not loop.last}}
 {%       else %}
-{{ (item.original) | indent(2,True) }}{{",&\n" if not loop.last}}
+{{ (item.original) | indent(2,True) }}{{",&" if not loop.last}}
 {%       endif %}
 {%     endfor %}
 {%   elif module.only|length %}
 use {{module.name}}, only:&
 {%     for item in module.only %}
 {%       if item.renamed != item.original %}
-{{ (item.renamed + " => " + item.original) | indent(2,True) }}{{",&\n" if not loop.last}}
+{{ (item.renamed + " => " + item.original) | indent(2,True) }}{{",&" if not loop.last}}
 {%       else %}
-{{ (item.original) | indent(2,True) }}{{",&\n" if not loop.last}}
+{{ (item.original) | indent(2,True) }}{{",&" if not loop.last}}
 {%       endif %}
 {%     endfor %}
 {%   else %}

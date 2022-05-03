@@ -204,6 +204,7 @@ class NamespaceGenerator():
                 construct["public"]        = [ident for ident in index_record.get("public",[]) if ident in type_and_parameter_names]
                 construct["private"]       = [ident for ident in index_record.get("private",[]) if ident in type_and_parameter_names]
             construct["used_modules"] = []
+            simple_use_statements_module_names = set()
             for used_module1 in index_record["used_modules"]:
                 used_module = copy.deepcopy(used_module1)
                 if len(used_module1["renamings"]) or len(used_module1["only"]):
@@ -224,7 +225,9 @@ class NamespaceGenerator():
                             # TODO also include types
                     construct["used_modules"].append(used_module)
                 else:
-                    construct["used_modules"].append(used_module)
+                    if used_module["name"] not in simple_use_statements_module_names:
+                        simple_use_statements_module_names.add(used_module["name"])
+                        construct["used_modules"].append(used_module)
             handle_use_statements_(construct) # take care of duplicates
             # extension
             construct["declarations"] = []

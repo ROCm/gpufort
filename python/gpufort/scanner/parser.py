@@ -263,7 +263,7 @@ def _parse_file(linemaps, index, **kwargs):
         new.ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
 
-    def Attributes(tokens):
+    def Attributes():
         nonlocal translation_enabled
         nonlocal current_node
         nonlocal current_linemap
@@ -273,15 +273,16 @@ def _parse_file(linemaps, index, **kwargs):
         new.ignore_in_s2s_translation = not translation_enabled
         current_node.append(new)
 
-    def UseStatement(tokens):
+    def UseStatement():
         nonlocal current_node
         nonlocal current_linemap
         nonlocal current_statement_no
+        nonlocal current_tokens
         log_detection_("use statement")
         new = tree.STUseStatement(current_linemap, current_statement_no)
         new.ignore_in_s2s_translation = not translation_enabled
         new.name = translator.tree.make_f_str(
-            tokens[1]) # just get the name, ignore specific includes
+            current_tokens[1]) # just get the name, ignore specific includes
         append_if_not_recording_(new)
 
     def PlaceHolder():
@@ -374,14 +375,13 @@ def _parse_file(linemaps, index, **kwargs):
             #], type(new.parent)
             append_if_not_recording_(new)
 
-    def CufKernelCall(tokens):
+    def CufKernelCall():
         nonlocal translation_enabled
         nonlocal current_node
         nonlocal current_linemap
         nonlocal current_statement_no
         nonlocal keep_recording
         log_detection_("CUDA kernel call")
-        kernel_name, kernel_launch_args, args = tokens
         assert type(current_node) in [
             tree.STModule, tree.STProcedure, tree.STProgram
         ], "type is: " + str(type(current_node))
@@ -497,21 +497,11 @@ def _parse_file(linemaps, index, **kwargs):
             translation_enabled = False
 
     # TODO completely remove / comment out !$acc end kernels
-    tree.grammar.use.setParseAction(UseStatement)
-
-    tree.grammar.attributes.setParseAction(Attributes)
     tree.grammar.ALLOCATED.setParseAction(Allocated)
     tree.grammar.non_zero_check.setParseAction(NonZeroCheck)
 
     # CUDA Fortran
     tree.grammar.cuda_lib_call.setParseAction(CufLibCall)
-    tree.grammar.cuf_kernel_call.setParseAction(CufKernelCall)
-
-    # OpenACC
-    tree.grammar.ACC_START.setParseAction(AccDirective)
-
-    # GPUFORT control
-    tree.grammar.gpufort_control.setParseAction(GpufortControl)
 
     current_file = str(fortran_file_path)
     current_node.children.clear()
@@ -630,6 +620,8 @@ def _parse_file(linemaps, index, **kwargs):
                             elif not cuf_implicit_memcpy:
                                 Assignment(lhs_ivar,lhs_expr)
                                 # TODO
+                            if cuda_fortran and next((tk for tk in current_tokens if tk[0:2] in ["nv","cu"]),None) != None:
+                                scan_string_("cuda_lib_call",tree.grammar.cuda_lib_call)
                         else:
                             # constructs
                             if util.parsing.is_do(current_tokens): # includes do while
@@ -656,16 +648,18 @@ def _parse_file(linemaps, index, **kwargs):
                                 # TODO parse Fortran statements and apply these 
                                 # constructs as cuda_fortran-specific postprocessing
                                 if cuda_fortran:
-                                    if current_tokens[0] == "attributes":
-                                        try_to_parse_string_("attributes",
-                                                            tree.grammar.attributes)
-                                    elif "<<<" in current_tokens:
-                                        try_to_parse_string_(
-                                            "cuf_kernel_call",
-                                            tree.grammar.cuf_kernel_call)
-                                    if "cu" in current_statement_stripped:
+                                    if (current_tokens[0] == "attributes" 
+                                       and not "function" in current_tokens
+                                       and not "subroutine" in current_tokens):
+                                        Attributes()
+                                    elif (current_tokens[0] == "call"
+                                         and current_tokens[1].isidentifier()
+                                         and current_tokens[2] == "<<<"):
+                                        CufKernelCall()
+                                    # TODO if a cuda prefix has been found
+                                    if next((tk for tk in current_tokens if tk[0:2] in ["nv","cu"]),None) != None:
                                         scan_string_("cuda_lib_call",
-                                                    tree.grammar.cuda_lib_call)
+                                                tree.grammar.cuda_lib_call)
                                     if "allocated" in current_tokens:
                                         scan_string_("allocated", tree.grammar.ALLOCATED)
                                     if ("/=" in current_statement_stripped
@@ -680,7 +674,7 @@ def _parse_file(linemaps, index, **kwargs):
                                     if current_tokens[1] == "type":
                                         TypeEnd()
                                 elif current_tokens[0] == "use":
-                                    try_to_parse_string_("use", tree.grammar.use)
+                                    UseStatement()
                                 elif current_tokens[0] == "implicit":
                                     PlaceHolder()
                                 elif current_tokens[0] == "contains":

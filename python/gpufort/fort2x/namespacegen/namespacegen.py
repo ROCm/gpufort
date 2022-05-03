@@ -262,9 +262,7 @@ class NamespaceGenerator():
             return construct
         
         def handle_use_statements_(icurrent):
-            for used_module in indexer.scope.condense_non_only_groups(
-                                 indexer.scope.condense_only_groups(
-                                   icurrent["used_modules"])):
+            for used_module in indexer.scope.combine_use_statements(icurrent["used_modules"]):
                 is_third_party_module = ("intrinsic" in used_module["attributes"]
                                          or used_module["name"] in indexer.scope.opts.module_ignore_list)
                 if not is_third_party_module:

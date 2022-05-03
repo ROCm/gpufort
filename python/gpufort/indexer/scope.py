@@ -146,12 +146,8 @@ def _get_accessibility(ientry,iparent):
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def _resolve_dependencies(scope,
                           index_record,
-                          index):
-
-    def add_to_scope_(scope,scope_additions):
-        for entry_type in types.SCOPE_ENTRY_TYPES:
-            scope[entry_type] += scope_additions[entry_type]
-
+                          index,
+                          strict_checks = False):
     """Include variable, type, and procedure records from modules used
     by the current record (module,program or procedure).
 
@@ -164,6 +160,10 @@ def _resolve_dependencies(scope,
     :param dict index_record: a module/program/procedure index record
     :param list index: list of module/program index records
     """
+    def add_to_scope_(scope,scope_additions):
+        for entry_type in types.SCOPE_ENTRY_TYPES:
+            scope[entry_type] += scope_additions[entry_type]
+    
     def handle_use_statements_(icurrent,depth=0):
         """
         recursive function
@@ -183,18 +183,17 @@ def _resolve_dependencies(scope,
         for used_module in condense_non_only_groups(
                              condense_only_groups(
                                icurrent["used_modules"])):
+            #print(used_module)
             # include definitions from other modules
             used_module_ignored = ("intrinsic" in used_module["attributes"]
-                                or used_module["name"] in opts.module_ignore_list)
+                                  or used_module["name"] in opts.module_ignore_list)
             used_module_found = False 
             if not used_module_ignored:
                 iother = next((imod for imod in index if imod["name"]==used_module["name"]),None)
                 used_module_found = iother != None
             if used_module_found:
                 # depth first search
-                scope_additions = copy.deepcopy(types.EMPTY_SCOPE)
-                add_to_scope_(scope_additions,
-                              handle_use_statements_(iother, depth+1)) # recursive
+                other_scope_copy = copy.deepcopy(create_scope(index, iother["name"])) # recursive, deepcopy to not modify cached scopes
                 include_all_entries = not len(used_module["only"])
                 if include_all_entries: # simple include
                     util.logging.log_debug2(
@@ -203,15 +202,13 @@ def _resolve_dependencies(scope,
                         "{}use all definitions from module '{}'".format(
                             indent,
                             iother["name"]))
-                    for entry_type in types.SCOPE_ENTRY_TYPES:
-                        # TODO check implications of always including in context of implicit attributes
-                        scope_additions[entry_type] += copy.deepcopy([irecord for irecord in iother[entry_type] 
-                                                                      if _get_accessibility(irecord,iother) == "public"])
+                    # TODO check implications of always including in context of implicit attributes
+                    # 1. rename particular definitions found in the other scope
                     if len(used_module["renamings"]):
                         for mapping in used_module["renamings"]:
                             number_of_entries_found = 0
                             for entry_type in types.SCOPE_ENTRY_TYPES:
-                                for entry in scope_additions[entry_type]:
+                                for entry in other_scope_copy[entry_type]:
                                     if entry["name"] == mapping["original"]:
                                         entry["name"] = mapping["renamed"]
                                         util.logging.log_debug2(opts.log_prefix,
@@ -222,14 +219,16 @@ def _resolve_dependencies(scope,
                                           iother["name"],
                                           mapping["renamed"]))
                                         number_of_entries_found += 1
-                            # TODO emit error if nothing could be found, has to take third-party modules into account
-                            #if number_of_entries_found != 1:
-                            #    raise util.error.LookupError("no public index record found for '{}' in module '{}'".format(mapping["original"],iother["name"])
-                else:#(include_all_entries)
+                            # emit error if nothing could be found; note that some definitions might
+                            # stem from third-party modules. TODO introduce ignore list
+                            if strict_checks and number_of_entries_found < 1:
+                                raise util.error.LookupError("no public index record found for '{}' in module '{}'".format(mapping["original"],iother["name"]))
+                    add_to_scope_(current_scope,other_scope_copy) 
+                else:#(include_all_entries) - select only particular entries
                     for mapping in used_module["only"]:
                         number_of_entries_found = 0
                         for entry_type in types.SCOPE_ENTRY_TYPES:
-                            for entry in [irecord for irecord in iother[entry_type] 
+                            for entry in [irecord for irecord in other_scope_copy[entry_type]  # must be the scope
                                           if _get_accessibility(irecord,iother) == "public"]:
                                 if entry["name"] == mapping["original"]:
                                     util.logging.log_debug2(opts.log_prefix,
@@ -239,15 +238,13 @@ def _resolve_dependencies(scope,
                                       entry_type[0:-1],mapping["original"],
                                       iother["name"],
                                       mapping["renamed"]))
-                                    copied_entry = copy.deepcopy(entry)
-                                    copied_entry["name"] = mapping[
-                                        "renamed"]
-                                    scope_additions[entry_type].append(copied_entry)
+                                    entry["name"] = mapping["renamed"]
+                                    current_scope[entry_type].append(entry)
                                     number_of_entries_found += 1
-                        # TODO emit error if nothing could be found, has to take third-party modules into account
-                        #if number_of_entries_found != 1:
-                        #    raise util.error.LookupError("no public index record found for '{}' in module '{}'".format(mapping["original"],iother["name"])
-                add_to_scope_(current_scope,scope_additions) 
+                        # emit error if nothing could be found; note that some definitions might
+                        # stem from third-party modules. TODO introduce ignore list
+                        if strict_checks and number_of_entries_found < 1:
+                            raise util.error.LookupError("no public index record found for '{}' in module '{}'".format(mapping["original"],iother["name"]))
             elif not used_module_ignored:
                 msg = "{}no index record found for module '{}' and module is not on ignore list".format(
                     indent,
@@ -453,13 +450,15 @@ def _lookup_index_record_hierarchy(scope_tag):
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def search_scope_for_var(scope,
-                         var_expr,
-                         resolve=False):
+                         var_expr):
     """
     %param str variable_tag% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c' or 'a%b(i,j)%c(a%i5)'.
     """
     util.logging.log_enter_function(opts.log_prefix,"search_scope_for_var",\
       {"var_expr": var_expr})
+
+    #print(scope["tag"])
+    #print([v["name"] for v in scope["variables"]])
 
     result = None
     # reverse access such that entries from the inner-most scope come first
@@ -532,8 +531,7 @@ def search_scope_for_procedure(scope, procedure_name):
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def search_index_for_var(index,
                          parent_tag,
-                         var_expr,
-                         resolve=False):
+                         var_expr):
     """
     :param str parent_tag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
     %param str var_expr% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c'. Note that all array indexing expressions must be stripped away.
@@ -543,7 +541,7 @@ def search_index_for_var(index,
 
     scope = create_scope(index, parent_tag)
     try:
-        result = search_scope_for_var(scope, var_expr, resolve)
+        result = search_scope_for_var(scope, var_expr)
         util.logging.log_leave_function(opts.log_prefix, "search_index_for_var")
         return result
     except util.error.LookupError as e:

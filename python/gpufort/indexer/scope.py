@@ -51,83 +51,125 @@ def _lookup_implicitly_declared_var(var_expr,implicit_none,type_map={}):
     # TODO params might not be [] if a type with parameters is specified
     return types.create_index_var(f_type,None,kind,[],var_expr)
 
-def condense_only_groups(iused_modules):
-    """Group consecutive used modules with same name
-    if both have non-empty 'only' list.
+def combine_use_statements(iused_modules):
+    """Group used modules with same name.
+    If all modules in a group have an 'only' list, then
+    the 'only' lists of all modules are combined.
+    In any other case, the renaming lists and only
+    lists are combined to a single renaming list.
+
+    :note: Modules with same name and attributes  
+    can be combined no matter their position
+    in the use statement list as duplicate names
+    are not allowed in the same scope by the Fortran standard.
     """
     result = []
+    def lookup_existing_(iused_module):
+        nonlocal result
+        for i,entry in enumerate(result):
+            same_name       = entry["name"] == iused_module["name"]
+            same_attributes = len(entry["attributes"]) == len(iused_module["attributes"])
+            if same_name and same_attributes:
+                for j,attrib in entry["attributes"]:
+                    if attrib not in iused_module["attributes"]:
+                        same_attributes = False
+                        break
+            if same_name and same_attributes:
+                return entry
+        return None
+
     for iused_module in iused_modules:
-        if not len(result):
-            result.append(iused_module)
+        existing_entry = lookup_existing_(iused_module)
+        if existing_entry == None:
+            result.append(copy.deepcopy(iused_module))
         else:
-            #print(iused_module)
-            last = result[-1]
-            if (iused_module["name"] == last["name"]
-               and iused_module["attributes"] == last["attributes"]
-               and (len(iused_module["only"])>0) 
-                   and (len(last["only"])>0)):
-                last["only"] += iused_module["only"] # TODO check for duplicates
+            if len(existing_entry["only"]) and len(iused_module["only"]):
+                existing_entry["only"] += copy.deepcopy(iused_module["only"])
             else:
-                result.append(iused_module)
+                # combine the lists
+                existing_entry["renamings"] += existing_entry["only"] 
+                existing_entry["only"].clear()
+                existing_entry["renamings"] += (copy.deepcopy(iused_module["only"])
+                                               + copy.deepcopy(iused_module["renamings"]))
     return result
 
-def condense_non_only_groups(iused_modules):
-    """Group consecutive used modules with same name
-    if both have no 'only' list.
-
-    Background:
-
-    Given a consecutive list of use statements that include the
-    same module, one can group them together to just two use statements.
-
-    Example (as seen in WRF):
-
-    ```
-    use a, b1 => a1 ! use all of a with orig. name except a1 which shall be named b1
-    use a, b2 => a2 ! use all of a with orig. name except a2 which shall be named b2
-    use a, b3 => a3 ! use all of a with orig. name except a3 which shall be named b3; 
-                    ! now a1,a2 are accessible via orig. name too but not a3
-
-    ```
-    can be transformed to
-
-    ```
-    use a, only: b1 => a1, b2 => a2
-    use a, b3 => a3
-    ```
-    """
-
-    # - remove `use <mod>` statements before the end of the list
-    # - combine renamings of `use <mod>`, statements before the end of the list
-    # - for the time being, ignore `use <mod>, only: <only-list>` statements in the interior of the list (no use case)
-    # group
-    groups = []
-    for iused_module in iused_modules:
-        if not len(groups):
-            groups.append([iused_module])
-        else:
-            last = groups[-1]
-            if (iused_module["name"] == last[0]["name"] 
-               and iused_module["attributes"] == last[0]["attributes"]
-               and (len(iused_module["only"])==0) 
-                   and (len(last[0]["only"])==0)):
-                last.append(iused_module)
-            else:
-                groups.append([iused_module])
-    # combine
-    result = []
-    for group in groups:
-        if len(group) == 1:
-            result.append(group[0])
-        else:
-            entry1 = copy.deepcopy(group[0])
-            entry1["renamings"] = []
-            for iused_module in group[:-1]: # exclude last
-                 entry1["only"] += iused_module["renamings"]
-            entry2 = group[-1]
-            result.append(entry1)
-            result.append(entry2)
-    return result
+#def condense_only_groups(iused_modules):
+#    """Group consecutive used modules with same name
+#    if both have non-empty 'only' list.
+#    """
+#    result = []
+#    for iused_module in iused_modules:
+#        if not len(result):
+#            result.append(iused_module)
+#        else:
+#            #print(iused_module)
+#            last = result[-1]
+#            if (iused_module["name"] == last["name"]
+#               and iused_module["attributes"] == last["attributes"]
+#               and (len(iused_module["only"])>0) 
+#                   and (len(last["only"])>0)):
+#                last["only"] += iused_module["only"] # TODO check for duplicates
+#            else:
+#                result.append(iused_module)
+#    return result
+#
+#def condense_non_only_groups(iused_modules):
+#    """Group consecutive used modules with same name
+#    if both have no 'only' list.
+#
+#    Background:
+#
+#    Given a consecutive list of use statements that include the
+#    same module, one can group them together to just two use statements.
+#
+#    Example (as seen in WRF):
+#
+#    ```
+#    use a, b1 => a1 ! use all of a with orig. name except a1 which shall be named b1
+#    use a, b2 => a2 ! use all of a with orig. name except a2 which shall be named b2
+#    use a, b3 => a3 ! use all of a with orig. name except a3 which shall be named b3; 
+#                    ! now a1,a2 are accessible via orig. name too but not a3
+#
+#    ```
+#    can be transformed to
+#
+#    ```
+#    use a, only: b1 => a1, b2 => a2
+#    use a, b3 => a3
+#    ```
+#    """
+#
+#    # - remove `use <mod>` statements before the end of the list
+#    # - combine renamings of `use <mod>`, statements before the end of the list
+#    # - for the time being, ignore `use <mod>, only: <only-list>` statements in the interior of the list (no use case)
+#    # group
+#    groups = []
+#    for iused_module in iused_modules:
+#        if not len(groups):
+#            groups.append([iused_module])
+#        else:
+#            last = groups[-1]
+#            if (iused_module["name"] == last[0]["name"] 
+#               and iused_module["attributes"] == last[0]["attributes"]
+#               and (len(iused_module["only"])==0) 
+#                   and (len(last[0]["only"])==0)):
+#                last.append(iused_module)
+#            else:
+#                groups.append([iused_module])
+#    # combine
+#    result = []
+#    for group in groups:
+#        if len(group) == 1:
+#            result.append(group[0])
+#        else:
+#            entry1 = copy.deepcopy(group[0])
+#            entry1["renamings"] = []
+#            for iused_module in group[:-1]: # exclude last
+#                 entry1["only"] += iused_module["renamings"]
+#            entry2 = group[-1]
+#            result.append(entry1)
+#            result.append(entry2)
+#    return result
 
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
@@ -180,9 +222,7 @@ def _resolve_dependencies(scope,
                 icurrent["name"]))
 
         current_scope = copy.deepcopy(types.EMPTY_SCOPE)
-        for used_module in condense_non_only_groups(
-                             condense_only_groups(
-                               icurrent["used_modules"])):
+        for used_module in combine_use_statements(icurrent["used_modules"]):
             #print(used_module)
             # include definitions from other modules
             used_module_ignored = ("intrinsic" in used_module["attributes"]

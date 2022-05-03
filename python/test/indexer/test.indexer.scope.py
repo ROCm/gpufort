@@ -88,7 +88,7 @@ class TestScoper(unittest.TestCase):
         except util.error.LookupError:
             pass
         indexer.opts.scopes.clear()
-    def test_8_condense_only_groups(self):
+    def test_8_combine_only_use_statements(self):
         use_statements=[
           "use a, only: b1 => a1",
           "use a, only: b2 => a2",
@@ -105,35 +105,35 @@ class TestScoper(unittest.TestCase):
         iused_modules = []
         for stmt in use_statements:
             iused_modules.append(indexer.create_index_record_from_use_statement(stmt))
-        iused_modules = indexer.scope.condense_only_groups(iused_modules)
+        iused_modules = indexer.scope.combine_use_statements(iused_modules)
         self.assertEqual(len(iused_modules),len(result))
         for i in range(0,len(iused_modules)):
             self.assertEqual(iused_modules[i]["name"],result[i]["name"])
             self.assertEqual(iused_modules[i]["attributes"],result[i]["attributes"])
             self.assertEqual(iused_modules[i]["renamings"],result[i]["renamings"])
             self.assertEqual(iused_modules[i]["only"],result[i]["only"])
-    def test_9_condense_non_only_groups(self):
+    def test_9_combone_mixed_use_statements(self):
         use_statements=[
           "use a, b1 => a1",
           "use a, b2 => a2",
           "use a",
           "use a, b3 => a3",
+          "use a, only: b4 => a4",
         ]
         result = [
-          {'name': 'a',
-           'only': [{'original': 'a1', 'renamed': 'b1'},
-                    {'original': 'a2', 'renamed': 'b2'}],
-           'attributes': [],
-           'renamings': []},
-          {'name': 'a',
-           'only': [],
-           'attributes': [],
-           'renamings': [{'original': 'a3', 'renamed': 'b3'}]}
+         {'name': 'a',
+         'attributes': [], 
+         'renamings': 
+            [{'original': 'a1', 'renamed': 'b1'}, 
+             {'original': 'a2', 'renamed': 'b2'}, 
+             {'original': 'a3', 'renamed': 'b3'}, 
+             {'original': 'a4', 'renamed': 'b4'}], 
+         'only': []} 
         ]
         iused_modules = []
         for stmt in use_statements:
             iused_modules.append(indexer.create_index_record_from_use_statement(stmt))
-        iused_modules = indexer.scope.condense_non_only_groups(iused_modules)
+        iused_modules = indexer.scope.combine_use_statements(iused_modules)
         self.assertEqual(len(iused_modules),len(result))
         for i in range(0,len(iused_modules)):
             self.assertEqual(iused_modules[i]["name"],result[i]["name"])

@@ -147,7 +147,7 @@ def _get_accessibility(ientry,iparent):
 def _resolve_dependencies(scope,
                           index_record,
                           index,
-                          strict_checks = True):
+                          strict_checks = False): # make option
     """Include variable, type, and procedure records from modules used
     by the current record (module,program or procedure).
 

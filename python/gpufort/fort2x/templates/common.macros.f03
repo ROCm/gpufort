@@ -38,7 +38,7 @@ type(gpufort_array{{tavar.rank}}){{qualifiers}} :: {{name}}
 {% for module in used_modules %}
 {%   if module.renamings|length %}
 use {{module.name}},&
-{%     for item in module.renamed %}
+{%     for item in module.renamings %}
 {%       if item.renamed != item.original %}
 {{ (item.renamed + " => " + item.original) | indent(2,True) }}{{",&\n" if not loop.last}}
 {%       else %}

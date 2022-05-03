@@ -1,11 +1,12 @@
 module myothermod
   private
   integer, parameter :: prec = selected_real_kind(5)
+  integer, save, public :: other = 1
   public :: prec
 end module
 
 module mymod
-  use myothermod, only: prec
+  use myothermod, only: prec, other
 
 contains
 

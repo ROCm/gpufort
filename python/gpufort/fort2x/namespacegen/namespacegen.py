@@ -193,7 +193,6 @@ class NamespaceGenerator():
         def create_fortran_construct_record_(kind,index_record,scope_tag_tokens):
             name = "_".join(scope_tag_tokens) 
             construct = indexer.create_fortran_construct_record(kind, name, None)
-            construct["used_modules"] += index_record["used_modules"]
             construct["types"]        += [] # index_record["types"]
             construct["variables"]    += [var for var in index_record["variables"] 
                                          if ("parameter" in var["attributes"]
@@ -204,6 +203,28 @@ class NamespaceGenerator():
                 construct["accessibility"] = index_record.get("accessibility","public")
                 construct["public"]        = [ident for ident in index_record.get("public",[]) if ident in type_and_parameter_names]
                 construct["private"]       = [ident for ident in index_record.get("private",[]) if ident in type_and_parameter_names]
+            construct["used_modules"] = []
+            for used_module1 in index_record["used_modules"]:
+                used_module = copy.deepcopy(used_module1)
+                if len(used_module1["renamings"]) or len(used_module1["only"]):
+                    used_module = copy.deepcopy(used_module1)
+                    used_module["renamings"].clear()
+                    used_module["only"].clear()
+                    for entry in ["only","renamings"]:
+                        for pair in used_module1[entry]:
+                            try:
+                                ivar = indexer.scope.search_index_for_var(
+                                        self.index,used_module["name"],
+                                        pair["original"])
+                                if ("parameter" in ivar["attributes"]
+                                   and ivar["f_type"] != "type"):
+                                    used_module[entry].append(pair)
+                            except util.error.LookupError:
+                                pass
+                            # TODO also include types
+                    construct["used_modules"].append(used_module)
+                else:
+                    construct["used_modules"].append(used_module)
             handle_use_statements_(construct) # take care of duplicates
             # extension
             construct["declarations"] = []

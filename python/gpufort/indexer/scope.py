@@ -192,7 +192,9 @@ def _resolve_dependencies(scope,
                 used_module_found = iother != None
             if used_module_found:
                 # depth first search
-                add_to_scope_(current_scope,handle_use_statements_(iother, depth+1)) # recursive call
+                scope_additions = copy.deepcopy(types.EMPTY_SCOPE)
+                add_to_scope_(scope_additions,
+                              handle_use_statements_(iother, depth+1)) # recursive
                 include_all_entries = not len(used_module["only"])
                 if include_all_entries: # simple include
                     util.logging.log_debug2(
@@ -203,27 +205,29 @@ def _resolve_dependencies(scope,
                             iother["name"]))
                     for entry_type in types.SCOPE_ENTRY_TYPES:
                         # TODO check implications of always including in context of implicit attributes
-                        # TODO introduce workaround visibility type that prevents it from being found in scope by respective routines
-                        current_scope[entry_type] += copy.deepcopy([irecord for irecord in iother[entry_type] 
-                                                                   if _get_accessibility(irecord,iother) == "public"])
+                        scope_additions[entry_type] += copy.deepcopy([irecord for irecord in iother[entry_type] 
+                                                                      if _get_accessibility(irecord,iother) == "public"])
                     if len(used_module["renamings"]):
                         for mapping in used_module["renamings"]:
+                            number_of_entries_found = 0
                             for entry_type in types.SCOPE_ENTRY_TYPES:
-                                entry = next((entry for entry in current_scope[entry_type] 
-                                             if entry["name"] == mapping["original"]),None)
-                                if entry != None:
-                                    entry["name"] = mapping["renamed"]
-                                    util.logging.log_debug2(opts.log_prefix,
-                                      "_resolve_dependencies.handle_use_statements",
-                                      "{}use {} '{}' from module '{}' as '{}'".format(
-                                      indent,
-                                      entry_type[0:-1],mapping["original"],
-                                      iother["name"],
-                                      mapping["renamed"]))
-                                    break
-                                # TODO emit error if nothing could be found
-                else: # include_all_entries
+                                for entry in scope_additions[entry_type]:
+                                    if entry["name"] == mapping["original"]:
+                                        entry["name"] = mapping["renamed"]
+                                        util.logging.log_debug2(opts.log_prefix,
+                                          "_resolve_dependencies.handle_use_statements",
+                                          "{}use {} '{}' from module '{}' as '{}'".format(
+                                          indent,
+                                          entry_type[0:-1],mapping["original"],
+                                          iother["name"],
+                                          mapping["renamed"]))
+                                        number_of_entries_found += 1
+                            # TODO emit error if nothing could be found, has to take third-party modules into account
+                            #if number_of_entries_found != 1:
+                            #    raise util.error.LookupError("no public index record found for '{}' in module '{}'".format(mapping["original"],iother["name"])
+                else:#(include_all_entries)
                     for mapping in used_module["only"]:
+                        number_of_entries_found = 0
                         for entry_type in types.SCOPE_ENTRY_TYPES:
                             for entry in [irecord for irecord in iother[entry_type] 
                                           if _get_accessibility(irecord,iother) == "public"]:
@@ -238,10 +242,14 @@ def _resolve_dependencies(scope,
                                     copied_entry = copy.deepcopy(entry)
                                     copied_entry["name"] = mapping[
                                         "renamed"]
-                                    current_scope[entry_type].append(copied_entry)
-                            # TODO emit error if nothing could be found
+                                    scope_additions[entry_type].append(copied_entry)
+                                    number_of_entries_found += 1
+                        # TODO emit error if nothing could be found, has to take third-party modules into account
+                        #if number_of_entries_found != 1:
+                        #    raise util.error.LookupError("no public index record found for '{}' in module '{}'".format(mapping["original"],iother["name"])
+                add_to_scope_(current_scope,scope_additions) 
             elif not used_module_ignored:
-                msg = "{}no index record found for module '{}'".format(
+                msg = "{}no index record found for module '{}' and module is not on ignore list".format(
                     indent,
                     used_module["name"])
                 raise util.error.LookupError(msg)

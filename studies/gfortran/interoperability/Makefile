@@ -1,5 +1,5 @@
 TEST ?= callbacks
-TEST_W_DEPS ?= reference-members nested-types bindcpp
+TEST_W_DEPS ?= reference-members nested-types bindcpp alter-ego
 DEPS_OBJ = $(addsuffix .o, $(TEST_W_DEPS))
 LDFLAGS  = -lstdc++
 

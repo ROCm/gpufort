@@ -699,7 +699,7 @@ def _parse_file(linemaps, index, **kwargs):
                                     ]):
                                     Declaration() 
                                 elif (not "function" in current_tokens 
-                                     and current_tokens[0] == "type" 
+                                     and current_tokens[0] in ["class","type"] 
                                      and current_tokens[1] == "("):
                                     Declaration() 
                                 elif current_tokens[0] == "type": # must come after declarations

@@ -552,8 +552,7 @@ def parse_use_statement(statement):
         module_name = tk
     elif tk == ",":
         qualifiers,num_consumed_tokens = get_top_level_operands(tokens)
-        for i in range(0,num_consumed_tokens):
-            tokens.pop(0)
+        tokens = tokens[num_consumed_tokens:]
         if tokens.pop(0) != "::":
             raise error.SyntaxError("expected '::' after qualifier list")
         tk = tokens.pop(0)
@@ -564,42 +563,34 @@ def parse_use_statement(statement):
     mappings = []
     have_only      = False
     have_renamings = False
-    if (len(tokens) > 3 
-       and tokens[0] == ","
-       and tokens[1].lower() == "only"
-       and tokens[2] == ":"):
+    if (len(tokens) > 3
+       and compare_ignore_case(tokens[0:3],[",","only",":"])):
+        tokens = tokens[3:]
         have_only = True
-    elif (len(tokens) > 3 
+    elif (len(tokens) > 4
          and tokens[0] == ","):
+        tokens.pop(0)
         have_renamings = True
-    if have_only:    
-        for i in range(0,3):
-            tokens.pop(0)
     if have_only or have_renamings:
-        is_local_name = True
-        while len(tokens):
-            tk = tokens.pop(0)
-            if tk == ",":
-                is_local_name = True
-            elif tk == "=>":
-                is_local_name = False
-            elif tk.isidentifier() and is_local_name:
-                mappings.append((tk,tk))
-            elif tk.isidentifier() and not is_local_name:
-                local_name,_ = mappings[-1]
-                mappings[-1] = (local_name, tk)
-            elif tk != "":
-                raise error.SyntaxError("could not parse 'use' statement. Unexpected token '{}'".format(tk))
+        entries,num_consumed_tokens = get_top_level_operands(tokens,join_operand_tokens=False)
+        tokens = tokens[num_consumed_tokens:]
+        for entry in entries:
+            parts,_ = get_top_level_operands(entry,separators=["=>"])
+            if len(parts) == 1 and have_only:
+                mappings.append((parts[0],parts[0]))  # use-name, use-name
+            elif len(parts) == 2:
+                mappings.append((parts[0], parts[1])) # local-name, use-name
+            elif have_only:
+                raise error.SyntaxError("unexpected only list entry: {}".format(entry))
+            elif have_renamings:
+                raise error.SyntaxError("unexpected rename list entry: {}".format(entry))
     if have_only:
         only = mappings
         renamings = []
     else:
         only = []
         renamings = mappings
-    if len(tokens):
-        while len(tokens) and tokens.pop(0) == "": pass
-    if len(tokens):
-        raise error.SyntaxError("expected end of statement or ', only:' or ', <expr1> => <expr2>' after module name")
+    check_if_all_tokens_are_blank(tokens)
     return module_name, qualifiers, renamings, only
 
 def parse_attributes_statement(statement):
@@ -963,9 +954,9 @@ def _parse_basic_type(statement,parse_all=False):
     else:
         return _parse_f77_basic_type(tokens,parse_all)
 
-def _parse_derived_type(statement,parse_all=True):
+def _parse_derived_type(statement,type_or_class="type",parse_all=True):
     tokens = tokenize(statement,padded_size=2)
-    if compare_ignore_case(tokens[0:2],["type","("]):
+    if compare_ignore_case(tokens[0:2],[type_or_class,"("]):
         total_num_consumed_tokens = 2
         types,num_consumed_tokens = get_top_level_operands(tokens[total_num_consumed_tokens:],join_operand_tokens=False)
         total_num_consumed_tokens += num_consumed_tokens
@@ -993,7 +984,9 @@ def _parse_derived_type(statement,parse_all=True):
 def _parse_datatype(statement,parse_all=False):
     tokens = tokenize(statement,padded_size=1)
     if compare_ignore_case(tokens[0],"type"):
-        return _parse_derived_type(tokens,parse_all)
+        return _parse_derived_type(tokens,"type",parse_all)
+    elif compare_ignore_case(tokens[0],"class"):
+        return _parse_derived_type(tokens,"class",parse_all)
     elif compare_ignore_case(tokens[0],"character"):
         return _parse_character_type(tokens,parse_all)
     else:

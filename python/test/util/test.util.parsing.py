@@ -225,6 +225,7 @@ class TestParsingUtils(unittest.TestCase):
           "use mymod, only: var1, var2",
           "use mymod, only: var1, var2=>var3",
           "use mymod, var4 => var5",
+          "use mymod, only: var4 => var5, operator(+), assignment(=>)",
           "USE module_domain, ONLY : domain, get_ijk_from_grid",
           "use, intrinsic :: iso_c_binding",
           "use, intrinsic :: iso_c_binding, only: myptr_t => c_ptr",
@@ -236,6 +237,7 @@ class TestParsingUtils(unittest.TestCase):
           ('mymod', [], [], [('var1', 'var1'),('var2', 'var2')]),
           ('mymod', [], [], [('var1', 'var1'),('var2', 'var3')]),
           ('mymod', [], [('var4', 'var5')], []),
+          ('mymod', [], [], [('var4', 'var5'), ('operator(+)', 'operator(+)'), ('assignment(=>)', 'assignment(=>)')]),
           ('module_domain', [], [], [('domain', 'domain'), ('get_ijk_from_grid', 'get_ijk_from_grid')]),
           ('iso_c_binding', ['intrinsic'], [], []),
           ('iso_c_binding', ['intrinsic'], [], [('myptr_t', 'c_ptr')]),
@@ -501,6 +503,7 @@ class TestParsingUtils(unittest.TestCase):
           "character(len=3,kind=c_char) :: a(3,4*l+3)*k",
           "TYPE(MYTYPE(M,N,K=A*B+C)) :: A(3,4*L+3)",
           "type(mytype),intent(IN out) :: A(3,4)",
+          "class(myclass),intent(IN out) :: this",
           "character(len=:),pointer :: a(:,:) => b",
         ]
         results = [
@@ -520,6 +523,7 @@ class TestParsingUtils(unittest.TestCase):
           ('character', 'k', 'c_char', [], [], [], [('a', ['3', '4*l+3'], None)], 'character(len=3,kind=c_char)', []),
           ('TYPE', None, 'MYTYPE', ['M', 'N', 'K=A*B+C'], [], [], [('A', ['3', '4*L+3'], None)], 'TYPE(MYTYPE(M,N,K=A*B+C))', []),
           ('type', None, 'mytype', [], ['intent(INout)'], [], [('A', ['3', '4'], None)], 'type(mytype)', ['intent(IN out)']),
+          ('class', None, 'myclass', [], ['intent(INout)'], [], [('this', [], None)], 'class(myclass)', ['intent(IN out)']),
           ('character', ':', None, [], ['pointer'], [], [('a', [':', ':'], 'b')], 'character(len=:)', ['pointer']),
         ]
         for i,stmt in enumerate(statements):

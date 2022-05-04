@@ -55,7 +55,8 @@ def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
     """Splits string at whitespaces and substrings such as
     'end', '$', '!', '(', ')', '=>', '=', ',' and "::".
     Preserves the substrings in the resulting token stream but not the whitespaces.
-    :param str padded_size: Always ensure that the list has at least this size by adding padded_size-N empty
+    :param statement: String or list of strings.
+    :param int padded_size: Always ensure that the list has at least this size by adding padded_size-N empty
                strings at the end of the returned token stream. Has no effect if N >= padded_size. 
                Disable padding by specifying value <= 0.
     :param bool keepws: keep whitespaces in the resulting list of tokens.
@@ -105,6 +106,16 @@ def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
             return pad_to_size([tk for tk in statement if len(tk.strip())],padded_size)
     else:
         raise Exception("input must be either a str or a list of strings")
+
+def remove_whitespace(statement):
+    """Remove whitespace.
+    :param statement: String or list of strings.
+    """
+    if isinstance(statement,list):
+        return tokenize(statement)
+    else:
+        return "".join(tokenize(statement))
+
 
 def mangle_fortran_var_expr(var_expr):
     """Unsophisticated name mangling routine that
@@ -1027,7 +1038,7 @@ def parse_declaration(statement):
     qualifiers = []
     dimension_bounds = []
     for qualifier in qualifiers_raw:
-        qualifier_tokens       = tokenize(qualifier)
+        qualifier_tokens = tokenize(qualifier)
         if qualifier_tokens[0].lower() == "dimension":
             # ex: dimension ( 1, 2, 1:n )
             qualifier_tokens = tokenize(qualifier)
@@ -1038,11 +1049,11 @@ def parse_declaration(statement):
             dimension_bounds,_  = get_top_level_operands(qualifier_tokens[2:-1])
         elif qualifier_tokens[0].lower() == "intent":
             # ex: intent ( inout )
-            qualifier_tokens = tokenize(qualifier)
-            if (len(qualifier_tokens) != 4 
-               or not compare_ignore_case(qualifier_tokens[0:2],["intent","("])
-               or qualifier_tokens[-1] != ")"
-               or qualifier_tokens[2].lower() not in ["out","inout","in"]):
+            qualifier_tokens2 = tokenize(remove_whitespace(qualifier))
+            if (len(qualifier_tokens2) != 4 
+               or not compare_ignore_case(qualifier_tokens2[0:2],["intent","("])
+               or qualifier_tokens2[-1] != ")"
+               or qualifier_tokens2[2].lower() not in ["out","inout","in"]):
                 raise error.SyntaxError("could not parse 'intent' qualifier")
             qualifiers.append("".join(qualifier_tokens))
         elif len(qualifier_tokens)==1 and qualifier_tokens[0].isidentifier():

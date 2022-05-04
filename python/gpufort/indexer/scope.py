@@ -4,8 +4,6 @@ import os, sys, traceback
 import copy
 import re
 
-import orjson
-
 from gpufort import util
 
 from . import opts
@@ -521,7 +519,7 @@ def search_scope_for_var(scope,
         nonlocal list_of_var_names
 
         var_name = list_of_var_names[pos]
-        if pos == len(list_of_var_names) - 1:
+        if pos == len(list_of_var_names) - 1: # innermost 
             result = next(
                 (var for var in scope_vars if var["name"] == var_name),
                 None)
@@ -533,6 +531,7 @@ def search_scope_for_var(scope,
                                      None)
             if matching_type_var == None:
                 raise util.error.LookupError("no index record found for variable tag '{}' in scope".format(variable_tag))
+            # TODO check where type is defined and change scope
             matching_type = next(
                 (typ for typ in scope_types
                  if typ["name"] == matching_type_var["kind"]), None)

@@ -500,6 +500,7 @@ class TestParsingUtils(unittest.TestCase):
           "CHARACTER*4, C",
           "character(len=3,kind=c_char) :: a(3,4*l+3)*k",
           "TYPE(MYTYPE(M,N,K=A*B+C)) :: A(3,4*L+3)",
+          "type(mytype),intent(IN out) :: A(3,4)",
           "character(len=:),pointer :: a(:,:) => b",
         ]
         results = [
@@ -518,6 +519,7 @@ class TestParsingUtils(unittest.TestCase):
           ('CHARACTER', '4', None, [], [], [], [('C', [], None)], 'CHARACTER*4', []),
           ('character', 'k', 'c_char', [], [], [], [('a', ['3', '4*l+3'], None)], 'character(len=3,kind=c_char)', []),
           ('TYPE', None, 'MYTYPE', ['M', 'N', 'K=A*B+C'], [], [], [('A', ['3', '4*L+3'], None)], 'TYPE(MYTYPE(M,N,K=A*B+C))', []),
+          ('type', None, 'mytype', [], ['intent(INout)'], [], [('A', ['3', '4'], None)], 'type(mytype)', ['intent(IN out)']),
           ('character', ':', None, [], ['pointer'], [], [('a', [':', ':'], 'b')], 'character(len=:)', ['pointer']),
         ]
         for i,stmt in enumerate(statements):

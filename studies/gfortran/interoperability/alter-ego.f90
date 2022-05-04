@@ -12,8 +12,9 @@ program main
 
   ! interoperable type with fixed size array as element
   type, bind(c) :: mytype_t
+    real(c_double) :: scalar
     ! Fortran fixed size array begin
-    integer(c_int),dimension(lb1:ub1,lb2:ub2) :: values
+    integer(c_int),dimension(lb1:ub1,lb2:ub2) :: array
     ! Fortran fixed size array end
     ! dope vector begin
     integer(c_int) :: extents(2) = [ub1-lb1+1,ub2-lb2+1] 
@@ -30,15 +31,17 @@ program main
   end interface
   ! declare the type
   type(mytype_t) :: mytype
-  ! mytype%lbounds = lbound(mytype%values) ! this works too
+  ! mytype%lbounds = lbound(mytype%array) ! this works too
 
   ! init the type
-  c = 1
   write(output_unit,"(a)",advance="yes") "fortran:"
+  mytype%scalar = 1.2345
+  write(output_unit,"(a,f10.4)",advance="yes") "mytype%scalar = ", mytype%scalar
+  c = 1
   do i = lb1,ub1
     do j = lb2,ub2
-       mytype%values(i,j) = c  
-       write(output_unit,"(a,i0,a,i0,a,i0)",advance="yes") "mytype%values(",i,",",j,") = ", mytype%values(i,j)
+       mytype%array(i,j) = c  
+       write(output_unit,"(a,i0,a,i0,a,i0)",advance="yes") "mytype%array(",i,",",j,") = ", mytype%array(i,j)
        c = c + 1
     end do
   end do

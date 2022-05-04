@@ -21,6 +21,7 @@ struct fixed_size_array {
   }   
 };
 
+
 namespace current_scope {
   constexpr int lb1 = -1; // lower bound dim 1 
   constexpr int ub1 =  2; // upper bound dim 1 
@@ -29,15 +30,21 @@ namespace current_scope {
   constexpr int size1 = ub1-lb1+1;
   constexpr int size2 = ub2-lb2+1;
   constexpr int size = size1*size2;
+
+  struct mytype_t {
+    double scalar;
+    fixed_size_array<int,2,size> array;
+  };
 }
 
 extern "C" {
   using namespace current_scope; // need size constexpr
-  void pass_to_cpp(fixed_size_array<int, 2, size>& array) {
+  void pass_to_cpp(mytype_t& mytype) {
     std::cout << "c++:" << std::endl;
+    std::cout << "mytype.scalar = " << mytype.scalar << std::endl;
     for (int i = lb1; i <= ub1; i++) {
       for (int j = lb2; j <= ub2; j++) {
-        std::cout << "array("<<i<<","<<j<<")=" << array(i,j) << std::endl;
+        std::cout << "mytype.array("<<i<<","<<j<<") = " << mytype.array(i,j) << std::endl;
       }
     }
   }

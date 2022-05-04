@@ -547,7 +547,10 @@ def search_scope_for_var(scope,
     except util.error.LookupError as e:
         #index_record = _lookup_index_record_hierarchy(scope["tag"])[-1]
         #implicit_spec = index_record["implicit"]
-        result = _lookup_implicitly_declared_var(var_expr,implicit_none=True,type_map={})
+        try:
+            result = _lookup_implicitly_declared_var(var_expr,implicit_none=True,type_map={})
+        except util.error.LookupError:
+            raise e
 
     util.logging.log_debug2(opts.log_prefix,"search_scope_for_var",\
       "entry found for variable tag '{}'".format(variable_tag))

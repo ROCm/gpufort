@@ -39,6 +39,13 @@ class NamespaceGenerator():
             This does not affect the lines to prepend or append.
         * *resolve_all_parameters_via_compiler* (`bool`):
             Resolve all parameters via the Fortran compiler.
+        * *all_used_modules_have_been_compiled* (`bool`)
+            When resolving parameters via Fortran compiler,
+            assume that all used modules by the current program/procedure/module
+            and its parent(s) (in the procedure case) have been
+            compiled already, i.e. there exists a mod file.
+            This can only work if every Fortran file that contains a module
+            only contains that single module and no other module, program or top-level procedure.
         * *fortran_compiler* (`str`):
             Fortran compiler to use if resolve_all_parameters_via_compiler is True.
         * *fortran_compiler_flags* (`str`):
@@ -53,6 +60,7 @@ class NamespaceGenerator():
         self.comment_body,_ = util.kwargs.get_value("comment_body",opts.comment_body, **kwargs)
         self.resolve_all_parameters_via_compiler,_ = util.kwargs.get_value("resolve_all_parameters_via_compiler",
                 opts.resolve_all_parameters_via_compiler,**kwargs)
+        self.all_used_modules_have_been_compiled,_ = util.kwargs.get_value("all_used_modules_have_been_compiled",opts.all_used_modules_have_been_compiled, **kwargs)
         self.fortran_compiler,_       = util.kwargs.get_value("fortran_compiler",opts.fortran_compiler, **kwargs)
         self.fortran_compiler_flags,_ = util.kwargs.get_value("fortran_compiler_flags",opts.fortran_compiler_flags, **kwargs)
 
@@ -91,7 +99,7 @@ class NamespaceGenerator():
         return body
 
     @util.logging.log_entry_and_exit(opts.log_prefix)
-    def __resolve_dependencies(self):
+    def __resolve_dependencies(self,all_used_modules_have_been_compiled=False):
         """
         Algorithm:
 
@@ -169,46 +177,35 @@ class NamespaceGenerator():
         # example: above, subroutine tag2 uses module tag1
 
         modules = []
-        module_names = []
+        artificial_modules=[]
         program = None
+            
+        module_names = []
 
-        def append_module(irecord):
-            if irecord["name"] not in module_names:
-                modules.append(irecord)
-                module_names.append(irecord["name"])
+        def create_fortran_construct_context_(kind,index_record,scope_tag_tokens,ignored=[]):
+            nonlocal all_used_modules_have_been_compiled
 
-        # given: tag1:tag2:..., = program/procedure tag
-        # going from inside to outside
-        # 1.: determine record mapping to scope tag
-        #    * add use statement for parent tag1_tag2_..tagn before existing use statements: create program routine
-        #    * create program tag1_tag2_.._tagn
-        #    * lookup index record for used modules and filter out all parameters, public and private: create module routine
-        # 2. till n.: determine record mapping to scope tag tag1_tag2...tagn-1
-        #    * add use statement for parent tag_1_tag_...tagn-2 before existing use statements: create module routine
-        #    * create module (!) tag1_tag2...tagn-1
-        #    * lookup index record for used modules and filter out all parameters, public and private: create module routine
-        # OTHER:
-        # * also copy derived type definitions as there are parameter types
-        # * ex: type(mytype),parameter :: t = mytype(1) 
-        # * when rendering, render in order of line orders  
-        def create_fortran_construct_record_(kind,index_record,scope_tag_tokens):
             name = "_".join(scope_tag_tokens) 
-            construct = indexer.create_fortran_construct_record(kind, name, None)
-            construct["types"]        += [] # index_record["types"]
-            construct["variables"]    += [var for var in index_record["variables"] 
+            context = indexer.create_fortran_construct_record(kind, name, None)
+            context["types"]        += [] # index_record["types"]
+            context["variables"]    += [var for var in index_record["variables"] 
                                          if ("parameter" in var["attributes"]
+                                            and var["name"] not in ignored
                                             and var["f_type"] != "type")] # TODO consider types too
-            type_and_parameter_names = ([var["name"] for var in construct["variables"]]
-                                       +[typ["kind"] for typ in construct["types"]])
+            type_and_parameter_names = ([var["name"] for var in context["variables"]]
+                                       +[typ["kind"] for typ in context["types"]])
             if kind == "module":
-                construct["accessibility"] = index_record.get("accessibility","public")
-                construct["public"]        = [ident for ident in index_record.get("public",[]) if ident in type_and_parameter_names]
-                construct["private"]       = [ident for ident in index_record.get("private",[]) if ident in type_and_parameter_names]
-            construct["used_modules"] = []
+                context["accessibility"] = index_record.get("accessibility","public")
+                context["public"]        = [ident for ident in index_record.get("public",[]) if ident in type_and_parameter_names]
+                context["private"]       = [ident for ident in index_record.get("private",[]) if ident in type_and_parameter_names]
+            context["used_modules"] = []
             simple_use_statements_module_names = set()
-            for used_module1 in index_record["used_modules"]:
+            for used_module1 in reversed(index_record["used_modules"]):
                 used_module = copy.deepcopy(used_module1)
-                if len(used_module1["renamings"]) or len(used_module1["only"]):
+                # only include parameters if we use reproduced models that contain only parameters
+                if (not all_used_modules_have_been_compiled 
+                   and (len(used_module1["renamings"]) 
+                       or len(used_module1["only"]))):
                     used_module = copy.deepcopy(used_module1)
                     used_module["renamings"].clear()
                     used_module["only"].clear()
@@ -224,80 +221,116 @@ class NamespaceGenerator():
                             except util.error.LookupError:
                                 pass
                             # TODO also include types
-                    construct["used_modules"].append(used_module)
+                    context["used_modules"].append(used_module)
                 else:
                     if used_module["name"] not in simple_use_statements_module_names:
                         simple_use_statements_module_names.add(used_module["name"])
-                        construct["used_modules"].append(used_module)
-            handle_use_statements_(construct) # take care of duplicates
+                        context["used_modules"].append(used_module)
             # extension
-            construct["declarations"] = []
+            context["declarations"] = []
             iv=0
             it=0
-            condv = iv < len(construct["variables"])
-            condt = it < len(construct["types"])
+            condv = iv < len(context["variables"])
+            condt = it < len(context["types"])
             condition = condv or condt
             while condition:
                 if condv and condt:
-                    if construct["variables"][iv]["lineno"] < construct["types"][it]["lineno"]:
-                        ivar = construct["variables"][iv]
-                        construct["declarations"].append(indexer.types.render_declaration(ivar))
+                    if context["variables"][iv]["lineno"] < context["types"][it]["lineno"]:
+                        ivar = context["variables"][iv]
+                        context["declarations"].append(indexer.types.render_declaration(ivar))
                         iv += 1
                     else:
                         # TODO render types too
-                        #itype = copy.deepcopy(construct["variables"][it])
+                        #itype = copy.deepcopy(context["variables"][it])
                         #if "device" in itype["attributes"]:
                         #end  
                         it += 1
                 elif condv:
-                    ivar = construct["variables"][iv]
-                    construct["declarations"].append(indexer.types.render_declaration(ivar))
+                    ivar = context["variables"][iv]
+                    context["declarations"].append(indexer.types.render_declaration(ivar))
                     iv += 1
                 elif condt:
                     # TODO render types too
                     it += 1
-                condv = iv < len(construct["variables"])
-                condt = it < len(construct["types"])
+                condv = iv < len(context["variables"])
+                condt = it < len(context["types"])
                 condition = condv or condt
-            return construct
-        
-        def handle_use_statements_(icurrent):
-            for used_module in indexer.scope.combine_use_statements(icurrent["used_modules"]):
+            return context
+
+
+        # 1) Go from tag1 to tag1:tag2:tagn and lookup all index records
+        scope_tag_tokens = self.scope["tag"].split(":")
+        nesting_levels = len(scope_tag_tokens)
+        hierarchy = []
+        irecord = None
+        for i in range(0,nesting_levels):
+            if i == 0:
+                irecord = next((ientry for ientry in self.index if ientry["name"] == scope_tag_tokens[0]),None)
+            else:
+                parent = irecord
+                irecord = next((ientry for ientry in parent["procedures"] if ientry["name"] == scope_tag_tokens[i]),None)
+            hierarchy.append(irecord)        
+        # 2) Go from tag1:tag2:tagn to tag1
+        # To have original top down order, all artificial modules must be prepended
+        # to the corresponding list.
+        names_used_by_inner_contexts = []
+        for i,irecord in enumerate(reversed(hierarchy)):
+            make_program = i == 0 
+            kind = "program" if make_program else "module"
+            context = create_fortran_construct_context_(kind,irecord,scope_tag_tokens[:nesting_levels-i],
+                                                         ignored=names_used_by_inner_contexts)
+            # While a procedure belonging to a program/module/procedure can hide the parent's definitions,
+            # a program/module/procedure cannot hide definitions included from a module.
+            # In this case, Fortran compilers emit an error stating that a name is used twice.
+            # As we convert outer program/module/procedures to artificial modules,
+            # we need to exclude names that have already be used by inner procedures.
+            names_used_by_inner_contexts += ([var["name"] for var in context["variables"]]
+                                              +[var["name"] for var in context["types"]])
+            if make_program:
+                program = context
+            else:
+                if context["name"] not in module_names:
+                    artificial_modules.insert(0,context) # prepend to invert order of list
+                    module_names.append(context["name"])
+        # 3) Now go again from tag1 to tag1:tag2:tagn and handle the use statements
+        # all used modules must be appended to the corresponding list
+        contexts = artificial_modules+[program] 
+        def handle_use_statements_(context):
+            """:note:recursive"""
+            nonlocal modules
+            nonlocal all_used_modules_have_been_compiled
+
+            for used_module in indexer.scope.combine_use_statements(context["used_modules"]):
                 is_third_party_module = ("intrinsic" in used_module["attributes"]
                                          or used_module["name"] in indexer.scope.opts.module_ignore_list)
                 if not is_third_party_module:
                     imodule_used = next((ientry for ientry in self.index if ientry["name"] == used_module["name"]),None)
                     if imodule_used != None:
-                        append_module(create_fortran_construct_record_("module",imodule_used,[used_module["name"]])) 
+                        new = create_fortran_construct_context_("module",imodule_used,[used_module["name"]])
+                        handle_use_statements_(new) # recursion
+                        if new["name"] not in module_names:
+                            modules.append(new)
+                            module_names.append(new["name"])
                     else:
-                        msg = "{}no index record found for module '{}'".format(
-                            indent,
+                        msg = "no index record found for module '{}'".format(
                             used_module["name"])
                         raise util.error.LookupError(msg)
+        # 4) Handle existing use statements
+        if not all_used_modules_have_been_compiled:
+            for context in contexts:
+                handle_use_statements_(context) # recursive
+        # 5) Then add additional predefined ones (parent, iso_c_binding, ...)
+        # Loop cannot be combined with above loop as above loop would try to
+        # lookup index record of artificially generated modules, which
+        # are not part of the index
+        for i,context in enumerate(contexts):
+            if i > 0:
+                parent_name = contexts[i-1]["name"]
+                context["used_modules"].insert(0,indexer.create_index_record_from_use_statement("use {}".format(parent_name)))
+        program["used_modules"].insert(0,indexer.create_index_record_from_use_statement("use iso_c_binding"))
+        program["used_modules"].insert(1,indexer.create_index_record_from_use_statement("use iso_fortran_env"))
 
-        scope_tag_tokens = self.scope["tag"].split(":")
-        current = None
-        for i,_ in enumerate(scope_tag_tokens):
-            if i == 0:
-                current = next((ientry for ientry in self.index if ientry["name"] == scope_tag_tokens[0]),None)
-            else:
-                parent = current
-                current = next((ientry for ientry in parent["procedures"] if ientry["name"] == scope_tag_tokens[i]),None)
-            make_program = i == len(scope_tag_tokens)-1
-            kind = "program" if make_program else "module"
-            construct = create_fortran_construct_record_(kind,current,scope_tag_tokens[0:i+1])
-            parent_module_name = "_".join(scope_tag_tokens[:i])
-            # must come afterwards
-            if len(parent_module_name):
-                construct["used_modules"].insert(0,indexer.create_index_record_from_use_statement("use {}".format(parent_module_name)))
-            if make_program:
-                construct["used_modules"].insert(0,indexer.create_index_record_from_use_statement("use iso_c_binding"))
-                construct["used_modules"].insert(1,indexer.create_index_record_from_use_statement("use iso_fortran_env"))
-                program = construct
-            else:
-                append_module(construct)
-
-        return modules, program
+        return modules+artificial_modules, program
 
     def __select_parameters_in_scope(self):
         ivars_to_resolve = []

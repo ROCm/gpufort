@@ -7,11 +7,14 @@ module myothermod
 end module
 
 module mymod
-  use myothermod, only: prec, other2 => other, other_param2 => other_param
+  use myothermod, other2 => other
+  use myothermod, other_param2 => other_param
 
 contains
 
 subroutine mysub()
+  ! we expect prec, other2, other_param2 in scope
+
   integer :: a
   a = 1
 end subroutine

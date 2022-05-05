@@ -26,6 +26,13 @@ comment_body = False
         # Only considered if resolve_all_parameters_via_compiler is False.
 resolve_all_parameters_via_compiler = False
         # Resolve all parameters via a Fortran compiler.
+all_used_modules_have_been_compiled = False
+        # When resolving parameters via Fortran compiler,
+        # assume that all used modules by the current program/procedure/module
+        # and its parent(s) (in the procedure case) have been
+        # compiled already, i.e. there exists a mod file.
+        # This can only work if every Fortran file that contains a module
+        # only contains that single module and no other module, program or top-level procedure.
 fortran_compiler = os.environ.get("GPUFORT_FC","hipfc")
         # Compiler to use for resolving parameters via (Fortran) compiler.
 fortran_compiler_flags = os.environ.get("GPUFORT_FCFLAGS","")

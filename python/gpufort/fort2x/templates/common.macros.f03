@@ -56,7 +56,7 @@ use {{module.name}}, only:&
 {%     endfor %}
 {%   else %}
 use {{module.name}}
-{%   endif %}#}
+{%   endif %}
 {% else %}
 {% endfor %}
 {%- endmacro -%}

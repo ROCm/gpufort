@@ -36,7 +36,7 @@ type(gpufort_array{{tavar.rank}}){{qualifiers}} :: {{name}}
 {########################################################################################}
 {%- macro render_used_modules(used_modules) -%}
 {% for module in used_modules %}
-{%   if module.renamings|length %}
+{%   if module.renamings is defined and module.renamings|length %}
 use {{module.name}},&
 {%     for item in module.renamings %}
 {%       if item.renamed != item.original %}
@@ -45,7 +45,7 @@ use {{module.name}},&
 {{ (item.original) | indent(2,True) }}{{",&" if not loop.last}}
 {%       endif %}
 {%     endfor %}
-{%   elif module.only|length %}
+{%   elif module.only is defined and module.only|length %}
 use {{module.name}}, only:&
 {%     for item in module.only %}
 {%       if item.renamed != item.original %}
@@ -56,7 +56,7 @@ use {{module.name}}, only:&
 {%     endfor %}
 {%   else %}
 use {{module.name}}
-{%   endif %}
+{%   endif %}#}
 {% else %}
 {% endfor %}
 {%- endmacro -%}

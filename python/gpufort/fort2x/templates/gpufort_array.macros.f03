@@ -33,7 +33,7 @@ module procedure :: &{{"\n"}}
 {%- macro render_gpufort_array_data_access_interfaces(datatypes,max_rank) -%}
 {% set prefix      = "gpufort_array" %}
 {% set max_rank_ub = max_rank+1 %}
-{% for routine in ["num_elements","num_data_bytes"] %}
+{% for routine in ["num_elements","size_in_bytes"] %}
 {% set iface       = prefix+"_"+routine %}
 !>
 !> \return the number of {{"array elements" if routine=="num_elements" else "bytes required for storing the array elements"}}.
@@ -68,12 +68,14 @@ end interface
 {% endfor %}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_gpufort_array_data_access_routines(datatypes,max_rank) -%}
+{%- macro render_gpufort_array_data_access_routines(prefix,datatypes,max_rank) -%}
+{#
 {% set prefix = "gpufort_array" %}
+#}
 {% set max_rank_ub = max_rank+1 %}
 {% for rank in range(1,max_rank_ub) %}
 {% set f_array  = prefix+rank|string %}
-function {{f_array}}_num_data_bytes(array) result(retval)
+function {{f_array}}_size_in_bytes(array) result(retval)
   implicit none
   type({{f_array}}),intent(in) :: array
   integer(c_size_t) :: retval 
@@ -134,7 +136,7 @@ end subroutine
 {% endfor %}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_gpufort_array_init_routines(datatypes,max_rank) -%}
+{%- macro render_gpufort_array_init_routines(prefix,datatypes,max_rank) -%}
 {% set prefix = "gpufort_array" %}
 {% set max_rank_ub = max_rank+1 %}
 {% for rank in range(1,max_rank_ub) %}
@@ -222,12 +224,14 @@ end function
 {% endfor %}{# rank #}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_gpufort_array_copy_to_from_buffer_routines(datatypes,max_rank) -%}
+{%- macro render_gpufort_array_copy_to_from_buffer_routines(prefix,datatypes,max_rank) -%}
+{#
 {% set prefix = "gpufort_array" %}
+#}
 {% set max_rank_ub = max_rank+1 %}
 {% for rank in range(1,max_rank_ub) %}
 {%   set f_array  = prefix+rank|string %}
-{%   for routine in ["copy_from_buffer","copy_to_buffer"] %}
+{%   for routine in ["copy_data_from_buffer","copy_data_to_buffer"] %}
 {%     set binding  = f_array+"_"+routine %}
 {%     set size_dims = ",dimension("+rank|string+")" %}
 {%     for tuple in datatypes %}
@@ -255,8 +259,8 @@ end function
 {% endfor %}{# rank #}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_gpufort_array_allocate_buffer_routines(datatypes,max_rank) -%}
-{% set prefix = "gpufort_array" %}
+{%- macro render_gpufort_array_allocate_buffer_routines(prefix,datatypes,max_rank) -%}
+{#{% set prefix = "gpufort_array" %}#}
 {% set max_rank_ub = max_rank+1 %}
 {% for target in ["host","device"] %}
 {% set is_host = target == "host" %}
@@ -307,7 +311,7 @@ end function
 {% endfor %}{# target #}
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_gpufort_array_deallocate_buffer_routines(datatypes,max_rank) -%}
+{%- macro render_gpufort_array_deallocate_buffer_routines(prefix,datatypes,max_rank) -%}
 {% set prefix = "gpufort_array" %}
 {% set max_rank_ub = max_rank+1 %}
 {% for target in ["host","device"] %}
@@ -582,10 +586,10 @@ interface {{iface}}{{async_suffix}}
 end interface
 {%   endfor %}
 {# COPY_FROM_BUFFER, COPY_TO_BUFFER #}
-{%   for routine in ["copy_from_buffer","copy_to_buffer"] %}
+{%   for routine in ["copy_data_from_buffer","copy_data_to_buffer"] %}
 {%     set iface = prefix+"_"+routine %}
 !>
-{%     if routine == "copy_to_buffer" %}
+{%     if routine == "copy_data_to_buffer" %}
 !> Copy this array's host or device data TO a host or device buffer.
 {%     else %}
 !> Copy this array's host or device data FROM a host or device buffer.
@@ -617,29 +621,6 @@ interface {{iface}}{{async_suffix}}
                            datatypes) | indent(2,True) }}
 end interface
 {%   endfor %}
-{# DEC_NUM_REFS #}
-{%   set routine = "dec_num_refs" %}
-{%   set iface = prefix+"_"+routine %}
-interface {{iface}}{{async_suffix}}
-{%   for rank in range(1,max_rank_ub) %}
-{%     set f_array  = prefix+rank|string %}
-{%     set binding  = f_array+"_"+routine %}
-  function {{binding}}{{async_suffix}}(&
-    array,destroy_if_zero_refs{{",&
-    stream" if is_async}}) &
-        bind(c,name="{{binding}}") &
-          result(ierr)
-    use iso_c_binding
-    use hipfort_enums
-    import {{f_array}}
-    implicit none
-    type({{f_array}}),intent(inout) :: array{{"
-    type(c_ptr),value,intent(in) :: stream" if is_async}}
-    logical(c_bool),intent(in),value :: destroy_if_zero_refs
-    integer(kind(hipSuccess)) :: ierr
-  end function
-{%   endfor %}
-end interface
 {% endfor %}{# async_suffix #}
 {# ALLOCATE_BUFFER #}
 {% for target in ["host","device"] %}
@@ -649,7 +630,7 @@ end interface
 !> Allocate a {{target}} buffer with
 !> the same size as the data buffers
 !> associated with this gpufort array.
-!> @see num_data_bytes()
+!> @see size_in_bytes()
 !> \param[inout] pointer to the buffer to allocate
 {%   if is_host %}
 !> \param[in] pinned If the memory should be pinned.
@@ -689,7 +670,7 @@ end interface
 {%   set iface = prefix+"_"+routine %}
 !> Deallocate a {{target}} buffer
 !> created via the allocate_{{target}}_buffer routine.
-!> \see num_data_bytes(), allocate_{{target}}_buffer
+!> \see size_in_bytes(), allocate_{{target}}_buffer
 !> \param[inout] the buffer to deallocate
 {%   if is_host %}
 !> \param[in] pinned If the memory to deallocate is pinned.
@@ -720,25 +701,6 @@ interface {{iface}}
                            datatypes) | indent(2,True) }}
 end interface
 {% endfor %}
-{# INC_NUM_REFS #}
-{% set routine = "inc_num_refs" %}
-{% set iface = prefix+"_"+routine %}
-interface {{iface}}
-{% for rank in range(1,max_rank_ub) %}
-{%   set f_array  = prefix+rank|string %}
-{%   set binding  = f_array+"_"+routine %}
-  function {{binding}}(array) &
-        bind(c,name="{{binding}}") &
-          result(ierr)
-    use iso_c_binding
-    use hipfort_enums
-    import {{f_array}}
-    implicit none
-    type({{f_array}}),intent(inout) :: array
-    integer(kind(hipSuccess)) :: ierr
-  end function
-{% endfor %}
-end interface
 {# SIZE,LBOUND,UBOUND #}
 {% for routine in ["size","lbound","ubound"] %}
 {%   set iface = prefix+"_"+routine %}
@@ -761,33 +723,37 @@ interface {{iface}}
 {%   endfor %}
 end interface
 {% endfor %}
-{# COLLAPSE #}
+{# SUBARRAY #}
+{% for routine in ["subarray","subarray_w_bounds"] %}
 !> 
-!> Collapse the array by fixing indices.
-!> \return A gpufort array of reduced rank.
-!> \param[in] i2,i3,... indices to fix.
+!> \return a {{thistype}}{{d}} by fixing the {{rank-d}} last dimensions of this {{thistype}}{{rank}}.
+!>         Further reset the upper bound of the result's last dimension.
+{% if routine == "subarray_w_ub" %}
+!> \param[in] ub{{d}} upper bound for the result's last dimension.
+{% endif %}
+!> \param[in] i{{d+1}},...,i{{rank}} indices to fix.
 !> 
-{% set routine = "collapse" %}
 {% set iface = prefix+"_"+routine %}
 interface {{iface}}
-{% for rank in range(1,max_rank_ub) %}
-{% set rank_ub = rank+1 %}
+{% for rank in range(1,max_rank+1) %}
 {% set f_array  = prefix+rank|string %}
 {% set binding  = f_array+"_"+routine %}
 {% for d in range(rank-1,0,-1) %}
-{% set f_array_collapsed  = prefix+d|string %}
-  subroutine {{binding}}_{{d}} (collapsed_array,array,&
-{{"" | indent(6,True)}}{% for e in range(d+1,rank_ub) %}i{{e}}{{"," if not loop.last}}{%- endfor %}) &
+{% set f_subarray  = "gpufort_array_ptr"+d|string %}
+  subroutine {{binding}}_{{d}} (subarray,array,&
+{{"" | indent(6,True)}}{% for e in range(d+1,rank+1) %}i{{e}}{{"," if not loop.last}}{%- endfor %}) &
       bind(c,name="{{binding}}_{{d}}")
     use iso_c_binding
     use hipfort_enums
     import {{f_array}}
-    import {{f_array_collapsed}}
+    import {{f_subarray}}
     implicit none
-    type({{f_array_collapsed}}),intent(inout) :: collapsed_array
+    type({{f_subarray}}),intent(inout) :: subarray
     type({{f_array}}),intent(in) :: array
     integer(c_int),value,intent(in) :: &
-{{"" | indent(6,True)}}{% for e in range(d+1,rank_ub) %}i{{e}}{{"," if not loop.last else "\n"}}{%- endfor %}
+{% if routine == "subarray_w_ub" %}
+{% endif %}
+{{"" | indent(6,True)}}{% for e in range(d+1,rank+1) %}i{{e}}{{"," if not loop.last else "\n"}}{%- endfor %}
   end subroutine
 {% endfor %}{# d #}
 {% endfor %}{# rank #}

@@ -33,18 +33,35 @@ def generate_file(output_path, template_path, context={}):
     with open(output_path, "w") as output:
         output.write(generate_code(template_path, context))
 
-
+# header files
 def render_gpufort_header_file(output_path, context={}):
     generate_file(output_path, "gpufort.template.h", context)
-
 
 def render_gpufort_reduction_header_file(output_path, context={}):
     generate_file(output_path, "gpufort_reduction.template.h", context)
 
+# array type header files
+def render_gpufort_dope_header_file(output_path, context={}):
+    generate_file(output_path, "gpufort_dope.template.h", context)
+
+def render_gpufort_array_ptr_header_file(output_path, context={}):
+    generate_file(output_path, "gpufort_array_ptr.template.h", context)
+
+def render_gpufort_fixed_array_header_file(output_path, context={}):
+    generate_file(output_path, "gpufort_fixed_array.template.h", context)
 
 def render_gpufort_array_header_file(output_path, context={}):
     generate_file(output_path, "gpufort_array.template.h", context)
 
+# source files
+def render_gpufort_dope_source_file(output_path, context={}):
+    generate_file(output_path, "gpufort_dope.template.cpp", context)
+
+def render_gpufort_array_ptr_source_file(output_path, context={}):
+    generate_file(output_path, "gpufort_array_ptr.template.cpp", context)
+
+def render_gpufort_fixed_array_source_file(output_path, context={}):
+    generate_file(output_path, "gpufort_fixed_array.template.cpp", context)
 
 def render_gpufort_array_source_file(output_path, context={}):
     generate_file(output_path, "gpufort_array.template.cpp", context)

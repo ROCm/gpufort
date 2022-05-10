@@ -1,12 +1,14 @@
+{# SPDX-License-Identifier: MIT                                                 #}
 {# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved. #}
 {########################################################################################}
 {% import "gpufort.macros.h" as gm %}
 {% import "gpufort_array_ptr.macros.h" as gapm %}
+{% import "gpufort_array.macros.h" as gam %}
 {########################################################################################}
-{%- macro render_header_begin(guard) -%}
+{%- macro render_header_begin() -%}
 // This file was generated from a template via gpufort --gpufort-create-headers
-#ifndef {{guard}}
-#  define {{guard}}
+#ifndef _GPUFORT_ARRAYS_H_
+#  define _GPUFORT_ARRAYS_H_
 #  include <hip/hip_runtime_api.h>
 #  ifndef _GPUFORT_H_
 #    include <iostream>
@@ -21,7 +23,6 @@
         exit(error); \
     } \
   }
-#  include "gpufort_array_ptr.h"
 #  endif
 #ifndef __HIP_DEVICE_COMPILE__
 #  include <assert.h>
@@ -31,8 +32,8 @@
 #endif
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_header_end(guard) -%}
-#endif // {{guard}}
+{%- macro render_header_end() -%}
+#endif // _GPUFORT_ARRAYS_H_
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_print_routines(rank) -%}
@@ -66,7 +67,7 @@ GPUFORT_HOST_ROUTINE void print_{{source}}_data(
               << static_cast<int>(print_mode) << std::endl; 
     std::terminate();
   }
-{% for col in range(1,rank+1) %}
+{% for col in range(1,rank_ub) %}
   const int n{{col}}  = this->size({{col}});
   const int lb{{col}} = this->lbound({{col}}); 
 {% endfor %}
@@ -85,10 +86,10 @@ GPUFORT_HOST_ROUTINE void print_{{source}}_data(
   T l1  = 0;
   T l2  = 0;
   out << prefix << ":\n";
-{% for col in range(1,rank+1) %}
-  for ( int i{{rank+1-col}} = 0; i{{rank+1-col}} < n{{rank+1-col}}; i{{rank+1-col}}++ ) {
+{% for col in range(1,rank_ub) %}
+  for ( int i{{rank_ub-col}} = 0; i{{rank_ub-col}} < n{{rank_ub-col}}; i{{rank_ub-col}}++ ) {
 {% endfor %}
-    const int idx = this->linearized_index({% for col in range(1,rank+1) -%}i{{col}}{{ "," if not loop.last }}{% endfor -%});
+    const int idx = this->linearized_index({% for col in range(1,rank_ub) -%}i{{col}}{{ "," if not loop.last }}{% endfor -%});
     T value = A_h[idx];
     if ( print_norms ) {
       min  = std::min(value,min);
@@ -98,11 +99,11 @@ GPUFORT_HOST_ROUTINE void print_{{source}}_data(
       l2  += value*value;
     }
     if ( print_values ) {
-        out << prefix << "(" << {% for col in range(1,rank+1) -%}(lb{{col}}+i{{col}}) << {{ "\",\" <<" |safe if not loop.last }} {% endfor -%} ") = " << std::setprecision(print_prec) << value << "\n";
+        out << prefix << "(" << {% for col in range(1,rank_ub) -%}(lb{{col}}+i{{col}}) << {{ "\",\" <<" |safe if not loop.last }} {% endfor -%} ") = " << std::setprecision(print_prec) << value << "\n";
     } else if ( print_values_c_style ) {
         out << prefix << "[" << idx << "] = " << std::setprecision(print_prec) << value << "\n";
     }
-{%+ for col in range(1,rank+1) -%}}{%- endfor %} // for loops
+{%+ for col in range(1,rank_ub) -%}}{%- endfor %} // for loops
   if ( print_norms ) {
     out << prefix << ":min=" << std::setprecision(print_prec) << min << "\n";
     out << prefix << ":max=" << std::setprecision(print_prec) << max << "\n";
@@ -116,7 +117,6 @@ GPUFORT_HOST_ROUTINE void print_{{source}}_data(
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_init_routines(rank,async_suffix) -%}
-{% set is_async = async_suffix == "_async" %}
 /**
  * Initialize.
  * \param[in] data_host host data pointer (may be nullptr; see the note).
@@ -145,8 +145,9 @@ GPUFORT_HOST_ROUTINE gpufort::error init{{async_suffix}}(
 {{ gm.separated_list_single_line("n",",",rank) | indent(2,True) }},
 {{ gm.separated_list_single_line("lb",",",rank) | indent(2,True) }}
   );
-  this->alloc_mode = alloc_mode;
-  this->sync_mode  = sync_mode;
+  this->alloc_mode        = alloc_mode;
+  this->sync_mode         = sync_mode;
+  this->num_refs          = 1;
   
   // host array allocation
   gpufort::error ierr = gpufort::success;
@@ -488,57 +489,67 @@ GPUFORT_HOST_ROUTINE gpufort::error create_device_copy{{async_suffix}}(
     return ierr;
   }
 }
+{% endfor %}
 
 {% for target in ["host","device"] %}
 {% set is_host = target == "host" %}
-/**
- * Allocate a {{target}} buffer with
- * the same size as the data buffers
- * associated with this gpufort array.
- * @see size_in_bytes()
- * \param[inout] pointer to the buffer to allocate
+    /**
+     * Allocate a {{target}} buffer with
+     * the same size as the data buffers
+     * associated with this gpufort array.
+     * @see size_in_bytes()
+     * \param[inout] pointer to the buffer to allocate
 {% if is_host %}
- * \param[in] pinned If the memory should be pinned (default=True)
- * \param[in] flags  Flags for the host memory allocation (default=0).
+     * \param[in] pinned If the memory should be pinned (default=True)
+     * \param[in] flags  Flags for the host memory allocation (default=0).
 {% endif %}
- */
-GPUFORT_HOST_ROUTINE gpufort::error allocate_{{target}}_buffer(void** buffer{{",bool pinned=true,int flags=0" if is_host}}) {
-  return this->data_dev.allocate_{{target}}_buffer(buffer{{",pinned,flags" if is_host}});
-}
+     */
+    GPUFORT_HOST_ROUTINE gpufort::error allocate_{{target}}_buffer(void** buffer{{",bool pinned=true,int flags=0" if is_host}}) {
+      return this->data_dev.allocate_{{target}}_buffer(buffer{{",pinned,flags" if is_host}});
+    }
 
-/**
- * Deallocate a {{target}} buffer
- * created via the allocate_{{target}}_buffer routine.
- * @see size_in_bytes(), allocate_{{target}}_buffer
- * \param[inout] the buffer to deallocte
+    /**
+     * Deallocate a {{target}} buffer
+     * created via the allocate_{{target}}_buffer routine.
+     * @see size_in_bytes(), allocate_{{target}}_buffer
+     * \param[inout] the buffer to deallocte
 {% if is_host %}
- * \param[in] pinned If the memory to deallocate is pinned (default=True)
+     * \param[in] pinned If the memory to deallocate is pinned (default=True)
 {% endif %}
- */
-GPUFORT_HOST_ROUTINE gpufort::error deallocate_{{target}}_buffer(void* buffer{{",bool pinned=true" if is_host}}) {
-  return this->data_dev.deallocate_{{target}}_buffer(buffer{{",pinned" if is_host}});
-}
+     */
+    GPUFORT_HOST_ROUTINE gpufort::error deallocate_{{target}}_buffer(void* buffer{{",bool pinned=true" if is_host}}) {
+      return this->data_dev.deallocate_{{target}}_buffer(buffer{{",pinned" if is_host}});
+    }
 {% endfor %}
 
-/** 
- * Copy metadata from another gpufort array to this gpufort array.
- * \note The allocation mode is always set to AllocMode::WrapHostWrapDevice
- *       and the sync mode is set to SyncMode::None.
- * \note No deep copy, i.e. the host and device data is not copied, just the pointers
- * to the data.
- */
-GPUFORT_HOST_ROUTINE void copy(const gpufort::array{{rank}}<T>& other) {
-  this->data_host = other.data_host;
-  this->alloc_mode= other.alloc_mode;
-  this->sync_mode = other.sync_mode;
-  this->data_host = other.data_host;
-  this->data_dev.copy(other.data_dev);
-}
+    /** 
+     * Copy metadata from another gpufort array to this gpufort array.
+     * \note The allocation mode is always set to AllocMode::WrapHostWrapDevice
+     *       and the sync mode is set to SyncMode::None.
+     * \note No deep copy, i.e. the host and device data is not copied, just the pointers
+     * to the data.
+     */
+    GPUFORT_HOST_ROUTINE void copy(const gpufort::array{{rank}}<T>& other) {
+      other.data_host  = this->data_host;
+      other.alloc_mode = this->alloc_mode;
+      other.sync_mode  = this->sync_mode;
+      other.num_refs   = this->num_refs;
+      other.data_dev.
+      this->init(
+        other.bytes_per_element,
+        other.data_host,
+        other.data_dev.data,
+        other.size(1),{% for d in range(2,rank_ub) %}other.size({{d}}),{% endfor %}{{""}}
+        other.lbound(1),{% for d in range(2,rank_ub) %}other.lbound({{d}}),{% endfor %}{{""}}
+        AllocMode::WrapHostWrapDevice,
+        SyncMode::None);
+    }
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_gpufort_arrays(max_rank) -%}
+{%- macro render_arrays(max_rank) -%}
 namespace gpufort {
 {% for rank in range(1,max_rank+1) %}
+{% set rank_ub = rank+1 %}
   template<typename T>
   struct array{{rank}}{
     array_ptr{{rank}}<T> data_dev;
@@ -547,6 +558,7 @@ namespace gpufort {
                                                            //> wrap the host and allocate device data
     SyncMode sync_mode  = SyncMode::None;                  //> How data should be synchronized
                                                            //> during the initialization and destruction of this GPUFORT array.
+    int num_refs = 0;                                      //> Number of references.
 
     array{{rank}}() {
       // do nothing
@@ -556,6 +568,7 @@ namespace gpufort {
       // do nothing
     }
 {% for async_suffix in ["_async",""] %}
+{% set is_async = async_suffix == "_async" %}
 {{ render_init_routines(rank,async_suffix) | indent(4,True) }}
 {{ render_memory_operations(rank,async_suffix) | indent(4,True) }}    
 {% endfor %} {# async_suffix #}
@@ -565,6 +578,6 @@ namespace gpufort {
 {% endfor -%}
 } // namespace gpufort
 
-{{ gapm.render_array_property_inquiry_cpp_routines("array",max_rank) | indent(2,True) -}}
+{{ gapm.render_gpufort_array_cpp_property_getters(max_rank) | indent(0,True) -}}
 {%- endmacro -%}
 {########################################################################################}

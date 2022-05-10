@@ -3,7 +3,7 @@
 {########################################################################################}
 {% import "common.macros.f03" as cm %}
 {########################################################################################}
-{% macro render_derived_types(derived_types,
+{%- macro render_derived_types(derived_types,
                               interop_suffix="_interop")  %}
 {# TODO consider extend #}
 {% if derived_types|length %}
@@ -14,9 +14,9 @@ type, bind(c) :: {{derived_type.name}}{{interop_suffix}}
 end type {{derived_type.name}}{{interop_suffix}}{{"\n" if not loop.last}}
 {% endfor %}
 {% endif %}
-{% endmacro  %}
+{%- endmacro  -%}
 {########################################################################################}
-{% macro render_derived_type_copy_scalars(derived_type,
+{%- macro render_derived_type_copy_scalars(derived_type,
                                            derived_types,
                                            inline=False,
                                            direction="in",
@@ -52,9 +52,9 @@ call {{ivar.kind}}{{interop_suffix}}_copy{{direction}}_scalars({{interop_var}}%{
 {%     endif  %}
 {%   endif  %}
 {% endfor %}
-{% endmacro  %}
+{%- endmacro  -%}
 {########################################################################################}
-{% macro render_derived_type_copy_scalars_routines(derived_types,
+{%- macro render_derived_type_copy_scalars_routines(derived_types,
                                                     direction="to",
                                                     used_modules=[],
                                                     error_check="hipCheck",
@@ -81,9 +81,9 @@ subroutine {{derived_type.name}}{{interop_suffix}}_copy{{direction}}_scalars({{i
                                       interop_suffix) -}}
 end subroutine{{"\n" if not loop.last}}
 {% endfor %}
-{% endmacro  %}
+{%- endmacro  -%}
 {########################################################################################}
-{% macro render_derived_type_size_bytes_routines(derived_types,
+{%- macro render_derived_type_size_bytes_routines(derived_types,
                                                   used_modules=[],
                                                   interop_suffix="_interop")  %}
 {% for derived_type in derived_types %}
@@ -96,9 +96,9 @@ function {{derived_type.name}}{{interop_suffix}}_size_bytes() result(size_bytes)
   size_bytes = c_sizeof(dummy)
 end function
 {% endfor %}
-{% endmacro  %}
+{%- endmacro  -%}
 {########################################################################################}
-{% macro render_derived_type_copy_derived_type_array_member(interop_type_name,
+{%- macro render_derived_type_copy_derived_type_array_member(interop_type_name,
                                                             member,
                                                             rank,
                                                             direction="in",
@@ -119,9 +119,9 @@ do i{{i}} = lbound({{orig_var}},{{i}}),ubound({{orig_var}},{{i}})
 {% for i in range(1,rank_ub) %}
 end do
 {% endfor %}
-{% endmacro %}
+{%- endmacro -%}
 {########################################################################################}
-{% macro render_derived_type_copy_array_member_routines(derived_types,
+{%- macro render_derived_type_copy_array_member_routines(derived_types,
                                                                       direction="in",
                                                                       asyncr="_async",
                                                                       used_modules=[],
@@ -202,9 +202,9 @@ end subroutine{{"\n" if not loop.last}}
 {%    endif  %}
 {%  endfor %}
 {% endfor %}
-{% endmacro  %}
+{%- endmacro  -%}
 {########################################################################################}
-{% macro render_derived_type_init_array_member(derived_type,
+{%- macro render_derived_type_init_array_member(derived_type,
                                                 member,
                                                 asyncr="_async",
                                                 error_check="hipCheck",
@@ -234,9 +234,9 @@ endif
 {%     endif  %}
 {%   endif  %}
 {% endfor %}
-{% endmacro  %}
+{%- endmacro  -%}
 {########################################################################################}
-{% macro render_derived_type_init_array_member_routines(derived_types,
+{%- macro render_derived_type_init_array_member_routines(derived_types,
                                                         asyncr="_async",
                                                         used_modules=[],
                                                         error_check="hipCheck",
@@ -292,9 +292,9 @@ end subroutine{{"\n" if not loop.last}}
 {%    endif  %}
 {%  endfor %}
 {% endfor %}
-{% endmacro  %}
+{%- endmacro  -%}
 {########################################################################################}
-{% macro render_derived_type_destroy_derived_type_array_member(interop_type_name,
+{%- macro render_derived_type_destroy_derived_type_array_member(interop_type_name,
                                                                 member,
                                                                 interop_member_type_name,
                                                                 rank,
@@ -317,9 +317,9 @@ do i{{i}} = lbound({{orig_var}},{{i}}),ubound({{orig_var}},{{i}})
 {% for i in range(1,rank_ub)  %}
 end do
 {% endfor %}
-{% endmacro %}
+{%- endmacro -%}
 {########################################################################################}
-{% macro render_derived_type_destroy_array_member(derived_type,
+{%- macro render_derived_type_destroy_array_member(derived_type,
                                                   member,
                                                   asyncr="_async",
                                                   synchronize_queue="hipStreamSynchronize",
@@ -350,9 +350,9 @@ endif
 call {{error_check}}(gpufort_array_destroy{{asyncr}}({{interop_var}}%{{member}}{{",queue" if is_async}}))
 {%-   endif  %}
 {% endfor %}
-{% endmacro  %}
+{%- endmacro  -%}
 {########################################################################################}
-{% macro render_derived_type_destroy_array_member_routines(derived_types,
+{%- macro render_derived_type_destroy_array_member_routines(derived_types,
                                                             asyncr="_async",
                                                             used_modules=[],
                                                             synchronize_queue="hipStreamSynchronize",
@@ -408,9 +408,9 @@ end subroutine{{"\n" if not loop.last}}
 {%    endif  %}
 {%  endfor %}
 {% endfor %}
-{% endmacro  %}
+{%- endmacro  -%}
 {########################################################################################}
-{% macro render_derived_type_destroy_routines(derived_types,
+{%- macro render_derived_type_destroy_routines(derived_types,
                                                asyncr="_async",
                                                used_modules=[],
                                                interop_suffix="_interop",
@@ -491,5 +491,5 @@ subroutine {{interop_type_name}}_destroy{{asyncr}}_cptr(&
     {{orig_var}}{{",queue" if is_async}})
 end subroutine{{"\n" if not loop.last}}
 {% endfor %}
-{% endmacro  %}
+{%- endmacro  -%}
 {########################################################################################}

@@ -3,7 +3,7 @@
 {########################################################################################}
 {% import "common.macros.f03" as cm %}
 {########################################################################################}
-{% macro render_interface(name,datatypes,max_rank=0) %}
+{%- macro render_interface(name,datatypes,max_rank=0) -%}
 interface {{name}}
   procedure :: &
 {% for f_kind in datatypes %}
@@ -12,9 +12,9 @@ interface {{name}}
     {{routine_name}}{{",&\n" if not loop.last}}{% endfor %}{{ ",&" if not loop.last}}
 {% endfor %}
 end interface
-{% endmacro %}
+{%- endmacro -%}
 {########################################################################################}
-{% macro render_print_ivar(ivar) %}
+{%- macro render_print_ivar(ivar) -%}
 {#########################}
 {# name and Fortran type #}
 {#########################}
@@ -159,16 +159,16 @@ write( output_unit, "(a)", advance="no") kind({{ivar.name}})
 {% endif %}
 {# newline #}
 write( output_unit, "(a)", advance="yes") ""
-{% endmacro %}
+{%- endmacro -%}
 {########################################################################################}
-{% macro render_compiler_information() %}
+{%- macro render_compiler_information() -%}
 write( output_unit, '(2a)') &
 'info:compiler version: ', compiler_version()
 write( output_unit, '(2a)') &
 'info:compiler options: ', compiler_options()
-{% endmacro %}
+{%- endmacro -%}
 {########################################################################################}
-{% macro render_print_value_routines_scalars() %}
+{%- macro render_print_value_routines_scalars() -%}
 subroutine print_value_c_bool_0(val)
   use iso_c_binding
   use iso_fortran_env
@@ -236,9 +236,9 @@ subroutine print_value_c_double_complex_0(val)
   complex(c_double_complex) :: val
   write( output_unit, "(e23.15e3,a,e23.15e3)", advance="no") real(val,kind=c_double),",",dimag(val)
 end subroutine
-{% endmacro %}
+{%- endmacro -%}
 {########################################################################################}
-{% macro render_resolve_scope_program(modules,program,ivars_to_resolve,max_rank=0) %}
+{%- macro render_resolve_scope_program(modules,program,ivars_to_resolve,max_rank=0) -%}
 {% set datatypes = [
    "c_bool",
    "c_short",
@@ -283,5 +283,5 @@ program {{program.name}}
 contains
 {{ render_print_value_routines_scalars() | indent(2,True) }}
 end program
-{% endmacro %}
+{%- endmacro -%}
 {########################################################################################}

@@ -1,7 +1,7 @@
 {# SPDX-License-Identifier: MIT                                                 #}
 {# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved. #}
 {# jinja2 macros #}
-{% macro binop_internal(op,n,result,prefix,print_vars) -%}
+{%- macro binop_internal(op,n,result,prefix,print_vars) --%}
 {%- if n == 1 -%}
 {%- set result = prefix+"a" -%}
 {%- elif n == 2 -%}

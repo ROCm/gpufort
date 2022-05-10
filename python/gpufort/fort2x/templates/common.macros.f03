@@ -68,7 +68,7 @@ import {{tavar.kind}}
 {% endif %}{% endfor %}
 {%- endmacro -%}
 {########################################################################################}
-{% macro render_set_fptr_lower_bound(fptr,
+{%- macro render_set_fptr_lower_bound(fptr,
                                      array,
                                      rank) %}
 {% set rank_ub=rank+1 %}
@@ -77,5 +77,5 @@ import {{tavar.kind}}
   lbound({{array}},{{i}}):{{ "," if not loop.last else ")" }}&
 {% endfor %}
     => {{fptr}}
-{% endmacro  %}
+{%- endmacro  -%}
 {#######################################################################################}

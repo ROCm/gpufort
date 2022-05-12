@@ -2,7 +2,7 @@
 FC    ?= hipfc
 HIPCC ?= hipcc
 
-GPUFORT_INC = -I$(shell gpufort --path)/include
+GPUFORT_INC = -I$(shell gpufort --print-path)/include
 
 FC_CFLAGS    ?= -std=f2008 -ffree-line-length-none -cpp -fmax-errors=5 \
                 -Wimplicit-procedure -Wimplicit-interface

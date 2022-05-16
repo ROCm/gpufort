@@ -448,13 +448,14 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal current_linemap
         nonlocal current_statement_no
         nonlocal current_statement
+        nonlocal current_statement_stripped
         nonlocal current_tokens
         nonlocal acc_kernels_directive
         nonlocal index
         log_detection_("assignment")
         if in_kernels_acc_region_and_not_recording() or lhs_ivar["rank"] == 0:
             parse_result = translator.tree.grammar.assignment_begin.parseString(
-                current_statement["body"])
+                current_statement_stripped)
             lvalue = translator.tree.find_first(parse_result, translator.tree.TTLValue)
             # TODO
             

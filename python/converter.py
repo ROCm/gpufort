@@ -403,6 +403,23 @@ This step is skipped if no GPUFORT module files are created.
         help=
         "Generate interoperable types from derived types found in the file.",
     )
+    group_fort2x_hip.add_argument(
+        "--resolve-parameters-via-fc",
+        dest="resolve_parameters_via_fc",
+        action="store_true",
+        help=
+        "Resolve parameter values via the Fortran compiler specified via '--gpufort-fc' switch.",
+    )
+    group_fort2x_hip.add_argument(
+        "--assume-used-mod-files-exist",
+        dest="assume_used_mod_files_exist",
+        action="store_true",
+        help=
+        "When resolving parameter values via the Fortran compiler specified via"+\
+        "'--gpufort-fc', assume that all used modules have been compiled already"+\
+        "and a *.mod file exists. WARNING: Only use if code in the input file"+\
+        "does not depend on a module within the input file.",
+    )
 
     # developer options
     group_developer = parser.add_argument_group(
@@ -490,6 +507,8 @@ This step is skipped if no GPUFORT module files are created.
         emit_debug_code=False,
         emit_interop_types=False,
         emit_launcher_interfaces=False,
+        resolve_parameters_via_fc=False,
+        assume_used_mod_files_exist=True,
         create_gpufort_headers=False,
         create_gpufort_sources=False,
         print_gfortran_config=False,
@@ -677,6 +696,8 @@ def map_args_to_opts(args,include_dirs,defines,fortran_and_cpp_compiler_options,
         fort2x.namespacegen.opts.fortran_compiler=" ".join(fortran_and_cpp_compiler_options[arg_cc])
     if len(fortran_and_cpp_compiler_options[arg_fcflags]) or args.use_default_flags:
         fort2x.namespacegen.opts.fortran_compiler_flags = fcflags # pass as list of string
+    fort2x.namespacegen.opts.resolve_all_parameters_via_compiler = args.resolve_parameters_via_fc
+    fort2x.namespacegen.opts.all_used_modules_have_been_compiled = args.assume_used_mod_files_exist
     # fort2x.hip.codegen
     if opts.only_emit_kernels:
         fort2x.hip.opts.emit_cpu_launcher = False

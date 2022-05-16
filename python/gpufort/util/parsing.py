@@ -1273,9 +1273,18 @@ def parse_implicit_statement(statement):
             datatype_tokens = next_tokens_till_open_bracket_is_closed(
                     rule_tokens,open_brackets=1,brackets=(None,")"))
             if len(datatype_tokens) == len(rule_tokens):
+                # In this case, last brackets do not belong to datatype_tokens
                 # example: implicit character (c)           
-                datatype_tokens = rule_tokens[:1]
-                first_letter_tokens = rule_tokens[1:]
+                # example: implicit double precision (a-z)           
+                # example: implicit double complex (c-d)           
+                if len(rule_tokens) > 1 and rule_tokens[1].isidentifier():
+                    # example: implicit double precision (a-z)           
+                    last_datatype_token = 1 
+                else:
+                    # example: implicit character (c)
+                    last_datatype_token = 0
+                datatype_tokens = rule_tokens[:last_datatype_token+1]
+                first_letter_tokens = rule_tokens[last_datatype_token+1:]
             else:
                 # example: implicit integer(mykind) (j,k,m,n)       
                 first_letter_tokens = rule_tokens[len(datatype_tokens):]

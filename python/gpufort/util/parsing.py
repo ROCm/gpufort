@@ -1482,10 +1482,12 @@ def parse_do_statement(statement):
     :Example:
 
     `mylabel: do i = 1,N+m`
+    `do`
 
     results in
 
     ('mylabel', 'i', '1', 'N+m', None)
+    (None, None, None, None, None)
     """
     tokens = tokenize(statement)
     label = None
@@ -1499,30 +1501,32 @@ def parse_do_statement(statement):
     else:
         raise error.SyntaxError("expected 'do' or identifier + ':' + 'do'")
     #
-    var = tokens.pop(0) 
-    if not var.isidentifier():
-        try:
-            label = str(int(var))
-            var = tokens.pop(0)
-        except ValueError as e:
-            raise error.SyntaxError("expected identifier or numeric label after 'do'") from e
-    if not tokens.pop(0) == "=":
-        raise error.SyntaxError("expected '='")
-    range_vals,consumed_tokens  = get_top_level_operands(tokens) 
+    var    = None
     lbound = None
     ubound = None
     stride = None
-    if len(range_vals) < 2:
-        raise error.SyntaxError("invalid loop range: expected at least first and last loop index")
-    elif len(range_vals) > 3:
-        raise error.SyntaxError("invalid loop range: expected not more than three values (first index, last index, stride)")
-    elif len(range_vals) == 2:
-        lbound = range_vals[0]
-        ubound = range_vals[1]
-    elif len(range_vals) == 3:
-        lbound = range_vals[0]
-        ubound = range_vals[1]
-        stride = range_vals[2]
+    if not all_tokens_are_blank(tokens): 
+        var = tokens.pop(0) 
+        if not var.isidentifier():
+            try:
+                label = str(int(var))
+                var = tokens.pop(0)
+            except ValueError as e:
+                raise error.SyntaxError("expected identifier or numeric label after 'do'") from e
+        if not tokens.pop(0) == "=":
+            raise error.SyntaxError("expected '='")
+        range_vals,consumed_tokens  = get_top_level_operands(tokens) 
+        if len(range_vals) < 2:
+            raise error.SyntaxError("invalid loop range: expected at least first and last loop index")
+        elif len(range_vals) > 3:
+            raise error.SyntaxError("invalid loop range: expected not more than three values (first index, last index, stride)")
+        elif len(range_vals) == 2:
+            lbound = range_vals[0]
+            ubound = range_vals[1]
+        elif len(range_vals) == 3:
+            lbound = range_vals[0]
+            ubound = range_vals[1]
+            stride = range_vals[2]
     return (label, var, lbound, ubound, stride)
 
 def parse_deallocate_statement(statement):

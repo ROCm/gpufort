@@ -531,11 +531,15 @@ class TestParsingUtils(unittest.TestCase):
             self.assertEqual(util.parsing.parse_declaration(stmt),results[i])
     def test_16_parse_do_statement(self):
         statements = [
+          "do",
+          "DO",
           "DO jj = MAX(jts,1) , MIN(jte,jde-1,spec_bdy_width)",
           "label: do j = min(x,y,z,k), max(M,n), min(a0,a1,2)",
-          "DO 2000 IIM=1,NF"
+          "DO 2000 IIM=1,NF",
         ]
         results = [
+          (None, None, None, None, None),
+          (None, None, None, None, None),
           (None, 'jj', 'MAX(jts,1)', 'MIN(jte,jde-1,spec_bdy_width)', None),
           ('label', 'j', 'min(x,y,z,k)', 'max(M,n)', 'min(a0,a1,2)'),
           ('2000', 'IIM', '1', 'NF', None),

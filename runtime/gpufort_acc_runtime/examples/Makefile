@@ -2,7 +2,7 @@ FC       = hipfc
 FCFLAGS ?= -std=f2008 -ffree-line-length-none
 FCFLAGS += -g -ggdb
 
-GPUFORT_ACC_DIR = $(shell gpufort --path)/runtime/gpufort_acc_runtime
+GPUFORT_ACC_DIR = $(shell gpufort --print-path)/runtime/gpufort_acc_runtime
 ACC_INC         = -I$(GPUFORT_ACC_DIR)/include 
 ACC_LIB         = -L$(GPUFORT_ACC_DIR)/lib -lgpufort_acc 
 

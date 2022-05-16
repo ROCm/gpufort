@@ -9,7 +9,7 @@ LDOPTS ?=
 LDOPTS += -L$(HIPFORT_PATH)/lib -lhipfort-amdgcn
 LDOPTS += -fopenacc -foffload=amdgcn-amdhsa="-march=gfx906" -L/opt/rocm/lib -lhipblas -lrocblas -lrocsolver -lamdhip64 -lstdc++ -lgfortran
 
-GPUFORT_ACC_DIR = $(shell gpufort --path)/runtime/openacc_gomp
+GPUFORT_ACC_DIR = $(shell gpufort --print-path)/runtime/openacc_gomp
 ACC_INC = -I$(GPUFORT_ACC_DIR)/include 
 ACC_LIB = $(GPUFORT_ACC_DIR)/lib/libopenacc_gomp.a 
 

@@ -47,17 +47,25 @@ class TestRenderGpufortTypes(unittest.TestCase):
             print(s.getvalue())
         elapsed = time.time() - self.started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
-    def test_0_render_gpufort_array_ptr_header(self):
+    def test_0_render_gpufort_array_ptr_h(self):
         print(fort2x.render.generate_code(
           "gpufort_array_ptr.template.h",
           context={
             "max_rank": max_rank
           }));
-    def test_1_render_gpufort_array_ptr_source(self):
+    def test_1_render_gpufort_array_ptr_f03(self):
         print(fort2x.render.generate_code(
-          "gpufort_array_ptr.template.cpp",
+          "gpufort_array_ptr.template.f03",
           context={
-            "max_rank": max_rank
+            "max_rank": max_rank,
+            "datatypes": [
+              {
+                  "c_type": "bool",
+                  "f_kind": "c_bool",
+                  "bytes": "c_bool",
+                  "f_type": "logical(c_bool)"
+              },
+            ],
           }));
 
 if __name__ == '__main__':

@@ -47,15 +47,21 @@ class TestRenderGpufortTypes(unittest.TestCase):
             print(s.getvalue())
         elapsed = time.time() - self.started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 6)))
-    def test_0_render_gpufort_dope_header(self):
+    def test_0_render_gpufort_dope_h(self):
         print(fort2x.render.generate_code(
           "gpufort_dope.template.h",
           context={
             "max_rank": max_rank
           }));
-    def test_1_render_gpufort_dope_source(self):
+    def test_1_render_gpufort_dope_cpp(self):
         print(fort2x.render.generate_code(
           "gpufort_dope.template.cpp",
+          context={
+            "max_rank": max_rank
+          }));
+    def test_2_render_gpufort_dope_f03(self):
+        print(fort2x.render.generate_code(
+          "gpufort_dope.template.f03",
           context={
             "max_rank": max_rank
           }));

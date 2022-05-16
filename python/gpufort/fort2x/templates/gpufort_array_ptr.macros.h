@@ -341,8 +341,8 @@ GPUFORT_DEVICE_ROUTINE_INLINE const T& operator[] (
 }
 {%- endmacro -%}
 {########################################################################################}
-{%- macro render_memory_operations(rank,prefix="data") -%}
-{# prefix - gpufort::array_ptr data prefix expression #}
+{%- macro render_memory_operations(gpufort_type,rank,data_member="data") -%}
+{# data_member - gpufort::array_ptr data data_member expression #}
 {% for target in ["host","device"] %}
 {%   set is_host = target == "host" %}
 /**
@@ -432,12 +432,12 @@ GPUFORT_HOST_ROUTINE gpufort::error copy_data_to_buffer{{async_suffix}}(
       direction = hipMemcpyDeviceToDevice;
       break;
     default:
-      std::cerr << "ERROR: gpufort::array_ptr{{rank}}::copy_data_to_buffer{{async_suffix}}(...): Unexpected value for 'direction': " 
+      std::cerr << "ERROR: gpufort::{{gpufort_type}}{{rank}}::copy_data_to_buffer{{async_suffix}}(...): Unexpected value for 'direction': " 
                 << static_cast<int>(direction) << std::endl; 
       std::terminate();
       break;
   }
-  T* src = this->{{prefix}};
+  T* src = this->{{data_member}};
   return static_cast<gpufort::error>(
     hipMemcpy{{"Async" if is_async}}(
       buffer, 
@@ -473,12 +473,12 @@ GPUFORT_HOST_ROUTINE gpufort::error copy_data_from_buffer{{async_suffix}}(
       direction = hipMemcpyDeviceToDevice;
       break;
     default:
-      std::cerr << "ERROR: gpufort::array_ptr{{rank}}::copy_data_from_buffer{{async_suffix}}(...): Unexpected value for 'direction': " 
+      std::cerr << "ERROR: gpufort::{{gpufort_type}}{{rank}}::copy_data_from_buffer{{async_suffix}}(...): Unexpected value for 'direction': " 
                 << static_cast<int>(direction) << std::endl; 
       std::terminate();
       break;
   }
-  T* dest = this->{{prefix}};
+  T* dest = this->{{data_member}};
   return static_cast<gpufort::error>(
     hipMemcpy{{"Async" if is_async}}(
       (void*) dest,
@@ -554,7 +554,7 @@ namespace gpufort {
 {{ render_array_property_getters_that_delegate_to_dope(rank) | indent(4,True) }}
 {{ render_size_in_bytes_routines() | indent(4,True) }}
 {{ render_data_access_routines(rank) | indent(4,True) }}
-{{ render_memory_operations(rank) }}
+{{ render_memory_operations("array_ptr",rank,"data") }}
 {{ render_subarray_routines("array_ptr","array_ptr",rank) | indent(4,true) }}
   }; // class array_ptr
 {% endfor %}

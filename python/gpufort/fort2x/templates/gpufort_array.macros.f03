@@ -225,6 +225,7 @@ end function
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_gpufort_array_copy_to_from_buffer_routines(prefix,datatypes,max_rank) -%}
+{########################################################################################}
 {#
 {% set prefix = "gpufort_array" %}
 #}

@@ -46,6 +46,7 @@ do j = 1, -(max(M,n)), min(m,n,2)
 
     if (i == 5.and.j > 2) then 
       k = 2*k
+      go to 50
     else
       select case (i)
         case (1)
@@ -56,6 +57,7 @@ do j = 1, -(max(M,n)), min(m,n,2)
           k = i
       end select
     endif
+50 continue
   end do
 end do
 """

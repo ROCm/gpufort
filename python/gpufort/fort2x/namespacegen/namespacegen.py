@@ -381,7 +381,7 @@ class NamespaceGenerator():
     def __resolve_all_parameters_via_compiler(self):
         decl_list = []
         ivars_to_resolve = self.__select_parameters_in_scope()
-        modules, program = self.__resolve_dependencies()
+        modules, program = self.__resolve_dependencies(self.all_used_modules_have_been_compiled)
         #print(decl_list)
         #print(ivars_to_resolve)
         fortran_snippet = render.render_resolve_scope_program_f03(

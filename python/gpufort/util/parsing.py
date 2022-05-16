@@ -76,7 +76,7 @@ def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
             r"=>?",
             r"\+",
             r"-",
-            r"\*",
+            r"\*\*?",
             r"\/",
             r"\&",
             r"\.\w+\.",
@@ -93,7 +93,7 @@ def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
         tokens = re.split(keep_pattern, statement, 0, re.IGNORECASE)
         result = []
         for tk in tokens:
-            if tk.lower() in ["endif", "elseif", "enddo"]:
+            if tk.lower() in ["endif", "elseif", "enddo", "goto"]:
                 result.append(tk[:-2])
                 result.append(tk[-2:])
             elif len(tk) and (keepws or len(tk.strip())):

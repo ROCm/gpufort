@@ -508,7 +508,7 @@ This step is skipped if no GPUFORT module files are created.
         emit_interop_types=False,
         emit_launcher_interfaces=False,
         resolve_parameters_via_fc=False,
-        assume_used_mod_files_exist=True,
+        assume_used_mod_files_exist=False,
         create_gpufort_headers=False,
         create_gpufort_sources=False,
         print_gfortran_config=False,
@@ -634,6 +634,9 @@ def parse_cl_args(parser,for_converter=True):
 
 
 def map_args_to_opts(args,include_dirs,defines,fortran_and_cpp_compiler_options,for_converter=True):
+    """Map specified command line arguments to option values.
+    :note: Only overwrites the option values if a flag is actually specified.
+    """
     # OVERWRITE CONFIG VALUES
     # parse file and create index in parallel
     if for_converter: 
@@ -696,8 +699,10 @@ def map_args_to_opts(args,include_dirs,defines,fortran_and_cpp_compiler_options,
         fort2x.namespacegen.opts.fortran_compiler=" ".join(fortran_and_cpp_compiler_options[arg_cc])
     if len(fortran_and_cpp_compiler_options[arg_fcflags]) or args.use_default_flags:
         fort2x.namespacegen.opts.fortran_compiler_flags = fcflags # pass as list of string
-    fort2x.namespacegen.opts.resolve_all_parameters_via_compiler = args.resolve_parameters_via_fc
-    fort2x.namespacegen.opts.all_used_modules_have_been_compiled = args.assume_used_mod_files_exist
+    if args.resolve_parameters_via_fc:
+        fort2x.namespacegen.opts.resolve_all_parameters_via_compiler = True
+    if args.assume_used_mod_files_exist:
+        fort2x.namespacegen.opts.all_used_modules_have_been_compiled = True
     # fort2x.hip.codegen
     if opts.only_emit_kernels:
         fort2x.hip.opts.emit_cpu_launcher = False

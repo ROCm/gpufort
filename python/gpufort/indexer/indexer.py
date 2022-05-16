@@ -651,7 +651,6 @@ def _read_json_file(file_path):
     with open(file_path, "r") as infile:
         return json.load(infile)
 
-
 # API
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def update_index_from_linemaps(linemaps, index,**kwargs):

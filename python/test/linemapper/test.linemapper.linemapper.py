@@ -125,9 +125,13 @@ class TestLinemapper(unittest.TestCase):
 program main
 if( tha(i,j,k).gt. 1.0 ) then
   thrad = -1.0/(12.0*3600.0)
-endif
+end if
+WHERE ( ht_g(ids:ide,jds:jde) < -1000. )
+  ht_g(ids:ide,jds:jde) = 0
+endwhere
 end program
 """    
+        #print(result_statements)
         self.assertEqual(self.clean(result_statements),self.clean(testdata_statements))
     def test_4_collapse_multiline_acc_directive(self):
         linemaps = linemapper.read_file("test3.f90",preproc_options="")

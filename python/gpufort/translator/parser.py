@@ -121,15 +121,15 @@ def parse_fortran_code(statements,result_name=None):
     level = 0
     do_loop_labels = []
     for stmt1 in statements:
-        tokens = util.parsing.tokenize(stmt1.lower(), padded_size=6)
+        tokens = util.parsing.tokenize(stmt1.lower(), padded_size=1)
         try:
             numeric_label = str(int(tokens[0]))
             tokens.pop(0)
             append_(tree.TTLabel(stmt,"", [numeric_label]))
         except:
             numeric_label = None
-        stmt = " ".join(tokens) # ensure whitespace between operators and operands
-        stmt = prepostprocess.preprocess_fortran_statement(stmt)
+        stmt = prepostprocess.preprocess_fortran_statement(tokens)
+        tokens = util.parsing.tokenize(stmt,padded_size=6)
         # strip of ! from tokens.index("!")
         util.logging.log_debug3(
             opts.log_prefix, "parse_fortran_code",
@@ -284,8 +284,8 @@ def parse_fortran_code(statements,result_name=None):
         elif tokens[0] == "exit":
             ttexit = tree.TTExit(stmt, 0, [[]])
             append_(ttexit,"exit statement")
-        elif tokens[0] == "goto":
-            append_(tree.TTGoto(stmt, 0, [tokens[1]]),"goto statement")
+        elif tokens[0:2] == ["go","to"]:
+            append_(tree.TTGoto(stmt, 0, [tokens[2]]),"goto statement")
         elif util.parsing.is_end(tokens, ["if", "select"]):
             ascend_(tokens[1])
             ascend_(tokens[1])

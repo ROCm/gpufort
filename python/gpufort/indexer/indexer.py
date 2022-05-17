@@ -133,7 +133,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
     implicit_spec_stack = []
     in_interface        = False
     interface_name      = None
-    in_contains_section_stack   = [False]
+    in_contains_section_stack   = [True] # file root can contain subroutines but not interfaces
 
     def log_enter_node_():
         nonlocal current_node

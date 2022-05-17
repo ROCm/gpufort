@@ -647,7 +647,7 @@ def _parse_file(linemaps, index, **kwargs):
                                     do_loop_labels.pop(-1)
                                 DoLoopEnd()
                             elif (current_tokens[0] == "end"
-                                 and current_tokens[1] != "type"
+                                 and current_tokens[1] not in ["type","interface"]
                                  and  current_tokens[1] not in indexer.ignored_constructs): 
                                 End()
                             # single-statements

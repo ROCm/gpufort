@@ -636,11 +636,11 @@ def _parse_statements(linemaps, file_path,**kwargs):
                             # TODO handle implicit variables here (problem: scope)
                             pass
                         else:
-                            if (current_tokens[0]=="end" and
+                            if current_tokens[0:2] == ["end","interface"]:
+                                InterfaceEnd() 
+                            elif (current_tokens[0]=="end" and
                                current_tokens[1] not in ignored_constructs):
                                 End()
-                            elif current_tokens[0:2] == ["end","interface"]:
-                                InterfaceEnd() 
                             elif openacc and util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
                                 if current_tokens[1:3] == ["acc","declare"]:
                                     AccDeclare()

@@ -45,10 +45,10 @@ enum class PrintMode {
 
 // Fortran/C/C++ 
 enum class Direction {
-  HostToHost = 0,     ///< Host-to-host operation
-  HostToDevice = 1,   ///< Host-to-device operation
-  DeviceToHost = 2,   ///< Device-to-host operation
-  DeviceToDevice = 3, ///< Device-to-device operation
+  HostToHost = 0,    ///< Host-to-host operation
+  HostToDevice = 1,  ///< Host-to-device operation
+  DeviceToHost = 2,  ///< Device-to-host operation
+  DeviceToDevice = 3 ///< Device-to-device operation
 };
 {%- endmacro -%}
 {########################################################################################}

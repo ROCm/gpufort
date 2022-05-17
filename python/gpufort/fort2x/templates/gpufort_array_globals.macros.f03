@@ -20,6 +20,13 @@ enum, bind(c)
   enumerator :: gpufort_array_alloc_pinned_host_wrap_device  = 4 !> Allocate new pinned host array and wrap device pointer.
   enumerator :: gpufort_array_alloc_pinned_host_alloc_device = 5 !> Allocate new pinned host array and wrap device pointer.
 end enum
+
+enum, bind(c)
+  enumerator :: gpufort_host_to_host = 0     !< Host-to-host operation
+  enumerator :: gpufort_host_to_device = 1   !< Host-to-device operation
+  enumerator :: gpufort_device_to_host = 2   !< Device-to-host operation
+  enumerator :: gpufort_device_to_device = 3 !< Device-to-device operation
+end enum
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_typedefs() -%}

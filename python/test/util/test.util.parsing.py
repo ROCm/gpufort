@@ -886,6 +886,18 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_implicit_statement(expr))
             self.assertEqual(util.parsing.parse_implicit_statement(expr),results[i])
+    def test_36_parse_interface_statement(self):
+        expressions = [
+          "interface",
+          "INTERFACE myInterFace",
+        ]
+        results = [
+          None,
+          "myInterFace",
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing.parse_interface_statement(expr))
+            self.assertEqual(util.parsing.parse_interface_statement(expr),results[i])
     
 if __name__ == '__main__':
     unittest.main() 

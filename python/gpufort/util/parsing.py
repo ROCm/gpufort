@@ -401,6 +401,22 @@ def extract_function_calls(text, func_name):
         result.append((text[m.start():end], args))
     return result
 
+def parse_interface_statement(statement):
+    """Parse interface statements such as
+    `interface`
+    `INTERFACE myinterface`
+    """
+    tokens = tokenize(statement,padded_size=2)
+    if tokens[0].lower() != "interface":
+        raise error.SyntaxError("expected 'interface'")
+    name = tokens[1]
+    if name.isidentifier():
+       return name
+    elif name == "":
+       return None
+    else:
+        raise error.SyntaxError("expected identifier after '{}'".format(tokens[0]))
+
 def parse_function_statement(statement):
     """Fortran function and subroutine statements can take
     various forms, e.g.:

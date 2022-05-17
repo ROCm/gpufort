@@ -599,6 +599,9 @@ class STProcedure(STContainerBase):
         return self.has_attribute("device") or\
                self.has_attribute("global")
 
+    def is_interface(self):
+        return self.index_record["interface"]
+
     def keep_recording(self):
         """
         No recording if the function needs to be kept only on the host.

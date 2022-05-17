@@ -20,7 +20,7 @@ from . import grammar
 
 considered_constructs = [
   "program", "module", "subroutine", "function",
-  "type"
+  "type", "interface"
 ]
 
 ignored_constructs = [
@@ -35,7 +35,7 @@ ignored_constructs = [
   "where",
   "while",
   
-  "interface",
+  #"interface",
 ]
 
 class Node():
@@ -131,6 +131,9 @@ def _parse_statements(linemaps, file_path,**kwargs):
     current_statement = None
     accessibility_statement_stack = []
     implicit_spec_stack = []
+    in_interface        = False
+    interface_name      = None
+    in_contains_section_stack   = [False]
 
     def log_enter_node_():
         nonlocal current_node
@@ -176,6 +179,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_linemap_no
         nonlocal current_statement_no
         nonlocal current_statement
+        nonlocal current_tokens
         nonlocal accessibility_statement_stack
         nonlocal implicit_spec_stack
         log_detection_("end of program/module/subroutine/function/type")
@@ -203,6 +207,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
                           "letters": letters
                         })
                 implicit_spec_stack.pop(-1)
+                in_contains_section_stack.pop(-1)
             # accessibility: public vs private
             if current_node._kind in ["module","type"]:
                 # apply public/private visibility
@@ -224,8 +229,10 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_tokens
         nonlocal accessibility_statement_stack
         nonlocal implicit_spec_stack
+        nonlocal in_contains_section_stack
         accessibility_statement_stack.append([])
         implicit_spec_stack.append([])
+        in_contains_section_stack.append(False)
         #
         name = current_tokens[1]
         module = create_fortran_construct_record("module", name, file_path)
@@ -242,7 +249,9 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_node
         nonlocal current_tokens
         nonlocal implicit_spec_stack
+        nonlocal in_contains_section_stack
         implicit_spec_stack.append([])
+        in_contains_section_stack.append(False)
         #
         name = current_tokens[1]
         program = create_fortran_construct_record("program", name, file_path)
@@ -271,10 +280,37 @@ def _parse_statements(linemaps, file_path,**kwargs):
         else:
             raise util.error.SyntaxError("unexpected '{}' statement".format(current_tokens[0]))
     
+    def Interface():
+        nonlocal in_interface
+        nonlocal interface_name
+        nonlocal current_statement
+        log_detection_("start of interface")
+        if in_contains_section_stack[-1]:
+            raise util.error.SyntaxError("interface statement in contains section")
+        if in_interface:
+            raise util.error.SyntaxError("interface statement within interface construct")
+        in_interface = True
+        name = util.parsing.parse_interface_statement(current_statement)
+        interface_name = name
+    
+    def InterfaceEnd():
+        nonlocal in_interface
+        nonlocal interface_name
+        log_detection_("end of interface")
+        in_interface   = False
+        interface_name = None
+    
+    def Contains():
+        nonlocal in_contains_section_stack
+        log_detection_("contains")
+        in_contains_section_stack[-1] = True
+        
+        
     def Implicit():
         nonlocal current_node
         nonlocal current_tokens
         nonlocal current_statement
+        log_detection_("implicit")
         if current_node._kind in ["module","program","subroutine","function"]:
             new_specs = util.parsing.parse_implicit_statement(current_statement)
             for _,_,_,letters in new_specs:
@@ -292,6 +328,8 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_node
         nonlocal current_statement
         nonlocal implicit_spec_stack
+        nonlocal in_contains_section_stack
+        nonlocal interface_name
         implicit_spec_stack.append([])
         #
         log_detection_("start of subroutine")
@@ -303,7 +341,9 @@ def _parse_statements(linemaps, file_path,**kwargs):
             result_type, result_type_kind, result_name = result_triple
             bind_c, bind_c_name = bind_tuple
             subroutine = create_fortran_construct_record("subroutine", name, file_path)
-            subroutine["attributes"] = modifiers + attributes 
+            subroutine["attributes"]     = modifiers + attributes 
+            subroutine["interface"]      = not in_contains_section_stack[-1]
+            subroutine["interface_name"] = interface_name # TODO consider module procedure & check if multiple names can be used
             subroutine["dummy_args"] = dummy_args
             if current_node._kind == "root":
                 current_node._data.append(subroutine)
@@ -315,6 +355,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
                                 parent=current_node)
             current_node._begin = (current_linemap_no, current_statement_no)
             log_enter_node_()
+            in_contains_section_stack.append(False)
         else:
             util.logging.log_warning(opts.log_prefix,"_parse_statements","found subroutine in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
               format(current_statement,current_node._kind))
@@ -325,6 +366,8 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_node
         nonlocal current_linemap
         nonlocal implicit_spec_stack
+        nonlocal in_contains_section_stack
+        nonlocal interface_name
         implicit_spec_stack.append([])
         #
         log_detection_("start of function")
@@ -336,9 +379,11 @@ def _parse_statements(linemaps, file_path,**kwargs):
             result_type, result_type_kind, result_name = result_triple
             bind_c, bind_c_name = bind_tuple
             function = create_fortran_construct_record("function", name, file_path)
-            function["attributes"] = modifiers + attributes 
-            function["dummy_args"] = dummy_args
-            function["result_name"] = result_name
+            function["attributes"]     = modifiers + attributes 
+            function["interface"]      = not in_contains_section_stack[-1]
+            function["interface_name"] = interface_name # TODO add name here
+            function["dummy_args"]     = dummy_args
+            function["result_name"]    = result_name
             if result_type != None:
                 result_var_decl = result_type
                 if result_type_kind != None:
@@ -357,6 +402,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
                                 parent=current_node)
             current_node._begin = (current_linemap_no, current_statement_no)
             log_enter_node_()
+            in_contains_section_stack.append(False)
         else:
             util.logging.log_warning(opts.log_prefix,"_parse_statements","found function in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
               format(current_statement,current_node._kind))
@@ -593,6 +639,8 @@ def _parse_statements(linemaps, file_path,**kwargs):
                             if (current_tokens[0]=="end" and
                                current_tokens[1] not in ignored_constructs):
                                 End()
+                            elif current_tokens[0:2] == ["end","interface"]:
+                                InterfaceEnd() 
                             elif openacc and util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
                                 if current_tokens[1:3] == ["acc","declare"]:
                                     AccDeclare()
@@ -612,6 +660,10 @@ def _parse_statements(linemaps, file_path,**kwargs):
                                 PublicOrPrivate()
                             elif current_tokens[0] == "implicit":
                                 Implicit()
+                            elif current_tokens[0] == "interface":
+                                Interface()
+                            elif current_tokens[0] == "contains":
+                                Contains()
                             elif current_tokens[0] == "parameter":
                                 Parameter()
                             elif current_tokens[0] == "attributes" and "::" in current_tokens: # attributes(device) :: a

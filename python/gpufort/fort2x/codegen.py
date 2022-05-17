@@ -213,7 +213,9 @@ class CodeGenerator():
                                 self.default_modules))
                 if inode == None:
                     raise util.error.LookupError("could not find self.index record for scanner tree node '{}'.".format(stnode_name))
-                if isinstance(stnode,(scanner.tree.STProcedure,scanner.tree.STProgram)):
+                if (isinstance(stnode,scanner.tree.STProgram)
+                   or (isinstance(stnode,scanner.tree.STProcedure)
+                      and not stnode.is_interface())):
                     self._render_scope(stnode, self.cpp_filegen) # must be in main C++ file
 
                 cpp_filegen.includes += self._create_includes_from_used_modules(

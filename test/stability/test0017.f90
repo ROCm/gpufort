@@ -3,6 +3,12 @@ program main
   integer i,n
   character(len=*) :: a
 
+  interface
+  subroutine foo(arg) bind(c,name="foo")
+    integer :: arg
+  end subroutine
+  end interface
+
   do
     read(unit,*,END=9)
     i=i+1

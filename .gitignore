@@ -12,3 +12,5 @@ __pycache__
 gpufort.h
 gpufort_reductions.h
 render*.template.*
+python/gpufort/fort2x/templates/render.py.in
+python/gpufort/fort2x/hip/templates/render.py.in

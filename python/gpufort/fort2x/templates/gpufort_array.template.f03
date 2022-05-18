@@ -45,7 +45,7 @@ module gpufort_array
     integer(kind(gpufort_array_wrap_host_wrap_device)) :: alloc_mode = gpufort_array_wrap_host_alloc_device  !> Data allocation strategy. Default: 
                                                                                                              !> wrap the host and allocate device data
     integer(kind(gpufort_array_sync_none)) :: sync_mode  = gpufort_array_sync_none               !> How data should be synchronized
-                                                                                                             !> during the initialization and destruction of this GPUFORT array.
+                                                                                                 !> during the initialization and destruction of this GPUFORT array.
     integer(c_int) :: num_refs          = 0  !> Number of references.
     integer(c_int) :: bytes_per_element = -1 !> Bytes per data element. 
   end type{{"\n" if not loop.last}}

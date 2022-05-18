@@ -12,7 +12,7 @@
 type,bind(c) :: gpufort_array_ptr{{rank}}
   type(c_ptr) :: data = c_null_ptr
   type(gpufort_dope) :: dope
-  integer(c_int) :: bytes_per_element = -1       !> Offset for index calculation scalar product of negative lower bounds and strides.
+  integer(c_int) :: bytes_per_element = -1
 end type
 {% endfor %}
 {%- endmacro -%}
@@ -157,38 +157,41 @@ end function
 {# SUBARRAY #}
 {########################################################################################}
 {% for routine in ["subarray","subarray_w_bounds"] %}
-!> 
-!> \return a {{thistype}}{{d}} by fixing the {{rank-d}} last dimensions of this {{thistype}}{{rank}}.
-!>         Further reset the upper bound of the result's last dimension.
-{% if routine == "subarray_w_ub" %}
-!> \param[in] ub{{d}} upper bound for the result's last dimension.
-{% endif %}
-!> \param[in] i{{d+1}},...,i{{rank}} indices to fix.
-!> 
-{% set iface = gpufort_type+"_"+routine %}
+{%   set iface = gpufort_type+"_"+routine %}
 interface {{iface}}
-{% for rank in range(1,max_rank+1) %}
-{% set f_kind  = gpufort_type+rank|string %}
-{% set binding  = f_kind+"_"+routine %}
-{% for d in range(rank-1,0,-1) %}
-{% set f_kind_subarray  = gpufort_subarray_type+d|string %}
+{%   for rank in range(1,max_rank+1) %}
+{%     set f_kind  = gpufort_type+rank|string %}
+{%     set binding  = f_kind+"_"+routine %}
+{%     for d in range(rank-1,0,-1) %}
+  !> \return a {{gpufort_type}}{{d}} by fixing the {{rank-d}} last dimensions of this {{gpufort_type}}{{rank}}.
+  {%   if routine == "subarray_w_ub" %}
+  !> Further reset the upper bound of the result's last dimension.
+  !> \param[in] ub{{d}} upper bound for the result's last dimension.
+{%   endif %}
+  !> \param[in] i{{d+1}},...,i{{rank}} indices to fix.
+{%       set f_kind_subarray  = gpufort_subarray_type+d|string %}
   subroutine {{binding}}_{{d}} (subarray,array,&
+{%       if routine == "subarray_w_ub" %}
+      u{{d}},&
+{%       endif %}
 {{"" | indent(6,True)}}{% for e in range(d+1,rank+1) %}i{{e}}{{"," if not loop.last}}{%- endfor %}) &
-      bind(c,name="{{binding}}_{{d}}")
+        bind(c,name="{{binding}}_{{d}}")
     use iso_c_binding
     use hipfort_enums
     import {{f_kind}}
-    import {{f_subarray}}
+    import {{f_kind_subarray}}
     implicit none
     type({{f_kind_subarray}}),intent(inout) :: subarray
     type({{f_kind}}),intent(in) :: array
     integer(c_int),value,intent(in) :: &
-{% if routine == "subarray_w_ub" %}
-{% endif %}
+{%       if routine == "subarray_w_ub" %}
+      u{{d}},&
+{%       endif %}
 {{"" | indent(6,True)}}{% for e in range(d+1,rank+1) %}i{{e}}{{"," if not loop.last else "\n"}}{%- endfor %}
   end subroutine
-{% endfor %}{# d #}
-{% endfor %}{# rank #}
+{%     endfor %}{# d #}
+{%   endfor %}{# rank #}
+{% endfor %}{# routine #}
 end interface
 {%- endmacro -%}
 {########################################################################################}

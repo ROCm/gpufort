@@ -18,6 +18,7 @@ module gpufort_array_ptr
 {{ gapm.render_gpufort_array_ptr_copy_data_to_from_buffer_interfaces("gpufort_array_ptr",datatypes,max_rank) | indent(2,True) }}
 {{ gapm.render_gpufort_array_ptr_allocate_interface("gpufort_array_ptr",datatypes,max_rank) | indent(2,True) }}
 {{ gapm.render_gpufort_array_ptr_deallocate_interface("gpufort_array_ptr",datatypes,max_rank) | indent(2,True) }}
+{{ gapm.render_gpufort_array_ptr_subarray_interfaces("gpufort_array_ptr","gpufort_array_ptr",max_rank) | indent(2,True) }}
 contains
 {{ gapm.render_gpufort_array_ptr_init_routines(datatypes,max_rank) | indent(2,True) }}
 {{ gapm.render_gpufort_array_ptr_wrap_routines(datatypes,max_rank) | indent(2,True) }}

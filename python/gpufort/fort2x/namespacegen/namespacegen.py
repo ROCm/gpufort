@@ -228,15 +228,6 @@ class NamespaceGenerator():
         already_considered = set()
         for ivar1 in reversed(self.scope["variables"]):
             ivar = copy.deepcopy(ivar1)
-            # public,private may only appear in module
-            try:
-                ivar["attributes"].remove("public")
-            except:
-                pass 
-            try:
-                ivar["attributes"].remove("private")
-            except:
-                pass 
             if self.__consider_parameter(ivar,already_considered):#
                 already_considered.add(ivar["name"])
                 ivars_to_resolve.insert(0,ivar)

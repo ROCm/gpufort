@@ -1356,11 +1356,10 @@ def parse_directive(directive,tokens_to_omit_at_begin=0):
         if tk == "(":
             rest = next_tokens_till_open_bracket_is_closed(tokens,1)
             result[-1] = "".join([result[-1],tk]+rest)
-            for i in range(0,len(rest)):
-                tokens.pop(0)
+            tokens = tokens[len(rest):]
         elif tk.isidentifier() or tk.endswith("$"):
             result.append(tk)
-        else:
+        elif tk != ",": # optional commas are allowed between clauses
             raise error.SyntaxError("unexpected clause or identifier token: {}".format(tk))
     return result[tokens_to_omit_at_begin:]
 
@@ -1410,7 +1409,7 @@ def parse_acc_directive(directive):
         length = len(kind)
         if len(directive_parts) >= length:
             last_directive_token_parts = directive_parts[length-1].split("(")
-            if (directive_parts[0:length-1]+last_directive_token_parts[0:1])==kind:
+            if compare_ignore_case(directive_parts[0:length-1]+last_directive_token_parts[0:1],kind):
                 directive_kind = kind
                 if len(last_directive_token_parts) > 1:
                     _, directive_args = parse_acc_clauses([directive_parts[length-1]])[0] 

@@ -10,7 +10,7 @@ program main
     y_exact(i) = 3
   end do
 
-  !$acc data copy(x(1:N),y(1:N))
+  !$ACC DATA COPY(X(1:N),Y(1:N))
  
   !$acc parallel loop present(x,y)
   do i = 1, N

@@ -32,7 +32,7 @@ class Acc2Omp(accbackends.AccBackendBase):
             return result, True
         except Exception as e:
             util.logging.log_exception(
-                LOG_PREFIX, "Acc2Omp.transform",
+                opts.log_prefix, "Acc2Omp.transform",
                 "failed parse directive " + str(snippet))
 
 

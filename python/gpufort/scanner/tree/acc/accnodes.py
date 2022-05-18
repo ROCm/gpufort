@@ -29,7 +29,7 @@ class STAccDirective(nodes.STDirective):
         #
         self.top_level_directive = top_level_directive
         directive_expr = top_level_directive if self.top_level_directive != None else self.first_statement()
-        _, self.directive_kind, self.directive_args, unprocessed_clauses = util.parsing.parse_acc_directive(directive_expr)
+        _, self.directive_kind, self.directive_args, unprocessed_clauses = util.parsing.parse_acc_directive(directive_expr.lower())
         self.clauses = util.parsing.parse_acc_clauses(unprocessed_clauses)
    
     # overwrite 

@@ -638,9 +638,13 @@ class TestParsingUtils(unittest.TestCase):
     def test_22_parse_directive(self):
         expressions = [
           "!$acc enter data copyin(a,b,c(:)) copyout(b(-1:))",
+          "!$ACC ENTER data copyin(a,b,c(:)) copyout(b(-1:))",
+          "!$ACC ENTER dAta copyin(a,b,c(:)), copyout(b(-1:))",
         ]
         results = [
           ['!$', 'acc', 'enter', 'data', 'copyin(a,b,c(:))', 'copyout(b(-1:))'],
+          ['!$', 'ACC', 'ENTER', 'data', 'copyin(a,b,c(:))', 'copyout(b(-1:))'],
+          ['!$', 'ACC', 'ENTER', 'dAta', 'copyin(a,b,c(:))', 'copyout(b(-1:))'],
         ]
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_directive(expr))

@@ -314,7 +314,7 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
             ]
             return "".join(tokens)
         else:
-            raise util.parsing.SyntaxError("clause not supported") 
+            raise util.error.SyntaxError("clause not supported") 
     
     def derive_kernel_call_arguments(self):
         """:return a list of arguments given the directives.

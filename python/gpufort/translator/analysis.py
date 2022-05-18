@@ -447,7 +447,7 @@ def kernel_args_to_acc_mappings_no_types(acc_clauses,tavars,present_by_default,c
     :note: Current implementation does not support mapping of scalars/arrays of derived type.
     
     :raise util.error.LimitationError: If a derived type must be mapped.
-    :raise util.parsing.SyntaxError: If the OpenACC clauses could not be parsed. 
+    :raise util.error.SyntaxError: If the OpenACC clauses could not be parsed. 
     """
     mappings = []
     for tavar in tavars:
@@ -471,7 +471,7 @@ def kernel_args_to_acc_mappings_no_types(acc_clauses,tavars,present_by_default,c
                 else:
                     mappings.append((tavar["expr"], callback("present_or_copy",tavar["expr"],tavar,**kwargs)))
             elif not explicitly_mapped:
-                raise util.parsing.SyntaxError("no mapping specified for expression: {}".format(tavar["expr"]))
+                raise util.error.SyntaxError("no mapping specified for expression: {}".format(tavar["expr"]))
         elif tavar["f_type"] == "type": # map type
             raise util.error.LimitationError("mapping of derived types and their members not supported (yet)")
         else: # basic type scalars

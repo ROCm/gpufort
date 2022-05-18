@@ -100,122 +100,38 @@ class NamespaceGenerator():
 
     @util.logging.log_entry_and_exit(opts.log_prefix)
     def __resolve_dependencies(self,all_used_modules_have_been_compiled=False):
+        # TODO rewrite docu
         """
         Algorithm:
-
         given: tag1:tag2:..., = program/procedure tag
         going from inside to outside
-        1.: determine record mapping to scope tag
-           * add use statement for parent tag1_tag2_..tagn before existing use statements: create program routine
-           * create program tag1_tag2_.._tagn
-           * lookup index record for used modules and filter out all parameters, public and private: create module routine
-        2. till n.: determine record mapping to scope tag tag1_tag2...tagn-1
-           * add use statement for parent tag_1_tag_...tagn-2 before existing use statements: create module routine
-           * create module (!) tag1_tag2...tagn-1
-           * lookup index record for used modules and filter out all parameters, public and private: create module routine
+        * reproduce hierarchy
+        * lookup index record for used modules and filter out all parameters, public and private: create module routine
         OTHER:
         * also copy derived type definitions as there are parameter types
         * ex: type(mytype),parameter :: t = mytype(1) 
         * when rendering, render in order of line orders  
-        ```
-        module used1
-          use tpl1  
-          <public_vars>
-          <private_vars>
-        end module
-     
-        module used2
-          use tpl2
-          <public_vars>
-          <private_vars>
-        end module
-
-        program tag1
-          use used1
-          <vars>
-          contains
-            subroutine tag2
-            use used2
-            <vars>
-            end subroutine
-        end program
-        ```
-        will be translated to
-        ```
-        module used1
-          use tpl1
-          <public_vars with 'parameter'>
-          <private_vars with 'parameter'>
-        end module
-     
-        module used2
-          use tpl2
-          <public_vars with 'parameter'>
-          <private_vars with 'parameter'>
-        end module
-
-        module tag1
-          use used1
-          public
-          <vars with 'parameter'> ! all assumed public
-        end module
-      
-        program tag2
-          use tag1
-          use used2
-          <vars with 'parameter'>
-          {for p in <vars in scope tag1:tag2 with 'parameter'>}
-          { print properties of <p> }
-          { endfor }
-        end program
-        ```
         """
-        # just need the parameters per module program procedure
-        # inner most scope tag entity will be translated to program
-        # rest will all converted to modules 
-        # model program/subroutine parents as modules with all parameters public
-        # example: above, subroutine tag2 uses module tag1
-
-        modules = []
-        artificial_modules=[]
-        program = None
-            
-        module_names = []
-
-        def create_fortran_construct_context_(kind,index_record,scope_tag_tokens,ignored=[],make_public=False):
-            """:param bool make_public: make private parameters public
+        def create_fortran_construct_context_(index_record):
+            """Create an index reocrd like structure based on the original
+            index record that only contains parameters and type definitions 
+            (latter part not implemented yet).
             """
             nonlocal all_used_modules_have_been_compiled
 
-            name = "_".join(scope_tag_tokens) 
-            context = indexer.create_fortran_construct_record(kind, name, None)
+            context = indexer.create_fortran_construct_record(index_record["kind"], index_record["name"], None)
             context["types"]        += [] # index_record["types"]
             context["variables"]    += [var for var in index_record["variables"] 
                                          if ("parameter" in var["attributes"]
-                                            and var["name"] not in ignored
                                             and var["f_type"] != "type")] # TODO consider types too
-            if make_public:
-                for entity_type in ["types","variables"]:
-                    for ivar in context[entity_type]:
-                        if "private" in ivar["attributes"]:
-                            ivar["attributes"].remove("private")
-
             type_and_parameter_names = ([var["name"] for var in context["variables"]]
                                        +[typ["kind"] for typ in context["types"]])
-            if kind == "module":
-                context["accessibility"] = index_record.get("accessibility","public")
-                context["public"] = [ident for ident in index_record.get("public",[]) if ident in type_and_parameter_names]
-                if make_public:
-                    context["accessibility"] = "public"
-                    context["public"] = [ident for ident in index_record.get("private",[]) if ident in type_and_parameter_names]
-                    context["private"] = []
-                else:
-                    context["private"] = [ident for ident in index_record.get("private",[]) if ident in type_and_parameter_names]
+            context["accessibility"] = index_record.get("accessibility","public")
+            context["public"]        = [ident for ident in index_record.get("public",[]) if ident in type_and_parameter_names]
+            context["private"]       = [ident for ident in index_record.get("private",[]) if ident in type_and_parameter_names]
             context["used_modules"] = []
-            simple_use_statements_module_names = set()
-            for used_module1 in reversed(index_record["used_modules"]):
-                used_module = copy.deepcopy(used_module1)
-                # only include parameters if we use reproduced modules that contain only parameters
+            for used_module1 in index_record["used_modules"]:
+                # filter 'only' and rename list to only contain parameters
                 if (not all_used_modules_have_been_compiled 
                    and (len(used_module1["renamings"]) 
                        or len(used_module1["only"]))):
@@ -236,9 +152,7 @@ class NamespaceGenerator():
                             # TODO also include types
                     context["used_modules"].append(used_module)
                 else:
-                    if used_module["name"] not in simple_use_statements_module_names:
-                        simple_use_statements_module_names.add(used_module["name"])
-                        context["used_modules"].append(used_module)
+                    context["used_modules"].append(copy.deepcopy(used_module1))
             # extension
             context["declarations"] = []
             iv=0
@@ -269,9 +183,29 @@ class NamespaceGenerator():
                 condt = it < len(context["types"])
                 condition = condv or condt
             return context
+        
+        modules = []
+        module_names = []
+        def handle_use_statements_(context):
+            """:note:recursive"""
+            nonlocal modules
+            nonlocal module_names
+            nonlocal all_used_modules_have_been_compiled
+
+            for used_module in indexer.scope.combine_use_statements(context["used_modules"]):
+                is_third_party_module = ("intrinsic" in used_module["attributes"]
+                                         or used_module["name"] in indexer.scope.opts.module_ignore_list)
+                if not is_third_party_module:
+                    imodule_used = indexer.scope.search_index_for_top_level_entry(
+                                    self.index,used_module["name"],"module")
+                    new = create_fortran_construct_context_(imodule_used)
+                    handle_use_statements_(new) # recursion
+                    if new["name"] not in module_names:
+                        modules.append(new)
+                        module_names.append(new["name"])
 
 
-        # 1) Go from tag1 to tag1:tag2:tagn and lookup all index records
+        # Go from tag1 to tag1:tag2:tagn and lookup all index records
         scope_tag_tokens = self.scope["tag"].split(":")
         nesting_levels = len(scope_tag_tokens)
         hierarchy = []
@@ -282,69 +216,12 @@ class NamespaceGenerator():
             else:
                 parent = irecord
                 irecord = next((ientry for ientry in parent["procedures"] if ientry["name"] == scope_tag_tokens[i]),None)
-            hierarchy.append(irecord)        
-        # 2) Go from tag1:tag2:tagn to tag1
-        # To have original top down order, all artificial modules must be prepended
-        # to the corresponding list.
-        names_used_by_inner_contexts = []
-        for i,irecord in enumerate(reversed(hierarchy)):
-            make_program = i == 0 
-            kind = "program" if make_program else "module"
-            context = create_fortran_construct_context_(kind,irecord,scope_tag_tokens[:nesting_levels-i],
-                                                        ignored=names_used_by_inner_contexts,
-                                                        make_public=True)
-            # While a procedure belonging to a program/module/procedure can hide the parent's definitions,
-            # a program/module/procedure cannot hide definitions included from a module.
-            # In this case, Fortran compilers emit an error stating that a name is used twice.
-            # As we convert outer program/module/procedures to artificial modules,
-            # we need to exclude names that have already be used by inner procedures.
-            names_used_by_inner_contexts += ([var["name"] for var in context["variables"]]
-                                              +[var["name"] for var in context["types"]])
-            if make_program:
-                program = context
-            else:
-                if context["name"] not in module_names:
-                    artificial_modules.insert(0,context) # prepend to invert order of list
-                    module_names.append(context["name"])
-        # 3) Now go again from tag1 to tag1:tag2:tagn and handle the use statements
-        # all used modules must be appended to the corresponding list
-        contexts = artificial_modules+[program] 
-        def handle_use_statements_(context):
-            """:note:recursive"""
-            nonlocal modules
-            nonlocal all_used_modules_have_been_compiled
-
-            for used_module in indexer.scope.combine_use_statements(context["used_modules"]):
-                is_third_party_module = ("intrinsic" in used_module["attributes"]
-                                         or used_module["name"] in indexer.scope.opts.module_ignore_list)
-                if not is_third_party_module:
-                    imodule_used = next((ientry for ientry in self.index if ientry["name"] == used_module["name"]),None)
-                    if imodule_used != None:
-                        new = create_fortran_construct_context_("module",imodule_used,[used_module["name"]])
-                        handle_use_statements_(new) # recursion
-                        if new["name"] not in module_names:
-                            modules.append(new)
-                            module_names.append(new["name"])
-                    else:
-                        msg = "no index record found for module '{}'".format(
-                            used_module["name"])
-                        raise util.error.LookupError(msg)
-        # 4) Handle existing use statements
-        if not all_used_modules_have_been_compiled:
-            for context in contexts:
+            context = create_fortran_construct_context_(irecord)
+            if not all_used_modules_have_been_compiled:
                 handle_use_statements_(context) # recursive
-        # 5) Then add additional predefined ones (parent, iso_c_binding, ...)
-        # Loop cannot be combined with above loop as above loop would try to
-        # lookup index record of artificially generated modules, which
-        # are not part of the index
-        for i,context in enumerate(contexts):
-            if i > 0:
-                parent_name = contexts[i-1]["name"]
-                context["used_modules"].insert(0,indexer.create_index_record_from_use_statement("use {}".format(parent_name)))
-        program["used_modules"].insert(0,indexer.create_index_record_from_use_statement("use iso_c_binding"))
-        program["used_modules"].insert(1,indexer.create_index_record_from_use_statement("use iso_fortran_env"))
+            hierarchy.append(context)
 
-        return modules+artificial_modules, program
+        return modules, hierarchy
 
     def __select_parameters_in_scope(self):
         ivars_to_resolve = []
@@ -395,11 +272,11 @@ class NamespaceGenerator():
     def __resolve_all_parameters_via_compiler(self):
         decl_list = []
         ivars_to_resolve = self.__select_parameters_in_scope()
-        modules, program = self.__resolve_dependencies(self.all_used_modules_have_been_compiled)
+        modules, hierarchy = self.__resolve_dependencies(self.all_used_modules_have_been_compiled)
         #print(decl_list)
         #print(ivars_to_resolve)
         fortran_snippet = render.render_resolve_scope_program_f03(
-          modules,program,ivars_to_resolve)
+          modules,hierarchy,ivars_to_resolve)
         msg = "scope '{}': snippet for evaluating parameters in scope:\n```\n{}\n```'".format(
             self.scope["tag"],
             fortran_snippet)

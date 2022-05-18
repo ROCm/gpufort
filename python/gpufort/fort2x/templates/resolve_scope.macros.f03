@@ -1,4 +1,4 @@
-{# SPDX-License-Identifier: MIT                                                 #}
+{# SPDX-License-Identifier: MIT                                              #}
 {# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved. #}
 {########################################################################################}
 {% import "common.macros.f03" as cm %}
@@ -19,13 +19,10 @@ end interface
 {# name and Fortran type #}
 {#########################}
 ! {{ivar.name}}
-write( output_unit, "(a)", advance="no") "{{ivar.name}}"
-write( output_unit, "(a)", advance="no") ","
-write( output_unit, "(a)", advance="no") "{{ivar.f_type}}"
+write( output_unit, "(a,a,a,a)", advance="no") "{{ivar.name}}", ",", "{{ivar.f_type}}", ","
 {#######}
 {# len #}
 {#######}
-write( output_unit, "(a)", advance="no") ","
 {% if ivar.f_type == "character" %}
 write( output_unit, "(i0)", advance="no") len({{ivar.name}})
 {% else %}
@@ -83,12 +80,10 @@ write( output_unit, "(a)", advance="no") kind({{ivar.name}})
 {#####################}
 {# bytes per element #}
 {#####################}
-write( output_unit, "(a)", advance="no") ","
-write( output_unit, "(i0)", advance="no") c_sizeof({{ivar.name}})
+write( output_unit, "(a,i0,a)", advance="no") ",",c_sizeof({{ivar.name}}),","
 {########}
 {# rank #}
 {########}
-write( output_unit, "(a)", advance="no") ","
 {% if ivar.rank > 0 %}
 write( output_unit, "(i0)", advance="no") size(shape({{ivar.name}}))
 {% else %}
@@ -238,7 +233,95 @@ subroutine print_value_c_double_complex_0(val)
 end subroutine
 {% endmacro %}
 {########################################################################################}
-{% macro render_resolve_scope_program(modules,program,ivars_to_resolve,max_rank=0) %}
+{% macro render_decl_list(current) %}
+{########################################################################################}
+{{ cm.render_used_modules(current.used_modules) | indent(2,True) }}
+implicit none
+{% for line in current.declarations %}
+{{line}}
+{% endfor %}
+{% endmacro %}
+{########################################################################################}
+{% macro render_ivars_to_resolve(ivars_to_resolve) %}
+{########################################################################################}
+{% for ivar in ivars_to_resolve %}
+{{ render_print_ivar(ivar) }}
+{% endfor %}
+{% endmacro %}
+{########################################################################################}
+{% macro render_hierarchy(hierarchy,ivars_to_resolve,i=0) %}
+{########################################################################################}
+{% set current = hierarchy[i] %}
+! {{current.kind}} {{current.name}}
+{################} 
+{#### i == 0 ####} 
+{################} 
+{% if i == 0 %}
+{####################} 
+{###### module ######} 
+{####################} 
+{%   if current.kind == "module" %}
+module gpufort_namespacegen_module_
+  public
+{{ render_decl_list(current) | indent(2,True) }}
+contains
+{%     if hierarchy|length > 1 %}
+{{ render_hierarchy(hierarchy,ivars_to_resolve,i+1)
+{%     endif %}
+  subroutine gpufort_namespacegen_run_()
+{%     if hierarchy|length == 1 %}
+{{ render_ivars_to_resolve(ivars_to_resolve) | indent(2,True) }}
+{%     else %}
+    call {{hierarchy[i+1].name}}()
+{%     endif %}
+  end subroutine
+end module
+!
+program gpufort_namespacegen_main_
+  use module gpufort_namespacegen_module_, only: gpufort_namespacegen_run_
+{{ render_interface("print_value",datatypes,max_rank) | indent(2,True) }}
+  call gpufort_namespacegen_run_()
+contains
+{{ render_print_value_routines_scalars() | indent(2,True) }}
+end program
+{#########################################} 
+{###### function,subroutine,program ######} 
+{#########################################} 
+{%   elif current.kind in ["function","subroutine","program"] %}
+program gpufort_namespacegen_main_
+{{ render_decl_list(current) | indent(2,True) }}
+{%     if hierarchy|length == 1 %}
+{{ render_ivars_to_resolve(ivars_to_resolve) | indent(2,True) }}
+{%     else %}
+  call {{hierarchy[i+1].name}}()
+{%     endif %}
+{%     if hierarchy|length > 1 %}
+contains
+{{ render_hierarchy(hierarchy,ivars_to_resolve,i+1)
+{%     endif %}
+end program
+{%  endif %}
+{#################################} 
+{#### i == hierarchy|length-1 ####} 
+{#################################} 
+{% elif i == hierarchy|length-1 %}
+subroutine {{current.name}}()
+{{ render_decl_list(current) | indent(2,True) }}
+{{ render_ivars_to_resolve(ivars_to_resolve) | indent(2,True) }}
+end subroutine
+{####################################} 
+{#### 0 < i < hierarchy|length-1 ####} 
+{####################################} 
+{% else %}
+subroutine {{current.name}}()
+{{ render_decl_list(current) | indent(2,True) }}
+  call {{hierarchy[i+1].name}}()
+contains
+{{ render_hierarchy(hierarchy,ivars_to_resolve,i+1) | indent(2,True) }}
+end subroutine
+{% endif %}
+{########################################################################################}
+{% macro render_resolve_scope_program(hierarchy,modules,ivars_to_resolve,max_rank=0) %}
 {% set datatypes = [
    "c_bool",
    "c_short",
@@ -269,19 +352,6 @@ module {{module.name}}
 end module{{"\n" if not loop.last}}
 {% endfor %}
 
-program {{program.name}}
-{{ cm.render_used_modules(program.used_modules) | indent(2,True) }}
-  implicit none ! TODO more care about implicit statement in non-modules
-{{ render_interface("print_value",datatypes,max_rank) | indent(2,True) }}
-{% for line in program.declarations %}
-{{line|indent(2,True)}}
-{% endfor %}
-
-{% for ivar in ivars_to_resolve %}
-{{ render_print_ivar(ivar)|indent(2,True) }}
-{% endfor %}
-contains
-{{ render_print_value_routines_scalars() | indent(2,True) }}
-end program
+{{ render_hierarchy(hierarchy,ivars_to_resolve) }}
 {% endmacro %}
 {########################################################################################}

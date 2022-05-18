@@ -233,7 +233,7 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
     def if_condition(self):
         clause = base.find_first(self.clauses, TTAccClauseIf)
         if not clause is None:
-            return [base.make_f_str(e) for e in clause.expression()]
+            return [base.make_f_str(e) for e in clause.condition()]
         else:
             return ""
 

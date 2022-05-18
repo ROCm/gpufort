@@ -633,3 +633,23 @@ def search_index_for_procedure(index, parent_tag, procedure_name):
         msg = e.args[0]+" (scope tag: '{}')".format(parent_tag)
         e.args = (msg, )
         raise
+
+def search_index_for_top_level_entry(index, name, kind=None):
+    """Search the index for module, program, subroutine,
+    or function entity that do not have a parent themselves.
+    :param str name: lower case name/tag of the searched entry.
+    :param str kind: Kind of the searched entry or None if any kind is accepted.
+                     If 'procedure' is specified, subroutine and functions are accepted."""
+    irecord = next((ientry for ientry in self.index if ientry["name"] == name),None)
+    if irecord != None:
+        if (kind == None 
+           or irecord["kind"] == kind
+           or (kind == "procedure" 
+              and irecord["kind"] == ["function","subroutine"])):
+            return irecord
+        else:
+          raise util.error.LookupError(
+            "no {} record found with name '{}'".format(kind,used_module["name"]))
+    else:
+        raise util.error.LookupError(
+          "no top level index entry found with name '{}'".format(used_module["name"]))

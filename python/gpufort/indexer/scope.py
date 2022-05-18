@@ -640,7 +640,7 @@ def search_index_for_top_level_entry(index, name, kind=None):
     :param str name: lower case name/tag of the searched entry.
     :param str kind: Kind of the searched entry or None if any kind is accepted.
                      If 'procedure' is specified, subroutine and functions are accepted."""
-    irecord = next((ientry for ientry in self.index if ientry["name"] == name),None)
+    irecord = next((ientry for ientry in index if ientry["name"] == name),None)
     if irecord != None:
         if (kind == None 
            or irecord["kind"] == kind

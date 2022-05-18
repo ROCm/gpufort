@@ -270,45 +270,47 @@ class NamespaceGenerator():
 
     @util.logging.log_entry_and_exit(opts.log_prefix)
     def __resolve_all_parameters_via_compiler(self):
-        decl_list = []
         ivars_to_resolve = self.__select_parameters_in_scope()
-        modules, hierarchy = self.__resolve_dependencies(self.all_used_modules_have_been_compiled)
-        #print(decl_list)
-        #print(ivars_to_resolve)
-        fortran_snippet = render.render_resolve_scope_program_f03(
-          modules,hierarchy,ivars_to_resolve)
-        msg = "scope '{}': snippet for evaluating parameters in scope:\n```\n{}\n```'".format(
-            self.scope["tag"],
-            fortran_snippet)
-        util.logging.log_debug2(opts.log_prefix,"NamespaceGenerator.__resolve_all_parameters_via_compiler",msg)
-        temp_infile = tempfile.NamedTemporaryFile(
-            delete=False, 
-            mode="w",
-            prefix="gpufort-namespacegen",
-            suffix=".f90")
-        temp_infile.write(fortran_snippet)
-        temp_infile.close()
-        temp_outfile_path = temp_infile.name.replace(".f90",".x")
-        temp_module_dir   = tempfile.TemporaryDirectory(
-            prefix="gpufort-namespacegen") # TODO set to True
-        # TODO -J,-o assumes gfortran
-        cmd_compile = [self.fortran_compiler,"".join(["-J",temp_module_dir.name])] + self.fortran_compiler_flags + [temp_infile.name,"-o",temp_outfile_path]
-        #print(cmd_compile)
-        status,_,err_out = util.subprocess.run_subprocess(cmd_compile,True)
-        if status != 0:
-            raise util.error.LookupError("failed resolving parameters in scope '{}' as compilation with compiler '{}' and flags '{}' failed for the following reason: {}".format(
-                self.scope["tag"],self.fortran_compiler," ".join(self.fortran_compiler_flags),err_out))
-        # TODO should be cleaned up also in case of error
-        shutil.rmtree(temp_module_dir.name,ignore_errors=False)
-        if os.path.exists(temp_infile.name):
-            os.remove(temp_infile.name)
-        cmd_run     = [temp_outfile_path]
-        _,std_out,_ = util.subprocess.run_subprocess(cmd_run,True)
-        cpp_parameter_expressions = self.__parse_fortran_output(std_out)
-        if os.path.exists(temp_outfile_path):
-            os.remove(temp_outfile_path)
-        # now fill the namespace body with the resolved parameters
-        return cpp_parameter_expressions 
+        if len(ivars_to_resolve):
+            modules, hierarchy = self.__resolve_dependencies(self.all_used_modules_have_been_compiled)
+            #print(ivars_to_resolve)
+            fortran_snippet = render.render_resolve_scope_program_f03(
+              hierarchy,modules,ivars_to_resolve)
+            msg = "scope '{}': snippet for evaluating parameters in scope:\n```\n{}\n```'".format(
+                self.scope["tag"],
+                fortran_snippet)
+            util.logging.log_debug2(opts.log_prefix,"NamespaceGenerator.__resolve_all_parameters_via_compiler",msg)
+            #print(fortran_snippet)
+            temp_infile = tempfile.NamedTemporaryFile(
+                delete=False, 
+                mode="w",
+                prefix="gpufort-namespacegen",
+                suffix=".f90")
+            temp_infile.write(fortran_snippet)
+            temp_infile.close()
+            temp_outfile_path = temp_infile.name.replace(".f90",".x")
+            temp_module_dir   = tempfile.TemporaryDirectory(
+                prefix="gpufort-namespacegen") # TODO set to True
+            # TODO -J,-o assumes gfortran
+            cmd_compile = [self.fortran_compiler,"".join(["-J",temp_module_dir.name])] + self.fortran_compiler_flags + [temp_infile.name,"-o",temp_outfile_path]
+            #print(cmd_compile)
+            status,_,err_out = util.subprocess.run_subprocess(cmd_compile,True)
+            if status != 0:
+                raise util.error.LookupError("failed resolving parameters in scope '{}' as compilation with compiler '{}' and flags '{}' failed for the following reason: {}".format(
+                    self.scope["tag"],self.fortran_compiler," ".join(self.fortran_compiler_flags),err_out))
+            # TODO should be cleaned up also in case of error
+            shutil.rmtree(temp_module_dir.name,ignore_errors=False)
+            if os.path.exists(temp_infile.name):
+                os.remove(temp_infile.name)
+            cmd_run     = [temp_outfile_path]
+            _,std_out,_ = util.subprocess.run_subprocess(cmd_run,True)
+            cpp_parameter_expressions = self.__parse_fortran_output(std_out)
+            if os.path.exists(temp_outfile_path):
+                os.remove(temp_outfile_path)
+            # now fill the namespace body with the resolved parameters
+            return cpp_parameter_expressions 
+        else:
+            return []
 
     @util.logging.log_entry_and_exit(opts.log_prefix)
     def render_namespace_cpp(self):

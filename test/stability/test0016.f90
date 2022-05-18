@@ -13,7 +13,7 @@ contains
 
     subroutine mysubsub()
       integer, parameter :: a = 3
-    integer, parameter   :: b = 3
+      integer, parameter   :: b = 3
     end subroutine
   end subroutine
 end module

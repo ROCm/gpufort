@@ -194,7 +194,7 @@ def _convert_lines_to_statements(lines,modern_fortran):
                                 re.IGNORECASE)
     # we look for a sequence ") <word>" were word != "then".
     p_single_line_if = re.compile(
-        r"^(?P<indent>[\s\t]*)(?P<head>if\s*\(.+\))\s*\b(?!then)(?P<body>\w.+)",
+        r"^(?P<indent>[\s\t]*)(?P<head>(if|where)\s*\(.+\))\s*\b(?!then)(?P<body>\w.+)",
         re.IGNORECASE)
     # Try to determine indent char and width
     first_line = lines[0]
@@ -238,12 +238,12 @@ def _convert_lines_to_statements(lines,modern_fortran):
     for stmt in single_line_statements:
         match = p_single_line_if.search(stmt)
         if match:
-            if match.group("head").startswith("if"):
+            if match.group("head").lower().startswith("if"):
                 THEN = " then"
                 ENDIF = "endif"
             else:
-                THEN = " THEN"
-                ENDIF = "ENDIF"
+                THEN = ""
+                ENDIF = "endwhere"
             unrolled_statements.append(
                 match.group("indent") + match.group("head") + THEN + "\n")
             unrolled_statements.append(

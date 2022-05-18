@@ -22,7 +22,7 @@ fort2x.namespacegen.opts.comment_body= False
         # Only considered if resolve_all_parameters_via_compiler is False.
 fort2x.namespacegen.opts.resolve_all_parameters_via_compiler= True
         # Resolve all parameters via a Fortran compiler.
-fort2x.namespacegen.opts.fortran_compiler= os.environ.get("FC","hipfc")
+fort2x.namespacegen.opts.fortran_compiler= os.environ.get("FC","gfortran")
         # Compiler to use for resolving parameters via (Fortran) compiler.
 fort2x.namespacegen.opts.fortran_compiler_flags= os.environ.get("FCFLAGS","")
         # Compiler flags to use for resolving parameters via (Fortran) compiler.

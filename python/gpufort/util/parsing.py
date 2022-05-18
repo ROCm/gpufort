@@ -76,7 +76,7 @@ def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
             r"=>?",
             r"\+",
             r"-",
-            r"\*",
+            r"\*\*?",
             r"\/",
             r"\&",
             r"\.\w+\.",
@@ -93,7 +93,7 @@ def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
         tokens = re.split(keep_pattern, statement, 0, re.IGNORECASE)
         result = []
         for tk in tokens:
-            if tk.lower() in ["endif", "elseif", "enddo"]:
+            if tk.lower() in ["endif", "elseif", "enddo", "goto"]:
                 result.append(tk[:-2])
                 result.append(tk[-2:])
             elif len(tk) and (keepws or len(tk.strip())):
@@ -400,6 +400,22 @@ def extract_function_calls(text, func_name):
         end = m.end() + len(rest_substr)
         result.append((text[m.start():end], args))
     return result
+
+def parse_interface_statement(statement):
+    """Parse interface statements such as
+    `interface`
+    `INTERFACE myinterface`
+    """
+    tokens = tokenize(statement,padded_size=2)
+    if tokens[0].lower() != "interface":
+        raise error.SyntaxError("expected 'interface'")
+    name = tokens[1]
+    if name.isidentifier():
+       return name
+    elif name == "":
+       return None
+    else:
+        raise error.SyntaxError("expected identifier after '{}'".format(tokens[0]))
 
 def parse_function_statement(statement):
     """Fortran function and subroutine statements can take
@@ -1273,9 +1289,18 @@ def parse_implicit_statement(statement):
             datatype_tokens = next_tokens_till_open_bracket_is_closed(
                     rule_tokens,open_brackets=1,brackets=(None,")"))
             if len(datatype_tokens) == len(rule_tokens):
+                # In this case, last brackets do not belong to datatype_tokens
                 # example: implicit character (c)           
-                datatype_tokens = rule_tokens[:1]
-                first_letter_tokens = rule_tokens[1:]
+                # example: implicit double precision (a-z)           
+                # example: implicit double complex (c-d)           
+                if len(rule_tokens) > 1 and rule_tokens[1].isidentifier():
+                    # example: implicit double precision (a-z)           
+                    last_datatype_token = 1 
+                else:
+                    # example: implicit character (c)
+                    last_datatype_token = 0
+                datatype_tokens = rule_tokens[:last_datatype_token+1]
+                first_letter_tokens = rule_tokens[last_datatype_token+1:]
             else:
                 # example: implicit integer(mykind) (j,k,m,n)       
                 first_letter_tokens = rule_tokens[len(datatype_tokens):]

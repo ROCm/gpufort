@@ -407,7 +407,7 @@ def _parse_file(linemaps, index, **kwargs):
             append_if_not_recording_(new)
             util.logging.log_debug(opts.log_prefix,"_parse_file","leave acc kernels region")
         # descend in constructs or new node
-        elif (new.is_directive(["acc","serial"]) # TODO this assumes that there will be always an acc loop afterwards
+        elif (new.is_directive(["acc","serial"]) 
              or  new.is_directive(["acc","parallel"]) # TODO this assumes that there will be always an acc loop afterwards
              or new.is_directive(["acc","parallel","loop"])
              or new.is_directive(["acc","kernels","loop"])
@@ -419,6 +419,10 @@ def _parse_file(linemaps, index, **kwargs):
             new._do_loop_ctr_memorised = len(do_loop_labels)
             descend_(new) # descend also appends
             set_keep_recording_(True)
+        elif new.is_directive(["acc","end","serial"]):
+            current_node.complete_init(index)
+            ascend_()
+            set_keep_recording_(False)
         elif new.is_directive(["acc","kernels"]):
             acc_kernels_directive = new.first_statement()
             append_if_not_recording_(new)
@@ -454,8 +458,10 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal index
         log_detection_("assignment")
         if in_kernels_acc_region_and_not_recording() or lhs_ivar["rank"] == 0:
+            current_statement_preprocessed =\
+                    translator.prepostprocess.preprocess_fortran_statement(current_statement_stripped)
             parse_result = translator.tree.grammar.assignment_begin.parseString(
-                current_statement_stripped)
+                current_statement_preprocessed)
             lvalue = translator.tree.find_first(parse_result, translator.tree.TTLValue)
             # TODO
             
@@ -641,7 +647,7 @@ def _parse_file(linemaps, index, **kwargs):
                                     do_loop_labels.pop(-1)
                                 DoLoopEnd()
                             elif (current_tokens[0] == "end"
-                                 and current_tokens[1] != "type"
+                                 and current_tokens[1] not in ["type","interface"]
                                  and  current_tokens[1] not in indexer.ignored_constructs): 
                                 End()
                             # single-statements

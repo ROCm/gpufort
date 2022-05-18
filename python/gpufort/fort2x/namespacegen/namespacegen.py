@@ -182,7 +182,9 @@ class NamespaceGenerator():
             
         module_names = []
 
-        def create_fortran_construct_context_(kind,index_record,scope_tag_tokens,ignored=[]):
+        def create_fortran_construct_context_(kind,index_record,scope_tag_tokens,ignored=[],make_public=False):
+            """:param bool make_public: make private parameters public
+            """
             nonlocal all_used_modules_have_been_compiled
 
             name = "_".join(scope_tag_tokens) 
@@ -192,17 +194,28 @@ class NamespaceGenerator():
                                          if ("parameter" in var["attributes"]
                                             and var["name"] not in ignored
                                             and var["f_type"] != "type")] # TODO consider types too
+            if make_public:
+                for entity_type in ["types","variables"]:
+                    for ivar in context[entity_type]:
+                        if "private" in ivar["attributes"]:
+                            ivar["attributes"].remove("private")
+
             type_and_parameter_names = ([var["name"] for var in context["variables"]]
                                        +[typ["kind"] for typ in context["types"]])
             if kind == "module":
                 context["accessibility"] = index_record.get("accessibility","public")
-                context["public"]        = [ident for ident in index_record.get("public",[]) if ident in type_and_parameter_names]
-                context["private"]       = [ident for ident in index_record.get("private",[]) if ident in type_and_parameter_names]
+                context["public"] = [ident for ident in index_record.get("public",[]) if ident in type_and_parameter_names]
+                if make_public:
+                    context["accessibility"] = "public"
+                    context["public"] = [ident for ident in index_record.get("private",[]) if ident in type_and_parameter_names]
+                    context["private"] = []
+                else:
+                    context["private"] = [ident for ident in index_record.get("private",[]) if ident in type_and_parameter_names]
             context["used_modules"] = []
             simple_use_statements_module_names = set()
             for used_module1 in reversed(index_record["used_modules"]):
                 used_module = copy.deepcopy(used_module1)
-                # only include parameters if we use reproduced models that contain only parameters
+                # only include parameters if we use reproduced modules that contain only parameters
                 if (not all_used_modules_have_been_compiled 
                    and (len(used_module1["renamings"]) 
                        or len(used_module1["only"]))):
@@ -278,7 +291,8 @@ class NamespaceGenerator():
             make_program = i == 0 
             kind = "program" if make_program else "module"
             context = create_fortran_construct_context_(kind,irecord,scope_tag_tokens[:nesting_levels-i],
-                                                         ignored=names_used_by_inner_contexts)
+                                                        ignored=names_used_by_inner_contexts,
+                                                        make_public=True)
             # While a procedure belonging to a program/module/procedure can hide the parent's definitions,
             # a program/module/procedure cannot hide definitions included from a module.
             # In this case, Fortran compilers emit an error stating that a name is used twice.
@@ -381,7 +395,7 @@ class NamespaceGenerator():
     def __resolve_all_parameters_via_compiler(self):
         decl_list = []
         ivars_to_resolve = self.__select_parameters_in_scope()
-        modules, program = self.__resolve_dependencies()
+        modules, program = self.__resolve_dependencies(self.all_used_modules_have_been_compiled)
         #print(decl_list)
         #print(ivars_to_resolve)
         fortran_snippet = render.render_resolve_scope_program_f03(

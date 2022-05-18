@@ -599,6 +599,9 @@ class STProcedure(STContainerBase):
         return self.has_attribute("device") or\
                self.has_attribute("global")
 
+    def is_interface(self):
+        return self.index_record["interface"]
+
     def keep_recording(self):
         """
         No recording if the function needs to be kept only on the host.
@@ -825,13 +828,16 @@ class STNonZeroCheck(STNode):
                 result):
             parse_result = tokens[0]
             lhs_name = parse_result.lhs_f_str()
-            ivar  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
-              lhs_name)
-            on_device = index_var_is_on_device(ivar)
-            transformed |= on_device
-            if on_device:
-                subst = parse_result.f_str() # TODO backend specific
-                result = result.replace(result[start:end], subst)
+            try:
+                ivar  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
+                  lhs_name)
+                on_device = index_var_is_on_device(ivar)
+                transformed |= on_device
+                if on_device:
+                    subst = parse_result.f_str() # TODO backend specific
+                    result = result.replace(result[start:end], subst)
+            except: # do not care if this is not a variable
+                pass
         return result, transformed
 
 

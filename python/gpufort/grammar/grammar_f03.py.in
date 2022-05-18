@@ -67,10 +67,10 @@ arithmetic_logical_expression = infixNotation(arithmetic_expression, #NOTE: Slow
 )
 
 # use in preprocessing step
-power_value1 = OPTSIGN + (conversion | inquiry_function | derived_type_elem | func_call | identifier | number)
+power_value1 = rvalue
 power_value2 = LPAR + arithmetic_expression + RPAR
-power_value  = power_value2 | power_value1
-power       = power_value + Suppress("**") + power_value
+power_value  = power_value2 | rvalue
+power        = power_value + Suppress("**") + power_value
 
 assignment_begin = lvalue + EQ
 assignment       = lvalue + EQ + arithmetic_logical_expression # ! emits 2 tokens: *,*

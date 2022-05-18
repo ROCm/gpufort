@@ -865,6 +865,9 @@ class TestParsingUtils(unittest.TestCase):
           "implicit none",
           "IMPLICIT NONE",
           "IMPLICIT integer (i,m-p)",
+          "IMPLICIT double precision (a-h,o-z)",
+          "IMPLICIT DOUBLE COmplex (a-h,o-z)",
+          "IMPLICIT DOUBLE COmplex (a-h,o-z), character (i)",
           "IMPLICIT integer (i-n), real (a-h,o-z)",
           "IMPLICIT integer(kind=8) (i,m-p,a)",
           "IMPLICIT integer(kind=8) (i,m-p,a), character (c), type(mytype) (d)",
@@ -873,13 +876,28 @@ class TestParsingUtils(unittest.TestCase):
           [(None, None, None, [])],
           [(None, None, None, [])],
           [('integer', None, None, ['i', 'm', 'n', 'o', 'p'])],
+          [('real', None, 'c_double', ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'])],
+          [('complex', None, 'c_double_complex', ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'])],
+          [('complex', None, 'c_double_complex', ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']), ('character', None, None, ['i'])],
           [('integer', None, None, ['i', 'j', 'k', 'l', 'm', 'n']), ('real', None, None, ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'])],
           [('integer', None, '8', ['i', 'm', 'n', 'o', 'p', 'a'])],
-          [('integer', None, '8', ['i', 'm', 'n', 'o', 'p', 'a']), ('character', None, None, ['c']), ('type', None, 'mytype', ['d'])] ,
+          [('integer', None, '8', ['i', 'm', 'n', 'o', 'p', 'a']), ('character', None, None, ['c']), ('type', None, 'mytype', ['d'])],
         ]
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_implicit_statement(expr))
             self.assertEqual(util.parsing.parse_implicit_statement(expr),results[i])
+    def test_36_parse_interface_statement(self):
+        expressions = [
+          "interface",
+          "INTERFACE myInterFace",
+        ]
+        results = [
+          None,
+          "myInterFace",
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing.parse_interface_statement(expr))
+            self.assertEqual(util.parsing.parse_interface_statement(expr),results[i])
     
 if __name__ == '__main__':
     unittest.main() 

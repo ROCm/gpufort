@@ -41,23 +41,21 @@ def translate_procedure_body_to_hip_kernel_body(ttprocedurebody, scope, **kwargs
         c_body += "\nreturn " + ttprocedurebody.result_name + ";"
     return prepostprocess.postprocess_c_snippet(c_body)
 
-def _handle_reductions(ttloopnest,grid_dim):
+def _handle_reductions(ttloopnest,ttvalues,grid_dim):
     tidx = "__gidx{dim}".format(dim=grid_dim)
     # 2. Identify reduced variables
-    for expr in tree.find_all(ttloopnest.body[0], tree.TTAssignment):
-        for value in tree.find_all_matching(
-                expr, lambda x: isinstance(x, tree.TTValue)):
-            if type(value._value) in [
-                    tree.TTDerivedTypeMember, tree.TTIdentifier
-            ]:
-                for op, reduced_vars in ttloopnest.gang_team_reductions(
-                ).items():
-                    if value.name().lower() in [
-                            el.lower() for el in reduced_vars
-                    ]:
-                        value._reduction_index = tidx
-        # TODO identify what operation is performed on the highest level to
-        # identify reduction op
+    for ttvalue in ttvalues:
+        if type(ttvalue._value) in [
+                tree.TTDerivedTypeMember, tree.TTIdentifier
+        ]:
+            for op, reduced_vars in ttloopnest.gang_team_reductions(
+            ).items():
+                if ttvalue.name().lower() in [
+                        el.lower() for el in reduced_vars
+                ]:
+                    ttvalue._reduction_index = tidx
+    # TODO identify what operation is performed on the highest level to
+    # identify reduction op
     reduction_preamble = ""
     # 2.1. Add init preamble for reduced variables
     for kind, reduced_vars in ttloopnest.gang_team_reductions(
@@ -120,7 +118,7 @@ def translate_loopnest_to_hip_kernel_body(ttloopnest, scope, **kwargs):
     else: # "collapse" or num_loops_to_map > 3
         grid_dim = 1
     
-    reduction_preamble = _handle_reductions(ttloopnest,grid_dim)
+    reduction_preamble = _handle_reductions(ttloopnest,ttvalues,grid_dim)
     
     # collapse and transform do-loops
     if ttloopnest.is_serial_construct(): 

@@ -397,8 +397,8 @@ def create_scope(index, tag):
 
     # check if already a scope exists for the tag or if
     # it can be derived from a higher-level scope
-    existing_scope = types.EMPTY_SCOPE
-    nesting_level = -1 # -1 implies that nothing has been found
+    existing_scope = copy.deepcopy(types.EMPTY_SCOPE)
+    nesting_level  = -1 # -1 implies that nothing has been found
     scopes_to_delete = []
     tag_tokens = tag.split(":")
     for s in opts.scopes:
@@ -459,13 +459,28 @@ def create_scope(index, tag):
             searched_name = tag_tokens[d]
             for current_record in current_record_list:
                 if current_record["name"] == searched_name:
+                    scope_additions = copy.deepcopy(types.EMPTY_SCOPE)
                     # 1. first include definitions from used records
-                    _resolve_dependencies(new_scope, current_record,
+                    # TODO ambiguous definitions still possible
+                    _resolve_dependencies(scope_additions, current_record,
                                           index)
+                    # TODO ambiguous definitions can be detected here
                     # 2. now include the current record's definitions
                     for entry_type in types.SCOPE_ENTRY_TYPES:
                         if entry_type in current_record:
-                            new_scope[entry_type] += current_record[entry_type]
+                            # scope entry has the parent tag as well
+                            for index_entry in current_record[entry_type]:
+                                scope_entry = copy.deepcopy(index_entry)
+                                scope_entry["parent_tag"] = ":".join(tag_tokens[0:d+1])
+                                scope_additions[entry_type].append(scope_entry)
+                        # remove hidden parent entries
+                        # TODO check if variable can hide type / procedure etc
+                        for local_entry in scope_additions[entry_type]:
+                            for parent_entry in copy.copy(new_scope[entry_type]):
+                                if parent_entry["name"] == local_entry["name"]:
+                                    new_scope[entry_type].remove(parent_entry)
+                        new_scope[entry_type] += scope_additions[entry_type]
+
                     #print("{}:{}".format(":".join(tag_tokens),[p["name"] for p in new_scope["procedures"]]))
                     current_record_list = current_record["procedures"]
                     break

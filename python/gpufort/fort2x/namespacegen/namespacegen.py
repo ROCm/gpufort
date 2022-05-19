@@ -224,14 +224,27 @@ class NamespaceGenerator():
         return modules, hierarchy
 
     def __select_parameters_in_scope(self):
-        ivars_to_resolve = []
+        """
+        * Exclude parameters that have the same name and have 
+          different parent tags. This means they are ambiguous
+          and will not be used in a valid code.
+        """
+        svars_to_resolve = []
         already_considered = set()
-        for ivar1 in reversed(self.scope["variables"]):
-            ivar = copy.deepcopy(ivar1)
-            if self.__consider_parameter(ivar,already_considered):#
-                already_considered.add(ivar["name"])
-                ivars_to_resolve.insert(0,ivar)
-        return ivars_to_resolve
+        for svar in self.scope["variables"]:
+            if svar["name"] not in already_considered:
+                if self.__consider_parameter(svar,already_considered):
+                    svars_to_resolve.append(svar)
+                already_considered.add(svar["name"])
+            else: # svar["name"] in already_considered:
+                # remove ambiguous entries 
+                for existing in copy.copy(svars_to_resolve): # shallow copy
+                    if (svar["name"] == existing["name"]
+                       and svar["parent_tag"] != existing["parent_tag"]):
+                        msg = "ambiguous definition of variable '{}'".format(svar["name"])
+                        util.logging.log_warning(opts.log_prefix,"NamespaceGenerator.__select_parameters_in_scope",msg)
+                        svars_to_resolve.remove(existing)
+        return svars_to_resolve
 
     @util.logging.log_entry_and_exit(opts.log_prefix)
     def __parse_fortran_output(self,std_out):

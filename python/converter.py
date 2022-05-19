@@ -770,16 +770,22 @@ def shutdown_logging(log_file_path):
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def create_index(linemaps, output_dir, search_dirs):
+    """:return: Index data structure plus the number
+             of top level entries contributed by the current file.
+             (-1 if no gpufort module files are created and they are only read.)
+    """
     index = []
+    num_top_level_entries = -1
     if not opts.skip_create_gpufort_module_files:
         indexer.update_index_from_linemaps(linemaps, index)
+        num_top_level_entries = len(index)
         if opts.touch_cpp_file_per_module:
             touch_cpp_file_per_module(index, output_dir)
         indexer.write_gpufort_module_files(index, output_dir)
     if not opts.only_create_gpufort_module_files:
         index.clear()
         indexer.load_gpufort_module_files(search_dirs, index)
-    return index
+    return index, num_top_level_entries
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def touch_cpp_file_per_module(index, output_dir):
@@ -835,13 +841,13 @@ def run(infile_path,outfile_path,outfile_cpp_path,preproc_options):
                               "dump linemaps (before translation)")
         linemapper.dump_linemaps(linemaps,
                                  infile_path + "-linemaps-pre.json")
-    index = create_index(linemaps,os.path.dirname(infile_path),opts.include_dirs)
+    index, num_local_top_level_index_entries = create_index(linemaps,os.path.dirname(infile_path),opts.include_dirs)
     if not opts.only_create_gpufort_module_files:
         stree, _, __ = scanner.parse_file(file_linemaps=linemaps,
                                           file_path=infile_path,
                                           index=index)
         if "hip" in scanner.opts.destination_dialect:
-            codegen = fort2x.hip.hipcodegen.HipCodeGenerator(stree, index)
+            codegen = fort2x.hip.hipcodegen.HipCodeGenerator(stree, index)#, num_top_level_index_entries)
             codegen.run()
             cpp_file_paths += codegen.write_cpp_files(outfile_cpp_path)
 

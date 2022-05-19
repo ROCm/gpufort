@@ -711,6 +711,9 @@ def _parse_file(linemaps, index, **kwargs):
                                     Declaration() 
                                 elif current_tokens[0] == "type": # must come after declarations
                                     TypeStart()
+                
+                    # TODO check if we can move that outside and then extract only active linemaps when 
+                    # translating
                     if keep_recording:
                         current_node.add_linemap(current_linemap)
                         current_node._last_statement_index = current_statement_no

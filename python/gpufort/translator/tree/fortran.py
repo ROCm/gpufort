@@ -4,11 +4,12 @@
 import pyparsing
 import ast
 
+from gpufort import util
+
 from .. import opts
 from .. import conv
 from . import base
 from . import grammar
-
 
 def flatten_arithmetic_expression(expr, converter=base.make_c_str):
 

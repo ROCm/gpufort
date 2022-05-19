@@ -80,12 +80,13 @@ class STNode:
 
     def remove_comments(self, lines):
         """Remove comments but keep directives."""
-        # TODO move somewhere else
+        # TODO move somewhere else where modern_fortran user info is available
         for line in list(lines): # shallow copy
-            stripped_line = line.lstrip("\t ")
-            if not len(stripped_line) or\
-               (stripped_line[0] in ["*","c","C","!"] and not\
-               stripped_line[1] == "$"):
+            if (util.parsing.is_fortran_directive(line,modern_fortran=True)
+               or util.parsing.is_fortran_directive(line,modern_fortran=False)):
+                pass # must be checked before
+            elif (util.parsing.is_fortran_comment(line,modern_fortran=True)
+               or util.parsing.is_fortran_comment(line,modern_fortran=False)):
                 lines.remove(line)
 
     def remove_whitespaces(self, lines):

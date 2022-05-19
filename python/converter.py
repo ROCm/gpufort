@@ -874,7 +874,8 @@ def run(infile_path,outfile_path,outfile_cpp_path,preproc_options):
 def run_checked(*args,**kwargs):
     try:
         run(*args,**kwargs)
-    except (IOError,
+    except (ValueError,
+            IOError,
             FileNotFoundError,
             util.error.SyntaxError,
             util.error.LimitationError,

@@ -14,10 +14,16 @@ program main
 
   !$acc kernels copy(x,y)
   x = 1
+
   y(1:N) = x(1:n) + x
 
-  do i = 1, N
-    y(i) = x(i) + y(i)
+  do i = 1, n
+    y(i) = x(i) + y(i) + 1
+  end do
+
+  !$acc loop
+  do i = 1, n
+    y(i) = y(i) - 1
   end do
   !$acc end kernels  
   

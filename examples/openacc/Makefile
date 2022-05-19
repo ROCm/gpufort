@@ -1,12 +1,14 @@
 TESTS = $(shell find . -name "vector-*" -type d)
 TESTS_CLEAN = $(shell find . -name "vector*" -type d | sed "s,\./,clean-,g")
 
-.PHONY: $(TESTS) clean
+.PHONY: $(TESTS) clean codegen.hip
 
 $(TESTS):
-	@echo "make -C $@"
+	make -C $@ codegen.hip
 
-$(TESTS_CLEAN): clean-%: %
-	@echo "make -C $@ clean"
+$(TESTS_CLEAN): clean-%:
+	make -C $(subst clean-,,$@) clean
 
 clean: $(TESTS_CLEAN)
+
+codegen.hip: $(TESTS)

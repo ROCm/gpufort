@@ -106,7 +106,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
     def _handle_data_clauses(self,index,async_expr,finalize_expr):
         result = [] 
         #
-        for kind, args in self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP.keys()):
+        for kind, args in self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP.keys(),True,False):
             options = []
             if kind in _DATA_CLAUSES_WITH_ASYNC:
                 options.append(async_expr)
@@ -320,7 +320,15 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
         """:return a list of arguments given the directives.
         """
         result = []
-        acc_clauses = self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP)
+        acc_clauses = []
+        # Add all variables listed in the data region clauses as present
+        # Put them before current clauses. translator.analysis routine
+        # processes them in reversed order.
+        data_region_acc_clauses = self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP,False,True)
+        for _,args in data_region_acc_clauses:
+            acc_clauses.append(("present",args))
+        # TODO also consider acc declare
+        acc_clauses += self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP,True,False)
         
         kwargs = {
           "finalize":self._get_finalize_clause_expr(),

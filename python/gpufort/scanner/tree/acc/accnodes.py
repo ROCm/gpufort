@@ -31,6 +31,7 @@ class STAccDirective(nodes.STDirective):
         directive_expr = top_level_directive if self.top_level_directive != None else self.first_statement()
         _, self.directive_kind, self.directive_args, unprocessed_clauses = util.parsing.parse_acc_directive(directive_expr.lower())
         self.clauses = util.parsing.parse_acc_clauses(unprocessed_clauses)
+        self.data_region_clauses = []
    
     # overwrite 
     def first_statement(self):
@@ -52,14 +53,24 @@ class STAccDirective(nodes.STDirective):
                    ['acc','enter','region'].
         """
         return self.directive_kind == kind 
-
-    def get_matching_clauses(self,clause_kinds):
-        """:return: List of clauses whose kind is part of
-        `clause_kinds`.
+    
+    def get_matching_clauses(self,clause_kinds,
+                             search_own_clauses=True,
+                             search_data_region_clauses=False):
+        """:return: List of clauses whose kind is part of `clause_kinds`.
         :param list clause_kinds: List of clause kinds in lower case.
+        :param bool search_own_clauses: Search the clauses of this directive.
+        :param bool search_data_region_clauses: Search the clauses of preceding data regions. 
+                                                Will be searched first if search_own_clauses is specified too.
         """
-        return [clause for clause in self.clauses
-                if clause[0].lower() in clause_kinds] 
+        result = []
+        if search_data_region_clauses:
+            result += [clause for clause in self.data_region_clauses
+                      if clause[0].lower() in clause_kinds] 
+        if search_own_clauses:
+            result += [clause for clause in self.clauses
+                      if clause[0].lower() in clause_kinds] 
+        return result
 
     def is_purely_declarative(self):
         return (self.is_directive(["acc","declare"])
@@ -121,18 +132,26 @@ class STAccDirective(nodes.STDirective):
     def get_if_clause_condition(self):
         """:return: Empty string if no if was found
         :rtype: str
+        :note: Assumes number of if clauses of acc data directives has been checked before.
         """
-        if_clauses = self.get_matching_clauses(["if"]) 
+        data_region_if_clauses = self.get_matching_clauses(["if"],False,True) 
+        condition = []
+        for _,args in data_region_if_clauses:
+            condition.append(args[0])
+        #
+        if_clauses = self.get_matching_clauses(["if"],True,False) 
         if len(if_clauses) == 1:
             _, args = if_clauses[0]
             if len(args) == 1:
-                return args[0], True
+                condition.append(args[0])
             else:
                 raise util.error.SyntaxError("'if' clause must have single argument")
         elif len(if_clauses) > 1:
             raise util.error.SyntaxError("'if' clause may only appear once")
+        if len(condition):
+            return "".join(["(",") .and. (".join(condition),")"]), True
         else:
-            return None, False
+            return "", False 
 
     def transform(self,*args,**kwargs):
         if self.is_purely_declarative():

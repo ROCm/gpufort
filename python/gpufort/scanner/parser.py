@@ -46,6 +46,7 @@ def _parse_file(linemaps, index, **kwargs):
     current_statement_stripped = None
     derived_type_parent = None
     acc_kernels_directive = None
+    acc_data_clauses_stack = []
     statement_function_stack = []
 
     def set_keep_recording_(enable):
@@ -243,8 +244,12 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal keep_recording
         nonlocal index
         log_detection_("end of do loop")
-        if isinstance(current_node, tree.STComputeConstruct):
-            if keep_recording and current_node._do_loop_ctr_memorised == len(do_loop_labels):
+        if (keep_recording
+           and isinstance(current_node, tree.STComputeConstruct)
+           and current_node._do_loop_ctr_memorised == len(do_loop_labels)):
+            if (not isinstance(current_node,tree.STAccDirective) 
+               or not (current_node.is_directive(["acc","parallel"])
+                   or current_node.is_directive(["acc","serial"]))):
                 current_node.add_linemap(current_linemap)
                 current_node._last_statement_index = current_statement_no
                 current_node.complete_init(index)
@@ -397,29 +402,34 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal keep_recording
         nonlocal do_loop_labels
         nonlocal acc_kernels_directive
+        nonlocal acc_data_clauses_stack
         log_detection_("OpenACC directive")
         new = tree.acc.STAccDirective(current_linemap, current_statement_no)
         new.ignore_in_s2s_translation = not translation_enabled
-        # if end directive ascend
-        if (new.is_directive(["acc","end","kernels"]) 
-           and acc_kernels_directive != None):
-            acc_kernels_directive = None
-            append_if_not_recording_(new)
-            util.logging.log_debug(opts.log_prefix,"_parse_file","leave acc kernels region")
-        # descend in constructs or new node
-        elif (new.is_directive(["acc","serial"]) 
-             or  new.is_directive(["acc","parallel"]) # TODO this assumes that there will be always an acc loop afterwards
+        
+        if (new.is_directive(["acc","serial"]) 
+             or new.is_directive(["acc","parallel"]) # TODO this assumes that there will be always an acc loop afterwards
              or new.is_directive(["acc","parallel","loop"])
              or new.is_directive(["acc","kernels","loop"])
-             or (acc_kernels_directive != None
+             or (in_kernels_acc_region_and_not_recording()
                 and new.is_directive(["acc","loop"]))):
+            assert not keep_recording
             new = tree.acc.STAccComputeConstruct(current_linemap, current_statement_no, acc_kernels_directive)
             new.kind = "acc-compute-construct"
             new.ignore_in_s2s_translation = not translation_enabled
             new._do_loop_ctr_memorised = len(do_loop_labels)
+            for clause_list in acc_data_clauses_stack:
+                new.data_region_clauses += clause_list
             descend_(new) # descend also appends
             set_keep_recording_(True)
-        elif new.is_directive(["acc","end","serial"]):
+        elif (new.is_directive(["acc","end","kernels"]) 
+           and acc_kernels_directive != None):
+            acc_kernels_directive = None
+            append_if_not_recording_(new)
+            util.logging.log_debug(opts.log_prefix,"_parse_file","leave acc kernels region")
+        elif (new.is_directive(["acc","end","serial"])
+             or new.is_directive(["acc","end","parallel"])):
+            assert keep_recording
             current_node.complete_init(index)
             ascend_()
             set_keep_recording_(False)
@@ -427,6 +437,12 @@ def _parse_file(linemaps, index, **kwargs):
             acc_kernels_directive = new.first_statement()
             append_if_not_recording_(new)
             util.logging.log_debug(opts.log_prefix,"_parse_file","enter acc kernels region")
+        elif new.is_directive(["acc","data"]):
+            acc_data_clauses_stack.append(new.clauses)
+            append_if_not_recording_(new)
+        elif new.is_directive(["acc","end","data"]):
+            acc_data_clauses_stack.pop(-1)
+            append_if_not_recording_(new)
         else:
             # append new directive
             append_if_not_recording_(new)
@@ -444,6 +460,7 @@ def _parse_file(linemaps, index, **kwargs):
         new.ignore_in_s2s_translation = not translation_enabled
         new._do_loop_ctr_memorised = len(do_loop_labels)
         descend_(new)
+        assert not keep_recording
         set_keep_recording_(True)
 
     def Assignment(lhs_ivar,lhs_expr):
@@ -497,7 +514,10 @@ def _parse_file(linemaps, index, **kwargs):
     def GpufortControl():
         nonlocal current_statement
         nonlocal translation_enabled
+        nonlocal keep_recording
         log_detection_("gpufortran control statement")
+        if keep_recording:
+            raise util.error.SyntaxError("gpufort control directive must be placed outside of compute constructs")
         if "on" in current_statement["body"]:
             translation_enabled = True
         elif "off" in current_statement["body"]:
@@ -600,8 +620,8 @@ def _parse_file(linemaps, index, **kwargs):
                     except:
                         numeric_label = None
                     current_statement_stripped = " ".join([tk for tk in current_tokens if len(tk)])
-                    if (not keep_recording 
-                       and util.parsing.is_fortran_directive(original_statement_lower,modern_fortran)):
+                    
+                    if util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
                         if openacc and current_tokens[1] == "acc":
                             AccDirective()
                         elif cuda_fortran and current_tokens[1:4] == ["cuf","kernel","do"]:

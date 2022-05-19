@@ -434,7 +434,7 @@ def kernel_args_to_acc_mappings_no_types(acc_clauses,tavars,present_by_default,c
              to an implementation-specific OpenACC mapping. The implementation-specific
              mapping is realised via a callback.
     
-    :param list acc_clauses:        The acc clauses as obtained via util.parsing.parse_acc_clauses(...)
+    :param list acc_clauses:        The acc clauses; list of tuples with clause kind as first and list of arguments as second argument.
     :param list tavars:             list of translator analysis vars
     :param bool present_by_default: If array variables without explicit mappings are present
                                     by default.
@@ -445,7 +445,8 @@ def kernel_args_to_acc_mappings_no_types(acc_clauses,tavars,present_by_default,c
     :param \*\*kwargs: Keyword args to pass to the callback.
     
     :note: Current implementation does not support mapping of scalars/arrays of derived type.
-    
+    :note: Clause list is processed in reversed order as the first clauses might originate from preceding
+           data directives.
     :raise util.error.LimitationError: If a derived type must be mapped.
     :raise util.error.SyntaxError: If the OpenACC clauses could not be parsed. 
     """
@@ -453,7 +454,7 @@ def kernel_args_to_acc_mappings_no_types(acc_clauses,tavars,present_by_default,c
     for tavar in tavars:
         if tavar["rank"] > 0: # map array
             explicitly_mapped = False
-            for clause in acc_clauses:
+            for clause in reversed(acc_clauses): # finds first matching clause from end of list on
                 kind1, args = clause
                 kind = kind1.lower()
                 for var_expr in args:

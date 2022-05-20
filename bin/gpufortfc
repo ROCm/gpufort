@@ -18,7 +18,7 @@ for m in $requirements; do
 done
 if (( requirements_missing > 0 )); then
   echo "Please install missing python3 packages e.g. via:"
-  echo "python3 -m pip install -r <gpufort_root>/python3-requirements.txt"
+  echo "python3 -m pip install -r ${GPUFORT_BIN_DIR}/../python/requirements.txt"
   echo "(you might need to be root)"
   exit 20
 fi

@@ -716,33 +716,50 @@ def dump_linemaps(linemaps, file_path):
 def get_linemaps_content(linemaps,
                          key,
                          first_linemap_first_elem=0,
-                         last_linemap_last_elem=-1):
-    """Collects entries for the given key from the node's linemaps."""
+                         last_linemap_last_elem=-1,
+                         **kwargs):
+    """Collects entries for the given key from the node's linemaps.
+    :param bool comment_prefix_for_inactive_code: Comment char to use for
+                                                inactive code and directives
+                                                that are not include directives.
+    :note: Comments content of inactive linemaps out."""
+    comment_prefix_for_inactive_code,_ = util.kwargs.get_value(
+      "comment_prefix_for_inactive_code",opts.comment_prefix_for_inactive_code,**kwargs)
     result = []
     for i, linemap in enumerate(linemaps):
+        addition = []
         if len(linemaps) == 1:
             if last_linemap_last_elem == -1:
-                result += linemap[key][first_linemap_first_elem:]
+                addition += linemap[key][first_linemap_first_elem:]
             else:
-                result += linemap[key][
+                addition += linemap[key][
                     first_linemap_first_elem:last_linemap_last_elem + 1]
         elif i == 0:
-            result += linemap[key][first_linemap_first_elem:]
+            addition += linemap[key][first_linemap_first_elem:]
         elif i == len(linemaps) - 1:
             if last_linemap_last_elem == -1:
-                result += linemap[key]
+                addition += linemap[key]
             else:
-                result += linemap[key][0:last_linemap_last_elem + 1]
+                addition += linemap[key][0:last_linemap_last_elem + 1]
         else:
-            result += linemap[key]
+            addition += linemap[key]
+        # Comment lines ouf inactive or C++ directives
+        is_active = linemap["is_active"]
+        is_statement_or_include_directive = (
+            len(linemap["included_linemaps"]) 
+            or not linemap["is_preprocessor_directive"])
+        if (is_active and is_statement_or_include_directive):
+            result += addition
+        else:
+            result += [("".join([comment_prefix_for_inactive_code," ",el])) for el in addition]
     return result
 
 
 def get_statement_bodies(linemaps,
                          first_linemap_first_elem=0,
-                         last_linemap_last_elem=-1):
+                         last_linemap_last_elem=-1,**kwargs):
     return [
         stmt["body"] for stmt in get_linemaps_content(
             linemaps, "statements", first_linemap_first_elem,
-            last_linemap_last_elem)
+            last_linemap_last_elem,**kwargs)
     ]

@@ -603,6 +603,7 @@ def _parse_file(linemaps, index, **kwargs):
     # parser loop
     for current_linemap in linemaps:
         condition1 = current_linemap["is_active"]
+        # TODO do we work with the included linemaps at all are inclusions handled???
         condition2 = len(current_linemap["included_linemaps"]
                         ) or not current_linemap["is_preprocessor_directive"]
         if condition1 and condition2:
@@ -734,15 +735,14 @@ def _parse_file(linemaps, index, **kwargs):
                 
                     # TODO check if we can move that outside and then extract only active linemaps when 
                     # translating
-                    if keep_recording:
-                        current_node.add_linemap(current_linemap)
-                        current_node._last_statement_index = current_statement_no
                 except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:
                     msg = "{}:{}:{}".format(
                             current_linemap["file"],current_linemap["lineno"],e.args[0])
                     e.args = (msg,)
                     raise
-
+        if keep_recording:
+            current_node.add_linemap(current_linemap)
+            current_node._last_statement_index = current_statement_no
     assert type(current_node) is tree.STRoot
     return current_node
 

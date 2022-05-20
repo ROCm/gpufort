@@ -32,7 +32,9 @@ type(grid_t) :: grid
 
 annotated_loop_nest = """\
 !$acc parallel loop present(grid%x(:,:,5),y(:,:,7)) private(k,i,coeffs) collapse(2)
+#ifndef single_loop
 do j = 1, -(max(M,n)), min(m,n,2)
+#endif
   do i = 1, N
     grid%x(i,j,5) = 1
     y(i,j,7) = 2
@@ -59,7 +61,9 @@ do j = 1, -(max(M,n)), min(m,n,2)
     endif
 50 continue
   end do
+#ifndef single_loop
 end do
+#endif
 """
 
 #print(ttloopnest.c_str())

@@ -878,7 +878,7 @@ namespace gpufort {
 
   template<typename T>
   std::ostream& operator<<(std::ostream &os, const gpufort::array{{rank}}<T> &arr) {
-    return os << "(host-ptr="<<arr.data.data_host<<",device-ptr"<<arr.data.data_dev<<")";
+    return os << "(host-ptr="<<arr.data.data_host<<",device-ptr="<<arr.data.data_dev<<")";
   }
 {{ "" if not loop.last }}
 {% endfor -%}

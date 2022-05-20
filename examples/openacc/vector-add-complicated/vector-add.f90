@@ -41,7 +41,13 @@ program main
   !$acc collapse(3) ! continuation of the above directive
   do 10 k = 1,10 
     do 20 j = 4, -4, -8
+#ifdef swap
+    do 20 j = 4, -4, -8
       do 20 i = 1, N/2
+#else
+    do 20 i = 1, N/2
+      do 20 j = 4, -4, -8
+#endif
         coeffs(-1) = 4
         coeffs(-0) = 8
         coeffs(1)  = 2

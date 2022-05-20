@@ -11,9 +11,11 @@ pretty_print_linemaps_dump = False
 
 modern_fortran = True
         # Expect modern Fortran comments and directives
+comment_prefix_for_inactive_code = "! "
+        # Inactive code within translated code regions gets commented out.
+        # This is the prefix to use for comments.
 cuda_fortran = True
         # Expect conditional code such as `!@cuf ierr = cudaDeviceSynchronize()`.
-
 user_defined_macros = []
         # manually add macro definitions: dicts with entries 'name' (str),
         # 'args' (list of str), and 'subst' (str)

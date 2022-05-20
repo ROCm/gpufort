@@ -250,6 +250,7 @@ namespace gpufort {
       // do nothing
     }
 
+
 {% for async_suffix in ["_async",""] %}
 {% set is_async = async_suffix == "_async" %}
     /**
@@ -874,6 +875,11 @@ namespace gpufort {
 {% endfor %}
 
   };
+
+  template<typename T>
+  std::ostream& operator<<(std::ostream &os, const gpufort::array{{rank}}<T> &arr) {
+    return os << "(host-ptr="<<arr.data.data_host<<",device-ptr"<<arr.data.data_dev<<")";
+  }
 {{ "" if not loop.last }}
 {% endfor -%}
 } // namespace gpufort

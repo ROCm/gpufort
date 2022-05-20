@@ -47,9 +47,9 @@ GPUFORT_PRINT_ARGS({% if is_gpu_launcher %}{% if have_problem_size %}problem_siz
 #endif
 {% for ivar in global_vars %}
 {%   if ivar.rank > 0 and ivar.f_type in ["logical","integer","float"] %}
-#if defined(GPUFORT_PRINT_{{stage}}_ARRAY_ALL) || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}})_ALL || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}}_{{ivar.c_name}})
+#if defined(GPUFORT_PRINT_{{stage}}_ARRAY_ALL) || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}}_ALL) || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}}_{{ivar.c_name}})
 {{ivar.c_name}}.print_device_data(std::cout,"{{prefix}}",gpufort::PrintMode::PrintValuesAndNorms);
-#elif defined(GPUFORT_PRINT_{{stage}}_ARRAY_ALL) || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}})_ALL || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}}_{{ivar.c_name}})
+#elif defined(GPUFORT_PRINT_{{stage}}_ARRAY_ALL) || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}}_ALL) || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}}_{{ivar.c_name}})
 {{ivar.c_name}}.print_device_data(std::cout,"{{prefix}}",gpufort::PrintMode::PrintNorms);
 #endif
 {%   endif %}

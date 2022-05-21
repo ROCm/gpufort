@@ -120,10 +120,8 @@ class TTDo(base.TTContainer):
         end = base.make_c_str(self._end)
         if self._step != None:
             step = base.make_c_str(self._step)
-        elif opts.all_unspecified_do_loop_step_sizes_are_positive:
-            step = "1"
         else:
-            step = "({} <= {}) ? 1 : -1".format(begin,end)
+            step = "1"
         return "int {idx} = {begin} + ({step})*(threadIdx.{tidx} + blockIdx.{tidx} * blockDim.{tidx});\n".format(\
                 idx=idx,begin=begin,tidx=self.thread_index,step=step)
 
@@ -136,38 +134,37 @@ class TTDo(base.TTContainer):
         ]
         if self._step != None:
             args.append(base.make_c_str(self._step))
-        elif opts.all_unspecified_do_loop_step_sizes_are_positive:
+        else:
             args.append("1")
         return "int {idx} = outermost_index({args});\n".format(\
                idx=idx,args=", ".join(args))
 
     def problem_size(self, converter=base.make_f_str):
         if self._step == None:
-            return "(1 + abs( -({begin}) + ({end}) ))".format(\
-                begin=converter(self._begin._rhs),end=converter(self._end),step=converter(self._step) )
+            step = "1"
         else:
-            return "(1 + abs( -({begin}) + ({end}) )/abs( {step} ))".format(\
-                begin=converter(self._begin._rhs),end=converter(self._end),step=converter(self._step))
+            step = converter(self._step)
+        return "gpufort_loop_len({begin},{end},{step})".format(\
+            begin=converter(self._begin._rhs),end=converter(self._end),step=step)
     
     def problem_size_c_str(self):
         converter = base.make_c_str
         if self._step == None:
-            return "loop_length({begin}, {end})".format(\
-                begin=converter(self._begin._rhs),end=converter(self._end),step=converter(self._step) )
+            step = "1"
         else:
-            return "loop_length({begin}, {end}, {step})".format(\
-                begin=converter(self._begin._rhs),end=converter(self._end),step=converter(self._step))
+            step = converter(self._step)
+        return "loop_len({begin},{end},{step})".format(\
+            begin=converter(self._begin._rhs),end=converter(self._end),step=step)
 
     # TODO rename
     def hip_thread_bound_c_str(self):
         args = [
           self.loop_var(),
           base.make_c_str(self._begin._rhs),
-          base.make_c_str(self._end),
         ]
         if self._step != None:
             args.append(base.make_c_str(self._step))
-        elif opts.all_unspecified_do_loop_step_sizes_are_positive:
+        else:
             args.append("1")
         return "loop_cond({})".format(",".join(args))
 
@@ -194,29 +191,14 @@ class TTDo(base.TTContainer):
                         condition = "{} >= {}".format(idx,end)
                 except:
                     pass
-            elif opts.all_unspecified_do_loop_step_sizes_are_positive:
+            else:
                 condition = "{} <= {}".format(idx,end)
                 step = "1"
-            elif not opts.loop_versioning:
-                step = "(({} <= {}) ? 1 : -1)".format(begin,end)
-            if step != None:
-                return textwrap.dedent("""\
-                    for ({idx}={begin}; {condition}; {idx} += {step}) {{
-                    {body}
-                    }}""").format(\
-                        idx=idx, begin=begin, condition=condition, step=step, body=textwrap.indent(body," "*2))
-            else:
-                return textwrap.dedent("""\
-                           if ( {begin} <= {end} ) {{
-                             for ({idx}={begin}; {idx} <= {end}; {idx}++) {{
-                           {body}
-                             }}
-                           }} else {{
-                             for ({idx}={begin}; {idx} >= {end}; {idx}--) {{
-                           {body}
-                             }}
-                           }}""").format(\
-                        idx=idx, begin=begin, end=end, step=step, body=textwrap.indent(body," "*4))
+            return textwrap.dedent("""\
+                for ({idx}={begin}; {condition}; {idx} += {step}) {{
+                {body}
+                }}""").format(\
+                    idx=idx, begin=begin, condition=condition, step=step, body=textwrap.indent(body," "*2))
         else:
             return textwrap.indent(body," "*2)
 

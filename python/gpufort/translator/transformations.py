@@ -188,10 +188,8 @@ def _loop_range_c_str(ttdo,counter):
     ]
     if ttdo.has_step():
         result.append("_step{} = {}".format(counter,ttdo.step_c_str()))
-    elif opts.all_unspecified_do_loop_step_sizes_are_positive:
-        result.append("_step{} = 1".format(counter))
     else:
-        result.append("_step{0} = ( _begin{0} <= _end{0} ) ? 1 : -1".format(counter))
+        result.append("_step{} = 1".format(counter))
     return "".join(["const int ",", ".join(result),";\n"])
 
 def _collapsed_loop_index_c_str(ttdo,counter):
@@ -199,7 +197,6 @@ def _collapsed_loop_index_c_str(ttdo,counter):
     args = [
       ttdo.thread_index,
       "_begin{}".format(counter),
-      "_end{}".format(counter), # end not needed
       "_len{}".format(counter),
       "_step{}".format(counter),
     ]
@@ -217,7 +214,7 @@ def collapse_loopnest(ttdos):
     for i,ttdo in enumerate(ttdos,1):
         ttdo.thread_index = "_rem,_denom" # side effects
         preamble1.append(_loop_range_c_str(ttdo,i))
-        preamble2.append("const int _len{0} = loop_length(_begin{0},_end{0},_step{0});\n".format(i))
+        preamble2.append("const int _len{0} = loop_len(_begin{0},_end{0},_step{0});\n".format(i))
         problem_sizes.append("_len{}".format(i))
         for child in ttdo:
             if isinstance(child,tree.TTContinue):

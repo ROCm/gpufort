@@ -294,90 +294,53 @@ namespace {
     }
   }  
   /**
-   * Checks if `idx` has reached the end of the loop iteration
-   * range yet. 
+   * Checks if `idx` is less or equal to the last index of the loop iteration
+   * range.
    *
    * \note Takes only the sign of `step` into account, not its value.
    *
    * \param[in] idx loop index
-   * \param[in] begin begin of the loop iteration range
-   * \param[in] end end of the loop iteration range
+   * \param[in] last last index of the loop iteration range
    * \param[in] step step size of the loop iteration range
    */
-  __host__ __device__ __forceinline__ bool loop_cond(int idx,int begin,int end,int step) {
-    return (step>0) ? ( idx <= end ) : ( -idx <= -end );     
-  }
-  
-  /** 
-   * Overloaded variant that deduces the sign of a unit step
-   * based on inputs `begin` and `end`.
-   */ 
-  __host__ __device__ __forceinline__ bool loop_cond(int idx,int begin,int end) {
-    int step = ( begin <= end ) ? 1 : -1; 
-    return loop_cond(idx,begin,end,step);
-  }
- 
-  /** 
-   * Overloaded variant that assumes that the step size is 1 or -1.
-   * 
-   * \note ( end - begin ) 
-   */ 
-  __host__ __device__ __forceinline__ int loop_length(int begin,int end) {
-    return 1 + (( begin <= end ) ? ( end - begin ) : ( begin - end ));
+  __host__ __device__ __forceinline__ bool loop_cond(int idx,int last,int step=1) {
+    return (step>0) ? ( idx <= last ) : ( idx >= last ); 
   }
   
   /**
-   * Number of iterations of a loop that runs from 'begin' to 'end' (both inclusive)
-   * with step size 'step'. Note that 'step' might be negative and 'begin' > 'end'.
+   * Number of iterations of a loop that runs from 'first' to 'last' (both inclusive)
+   * with step size 'step'. Note that 'step' might be negative and 'first' > 'last'.
+   * If 'step' lets the loop run into a different direction than 'first' to 'last', this function 
+   * returns 0.
    *
-   * \param[in] begin begin of the loop iteration range
-   * \param[in] end end of the loop iteration range
+   * \param[in] first first index of the loop iteration range
+   * \param[in] last last index of the loop iteration range
    * \param[in] step step size of the loop iteration range
-   *
-   * \note ( end - begin ) and step are assumed to have the same sign.
    */
-  __host__ __device__ __forceinline__ int loop_length(int begin,int end,int step) {
-    return 1 + ( end - begin ) / step;
+  __host__ __device__ __forceinline__ int loop_len(int first,int last,int step=1) {
+    const int len_minus_1 = (last-first) / step;
+    return ( len_minus_1 >= 0 ) ? (1+len_minus_1) : 0; 
   }
   
   /**
    * Variant of outermost_index that takes the length of the loop
    * as additional argument.
    *
-   * \param[in] begin begin of the outermost loop iteration range
-   * \param[in] end end of the outermost loop iteration range; unused but
-   *            kept for signature reasons. You can pass any value.
-   * \param[in] len the loop length, i.e. `(1+abs(end-begin))/abs(step)`.
+   * \param[in] first first index of the outermost loop iteration range
+   * \param[in] len the loop length, i.e. `(1+abs(last-first))/abs(step)`.
    * \param[in] step step size of the outermost loop iteration range
    */
   __host__ __device__ __forceinline__ int outermost_index_w_len(
     int& collapsed_idx,
     int& collapsed_len,
-    const int begin, const int end, const int len, const int step
+    const int first, const int len, const int step = 1
   ) {
     collapsed_len /= len;
     const int idx = collapsed_idx / collapsed_len; // rounds down
     collapsed_idx -= idx*collapsed_len;
-    return (begin + step*idx);
+    return (first + step*idx);
   }
  
-  /** 
-   * Overloaded variant that deduces the sign of a unit step
-   * based on inputs `begin` and `end`.
-   *
-   * \param[in] end only needed to deduce the sign of the step.
-   *
-   * \param[in] _v2 suffix is required to distinguish from some outermost_index variants
-   *            as number of parameters is the same.
-   */ 
-  __host__ __device__ __forceinline__ int outermost_index_w_len(
-    int& collapsed_idx,
-    int& collapsed_len,
-    const int begin, const int end, const int len
-  ) {
-    int step = ( begin <= end ) ? 1 : -1; 
-    return outermost_index_w_len(collapsed_idx,collapsed_len,begin,end,len,step);
-  }
   
   /**
    * Given the index for iterating a collapsed loop nest
@@ -397,29 +360,16 @@ namespace {
    * \param[inout] collapsed_len Denominator for retrieving outermost index. Must be chosen
    *                           equal to the total number of iterations of the collapsed loop nest 
    *                           before the first call of `outermost_index`.
-   * \param[in] begin begin of the outermost loop iteration range
-   * \param[in] end end of the outermost loop iteration range
+   * \param[in] first first index of the outermost loop iteration range
+   * \param[in] last last index of the outermost loop iteration range
    * \param[in] step step size of the outermost loop iteration range
    */
   __host__ __device__ __forceinline__ int outermost_index(
     int& collapsed_idx,
     int& collapsed_len,
-    const int begin, const int end, const int step
+    const int first, const int last, const int step=1
   ) {
-    return outermost_index_w_len(collapsed_idx,collapsed_len,begin,end,loop_length(begin,end,step),step);
-  }
- 
-  /** 
-   * Overloaded variant that deduces the sign of a unit step
-   * based on inputs `begin` and `end`.
-   */ 
-  __host__ __device__ __forceinline__ int outermost_index(
-    int& collapsed_idx,
-    int& collapsed_len,
-    const int begin, const int end
-  ) {
-    int step = ( begin <= end ) ? 1 : -1; 
-    return outermost_index_w_len(collapsed_idx,collapsed_len,begin,end,loop_length(begin,end,step),step);
+    return outermost_index_w_len(collapsed_idx,collapsed_len,first,loop_len(first,last,step),step);
   }
 
   // type conversions (complex make routines already defined via "hip/hip_complex.h")

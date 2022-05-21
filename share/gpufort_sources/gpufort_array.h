@@ -211,6 +211,7 @@ namespace gpufort {
       // do nothing
     }
 
+
     /**
      * Initialize.
      * \param[in] data_host host data pointer (may be nullptr; see the note).
@@ -1211,6 +1212,11 @@ namespace gpufort {
 
   };
 
+  template<typename T>
+  std::ostream& operator<<(std::ostream &os, const gpufort::array1<T> &arr) {
+    return os << "(host-ptr="<<arr.data.data_host<<",device-ptr="<<arr.data.data_dev<<")";
+  }
+
   /**
    * Intended to be passed as kernel launch parameter.
    * \note Operator `T& operator()` requires parametrization with type T.
@@ -1388,6 +1394,7 @@ namespace gpufort {
     ~array2() {
       // do nothing
     }
+
 
     /**
      * Initialize.
@@ -2431,6 +2438,11 @@ namespace gpufort {
 
   };
 
+  template<typename T>
+  std::ostream& operator<<(std::ostream &os, const gpufort::array2<T> &arr) {
+    return os << "(host-ptr="<<arr.data.data_host<<",device-ptr="<<arr.data.data_dev<<")";
+  }
+
   /**
    * Intended to be passed as kernel launch parameter.
    * \note Operator `T& operator()` requires parametrization with type T.
@@ -2626,6 +2638,7 @@ namespace gpufort {
     ~array3() {
       // do nothing
     }
+
 
     /**
      * Initialize.
@@ -3714,6 +3727,11 @@ namespace gpufort {
 
   };
 
+  template<typename T>
+  std::ostream& operator<<(std::ostream &os, const gpufort::array3<T> &arr) {
+    return os << "(host-ptr="<<arr.data.data_host<<",device-ptr="<<arr.data.data_dev<<")";
+  }
+
   /**
    * Intended to be passed as kernel launch parameter.
    * \note Operator `T& operator()` requires parametrization with type T.
@@ -3927,6 +3945,7 @@ namespace gpufort {
     ~array4() {
       // do nothing
     }
+
 
     /**
      * Initialize.
@@ -5063,6 +5082,11 @@ namespace gpufort {
 
   };
 
+  template<typename T>
+  std::ostream& operator<<(std::ostream &os, const gpufort::array4<T> &arr) {
+    return os << "(host-ptr="<<arr.data.data_host<<",device-ptr="<<arr.data.data_dev<<")";
+  }
+
   /**
    * Intended to be passed as kernel launch parameter.
    * \note Operator `T& operator()` requires parametrization with type T.
@@ -5294,6 +5318,7 @@ namespace gpufort {
     ~array5() {
       // do nothing
     }
+
 
     /**
      * Initialize.
@@ -6481,6 +6506,11 @@ namespace gpufort {
 
   };
 
+  template<typename T>
+  std::ostream& operator<<(std::ostream &os, const gpufort::array5<T> &arr) {
+    return os << "(host-ptr="<<arr.data.data_host<<",device-ptr="<<arr.data.data_dev<<")";
+  }
+
   /**
    * Intended to be passed as kernel launch parameter.
    * \note Operator `T& operator()` requires parametrization with type T.
@@ -6730,6 +6760,7 @@ namespace gpufort {
     ~array6() {
       // do nothing
     }
+
 
     /**
      * Initialize.
@@ -7971,6 +8002,11 @@ namespace gpufort {
 
   };
 
+  template<typename T>
+  std::ostream& operator<<(std::ostream &os, const gpufort::array6<T> &arr) {
+    return os << "(host-ptr="<<arr.data.data_host<<",device-ptr="<<arr.data.data_dev<<")";
+  }
+
   /**
    * Intended to be passed as kernel launch parameter.
    * \note Operator `T& operator()` requires parametrization with type T.
@@ -8238,6 +8274,7 @@ namespace gpufort {
     ~array7() {
       // do nothing
     }
+
 
     /**
      * Initialize.
@@ -9535,6 +9572,11 @@ namespace gpufort {
   }
 
   };
+
+  template<typename T>
+  std::ostream& operator<<(std::ostream &os, const gpufort::array7<T> &arr) {
+    return os << "(host-ptr="<<arr.data.data_host<<",device-ptr="<<arr.data.data_dev<<")";
+  }
 
 } // namespace gpufort
 

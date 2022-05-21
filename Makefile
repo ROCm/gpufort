@@ -20,6 +20,7 @@ gpufort_sources:
 	make -C $(GPUFORT_DIR)/src gpufort_sources
 
 share/gpufort_sources: gpufort_headers gpufort_sources
+	cp src/gpufort.f03 share/gpufort_sources
 	cp src/gpufort_array.cpp share/gpufort_sources
 	cp src/gpufort_array.f03 share/gpufort_sources
 	cp include/gpufort.h share/gpufort_sources

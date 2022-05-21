@@ -1,5 +1,6 @@
 module gpufort_array
   use iso_c_binding
+  use gpufort
   implicit none
   
   enum, bind(c)

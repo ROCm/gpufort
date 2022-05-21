@@ -8,6 +8,28 @@
 #include <limits>
 // reductions
 namespace {
+  struct reduce_op_or {
+    template <typename T> 
+    static __host__ __device__ __forceinline__ T ival() { return (T)false; }
+    template <typename T> 
+    static __host__ __device__ __forceinline__ void init(T &a) { a = ival<T>(); }
+    template <typename T> 
+    __device__ __forceinline__ T operator()(const T &a, const T &b) const {
+      return a || b;
+    }
+  };
+  
+  struct reduce_op_and {
+    template <typename T> 
+    static __host__ __device__ __forceinline__ T ival() { return (T)true; }
+    template <typename T> 
+    static __host__ __device__ __forceinline__ void init(T &a) { a = ival<T>(); }
+    template <typename T> 
+    __device__ __forceinline__ T operator()(const T &a, const T &b) const {
+      return a && b;
+    }
+  };
+  
   struct reduce_op_mult {
     template <typename T> 
     static __host__ __device__ __forceinline__ T ival() { return (T)1; }

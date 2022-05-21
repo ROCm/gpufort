@@ -112,6 +112,11 @@ extern "C" hipError_t {{launcher.name}}_(
                                 kernel.global_vars+kernel.shared_and_local_array_vars,
                                 kernel.global_reduced_vars,True,have_problem_size) | indent(2,True) }}
 {% endif %}
+{% if have_problem_size %}
+  if (problem_size.x==0 || problem_size.y==0 || problem_size.z==0) {
+    return ierr;
+  }
+{% endif %}
 {% if kernel.global_reduced_vars|length %}
 {{ render_reductions_prepare(kernel.global_reduced_vars) | indent(2,True) }}
 {% endif %}

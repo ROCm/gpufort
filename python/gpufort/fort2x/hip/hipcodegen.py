@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-print("init gpufort.fort2x.hip.hipcodegen")
 import os
 import copy
 import logging

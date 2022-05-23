@@ -7,5 +7,3 @@ from . import translator
 from . import indexer
 from . import scanner
 from . import fort2x
-
-print("init gpufort")

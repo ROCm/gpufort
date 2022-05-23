@@ -144,7 +144,7 @@ class TTDo(base.TTContainer):
             step = "1"
         else:
             step = converter(self._step)
-        return "gpufort_loop_len({begin},{end},{step})".format(\
+        return "gpufort_loop_len(int({begin},c_int),int({end},c_int),int({step},c_int))".format(\
             begin=converter(self._begin._rhs),end=converter(self._end),step=step)
     
     def problem_size_c_str(self):
@@ -160,7 +160,7 @@ class TTDo(base.TTContainer):
     def hip_thread_bound_c_str(self):
         args = [
           self.loop_var(),
-          base.make_c_str(self._begin._rhs),
+          base.make_c_str(self._end),
         ]
         if self._step != None:
             args.append(base.make_c_str(self._step))

@@ -882,18 +882,7 @@ namespace gpufort {
 
   template<typename T>
   std::ostream& operator<<(std::ostream &os, const gpufort::array{{rank}}<T> &arr) {
-    os << "(host-ptr="<<arr.data.data_host<<",device-ptr="<<arr.data.data_dev
-       << ",host-norms=";
-    if ( arr.data.data_host == nullptr )
-      os << "-";
-    else
-      arr.print_host_data(os,"",PrintMode::PrintNorms);
-    os<< ",device-norms=";
-    if ( arr.data.data_dev == nullptr )
-      os << "-";
-    else
-      arr.print_device_data(os,"",PrintMode::PrintNorms);
-    os<<")";
+    os << "(host-ptr="<<arr.data.data_host<<",device-ptr="<<arr.data.data_dev << ")";
     return os;
   }
 {{ "" if not loop.last }}

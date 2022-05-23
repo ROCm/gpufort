@@ -48,7 +48,7 @@ GPUFORT_PRINT_ARGS({% if is_gpu_launcher %}{% if have_problem_size %}problem_siz
 {% set prefix_stage = "GPUFORT_PRINT_"+stage+"_ARRAY" %}
 {% set prefix_kernel = "GPUFORT_PRINT_"+stage+"_ARRAY_"+kernel_name %}
 {% for ivar in global_vars %}
-{%   if ivar.rank > 0 and ivar.f_type in ["logical","integer","float"] %}
+{%   if ivar.rank > 0 and ivar.f_type in ["logical","integer","real"] %}
 {% set prefix_var = "GPUFORT_PRINT_"+stage+"_ARRAY_"+kernel_name+"_"+ivar.c_name %}
 #if defined({{prefix_stage}}_ALL) || defined({{prefix_kernel}}_ALL) || defined({{prefix_var}})
 #ifdef {{prefix_var}}_HALO_LAYERS

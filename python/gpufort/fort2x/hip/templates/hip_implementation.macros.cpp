@@ -45,12 +45,33 @@ dim3 grid({% for dim in ["x","y","z"] %}divideAndRoundUp(problem_size.{{dim}},bl
 std::cout << "{{prefix}}:args:{{direction}}:";
 GPUFORT_PRINT_ARGS({% if is_gpu_launcher %}{% if have_problem_size %}problem_size.x,problem_size.y,problem_size.y,{% endif %}grid.x,grid.y,grid.z,block.x,block.y,block.z,sharedmem,stream,asyncr{% endif %}{% if num_args %},{{cm.render_global_params(global_vars+global_reduced_vars)}}{% endif %});
 #endif
+{% set prefix_stage = "GPUFORT_PRINT_"+stage+"_ARRAY" %}
+{% set prefix_kernel = "GPUFORT_PRINT_"+stage+"_ARRAY_"+kernel_name %}
 {% for ivar in global_vars %}
 {%   if ivar.rank > 0 and ivar.f_type in ["logical","integer","float"] %}
-#if defined(GPUFORT_PRINT_{{stage}}_ARRAY_ALL) || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}}_ALL) || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}}_{{ivar.c_name}})
-{{ivar.c_name}}.print_device_data(std::cout,"{{prefix}}",gpufort::PrintMode::PrintValuesAndNorms);
-#elif defined(GPUFORT_PRINT_{{stage}}_ARRAY_ALL) || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}}_ALL) || defined(GPUFORT_PRINT_{{stage}}_ARRAY_{{kernel_name}}_{{ivar.c_name}})
-{{ivar.c_name}}.print_device_data(std::cout,"{{prefix}}",gpufort::PrintMode::PrintNorms);
+{% set prefix_var = "GPUFORT_PRINT_"+stage+"_ARRAY_"+kernel_name+"_"+ivar.c_name %}
+#if defined({{prefix_stage}}_ALL) || defined({{prefix_kernel}}_ALL) || defined({{prefix_var}})
+#ifdef {{prefix_var}}_HALO_LAYERS
+constexpr int {{prefix_var}}_halo_layers = {{prefix_var}}_HALO_LAYERS;
+#elif {{prefix_kernel}}_HALO_LAYERS
+constexpr int {{prefix_var}}_halo_layers = {{prefix_kernel}}_HALO_LAYERS;
+#elif {{prefix_stage}}_HALO_LAYERS
+constexpr int {{prefix_var}}_halo_layers = {{prefix_stage}}_HALO_LAYERS;
+#else
+constexpr int {{prefix_var}}_halo_layers = 0;
+#endif
+{{ivar.c_name}}.print_device_data(std::cout,"{{prefix}}{{ivar.c_name}}:",gpufort::PrintMode::PrintValuesAndNorms,{{prefix_var}}_halo_layers);
+#elif defined({{prefix_stage}}_NORMS_ALL) || defined({{prefix_kernel}}_NORMS_ALL) || defined({{prefix_var}}_NORMS)
+#ifdef {{prefix_var}}_HALO_LAYERS
+constexpr int {{prefix_var}}_halo_layers = {{prefix_var}}_HALO_LAYERS;
+#elif {{prefix_kernel}}_HALO_LAYERS
+constexpr int {{prefix_var}}_halo_layers = {{prefix_kernel}}_HALO_LAYERS;
+#elif {{prefix_stage}}_HALO_LAYERS
+constexpr int {{prefix_var}}_halo_layers = {{prefix_stage}}_HALO_LAYERS;
+#else
+constexpr int {{prefix_var}}_halo_layers = 0;
+#endif
+{{ivar.c_name}}.print_device_data(std::cout,"{{prefix}}{{ivar.c_name}}:",gpufort::PrintMode::PrintNorms,{{prefix_var}}_halo_layers);
 #endif
 {%   endif %}
 {% endfor %}

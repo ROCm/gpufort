@@ -802,6 +802,9 @@ namespace gpufort {
      * to an output stream.
      * \param[inout] out        output stream
      * \param[in]    prefix     prefix to put before each output line
+     * \param[in]    print_mode What values to print and how.
+     * \param[in]    halo_layers Number of halo layers per face of the hypercube, defaults to 0. Halo layers
+     *                           per dimension is two times this value.
      * \param[in]    print_prec precision to use when printing floating point numbers 
      *               [default=GPUFORT_ARRAY_PRINT_PREC[default=6]]
      * \note This method only makes sense for numeric data types and
@@ -810,6 +813,7 @@ namespace gpufort {
      */
     __host__ void print_{{source}}_data(
         std::ostream& out, const char* prefix, PrintMode print_mode,
+        const int halo_layers=0,
         const int print_prec=GPUFORT_ARRAY_PRINT_PREC) const {
       const bool print_norms = 
 	print_mode==PrintMode::PrintNorms ||
@@ -846,7 +850,7 @@ namespace gpufort {
       T l2  = 0;
       out << prefix << ":\n";
 {% for col in range(1,rank_ub) %}
-    for ( int i{{rank_ub-col}} = 0; i{{rank_ub-col}} < n{{rank_ub-col}}; i{{rank_ub-col}}++ ) {
+    for ( int i{{rank_ub-col}} = halo_layers; i{{rank_ub-col}} < n{{rank_ub-col}}-halo_layers; i{{rank_ub-col}}++ ) {
 {% endfor %}
       const int idx = this->linearized_index({% for col in range(1,rank_ub) -%}i{{col}}{{ "," if not loop.last }}{% endfor -%});
       T value = A_h[idx];
@@ -864,11 +868,11 @@ namespace gpufort {
       }
     {%+ for col in range(1,rank_ub) -%}}{%- endfor %} // for loops
     if ( print_norms ) {
-      out << prefix << ":min=" << std::setprecision(print_prec) << min << "\n";
-      out << prefix << ":max=" << std::setprecision(print_prec) << max << "\n";
-      out << prefix << ":sum=" << std::setprecision(print_prec) << sum << "\n";
-      out << prefix << ":l1="  << std::setprecision(print_prec) << l1  << "\n";
-      out << prefix << ":l2="  << std::setprecision(print_prec) << std::sqrt(l2) << "\n";
+      out << prefix << "min=" << std::setprecision(print_prec) << min << "\n";
+      out << prefix << "max=" << std::setprecision(print_prec) << max << "\n";
+      out << prefix << "sum=" << std::setprecision(print_prec) << sum << "\n";
+      out << prefix << "l1="  << std::setprecision(print_prec) << l1  << "\n";
+      out << prefix << "l2="  << std::setprecision(print_prec) << std::sqrt(l2) << "\n";
       out << prefix << "num_elements=" << std::setprecision(print_prec) << n << "\n";
     }
   }
@@ -878,7 +882,19 @@ namespace gpufort {
 
   template<typename T>
   std::ostream& operator<<(std::ostream &os, const gpufort::array{{rank}}<T> &arr) {
-    return os << "(host-ptr="<<arr.data.data_host<<",device-ptr="<<arr.data.data_dev<<")";
+    os << "(host-ptr="<<arr.data.data_host<<",device-ptr="<<arr.data.data_dev
+       << ",host-norms=";
+    if ( arr.data.data_host == nullptr )
+      os << "-";
+    else
+      arr.print_host_data(os,"",PrintMode::PrintNorms);
+    os<< ",device-norms=";
+    if ( arr.data.data_dev == nullptr )
+      os << "-";
+    else
+      arr.print_device_data(os,"",PrintMode::PrintNorms);
+    os<<")";
+    return os;
   }
 {{ "" if not loop.last }}
 {% endfor -%}

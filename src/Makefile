@@ -13,7 +13,7 @@ LIBGPUFORT    = libgpufort_$(SUFFIX).a
 
 # files
 HIP_SRC  = $(shell find . -name "*.cpp")
-FORT_SRC = $(shell find . -name "*.f03")
+FORT_SRC = gpufort.f03 gpufort_array.f03 
 
 HIP_OBJ  = $(HIP_SRC:%.cpp=%.cpp.o)
 FORT_OBJ = $(FORT_SRC:%.f03=%.o)

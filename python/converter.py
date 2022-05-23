@@ -19,6 +19,7 @@ from gpufort import linemapper
 from gpufort import translator
 from gpufort import fort2x
 
+
 import opts
 
 __GPUFORT_PYTHON_DIR = os.path.dirname(os.path.abspath(__file__))

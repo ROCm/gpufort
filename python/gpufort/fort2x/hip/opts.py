@@ -1,6 +1,7 @@
-        # SPDX-License-Identifier: MIT
-        # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-        # Defaults
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+print("init gpufort.fort2x.hip.opts")
+# Defaults
 def GET_DEFAULT_BLOCK_DIMS(kernel_name, dim):
     block_dims = {1: [128], 2: [128, 1, 1], 3: [128, 1, 1]}
     return block_dims[dim]
@@ -10,7 +11,7 @@ def GET_DEFAULT_LAUNCH_BOUNDS(kernel_name):
     return None
 
 
-        # OPTIONS
+ # OPTIONS
 log_prefix = "fort2x.hip.codegen"
         # Prefix for log output that this component writes.
 get_block_dims = GET_DEFAULT_BLOCK_DIMS

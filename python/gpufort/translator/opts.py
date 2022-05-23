@@ -1,6 +1,6 @@
-        # SPDX-License-Identifier: MIT
-        # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-        # general options
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+# general options
 log_prefix = "translator"
 comment = r"(!|^\s*[\*cCdD])[^\$].+"
 fortran_style_tensor_access = True

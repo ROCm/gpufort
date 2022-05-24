@@ -50,7 +50,6 @@ if __name__ == "__main__":
     context = { 
             "mappings"   : mappings, 
             "datatypes"  : datatypes,
-            "datatypes"  : datatypes,
             "dimensions" : dimensions }
     
     model = Model()

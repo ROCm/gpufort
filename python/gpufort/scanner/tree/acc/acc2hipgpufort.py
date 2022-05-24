@@ -26,31 +26,43 @@ _ACC_ENTER_REGION = "call gpufort_acc_enter_region({options})\n"
 _ACC_EXIT_REGION = "call gpufort_acc_exit_region({options})\n"
 
 # clauses
-_ACC_CREATE = "call gpufort_acc_ignore(gpufort_acc_create({var}))\n"
-_ACC_NO_CREATE = "call gpufort_acc_ignore(gpufort_acc_no_create({var}))\n"
-_ACC_PRESENT = "call gpufort_acc_ignore(gpufort_acc_present({var}{options}))\n"
-_ACC_DELETE = "call gpufort_acc_delete({var}{options})\n"
-_ACC_COPY = "call gpufort_acc_ignore(gpufort_acc_copy({var}{options}))\n"
-_ACC_COPYIN = "call gpufort_acc_ignore(gpufort_acc_copyin({var}{options}))\n"
-_ACC_COPYOUT = "call gpufort_acc_ignore(gpufort_acc_copyout({var}{options}))\n"
-_ACC_PRESENT_OR_CREATE = "call gpufort_acc_ignore(gpufort_acc_present_or_create({var}{options}))\n"
-_ACC_PRESENT_OR_COPYIN = "call gpufort_acc_ignore(gpufort_acc_present_or_copyin({var}{options}))\n"
-_ACC_PRESENT_OR_COPYOUT = "call gpufort_acc_ignore(gpufort_acc_present_or_copyout({var}{options}))\n"
-_ACC_PRESENT_OR_COPY = "call gpufort_acc_ignore(gpufort_acc_present_or_copy({var}{options}))\n"
+#_ACC_CREATE = "call gpufort_acc_ignore(gpufort_acc_create({var}))\n"
+#_ACC_NO_CREATE = "call gpufort_acc_ignore(gpufort_acc_no_create({var}))\n"
+#_ACC_PRESENT = "call gpufort_acc_ignore(gpufort_acc_present({var}{options}))\n"
+#_ACC_DELETE = "call gpufort_acc_delete({var}{options})\n"
+#_ACC_COPY = "call gpufort_acc_ignore(gpufort_acc_copy({var}{options}))\n"
+#_ACC_COPYIN = "call gpufort_acc_ignore(gpufort_acc_copyin({var}{options}))\n"
+#_ACC_COPYOUT = "call gpufort_acc_ignore(gpufort_acc_copyout({var}{options}))\n"
+#_ACC_PRESENT_OR_CREATE = "call gpufort_acc_ignore(gpufort_acc_present_or_create({var}{options}))\n"
+#_ACC_PRESENT_OR_COPYIN = "call gpufort_acc_ignore(gpufort_acc_present_or_copyin({var}{options}))\n"
+#_ACC_PRESENT_OR_COPYOUT = "call gpufort_acc_ignore(gpufort_acc_present_or_copyout({var}{options}))\n"
+#_ACC_PRESENT_OR_COPY = "call gpufort_acc_ignore(gpufort_acc_present_or_copy({var}{options}))\n"
 _ACC_USE_DEVICE = "gpufort_acc_use_device({var},lbound({var}){options})\n"
 
+_ACC_MAP_CREATE = "gpufort_map_acc_create({var})"
+_ACC_MAP_NO_CREATE = "gpufort_map_acc_no_create({var})"
+_ACC_MAP_PRESENT = "gpufort_map_acc_present({var})"
+_ACC_MAP_DELETE = "call gpufort_map_acc_delete({var}"
+_ACC_MAP_COPY = "gpufort_map_acc_copy({var})"
+_ACC_MAP_COPYIN = "gpufort_map_acc_copyin({var})"
+_ACC_MAP_COPYOUT = "gpufort_map_acc_copyout({var})"
+_ACC_MAP_PRESENT_OR_CREATE = "gpufort_map_acc_present_or_create({var})"
+_ACC_MAP_PRESENT_OR_COPYIN = "gpufort_map_acc_present_or_copyin({var})"
+_ACC_MAP_PRESENT_OR_COPYOUT = "gpufort_map_acc_present_or_copyout({var})"
+_ACC_MAP_PRESENT_OR_COPY = "gpufort_map_acc_present_or_copy({var})"
+
 _DATA_CLAUSE_2_TEMPLATE_MAP = {
-  "create": _ACC_CREATE,
-  "no_create": _ACC_NO_CREATE,
-  "delete": _ACC_DELETE,
-  "copyin": _ACC_COPYIN,
-  "copyout": _ACC_COPYOUT,
-  "copy": _ACC_COPY,
-  "present": _ACC_PRESENT,
-  "present_or_create": _ACC_PRESENT_OR_CREATE,
-  "present_or_copyin": _ACC_PRESENT_OR_COPYIN,
-  "present_or_copyout": _ACC_PRESENT_OR_COPYOUT,
-  "present_or_copy": _ACC_PRESENT_OR_COPY,
+  "create": _ACC_MAP_CREATE,
+  "no_create": _ACC_MAP_NO_CREATE,
+  "delete": _ACC_MAP_DELETE,
+  "copyin": _ACC_MAP_COPYIN,
+  "copyout": _ACC_MAP_COPYOUT,
+  "copy": _ACC_MAP_COPY,
+  "present": _ACC_MAP_PRESENT,
+  "present_or_create": _ACC_MAP_PRESENT_OR_CREATE,
+  "present_or_copyin": _ACC_MAP_PRESENT_OR_COPYIN,
+  "present_or_copyout": _ACC_MAP_PRESENT_OR_COPYOUT,
+  "present_or_copy": _ACC_MAP_PRESENT_OR_COPY,
 }
         
 _DATA_CLAUSES_WITH_ASYNC = [
@@ -102,24 +114,25 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         elif wait_present and len(wait_queues):
             result.append(_ACC_WAIT.format(queue="["+",".join(wait_queues)+"]",options=""))
         return result
- 
-    def _handle_data_clauses(self,index,async_expr,finalize_expr):
+
+    # TODO clean up
+    def _handle_data_clauses(self,index):#,async_expr,finalize_expr):
         result = [] 
         #
         for kind, args in self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP.keys(),True,False):
-            options = []
-            if kind in _DATA_CLAUSES_WITH_ASYNC:
-                options.append(async_expr)
-            if kind in _DATA_CLAUSES_WITH_FINALIZE:
-                options.append(finalize_expr)
+            #options = []
+            #if kind in _DATA_CLAUSES_WITH_ASYNC:
+            #    options.append(async_expr)
+            #if kind in _DATA_CLAUSES_WITH_FINALIZE:
+            #    options.append(finalize_expr)
             for var_expr in args:
                 template = _DATA_CLAUSE_2_TEMPLATE_MAP[kind.lower()]
-                options_str =_create_options_str(options)
-                result.append(template.format(var=var_expr,options=options_str))
+                #options_str =_create_options_str(options)
+                result.append(template.format(var=var_expr))
                 if not opts.acc_map_derived_types: 
                     ivar = indexer.scope.search_index_for_var(index,self.stnode.parent.tag(),var_expr)
-                    if ivar["f_type"] == "type":
-                        result.pop(-1)
+                    #if ivar["f_type"] == "type":
+                    #    result.pop(-1)
         return result
 
     def _handle_if_clause(self,result):
@@ -254,34 +267,31 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
              or stnode.is_directive(["acc","end","data"])):
             result.append(_ACC_EXIT_REGION.format(
                 options=""))
-        # data regions
-        elif stnode.is_directive(["acc","enter","data"]):
-            result += self._handle_wait_clause()  
-            result.append(_ACC_ENTER_REGION.format(
-                options="unstructured=.true."))
-        elif stnode.is_directive(["acc","data"]):
-            result.append(_ACC_ENTER_REGION.format(
-                options=""))
-        elif stnode.is_directive(["acc","kernels"]):
-            result += self._handle_wait_clause()  
-            result.append(_ACC_ENTER_REGION.format(
-                options=""))
-
+            # emit
+        ## data regions
         ## mapping clauses on data and kernels directives
         if (stnode.is_directive(["acc","enter","data"])
-           or stnode.is_directive(["acc","exit","data"])
            or stnode.is_directive(["acc","data"])
            or stnode.is_directive(["acc","kernels"])):
             async_expr = self._get_async_clause_expr()
+            mappings = self._handle_data_clauses(index)
+            # emit gpufort_acc_enter_exit_data
+        elif stnode.is_directive(["acc","data"]:
+            async_expr = self._get_async_clause_expr()
+            mappings = self._handle_data_clauses(index)
+        elif stnode.is_directive(["acc","kernels"]):
+            result += self._handle_wait_clause()  
+            async_expr = self._get_async_clause_expr()
+            mappings = self._handle_data_clauses(index)
+            # emit gpufort_acc_data_start
+        elif stnode.is_directive(["acc","exit","data"]):
+            async_expr = self._get_async_clause_expr()
             finalize_expr = self._get_finalize_clause_expr();
-            if len(finalize_expr) and not stnode.is_directive(["acc","exit","data"]):
-                raise util.error.SyntaxError("finalize clause may only appear on 'exit data' directive.")
-            result += self._handle_data_clauses(index,async_expr,finalize_expr)
-
-        ## Exit region commands must come last
-        if stnode.is_directive(["acc","exit","data"]):
-            result.append(_ACC_EXIT_REGION.format(
-                options="unstructured=.true."))
+            mappings = self._handle_data_clauses(index)
+            # emit gpufort_acc_enter_exit_data
+            ## Exit region commands must come last
+            #result.append(_ACC_EXIT_REGION.format(
+            #    options="unstructured=.true."))
         # _handle if
         self._handle_if_clause(result)
 

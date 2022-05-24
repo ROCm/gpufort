@@ -1,9 +1,70 @@
 {# SPDX-License-Identifier: MIT #}
 {# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved. #}
 {########################################################################################}
+{%- set data_clauses = [
+    "delete",
+    "dec_struct_refs",
+    "present",
+    "no_create",
+    "create",
+    "copy",
+    "copyin",
+    "copyout",
+    "present_or_create",
+    "present_or_copy",
+    "present_or_copyin",
+    "present_or_copyout",
+  ]
+-%}
+{########################################################################################}
+{%- macro render_map_routines(data_clauses,datatypes,dimensions) -%}
+{########################################################################################}
+{% for mapping in data_clauses -%}
+{% set routine = "gpufort_acc_map_" + mapping %}
+! {{routine}}
+function {{routine}}_b(hostptr,num_bytes) result(retval)
+  use iso_c_binding
+  use openacc_gomp_base, only: mapping, {{mapping[1]}}
+  implicit none
+  !
+  type(c_ptr),intent(in)       :: hostptr
+  integer(c_size_t),intent(in) :: num_bytes
+  !
+  type(mapping) :: retval
+  !
+  call retval%init(hostptr,num_bytes,gpufort_acc_map_kind_{{mapping}})
+end function
+
+{% for tuple in datatypes -%}
+{%- for dims in dimensions -%}
+{% if dims > 0 %}
+{% set size = 'size(hostptr)*' %}
+{% set rank = ',dimension(' + ':,'*(dims-1) + ':)' %}
+{% else %}
+{% set size = '' %}
+{% set rank = '' %}
+{% endif %}
+{% set suffix = tuple[0] + "_" + dims|string %}                                                              
+function {{routine}}_{{suffix}}(hostptr) result(retval)
+  use iso_c_binding
+  use openacc_gomp_base, only: mapping
+  implicit none
+  {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
+  !
+  type(mapping) :: retval
+  !
+  retval = {{routine}}_b(c_loc(hostptr),int({{size}}{{tuple[1]}},c_size_t))
+end function
+
+{% endfor %} 
+{% endfor %} 
+{% endfor -%} 
+{%- endmacro -%}
+{########################################################################################}
 {%- macro render_set_fptr_lower_bound(fptr,
                                      array,
                                      rank) -%}
+{########################################################################################}
 {% set rank_ub=rank+1 %}
 {{fptr}}(&
 {% for i in range(1,rank_ub) %}
@@ -47,88 +108,14 @@ module gpufort_acc_runtime
   !> \note Returns a c_null_ptr if the host pointer is invalid, i.e. not C associated.
 {{ render_interface("gpufort_acc_use_device",True) | indent(2,True) }}
 
-  !> copyin( list ) parallel, kernels, serial, data, enter data,
-  !> declare
-  !> When entering the region or at an enter data directive,
-  !> if the data in list is already present on the current device, the
-  !> appropriate reference count is incremented and that copy is
-  !> used. Otherwise, it allocates device memory and copies the
-  !> values from the encountering thread and sets the appropriate
-  !> reference count to one. When exiting the region the structured
-  !> reference count is decremented. If both reference counts are
-  !> zero, the device memory is deallocated.
-{{ render_interface("gpufort_acc_copyin",True) | indent(2,True) }}
+{% for mapping in data_clauses %} 
+{{ render_interface("gpufort_acc_"+mapping,True) | indent(2,True) }}
 
-  !> copyout( list ) parallel, kernels, serial, data, exit data,
-  !> declare
-  !> When entering the region, if the data in list is already present on
-  !> the current device, the structured reference count is incremented
-  !> and that copy is used. Otherwise, it allocates device memory and
-  !> sets the structured reference count to one. At an exit data
-  !> directive with no finalize clause or when exiting the region,
-  !> the appropriate reference count is decremented. At an exit
-  !> data directive with a finalize clause, the dynamic reference
-  !> count is set to zero. In any case, if both reference counts are zero,
-  !> the data is copied from device memory to the encountering
-  !> thread and the device memory is deallocated.
-{{ render_interface("gpufort_acc_copyout",True) | indent(2,True) }}
+{% endfor %}
+{% for mapping in data_clauses %} 
+{{ render_interface("gpufort_acc_map_"+mapping,True) | indent(2,True) }}
 
-  !> copy( list ) parallel, kernels, serial, data, declare
-  !> When entering the region, if the data in list is already present on
-  !> the current device, the structured reference count is incremented
-  !> and that copy is used. Otherwise, it allocates device memory
-  !> and copies the values from the encountering thread and sets
-  !> the structured reference count to one. When exiting the region,
-  !> the structured reference count is decremented. If both reference
-  !> counts are zero, the data is copied from device memory to the
-  !> encountering thread and the device memory is deallocated.
-{{ render_interface("gpufort_acc_copy",True) | indent(2,True) }}
-
-  !> create( list ) parallel, kernels, serial, data, enter data,
-  !> declare
-  !> When entering the region or at an enter data directive,
-  !> if the data in list is already present on the current device, the
-  !> appropriate reference count is incremented and that copy
-  !> is used. Otherwise, it allocates device memory and sets the
-  !> appropriate reference count to one. When exiting the region,
-  !> the structured reference count is decremented. If both reference
-  !> counts are zero, the device memory is deallocated.
-{{ render_interface("gpufort_acc_create",True) | indent(2,True) }}
-
-  !> no_create( list ) parallel, kernels, serial, data
-  !> When entering the region, if the data in list is already present on
-  !> the current device, the structured reference count is incremented
-  !> and that copy is used. Otherwise, no action is performed and any
-  !> device code in the construct will use the local memory address
-  !> for that data.
-{{ render_interface("gpufort_acc_no_create",True) | indent(2,True) }}
-
-  !> The delete clause may appear on exit data directives.
-  !>
-  !> For each var in varlist, if var is in shared memory, no action is taken; if var is not in shared memory,
-  !> the delete clause behaves as follows:
-  !> If var is not present in the current device memory, a runtime error is issued.
-  !> Otherwise, the dynamic reference counter is updated:
-  !> On an exit data directive with a finalize clause, the dynamic reference counter
-  !> is set to zero.
-  !> Otherwise, a present decrement action with the dynamic reference counter is performed.
-  !> If var is a pointer reference, a detach action is performed. If both structured and dynamic
-  !> reference counters are zero, a delete action is performed.
-  !> An exit data directive with a delete clause and with or without a finalize clause is
-  !> functionally equivalent to a call to
-  !> the acc_delete_finalize or acc_delete API routine, respectively, as described in Section 3.2.23.
-{{ render_interface("gpufort_acc_delete",True) | indent(2,True) }}
-
-  !> present( list ) parallel, kernels, serial, data, declare
-  !> When entering the region, the data must be present in device
-  !> memory, and the structured reference count is incremented.
-  !> When exiting the region, the structured reference count is
-  !> decremented.
-{{ render_interface("gpufort_acc_present",True) | indent(2,True) }}
-{{ render_interface("gpufort_acc_present_or_copy",True) | indent(2,True) }}
-{{ render_interface("gpufort_acc_present_or_copyin",True) | indent(2,True) }}
-{{ render_interface("gpufort_acc_present_or_copyout",True) | indent(2,True) }}
-{{ render_interface("gpufort_acc_present_or_create",True) | indent(2,True) }}
+{% endfor %}
 
   !> Update Directive
   !>
@@ -361,4 +348,5 @@ module gpufort_acc_runtime
 {% endfor %}
 {% endfor %}
 
+{{ render_map_routines(data_clauses,datatypes,dimensions) | indent(2,True) }}
 end module

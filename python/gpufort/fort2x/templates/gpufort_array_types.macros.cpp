@@ -61,6 +61,7 @@ GPUFORT_HOST_ROUTINE gpufort::error {{c_prefix}}_init(
   return dope->init(sizes, lbounds);
 } 
 {% endfor %}
+{%- endmacro -%}
 {########################################################################################}
 {%- macro render_gpufort_array_ptr_c_bindings(thistype,max_rank) -%}
 {% for rank in range(1,max_rank+1) %}
@@ -75,6 +76,7 @@ GPUFORT_HOST_ROUTINE gpufort::error {{c_prefix}}_init(
   return array_ptr->init(bytes_per_element,data,sizes, lbounds);
 } 
 {% endfor %}
+{%- endmacro -%}
 {########################################################################################}
 {%- macro render_array_property_inquiry_c_bindings(thistype,max_rank,parameterized=True) -%}
 {# parameterized - If we have a template parameter to consider #}
@@ -87,7 +89,7 @@ GPUFORT_HOST_ROUTINE gpufort::error {{c_prefix}}_init(
 GPUFORT_HOST_ROUTINE  int gpufort_{{thistype}}{{rank}}_size(
   gpufort::array{{rank}}{{param}}* array,
   int dim) {
-  return array->data.size(dim);
+  return array->data_dev.size(dim);
 }
 
 /**
@@ -97,7 +99,7 @@ GPUFORT_HOST_ROUTINE  int gpufort_{{thistype}}{{rank}}_size(
 GPUFORT_HOST_ROUTINE  int gpufort_{{thistype}}{{rank}}_lbound(
   gpufort::array{{rank}}{{param}}* array,
   int dim) {
-  return array->data.lbound(dim);
+  return array->data_dev.lbound(dim);
 }
 
 /**
@@ -107,7 +109,7 @@ GPUFORT_HOST_ROUTINE  int gpufort_{{thistype}}{{rank}}_lbound(
 GPUFORT_HOST_ROUTINE  int gpufort_{{thistype}}{{rank}}_ubound(
   gpufort::array{{rank}}{{param}}* array,
   int dim) {
-  return array->data.ubound(dim);
+  return array->data_dev.ubound(dim);
 }
 {% endfor %}
 {%- endmacro -%}  

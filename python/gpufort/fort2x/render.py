@@ -41,6 +41,9 @@ def render_gpufort_reduction_header_file(output_path, context={}):
     generate_file(output_path, "gpufort_reduction.template.h", context)
 
 # array type header files
+def render_gpufort_array_globals_header_file(output_path, context={}):
+    generate_file(output_path, "gpufort_array_globals.template.h", context)
+
 def render_gpufort_dope_header_file(output_path, context={}):
     generate_file(output_path, "gpufort_dope.template.h", context)
 

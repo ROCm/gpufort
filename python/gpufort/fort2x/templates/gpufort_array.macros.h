@@ -339,19 +339,19 @@ GPUFORT_HOST_ROUTINE gpufort::error copy_data_to_buffer{{async_suffix}}(
   T* src = nullptr ;
   hipMemcpyKind memcpy_kind = hipMemcpyDefault;
   switch (direction) {
-    case DeviceToHost: 
+    case Direction::DeviceToHost: 
       src = this->data_dev.data;
       memcpy_kind = hipMemcpyDeviceToHost;
       break;
-    case DeviceToDevice:
+    case Direction::DeviceToDevice:
       src = this->data_dev.data;
       memcpy_kind = hipMemcpyDeviceToDevice;
       break;
-    case HostToHost: 
+    case Direction::HostToHost: 
       src = this->data_host;
       memcpy_kind = hipMemcpyHostToHost;
       break;
-    case HostToDevice:
+    case Direction::HostToDevice:
       src = this->data_host;
       memcpy_kind = hipMemcpyHostToDevice;
       break;
@@ -387,19 +387,19 @@ GPUFORT_HOST_ROUTINE gpufort::error copy_data_from_buffer{{async_suffix}}(
   T* dest = nullptr ;
   hipMemcpyKind memcpy_kind = hipMemcpyDefault;
   switch (direction) {
-    case HostToDevice: 
+    case Direction::HostToDevice: 
       dest = this->data_dev.data;
       memcpy_kind = hipMemcpyHostToDevice;
       break;
-    case DeviceToDevice:
+    case Direction::DeviceToDevice:
       dest = this->data_dev.data;
       memcpy_kind = hipMemcpyDeviceToDevice;
       break;
-    case HostToHost: 
+    case Direction::HostToHost: 
       dest = this->data_host;
-      memcpy_kind = hipMemcpyHostToHost
+      memcpy_kind = hipMemcpyHostToHost;
       break;
-    case DeviceToHost:
+    case Direction::DeviceToHost:
       dest = this->data_host;
       memcpy_kind = hipMemcpyDeviceToHost;
       break;
@@ -489,6 +489,8 @@ GPUFORT_HOST_ROUTINE gpufort::error create_device_copy{{async_suffix}}(
   }
 }
 
+{# render these functions only for once #}
+{% if is_async %}
 {% for target in ["host","device"] %}
 {% set is_host = target == "host" %}
 /**
@@ -534,6 +536,25 @@ GPUFORT_HOST_ROUTINE void copy(const gpufort::array{{rank}}<T>& other) {
   this->data_host = other.data_host;
   this->data_dev.copy(other.data_dev);
 }
+{% endif %}
+{%- endmacro -%}
+{########################################################################################}
+{%- macro render_size_in_bytes_routines(prefix_w_dot="") -%}
+{# prefix_w_dot - prefix_w_dot to derive the information from #}
+/**
+ * \return size of a single array element in bytes.
+GPUFORT_DEVICE_ROUTINE_INLINE int bytes_per_element_() const {
+  return this->{{prefix_w_dot}}bytes_per_element;
+}
+ */
+
+/**
+ * \return size of the array data in bytes.
+ */
+GPUFORT_DEVICE_ROUTINE_INLINE size_t size_in_bytes() const {
+  return static_cast<size_t>(this->{{prefix_w_dot}}size())
+         * static_cast<size_t>(this->{{prefix_w_dot}}bytes_per_element_());
+}
 {%- endmacro -%}
 {########################################################################################}
 {%- macro render_gpufort_arrays(max_rank) -%}
@@ -548,6 +569,8 @@ namespace gpufort {
     SyncMode sync_mode  = SyncMode::None;                  //> How data should be synchronized
                                                            //> during the initialization and destruction of this GPUFORT array.
 
+    int bytes_per_element = -1;
+
     array{{rank}}() {
       // do nothing
     }
@@ -559,6 +582,7 @@ namespace gpufort {
 {{ render_init_routines(rank,async_suffix) | indent(4,True) }}
 {{ render_memory_operations(rank,async_suffix) | indent(4,True) }}    
 {% endfor %} {# async_suffix #}
+{{ render_size_in_bytes_routines("data_dev.") | indent(4,True) }}
 {{ render_print_routines(rank) | indent(4,True) }}
   };
 {{ "" if not loop.last }}

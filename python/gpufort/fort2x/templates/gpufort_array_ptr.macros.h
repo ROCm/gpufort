@@ -22,7 +22,8 @@ GPUFORT_DEVICE_ROUTINE_INLINE void init(
 {{ gm.separated_list("const int lb",",",rank) | indent(2,True) }}
 ) {
   this->{{prefix}}.init(
-{% if have_data_ptr -%}    bytes_per_element,data,{%- endif %}
+{# not so sure about this #}
+/*{% if have_data_ptr -%}    bytes_per_element,data,{%- endif %}*/
 {{ gm.separated_list_single_line("n",",",rank) | indent(4,True) }},
 {{ gm.separated_list_single_line("lb",",",rank) | indent(4,True) }}
   );
@@ -42,7 +43,7 @@ GPUFORT_DEVICE_ROUTINE_INLINE void init(
 {% if have_data_ptr -%}  int bytes_per_element,
   T* data,{%- endif %}
   const int* const sizes,
-  const int* const lbounds,
+  const int* const lbounds
 ) {
   this->init(
 {% if have_data_ptr -%}    bytes_per_element,data,{%- endif %}
@@ -52,7 +53,7 @@ GPUFORT_DEVICE_ROUTINE_INLINE void init(
 }
 
 /** (Shallow) copy operation. Does not copy array data as this is a target specific operation. */
-GPUFORT_DEVICE_ROUTINE_INLINE copy(const {{thistype}}{{rank}}& other) {
+GPUFORT_DEVICE_ROUTINE_INLINE void copy(const {{thistype}}{{rank}}& other) {
 {% if have_data_ptr %}
   this->data = other.data;
 {% endif %}
@@ -70,7 +71,7 @@ GPUFORT_DEVICE_ROUTINE_INLINE copy(const {{thistype}}{{rank}}& other) {
  * \param[in] lb1,lb2,... lower bounds, i.e. the index of the first element per dimension of the multi-dim. array 
  */ 
 GPUFORT_DEVICE_ROUTINE {{thistype}}{{rank}}(
-{% if have_data_ptr -%}  T* data{%- endif %}
+{% if have_data_ptr -%}  T* data{%- endif %},
 {{ gm.separated_list("const int n",",",rank) | indent(2,True) }},
 {{ gm.separated_list("const int lb",",",rank) | indent(2,True) }}
 ) {
@@ -94,13 +95,13 @@ GPUFORT_DEVICE_ROUTINE {{thistype}}{{rank}}(
 GPUFORT_DEVICE_ROUTINE_INLINE {{thistype}}{{rank}}(
 {% if have_data_ptr -%}  T* data,{%- endif %}
   const int* const sizes,
-  const int* const lbounds,
+  const int* const lbounds
 ) {
   this->init({% if have_data_ptr -%}data,sizeof(T),{%- endif %}sizes,lbounds);
 } 
 
 /** (Shallow) copy operation. Does not copy array data as this is a target specific operation. */
-GPUFORT_DEVICE_ROUTINE_INLINE {{thistype}}(const {{thistype}}{{rank}}& other) {
+GPUFORT_DEVICE_ROUTINE_INLINE {{thistype}}{{rank}}(const {{thistype}}{{rank}}& other) {
   this->copy(other);
 }
  
@@ -124,7 +125,7 @@ GPUFORT_DEVICE_ROUTINE_INLINE void set_last_dim_ubound(const int ub{{rank}}) {
 {% endif %}
   const int stride{{rank}}  = {{curr_array_ptr}}{{prefix}}.stride{{rank}};
   const int lb{{rank}}      = {{curr_array_ptr}}{{prefix}}.lbound({{rank}});
-  {{curr_array_ptr}}dope.num_elements = ub - lb + 1;
+  {{curr_array_ptr}}dope.num_elements = ub{{rank}} - lb{{rank}} + 1;
 }
 
 {% for d in range(rank-1,0,-1) %}
@@ -154,7 +155,7 @@ GPUFORT_DEVICE_ROUTINE_INLINE {{resulttype}}{{d}}<T> subarray(
     data_dev_new = this->data_dev.data + index;
   }
   array{{d}}<T> result;
-  result.data_host = data_host_new
+  result.data_host = data_host_new;
   result.alloc_mode = AllocMode::WrapHostWrapDevice;
   result.sync_mode  = SyncMode::None;
   result.data_dev.data = data_dev_new;
@@ -166,7 +167,7 @@ GPUFORT_DEVICE_ROUTINE_INLINE {{resulttype}}{{d}}<T> subarray(
     data_new = &this->data[0] + index;
   }
   array_ptr{{d}}<T> result;
-  result.data = data
+  result.data = data;
 {% set curr_array_ptr = "this->" %}
 {% set new_array_ptr  = "result." %}
 {% endif %}
@@ -213,7 +214,7 @@ GPUFORT_DEVICE_ROUTINE_INLINE {{resulttype}}{{d}}<T> subarray_w_ub(
  * \param[in] i1,i2,... multi-dimensional array index.
  */
 GPUFORT_DEVICE_ROUTINE_INLINE int linearized_index(
-{{ gm.separated_list("const int n",",",rank) | indent(2,True) }},
+{{ gm.separated_list("const int i",",",rank) | indent(2,True) }}
 ) const {
   return this->{{prefix}}(
 {{ gm.separated_list_single_line("i",",",rank) | indent(4,True) }}
@@ -261,7 +262,7 @@ GPUFORT_DEVICE_ROUTINE_INLINE int ubound(int dim) const {
 /**
  * \return size of a single array element in bytes. 
  */  
-GPUFORT_DEVICE_ROUTINE_INLINE int bytes_per_element() const {
+GPUFORT_DEVICE_ROUTINE_INLINE int bytes_per_element_() const {
   return this->{{prefix_w_dot}}bytes_per_element;
 }
 
@@ -271,7 +272,7 @@ GPUFORT_DEVICE_ROUTINE_INLINE int bytes_per_element() const {
  */
 GPUFORT_DEVICE_ROUTINE_INLINE size_t size_in_bytes() const {
   return static_cast<size_t>(this->{{prefix_w_dot}}size())
-         * static_cast<size_t>(this->{{prefix_w_dot}}bytes_per_element());
+         * static_cast<size_t>(this->{{prefix_w_dot}}bytes_per_element_());
 }
 {%- endmacro -%}
 {########################################################################################}
@@ -415,24 +416,24 @@ GPUFORT_HOST_ROUTINE gpufort::error copy_data_to_buffer{{async_suffix}}(
 ) {
   #ifndef __HIP_DEVICE_COMPILE__
   assert(buffer!=nullptr);
-  assert(src!=nullptr);
+  assert(this->{{data_member}}!=nullptr);
   #endif
-  hipMemcpyKind direction = hipMemcpyDefault;
+  hipMemcpyKind memcpy_kind = hipMemcpyDefault;
   switch (direction) {
-    case HostToHost: 
-      direction = hipMemcpyHostToHost;
+    case Direction::HostToHost: 
+      memcpy_kind = hipMemcpyHostToHost;
       break;
-    case HostToDevice:
-      direction = hipMemcpyHostToDevice;
+    case Direction::HostToDevice:
+      memcpy_kind = hipMemcpyHostToDevice;
       break;
-    case DeviceToHost: 
-      direction = hipMemcpyDeviceToHost;
+    case Direction::DeviceToHost: 
+      memcpy_kind = hipMemcpyDeviceToHost;
       break;
-    case DeviceToDevice:
-      direction = hipMemcpyDeviceToDevice;
+    case Direction::DeviceToDevice:
+      memcpy_kind = hipMemcpyDeviceToDevice;
       break;
     default:
-      std::cerr << "ERROR: gpufort::{{gpufort_type}}{{rank}}::copy_data_to_buffer{{async_suffix}}(...): Unexpected value for 'direction': " 
+      std::cerr << "ERROR: gpufort::{{gpufort_type}}::copy_data_to_buffer{{async_suffix}}(...): Unexpected value for 'direction': " 
                 << static_cast<int>(direction) << std::endl; 
       std::terminate();
       break;
@@ -458,22 +459,22 @@ GPUFORT_HOST_ROUTINE gpufort::error copy_data_from_buffer{{async_suffix}}(
    void* buffer, gpufort::Direction direction{{",
    gpufort::queue stream" if is_async}}
 ) {
-  hipMemcpyKind direction = hipMemcpyDefault;
+  hipMemcpyKind memcpy_kind = hipMemcpyDefault;
   switch (direction) {
-    case HostToHost: 
-      direction = hipMemcpyHostToHost;
+    case Direction::HostToHost: 
+      memcpy_kind = hipMemcpyHostToHost;
       break;
-    case HostToDevice:
-      direction = hipMemcpyHostToDevice;
+    case Direction::HostToDevice:
+      memcpy_kind = hipMemcpyHostToDevice;
       break;
-    case DeviceToHost: 
-      direction = hipMemcpyDeviceToHost;
+    case Direction::DeviceToHost: 
+      memcpy_kind = hipMemcpyDeviceToHost;
       break;
-    case DeviceToDevice:
-      direction = hipMemcpyDeviceToDevice;
+    case Direction::DeviceToDevice:
+      memcpy_kind = hipMemcpyDeviceToDevice;
       break;
     default:
-      std::cerr << "ERROR: gpufort::{{gpufort_type}}{{rank}}::copy_data_from_buffer{{async_suffix}}(...): Unexpected value for 'direction': " 
+      std::cerr << "ERROR: gpufort::{{gpufort_type}}::copy_data_from_buffer{{async_suffix}}(...): Unexpected value for 'direction': " 
                 << static_cast<int>(direction) << std::endl; 
       std::terminate();
       break;
@@ -545,7 +546,7 @@ namespace gpufort {
    * of the array according to the data layout described
    * by the dope vector. 
    */
-  namespace <typename T>
+  template<typename T>
   struct array_ptr{{rank}} {
     T* data;
     dope{{rank}} dope;

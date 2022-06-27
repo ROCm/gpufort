@@ -57,7 +57,7 @@ namespace gpufort {
      */ 
     GPUFORT_DEVICE_ROUTINE_INLINE void init(
       const int* const sizes,
-      const int* const lbounds,
+      const int* const lbounds
     ) {
       this->init(
 {{ gm.separated_list_single_line("sizes[",",",rank,"]") | indent(8,True) }},
@@ -68,7 +68,7 @@ namespace gpufort {
     /**
      * Copy from another dope vector.
      */
-    GPUFORT_DEVICE_ROUTINE_INLINE copy(const dope{{rank}}& other) {
+    GPUFORT_DEVICE_ROUTINE_INLINE void copy(const dope{{rank}}& other) {
       this->index_offset = other.index_offset;
       {% for d in range(2,rank_ub) %}
       this->stride{{d}} = other.stride{{d}};
@@ -93,11 +93,12 @@ namespace gpufort {
      */
     GPUFORT_DEVICE_ROUTINE_INLINE dope{{rank}}(
       const int* const sizes,
-      const int* const lbounds,
+      const int* const lbounds
     ) {
       this->init(sizes,lbounds);
     } 
-    
+
+#if 0
     GPUFORT_DEVICE_ROUTINE_INLINE copy(const dope{{rank}}& other) {
       this->index_offset = other.index_offset;
       {% for d in range(2,rank_ub) %}
@@ -105,14 +106,15 @@ namespace gpufort {
       {% endfor %}
       this->num_elements = num_elements;
     }
-   
+#endif
+
     /** Constructor. */ 
     GPUFORT_DEVICE_ROUTINE_INLINE dope{{rank}}(
     ) {}
     
     
     /** Copy constructor. */
-    GPUFORT_DEVICE_ROUTINE_INLINE dope(const dope{{rank}}& other) {
+    GPUFORT_DEVICE_ROUTINE_INLINE dope{{rank}}(const dope{{rank}}& other) {
       this->copy(other);
     }
  

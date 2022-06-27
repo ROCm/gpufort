@@ -40,6 +40,67 @@ def generate_gpufort_headers(output_dir):
 
     util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
 
+    # gpufort array globals
+    gpufort_array_globals_context = {
+        "max_rank": opts.max_rank,
+        "datatypes": opts.datatypes
+    }
+    gpufort_array_globals_header_file_path = os.path.join(output_dir,
+                                                  "gpufort_array_globals.h")
+    render.render_gpufort_array_globals_header_file(gpufort_array_globals_header_file_path,\
+      context=gpufort_array_globals_context)
+    msg = "created array globals header file: ".ljust(
+        40) + gpufort_array_globals_header_file_path
+    util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
+
+    util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
+
+    # dope arrays
+    gpufort_dope_array_context = {
+        "max_rank": opts.max_rank,
+        "datatypes": opts.datatypes
+    }
+    gpufort_dope_array_header_file_path = os.path.join(output_dir,
+                                                  "gpufort_dope.h")
+    render.render_gpufort_dope_header_file(gpufort_dope_array_header_file_path,\
+      context=gpufort_dope_array_context)
+    msg = "created dope arrays header file: ".ljust(
+        40) + gpufort_dope_array_header_file_path
+    util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
+
+    util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
+
+    # fixed arrays
+    gpufort_fixed_array_context = {
+        "max_rank": opts.max_rank,
+        "datatypes": opts.datatypes
+    }
+    gpufort_fixed_array_header_file_path = os.path.join(output_dir,
+                                                  "gpufort_fixed_array.h")
+    render.render_gpufort_fixed_array_header_file(gpufort_fixed_array_header_file_path,\
+      context=gpufort_fixed_array_context)
+    msg = "created fixed arrays header file: ".ljust(
+        40) + gpufort_fixed_array_header_file_path
+    util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
+
+    util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
+
+
+    # dynamic array
+    gpufort_array_ptr_context = {
+        "max_rank": opts.max_rank,
+        "datatypes": opts.datatypes
+    }
+    gpufort_array_ptr_header_file_path = os.path.join(output_dir,
+                                                  "gpufort_array_ptr.h")
+    render.render_gpufort_array_ptr_header_file(gpufort_array_ptr_header_file_path,\
+      context=gpufort_array_ptr_context)
+    msg = "created dynamic arrays header file: ".ljust(
+        40) + gpufort_array_ptr_header_file_path
+    util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
+
+    util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
+
 
 def generate_gpufort_sources(output_dir):
     """Create the source files that all GPUFORT HIP kernels rely on."""

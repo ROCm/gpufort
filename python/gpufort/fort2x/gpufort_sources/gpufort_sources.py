@@ -38,8 +38,6 @@ def generate_gpufort_headers(output_dir):
         40) + gpufort_array_header_file_path
     util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
 
-    util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
-
     # gpufort array globals
     gpufort_array_globals_context = {
         "max_rank": opts.max_rank,
@@ -51,8 +49,6 @@ def generate_gpufort_headers(output_dir):
       context=gpufort_array_globals_context)
     msg = "created array globals header file: ".ljust(
         40) + gpufort_array_globals_header_file_path
-    util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
-
     util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
 
     # dope arrays
@@ -68,8 +64,6 @@ def generate_gpufort_headers(output_dir):
         40) + gpufort_dope_array_header_file_path
     util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
 
-    util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
-
     # fixed arrays
     gpufort_fixed_array_context = {
         "max_rank": opts.max_rank,
@@ -82,9 +76,6 @@ def generate_gpufort_headers(output_dir):
     msg = "created fixed arrays header file: ".ljust(
         40) + gpufort_fixed_array_header_file_path
     util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
-
-    util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
-
 
     # dynamic array
     gpufort_array_ptr_context = {
@@ -99,8 +90,8 @@ def generate_gpufort_headers(output_dir):
         40) + gpufort_array_ptr_header_file_path
     util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
 
-    util.logging.log_info(opts.log_prefix, "generate_gpufort_headers", msg)
-
+    util.logging.log_leave_function(opts.log_prefix,
+                                    "generate_gpufort_headers")
 
 def generate_gpufort_sources(output_dir):
     """Create the source files that all GPUFORT HIP kernels rely on."""
@@ -112,6 +103,7 @@ def generate_gpufort_sources(output_dir):
     gpufort_array_context = {
         "max_rank": opts.max_rank,
         "datatypes": opts.datatypes,
+        "thistype": ""
     }
     gpufort_array_source_file_path = os.path.join(output_dir,
                                                   "gpufort_array.cpp")
@@ -130,6 +122,54 @@ def generate_gpufort_sources(output_dir):
     msg = "created gpufort arrays Fortran interface module: ".ljust(
         40) + gpufort_array_fortran_interfaces_module_path
     util.logging.log_info(opts.log_prefix, "generate_gpufort_sources", msg)
+
+    # gpufort dope array
+    gpufort_dope_array_context = {
+        "max_rank": opts.max_rank,
+        "datatypes": opts.datatypes,
+    }
+    gpufort_dope_array_source_file_path = os.path.join(output_dir,
+                                                  "gpufort_dope_array.cpp")
+    render.render_gpufort_dope_source_file(gpufort_dope_array_source_file_path,\
+      context=gpufort_dope_array_context)
+    msg = "".join([
+        "created gpufort dope arrays C++ source file: ".ljust(40),
+        gpufort_dope_array_source_file_path
+    ])
+    util.logging.log_info(opts.log_prefix, "generate_gpufort_sources", msg)
+
+    gpufort_dope_array_fortran_interfaces_module_path = os.path.join(
+        output_dir, "gpufort_dope_array.f03")
+    render.render_gpufort_dope_fortran_interfaces_file(gpufort_dope_array_fortran_interfaces_module_path,\
+                                                               context=gpufort_dope_array_context)
+    msg = "created gpufort dope_arrays Fortran interface module: ".ljust(
+        40) + gpufort_dope_array_fortran_interfaces_module_path
+    util.logging.log_info(opts.log_prefix, "generate_gpufort_sources", msg)
+
+    # gpufort dynamic array
+    gpufort_array_ptr_context = {
+        "max_rank": opts.max_rank,
+        "datatypes": opts.datatypes,
+        "thistype": "array_ptr"
+    }
+    gpufort_array_ptr_source_file_path = os.path.join(output_dir,
+                                                  "gpufort_array_ptr.cpp")
+    render.render_gpufort_array_ptr_source_file(gpufort_array_ptr_source_file_path,\
+      context=gpufort_array_ptr_context)
+    msg = "".join([
+        "created gpufort dynamic arrays C++ source file: ".ljust(40),
+        gpufort_array_ptr_source_file_path
+    ])
+    util.logging.log_info(opts.log_prefix, "generate_gpufort_sources", msg)
+
+    gpufort_array_ptr_fortran_interfaces_module_path = os.path.join(
+        output_dir, "gpufort_array_ptr.f03")
+    render.render_gpufort_array_ptr_fortran_interfaces_file(gpufort_array_ptr_fortran_interfaces_module_path,\
+                                                               context=gpufort_array_ptr_context)
+    msg = "created gpufort dynamic array Fortran interface module: ".ljust(
+        40) + gpufort_array_ptr_fortran_interfaces_module_path
+    util.logging.log_info(opts.log_prefix, "generate_gpufort_sources", msg)
+
 
     util.logging.log_leave_function(opts.log_prefix,
                                     "generate_gpufort_sources")

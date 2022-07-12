@@ -60,19 +60,26 @@ def render_gpufort_array_header_file(output_path, context={}):
 def render_gpufort_dope_source_file(output_path, context={}):
     generate_file(output_path, "gpufort_dope.template.cpp", context)
 
-def render_gpufort_array_ptr_source_file(output_path, context={}):
-    generate_file(output_path, "gpufort_array_ptr.template.cpp", context)
-
-def render_gpufort_fixed_array_source_file(output_path, context={}):
-    generate_file(output_path, "gpufort_fixed_array.template.cpp", context)
-
 def render_gpufort_array_source_file(output_path, context={}):
     generate_file(output_path, "gpufort_array.template.cpp", context)
 
+def render_gpufort_array_ptr_source_file(output_path, context={}):
+    generate_file(output_path, "gpufort_array.template.cpp", context)
+
+#def render_gpufort_fixed_array_source_file(output_path, context={}):
+#    generate_file(output_path, "gpufort_fixed_array.template.cpp", context)
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def render_gpufort_array_fortran_interfaces_file(output_path, context={}):
     generate_file(output_path, "gpufort_array.template.f03", context)
+
+@util.logging.log_entry_and_exit(opts.log_prefix)
+def render_gpufort_dope_fortran_interfaces_file(output_path, context={}):
+    generate_file(output_path, "gpufort_dope.template.f03", context)
+
+@util.logging.log_entry_and_exit(opts.log_prefix)
+def render_gpufort_array_ptr_fortran_interfaces_file(output_path, context={}):
+    generate_file(output_path, "gpufort_array_ptr.template.f03", context)
 
 parent_dir = os.path.dirname(__file__)
 include_file = os.path.abspath(os.path.join(parent_dir, "templates", "render.py.in"))

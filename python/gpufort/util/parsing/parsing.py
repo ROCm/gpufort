@@ -4,7 +4,9 @@
 
 import re
 
-from . import error
+from .. import error
+
+from . import acc_clauses
 
 def compare_ignore_case(tokens1,tokens2):
     if isinstance(tokens1,str):
@@ -1375,7 +1377,7 @@ def parse_acc_directive(directive):
       ('!$',['acc','enter','data'],['copyin(a,b)','async'])
     """
     directive_parts = parse_directive(directive)
-    directive_kinds = [
+    directive_kinds = [ # order is important
       ["acc","init"],
       ["acc","shutdown"],
       ["acc","data"],
@@ -1453,6 +1455,19 @@ def parse_acc_clauses(clauses):
         else:
             raise error.SyntaxError("could not parse expression: '{}'".format(expr))
     return result
+
+def check_acc_clauses(directive_kind,clauses):
+    """Check if the used acc clauses are legal for the given directive.
+    :param list directive_kind: List of directive tokens as produced by parse_acc_directive.
+    :param list clauses: list of tuples as produced by parse_acc_clauses.
+    """
+    key = " ".join(directive_kind[1:]).lower()
+    if key in acc_clauses.acc_clauses:
+        for name,_ in clauses:
+            if name.lower() not in acc_clauses.acc_clauses[key]:
+                raise error.SyntaxError("clause '{}' not allowed on 'acc {}' directive".format(name.lower(),key))
+    elif len(clauses):
+        raise error.SyntaxError("No clauses allowed on 'acc {}' directive".format(key))
 
 def parse_cuf_kernel_call(statement):
     """Parses a CUDA Fortran kernel call statement.

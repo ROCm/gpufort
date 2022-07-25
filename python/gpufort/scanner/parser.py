@@ -45,8 +45,7 @@ def _parse_file(linemaps, index, **kwargs):
     current_tokens = None
     current_statement_stripped = None
     derived_type_parent = None
-    acc_kernels_directive = None
-    acc_data_clauses_stack = []
+    current_acc_data_or_kernels_directive = None
     statement_function_stack = []
 
     def set_keep_recording_(enable):
@@ -208,10 +207,12 @@ def _parse_file(linemaps, index, **kwargs):
             new = tree.STReturn(current_linemap, current_statement_no)
             append_if_not_recording_(new)
 
-    def in_kernels_acc_region_and_not_recording():
+    def in_acc_kernels_region_and_not_recording():
         nonlocal keep_recording
-        nonlocal acc_kernels_directive
-        return not keep_recording and acc_kernels_directive != None
+        nonlocal current_acc_data_or_kernels_directive
+        return (not keep_recording 
+               and current_acc_data_or_kernels_directive != None
+               and current_acc_data_or_kernels_directive.is_directive(["acc","kernels"]))
 
     def DoLoopStart():
         nonlocal translation_enabled
@@ -220,16 +221,18 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal current_linemap
         nonlocal do_loop_labels
         nonlocal keep_recording
-        nonlocal acc_kernels_directive
+        nonlocal current_acc_data_or_kernels_directive
         log_detection_("do loop")
         if not util.parsing.is_do_while(current_tokens):
             parse_result = util.parsing.parse_do_statement(" ".join(current_tokens))
             label = parse_result[0]
         else:
             label = None
-        if (in_kernels_acc_region_and_not_recording() and
+        if (in_acc_kernels_region_and_not_recording() and
            not util.parsing.is_do_while(current_tokens)):
-            new = tree.acc.STAccComputeConstruct(current_linemap, current_statement_no, acc_kernels_directive)
+            new = tree.acc.STAccComputeConstruct(
+                    current_acc_data_or_kernels_directive,
+                    current_linemap, current_statement_no)
             new.ignore_in_s2s_translation = not translation_enabled
             new._do_loop_ctr_memorised = len(do_loop_labels)
             descend_(new)
@@ -401,48 +404,57 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal current_statement_no
         nonlocal keep_recording
         nonlocal do_loop_labels
-        nonlocal acc_kernels_directive
-        nonlocal acc_data_clauses_stack
+        nonlocal current_acc_data_or_kernels_directive
         log_detection_("OpenACC directive")
-        new = tree.acc.STAccDirective(current_linemap, current_statement_no)
+        new = tree.acc.STAccDirective(
+                current_acc_data_or_kernels_directive,
+                current_linemap, current_statement_no)
         new.ignore_in_s2s_translation = not translation_enabled
-        
-        if (new.is_directive(["acc","serial"]) 
-             or new.is_directive(["acc","parallel"]) # TODO this assumes that there will be always an acc loop afterwards
-             or new.is_directive(["acc","parallel","loop"])
-             or new.is_directive(["acc","kernels","loop"])
-             or (in_kernels_acc_region_and_not_recording()
-                and new.is_directive(["acc","loop"]))):
-            assert not keep_recording
-            new = tree.acc.STAccComputeConstruct(current_linemap, current_statement_no, acc_kernels_directive)
-            new.kind = "acc-compute-construct"
-            new.ignore_in_s2s_translation = not translation_enabled
-            new._do_loop_ctr_memorised = len(do_loop_labels)
-            for clause_list in acc_data_clauses_stack:
-                new.data_region_clauses += clause_list
-            descend_(new) # descend also appends
-            set_keep_recording_(True)
-        elif (new.is_directive(["acc","end","kernels"]) 
-           and acc_kernels_directive != None):
-            acc_kernels_directive = None
+      
+        #print(current_linemap["statements"])
+        print(new.directive_kind)
+
+        if new.is_directive(["acc","end","kernels"]):
+            if current_acc_data_or_kernels_directive == None:
+                raise util.error.SyntaxError("'acc end kernels' directive without preceding 'acc kernels' directive")
             append_if_not_recording_(new)
+            current_acc_data_or_kernels_directive = current_acc_data_or_kernels_directive.parent_directive
+            print(current_acc_data_or_kernels_directive)
             util.logging.log_debug(opts.log_prefix,"_parse_file","leave acc kernels region")
+        elif new.is_directive(["acc","end","data"]):
+            if not current_acc_data_or_kernels_directive.is_directive(["acc","data"]):
+                raise util.error.SyntaxError("'acc end data' without preceding 'acc data'")
+            current_acc_data_or_kernels_directive = current_acc_data_or_kernels_directive.parent_directive
+            append_if_not_recording_(new)
         elif (new.is_directive(["acc","end","serial"])
              or new.is_directive(["acc","end","parallel"])):
             assert keep_recording
             current_node.complete_init(index)
             ascend_()
             set_keep_recording_(False)
+        elif (new.is_directive(["acc","serial"]) 
+             or new.is_directive(["acc","parallel"]) # TODO this assumes that there will be always an acc loop afterwards
+             or new.is_directive(["acc","parallel","loop"])
+             or new.is_directive(["acc","kernels","loop"])
+             or (in_acc_kernels_region_and_not_recording()
+                and new.is_directive(["acc","loop"]))):
+            assert not keep_recording
+            new = tree.acc.STAccComputeConstruct(
+                    current_acc_data_or_kernels_directive, 
+                    current_linemap, current_statement_no)
+            new.kind = "acc-compute-construct"
+            new.ignore_in_s2s_translation = not translation_enabled
+            new._do_loop_ctr_memorised = len(do_loop_labels)
+            descend_(new) # descend also appends
+            set_keep_recording_(True)
+        elif new.is_directive(["acc","data"]):
+            current_acc_data_or_kernels_directive = new
+            append_if_not_recording_(new)
+            util.logging.log_debug(opts.log_prefix,"_parse_file","enter acc data region")
         elif new.is_directive(["acc","kernels"]):
-            acc_kernels_directive = new.first_statement()
+            current_acc_data_or_kernels_directive = new
             append_if_not_recording_(new)
             util.logging.log_debug(opts.log_prefix,"_parse_file","enter acc kernels region")
-        elif new.is_directive(["acc","data"]):
-            acc_data_clauses_stack.append(new.clauses)
-            append_if_not_recording_(new)
-        elif new.is_directive(["acc","end","data"]):
-            acc_data_clauses_stack.pop(-1)
-            append_if_not_recording_(new)
         else:
             # append new directive
             append_if_not_recording_(new)
@@ -471,10 +483,10 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal current_statement
         nonlocal current_statement_stripped
         nonlocal current_tokens
-        nonlocal acc_kernels_directive
+        nonlocal current_acc_data_or_kernels_directive
         nonlocal index
         log_detection_("assignment")
-        if in_kernels_acc_region_and_not_recording() or lhs_ivar["rank"] == 0:
+        if in_acc_kernels_region_and_not_recording() or lhs_ivar["rank"] == 0:
             current_statement_preprocessed =\
                     translator.prepostprocess.preprocess_fortran_statement(current_statement_stripped)
             parse_result = translator.tree.grammar.assignment_begin.parseString(
@@ -482,18 +494,18 @@ def _parse_file(linemaps, index, **kwargs):
             lvalue = translator.tree.find_first(parse_result, translator.tree.TTLValue)
             # TODO
             
-            if (in_kernels_acc_region_and_not_recording()
+            if (in_acc_kernels_region_and_not_recording()
                and lhs_ivar["rank"] > 0 
                and (lvalue.has_range_args() 
                    or not lvalue.has_args())):
                 new = tree.acc.STAccComputeConstruct(
+                        current_acc_data_or_kernels_directive,
                         current_linemap,
-                        current_statement_no,
-                        acc_kernels_directive)
+                        current_statement_no)
                 new.ignore_in_s2s_translation = not translation_enabled
                 append_if_not_recording_(new)
                 new.complete_init(index)
-            elif (not in_kernels_acc_region_and_not_recording()
+            elif (not in_acc_kernels_region_and_not_recording()
                  and lhs_ivar["rank"] == 0 
                  and lvalue.has_args() 
                  and lhs_ivar["f_type"] in ["integer","real","logical"]):

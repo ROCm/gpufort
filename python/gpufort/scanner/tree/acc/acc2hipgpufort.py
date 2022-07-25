@@ -19,11 +19,15 @@ _ACC_UPDATE = "call gpufort_acc_update_{kind}({var}{options})\n"
 # wait
 _ACC_WAIT = "call gpufort_acc_wait({queue}{options})\n"
 # init shutdown
-_ACC_INIT = "call gpufort_acc_init()\n"
+_ACC_INIT     = "call gpufort_acc_init()\n"
 _ACC_SHUTDOWN = "call gpufort_acc_shutdown()\n"
+
 # regions
 _ACC_ENTER_REGION = "call gpufort_acc_enter_region({options})\n"
 _ACC_EXIT_REGION = "call gpufort_acc_exit_region({options})\n"
+_ACC_DATA_START      = "call gpufort_acc_data_start({mappings}{options})\n"
+_ACC_DATA_END        = "call gpufort_acc_data_end({mappings}{options})\n"
+_ACC_ENTER_EXIT_DATA = "call gpufort_acc_enter_exit_data({mappings}{options})\n"
 
 # clauses
 #_ACC_CREATE = "call gpufort_acc_ignore(gpufort_acc_create({var}))\n"
@@ -50,6 +54,8 @@ _ACC_MAP_PRESENT_OR_CREATE = "gpufort_map_acc_present_or_create({var})"
 _ACC_MAP_PRESENT_OR_COPYIN = "gpufort_map_acc_present_or_copyin({var})"
 _ACC_MAP_PRESENT_OR_COPYOUT = "gpufort_map_acc_present_or_copyout({var})"
 _ACC_MAP_PRESENT_OR_COPY = "gpufort_map_acc_present_or_copy({var})"
+
+_ACC_MAP_DEC_STRUCT_REFS = "gpufort_map_dec_struct_refs({var})"
 
 _DATA_CLAUSE_2_TEMPLATE_MAP = {
   "create": _ACC_MAP_CREATE,
@@ -78,14 +84,18 @@ _CLAUSES_OMP2ACC = {
   "tofrom": "copy"
 }
 
-def _create_options_str(options,prefix=""):
+def _create_options_str(options):
     while(options.count("")):
       options.remove("")
     if len(options):
         return "".join([",",",".join(options)])
     else:
         return ""
-
+        
+def _create_mappings_str(mappings,indent):
+    """Join and indent mappings."""
+    return textwrap.indent(
+        ",&\n".join(mappings),indent)
 
 class Acc2HipGpufortRT(accbackends.AccBackendBase):
     
@@ -96,8 +106,11 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             finalize_expr = "finalize=True"
         return finalize_expr
     
-    def _get_async_clause_expr(self):
-        async_queue, async_present = self.stnode.get_async_clause_queue()
+    def _get_async_clause_expr(self,staccdir):
+        """
+        :param STAccDirective staccdir: OpenACC directive scanner node
+        """
+        async_queue, async_present = staccdir.get_async_clause_queue()
         async_expr = ""
         if async_present and async_queue!=None:
             async_expr = "async={}".format(async_queue)
@@ -116,34 +129,36 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         return result
 
     # TODO clean up
-    def _handle_data_clauses(self,index):#,async_expr,finalize_expr):
+    def _handle_data_clauses(self,staccdir,index,
+                             template=None):#,async_expr,finalize_expr):
+        """
+        Handle all data clauses of the current directive and/or of the preceding data clauses.
+        :param str template: Overwrite the default mapping templates by a specific one.
+                             In the context of structured data regions, can be used to enqueue
+                             counter modification mappings for each original mapping.
+        """
         result = [] 
         #
-        for kind, args in self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP.keys(),True,False):
-            #options = []
-            #if kind in _DATA_CLAUSES_WITH_ASYNC:
-            #    options.append(async_expr)
-            #if kind in _DATA_CLAUSES_WITH_FINALIZE:
-            #    options.append(finalize_expr)
+        for kind, args in staccdir.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP.keys()):
             for var_expr in args:
-                template = _DATA_CLAUSE_2_TEMPLATE_MAP[kind.lower()]
-                #options_str =_create_options_str(options)
+                if template == None:
+                    template = _DATA_CLAUSE_2_TEMPLATE_MAP[kind.lower()]
                 result.append(template.format(var=var_expr))
                 if not opts.acc_map_derived_types: 
-                    ivar = indexer.scope.search_index_for_var(index,self.stnode.parent.tag(),var_expr)
+                    ivar = indexer.scope.search_index_for_var(index,staccdir.parent.tag(),var_expr)
                     #if ivar["f_type"] == "type":
                     #    result.pop(-1)
         return result
 
-    def _handle_if_clause(self,result):
-        condition, found_if = self.stnode.get_if_clause_condition()
+    def _handle_if_clause(self,staccdir,result):
+        condition, found_if = staccdir.get_if_clause_condition()
         if found_if:
             result2 = [textwrap.indent(l," "*2) for l in result]
             result.clear()
             result.append("if ( {} ) then\n".format(condition))
             result += result2
             result.append("else\n".format(condition))
-            original_snippet = textwrap.indent(textwrap.dedent("\n".join([l.rstrip("\n") for l in self.stnode.lines()]))," "*2)
+            original_snippet = textwrap.indent(textwrap.dedent("\n".join([l.rstrip("\n") for l in staccdir.lines()]))," "*2)
             result += original_snippet + "\n"
             result.append("endif\n".format(condition))
     
@@ -200,8 +215,6 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         return result
     
     def _end_host_data_directive(self,async_expr):
-        """Emits a acc_clause_update command for every variable in the list
-        """
         #if self.stnode.is_directive(["acc","update"]):
         result = [""]
         return result
@@ -239,6 +252,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         result = []
 
         stnode = self.stnode
+        indent = stnode.first_line_indent()
         if stnode.is_directive(["acc","init"]):
             result.append(_ACC_INIT)
         elif stnode.is_directive(["acc","shutdown"]):
@@ -253,47 +267,62 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             result += self._host_data_directive()
         elif stnode.is_directive(["acc","end","host_data"]):
             result.append("end associate")
-        elif (stnode.is_directive(["acc","end","parallel"])
-             or stnode.is_directive(["acc","serial"])
-             or stnode.is_directive(["acc","end","parallel","loop"])
-             or stnode.is_directive(["acc","end","kernels","loop"])):
-            pass
         elif (stnode.is_directive(["acc","parallel"])
              or stnode.is_directive(["acc","serial"])
              or stnode.is_directive(["acc","parallel","loop"])
              or stnode.is_directive(["acc","kernels","loop"])):
             assert False, "should not be called for serial, parallel (loop) and kernels loop directive"
-        elif (stnode.is_directive(["acc","end","kernels"])
-             or stnode.is_directive(["acc","end","data"])):
-            result.append(_ACC_EXIT_REGION.format(
-                options=""))
-            # emit
-        ## data regions
-        ## mapping clauses on data and kernels directives
-        if (stnode.is_directive(["acc","enter","data"])
-           or stnode.is_directive(["acc","data"])
-           or stnode.is_directive(["acc","kernels"])):
-            async_expr = self._get_async_clause_expr()
-            mappings = self._handle_data_clauses(index)
+        ## data and kernels regions
+        elif stnode.is_directive(["acc","enter","data"]):
+            result += self._handle_wait_clause()
+            mappings = self._handle_data_clauses(stnode,index)
+            options = [ self._get_async_clause_expr() ]
+            
+            result.append(_ACC_ENTER_EXIT_DATA.format(
+                mappings="&\n"+_create_mappings_str(mappings,indent),
+                options=_create_options_str(options)))
             # emit gpufort_acc_enter_exit_data
-        elif stnode.is_directive(["acc","data"]:
-            async_expr = self._get_async_clause_expr()
-            mappings = self._handle_data_clauses(index)
-        elif stnode.is_directive(["acc","kernels"]):
-            result += self._handle_wait_clause()  
-            async_expr = self._get_async_clause_expr()
-            mappings = self._handle_data_clauses(index)
-            # emit gpufort_acc_data_start
         elif stnode.is_directive(["acc","exit","data"]):
-            async_expr = self._get_async_clause_expr()
-            finalize_expr = self._get_finalize_clause_expr();
-            mappings = self._handle_data_clauses(index)
-            # emit gpufort_acc_enter_exit_data
-            ## Exit region commands must come last
-            #result.append(_ACC_EXIT_REGION.format(
-            #    options="unstructured=.true."))
+            result += self._handle_wait_clause()
+            mappings = self._handle_data_clauses(stnode,index)
+            options = [ self._get_async_clause_expr(),
+                        self._get_finalize_clause_expr() ]
+            result.append(_ACC_ENTER_EXIT_DATA.format(
+                mappings="&\n"+_create_mappings_str(mappings,indent),
+                options=_create_options_str(options)))
+        elif stnode.is_directive(["acc","data"]):
+            result += self._handle_wait_clause()
+            mappings = self._handle_data_clauses(stnode,index)
+            result.append(_ACC_DATA_START.format(
+                mappings="&\n"+_create_mappings_str(mappings,indent),
+                options=""))
+        elif stnode.is_directive(["acc","end","data"]):
+            stparentnode = stnode.parent_directive
+            mappings = self._handle_data_clauses(
+                stparentnode,index,template=_ACC_MAP_DEC_STRUCT_REFS)
+            options = [ self._get_async_clause_expr(stparentnode) ]
+            result.append(_ACC_DATA_END.format(
+                mappings="&\n"+_create_mappings_str(mappings,indent),
+                options=""))
+        elif stnode.is_directive(["acc","kernels"]):
+            result += self._handle_wait_clause()
+            mappings = self._handle_data_clauses(stnode,index)
+            options = [ self._get_async_clause_expr(stnode) ]
+            
+            result.append(_ACC_DATA_START.format(
+                mappings="&\n"+_create_mappings_str(mappings,indent),
+                options=_create_options_str(options)))
+        elif stnode.is_directive(["acc","end","kernels"]):
+            stparentnode = stnode.parent_directive
+            mappings = self._handle_data_clauses(
+                stparentnode,index,template=_ACC_MAP_DEC_STRUCT_REFS)
+            options = [ self._get_async_clause_expr(stparentnode) ]
+            
+            result.append(_ACC_DATA_END.format(
+                mappings="&\n"+_create_mappings_str(mappings,indent),
+                options=_create_options_str(options)))
         # _handle if
-        self._handle_if_clause(result)
+        self._handle_if_clause(stnode,result)
 
         indent = stnode.first_line_indent()
         return textwrap.indent("".join(result),indent), len(result)
@@ -302,7 +331,6 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
 
     def _map_array(clause_kind1,var_expr,tavar,**kwargs):
         asyncr,_   = util.kwargs.get_value("asyncr","",**kwargs)
-        finalize,_ = util.kwargs.get_value("finalize","",**kwargs)
         prepend_present,_ = util.kwargs.get_value("prepend_present",False,**kwargs)       
 
         if prepend_present and clause_kind1.startswith("copy"):
@@ -314,8 +342,6 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
             runtime_call_tokens.append(var_expr)
             if len(asyncr) and clause_kind in _DATA_CLAUSES_WITH_ASYNC:
                 runtime_call_tokens += [",",asyncr]
-            if len(finalize) and clause_kind in _DATA_CLAUSES_WITH_FINALIZE:
-                runtime_call_tokens += [",",finalize]
             runtime_call_tokens.append(")") 
             tokens = [
               "gpufort_array",str(tavar["c_rank"]),"_wrap_device_cptr(&\n",
@@ -327,25 +353,31 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
             raise util.error.SyntaxError("clause not supported") 
     
     def derive_kernel_call_arguments(self):
-        """:return a list of arguments given the directives.
+        """
+        :return a list of arguments given the directives.
+        :note: Add all variables listed in the data region clauses as present
+               Put them before this directive's own clauses.
+               translator.analysis routine processes them in reversed order.
         """
         result = []
+        
         acc_clauses = []
-        # Add all variables listed in the data region clauses as present
-        # Put them before current clauses. translator.analysis routine
-        # processes them in reversed order.
-        data_region_acc_clauses = self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP,False,True)
-        for _,args in data_region_acc_clauses:
-            acc_clauses.append(("present",args))
-        # TODO also consider acc declare
-        acc_clauses += self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP,True,False)
+        data_and_kernels_ancestors  = self.stnode.get_acc_data_ancestors()
+        kernels_ancestor = self.stnode.get_acc_kernels_ancestor()
+        if kernels_ancestor != None:
+            data_and_kernels_ancestors.append(kernels_ancestor)
+        for staccdir in data_and_kernels_ancestors:
+            for _,args in staccdir.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP):
+                acc_clauses.append(("present",args))
+        # TODO also consider acc declare'd variables here
+       
+        if not self.stnode.is_directive(["acc","kernels"]): # note: parent `acc kernels` directive lines are copied to each embedded compute construct
+            acc_clauses += self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP)
         
         kwargs = {
-          "finalize":self._get_finalize_clause_expr(),
-          "asyncr":self._get_async_clause_expr(),
+          "asyncr":self._get_async_clause_expr(self.stnode),
         }
-        if self.stnode.is_directive(["acc","kernels"]):
-            kwargs["prepend_present"] = True
+        
         mappings = translator.analysis.kernel_args_to_acc_mappings_no_types(
                        acc_clauses,
                        self.stnode.kernel_args_tavars,
@@ -365,19 +397,6 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
         stloopnest = self.stnode
         ttloopnest = stloopnest.parse_result
         
-        # if kernels loop / parallel / parallel loop -> enter_region
-        # if kernels -> do not emit enter_region
-        emit_enter_exit_region = \
-           (stloopnest.is_directive(["acc","serial"])
-           or stloopnest.is_directive(["acc","parallel"])
-           or stloopnest.is_directive(["acc","parallel","loop"])
-           or stloopnest.is_directive(["acc","kernels","loop"]))
-        
-        if emit_enter_exit_region:
-            result += self._handle_wait_clause()  
-            result.append(_ACC_ENTER_REGION.format(
-                options=""))
-        
         queue, found_async = stloopnest.get_async_clause_queue()
         if not found_async:
             queue = "0"
@@ -390,20 +409,18 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
                                  statements_fully_cover_lines, index)
         result.append(textwrap.dedent(result_loopnest))
         
-        if emit_enter_exit_region:
-            result.append(_ACC_EXIT_REGION.format(options=""))
-        
-        self._handle_if_clause(result)
+        self._handle_if_clause(stloopnest,result)
 
         indent = stloopnest.first_line_indent()
         return textwrap.indent("".join(result),indent), len(result)
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def _add_implicit_region(stcontainer):
-    stcontainer.append_to_decl_list([_ACC_ENTER_REGION.format(\
-        options="implicit_region=.true.")])
-    stcontainer.prepend_to_return_or_end_statements([_ACC_EXIT_REGION.format(\
-            options="implicit_region=.true.")])
+def _add_structured_data_region(stcontainer,mappings):
+    pass
+    #stcontainer.append_to_decl_list([_ACC_DATA_START.format(
+    #    mappings)])
+    #stcontainer.prepend_to_return_or_end_statements([_ACC_DATA_END.format(
+    #    mappings)])
 
 def AllocateHipGpufortRT(stallocate, joined_statements, index):
     stcontainer = stallocate.parent
@@ -430,13 +447,13 @@ def AllocateHipGpufortRT(stallocate, joined_statements, index):
                 implicit_region = True
             declare = ivar["declare_on_target"]
             if declare in _CLAUSES_OMP2ACC.keys():
-                map_kind = "".join(["present_or_",_CLAUSES_OMP2ACC[declare]])
+                map_kind = _CLAUSES_OMP2ACC[declare]
                 acc_present_template =  _DATA_CLAUSE_2_TEMPLATE_MAP[map_kind]
                 acc_present_calls.append(acc_present_template.format(
                     var=var_expr,options=module_var))
     if len(acc_present_calls):
         if implicit_region:
-            _add_implicit_region(stcontainer)
+            _add_structured_data_region(stcontainer)
         for line in acc_present_calls:
             stallocate.add_to_epilog(textwrap.indent(line,indent))
     return joined_statements, False
@@ -515,7 +532,7 @@ def Acc2HipGpufortRTPostprocess(stree, index):
                             var=var_expr,options=module_var))
         if len(acc_present_calls):
             if implicit_region:
-                _add_implicit_region(stcontainer)
+                _add_structured_data_region(stcontainer)
             last_decl_list_node.add_to_epilog(textwrap.indent("".join(acc_present_calls),indent))
 
 dest_dialects = ["hipgpufort"]

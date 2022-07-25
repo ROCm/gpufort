@@ -676,6 +676,7 @@ class STComputeConstruct(STNode):
 
     def complete_init(self, index=[]):
         self.code = self.statements()
+        #print(self.statements())
         self.__hash = self.__hash_kernel()
         parent_tag = self.parent.tag()
         scope = indexer.scope.create_scope(index, parent_tag)

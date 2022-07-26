@@ -424,7 +424,7 @@ class STContainerBase(STNode):
         if last_decl_list_node is None:
             last_decl_list_node = self
         for line in lines:
-            last_decl_list_node.add_to_epilog("".join([indent, line]), prepend)
+            last_decl_list_node.add_to_epilog(textwrap.indent(line,indent), prepend)
 
     def append_vars_to_decl_list(self, varnames, vartype="type(c_ptr)"):
         """Create and add declaration expression from `varnames` and `vartype` to declaration list 
@@ -442,7 +442,7 @@ class STContainerBase(STNode):
         for return_or_end_node in self.return_or_end_statements():
             indent = return_or_end_node.first_line_indent()
             for line in lines:
-                return_or_end_node.add_to_prolog(indent + line)
+                return_or_end_node.add_to_prolog(textwrap.indent(line,indent))
 
     def tag(self):
         """Construct a tag that can be used to search the index."""

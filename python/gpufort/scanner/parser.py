@@ -410,9 +410,6 @@ def _parse_file(linemaps, index, **kwargs):
                 current_acc_data_or_kernels_directive,
                 current_linemap, current_statement_no)
         new.ignore_in_s2s_translation = not translation_enabled
-      
-        #print(current_linemap["statements"])
-        print(new.directive_kind)
 
         if new.is_directive(["acc","end","kernels"]):
             if current_acc_data_or_kernels_directive == None:
@@ -424,6 +421,11 @@ def _parse_file(linemaps, index, **kwargs):
         elif new.is_directive(["acc","end","data"]):
             if not current_acc_data_or_kernels_directive.is_directive(["acc","data"]):
                 raise util.error.SyntaxError("'acc end data' without preceding 'acc data'")
+            current_acc_data_or_kernels_directive = current_acc_data_or_kernels_directive.parent_directive
+            append_if_not_recording_(new)
+        elif new.is_directive(["acc","end","host_data"]):
+            if not current_acc_data_or_kernels_directive.is_directive(["acc","host_data"]):
+                raise util.error.syntaxerror("'acc end host_data' without preceding 'acc host_data'")
             current_acc_data_or_kernels_directive = current_acc_data_or_kernels_directive.parent_directive
             append_if_not_recording_(new)
         elif (new.is_directive(["acc","end","serial"])
@@ -447,15 +449,20 @@ def _parse_file(linemaps, index, **kwargs):
             new._do_loop_ctr_memorised = len(do_loop_labels)
             descend_(new) # descend also appends
             set_keep_recording_(True)
-        elif new.is_directive(["acc","data"]):
-            current_acc_data_or_kernels_directive = new
-            append_if_not_recording_(new)
-            util.logging.log_debug(opts.log_prefix,"_parse_file","enter acc data region")
         elif new.is_directive(["acc","kernels"]):
             current_acc_data_or_kernels_directive = new
             append_if_not_recording_(new)
             util.logging.log_debug(opts.log_prefix,"_parse_file","enter acc kernels region")
+        elif new.is_directive(["acc","data"]):
+            current_acc_data_or_kernels_directive = new
+            append_if_not_recording_(new)
+            util.logging.log_debug(opts.log_prefix,"_parse_file","enter acc data region")
+        elif new.is_directive(["acc","host_data"]):
+            current_acc_data_or_kernels_directive = new
+            append_if_not_recording_(new)
+            util.logging.log_debug(opts.log_prefix,"_parse_file","enter acc host_data region")
         else:
+            # init, shutdown, update, wait, set (cache, wait)
             # append new directive
             append_if_not_recording_(new)
 

@@ -3,7 +3,6 @@
 {########################################################################################}
 {%- set data_clauses = [
     "delete",
-    "update_struct_refs",
     "present",
     "no_create",
     "create",
@@ -15,26 +14,55 @@
 {########################################################################################}
 {%- macro render_map_routines(data_clauses,datatypes,dimensions) -%}
 {########################################################################################}
-{% for mapping in data_clauses -%}
-{% set is_acc_declare_clause = mapping in ["present_or_create", 
-                                           "present_or_copyin"] %}
+function gpufort_acc_map_dec_struct_refs_scal(hostptr) result(retval)
+  use iso_c_binding
+  use openacc_gomp_base, only: t_mapping
+  implicit none
+  type(*),target,intent(in) :: hostptr
+  !
+  type(t_mapping) :: retval
+  !
+  call retval%init(c_loc(hostptr),0,gpufort_acc_map_kind_dec_struct_refs,.false.)
+end function
+
+function gpufort_acc_map_dec_struct_refs_arr(hostptr) result(retval)
+  use iso_c_binding
+  use openacc_gomp_base, only: t_mapping
+  implicit none
+  type(*),dimension(*),target,intent(in) :: hostptr
+  !
+  type(t_mapping) :: retval
+  !
+  call retval%init(c_loc(hostptr),0,gpufort_acc_map_kind_dec_struct_refs,.false.)
+end function
+
+{% for clause in data_clauses -%}
+{% set is_acc_declare_clause = clause in ["create", 
+                                           "copyin",
+                                           "copy"] %}
 {% set extra_args = ",module_var" if is_acc_declare_clause else "" %}
-{% set routine = "gpufort_acc_map_" + mapping %}
+{% set routine = "gpufort_acc_map_" + clause %}
 ! {{routine}}
 function {{routine}}_b(hostptr,num_bytes{{extra_args}}) result(retval)
   use iso_c_binding
-  use openacc_gomp_base, only: mapping, {{mapping}}
+  use openacc_gomp_base, only: t_mapping
   implicit none
   !
   type(c_ptr),intent(in)       :: hostptr
   integer(c_size_t),intent(in) :: num_bytes
 {% if is_acc_declare_clause %}
    logical,intent(in),optional :: module_var
-{% endfor %}
+{% endif %}
   !
-  type(mapping) :: retval
+  type(t_mapping) :: retval
   !
-  call retval%init(hostptr,num_bytes,gpufort_acc_map_kind_{{mapping}})
+{% if is_acc_declare_clause %}
+  logical :: opt_module_var
+  !
+  opt_module_var = .false.
+  if ( present(module_var) ) opt_module_var = module_var
+{% endif %}
+  call retval%init(hostptr,num_bytes,gpufort_acc_map_kind_{{clause}},opt_module_var)
 end function
 
 {% for tuple in datatypes -%}
@@ -49,14 +77,14 @@ end function
 {%     set suffix = tuple[0] + "_" + dims|string %}                                                              
 function {{routine}}_{{suffix}}(hostptr{{extra_args}}) result(retval)
   use iso_c_binding
-  use openacc_gomp_base, only: mapping
+  use openacc_gomp_base, only: t_mapping
   implicit none
   {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
 {%     if is_acc_declare_clause %}
    logical,intent(in),optional :: module_var
 {%     endif %}
   !
-  type(mapping) :: retval
+  type(t_clause) :: retval
   !
   retval = {{routine}}_b(c_loc(hostptr),int({{size}}{{tuple[1]}},c_size_t){{extra_args}})
 end function
@@ -112,6 +140,12 @@ module gpufort_acc_runtime
   !>                       otherwise host pointer is returned. Defaults to '.false.'.
   !> \note Returns a c_null_ptr if the host pointer is invalid, i.e. not C associated.
 {{ render_interface("gpufort_acc_use_device",True) | indent(2,True) }}
+
+  !> Decrement the structured reference counter of a record.
+  interface gpufort_acc_map_dec_struct_refs
+    module procedure :: gpufort_acc_map_dec_struct_refs_scal,&
+                        gpufort_acc_map_dec_struct_refs_arr
+  end interface
 
 {% for mapping in data_clauses %} 
 {{ render_interface("gpufort_acc_"+mapping,True) | indent(2,True) }}

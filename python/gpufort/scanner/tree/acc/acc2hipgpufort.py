@@ -413,13 +413,12 @@ def AllocateHipGpufortRT(stallocate, joined_statements, index):
             if not is_allocatable_or_pointer:
                 raise error.SyntaxError("variable '{}' that is subject to `allocate` intrinsic must have 'allocatable' or 'pointer' qualifier".
                         format(var_expr))
-            module_var = "module_var=.true." if is_used_module_var else ""
             declare = ivar["declare_on_target"]
             if declare in _CLAUSES_OMP2ACC.keys():
                 map_kind     = _CLAUSES_OMP2ACC[declare]
                 map_template =  _DATA_CLAUSE_2_TEMPLATE_MAP[map_kind]
                 enter_data_mappings.append(map_template.format(
-                  args=_create_args_str([var_expr,module_var],"",sep=",")))
+                  args=_create_args_str([var_expr],"",sep=",")))
     if len(enter_data_mappings):
         enter_data_str = _ACC_ENTER_EXIT_DATA.format(
             args="&\n"+_create_args_str(enter_data_mappings," "*2))
@@ -448,10 +447,9 @@ def DeallocateHipGpufortRT(stdeallocate, joined_statements, index):
             if not is_allocatable_or_pointer:
                 raise error.SyntaxError("variable '{}' that is subject to `deallocate` intrinsic must have 'allocatable' or 'pointer' qualifier".
                         format(var_expr))
-            module_var = "module_var=.true." if is_used_module_var else ""
             if ivar["declare_on_target"] in ["alloc", "to", "tofrom"]:
                 exit_data_mappings.append(_ACC_MAP_DELETE.format(
-                  args=_create_args_str([var_expr,module_var],"",sep=",")))
+                  args=_create_args_str([var_expr],"",sep=",")))
     if len(exit_data_mappings):
         exit_data_str = _ACC_ENTER_EXIT_DATA.format(
             args="&\n"+_create_args_str(exit_data_mappings," "*2))
@@ -508,7 +506,7 @@ def Acc2HipGpufortRTPostprocess(stree, index):
                         data_start_mappings.append(map_template.format(
                             args=_create_args_str([var_expr,module_var],"",sep=",")))
                         data_end_mappings.append(_ACC_MAP_DEC_STRUCT_REFS.format(
-                            args=_create_args_str([var_expr,module_var],"",sep=",")))
+                            args=_create_args_str([var_expr],"",sep=",")))
         if len(data_start_mappings):
             _add_structured_data_region(stcontainer,data_start_mappings,data_end_mappings)
 

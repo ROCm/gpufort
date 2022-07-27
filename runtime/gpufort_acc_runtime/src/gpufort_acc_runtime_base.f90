@@ -64,8 +64,8 @@ module gpufort_acc_runtime_base
   type, public :: t_mapping
      type(c_ptr)       :: hostptr   = c_null_ptr
      integer(c_size_t) :: num_bytes =  0 
-     integer(kind(gpufort_acc_map_kind_undefined)) :: map_kind = gpufort_acc_event_undefined
-     
+     integer(kind(gpufort_acc_map_kind_undefined)) :: map_kind = gpufort_acc_map_kind_undefined
+     logical           :: module_var = .false.
      contains
        procedure :: init => t_mapping_init_
   end type
@@ -262,7 +262,6 @@ module gpufort_acc_runtime_base
       print *, "- total records created       = ", record_creation_counter_
       print *, "- total memory allocated (B)  = ", total_memory
       print *, "- HIP used memory        (B)  = ", (total_memory - free_memory), "/", total_memory
-      print *, "- current region              = ", record_list_%current_region
       print *, "- last record index           = ", record_list_%last_record_index
       print *, "- device memory allocated (B) = ", record_list_%total_memory_bytes
       print *, ""
@@ -277,7 +276,7 @@ module gpufort_acc_runtime_base
   
     ! t_mapping-bound procedures
 
-    recursive subroutine t_mapping_init_(this,hostptr,num_bytes,map_kind)
+    recursive subroutine t_mapping_init_(this,hostptr,num_bytes,map_kind,module_var)
        use iso_c_binding
        implicit none
        !
@@ -285,10 +284,12 @@ module gpufort_acc_runtime_base
        type(c_ptr),intent(in)         :: hostptr
        integer(c_size_t),intent(in)   :: num_bytes
        integer(kind(gpufort_acc_map_kind_undefined)),intent(in) :: map_kind
+       logical,intent(in)             :: module_var
        !
-       this%hostptr   = hostptr
-       this%num_bytes = num_bytes
-       this%map_kind  = map_kind
+       this%hostptr    = hostptr
+       this%num_bytes  = num_bytes
+       this%map_kind   = map_kind
+       this%module_var = module_var
     end subroutine
 
     !
@@ -369,18 +370,19 @@ module gpufort_acc_runtime_base
     
     subroutine t_record_print_(record)
       use iso_c_binding
-      use gpufort_acc_runtime_c_bindings
       implicit none
       class(t_record),intent(in) :: record
       !
       CALL print_record(&
         record%id,&
         record%is_initialized(),&
+        record%is_used(),&
+        record%is_released(),&
         record%hostptr,&
         record%deviceptr,&
         record%num_bytes,&
         record%struct_refs,&
-        record%region,&
+        record%dyn_refs,&
         record%creational_event)
     end subroutine
     
@@ -400,7 +402,8 @@ module gpufort_acc_runtime_base
       logical(c_bool) :: ret
       !
       ret = record%is_initialized() .and. &
-            record%struct_refs > 0
+            (record%struct_refs > 0 .or.&
+            record%struct_refs > 0)
     end function
     
     function t_record_is_released_(record) result(ret)
@@ -469,7 +472,6 @@ module gpufort_acc_runtime_base
     
     function t_record_is_subarray_(record,hostptr,num_bytes,offset_bytes) result(rval)
       use iso_c_binding
-      use gpufort_acc_runtime_c_bindings
       implicit none
       class(t_record),intent(inout) :: record
       type(c_ptr), intent(in)       :: hostptr
@@ -496,9 +498,8 @@ module gpufort_acc_runtime_base
         call record%print()
         flush(output_unit)
       endif
-      record%hostptr  = c_null_ptr
+      record%hostptr     = c_null_ptr
       record%struct_refs = 0
-      record%region   = -1
     end subroutine
     
     !> Setup newly created/reused record according to new hostptr.
@@ -514,13 +515,8 @@ module gpufort_acc_runtime_base
       logical, intent(in)                                 :: reuse_existing
       !
       record%hostptr = hostptr
-      if ( update_dync_refs_ ) then
-        record%struct_refs = 0
-        record%dyn_refs = 1
-      else 
-        record%struct_refs = 1
-        record%dyn_refs = 0
-      endif
+      record%struct_refs = 0
+      record%dyn_refs = 0
       record%creational_event  = creational_event
       record%num_bytes_used    = num_bytes
       if ( .not. reuse_existing ) then
@@ -552,7 +548,6 @@ module gpufort_acc_runtime_base
       record%deviceptr = c_null_ptr
       record%hostptr   = c_null_ptr
       record%struct_refs  = 0
-      record%region    = -1
     end subroutine
     
     !> Increment the specified reference counters.
@@ -574,7 +569,7 @@ module gpufort_acc_runtime_base
     !> checks if the sum of the counters is smaller or equal to a threshold.
     function t_record_dec_refs_(record,&
         update_struct_refs,update_dyn_refs,&
-        threshold)
+        threshold) result(ret)
       implicit none
       class(t_record),intent(inout) :: record
       logical,intent(in),optional   :: update_struct_refs, update_dyn_refs
@@ -647,7 +642,6 @@ module gpufort_acc_runtime_base
     function t_record_list_find_record_(record_list,hostptr,success) result(loc)
       use iso_fortran_env
       use iso_c_binding
-      use gpufort_acc_runtime_c_bindings
       implicit none
       class(t_record_list),intent(inout) :: record_list
       type(c_ptr), intent(in)            :: hostptr
@@ -727,10 +721,13 @@ module gpufort_acc_runtime_base
     !> Inserts a record (inclusive the host-to-device memcpy where required) or increments a record's
     !> reference counter.
     !> 
+    !> \note Non-alloctable and non-pointer module variables are initialized 
+    !> with structured reference counter value "1".
     !> \note Not thread safe.
-    function t_record_list_use_increment_record_(record_list,hostptr,num_bytes,creational_event,&
-        update_struct_refs,update_dyn_refs,&
-        async,module_var) result(loc)
+    function t_record_list_use_increment_record_(record_list,&
+        hostptr,num_bytes,creational_event,&
+        async,module_var,&
+        update_struct_refs,update_dyn_refs) result(loc)
       use iso_c_binding
       use iso_fortran_env
       use hipfort
@@ -742,6 +739,7 @@ module gpufort_acc_runtime_base
       integer(kind(gpufort_acc_event_create)), intent(in) :: creational_event
       integer,intent(in),optional                         :: async
       logical,intent(in),optional                         :: module_var
+      logical,intent(in),optional                         :: update_struct_refs,update_dyn_refs
       !
       integer :: loc 
       logical :: success, reuse_existing
@@ -755,8 +753,9 @@ module gpufort_acc_runtime_base
          !
          call record_list%records(loc)%setup(hostptr,&
            num_bytes,creational_event,reuse_existing)
-         if ( eval_optval_(module_var,.false.) ) record_list%records(loc)%struct_refs=1 ! module_var only .true. in structured
-                                                                                        ! regions
+         if ( eval_optval_(update_struct_refs,.false.) .and. eval_optval_(module_var,.false.) ) then
+           record_list%records(loc)%struct_refs=1
+         endif
          if ( creational_event .eq. gpufort_acc_event_copyin .or. &
               creational_event .eq. gpufort_acc_event_copy ) &
                 call record_list%records(loc)%copy_to_device(async)
@@ -799,8 +798,11 @@ module gpufort_acc_runtime_base
       !
       loc = record_list%find_record(hostptr,success)
       if ( success ) then
+        if ( record_list_%records(loc)%hostptr .ne. hostptr ) then
+          ERROR STOP "t_record_list_decrement_release_record_: called on subsection of mapped data"
+        endif
         if ( record_list%records(loc)%dec_refs(update_struct_refs,updiate_dyn_refs,0) ) then
-          # if both structured and dynamic reference counters are zero, a copyout action is performed
+          ! if both structured and dynamic reference counters are zero, a copyout action is performed
           if ( present(copy_to_host) ) then
             if ( copy_to_host ) call record_list%records(loc)%copy_to_host()
           endif
@@ -953,39 +955,42 @@ module gpufort_acc_runtime_base
       endif
     end subroutine
  
-    subroutine apply_mappings_(mappings,update_struct_refs,update_dyn_refs,async,finalize)
-      type(mapping),dimension(:),intent(in),optional :: mappings
-      logical,intent(in),optional                    :: update_struct_refs, update_dyn_refs
-      integer,intent(in),optional                    :: async
-      logical,intent(in),optional                    :: finalize
+    subroutine apply_mappings_(mappings,&
+        update_struct_refs,update_dyn_refs,&
+        async,finalize)
+      type(t_mapping),dimension(:),intent(in),optional :: mappings
+      logical,intent(in),optional                      :: update_struct_refs, update_dyn_refs
+      integer,intent(in),optional                      :: async
+      logical,intent(in),optional                      :: finalize
       !
-      type(c_ptr) :: deviceptr
+      type(t_mapping) :: mapping
+      type(c_ptr)     :: deviceptr
       !
       if ( present(mappings) ) then
         do i=1,size(mappings)
-          map = mappings(i)
-          select case(map%map_kind)
+          mapping = mappings(i)
+          select case(mapping%map_kind)
             case(gpufort_acc_map_kind_delete)
-              call gpufort_acc_delete_b(hostptr,finalize)
+              call gpufort_acc_delete_b(mapping%hostptr,finalize)
             case(gpufort_acc_map_kind_dec_struct_refs)
-              call gpufort_acc_dec_struct_refs_b(map%hostptr,async)
+              call gpufort_acc_dec_struct_refs_b(mapping%hostptr,async)
             case(gpufort_acc_map_kind_present)
-              deviceptr = gpufort_acc_present_b(map%hostptr,map%num_bytes,async,&
+              deviceptr = gpufort_acc_present_b(mapping%hostptr,mapping%num_bytes,async,&
                 update_struct_refs)
             case(gpufort_acc_map_kind_create)
-              deviceptr = gpufort_acc_create_b(hostptr,num_bytes,&
+              deviceptr = gpufort_acc_create_b(mapping%hostptr,mapping%num_bytes,&
                 update_struct_refs,update_dyn_refs,&
                 async)
             case(gpufort_acc_map_kind_copyin)
-              deviceptr = gpufort_acc_copyin_b(hostptr,num_bytes,&
+              deviceptr = gpufort_acc_copyin_b(mapping%hostptr,mapping%num_bytes,&
                 update_struct_refs,update_dyn_refs,&
                 async)
             case(gpufort_acc_map_kind_copyout)
-              deviceptr = gpufort_acc_copyout_b(hostptr,num_bytes,&
+              deviceptr = gpufort_acc_copyout_b(mapping%hostptr,mapping%num_bytes,&
                 update_struct_refs,update_dyn_refs,&
                 async)
             case(gpufort_acc_map_kind_copy)
-              deviceptr = gpufort_acc_copy_b(hostptr,num_bytes,&
+              deviceptr = gpufort_acc_copy_b(mapping%hostptr,mapping%num_bytes,&
                 update_struct_refs,.false.,&
                 async)
             case default
@@ -1001,7 +1006,7 @@ module gpufort_acc_runtime_base
       implicit none
       !
       integer,intent(in)                             :: device
-      type(mapping),dimension(:),intent(in),optional :: mappings
+      type(t_mapping),dimension(:),intent(in),optional :: mappings
       !
       ! mappings
       call apply_mappings_(mappings,&
@@ -1015,8 +1020,8 @@ module gpufort_acc_runtime_base
       use openacc
       implicit none
       !
-      integer,intent(in)                             :: device
-      type(mapping),dimension(:),optional,intent(in) :: mappings
+      integer,intent(in)                               :: device
+      type(t_mapping),dimension(:),optional,intent(in) :: mappings
       !
       ! mappings
       call apply_mappings_(mappings,&
@@ -1031,8 +1036,6 @@ module gpufort_acc_runtime_base
       end do
       record_list_%last_record_index = new_last_record_index
       !
-      record_list_%current_region = record_list_%current_region -1
-      !
     end subroutine
     
     subroutine gpufort_acc_enter_exit_data(device,mappings,async,finalize)
@@ -1040,14 +1043,14 @@ module gpufort_acc_runtime_base
       use openacc
       implicit none
       !
-      integer,intent(in)                             :: device
-      type(mapping),dimension(:),optional,intent(in) :: mappings
-      integer,intent(in),optional                    :: async
-      logical,intent(in),optional                    :: finalize
+      integer,intent(in)                               :: device
+      type(t_mapping),dimension(:),optional,intent(in) :: mappings
+      integer,intent(in),optional                      :: async
+      logical,intent(in),optional                      :: finalize
       !
       ! mappings
       call apply_mappings_(mappings,&
-        update_dyn_refs=.true.,
+        update_dyn_refs=.true.,&
         async=async,finalize=finalize)
     end subroutine
 
@@ -1060,7 +1063,6 @@ module gpufort_acc_runtime_base
         condition,if_present) result(resultptr)
       use iso_fortran_env
       use iso_c_binding
-      use gpufort_acc_runtime_c_bindings, only: inc_cptr, print_cptr
       implicit none
       type(c_ptr),intent(in)       :: hostptr
       integer(c_size_t),intent(in) :: num_bytes
@@ -1091,16 +1093,6 @@ module gpufort_acc_runtime_base
       endif
     end function
 
-    subroutine adjust_struct_refs_for_acc_declared_module_vars(record,module_var)
-      type(t_record),intent(in)    :: record 
-      logical,intent(in),optional  :: module_var
-      if ( present(module_var) ) then 
-        if ( module_var .and. record%struct_refs .le. 0 ) then
-          record%struct_refs = 1
-        endif
-      endif
-    end subroutine
-
     ! Data Clauses
     ! The description applies to the clauses used on compute
     ! constructs, data constructs, and enter data and exit
@@ -1112,16 +1104,12 @@ module gpufort_acc_runtime_base
     !> memory, and the structured reference count is incremented.
     !> When exiting the region, the structured reference count is
     !> decremented.
-    !>
-    !> \note We just return the device pointer here and do not modify the counters.
-    function gpufort_acc_present_b(hostptr,num_bytes,module_var,update_struct_refs) result(deviceptr)
+    function gpufort_acc_present_b(hostptr,num_bytes,update_struct_refs) result(deviceptr)
       use iso_fortran_env
       use iso_c_binding
-      use gpufort_acc_runtime_c_bindings
       implicit none
       type(c_ptr),intent(in)       :: hostptr
       integer(c_size_t),intent(in) :: num_bytes
-      logical,intent(in),optional  :: module_var
       logical,intent(in),optional  :: update_struct_refs
       !
       type(c_ptr) :: deviceptr
@@ -1140,7 +1128,6 @@ module gpufort_acc_runtime_base
                                                                                             ! might have been mapped before
           deviceptr = inc_cptr(record_list_%records(loc)%deviceptr,offset_bytes)
           !
-          call adjust_struct_refs_for_acc_declared_module_vars(record_list_%records(loc),module_var)
           if ( update_struct_refs ) then
             record_list_%records(loc)%inc_refs(update_struct_refs=.true.)
           endif
@@ -1161,18 +1148,12 @@ module gpufort_acc_runtime_base
           flush(output_unit)
           print *, ""
         endif
-        !if (exiting) then 
-        !  record_list_%records(loc)%update_struct_refs()
-        !else
-        !  record_list_%records(loc)%update_struct_refs()
-        !endif
       endif
     end function
 
     subroutine gpufort_acc_dec_struct_refs_b(hostptr,async)
       use iso_fortran_env
       use iso_c_binding
-      use gpufort_acc_runtime_c_bindings
       implicit none
       type(c_ptr),intent(in)      :: hostptr
       integer,intent(in),optional :: async
@@ -1223,9 +1204,8 @@ module gpufort_acc_runtime_base
         ERROR STOP "gpufort_acc_create_b: hostptr not c_associated"
       else
         loc       = record_list_%use_increment_record(hostptr,num_bytes,&
-                        update_struct_refs,update_dyn_refs,&
-                      gpufort_acc_event_create,async,module_var)
-        call adjust_struct_refs_for_acc_declared_module_vars(record_list_%records(loc),module_var)
+                      gpufort_acc_event_create,async,module_var,&
+                      update_struct_refs,update_dyn_refs)
         deviceptr = record_list_%records(loc)%deviceptr
       endif
     end function
@@ -1296,10 +1276,14 @@ module gpufort_acc_runtime_base
         if ( opt_finalize ) then
           loc = record_list_%find_record(hostptr,success)
           if ( .not. success ) ERROR STOP "gpufort_acc_delete_b: no record found for hostptr"
-          call record_list_%records(loc)%release()
+          if ( record_list_%records(loc)%hostptr .eq. hostptr) then
+            call record_list_%records(loc)%release()
+          else
+            ERROR STOP "gpufort_acc_delete_b: called on subsection of mapped data"
+          endif
         else
           call record_list_%decrement_release_record(hostptr,&
-            update_dyn_refs=.true.
+            update_dyn_refs=.true.,&
             copy_to_host=.false.)
         endif
       endif
@@ -1327,6 +1311,7 @@ module gpufort_acc_runtime_base
       implicit none
       type(c_ptr), intent(in)      :: hostptr
       integer(c_size_t),intent(in) :: num_bytes
+      logical,intent(in),optional  :: update_struct_refs,update_dyn_refs
       integer,intent(in),optional  :: async
       logical,intent(in),optional  :: module_var
       !
@@ -1343,7 +1328,6 @@ module gpufort_acc_runtime_base
         deviceptr = c_null_ptr
       else
         loc       = record_list_%use_increment_record(hostptr,num_bytes,gpufort_acc_event_copyin,async,module_var)
-        call adjust_struct_refs_for_acc_declared_module_vars(record_list_%records(loc),module_var)
         deviceptr = record_list_%records(loc)%deviceptr
       endif 
     end function
@@ -1383,7 +1367,9 @@ module gpufort_acc_runtime_base
 #endif
         deviceptr = c_null_ptr
       else
-        loc       = record_list_%use_increment_record(hostptr,num_bytes,gpufort_acc_event_copyout,async,module_var)
+        loc       = record_list_%use_increment_record(hostptr,num_bytes,&
+                      gpufort_acc_event_copyout,async,.false.,&
+                      update_struct_refs,update_dyn_refs)
         deviceptr = record_list_%records(loc)%deviceptr
       endif
     end function
@@ -1422,9 +1408,8 @@ module gpufort_acc_runtime_base
       else
         loc       = record_list_%use_increment_record(hostptr,num_bytes,&
                       gpufort_acc_event_copy,&
-                      update_struct_refs,.false.,&
-                      async,module_var)
-        call adjust_struct_refs_for_acc_declared_module_vars(record_list_%records(loc),module_var)
+                      async,module_var,&
+                      update_struct_refs,.false.)
         deviceptr = record_list_%records(loc)%deviceptr
       endif
     end function
@@ -1512,11 +1497,11 @@ module gpufort_acc_runtime_base
     !> wait [( expression-list )] - TODO not implemented
     !>   The data movement will not begin execution until all actions on
     !>   the corresponding async queue(s) are complete.
-    subroutine gpufort_acc_update_device_b(hostptr,condition,if_present,async,module_var)
+    subroutine gpufort_acc_update_device_b(hostptr,condition,if_present,async)
       use iso_c_binding
       implicit none
       type(c_ptr),intent(in)      :: hostptr
-      logical,intent(in),optional :: condition, if_present, module_var
+      logical,intent(in),optional :: condition, if_present
       integer,intent(in),optional :: async
       !
       integer :: loc

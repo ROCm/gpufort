@@ -77,7 +77,20 @@ def _create_args_str(args,indent,sep=",&\n"):
     """Join and indent non-blank args"""
     while(args.count("")):
       args.remove("")
-    return textwrap.indent(sep.join(args),indent)
+    if len(args):
+        return textwrap.indent(sep.join(args),indent)
+    return ""
+
+def _create_mappings_str(mappings,options,indent):
+    result = ""
+    mappings_str = _create_args_str(mappings,indent) 
+    options_str  = _create_args_str(options,indent)
+    if len(mappings_str):
+        result += "".join(["[&\n",mappings_str,"]"])
+        if len(options_str):
+            result += ",&\n"
+    result += options_str
+    return result
 
 class Acc2HipGpufortRT(accbackends.AccBackendBase):
     
@@ -278,27 +291,26 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             result += self._handle_wait_clause()
             mappings = self._handle_data_clauses(stnode,index)
             result.append(_ACC_DATA_START.format(
-                args="&\n"+_create_args_str(mappings,indent)))
+                args=_create_mappings_str(mappings,[],indent)))
         elif stnode.is_directive(["acc","end","data"]):
             stparentdir = stnode.parent_directive
             mappings = self._handle_data_clauses(
                 stparentdir,index,template=_ACC_MAP_DEC_STRUCT_REFS)
-            options = [ self._get_async_clause_expr(stparentdir) ]
             result.append(_ACC_DATA_END.format(
-                args="&\n"+_create_args_str(mappings+options,indent)))
+                args=_create_mappings_str(mappings,[],indent)))
         elif stnode.is_directive(["acc","kernels"]):
             result += self._handle_wait_clause()
             mappings = self._handle_data_clauses(stnode,index)
             options = [ self._get_async_clause_expr(stnode) ]
             result.append(_ACC_DATA_START.format(
-                args="&\n"+_create_args_str(mappings+options,indent)))
+                args=_create_mappings_str(mappings,options,indent)))
         elif stnode.is_directive(["acc","end","kernels"]):
             stparentdir = stnode.parent_directive
             mappings = self._handle_data_clauses(
                 stparentdir,index,template=_ACC_MAP_DEC_STRUCT_REFS)
             options = [ self._get_async_clause_expr(stparentdir) ]
             result.append(_ACC_DATA_END.format(
-                args="&\n"+_create_args_str(mappings+options,indent)))
+                args=_create_mappings_str(mappings,options,indent)))
         # _handle if
         self._handle_if_clause(stnode,result)
 
@@ -421,7 +433,7 @@ def AllocateHipGpufortRT(stallocate, joined_statements, index):
                   args=_create_args_str([var_expr],"",sep=",")))
     if len(enter_data_mappings):
         enter_data_str = _ACC_ENTER_EXIT_DATA.format(
-            args="&\n"+_create_args_str(enter_data_mappings," "*2))
+            args=_create_mappings_str(enter_data_mappings,[]," "*2))
         stallocate.add_to_epilog(textwrap.indent(enter_data_str,indent))
     return joined_statements, False
 
@@ -452,16 +464,16 @@ def DeallocateHipGpufortRT(stdeallocate, joined_statements, index):
                   args=_create_args_str([var_expr],"",sep=",")))
     if len(exit_data_mappings):
         exit_data_str = _ACC_ENTER_EXIT_DATA.format(
-            args="&\n"+_create_args_str(exit_data_mappings," "*2))
+            args=_create_mappings_str(exit_data_mappings,[]," "*2))
         stdeallocate.add_to_prolog(textwrap.indent(exit_data_str,indent))
     return joined_statements, False
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def _add_structured_data_region(stcontainer,data_start_mappings,data_end_mappings):
     data_start_str = _ACC_DATA_START.format(
-        args="&\n"+_create_args_str(data_start_mappings," "*2))
+        args=_create_mappings_str(data_start_mappings,[]," "*2))
     data_end_str = _ACC_DATA_END.format(
-        args="&\n"+_create_args_str(data_end_mappings," "*2))
+        args=_create_mappings_str(data_end_mappings,[]," "*2))
     stcontainer.append_to_decl_list([data_start_str])
     stcontainer.prepend_to_return_or_end_statements([data_end_str])
 

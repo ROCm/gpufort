@@ -9,7 +9,7 @@ ACC_LIB         = -L$(GPUFORTRT_DIR)/lib -lgpufortrt
 TEST_SRC = $(shell find . -name "test-*.f90")
 TEST_APP = $(TEST_SRC:.f90=.x)
 #TEST_ENV = AMD_LOG_LEVEL=3 
-TEST_ENV = GPUFORT_LOG_LEVEL=3
+TEST_ENV = GPUFORTRT_LOG_LEVEL=3
 
 .PHONY: $(TEST_APP)
 

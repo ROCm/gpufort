@@ -1,12 +1,13 @@
 FC ?= hipfc
-HIPFORT_PATH ?= /opt/rocm/hipfort
 
-FCFLAGS ?= -std=f2008 -ffree-line-length-none -cpp
+HIP_PLATFORM ?= amd
 ifeq ($(HIP_PLATFORM),nvcc)
-  FCFLAGS += -I/$(HIPFORT_PATH)/include/nvptx
+  HIPFORT_INC ?= /opt/rocm/include/hipfort/nvptx
 else
-  FCFLAGS += -I/$(HIPFORT_PATH)/include/amdgcn
+  HIPFORT_INC ?= /opt/rocm/include/hipfort/amdgcn
 endif
+FCFLAGS ?= -std=f2008 -ffree-line-length-none -cpp \
+           -I$(HIPFORT_INC)
 
 SUFFIX        ?= $(if $(HIP_PLATFORM),$(HIP_PLATFORM),amd)
 LIBGPUFORT_ACC = libgpufort_acc_$(SUFFIX).a

@@ -38,7 +38,7 @@ module gpufort_acc_runtime_c_bindings
                             num_bytes,&
                             struct_refs,&
                             dyn_refs,&
-                            creational_event) bind(c,name="print_record")
+                            map_kind) bind(c,name="print_record")
       use iso_c_binding
       implicit none
       integer,intent(in)           :: id
@@ -50,7 +50,7 @@ module gpufort_acc_runtime_c_bindings
       integer(c_size_t),intent(in) :: num_bytes
       integer,intent(in)           :: struct_refs
       integer,intent(in)           :: dyn_refs
-      integer,intent(in)           :: creational_event
+      integer,intent(in)           :: map_kind
     end subroutine
 
   end interface

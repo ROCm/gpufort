@@ -1,4 +1,3 @@
-FC     ?= gfortran
 CFLAGS ?= $(shell gpufort --print-gfortran-config)
 
 HIPCC ?= hipcc 

@@ -15,32 +15,32 @@ from . import accbackends
 from . import accnodes
 
 # update
-_ACC_UPDATE = "call gpufort_acc_update_{kind}({args})\n"
+_ACC_UPDATE = "call gpufortrt_update_{kind}({args})\n"
 # wait
-#_ACC_WAIT = "call gpufort_acc_wait({queue}{{args})\n"
-_ACC_WAIT = "call gpufort_acc_wait({args})\n"
+#_ACC_WAIT = "call gpufortrt_wait({queue}{{args})\n"
+_ACC_WAIT = "call gpufortrt_wait({args})\n"
 # init shutdown
-_ACC_INIT     = "call gpufort_acc_init()\n"
-_ACC_SHUTDOWN = "call gpufort_acc_shutdown()\n"
+_ACC_INIT     = "call gpufortrt_init()\n"
+_ACC_SHUTDOWN = "call gpufortrt_shutdown()\n"
 
 # regions
-_ACC_DATA_START      = "call gpufort_acc_data_start({args})\n"
-_ACC_DATA_END        = "call gpufort_acc_data_end({args})\n"
-_ACC_ENTER_EXIT_DATA = "call gpufort_acc_enter_exit_data({args})\n"
+_ACC_DATA_START      = "call gpufortrt_data_start({args})\n"
+_ACC_DATA_END        = "call gpufortrt_data_end({args})\n"
+_ACC_ENTER_EXIT_DATA = "call gpufortrt_enter_exit_data({args})\n"
 
 # clauses
-#_ACC_USE_DEVICE = "gpufort_acc_use_device({args},lbound({args}){options})\n"
-_ACC_USE_DEVICE = "gpufort_acc_use_device({args})\n"
+#_ACC_USE_DEVICE = "gpufortrt_use_device({args},lbound({args}){options})\n"
+_ACC_USE_DEVICE = "gpufortrt_use_device({args})\n"
 
-_ACC_MAP_CREATE = "gpufort_acc_map_create({args})"
-_ACC_MAP_NO_CREATE = "gpufort_acc_map_no_create({args})"
-_ACC_MAP_PRESENT = "gpufort_acc_map_present({args})"
-_ACC_MAP_DELETE = "call gpufort_acc_map_delete({args})"
-_ACC_MAP_COPY = "gpufort_acc_map_copy({args})"
-_ACC_MAP_COPYIN = "gpufort_acc_map_copyin({args})"
-_ACC_MAP_COPYOUT = "gpufort_acc_map_copyout({args})"
+_ACC_MAP_CREATE = "gpufortrt_map_create({args})"
+_ACC_MAP_NO_CREATE = "gpufortrt_map_no_create({args})"
+_ACC_MAP_PRESENT = "gpufortrt_map_present({args})"
+_ACC_MAP_DELETE = "call gpufortrt_map_delete({args})"
+_ACC_MAP_COPY = "gpufortrt_map_copy({args})"
+_ACC_MAP_COPYIN = "gpufortrt_map_copyin({args})"
+_ACC_MAP_COPYOUT = "gpufortrt_map_copyout({args})"
 
-_ACC_MAP_DEC_STRUCT_REFS = "gpufort_acc_map_dec_struct_refs({args})"
+_ACC_MAP_DEC_STRUCT_REFS = "gpufortrt_map_dec_struct_refs({args})"
 
 _DATA_CLAUSE_2_TEMPLATE_MAP = {
   "present": _ACC_MAP_PRESENT,
@@ -266,7 +266,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             options = [ self._get_async_clause_expr() ]
             result.append(_ACC_ENTER_EXIT_DATA.format(
                 args="&\n"+_create_args_str(mappings+options,indent)))
-            # emit gpufort_acc_enter_exit_data
+            # emit gpufortrt_enter_exit_data
         elif stnode.is_directive(["acc","exit","data"]):
             result += self._handle_wait_clause()
             mappings = self._handle_data_clauses(stnode,index)
@@ -316,7 +316,7 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
         else:
             clause_kind = clause_kind1
         if clause_kind in _DATA_CLAUSE_2_TEMPLATE_MAP:
-            runtime_call_tokens = ["gpufort_acc_",clause_kind,"("]
+            runtime_call_tokens = ["gpufortrt_",clause_kind,"("]
             runtime_call_tokens.append(var_expr)
             if len(asyncr) and clause_kind in _DATA_CLAUSES_WITH_ASYNC:
                 runtime_call_tokens += [",",asyncr]
@@ -378,7 +378,7 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
         queue, found_async = stloopnest.get_async_clause_queue()
         if not found_async:
             queue = "0"
-        stloopnest.stream_f_str = "gpufort_acc_get_stream({})".format(queue)
+        stloopnest.stream_f_str = "gpufortrt_get_stream({})".format(queue)
         stloopnest.async_launch_f_str = ".{}.".format(str(found_async)).lower()
        
         stloopnest.kernel_args_names = self.derive_kernel_call_arguments()
@@ -468,7 +468,7 @@ def _add_structured_data_region(stcontainer,data_start_mappings,data_end_mapping
 def Acc2HipGpufortRTPostprocess(stree, index):
     """:param stree: the full scanner tree
        :param staccdirectives: All acc directive tree accnodes."""
-    accbackends.add_runtime_module_use_statements(stree,"gpufort_acc_runtime")
+    accbackends.add_runtime_module_use_statements(stree,"gpufortrt")
 
     # TODO check if there is any acc used in the
     # construct at all

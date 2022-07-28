@@ -3,7 +3,7 @@ include ../rules.mk
 .PHONY: clean
 
 FCFLAGS += -I ../include
-LD_FLAGS  = ../lib/libgpufort_acc.a -lstdc++
+LD_FLAGS  = ../lib/libgpufortrt.a -lstdc++
 
 TEST_SRC = $(shell find . -name "test_*.f90")
 TEST = $(TEST_SRC:.f90=)

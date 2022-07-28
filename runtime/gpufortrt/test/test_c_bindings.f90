@@ -2,7 +2,7 @@
 ! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 program test_c_bindings
   use iso_c_binding
-  use gpufort_acc_runtime_c_bindings
+  use gpufortrt_c_bindings
   implicit none
   !
   real(4),target :: array(10,10)

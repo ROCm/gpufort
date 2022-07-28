@@ -19,7 +19,7 @@
       `hipfort` API calls or `GPUFORT` kernel launch routines.
     * Examples are likely outdated 
 
-* This directory further contains `gpufort_acc_runtime`, a minimal non-standard-compliant runtime written 
+* This directory further contains `gpufortrt`, a minimal non-standard-compliant runtime written 
   mostly in Fortran, which we use for prototyping and characterizing application runtime behavior. 
   Long term, we plan to rewrite this runtime in C++ or abandon it for a better alternative.
  
@@ -32,7 +32,7 @@
 ## Runtime subfolders
 
 * `openacc_gomp`: contains extended interfaces to GCC's LIBGOMP.
-* `gpufort_acc_runtime`: contains a minimal non-standard-compliant runtime written 
+* `gpufortrt`: contains a minimal non-standard-compliant runtime written 
   completely in Fortran, which can be used teaching purposes
 
 ## Building

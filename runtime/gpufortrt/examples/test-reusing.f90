@@ -2,7 +2,7 @@
 ! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 program test_acc
   use iso_c_binding
-  use gpufort_acc_runtime
+  use gpufortrt
   !
   real(8),allocatable,target :: a(:,:), b(:,:)
   type(c_ptr) :: a_d, b_d
@@ -13,24 +13,24 @@ program test_acc
 
   print *, "initializing"
   !$acc init
-  call gpufort_acc_init()
+  call gpufortrt_init()
  
   print *, "entering region" 
-  call gpufort_acc_enter_region()
-  a_d = gpufort_acc_copyin(a(:,:))
-  call gpufort_acc_exit_region()
+  call gpufortrt_enter_region()
+  a_d = gpufortrt_copyin(a(:,:))
+  call gpufortrt_exit_region()
   print *, "exiting region" 
   
   print *, "entering region" 
-  call gpufort_acc_enter_region()
-  b_d = gpufort_acc_copyin(b(:,:))
-  call gpufort_acc_exit_region()
+  call gpufortrt_enter_region()
+  b_d = gpufortrt_copyin(b(:,:))
+  call gpufortrt_exit_region()
   print *, "exiting region" 
 
-  call gpufort_acc_runtime_print_summary() 
+  call gpufortrt_print_summary() 
   
   print *, "shutting down"
   !$acc shutdown
-  call gpufort_acc_shutdown()
+  call gpufortrt_shutdown()
 
 end program 

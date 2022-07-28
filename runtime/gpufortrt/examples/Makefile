@@ -2,9 +2,9 @@ FC       = hipfc
 FCFLAGS ?= -std=f2008 -ffree-line-length-none
 FCFLAGS += -g -ggdb
 
-GPUFORT_ACC_DIR = $(shell gpufort --print-path)/runtime/gpufort_acc_runtime
-ACC_INC         = -I$(GPUFORT_ACC_DIR)/include 
-ACC_LIB         = -L$(GPUFORT_ACC_DIR)/lib -lgpufort_acc 
+GPUFORTRT_DIR = $(shell gpufort --print-path)/runtime/gpufortrt
+ACC_INC         = -I$(GPUFORTRT_DIR)/include 
+ACC_LIB         = -L$(GPUFORTRT_DIR)/lib -lgpufortrt 
 
 TEST_SRC = $(shell find . -name "test-*.f90")
 TEST_APP = $(TEST_SRC:.f90=.x)

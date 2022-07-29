@@ -19,22 +19,22 @@
 {%   set suffix = tuple[0] %}                                                              
 function gpufortrt_map_dec_struct_refs_{{suffix}}_scal(hostptr) result(retval)
   use iso_c_binding
-  use gpufortrt_base, only: t_mapping
+  use gpufortrt_base, only: mapping_t
   implicit none
   {{tuple[2]}},target,intent(in) :: hostptr
   !
-  type(t_mapping) :: retval
+  type(mapping_t) :: retval
   !
   call retval%init(c_loc(hostptr),0_c_size_T,gpufortrt_map_kind_dec_struct_refs,.false.)
 end function
 
 function gpufortrt_map_dec_struct_refs_{{suffix}}_arr(hostptr) result(retval)
   use iso_c_binding
-  use gpufortrt_base, only: t_mapping
+  use gpufortrt_base, only: mapping_t
   implicit none
   {{tuple[2]}},dimension(*),target,intent(in) :: hostptr
   !
-  type(t_mapping) :: retval
+  type(mapping_t) :: retval
   !
   call retval%init(c_loc(hostptr),0_c_size_t,gpufortrt_map_kind_dec_struct_refs,.false.)
 end function
@@ -47,7 +47,7 @@ end function
 ! {{routine}}
 function {{routine}}_b(hostptr,num_bytes{{extra_args}}) result(retval)
   use iso_c_binding
-  use gpufortrt_base, only: t_mapping
+  use gpufortrt_base, only: mapping_t
   implicit none
   !
   type(c_ptr),intent(in)       :: hostptr
@@ -56,7 +56,7 @@ function {{routine}}_b(hostptr,num_bytes{{extra_args}}) result(retval)
    logical,intent(in),optional :: declared_module_var
 {% endif %}
   !
-  type(t_mapping) :: retval
+  type(mapping_t) :: retval
   !
   logical :: opt_declared_module_var
   !
@@ -79,14 +79,14 @@ end function
 {%     set suffix = tuple[0] + "_" + dims|string %}                                                              
 function {{routine}}_{{suffix}}(hostptr{{extra_args}}) result(retval)
   use iso_c_binding
-  use gpufortrt_base, only: t_mapping
+  use gpufortrt_base, only: mapping_t
   implicit none
   {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
 {%     if is_acc_declare_module_clause %}
    logical,intent(in),optional :: declared_module_var
 {%     endif %}
   !
-  type(t_mapping) :: retval
+  type(mapping_t) :: retval
   !
   retval = {{routine}}_b(c_loc(hostptr),int({{size}}{{tuple[1]}},c_size_t){{extra_args}})
 end function

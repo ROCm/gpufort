@@ -1,4 +1,4 @@
-! SPDX-License-Identifier: MIT                                                
+! SPDX-License-Identifier: MIT
 ! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 
 #define blocked_size(num_bytes) ((((num_bytes)+BLOCK_SIZE-1)/BLOCK_SIZE) * BLOCK_SIZE)
@@ -11,8 +11,8 @@ module gpufortrt_base
 
   public :: gpufortrt_ignore
   public :: gpufortrt_use_device_b
-  public :: gpufortrt_copyin_b, gpufortrt_copyout_b, gpufortrt_copy_b, & 
-            gpufortrt_create_b, gpufortrt_no_create_b,& 
+  public :: gpufortrt_copyin_b, gpufortrt_copyout_b, gpufortrt_copy_b, &
+            gpufortrt_create_b, gpufortrt_no_create_b,&
             gpufortrt_present_b,&
             gpufortrt_delete_b,&
             gpufortrt_dec_struct_refs_b
@@ -22,9 +22,9 @@ module gpufortrt_base
   public :: gpufortrt_enter_exit_data, gpufortrt_data_start, gpufortrt_data_end
   public :: gpufortrt_wait
   public :: gpufortrt_print_summary
-  
+
   public :: gpufortrt_record_exists, gpufortrt_get_record_id
-    
+
   public ::  &
     gpufortrt_map_kind_dec_struct_refs,&
     gpufortrt_map_kind_undefined,&
@@ -43,43 +43,43 @@ module gpufortrt_base
   !
   ! members
   !
-  
+
   integer, save :: LOG_LEVEL                = 0
   integer, save :: MAX_QUEUES               = 64
   integer, save :: INITIAL_RECORDS_CAPACITY = 4096
   ! reuse/fragmentation controls
   integer, save :: BLOCK_SIZE             = 32
-  real, save    :: REUSE_THRESHOLD        = 0.9 ! only reuse record if mem_new>=factor*mem_old 
-  integer, save :: NUM_REFS_TO_DEALLOCATE = -5  ! dealloc device mem only if struct_refs takes this value 
+  real, save    :: REUSE_THRESHOLD        = 0.9 ! only reuse record if mem_new>=factor*mem_old
+  integer, save :: NUM_REFS_TO_DEALLOCATE = -5  ! dealloc device mem only if struct_refs takes this value
 
   logical, save :: initialized_              = .false.
   integer, save :: record_creation_counter_  = 0
   integer, save :: last_queue_index_         = 0
-  
+
   !> Mapping kinds.
-  enum, bind(c) 
+  enum, bind(c)
     enumerator :: gpufortrt_map_kind_dec_struct_refs = -1
-    enumerator :: gpufortrt_map_kind_undefined       = 0 
+    enumerator :: gpufortrt_map_kind_undefined       = 0
     enumerator :: gpufortrt_map_kind_present         = 1
     enumerator :: gpufortrt_map_kind_delete          = 2
-    enumerator :: gpufortrt_map_kind_create          = 3 
+    enumerator :: gpufortrt_map_kind_create          = 3
     enumerator :: gpufortrt_map_kind_no_create       = 4
-    enumerator :: gpufortrt_map_kind_copyin          = 5 
-    enumerator :: gpufortrt_map_kind_copyout         = 6 
-    enumerator :: gpufortrt_map_kind_copy            = 7 
-  end enum 
+    enumerator :: gpufortrt_map_kind_copyin          = 5
+    enumerator :: gpufortrt_map_kind_copyout         = 6
+    enumerator :: gpufortrt_map_kind_copy            = 7
+  end enum
 
-  type, public :: t_mapping
+  type, public :: mapping_t
      type(c_ptr)       :: hostptr   = c_null_ptr
-     integer(c_size_t) :: num_bytes =  0 
+     integer(c_size_t) :: num_bytes =  0
      integer(kind(gpufortrt_map_kind_undefined)) :: map_kind = gpufortrt_map_kind_undefined
      logical           :: declared_module_var = .false.
      contains
-       procedure :: init => t_mapping_init_
+       procedure :: init => mapping_init_
   end type
 
   !> Data structure that maps a host to a device pointer.
-  type :: t_record
+  type,bind(c) :: record_t
     integer           :: id             = -1
     type(c_ptr)       :: hostptr        = c_null_ptr
     type(c_ptr)       :: deviceptr      = c_null_ptr
@@ -88,56 +88,27 @@ module gpufortrt_base
     integer           :: struct_refs    = 0
     integer           :: dyn_refs       = 0
     integer(kind(gpufortrt_map_kind_create)) :: map_kind = gpufortrt_map_kind_undefined
-
-    contains 
-      procedure :: print          => t_record_print_
-      procedure :: is_initialized => t_record_is_initialized_
-      procedure :: is_used        => t_record_is_used_
-      procedure :: is_released    => t_record_is_released_
-      procedure :: is_subarray    => t_record_is_subarray_
-      procedure :: setup          => t_record_setup_
-      procedure :: release        => t_record_release_
-      procedure :: destroy        => t_record_destroy_
-      procedure :: copy_to_device => t_record_copy_to_device_
-      procedure :: copy_to_host   => t_record_copy_to_host_
-      procedure :: dec_refs       => t_record_dec_refs_
-      procedure :: inc_refs       => t_record_inc_refs_
   end type
 
   !> Data structure managing records and storing associated metadata.
-  type :: t_record_list
-    type(t_record), allocatable :: records(:)
+  type :: record_list_t
+    type(record_t), allocatable :: records(:)
     integer                     :: last_record_index  = 0
     integer(c_size_t)           :: total_memory_bytes = 0
-    
-    contains   
-      procedure :: is_initialized           => t_record_list_is_initialized_
-      procedure :: initialize               => t_record_list_initialize_
-      procedure :: grow                     => t_record_list_grow_
-      procedure :: destroy                  => t_record_list_destroy_
-      procedure :: find_record              => t_record_list_find_record_
-      procedure :: find_available_record    => t_record_list_find_available_record_
-      procedure :: use_increment_record     => t_record_list_use_increment_record_
-      procedure :: decrement_release_record => t_record_list_decrement_release_record_
   end type
 
-  !> Data structure to map integer numbers to queues.  
-  type :: t_queue
+  !> Data structure to map integer numbers to queues.
+  type,bind(c) :: queue_t
     type(c_ptr) :: queueptr = c_null_ptr
-    
-    contains 
-      procedure :: is_initialized     => t_queue_is_initialized_
-      procedure :: initialize         => t_queue_initialize_
-      procedure :: destroy            => t_queue_destroy_
   end type
 
-  type(t_record_list),save       :: record_list_
-  type(t_queue),allocatable,save :: queues_(:)
+  type(record_list_t),save       :: record_list_
+  type(queue_t),allocatable,save :: queues_(:)
 
   !> evaluate optional values
   interface eval_optval_
      module procedure :: eval_optval_l_, eval_optval_i_
-  end interface 
+  end interface
 
   contains
 
@@ -147,43 +118,43 @@ module gpufortrt_base
       logical,intent(in)          :: fallback
       logical                     :: retval
       if ( present(optval) ) then
-         retval = optval       
+         retval = optval
       else
          retval = fallback
       endif
     end function
-    
+
     function eval_optval_i_(optval,fallback) result(retval)
       implicit none
       integer,intent(in),optional :: optval
       integer,intent(in)          :: fallback
       integer                     :: retval
       if ( present(optval) ) then
-         retval = optval       
+         retval = optval
       else
          retval = fallback
       endif
     end function
-    
+
     !function eval_optval_3_(optval,fallback) result(retval)
     !  implicit none
     !  integer(kind(gpufortrt_map_kind_undefined)),intent(in),optional :: optval
     !  integer(kind(gpufortrt_map_kind_undefined)),intent(in)          :: fallback
     !  integer(kind(gpufortrt_map_kind_undefined))                     :: retval
     !  if ( present(optval) ) then
-    !     retval = optval       
+    !     retval = optval
     !  else
     !     retval = fallback
     !  endif
     !end function
-    
+
     !
     ! debugging/analysis
     !
-  
+
     function gpufortrt_record_exists(hostptr,id,print_record) result(success)
       use iso_fortran_env
-      use iso_c_binding 
+      use iso_c_binding
       implicit none
       type(c_ptr),intent(in),optional :: hostptr
       integer,intent(in),optional     :: id
@@ -197,7 +168,7 @@ module gpufortrt_base
       integer     :: opt_id
       !
       opt_print_record = .false.
-      opt_hostptr      = c_null_ptr 
+      opt_hostptr      = c_null_ptr
       opt_id           = -1
       !
       if ( present(print_record) ) opt_print_record = print_record
@@ -206,22 +177,22 @@ module gpufortrt_base
       !
       success = .false.
       do i = 1, record_list_%last_record_index
-        
-         if ( ( record_list_%records(i)%is_subarray(opt_hostptr,0_8) ) .or. &
+
+         if ( ( record_is_subarray_(record_list_%records(i),opt_hostptr,0_8) ) .or. &
               ( record_list_%records(i)%id .eq. opt_id ) ) then
           success = .true.
-          if ( opt_print_record ) then 
-            CALL record_list_%records(i)%print() 
+          if ( opt_print_record ) then
+            CALL record_print_(record_list_%records(i))
             flush(output_unit)
           endif
           exit ! loop
-        endif 
+        endif
       end do
       if ( .not. success .and. opt_print_record ) ERROR STOP "no record found"
-    end function        
-   
+    end function
+
     function gpufortrt_get_record_id(hostptr) result(id)
-      use iso_c_binding 
+      use iso_c_binding
       implicit none
       type(c_ptr),intent(in) :: hostptr
       !
@@ -230,13 +201,13 @@ module gpufortrt_base
       integer :: i
       !
       do i = 1, record_list_%last_record_index
-        if ( record_list_%records(i)%is_subarray(hostptr,0_8) ) then
+        if ( record_is_subarray_(record_list_%records(i),hostptr,0_8) ) then
           id = record_list_%records(i)%id
           exit ! loop
-        endif 
+        endif
       end do
     end function
-   
+
     subroutine gpufortrt_print_summary(print_records)
       use iso_fortran_env
       use iso_c_binding
@@ -246,7 +217,7 @@ module gpufortrt_base
       logical,intent(in),optional :: print_records
       !
       integer :: i, j
-      integer(c_size_t) :: free_memory, total_memory 
+      integer(c_size_t) :: free_memory, total_memory
       logical           :: opt_print_records
       !
       opt_print_records = .false.
@@ -267,19 +238,19 @@ module gpufortrt_base
       if ( opt_print_records ) then
         do i = 1, record_list_%last_record_index
            print *, "- record ", i, ":"
-           CALL record_list_%records(i)%print()
+           CALL record_print_(record_list_%records(i))
            flush(output_unit)
         end do
       endif
     end subroutine
-  
-    ! t_mapping-bound procedures
 
-    recursive subroutine t_mapping_init_(this,hostptr,num_bytes,map_kind,declared_module_var)
+    ! mapping_t-bound procedures
+
+    recursive subroutine mapping_init_(this,hostptr,num_bytes,map_kind,declared_module_var)
        use iso_c_binding
        implicit none
        !
-       class(t_mapping),intent(inout) :: this
+       class(mapping_t),intent(inout) :: this
        type(c_ptr),intent(in)         :: hostptr
        integer(c_size_t),intent(in)   :: num_bytes
        integer(kind(gpufortrt_map_kind_undefined)),intent(in) :: map_kind
@@ -292,66 +263,66 @@ module gpufortrt_base
     end subroutine
 
     !
-    ! t_queue-bound procedures
+    ! queue_t-bound procedures
     !
-    
-    function t_queue_is_initialized_(queue) result(ret)
+
+    function queue_is_initialized_(queue) result(ret)
       use iso_c_binding
       implicit none
-      class(t_queue),intent(in) :: queue
+      class(queue_t),intent(in) :: queue
       logical(c_bool) :: ret
       !
       ret = c_associated( queue%queueptr )
     end function
-    
-    subroutine t_queue_initialize_(queue) 
+
+    subroutine queue_initialize_(queue)
       use hipfort
       use hipfort_check
       implicit none
-      class(t_queue),intent(inout) :: queue
+      class(queue_t),intent(inout) :: queue
       !
       call hipCheck(hipStreamCreate(queue%queueptr))
     end subroutine
-    
-    subroutine t_queue_destroy_(queue)
+
+    subroutine queue_destroy_(queue)
       use hipfort
       use hipfort_check
       implicit none
-      class(t_queue),intent(inout) :: queue
+      class(queue_t),intent(inout) :: queue
       !
       call hipCheck(hipStreamDestroy(queue%queueptr))
       queue%queueptr = c_null_ptr
     end subroutine
-    
+
     !
     ! queues_
     !
-    
-    !> \note Not thread safe 
+
+    !> \note Not thread safe
     subroutine ensure_queue_exists_(id)
        implicit none
        integer, intent(in) :: id
        !
        if ( id .gt. 0 .and. id .le. MAX_QUEUES ) then
-          if ( .not. queues_(id)%is_initialized() ) then
-            call queues_(id)%initialize()
+          if ( .not. queue_is_initialized_(queues_(id)) ) then
+            call queue_initialize_(queues_(id))
           endif
           last_queue_index_ = max(id, last_queue_index_)
        else if ( id .gt. MAX_QUEUES ) then
-         ERROR STOP "gpufortrt: ensure_queue_exists_: queue id greater than parameter MAX_QUEUES" 
+         ERROR STOP "gpufortrt: ensure_queue_exists_: queue id greater than parameter MAX_QUEUES"
        else
-         ERROR STOP "gpufortrt: ensure_queue_exists_: queue id must be greater than 0" 
+         ERROR STOP "gpufortrt: ensure_queue_exists_: queue id must be greater than 0"
        endif
     end subroutine
-   
-    !> \note Not thread safe 
+
+    !> \note Not thread safe
     subroutine destroy_queue_(id)
        implicit none
        integer, intent(in) :: id
        !
        if ( id .gt. 0 .and. id .le. MAX_QUEUES ) then
-          if ( queues_(id)%is_initialized() ) then
-            call queues_(id)%destroy()
+          if ( queue_is_initialized_(queues_(id)) ) then
+            call queue_destroy_(queues_(id))
           endif
           if ( id .eq. last_queue_index_ ) then
             last_queue_index_ = last_queue_index_ - 1
@@ -359,24 +330,24 @@ module gpufortrt_base
        else if ( id .gt. MAX_QUEUES ) then
          ERROR STOP "gpufortrt: destroy_queue_: queue id greater than parameter MAX_QUEUES"
        else
-         ERROR STOP "gpufortrt: destroy_queue_: queue id must be greater than 0" 
+         ERROR STOP "gpufortrt: destroy_queue_: queue id must be greater than 0"
        endif
     end subroutine
-    
+
     !
-    ! t_record-bound procedures
+    ! record_t-bound procedures
     !
-    
-    subroutine t_record_print_(record)
+
+    subroutine record_print_(record)
       use iso_c_binding
       implicit none
-      class(t_record),intent(in) :: record
+      type(record_t),intent(in) :: record
       !
       CALL print_record(&
         record%id,&
-        record%is_initialized(),&
-        record%is_used(),&
-        record%is_released(),&
+        record_is_initialized_(record),&
+        record_is_used_(record),&
+        record_is_released_(record),&
         record%hostptr,&
         record%deviceptr,&
         record%num_bytes,&
@@ -384,45 +355,45 @@ module gpufortrt_base
         record%dyn_refs,&
         record%map_kind)
     end subroutine
-    
-    function t_record_is_initialized_(record) result(ret)
+
+    function record_is_initialized_(record) result(ret)
       use iso_c_binding
       implicit none
-      class(t_record),intent(in) :: record
+      type(record_t),intent(in) :: record
       logical(c_bool) :: ret
       !
       ret = c_associated(record%deviceptr)
     end function
-    
-    function t_record_is_used_(record) result(ret)
+
+    function record_is_used_(record) result(ret)
       use iso_c_binding
       implicit none
-      class(t_record),intent(in) :: record
+      type(record_t),intent(in) :: record
       logical(c_bool) :: ret
       !
-      ret = record%is_initialized() .and. &
+      ret = record_is_initialized_(record) .and. &
             (record%struct_refs > 0 .or.&
             record%struct_refs > 0)
     end function
-    
-    function t_record_is_released_(record) result(ret)
+
+    function record_is_released_(record) result(ret)
       use iso_c_binding
       implicit none
-      class(t_record),intent(in) :: record
+      type(record_t),intent(in) :: record
       logical(c_bool) :: ret
       !
-      ret = record%is_initialized() &
+      ret = record_is_initialized_(record) &
             .and. record%struct_refs .le. 0 &
             .and. record%dyn_refs .eq. 0
     end function
-    
-   subroutine t_record_copy_to_device_(record,async)
+
+   subroutine record_copy_to_device_(record,async)
       use iso_c_binding
       use hipfort_check
       use hipfort_enums
       use hipfort_hipmemcpy
       implicit none
-      class(t_record),intent(in)  :: record
+      type(record_t),intent(in)  :: record
       integer,intent(in),optional :: async
       !
 #ifndef BLOCKING_COPIES
@@ -442,14 +413,14 @@ module gpufortrt_base
       endif
 #endif
     end subroutine
-    
-    subroutine t_record_copy_to_host_(record,async)
+
+    subroutine record_copy_to_host_(record,async)
       use iso_c_binding
       use hipfort_check
       use hipfort_enums
       use hipfort_hipmemcpy
       implicit none
-      class(t_record),intent(in) :: record
+      type(record_t),intent(in) :: record
       integer,intent(in),optional :: async
       !
 #ifndef BLOCKING_COPIES
@@ -469,11 +440,11 @@ module gpufortrt_base
       endif
 #endif
     end subroutine
-    
-    function t_record_is_subarray_(record,hostptr,num_bytes,offset_bytes) result(rval)
+
+    function record_is_subarray_(record,hostptr,num_bytes,offset_bytes) result(rval)
       use iso_c_binding
       implicit none
-      class(t_record),intent(inout) :: record
+      type(record_t),intent(inout) :: record
       type(c_ptr), intent(in)       :: hostptr
       integer(c_size_t), intent(in) :: num_bytes
       !
@@ -487,28 +458,28 @@ module gpufortrt_base
     end function
 
     !> Release the record for reuse/deallocation.
-    subroutine t_record_release_(record)
+    subroutine record_release_(record)
       use iso_fortran_env
       implicit none
-      class(t_record),intent(inout) :: record
+      type(record_t),intent(inout) :: record
       !
       if ( LOG_LEVEL > 1 ) then
         write(output_unit,fmt="(a)",advance="no") "[gpufort-rt][2] release record: "
         flush(output_unit)
-        call record%print()
+        call record_print_(record)
         flush(output_unit)
       endif
       record%hostptr     = c_null_ptr
       record%struct_refs = 0
     end subroutine
-    
+
     !> Setup newly created/reused record according to new hostptr.
-    subroutine t_record_setup_(record,hostptr,num_bytes,map_kind,reuse_existing)
+    subroutine record_setup_(record,hostptr,num_bytes,map_kind,reuse_existing)
       use iso_c_binding
       use hipfort_check
       use hipfort_hipmalloc
       implicit none
-      class(t_record),intent(inout)                       :: record
+      type(record_t),intent(inout)                       :: record
       type(c_ptr), intent(in)                             :: hostptr
       integer(c_size_t), intent(in)                       :: num_bytes
       integer(kind(gpufortrt_map_kind_create)), intent(in) :: map_kind
@@ -521,27 +492,27 @@ module gpufortrt_base
       record%num_bytes_used    = num_bytes
       if ( .not. reuse_existing ) then
         record_creation_counter_ = record_creation_counter_ + 1
-        record%id                = record_creation_counter_ 
+        record%id                = record_creation_counter_
         record%num_bytes         = blocked_size(num_bytes)
         call hipCheck(hipMalloc(record%deviceptr,record%num_bytes))
       endif
       if ( map_kind .eq. gpufortrt_map_kind_copyin .or. &
            map_kind .eq. gpufortrt_map_kind_copy ) &
-             call record%copy_to_device()
+             call record_copy_to_device_(record)
     end subroutine
-     
-    subroutine t_record_destroy_(record)
+
+    subroutine record_destroy_(record)
       use iso_c_binding
       use iso_fortran_env
       use hipfort_check
       use hipfort_hipmalloc
       implicit none
-      class(t_record),intent(inout) :: record
+      type(record_t),intent(inout) :: record
       !
       if ( LOG_LEVEL > 1 ) then
         write(output_unit,fmt="(a)",advance="no") "[gpufort-rt][2] destroy record: "
         flush(output_unit)
-        call record%print()
+        call record_print_(record)
         flush(output_unit)
       endif
       call hipCheck(hipFree(record%deviceptr))
@@ -549,12 +520,12 @@ module gpufortrt_base
       record%hostptr   = c_null_ptr
       record%struct_refs  = 0
     end subroutine
-    
+
     !> Increment the specified reference counters.
-    subroutine t_record_inc_refs_(record,&
+    subroutine record_inc_refs_(record,&
         update_struct_refs,update_dyn_refs)
       implicit none
-      class(t_record),intent(inout) :: record
+      type(record_t),intent(inout) :: record
       logical,intent(in),optional :: update_struct_refs, update_dyn_refs
       !
       if ( eval_optval_(update_struct_refs,.false.) ) then
@@ -567,11 +538,11 @@ module gpufortrt_base
 
     !> Decrements the specified reference counters and
     !> checks if the sum of the counters is smaller or equal to a threshold.
-    function t_record_dec_refs_(record,&
+    function record_dec_refs_(record,&
         update_struct_refs,update_dyn_refs,&
         threshold) result(ret)
       implicit none
-      class(t_record),intent(inout) :: record
+      type(record_t),intent(inout) :: record
       logical,intent(in),optional   :: update_struct_refs, update_dyn_refs
       integer,intent(in),optional   :: threshold
       !
@@ -585,34 +556,34 @@ module gpufortrt_base
       endif
       ret = record%dyn_refs == 0 .and. (record%struct_refs <= eval_optval_(threshold,0))
     end function
-    
+
     !
-    ! t_record_list-bound procedures
+    ! record_list_t-bound procedures
     !
-    
-    function t_record_list_is_initialized_(record_list) result(ret)
+
+    function record_list_is_initialized_(record_list) result(ret)
       implicit none
-      class(t_record_list),intent(inout) :: record_list
+      type(record_list_t),intent(inout) :: record_list
       logical                            :: ret
       !
       ret = allocated(record_list%records)
     end function
-    
-    subroutine t_record_list_initialize_(record_list)
+
+    subroutine record_list_initialize_(record_list)
       implicit none
-      class(t_record_list),intent(inout) :: record_list
+      type(record_list_t),intent(inout) :: record_list
       !
-      type(t_record), allocatable :: new_records(:)
+      type(record_t), allocatable :: new_records(:)
       integer                     :: old_size
       !
       allocate(record_list%records(INITIAL_RECORDS_CAPACITY))
     end subroutine
-    
-    subroutine t_record_list_grow_(record_list)
+
+    subroutine record_list_grow_(record_list)
       implicit none
-      class(t_record_list),intent(inout) :: record_list
+      type(record_list_t),intent(inout) :: record_list
       !
-      type(t_record), allocatable :: new_records(:)
+      type(record_t), allocatable :: new_records(:)
       integer                     :: old_size
       !
       old_size = size(record_list%records)
@@ -622,34 +593,34 @@ module gpufortrt_base
       call move_alloc(new_records,record_list%records)
     end subroutine
 
-    subroutine t_record_list_destroy_(record_list)
+    subroutine record_list_destroy_(record_list)
       implicit none
-      class(t_record_list),intent(inout) :: record_list
+      type(record_list_t),intent(inout) :: record_list
       !
       integer :: i
       !
       do i = 1, record_list%last_record_index
         if ( record_list%records(i)%is_initialized() ) then
           call record_list%records(i)%destroy()
-        endif 
+        endif
       end do
       deallocate(record_list%records)
     end subroutine
 
-    !> Finds a record for a given host ptr and returns the location.   
+    !> Finds a record for a given host ptr and returns the location.
     !>
     !> \note Not thread safe
-    function t_record_list_find_record_(record_list,hostptr,success) result(loc)
+    function record_list_find_record_(record_list,hostptr,success) result(loc)
       use iso_fortran_env
       use iso_c_binding
       implicit none
-      class(t_record_list),intent(inout) :: record_list
+      type(record_list_t),intent(inout) :: record_list
       type(c_ptr), intent(in)            :: hostptr
       logical, intent(inout)             :: success
       !
       integer :: i, loc
       !
-      if ( .not. c_associated(hostptr) ) ERROR STOP "gpufortrt: t_record_list_find_record_: hostptr not c_associated"
+      if ( .not. c_associated(hostptr) ) ERROR STOP "gpufortrt: record_list_find_record_: hostptr not c_associated"
       loc     = -1
       success = .false.
       if ( record_list%last_record_index > 0 ) then
@@ -658,7 +629,7 @@ module gpufortrt_base
             loc = i
             success = .true.
             exit ! loop
-          endif 
+          endif
         end do
         if ( LOG_LEVEL > 2 ) then
           write(output_unit,fmt="(a)",advance="no") "[gpufort-rt][3] lookup record: "
@@ -684,9 +655,9 @@ module gpufortrt_base
     !> associated device data if that has happend NUM_REFS_TO_DEALLOCATE times (or more).
     !>
     !> \note Not thread safe.
-    function t_record_list_find_available_record_(record_list,num_bytes,reuse_existing) result(loc)
+    function record_list_find_available_record_(record_list,num_bytes,reuse_existing) result(loc)
       implicit none
-      class(t_record_list),intent(inout) :: record_list
+      type(record_list_t),intent(inout) :: record_list
       integer(c_size_t),intent(in)       :: num_bytes
       logical,intent(inout)              :: reuse_existing
       !
@@ -696,35 +667,35 @@ module gpufortrt_base
       loc = record_list%last_record_index+1
       do i = 1, record_list%last_record_index
         if ( .not. record_list%records(i)%is_initialized() ) then ! 1. buffer is empty
-          loc = i  
+          loc = i
           reuse_existing = .false.
-          exit ! exit loop 
+          exit ! exit loop
         else if ( record_list%records(i)%is_released() ) then ! 2 found a released array
-          loc = i  
+          loc = i
           if ( record_list%records(i)%num_bytes < num_bytes .or. &
              num_bytes < record_list%records(i)%num_bytes * REUSE_THRESHOLD ) then ! 2.1 buffer too small/big
             ! deallocate routinely unused memory blocks
             if ( record_list%records(i)%dec_refs(update_struct_refs=.true.,threshold=NUM_REFS_TO_DEALLOCATE) ) then ! decrement struct refs, side effect
               record_list%total_memory_bytes = record_list%total_memory_bytes &
                                              - record_list%records(loc)%num_bytes
-              call record_list%records(i)%destroy() 
-            endif 
+              call record_list%records(i)%destroy()
+            endif
             reuse_existing = .false.
           else ! 2. buffer size is fine
             reuse_existing = .true.
           endif
           exit ! exit loop
-        endif 
+        endif
       end do
     end function
-    
+
     !> Inserts a record (inclusive the host-to-device memcpy where required) or increments a record's
     !> reference counter.
-    !> 
-    !> \note Non-alloctable and non-pointer module variables are initialized 
+    !>
+    !> \note Non-alloctable and non-pointer module variables are initialized
     !> with structured reference counter value "1".
     !> \note Not thread safe.
-    function t_record_list_use_increment_record_(record_list,&
+    function record_list_use_increment_record_(record_list,&
         hostptr,num_bytes,map_kind,&
         async,declared_module_var,&
         update_struct_refs,update_dyn_refs) result(loc)
@@ -733,7 +704,7 @@ module gpufortrt_base
       use hipfort
       use hipfort_check
       implicit none
-      class(t_record_list),intent(inout)                  :: record_list
+      type(record_list_t),intent(inout)                  :: record_list
       type(c_ptr), intent(in)                             :: hostptr
       integer(c_size_t), intent(in)                       :: num_bytes
       integer(kind(gpufortrt_map_kind_create)), intent(in) :: map_kind
@@ -741,7 +712,7 @@ module gpufortrt_base
       logical,intent(in),optional                         :: declared_module_var
       logical,intent(in),optional                         :: update_struct_refs,update_dyn_refs
       !
-      integer :: loc 
+      integer :: loc
       logical :: success, reuse_existing
       !
       loc = record_list%find_record(hostptr,success)
@@ -765,7 +736,7 @@ module gpufortrt_base
          if ( LOG_LEVEL > 1 ) then
            if ( reuse_existing ) then
              write(output_unit,fmt="(a)",advance="no") "[gpufort-rt][2] reuse record: "
-           else            
+           else
              write(output_unit,fmt="(a)",advance="no") "[gpufort-rt][2] create record: "
            endif
            flush(output_unit)
@@ -778,28 +749,28 @@ module gpufortrt_base
     !> Decrements a record's reference counter and destroys the record if
     !> the reference counter is zero. Copies the data to the host beforehand
     !> if specified.
-    !> 
+    !>
     !> \note Not thread safe.
-    subroutine t_record_list_decrement_release_record_(record_list,hostptr,&
+    subroutine record_list_decrement_release_record_(record_list,hostptr,&
         update_struct_refs,update_dyn_refs,&
         veto_copy_to_host)
       use iso_c_binding
       use hipfort
       use hipfort_check
       implicit none
-      class(t_record_list),intent(inout) :: record_list
+      type(record_list_t),intent(inout) :: record_list
       type(c_ptr),intent(in)             :: hostptr
       !
       logical,intent(in),optional :: update_struct_refs, update_dyn_refs
       logical,intent(in),optional :: veto_copy_to_host
       !
-      integer :: loc 
+      integer :: loc
       logical :: success
       !
       loc = record_list%find_record(hostptr,success)
       if ( success ) then
         if ( .not. c_associated(record_list_%records(loc)%hostptr,hostptr) ) then
-          ERROR STOP "t_record_list_decrement_release_record_: called on subsection of mapped data"
+          ERROR STOP "record_list_decrement_release_record_: called on subsection of mapped data"
         endif
         if ( record_list%records(loc)%dec_refs(update_struct_refs,update_dyn_refs,0) ) then
           ! if both structured and dynamic reference counters are zero, a copyout action is performed
@@ -809,16 +780,16 @@ module gpufortrt_base
                 call record_list%records(loc)%copy_to_host()
               endif
            endif
-        endif 
+        endif
       else
 #ifndef DELETE_NORECORD_MEANS_NOOP
-        ERROR STOP "gpufortrt: t_record_list_decrement_release_record_: could not find matching record for hostptr"
+        ERROR STOP "gpufortrt: record_list_decrement_release_record_: could not find matching record for hostptr"
 #endif
         return
       endif
       !
     end subroutine
-    
+
     !
     ! public
     !
@@ -826,8 +797,8 @@ module gpufortrt_base
     !> \param[in] deviceptr a device pointer.
     subroutine gpufortrt_ignore(deviceptr)
       type(c_ptr),intent(in) :: deviceptr
-      ! 
-      ! nop  
+      !
+      ! nop
     end subroutine
 
     subroutine gpufortrt_init()
@@ -835,7 +806,7 @@ module gpufortrt_base
       integer :: j
       character(len=255) :: tmp
       !
-      if ( initialized_ ) then 
+      if ( initialized_ ) then
         ERROR STOP "gpufortrt_init: runtime already initialized"
       else
         call get_environment_variable("GPUFORTRT_LOG_LEVEL", tmp)
@@ -852,66 +823,66 @@ module gpufortrt_base
         if (len_trim(tmp) > 0) read(tmp,*) REUSE_THRESHOLD
         call get_environment_variable("GPUFORTRT_NUM_REFS_TO_DEALLOCATE", tmp)
         if (len_trim(tmp) > 0) read(tmp,*) NUM_REFS_TO_DEALLOCATE
-        if ( LOG_LEVEL > 0 ) then 
-          write(*,*) "GPUFORTRT_LOG_LEVEL=",LOG_LEVEL 
+        if ( LOG_LEVEL > 0 ) then
+          write(*,*) "GPUFORTRT_LOG_LEVEL=",LOG_LEVEL
           write(*,*) "GPUFORTRT_MAX_QUEUES=",MAX_QUEUES
           write(*,*) "GPUFORTRT_INITIAL_RECORDS_CAPACITY=",INITIAL_RECORDS_CAPACITY
-          write(*,*) "GPUFORTRT_BLOCK_SIZE=",BLOCK_SIZE 
-          write(*,*) "GPUFORTRT_REUSE_THRESHOLD=",REUSE_THRESHOLD 
-          write(*,*) "GPUFORTRT_NUM_REFS_TO_DEALLOCATE=",NUM_REFS_TO_DEALLOCATE 
-        endif 
+          write(*,*) "GPUFORTRT_BLOCK_SIZE=",BLOCK_SIZE
+          write(*,*) "GPUFORTRT_REUSE_THRESHOLD=",REUSE_THRESHOLD
+          write(*,*) "GPUFORTRT_NUM_REFS_TO_DEALLOCATE=",NUM_REFS_TO_DEALLOCATE
+        endif
         !
-        call record_list_%initialize()
+        call record_list_initialize_()
         allocate(queues_(1:MAX_QUEUES))
         initialized_ = .true.
       endif
     end subroutine
-   
+
     !> Deallocate all host data and the records_ and
-    !> queue data structures.. 
+    !> queue data structures..
     subroutine gpufortrt_shutdown()
       implicit none
       integer :: i, j
       if ( .not. initialized_ ) ERROR STOP "gpufortrt_shutdown: runtime not initialized"
       ! deallocate records_
-      call record_list_%destroy()
+      call record_list_destroy_()
       ! deallocate queues_ elements
       do i = 1, last_queue_index_
-        if ( queues_(i)%is_initialized() ) then
-          call queues_(i)%destroy()
-        endif 
+        if ( queue_is_initialized_(queues_(i)) ) then
+          call queue_destroy_(queues_(i))
+        endif
       end do
     end subroutine
 
     !> Summary The wait directive causes the local thread to wait for completion of asynchronous
     !> operations on the current device, such as an accelerator parallel, kernels, or serial region or an
-    !> update directive, or causes one device activity queue to synchronize with 
+    !> update directive, or causes one device activity queue to synchronize with
     !> one or more other activity queues on the current device.
-    !> 
-    !> Syntax 
-    !> 
+    !>
+    !> Syntax
+    !>
     !> In Fortran the syntax of the wait directive is:
-    !> 
+    !>
     !> !$acc wait [( int-expr-list )] [clause-list]
-    !> 
+    !>
     !> where clause is:
-    !> 
+    !>
     !> async [( int-expr )]
-    !> 
+    !>
     !> The wait argument, if it appears, must be one or more async-arguments.
     !> If there is no wait argument and no async clause, the local thread will wait until all operations
     !> enqueued by this thread on any activity queue on the current device have completed.
     !> If there are one or more int-expr expressions and no async clause, the local thread will wait until all
     !> operations enqueued by this thread on each of the associated device activity queues have completed.
     !> If there are two or more threads executing and sharing the same device, a wait directive with no
-    !> async clause will cause the local thread to wait until all of the appropriate asynchronous operations previously enqueued by that thread have completed. 
+    !> async clause will cause the local thread to wait until all of the appropriate asynchronous operations previously enqueued by that thread have completed.
     !> To guarantee that operations have been
     !> enqueued by other threads requires additional synchronization between those threads. There is no
     !> guarantee that all the similar asynchronous operations initiated by other threads will have completed.
-    !> 
+    !>
     !> If there is an async clause, no new operation may be launched or executed on the async activity queue on
     !> the current device until all operations enqueued up to this point by this thread on the
-    !> asynchronous activity queues associated with the wait argument have completed. One legal implementation is for the 
+    !> asynchronous activity queues associated with the wait argument have completed. One legal implementation is for the
     !> local thread to wait for all the associated asynchronous device activity queues.
     !> Another legal implementation is for the thread to enqueue a synchronization operation in such a
     !> way that no new operation will start until the operations enqueued on the associated asynchronous
@@ -928,7 +899,7 @@ module gpufortrt_base
       integer,intent(in),optional,dimension(:) :: arg,async
       !
       integer :: i, j
-      logical :: no_opt_present 
+      logical :: no_opt_present
       !
       if ( .not. initialized_ ) ERROR STOP "gpufortrt_wait: runtime not initialized"
       no_opt_present = .true.
@@ -948,24 +919,24 @@ module gpufortrt_base
         end do
       endif
       !
-      if ( no_opt_present ) then 
+      if ( no_opt_present ) then
         do i=1,last_queue_index_
-          if ( queues_(i)%is_initialized() ) then
+          if ( queue_is_initialized_(queues_(i)) ) then
             call hipCheck(hipStreamSynchronize(queues_(i)%queueptr))
           endif
         end do
         call hipCheck(hipStreamSynchronize(c_null_ptr)) ! synchronize default stream
       endif
     end subroutine
- 
+
     subroutine apply_mappings_(mappings,async,finalize,&
         update_struct_refs,update_dyn_refs)
-      type(t_mapping),dimension(:),intent(in),optional :: mappings
+      type(mapping_t),dimension(:),intent(in),optional :: mappings
       integer,intent(in),optional                      :: async
       logical,intent(in),optional                      :: finalize
       logical,intent(in),optional                      :: update_struct_refs, update_dyn_refs
       !
-      type(t_mapping) :: mapping
+      type(mapping_t) :: mapping
       type(c_ptr)     :: deviceptr
       !
       if ( .not. initialized_ ) call gpufortrt_init()
@@ -1009,15 +980,15 @@ module gpufortrt_base
       implicit none
       !
       !integer,intent(in)                              :: device_kind
-      type(t_mapping),dimension(:),intent(in),optional :: mappings
+      type(mapping_t),dimension(:),intent(in),optional :: mappings
       !
       ! mappings
       call apply_mappings_(mappings,&
         update_struct_refs=.true.)
     end subroutine
-   
+
     !> Only supposed to apply gpufortrt_map_kind_dec_struct_refs mappings.
-    !> Updates the stored last record index. 
+    !> Updates the stored last record index.
     subroutine gpufortrt_data_end(mappings)
     !subroutine gpufortrt_data_start(device_kind,mappings)
       use iso_c_binding
@@ -1025,7 +996,7 @@ module gpufortrt_base
       implicit none
       !
       !integer,intent(in)                               :: device_kind
-      type(t_mapping),dimension(:),intent(in),optional :: mappings
+      type(mapping_t),dimension(:),intent(in),optional :: mappings
       !
       integer :: i,new_last_record_index
       !
@@ -1035,15 +1006,15 @@ module gpufortrt_base
       !
       new_last_record_index = 0
       do i = record_list_%last_record_index,1,-1
-        if ( record_list_%records(i)%is_initialized() ) then
+        if ( record_is_initialized_(record_list_%records(i)) ) then
           new_last_record_index = i
           exit ! break the loop
-        endif 
+        endif
       end do
       record_list_%last_record_index = new_last_record_index
       !
     end subroutine
-    
+
     subroutine gpufortrt_enter_exit_data(mappings,async,finalize)
     !subroutine gpufortrt_enter_exit_data(device_kind,mappings,async,finalize)
       use iso_c_binding
@@ -1051,7 +1022,7 @@ module gpufortrt_base
       implicit none
       !
       !integer,intent(in)                               :: device_kind
-      type(t_mapping),dimension(:),intent(in),optional :: mappings
+      type(mapping_t),dimension(:),intent(in),optional :: mappings
       integer,intent(in),optional                      :: async
       logical,intent(in),optional                      :: finalize
       !
@@ -1085,9 +1056,9 @@ module gpufortrt_base
       if ( .not. c_associated(hostptr) ) then
          resultptr = c_null_ptr
       else if ( eval_optval_(condition,.true.) ) then
-        loc = record_list_%find_record(hostptr,success) ! TODO already detect a suitable candidate here on-the-fly
-        if ( success ) then 
-            fits      = record_list_%records(loc)%is_subarray(hostptr,num_bytes,offset_bytes) ! TODO might not fit, i.e. only subarray
+        loc = record_list_find_record_(hostptr,success) ! TODO already detect a suitable candidate here on-the-fly
+        if ( success ) then
+            fits      = record_is_subarray_(record_list_%records(loc),hostptr,num_bytes,offset_bytes) ! TODO might not fit, i.e. only subarray
                                                                                               ! might have been mapped before
             resultptr = inc_cptr(record_list_%records(loc)%deviceptr,offset_bytes)
         else if ( eval_optval_(if_present,.false.) ) then
@@ -1105,7 +1076,7 @@ module gpufortrt_base
     ! constructs, data constructs, and enter data and exit
     ! data directives. Data clauses may not follow a device_type
     ! clause. These clauses have no effect on a shared memory device.
-    
+
     !> present( list ) parallel, kernels, serial, data, declare
     !> When entering the region, the data must be present in device
     !> memory, and the structured reference count is incremented.
@@ -1129,13 +1100,13 @@ module gpufortrt_base
       if ( .not. c_associated(hostptr) ) then
         ERROR STOP "gpufortrt_present_b: hostptr not c_associated"
       else
-        loc = record_list_%find_record(hostptr,success) ! TODO already detect a suitable candidate here on-the-fly
-        if ( success ) then 
-          fits      = record_list_%records(loc)%is_subarray(hostptr,num_bytes,offset_bytes) ! TODO might not fit, i.e. only subarray
+        loc = record_list_find_record_(hostptr,success) ! TODO already detect a suitable candidate here on-the-fly
+        if ( success ) then
+          fits      = record_is_subarray_(record_list_%records(loc),hostptr,num_bytes,offset_bytes) ! TODO might not fit, i.e. only subarray
                                                                                             ! might have been mapped before
           deviceptr = inc_cptr(record_list_%records(loc)%deviceptr,offset_bytes)
           !
-          call record_list_%records(loc)%inc_refs(update_struct_refs,.false.)
+          call record_inc_refs_(record_list_%records(loc),update_struct_refs,.false.)
         endif
         if ( LOG_LEVEL > 0 .and. success ) then
           write(output_unit,fmt="(a)",advance="no") "[gpufort-rt][1] gpufortrt_present_b: retrieved deviceptr="
@@ -1176,10 +1147,10 @@ module gpufortrt_base
         ERROR STOP "gpufortrt_dec_struct_refs_b: hostptr not c_associated"
 #endif
       else
-        call record_list_%decrement_release_record(hostptr,update_struct_refs=.true.,veto_copy_to_host=.false.)
+        call record_list_decrement_release_record_(hostptr,update_struct_refs=.true.,veto_copy_to_host=.false.)
       endif
     end subroutine
-    
+
     !> no_create( list ) parallel, kernels, serial, data
     !> When entering the region, if the data in list is already present on
     !> the current device, the structured reference count is incremented
@@ -1202,12 +1173,12 @@ module gpufortrt_base
       if ( .not. c_associated(hostptr) ) then
         ERROR STOP "gpufortrt_no_create_b: hostptr not c_associated"
       else
-        loc = record_list_%find_record(hostptr,success)
+        loc = record_list_find_record_(hostptr,success)
         deviceptr = c_null_ptr
         if ( success ) deviceptr = record_list_%records(loc)%deviceptr
       endif
     end function
-    
+
     !> create( list ) parallel, kernels, serial, data, enter data,
     !> declare
     !> When entering the region or at an enter data directive,
@@ -1237,15 +1208,15 @@ module gpufortrt_base
       if ( .not. c_associated(hostptr) ) then
         ERROR STOP "gpufortrt_create_b: hostptr not c_associated"
       else
-        loc       = record_list_%use_increment_record(hostptr,num_bytes,&
+        loc       = record_list_use_increment_record_(hostptr,num_bytes,&
                       gpufortrt_map_kind_create,async,declared_module_var,&
                       update_struct_refs,update_dyn_refs)
         deviceptr = record_list_%records(loc)%deviceptr
       endif
     end function
-    
+
     !> The delete clause may appear on exit data directives.
-    !> 
+    !>
     !> For each var in varlist, if var is in shared memory, no action is taken; if var is not in shared memory,
     !> the delete clause behaves as follows:
     !> If var is not present in the current device memory, a runtime error is issued.
@@ -1255,18 +1226,18 @@ module gpufortrt_base
     !> Otherwise, a present decrement action with the dynamic reference counter is performed.
     !> If var is a pointer reference, a detach action is performed. If both structured and dynamic
     !> reference counters are zero, a delete action is performed.
-    !> An exit data directive with a delete clause and with or without a finalize clause is 
-    !> functionally equivalent to a call to 
-    !> the acc_delete_finalize or acc_delete API routine, respectively, as described in Section 3.2.23. 
+    !> An exit data directive with a delete clause and with or without a finalize clause is
+    !> functionally equivalent to a call to
+    !> the acc_delete_finalize or acc_delete API routine, respectively, as described in Section 3.2.23.
     !>
-    !> \note use 
+    !> \note use
     subroutine gpufortrt_delete_b(hostptr,finalize)
       use iso_c_binding
       implicit none
       type(c_ptr), intent(in)     :: hostptr
       logical,intent(in),optional :: finalize
       !
-      logical :: success, opt_finalize 
+      logical :: success, opt_finalize
       integer :: loc
       !
       if ( .not. initialized_ ) ERROR STOP "gpufortrt_delete_b: runtime not initialized"
@@ -1279,31 +1250,31 @@ module gpufortrt_base
         opt_finalize = .false.
         if ( present(finalize) ) opt_finalize = finalize
         if ( opt_finalize ) then
-          loc = record_list_%find_record(hostptr,success)
+          loc = record_list_find_record_(hostptr,success)
           if ( .not. success ) ERROR STOP "gpufortrt_delete_b: no record found for hostptr"
           if ( c_associated(record_list_%records(loc)%hostptr,hostptr) ) then
-            call record_list_%records(loc)%release()
+            call record_release_(record_list_%records(loc))
           else
             ERROR STOP "gpufortrt_delete_b: called on subsection of mapped data"
           endif
         else
-          call record_list_%decrement_release_record(hostptr,&
+          call record_list_decrement_release_record_(hostptr,&
             update_dyn_refs=.true.,&
             veto_copy_to_host=.true.)
         endif
       endif
     end subroutine
-    
+
     !> copyin( list ) parallel, kernels, serial, data, enter data,
     !> declare
-    !> 
+    !>
     !> When entering the region or at an enter data directive,
     !> if the data in list is already present on the current device, the
     !> appropriate reference count is incremented and that copy is
     !> used. Otherwise, it allocates device memory and copies the
     !> values from the encountering thread and sets the appropriate
-    !> reference count to one. 
-    !> 
+    !> reference count to one.
+    !>
     !> When exiting the region the structured
     !> reference count is decremented. If both reference counts are
     !> zero, the device memory is deallocated.
@@ -1319,7 +1290,7 @@ module gpufortrt_base
       logical,intent(in),optional  :: declared_module_var
       logical,intent(in),optional  :: update_struct_refs,update_dyn_refs
       !
-      type(c_ptr) :: deviceptr 
+      type(c_ptr) :: deviceptr
       !
       integer :: loc
       !
@@ -1330,18 +1301,18 @@ module gpufortrt_base
 #endif
         deviceptr = c_null_ptr
       else
-        loc       = record_list_%use_increment_record(hostptr,num_bytes,gpufortrt_map_kind_copyin,async,declared_module_var)
+        loc       = record_list_use_increment_record_(hostptr,num_bytes,gpufortrt_map_kind_copyin,async,declared_module_var)
         deviceptr = record_list_%records(loc)%deviceptr
-      endif 
+      endif
     end function
-    
+
     !> copyout( list ) parallel, kernels, serial, data, exit data,
     !> declare
     !> When entering the region, if the data in list is already present on
     !> the current device, the structured reference count is incremented
     !> and that copy is used. Otherwise, it allocates device memory and
-    !> sets the structured reference count to one. 
-    !> 
+    !> sets the structured reference count to one.
+    !>
     !> At an exit data
     !> directive with no finalize clause or when exiting the region,
     !> the appropriate reference count is decremented. At an exit
@@ -1351,7 +1322,7 @@ module gpufortrt_base
     !> thread and the device memory is deallocated.
     !>
     !> \note Only returns valid device pointer if none of the counters
-    !> is updated, which implies that 
+    !> is updated, which implies that
     function gpufortrt_copyout_b(hostptr,num_bytes,async,&
             update_struct_refs,update_dyn_refs) result(deviceptr)
       use iso_c_binding
@@ -1362,7 +1333,7 @@ module gpufortrt_base
       integer,intent(in),optional  :: async
       logical,intent(in),optional  :: update_struct_refs,update_dyn_refs
       !
-      type(c_ptr) :: deviceptr 
+      type(c_ptr) :: deviceptr
       !
       integer :: loc
       !
@@ -1375,25 +1346,25 @@ module gpufortrt_base
       else
         if ( eval_optval_(update_struct_refs,.false.) ) then
             ! clause attached to data directive
-            loc       = record_list_%use_increment_record(hostptr,num_bytes,&
+            loc       = record_list_use_increment_record_(hostptr,num_bytes,&
                           gpufortrt_map_kind_copyout,async,.false.,&
                           update_struct_refs,update_dyn_refs)
-            deviceptr = c_null_ptr ! not needed in this case 
+            deviceptr = c_null_ptr ! not needed in this case
         else if ( eval_optval_(update_dyn_refs,.false.) ) then
             ! clause attached to exit data directive
-            call record_list_%decrement_release_record(&
+            call record_list_decrement_release_record_(&
                 hostptr,.false.,.false.,.false.)
             deviceptr = c_null_ptr ! not needed in this case
         else
             ! clause directly associated with compute-construct
-            loc       = record_list_%use_increment_record(hostptr,num_bytes,&
+            loc       = record_list_use_increment_record_(hostptr,num_bytes,&
                           gpufortrt_map_kind_copyout,async,.false.,&
                           .false.,.false.)
             deviceptr = record_list_%records(loc)%deviceptr
         endif
       endif
     end function
-    
+
     !> copy( list ) parallel, kernels, serial, data, declare
     !> When entering the region, if the data in list is already present on
     !> the current device, the structured reference count is incremented
@@ -1415,7 +1386,7 @@ module gpufortrt_base
       integer,intent(in),optional  :: async
       logical,intent(in),optional  :: update_struct_refs
       !
-      type(c_ptr) :: deviceptr 
+      type(c_ptr) :: deviceptr
       !
       integer :: loc
       !
@@ -1426,7 +1397,7 @@ module gpufortrt_base
 #endif
         deviceptr = c_null_ptr
       else
-        loc       = record_list_%use_increment_record(hostptr,num_bytes,&
+        loc       = record_list_use_increment_record_(hostptr,num_bytes,&
                       gpufortrt_map_kind_copy,&
                       async,.false.,&
                       update_struct_refs,.false.)
@@ -1435,17 +1406,17 @@ module gpufortrt_base
     end function
 
     !> Update Directive
-    !> 
+    !>
     !> The update directive copies data between the memory for the
     !> encountering thread and the device. An update directive may
     !> appear in any data region, including an implicit data region.
-    !> 
+    !>
     !> FORTRAN
-    !> 
+    !>
     !> !$acc update [clause [[,] clause]…]
-    !> 
+    !>
     !> CLAUSES
-    !> 
+    !>
     !> self( list ) or host( list )
     !>   Copies the data in list from the device to the encountering
     !>   thread.
@@ -1461,7 +1432,7 @@ module gpufortrt_base
       !
       integer :: loc
       !
-      logical :: success, opt_condition, opt_if_present 
+      logical :: success, opt_condition, opt_if_present
       !
       if ( .not. initialized_ ) ERROR STOP "gpufortrt_update_host_b: runtime not initialized"
       if ( .not. c_associated(hostptr) ) then
@@ -1476,30 +1447,30 @@ module gpufortrt_base
       if ( present(if_present) ) opt_if_present = if_present
       !
       if ( opt_condition ) then
-        loc = record_list_%find_record(hostptr,success)
+        loc = record_list_find_record_(hostptr,success)
         !
         if ( .not. success .and. .not. opt_if_present ) ERROR STOP "gpufortrt_update_host_b: no deviceptr found for hostptr"
-        ! 
-        if ( success .and. present(async) ) then 
-          call record_list_%records(loc)%copy_to_host(async)
+        !
+        if ( success .and. present(async) ) then
+          call record_copy_to_host_(record_list_%records(loc),async)
         else if ( success ) then
-          call record_list_%records(loc)%copy_to_host()
+          call record_copy_to_host_(record_list_%records(loc))
         endif
       endif
     end subroutine
-    
+
     !> Update Directive
-    !> 
+    !>
     !> The update directive copies data between the memory for the
     !> encountering thread and the device. An update directive may
     !> appear in any data region, including an implicit data region.
-    !> 
+    !>
     !> FORTRAN
-    !> 
+    !>
     !> !$acc update [clause [[,] clause]…]
-    !> 
+    !>
     !> CLAUSES
-    !> 
+    !>
     !> self( list ) or host( list )
     !>   Copies the data in list from the device to the encountering
     !>   thread.
@@ -1540,14 +1511,14 @@ module gpufortrt_base
       if ( present(if_present) ) opt_if_present = if_present
       !
       if ( opt_condition ) then
-        loc = record_list_%find_record(hostptr,success)
+        loc = record_list_find_record_(hostptr,success)
         !
         if ( .not. success .and. .not. opt_if_present ) ERROR STOP "gpufortrt_update_device_b: no deviceptr found for hostptr"
-        ! 
-        if ( success .and. present(async) ) then 
-          call record_list_%records(loc)%copy_to_device(async)
+        !
+        if ( success .and. present(async) ) then
+          call record_copy_to_device_(record_list_%records(loc),async)
         else if ( success ) then
-          call record_list_%records(loc)%copy_to_device()
+          call record_copy_to_device_(record_list_%records(loc))
         endif
       endif
     end subroutine
@@ -1555,12 +1526,12 @@ module gpufortrt_base
     function gpufortrt_get_stream(queue_id) result (stream)
        implicit none
        integer, intent(in) :: queue_id
-       ! 
+       !
        type(c_ptr) :: stream
        !
        if ( queue_id .eq. 0 ) then
           stream = c_null_ptr
-       else 
+       else
           call ensure_queue_exists_(queue_id)
           stream = queues_(queue_id)%queueptr
        endif

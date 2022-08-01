@@ -19,7 +19,7 @@
 {%   set suffix = tuple[0] %}                                                              
 function gpufortrt_map_dec_struct_refs_{{suffix}}_scal(hostptr) result(retval)
   use iso_c_binding
-  use gpufortrt_base, only: mapping_t
+  use gpufortrt_core, only: mapping_t
   implicit none
   {{tuple[2]}},target,intent(in) :: hostptr
   !
@@ -30,7 +30,7 @@ end function
 
 function gpufortrt_map_dec_struct_refs_{{suffix}}_arr(hostptr) result(retval)
   use iso_c_binding
-  use gpufortrt_base, only: mapping_t
+  use gpufortrt_core, only: mapping_t
   implicit none
   {{tuple[2]}},dimension(*),target,intent(in) :: hostptr
   !
@@ -47,7 +47,7 @@ end function
 ! {{routine}}
 function {{routine}}_b(hostptr,num_bytes{{extra_args}}) result(retval)
   use iso_c_binding
-  use gpufortrt_base, only: mapping_t
+  use gpufortrt_core, only: mapping_t
   implicit none
   !
   type(c_ptr),intent(in)       :: hostptr
@@ -79,7 +79,7 @@ end function
 {%     set suffix = tuple[0] + "_" + dims|string %}                                                              
 function {{routine}}_{{suffix}}(hostptr{{extra_args}}) result(retval)
   use iso_c_binding
-  use gpufortrt_base, only: mapping_t
+  use gpufortrt_core, only: mapping_t
   implicit none
   {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
 {%     if is_acc_declare_module_clause %}
@@ -133,7 +133,7 @@ end interface
 
 
 module gpufortrt
-  use gpufortrt_base
+  use gpufortrt_core
     
   !> Lookup device pointer for given host pointer.
   !> \param[in] condition condition that must be met, otherwise host pointer is returned. Defaults to '.true.'.
@@ -241,7 +241,7 @@ module gpufortrt
 {%     set suffix = tuple[0] + "_" + dims|string %}
     function gpufortrt_use_device_{{suffix}}(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
       integer(c_int),dimension({{ dims }}),intent(in),optional :: lbounds
@@ -263,7 +263,7 @@ module gpufortrt
 
     function gpufortrt_present_{{suffix}}(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
       !
@@ -274,7 +274,7 @@ module gpufortrt
 
     function gpufortrt_create_{{suffix}}(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
       !
@@ -285,7 +285,7 @@ module gpufortrt
 
     function gpufortrt_no_create_{{suffix}}(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
       !
@@ -296,7 +296,7 @@ module gpufortrt
 
     subroutine gpufortrt_delete_{{suffix}}(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -306,7 +306,7 @@ module gpufortrt
 
     function gpufortrt_copyin_{{suffix}}(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -318,7 +318,7 @@ module gpufortrt
 
     function gpufortrt_copyout_{{suffix}}(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       {{tuple[2]}},target{{ rank }},intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -330,7 +330,7 @@ module gpufortrt
 
     function gpufortrt_copy_{{suffix}}(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       {{tuple[2]}},target{{ rank }},intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -343,7 +343,7 @@ module gpufortrt
 {% for target in ["host","device"] %}
     subroutine gpufortrt_update_{{target}}_{{suffix}}(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       {{tuple[2]}},target{{ rank }},intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present

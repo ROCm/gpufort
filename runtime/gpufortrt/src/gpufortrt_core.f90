@@ -3,7 +3,7 @@
 
 #define blocked_size(num_bytes) ((((num_bytes)+BLOCK_SIZE-1)/BLOCK_SIZE) * BLOCK_SIZE)
 
-module gpufortrt_base
+module gpufortrt_core
   use iso_c_binding
   use gpufortrt_c_bindings
 
@@ -373,7 +373,7 @@ module gpufortrt_base
       !
       ret = record_is_initialized_(record) .and. &
             (record%struct_refs > 0 .or.&
-            record%struct_refs > 0)
+            record%dyn_refs > 0)
     end function
 
     function record_is_released_(record) result(ret)

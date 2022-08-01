@@ -7,7 +7,7 @@ of GPUFORT's OpenACC runtime.
 
 Please do not edit file `gpufortrt.f90` manually as this
 file is generated from the template `gpufortrt.template.f90`.
-`gpufortrt` is a frontend for `gpufortrt_base.f90`,
+`gpufortrt` is a frontend for `gpufortrt_core.f90`,
 which implements the fundamental data structures and routines
 of the runtime.
 

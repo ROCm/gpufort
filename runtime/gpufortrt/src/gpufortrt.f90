@@ -9,7 +9,7 @@
 
 
 module gpufortrt
-  use gpufortrt_base
+  use gpufortrt_core
     
   !> Lookup device pointer for given host pointer.
   !> \param[in] condition condition that must be met, otherwise host pointer is returned. Defaults to '.true.'.
@@ -1445,7 +1445,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_use_device_l_0(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       logical,target,intent(in) :: hostptr
       integer(c_int),dimension(0),intent(in),optional :: lbounds
@@ -1462,7 +1462,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_l_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       logical,target,intent(in) :: hostptr
       !
@@ -1473,7 +1473,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_l_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       logical,target,intent(in) :: hostptr
       !
@@ -1484,7 +1484,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_l_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       logical,target,intent(in) :: hostptr
       !
@@ -1495,7 +1495,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_l_0(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       logical,target,intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -1505,7 +1505,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_l_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       logical,target,intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -1517,7 +1517,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_l_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       logical,target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -1529,7 +1529,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_l_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       logical,target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -1541,7 +1541,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_l_0(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       logical,target,intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -1551,7 +1551,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_l_0(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       logical,target,intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -1561,7 +1561,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_l_1(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       logical,target,dimension(:),intent(in) :: hostptr
       integer(c_int),dimension(1),intent(in),optional :: lbounds
@@ -1583,7 +1583,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_l_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       logical,target,dimension(:),intent(in) :: hostptr
       !
@@ -1594,7 +1594,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_l_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       logical,target,dimension(:),intent(in) :: hostptr
       !
@@ -1605,7 +1605,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_l_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       logical,target,dimension(:),intent(in) :: hostptr
       !
@@ -1616,7 +1616,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_l_1(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       logical,target,dimension(:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -1626,7 +1626,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_l_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       logical,target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -1638,7 +1638,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_l_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       logical,target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -1650,7 +1650,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_l_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       logical,target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -1662,7 +1662,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_l_1(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       logical,target,dimension(:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -1672,7 +1672,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_l_1(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       logical,target,dimension(:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -1682,7 +1682,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_l_2(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       logical,target,dimension(:,:),intent(in) :: hostptr
       integer(c_int),dimension(2),intent(in),optional :: lbounds
@@ -1705,7 +1705,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_l_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       logical,target,dimension(:,:),intent(in) :: hostptr
       !
@@ -1716,7 +1716,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_l_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       logical,target,dimension(:,:),intent(in) :: hostptr
       !
@@ -1727,7 +1727,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_l_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       logical,target,dimension(:,:),intent(in) :: hostptr
       !
@@ -1738,7 +1738,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_l_2(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       logical,target,dimension(:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -1748,7 +1748,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_l_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       logical,target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -1760,7 +1760,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_l_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       logical,target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -1772,7 +1772,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_l_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       logical,target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -1784,7 +1784,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_l_2(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       logical,target,dimension(:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -1794,7 +1794,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_l_2(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       logical,target,dimension(:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -1804,7 +1804,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_l_3(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       logical,target,dimension(:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(3),intent(in),optional :: lbounds
@@ -1828,7 +1828,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_l_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       logical,target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -1839,7 +1839,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_l_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       logical,target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -1850,7 +1850,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_l_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       logical,target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -1861,7 +1861,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_l_3(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       logical,target,dimension(:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -1871,7 +1871,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_l_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       logical,target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -1883,7 +1883,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_l_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       logical,target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -1895,7 +1895,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_l_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       logical,target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -1907,7 +1907,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_l_3(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       logical,target,dimension(:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -1917,7 +1917,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_l_3(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       logical,target,dimension(:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -1927,7 +1927,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_l_4(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       logical,target,dimension(:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(4),intent(in),optional :: lbounds
@@ -1952,7 +1952,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_l_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       logical,target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -1963,7 +1963,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_l_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       logical,target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -1974,7 +1974,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_l_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       logical,target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -1985,7 +1985,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_l_4(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       logical,target,dimension(:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -1995,7 +1995,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_l_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       logical,target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -2007,7 +2007,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_l_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       logical,target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -2019,7 +2019,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_l_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       logical,target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -2031,7 +2031,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_l_4(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       logical,target,dimension(:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -2041,7 +2041,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_l_4(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       logical,target,dimension(:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -2051,7 +2051,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_l_5(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(5),intent(in),optional :: lbounds
@@ -2077,7 +2077,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_l_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -2088,7 +2088,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_l_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -2099,7 +2099,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_l_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -2110,7 +2110,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_l_5(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -2120,7 +2120,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_l_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -2132,7 +2132,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_l_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -2144,7 +2144,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_l_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -2156,7 +2156,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_l_5(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -2166,7 +2166,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_l_5(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       logical,target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -2176,7 +2176,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_l_6(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(6),intent(in),optional :: lbounds
@@ -2203,7 +2203,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_l_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -2214,7 +2214,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_l_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -2225,7 +2225,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_l_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -2236,7 +2236,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_l_6(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -2246,7 +2246,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_l_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -2258,7 +2258,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_l_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -2270,7 +2270,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_l_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -2282,7 +2282,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_l_6(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -2292,7 +2292,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_l_6(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -2302,7 +2302,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_l_7(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(7),intent(in),optional :: lbounds
@@ -2330,7 +2330,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_l_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -2341,7 +2341,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_l_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -2352,7 +2352,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_l_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -2363,7 +2363,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_l_7(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -2373,7 +2373,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_l_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -2385,7 +2385,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_l_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -2397,7 +2397,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_l_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -2409,7 +2409,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_l_7(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -2419,7 +2419,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_l_7(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       logical,target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -2429,7 +2429,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c_0(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       character(c_char),target,intent(in) :: hostptr
       integer(c_int),dimension(0),intent(in),optional :: lbounds
@@ -2446,7 +2446,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       character(c_char),target,intent(in) :: hostptr
       !
@@ -2457,7 +2457,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       character(c_char),target,intent(in) :: hostptr
       !
@@ -2468,7 +2468,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       character(c_char),target,intent(in) :: hostptr
       !
@@ -2479,7 +2479,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c_0(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       character(c_char),target,intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -2489,7 +2489,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       character(c_char),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -2501,7 +2501,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       character(c_char),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -2513,7 +2513,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       character(c_char),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -2525,7 +2525,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c_0(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       character(c_char),target,intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -2535,7 +2535,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c_0(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       character(c_char),target,intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -2545,7 +2545,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c_1(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       character(c_char),target,dimension(:),intent(in) :: hostptr
       integer(c_int),dimension(1),intent(in),optional :: lbounds
@@ -2567,7 +2567,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       character(c_char),target,dimension(:),intent(in) :: hostptr
       !
@@ -2578,7 +2578,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       character(c_char),target,dimension(:),intent(in) :: hostptr
       !
@@ -2589,7 +2589,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       character(c_char),target,dimension(:),intent(in) :: hostptr
       !
@@ -2600,7 +2600,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c_1(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       character(c_char),target,dimension(:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -2610,7 +2610,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       character(c_char),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -2622,7 +2622,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       character(c_char),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -2634,7 +2634,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       character(c_char),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -2646,7 +2646,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c_1(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       character(c_char),target,dimension(:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -2656,7 +2656,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c_1(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       character(c_char),target,dimension(:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -2666,7 +2666,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c_2(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       character(c_char),target,dimension(:,:),intent(in) :: hostptr
       integer(c_int),dimension(2),intent(in),optional :: lbounds
@@ -2689,7 +2689,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       character(c_char),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -2700,7 +2700,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       character(c_char),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -2711,7 +2711,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       character(c_char),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -2722,7 +2722,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c_2(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       character(c_char),target,dimension(:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -2732,7 +2732,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       character(c_char),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -2744,7 +2744,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       character(c_char),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -2756,7 +2756,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       character(c_char),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -2768,7 +2768,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c_2(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       character(c_char),target,dimension(:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -2778,7 +2778,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c_2(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       character(c_char),target,dimension(:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -2788,7 +2788,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c_3(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       character(c_char),target,dimension(:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(3),intent(in),optional :: lbounds
@@ -2812,7 +2812,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       character(c_char),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -2823,7 +2823,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       character(c_char),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -2834,7 +2834,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       character(c_char),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -2845,7 +2845,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c_3(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       character(c_char),target,dimension(:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -2855,7 +2855,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       character(c_char),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -2867,7 +2867,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       character(c_char),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -2879,7 +2879,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       character(c_char),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -2891,7 +2891,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c_3(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       character(c_char),target,dimension(:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -2901,7 +2901,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c_3(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       character(c_char),target,dimension(:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -2911,7 +2911,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c_4(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       character(c_char),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(4),intent(in),optional :: lbounds
@@ -2936,7 +2936,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       character(c_char),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -2947,7 +2947,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       character(c_char),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -2958,7 +2958,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       character(c_char),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -2969,7 +2969,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c_4(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       character(c_char),target,dimension(:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -2979,7 +2979,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       character(c_char),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -2991,7 +2991,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       character(c_char),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -3003,7 +3003,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       character(c_char),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -3015,7 +3015,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c_4(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       character(c_char),target,dimension(:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -3025,7 +3025,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c_4(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       character(c_char),target,dimension(:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -3035,7 +3035,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c_5(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(5),intent(in),optional :: lbounds
@@ -3061,7 +3061,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       character(c_char),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -3072,7 +3072,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -3083,7 +3083,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -3094,7 +3094,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c_5(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -3104,7 +3104,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -3116,7 +3116,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -3128,7 +3128,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -3140,7 +3140,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c_5(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -3150,7 +3150,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c_5(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -3160,7 +3160,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c_6(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(6),intent(in),optional :: lbounds
@@ -3187,7 +3187,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -3198,7 +3198,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -3209,7 +3209,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -3220,7 +3220,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c_6(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -3230,7 +3230,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -3242,7 +3242,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -3254,7 +3254,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -3266,7 +3266,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c_6(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -3276,7 +3276,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c_6(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -3286,7 +3286,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c_7(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(7),intent(in),optional :: lbounds
@@ -3314,7 +3314,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -3325,7 +3325,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -3336,7 +3336,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -3347,7 +3347,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c_7(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -3357,7 +3357,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -3369,7 +3369,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -3381,7 +3381,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -3393,7 +3393,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c_7(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -3403,7 +3403,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c_7(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       character(c_char),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -3413,7 +3413,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i2_0(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_short),target,intent(in) :: hostptr
       integer(c_int),dimension(0),intent(in),optional :: lbounds
@@ -3430,7 +3430,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i2_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_short),target,intent(in) :: hostptr
       !
@@ -3441,7 +3441,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i2_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_short),target,intent(in) :: hostptr
       !
@@ -3452,7 +3452,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i2_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_short),target,intent(in) :: hostptr
       !
@@ -3463,7 +3463,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i2_0(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_short),target,intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -3473,7 +3473,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i2_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_short),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -3485,7 +3485,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i2_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_short),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -3497,7 +3497,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i2_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_short),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -3509,7 +3509,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i2_0(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_short),target,intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -3519,7 +3519,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i2_0(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_short),target,intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -3529,7 +3529,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i2_1(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_short),target,dimension(:),intent(in) :: hostptr
       integer(c_int),dimension(1),intent(in),optional :: lbounds
@@ -3551,7 +3551,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i2_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_short),target,dimension(:),intent(in) :: hostptr
       !
@@ -3562,7 +3562,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i2_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_short),target,dimension(:),intent(in) :: hostptr
       !
@@ -3573,7 +3573,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i2_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_short),target,dimension(:),intent(in) :: hostptr
       !
@@ -3584,7 +3584,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i2_1(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_short),target,dimension(:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -3594,7 +3594,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i2_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_short),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -3606,7 +3606,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i2_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_short),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -3618,7 +3618,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i2_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_short),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -3630,7 +3630,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i2_1(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_short),target,dimension(:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -3640,7 +3640,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i2_1(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_short),target,dimension(:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -3650,7 +3650,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i2_2(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_short),target,dimension(:,:),intent(in) :: hostptr
       integer(c_int),dimension(2),intent(in),optional :: lbounds
@@ -3673,7 +3673,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i2_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_short),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -3684,7 +3684,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i2_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_short),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -3695,7 +3695,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i2_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_short),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -3706,7 +3706,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i2_2(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_short),target,dimension(:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -3716,7 +3716,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i2_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_short),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -3728,7 +3728,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i2_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_short),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -3740,7 +3740,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i2_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_short),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -3752,7 +3752,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i2_2(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_short),target,dimension(:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -3762,7 +3762,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i2_2(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_short),target,dimension(:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -3772,7 +3772,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i2_3(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_short),target,dimension(:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(3),intent(in),optional :: lbounds
@@ -3796,7 +3796,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i2_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_short),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -3807,7 +3807,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i2_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_short),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -3818,7 +3818,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i2_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_short),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -3829,7 +3829,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i2_3(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_short),target,dimension(:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -3839,7 +3839,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i2_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_short),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -3851,7 +3851,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i2_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_short),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -3863,7 +3863,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i2_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_short),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -3875,7 +3875,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i2_3(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_short),target,dimension(:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -3885,7 +3885,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i2_3(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_short),target,dimension(:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -3895,7 +3895,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i2_4(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(4),intent(in),optional :: lbounds
@@ -3920,7 +3920,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i2_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_short),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -3931,7 +3931,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i2_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -3942,7 +3942,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i2_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -3953,7 +3953,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i2_4(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -3963,7 +3963,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i2_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -3975,7 +3975,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i2_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -3987,7 +3987,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i2_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -3999,7 +3999,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i2_4(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -4009,7 +4009,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i2_4(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -4019,7 +4019,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i2_5(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(5),intent(in),optional :: lbounds
@@ -4045,7 +4045,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i2_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -4056,7 +4056,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i2_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -4067,7 +4067,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i2_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -4078,7 +4078,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i2_5(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -4088,7 +4088,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i2_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -4100,7 +4100,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i2_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -4112,7 +4112,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i2_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -4124,7 +4124,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i2_5(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -4134,7 +4134,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i2_5(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -4144,7 +4144,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i2_6(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(6),intent(in),optional :: lbounds
@@ -4171,7 +4171,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i2_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -4182,7 +4182,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i2_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -4193,7 +4193,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i2_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -4204,7 +4204,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i2_6(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -4214,7 +4214,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i2_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -4226,7 +4226,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i2_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -4238,7 +4238,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i2_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -4250,7 +4250,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i2_6(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -4260,7 +4260,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i2_6(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -4270,7 +4270,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i2_7(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(7),intent(in),optional :: lbounds
@@ -4298,7 +4298,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i2_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -4309,7 +4309,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i2_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -4320,7 +4320,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i2_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -4331,7 +4331,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i2_7(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -4341,7 +4341,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i2_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -4353,7 +4353,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i2_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -4365,7 +4365,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i2_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -4377,7 +4377,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i2_7(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -4387,7 +4387,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i2_7(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -4397,7 +4397,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i4_0(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_int),target,intent(in) :: hostptr
       integer(c_int),dimension(0),intent(in),optional :: lbounds
@@ -4414,7 +4414,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i4_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_int),target,intent(in) :: hostptr
       !
@@ -4425,7 +4425,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i4_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_int),target,intent(in) :: hostptr
       !
@@ -4436,7 +4436,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i4_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_int),target,intent(in) :: hostptr
       !
@@ -4447,7 +4447,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i4_0(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_int),target,intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -4457,7 +4457,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i4_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_int),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -4469,7 +4469,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i4_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_int),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -4481,7 +4481,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i4_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_int),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -4493,7 +4493,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i4_0(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_int),target,intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -4503,7 +4503,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i4_0(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_int),target,intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -4513,7 +4513,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i4_1(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_int),target,dimension(:),intent(in) :: hostptr
       integer(c_int),dimension(1),intent(in),optional :: lbounds
@@ -4535,7 +4535,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i4_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_int),target,dimension(:),intent(in) :: hostptr
       !
@@ -4546,7 +4546,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i4_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_int),target,dimension(:),intent(in) :: hostptr
       !
@@ -4557,7 +4557,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i4_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_int),target,dimension(:),intent(in) :: hostptr
       !
@@ -4568,7 +4568,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i4_1(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_int),target,dimension(:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -4578,7 +4578,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i4_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_int),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -4590,7 +4590,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i4_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_int),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -4602,7 +4602,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i4_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_int),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -4614,7 +4614,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i4_1(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_int),target,dimension(:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -4624,7 +4624,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i4_1(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_int),target,dimension(:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -4634,7 +4634,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i4_2(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_int),target,dimension(:,:),intent(in) :: hostptr
       integer(c_int),dimension(2),intent(in),optional :: lbounds
@@ -4657,7 +4657,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i4_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_int),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -4668,7 +4668,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i4_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_int),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -4679,7 +4679,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i4_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_int),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -4690,7 +4690,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i4_2(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_int),target,dimension(:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -4700,7 +4700,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i4_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_int),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -4712,7 +4712,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i4_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_int),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -4724,7 +4724,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i4_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_int),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -4736,7 +4736,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i4_2(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_int),target,dimension(:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -4746,7 +4746,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i4_2(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_int),target,dimension(:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -4756,7 +4756,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i4_3(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_int),target,dimension(:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(3),intent(in),optional :: lbounds
@@ -4780,7 +4780,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i4_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_int),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -4791,7 +4791,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i4_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_int),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -4802,7 +4802,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i4_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_int),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -4813,7 +4813,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i4_3(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_int),target,dimension(:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -4823,7 +4823,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i4_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_int),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -4835,7 +4835,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i4_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_int),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -4847,7 +4847,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i4_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_int),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -4859,7 +4859,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i4_3(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_int),target,dimension(:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -4869,7 +4869,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i4_3(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_int),target,dimension(:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -4879,7 +4879,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i4_4(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(4),intent(in),optional :: lbounds
@@ -4904,7 +4904,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i4_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_int),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -4915,7 +4915,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i4_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -4926,7 +4926,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i4_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -4937,7 +4937,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i4_4(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -4947,7 +4947,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i4_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -4959,7 +4959,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i4_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -4971,7 +4971,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i4_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -4983,7 +4983,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i4_4(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -4993,7 +4993,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i4_4(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -5003,7 +5003,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i4_5(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(5),intent(in),optional :: lbounds
@@ -5029,7 +5029,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i4_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -5040,7 +5040,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i4_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -5051,7 +5051,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i4_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -5062,7 +5062,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i4_5(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -5072,7 +5072,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i4_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -5084,7 +5084,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i4_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -5096,7 +5096,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i4_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -5108,7 +5108,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i4_5(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -5118,7 +5118,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i4_5(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -5128,7 +5128,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i4_6(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(6),intent(in),optional :: lbounds
@@ -5155,7 +5155,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i4_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -5166,7 +5166,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i4_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -5177,7 +5177,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i4_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -5188,7 +5188,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i4_6(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -5198,7 +5198,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i4_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -5210,7 +5210,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i4_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -5222,7 +5222,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i4_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -5234,7 +5234,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i4_6(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -5244,7 +5244,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i4_6(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -5254,7 +5254,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i4_7(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(7),intent(in),optional :: lbounds
@@ -5282,7 +5282,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i4_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -5293,7 +5293,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i4_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -5304,7 +5304,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i4_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -5315,7 +5315,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i4_7(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -5325,7 +5325,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i4_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -5337,7 +5337,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i4_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -5349,7 +5349,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i4_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -5361,7 +5361,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i4_7(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -5371,7 +5371,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i4_7(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -5381,7 +5381,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i8_0(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_long),target,intent(in) :: hostptr
       integer(c_int),dimension(0),intent(in),optional :: lbounds
@@ -5398,7 +5398,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i8_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_long),target,intent(in) :: hostptr
       !
@@ -5409,7 +5409,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i8_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_long),target,intent(in) :: hostptr
       !
@@ -5420,7 +5420,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i8_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_long),target,intent(in) :: hostptr
       !
@@ -5431,7 +5431,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i8_0(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_long),target,intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -5441,7 +5441,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i8_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_long),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -5453,7 +5453,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i8_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_long),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -5465,7 +5465,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i8_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_long),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -5477,7 +5477,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i8_0(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_long),target,intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -5487,7 +5487,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i8_0(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_long),target,intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -5497,7 +5497,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i8_1(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_long),target,dimension(:),intent(in) :: hostptr
       integer(c_int),dimension(1),intent(in),optional :: lbounds
@@ -5519,7 +5519,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i8_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_long),target,dimension(:),intent(in) :: hostptr
       !
@@ -5530,7 +5530,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i8_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_long),target,dimension(:),intent(in) :: hostptr
       !
@@ -5541,7 +5541,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i8_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_long),target,dimension(:),intent(in) :: hostptr
       !
@@ -5552,7 +5552,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i8_1(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_long),target,dimension(:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -5562,7 +5562,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i8_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_long),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -5574,7 +5574,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i8_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_long),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -5586,7 +5586,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i8_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_long),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -5598,7 +5598,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i8_1(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_long),target,dimension(:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -5608,7 +5608,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i8_1(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_long),target,dimension(:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -5618,7 +5618,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i8_2(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_long),target,dimension(:,:),intent(in) :: hostptr
       integer(c_int),dimension(2),intent(in),optional :: lbounds
@@ -5641,7 +5641,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i8_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_long),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -5652,7 +5652,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i8_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_long),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -5663,7 +5663,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i8_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_long),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -5674,7 +5674,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i8_2(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_long),target,dimension(:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -5684,7 +5684,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i8_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_long),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -5696,7 +5696,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i8_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_long),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -5708,7 +5708,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i8_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_long),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -5720,7 +5720,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i8_2(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_long),target,dimension(:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -5730,7 +5730,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i8_2(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_long),target,dimension(:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -5740,7 +5740,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i8_3(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_long),target,dimension(:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(3),intent(in),optional :: lbounds
@@ -5764,7 +5764,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i8_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_long),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -5775,7 +5775,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i8_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_long),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -5786,7 +5786,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i8_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_long),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -5797,7 +5797,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i8_3(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_long),target,dimension(:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -5807,7 +5807,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i8_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_long),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -5819,7 +5819,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i8_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_long),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -5831,7 +5831,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i8_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_long),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -5843,7 +5843,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i8_3(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_long),target,dimension(:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -5853,7 +5853,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i8_3(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_long),target,dimension(:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -5863,7 +5863,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i8_4(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(4),intent(in),optional :: lbounds
@@ -5888,7 +5888,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i8_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_long),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -5899,7 +5899,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i8_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -5910,7 +5910,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i8_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -5921,7 +5921,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i8_4(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -5931,7 +5931,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i8_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -5943,7 +5943,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i8_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -5955,7 +5955,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i8_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -5967,7 +5967,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i8_4(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -5977,7 +5977,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i8_4(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -5987,7 +5987,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i8_5(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(5),intent(in),optional :: lbounds
@@ -6013,7 +6013,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i8_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -6024,7 +6024,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i8_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -6035,7 +6035,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i8_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -6046,7 +6046,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i8_5(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -6056,7 +6056,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i8_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -6068,7 +6068,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i8_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -6080,7 +6080,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i8_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -6092,7 +6092,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i8_5(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -6102,7 +6102,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i8_5(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -6112,7 +6112,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i8_6(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(6),intent(in),optional :: lbounds
@@ -6139,7 +6139,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i8_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -6150,7 +6150,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i8_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -6161,7 +6161,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i8_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -6172,7 +6172,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i8_6(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -6182,7 +6182,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i8_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -6194,7 +6194,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i8_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -6206,7 +6206,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i8_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -6218,7 +6218,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i8_6(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -6228,7 +6228,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i8_6(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -6238,7 +6238,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_i8_7(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(7),intent(in),optional :: lbounds
@@ -6266,7 +6266,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_i8_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -6277,7 +6277,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_i8_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -6288,7 +6288,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_i8_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -6299,7 +6299,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_i8_7(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -6309,7 +6309,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_i8_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -6321,7 +6321,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_i8_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -6333,7 +6333,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_i8_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -6345,7 +6345,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_i8_7(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -6355,7 +6355,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_i8_7(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -6365,7 +6365,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_r4_0(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       real(c_float),target,intent(in) :: hostptr
       integer(c_int),dimension(0),intent(in),optional :: lbounds
@@ -6382,7 +6382,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_r4_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       real(c_float),target,intent(in) :: hostptr
       !
@@ -6393,7 +6393,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_r4_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       real(c_float),target,intent(in) :: hostptr
       !
@@ -6404,7 +6404,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_r4_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       real(c_float),target,intent(in) :: hostptr
       !
@@ -6415,7 +6415,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_r4_0(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       real(c_float),target,intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -6425,7 +6425,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_r4_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       real(c_float),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -6437,7 +6437,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_r4_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       real(c_float),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -6449,7 +6449,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_r4_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       real(c_float),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -6461,7 +6461,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_r4_0(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_float),target,intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -6471,7 +6471,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_r4_0(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_float),target,intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -6481,7 +6481,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_r4_1(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       real(c_float),target,dimension(:),intent(in) :: hostptr
       integer(c_int),dimension(1),intent(in),optional :: lbounds
@@ -6503,7 +6503,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_r4_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       real(c_float),target,dimension(:),intent(in) :: hostptr
       !
@@ -6514,7 +6514,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_r4_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       real(c_float),target,dimension(:),intent(in) :: hostptr
       !
@@ -6525,7 +6525,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_r4_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       real(c_float),target,dimension(:),intent(in) :: hostptr
       !
@@ -6536,7 +6536,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_r4_1(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       real(c_float),target,dimension(:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -6546,7 +6546,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_r4_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       real(c_float),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -6558,7 +6558,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_r4_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       real(c_float),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -6570,7 +6570,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_r4_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       real(c_float),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -6582,7 +6582,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_r4_1(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_float),target,dimension(:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -6592,7 +6592,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_r4_1(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_float),target,dimension(:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -6602,7 +6602,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_r4_2(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       real(c_float),target,dimension(:,:),intent(in) :: hostptr
       integer(c_int),dimension(2),intent(in),optional :: lbounds
@@ -6625,7 +6625,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_r4_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       real(c_float),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -6636,7 +6636,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_r4_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       real(c_float),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -6647,7 +6647,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_r4_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       real(c_float),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -6658,7 +6658,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_r4_2(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       real(c_float),target,dimension(:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -6668,7 +6668,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_r4_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       real(c_float),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -6680,7 +6680,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_r4_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       real(c_float),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -6692,7 +6692,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_r4_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       real(c_float),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -6704,7 +6704,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_r4_2(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_float),target,dimension(:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -6714,7 +6714,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_r4_2(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_float),target,dimension(:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -6724,7 +6724,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_r4_3(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       real(c_float),target,dimension(:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(3),intent(in),optional :: lbounds
@@ -6748,7 +6748,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_r4_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       real(c_float),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -6759,7 +6759,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_r4_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       real(c_float),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -6770,7 +6770,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_r4_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       real(c_float),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -6781,7 +6781,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_r4_3(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       real(c_float),target,dimension(:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -6791,7 +6791,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_r4_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       real(c_float),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -6803,7 +6803,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_r4_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       real(c_float),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -6815,7 +6815,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_r4_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       real(c_float),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -6827,7 +6827,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_r4_3(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_float),target,dimension(:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -6837,7 +6837,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_r4_3(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_float),target,dimension(:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -6847,7 +6847,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_r4_4(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       real(c_float),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(4),intent(in),optional :: lbounds
@@ -6872,7 +6872,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_r4_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       real(c_float),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -6883,7 +6883,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_r4_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       real(c_float),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -6894,7 +6894,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_r4_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       real(c_float),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -6905,7 +6905,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_r4_4(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       real(c_float),target,dimension(:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -6915,7 +6915,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_r4_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       real(c_float),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -6927,7 +6927,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_r4_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       real(c_float),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -6939,7 +6939,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_r4_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       real(c_float),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -6951,7 +6951,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_r4_4(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_float),target,dimension(:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -6961,7 +6961,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_r4_4(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_float),target,dimension(:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -6971,7 +6971,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_r4_5(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(5),intent(in),optional :: lbounds
@@ -6997,7 +6997,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_r4_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       real(c_float),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -7008,7 +7008,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_r4_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -7019,7 +7019,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_r4_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -7030,7 +7030,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_r4_5(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -7040,7 +7040,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_r4_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -7052,7 +7052,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_r4_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -7064,7 +7064,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_r4_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -7076,7 +7076,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_r4_5(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -7086,7 +7086,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_r4_5(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -7096,7 +7096,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_r4_6(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(6),intent(in),optional :: lbounds
@@ -7123,7 +7123,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_r4_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -7134,7 +7134,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_r4_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -7145,7 +7145,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_r4_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -7156,7 +7156,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_r4_6(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -7166,7 +7166,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_r4_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -7178,7 +7178,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_r4_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -7190,7 +7190,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_r4_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -7202,7 +7202,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_r4_6(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -7212,7 +7212,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_r4_6(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -7222,7 +7222,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_r4_7(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(7),intent(in),optional :: lbounds
@@ -7250,7 +7250,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_r4_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -7261,7 +7261,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_r4_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -7272,7 +7272,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_r4_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -7283,7 +7283,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_r4_7(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -7293,7 +7293,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_r4_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -7305,7 +7305,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_r4_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -7317,7 +7317,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_r4_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -7329,7 +7329,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_r4_7(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -7339,7 +7339,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_r4_7(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_float),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -7349,7 +7349,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_r8_0(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       real(c_double),target,intent(in) :: hostptr
       integer(c_int),dimension(0),intent(in),optional :: lbounds
@@ -7366,7 +7366,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_r8_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       real(c_double),target,intent(in) :: hostptr
       !
@@ -7377,7 +7377,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_r8_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       real(c_double),target,intent(in) :: hostptr
       !
@@ -7388,7 +7388,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_r8_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       real(c_double),target,intent(in) :: hostptr
       !
@@ -7399,7 +7399,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_r8_0(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       real(c_double),target,intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -7409,7 +7409,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_r8_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       real(c_double),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -7421,7 +7421,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_r8_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       real(c_double),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -7433,7 +7433,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_r8_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       real(c_double),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -7445,7 +7445,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_r8_0(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_double),target,intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -7455,7 +7455,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_r8_0(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_double),target,intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -7465,7 +7465,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_r8_1(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       real(c_double),target,dimension(:),intent(in) :: hostptr
       integer(c_int),dimension(1),intent(in),optional :: lbounds
@@ -7487,7 +7487,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_r8_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       real(c_double),target,dimension(:),intent(in) :: hostptr
       !
@@ -7498,7 +7498,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_r8_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       real(c_double),target,dimension(:),intent(in) :: hostptr
       !
@@ -7509,7 +7509,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_r8_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       real(c_double),target,dimension(:),intent(in) :: hostptr
       !
@@ -7520,7 +7520,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_r8_1(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       real(c_double),target,dimension(:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -7530,7 +7530,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_r8_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       real(c_double),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -7542,7 +7542,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_r8_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       real(c_double),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -7554,7 +7554,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_r8_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       real(c_double),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -7566,7 +7566,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_r8_1(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_double),target,dimension(:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -7576,7 +7576,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_r8_1(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_double),target,dimension(:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -7586,7 +7586,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_r8_2(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       real(c_double),target,dimension(:,:),intent(in) :: hostptr
       integer(c_int),dimension(2),intent(in),optional :: lbounds
@@ -7609,7 +7609,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_r8_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       real(c_double),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -7620,7 +7620,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_r8_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       real(c_double),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -7631,7 +7631,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_r8_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       real(c_double),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -7642,7 +7642,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_r8_2(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       real(c_double),target,dimension(:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -7652,7 +7652,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_r8_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       real(c_double),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -7664,7 +7664,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_r8_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       real(c_double),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -7676,7 +7676,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_r8_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       real(c_double),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -7688,7 +7688,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_r8_2(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_double),target,dimension(:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -7698,7 +7698,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_r8_2(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_double),target,dimension(:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -7708,7 +7708,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_r8_3(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       real(c_double),target,dimension(:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(3),intent(in),optional :: lbounds
@@ -7732,7 +7732,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_r8_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       real(c_double),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -7743,7 +7743,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_r8_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       real(c_double),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -7754,7 +7754,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_r8_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       real(c_double),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -7765,7 +7765,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_r8_3(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       real(c_double),target,dimension(:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -7775,7 +7775,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_r8_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       real(c_double),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -7787,7 +7787,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_r8_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       real(c_double),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -7799,7 +7799,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_r8_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       real(c_double),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -7811,7 +7811,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_r8_3(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_double),target,dimension(:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -7821,7 +7821,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_r8_3(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_double),target,dimension(:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -7831,7 +7831,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_r8_4(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       real(c_double),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(4),intent(in),optional :: lbounds
@@ -7856,7 +7856,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_r8_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       real(c_double),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -7867,7 +7867,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_r8_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       real(c_double),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -7878,7 +7878,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_r8_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       real(c_double),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -7889,7 +7889,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_r8_4(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       real(c_double),target,dimension(:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -7899,7 +7899,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_r8_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       real(c_double),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -7911,7 +7911,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_r8_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       real(c_double),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -7923,7 +7923,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_r8_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       real(c_double),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -7935,7 +7935,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_r8_4(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_double),target,dimension(:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -7945,7 +7945,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_r8_4(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_double),target,dimension(:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -7955,7 +7955,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_r8_5(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(5),intent(in),optional :: lbounds
@@ -7981,7 +7981,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_r8_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       real(c_double),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -7992,7 +7992,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_r8_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -8003,7 +8003,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_r8_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -8014,7 +8014,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_r8_5(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -8024,7 +8024,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_r8_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -8036,7 +8036,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_r8_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -8048,7 +8048,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_r8_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -8060,7 +8060,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_r8_5(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -8070,7 +8070,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_r8_5(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -8080,7 +8080,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_r8_6(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(6),intent(in),optional :: lbounds
@@ -8107,7 +8107,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_r8_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -8118,7 +8118,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_r8_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -8129,7 +8129,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_r8_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -8140,7 +8140,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_r8_6(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -8150,7 +8150,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_r8_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -8162,7 +8162,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_r8_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -8174,7 +8174,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_r8_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -8186,7 +8186,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_r8_6(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -8196,7 +8196,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_r8_6(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -8206,7 +8206,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_r8_7(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(7),intent(in),optional :: lbounds
@@ -8234,7 +8234,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_r8_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -8245,7 +8245,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_r8_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -8256,7 +8256,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_r8_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -8267,7 +8267,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_r8_7(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -8277,7 +8277,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_r8_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -8289,7 +8289,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_r8_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -8301,7 +8301,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_r8_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -8313,7 +8313,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_r8_7(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -8323,7 +8323,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_r8_7(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       real(c_double),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -8333,7 +8333,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c4_0(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       complex(c_float_complex),target,intent(in) :: hostptr
       integer(c_int),dimension(0),intent(in),optional :: lbounds
@@ -8350,7 +8350,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c4_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       complex(c_float_complex),target,intent(in) :: hostptr
       !
@@ -8361,7 +8361,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c4_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       complex(c_float_complex),target,intent(in) :: hostptr
       !
@@ -8372,7 +8372,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c4_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       complex(c_float_complex),target,intent(in) :: hostptr
       !
@@ -8383,7 +8383,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c4_0(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       complex(c_float_complex),target,intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -8393,7 +8393,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c4_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       complex(c_float_complex),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -8405,7 +8405,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c4_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       complex(c_float_complex),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -8417,7 +8417,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c4_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       complex(c_float_complex),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -8429,7 +8429,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c4_0(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_float_complex),target,intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -8439,7 +8439,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c4_0(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_float_complex),target,intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -8449,7 +8449,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c4_1(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       complex(c_float_complex),target,dimension(:),intent(in) :: hostptr
       integer(c_int),dimension(1),intent(in),optional :: lbounds
@@ -8471,7 +8471,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c4_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       complex(c_float_complex),target,dimension(:),intent(in) :: hostptr
       !
@@ -8482,7 +8482,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c4_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       complex(c_float_complex),target,dimension(:),intent(in) :: hostptr
       !
@@ -8493,7 +8493,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c4_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       complex(c_float_complex),target,dimension(:),intent(in) :: hostptr
       !
@@ -8504,7 +8504,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c4_1(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       complex(c_float_complex),target,dimension(:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -8514,7 +8514,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c4_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       complex(c_float_complex),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -8526,7 +8526,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c4_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       complex(c_float_complex),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -8538,7 +8538,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c4_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       complex(c_float_complex),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -8550,7 +8550,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c4_1(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_float_complex),target,dimension(:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -8560,7 +8560,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c4_1(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_float_complex),target,dimension(:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -8570,7 +8570,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c4_2(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       complex(c_float_complex),target,dimension(:,:),intent(in) :: hostptr
       integer(c_int),dimension(2),intent(in),optional :: lbounds
@@ -8593,7 +8593,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c4_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       complex(c_float_complex),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -8604,7 +8604,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c4_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       complex(c_float_complex),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -8615,7 +8615,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c4_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       complex(c_float_complex),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -8626,7 +8626,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c4_2(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       complex(c_float_complex),target,dimension(:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -8636,7 +8636,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c4_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       complex(c_float_complex),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -8648,7 +8648,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c4_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       complex(c_float_complex),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -8660,7 +8660,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c4_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       complex(c_float_complex),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -8672,7 +8672,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c4_2(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_float_complex),target,dimension(:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -8682,7 +8682,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c4_2(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_float_complex),target,dimension(:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -8692,7 +8692,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c4_3(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(3),intent(in),optional :: lbounds
@@ -8716,7 +8716,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c4_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       complex(c_float_complex),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -8727,7 +8727,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c4_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -8738,7 +8738,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c4_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -8749,7 +8749,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c4_3(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -8759,7 +8759,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c4_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -8771,7 +8771,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c4_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -8783,7 +8783,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c4_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -8795,7 +8795,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c4_3(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -8805,7 +8805,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c4_3(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -8815,7 +8815,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c4_4(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(4),intent(in),optional :: lbounds
@@ -8840,7 +8840,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c4_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -8851,7 +8851,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c4_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -8862,7 +8862,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c4_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -8873,7 +8873,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c4_4(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -8883,7 +8883,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c4_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -8895,7 +8895,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c4_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -8907,7 +8907,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c4_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -8919,7 +8919,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c4_4(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -8929,7 +8929,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c4_4(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -8939,7 +8939,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c4_5(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(5),intent(in),optional :: lbounds
@@ -8965,7 +8965,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c4_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -8976,7 +8976,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c4_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -8987,7 +8987,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c4_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -8998,7 +8998,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c4_5(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -9008,7 +9008,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c4_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -9020,7 +9020,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c4_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -9032,7 +9032,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c4_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -9044,7 +9044,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c4_5(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -9054,7 +9054,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c4_5(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -9064,7 +9064,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c4_6(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(6),intent(in),optional :: lbounds
@@ -9091,7 +9091,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c4_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -9102,7 +9102,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c4_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -9113,7 +9113,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c4_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -9124,7 +9124,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c4_6(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -9134,7 +9134,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c4_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -9146,7 +9146,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c4_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -9158,7 +9158,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c4_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -9170,7 +9170,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c4_6(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -9180,7 +9180,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c4_6(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -9190,7 +9190,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c4_7(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(7),intent(in),optional :: lbounds
@@ -9218,7 +9218,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c4_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -9229,7 +9229,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c4_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -9240,7 +9240,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c4_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -9251,7 +9251,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c4_7(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -9261,7 +9261,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c4_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -9273,7 +9273,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c4_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -9285,7 +9285,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c4_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -9297,7 +9297,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c4_7(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -9307,7 +9307,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c4_7(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -9317,7 +9317,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c8_0(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       complex(c_double_complex),target,intent(in) :: hostptr
       integer(c_int),dimension(0),intent(in),optional :: lbounds
@@ -9334,7 +9334,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c8_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       complex(c_double_complex),target,intent(in) :: hostptr
       !
@@ -9345,7 +9345,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c8_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       complex(c_double_complex),target,intent(in) :: hostptr
       !
@@ -9356,7 +9356,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c8_0(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       complex(c_double_complex),target,intent(in) :: hostptr
       !
@@ -9367,7 +9367,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c8_0(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       complex(c_double_complex),target,intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -9377,7 +9377,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c8_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       complex(c_double_complex),target,intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -9389,7 +9389,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c8_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       complex(c_double_complex),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -9401,7 +9401,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c8_0(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       complex(c_double_complex),target,intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -9413,7 +9413,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c8_0(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_double_complex),target,intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -9423,7 +9423,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c8_0(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_double_complex),target,intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -9433,7 +9433,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c8_1(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       complex(c_double_complex),target,dimension(:),intent(in) :: hostptr
       integer(c_int),dimension(1),intent(in),optional :: lbounds
@@ -9455,7 +9455,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c8_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       complex(c_double_complex),target,dimension(:),intent(in) :: hostptr
       !
@@ -9466,7 +9466,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c8_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       complex(c_double_complex),target,dimension(:),intent(in) :: hostptr
       !
@@ -9477,7 +9477,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c8_1(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       complex(c_double_complex),target,dimension(:),intent(in) :: hostptr
       !
@@ -9488,7 +9488,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c8_1(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       complex(c_double_complex),target,dimension(:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -9498,7 +9498,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c8_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       complex(c_double_complex),target,dimension(:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -9510,7 +9510,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c8_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       complex(c_double_complex),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -9522,7 +9522,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c8_1(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       complex(c_double_complex),target,dimension(:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -9534,7 +9534,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c8_1(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_double_complex),target,dimension(:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -9544,7 +9544,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c8_1(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_double_complex),target,dimension(:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -9554,7 +9554,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c8_2(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       complex(c_double_complex),target,dimension(:,:),intent(in) :: hostptr
       integer(c_int),dimension(2),intent(in),optional :: lbounds
@@ -9577,7 +9577,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c8_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       complex(c_double_complex),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -9588,7 +9588,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c8_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       complex(c_double_complex),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -9599,7 +9599,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c8_2(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       complex(c_double_complex),target,dimension(:,:),intent(in) :: hostptr
       !
@@ -9610,7 +9610,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c8_2(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       complex(c_double_complex),target,dimension(:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -9620,7 +9620,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c8_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       complex(c_double_complex),target,dimension(:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -9632,7 +9632,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c8_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       complex(c_double_complex),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -9644,7 +9644,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c8_2(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       complex(c_double_complex),target,dimension(:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -9656,7 +9656,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c8_2(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_double_complex),target,dimension(:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -9666,7 +9666,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c8_2(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_double_complex),target,dimension(:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -9676,7 +9676,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c8_3(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(3),intent(in),optional :: lbounds
@@ -9700,7 +9700,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c8_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       complex(c_double_complex),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -9711,7 +9711,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c8_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -9722,7 +9722,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c8_3(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:),intent(in) :: hostptr
       !
@@ -9733,7 +9733,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c8_3(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -9743,7 +9743,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c8_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -9755,7 +9755,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c8_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -9767,7 +9767,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c8_3(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -9779,7 +9779,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c8_3(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -9789,7 +9789,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c8_3(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -9799,7 +9799,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c8_4(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(4),intent(in),optional :: lbounds
@@ -9824,7 +9824,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c8_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -9835,7 +9835,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c8_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -9846,7 +9846,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c8_4(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
       !
@@ -9857,7 +9857,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c8_4(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -9867,7 +9867,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c8_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -9879,7 +9879,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c8_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -9891,7 +9891,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c8_4(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -9903,7 +9903,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c8_4(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -9913,7 +9913,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c8_4(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -9923,7 +9923,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c8_5(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(5),intent(in),optional :: lbounds
@@ -9949,7 +9949,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c8_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -9960,7 +9960,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c8_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -9971,7 +9971,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c8_5(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       !
@@ -9982,7 +9982,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c8_5(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -9992,7 +9992,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c8_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -10004,7 +10004,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c8_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -10016,7 +10016,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c8_5(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -10028,7 +10028,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c8_5(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -10038,7 +10038,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c8_5(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -10048,7 +10048,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c8_6(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(6),intent(in),optional :: lbounds
@@ -10075,7 +10075,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c8_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -10086,7 +10086,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c8_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -10097,7 +10097,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c8_6(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -10108,7 +10108,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c8_6(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -10118,7 +10118,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c8_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -10130,7 +10130,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c8_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -10142,7 +10142,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c8_6(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -10154,7 +10154,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c8_6(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -10164,7 +10164,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c8_6(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -10174,7 +10174,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     function gpufortrt_use_device_c8_7(hostptr,lbounds,condition,if_present) result(resultptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_use_device_b
+      use gpufortrt_core, only: gpufortrt_use_device_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer(c_int),dimension(7),intent(in),optional :: lbounds
@@ -10202,7 +10202,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_present_c8_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
+      use gpufortrt_core, only: gpufortrt_present_b, gpufortrt_map_kind_undefined
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -10213,7 +10213,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_create_c8_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_create_b
+      use gpufortrt_core, only: gpufortrt_create_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -10224,7 +10224,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_no_create_c8_7(hostptr) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_no_create_b
+      use gpufortrt_core, only: gpufortrt_no_create_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       !
@@ -10235,7 +10235,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_delete_c8_7(hostptr,finalize)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_delete_b
+      use gpufortrt_core, only: gpufortrt_delete_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       logical,intent(in),optional              :: finalize
@@ -10245,7 +10245,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyin_c8_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyin_b
+      use gpufortrt_core, only: gpufortrt_copyin_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
       integer,intent(in),optional :: async
@@ -10257,7 +10257,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copyout_c8_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copyout_b
+      use gpufortrt_core, only: gpufortrt_copyout_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -10269,7 +10269,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     function gpufortrt_copy_c8_7(hostptr,async) result(deviceptr)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_copy_b
+      use gpufortrt_core, only: gpufortrt_copy_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       integer,intent(in),optional :: async
@@ -10281,7 +10281,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
     subroutine gpufortrt_update_host_c8_7(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -10291,7 +10291,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     end subroutine
     subroutine gpufortrt_update_device_c8_7(hostptr,condition,if_present,async)
       use iso_c_binding
-      use gpufortrt_base, only: gpufortrt_update_host_b
+      use gpufortrt_core, only: gpufortrt_update_host_b
       implicit none
       complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(inout) :: hostptr
       logical,intent(in),optional :: condition, if_present
@@ -10303,7 +10303,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_dec_struct_refs_l_scal(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,intent(in) :: hostptr
     !
@@ -10314,7 +10314,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
   function gpufortrt_map_dec_struct_refs_l_arr(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,dimension(*),target,intent(in) :: hostptr
     !
@@ -10325,7 +10325,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_dec_struct_refs_c_scal(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,intent(in) :: hostptr
     !
@@ -10336,7 +10336,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
   function gpufortrt_map_dec_struct_refs_c_arr(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),dimension(*),target,intent(in) :: hostptr
     !
@@ -10347,7 +10347,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_dec_struct_refs_i2_scal(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,intent(in) :: hostptr
     !
@@ -10358,7 +10358,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
   function gpufortrt_map_dec_struct_refs_i2_arr(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),dimension(*),target,intent(in) :: hostptr
     !
@@ -10369,7 +10369,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_dec_struct_refs_i4_scal(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,intent(in) :: hostptr
     !
@@ -10380,7 +10380,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
   function gpufortrt_map_dec_struct_refs_i4_arr(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),dimension(*),target,intent(in) :: hostptr
     !
@@ -10391,7 +10391,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_dec_struct_refs_i8_scal(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,intent(in) :: hostptr
     !
@@ -10402,7 +10402,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
   function gpufortrt_map_dec_struct_refs_i8_arr(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),dimension(*),target,intent(in) :: hostptr
     !
@@ -10413,7 +10413,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_dec_struct_refs_r4_scal(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,intent(in) :: hostptr
     !
@@ -10424,7 +10424,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
   function gpufortrt_map_dec_struct_refs_r4_arr(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),dimension(*),target,intent(in) :: hostptr
     !
@@ -10435,7 +10435,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_dec_struct_refs_r8_scal(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,intent(in) :: hostptr
     !
@@ -10446,7 +10446,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
   function gpufortrt_map_dec_struct_refs_r8_arr(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),dimension(*),target,intent(in) :: hostptr
     !
@@ -10457,7 +10457,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_dec_struct_refs_c4_scal(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,intent(in) :: hostptr
     !
@@ -10468,7 +10468,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
   function gpufortrt_map_dec_struct_refs_c4_arr(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),dimension(*),target,intent(in) :: hostptr
     !
@@ -10479,7 +10479,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_dec_struct_refs_c8_scal(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,intent(in) :: hostptr
     !
@@ -10490,7 +10490,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
 
   function gpufortrt_map_dec_struct_refs_c8_arr(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),dimension(*),target,intent(in) :: hostptr
     !
@@ -10502,7 +10502,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
    ! gpufortrt_map_delete
   function gpufortrt_map_delete_b(hostptr,num_bytes) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     !
     type(c_ptr),intent(in)       :: hostptr
@@ -10519,7 +10519,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_l_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,intent(in) :: hostptr
     !
@@ -10531,7 +10531,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_l_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:),intent(in) :: hostptr
     !
@@ -10543,7 +10543,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_l_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:),intent(in) :: hostptr
     !
@@ -10555,7 +10555,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_l_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -10567,7 +10567,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_l_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -10579,7 +10579,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_l_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -10591,7 +10591,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_l_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -10603,7 +10603,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_l_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -10616,7 +10616,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,intent(in) :: hostptr
     !
@@ -10628,7 +10628,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:),intent(in) :: hostptr
     !
@@ -10640,7 +10640,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -10652,7 +10652,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -10664,7 +10664,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -10676,7 +10676,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -10688,7 +10688,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -10700,7 +10700,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -10713,7 +10713,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i2_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,intent(in) :: hostptr
     !
@@ -10725,7 +10725,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i2_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:),intent(in) :: hostptr
     !
@@ -10737,7 +10737,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i2_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -10749,7 +10749,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i2_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -10761,7 +10761,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i2_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -10773,7 +10773,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i2_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -10785,7 +10785,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i2_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -10797,7 +10797,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i2_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -10810,7 +10810,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i4_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,intent(in) :: hostptr
     !
@@ -10822,7 +10822,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i4_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:),intent(in) :: hostptr
     !
@@ -10834,7 +10834,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i4_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -10846,7 +10846,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i4_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -10858,7 +10858,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i4_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -10870,7 +10870,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i4_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -10882,7 +10882,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i4_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -10894,7 +10894,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i4_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -10907,7 +10907,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i8_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,intent(in) :: hostptr
     !
@@ -10919,7 +10919,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i8_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:),intent(in) :: hostptr
     !
@@ -10931,7 +10931,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i8_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -10943,7 +10943,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i8_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -10955,7 +10955,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i8_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -10967,7 +10967,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i8_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -10979,7 +10979,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i8_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -10991,7 +10991,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_i8_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11004,7 +11004,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_r4_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,intent(in) :: hostptr
     !
@@ -11016,7 +11016,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_r4_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:),intent(in) :: hostptr
     !
@@ -11028,7 +11028,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_r4_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -11040,7 +11040,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_r4_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -11052,7 +11052,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_r4_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -11064,7 +11064,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_r4_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11076,7 +11076,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_r4_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11088,7 +11088,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_r4_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11101,7 +11101,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_r8_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,intent(in) :: hostptr
     !
@@ -11113,7 +11113,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_r8_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:),intent(in) :: hostptr
     !
@@ -11125,7 +11125,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_r8_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -11137,7 +11137,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_r8_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -11149,7 +11149,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_r8_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -11161,7 +11161,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_r8_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11173,7 +11173,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_r8_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11185,7 +11185,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_r8_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11198,7 +11198,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c4_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,intent(in) :: hostptr
     !
@@ -11210,7 +11210,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c4_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:),intent(in) :: hostptr
     !
@@ -11222,7 +11222,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c4_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -11234,7 +11234,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c4_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -11246,7 +11246,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c4_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -11258,7 +11258,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c4_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11270,7 +11270,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c4_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11282,7 +11282,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c4_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11295,7 +11295,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c8_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,intent(in) :: hostptr
     !
@@ -11307,7 +11307,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c8_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:),intent(in) :: hostptr
     !
@@ -11319,7 +11319,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c8_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -11331,7 +11331,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c8_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -11343,7 +11343,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c8_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -11355,7 +11355,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c8_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11367,7 +11367,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c8_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11379,7 +11379,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_delete_c8_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11393,7 +11393,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
    ! gpufortrt_map_present
   function gpufortrt_map_present_b(hostptr,num_bytes) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     !
     type(c_ptr),intent(in)       :: hostptr
@@ -11410,7 +11410,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_l_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,intent(in) :: hostptr
     !
@@ -11422,7 +11422,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_l_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:),intent(in) :: hostptr
     !
@@ -11434,7 +11434,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_l_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:),intent(in) :: hostptr
     !
@@ -11446,7 +11446,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_l_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -11458,7 +11458,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_l_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -11470,7 +11470,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_l_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11482,7 +11482,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_l_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11494,7 +11494,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_l_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11507,7 +11507,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,intent(in) :: hostptr
     !
@@ -11519,7 +11519,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:),intent(in) :: hostptr
     !
@@ -11531,7 +11531,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -11543,7 +11543,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -11555,7 +11555,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -11567,7 +11567,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11579,7 +11579,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11591,7 +11591,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11604,7 +11604,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i2_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,intent(in) :: hostptr
     !
@@ -11616,7 +11616,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i2_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:),intent(in) :: hostptr
     !
@@ -11628,7 +11628,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i2_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -11640,7 +11640,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i2_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -11652,7 +11652,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i2_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -11664,7 +11664,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i2_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11676,7 +11676,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i2_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11688,7 +11688,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i2_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11701,7 +11701,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i4_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,intent(in) :: hostptr
     !
@@ -11713,7 +11713,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i4_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:),intent(in) :: hostptr
     !
@@ -11725,7 +11725,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i4_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -11737,7 +11737,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i4_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -11749,7 +11749,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i4_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -11761,7 +11761,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i4_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11773,7 +11773,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i4_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11785,7 +11785,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i4_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11798,7 +11798,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i8_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,intent(in) :: hostptr
     !
@@ -11810,7 +11810,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i8_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:),intent(in) :: hostptr
     !
@@ -11822,7 +11822,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i8_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -11834,7 +11834,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i8_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -11846,7 +11846,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i8_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -11858,7 +11858,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i8_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11870,7 +11870,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i8_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11882,7 +11882,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_i8_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11895,7 +11895,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_r4_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,intent(in) :: hostptr
     !
@@ -11907,7 +11907,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_r4_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:),intent(in) :: hostptr
     !
@@ -11919,7 +11919,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_r4_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -11931,7 +11931,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_r4_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -11943,7 +11943,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_r4_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -11955,7 +11955,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_r4_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11967,7 +11967,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_r4_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11979,7 +11979,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_r4_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -11992,7 +11992,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_r8_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,intent(in) :: hostptr
     !
@@ -12004,7 +12004,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_r8_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:),intent(in) :: hostptr
     !
@@ -12016,7 +12016,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_r8_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -12028,7 +12028,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_r8_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -12040,7 +12040,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_r8_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -12052,7 +12052,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_r8_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12064,7 +12064,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_r8_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12076,7 +12076,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_r8_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12089,7 +12089,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c4_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,intent(in) :: hostptr
     !
@@ -12101,7 +12101,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c4_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:),intent(in) :: hostptr
     !
@@ -12113,7 +12113,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c4_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -12125,7 +12125,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c4_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -12137,7 +12137,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c4_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -12149,7 +12149,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c4_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12161,7 +12161,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c4_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12173,7 +12173,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c4_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12186,7 +12186,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c8_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,intent(in) :: hostptr
     !
@@ -12198,7 +12198,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c8_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:),intent(in) :: hostptr
     !
@@ -12210,7 +12210,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c8_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -12222,7 +12222,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c8_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -12234,7 +12234,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c8_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -12246,7 +12246,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c8_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12258,7 +12258,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c8_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12270,7 +12270,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_present_c8_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12284,7 +12284,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
    ! gpufortrt_map_no_create
   function gpufortrt_map_no_create_b(hostptr,num_bytes) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     !
     type(c_ptr),intent(in)       :: hostptr
@@ -12301,7 +12301,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_l_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,intent(in) :: hostptr
     !
@@ -12313,7 +12313,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_l_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:),intent(in) :: hostptr
     !
@@ -12325,7 +12325,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_l_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:),intent(in) :: hostptr
     !
@@ -12337,7 +12337,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_l_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -12349,7 +12349,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_l_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -12361,7 +12361,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_l_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12373,7 +12373,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_l_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12385,7 +12385,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_l_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12398,7 +12398,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,intent(in) :: hostptr
     !
@@ -12410,7 +12410,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:),intent(in) :: hostptr
     !
@@ -12422,7 +12422,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -12434,7 +12434,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -12446,7 +12446,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -12458,7 +12458,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12470,7 +12470,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12482,7 +12482,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12495,7 +12495,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i2_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,intent(in) :: hostptr
     !
@@ -12507,7 +12507,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i2_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:),intent(in) :: hostptr
     !
@@ -12519,7 +12519,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i2_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -12531,7 +12531,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i2_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -12543,7 +12543,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i2_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -12555,7 +12555,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i2_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12567,7 +12567,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i2_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12579,7 +12579,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i2_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12592,7 +12592,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i4_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,intent(in) :: hostptr
     !
@@ -12604,7 +12604,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i4_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:),intent(in) :: hostptr
     !
@@ -12616,7 +12616,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i4_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -12628,7 +12628,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i4_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -12640,7 +12640,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i4_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -12652,7 +12652,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i4_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12664,7 +12664,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i4_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12676,7 +12676,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i4_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12689,7 +12689,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i8_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,intent(in) :: hostptr
     !
@@ -12701,7 +12701,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i8_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:),intent(in) :: hostptr
     !
@@ -12713,7 +12713,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i8_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -12725,7 +12725,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i8_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -12737,7 +12737,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i8_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -12749,7 +12749,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i8_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12761,7 +12761,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i8_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12773,7 +12773,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_i8_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12786,7 +12786,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_r4_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,intent(in) :: hostptr
     !
@@ -12798,7 +12798,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_r4_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:),intent(in) :: hostptr
     !
@@ -12810,7 +12810,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_r4_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -12822,7 +12822,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_r4_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -12834,7 +12834,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_r4_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -12846,7 +12846,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_r4_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12858,7 +12858,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_r4_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12870,7 +12870,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_r4_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12883,7 +12883,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_r8_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,intent(in) :: hostptr
     !
@@ -12895,7 +12895,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_r8_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:),intent(in) :: hostptr
     !
@@ -12907,7 +12907,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_r8_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -12919,7 +12919,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_r8_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -12931,7 +12931,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_r8_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -12943,7 +12943,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_r8_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12955,7 +12955,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_r8_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12967,7 +12967,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_r8_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -12980,7 +12980,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c4_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,intent(in) :: hostptr
     !
@@ -12992,7 +12992,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c4_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:),intent(in) :: hostptr
     !
@@ -13004,7 +13004,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c4_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -13016,7 +13016,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c4_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -13028,7 +13028,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c4_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -13040,7 +13040,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c4_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -13052,7 +13052,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c4_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -13064,7 +13064,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c4_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -13077,7 +13077,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c8_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,intent(in) :: hostptr
     !
@@ -13089,7 +13089,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c8_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:),intent(in) :: hostptr
     !
@@ -13101,7 +13101,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c8_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -13113,7 +13113,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c8_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -13125,7 +13125,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c8_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -13137,7 +13137,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c8_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -13149,7 +13149,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c8_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -13161,7 +13161,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_no_create_c8_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -13175,7 +13175,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
    ! gpufortrt_map_create
   function gpufortrt_map_create_b(hostptr,num_bytes,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     !
     type(c_ptr),intent(in)       :: hostptr
@@ -13194,7 +13194,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_l_0(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13207,7 +13207,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_l_1(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13220,7 +13220,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_l_2(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13233,7 +13233,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_l_3(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13246,7 +13246,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_l_4(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13259,7 +13259,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_l_5(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13272,7 +13272,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_l_6(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13285,7 +13285,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_l_7(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13299,7 +13299,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c_0(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13312,7 +13312,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c_1(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13325,7 +13325,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c_2(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13338,7 +13338,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c_3(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13351,7 +13351,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c_4(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13364,7 +13364,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c_5(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13377,7 +13377,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c_6(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13390,7 +13390,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c_7(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13404,7 +13404,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i2_0(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13417,7 +13417,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i2_1(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13430,7 +13430,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i2_2(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13443,7 +13443,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i2_3(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13456,7 +13456,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i2_4(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13469,7 +13469,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i2_5(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13482,7 +13482,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i2_6(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13495,7 +13495,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i2_7(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13509,7 +13509,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i4_0(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13522,7 +13522,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i4_1(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13535,7 +13535,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i4_2(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13548,7 +13548,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i4_3(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13561,7 +13561,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i4_4(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13574,7 +13574,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i4_5(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13587,7 +13587,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i4_6(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13600,7 +13600,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i4_7(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13614,7 +13614,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i8_0(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13627,7 +13627,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i8_1(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13640,7 +13640,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i8_2(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13653,7 +13653,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i8_3(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13666,7 +13666,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i8_4(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13679,7 +13679,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i8_5(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13692,7 +13692,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i8_6(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13705,7 +13705,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_i8_7(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13719,7 +13719,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_r4_0(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13732,7 +13732,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_r4_1(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13745,7 +13745,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_r4_2(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13758,7 +13758,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_r4_3(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13771,7 +13771,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_r4_4(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13784,7 +13784,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_r4_5(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13797,7 +13797,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_r4_6(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13810,7 +13810,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_r4_7(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13824,7 +13824,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_r8_0(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13837,7 +13837,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_r8_1(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13850,7 +13850,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_r8_2(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13863,7 +13863,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_r8_3(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13876,7 +13876,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_r8_4(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13889,7 +13889,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_r8_5(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13902,7 +13902,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_r8_6(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13915,7 +13915,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_r8_7(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13929,7 +13929,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c4_0(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13942,7 +13942,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c4_1(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13955,7 +13955,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c4_2(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13968,7 +13968,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c4_3(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13981,7 +13981,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c4_4(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -13994,7 +13994,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c4_5(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -14007,7 +14007,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c4_6(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -14020,7 +14020,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c4_7(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -14034,7 +14034,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c8_0(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -14047,7 +14047,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c8_1(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -14060,7 +14060,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c8_2(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -14073,7 +14073,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c8_3(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -14086,7 +14086,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c8_4(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -14099,7 +14099,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c8_5(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -14112,7 +14112,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c8_6(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -14125,7 +14125,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_create_c8_7(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -14140,7 +14140,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
    ! gpufortrt_map_copy
   function gpufortrt_map_copy_b(hostptr,num_bytes) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     !
     type(c_ptr),intent(in)       :: hostptr
@@ -14157,7 +14157,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_l_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,intent(in) :: hostptr
     !
@@ -14169,7 +14169,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_l_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:),intent(in) :: hostptr
     !
@@ -14181,7 +14181,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_l_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:),intent(in) :: hostptr
     !
@@ -14193,7 +14193,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_l_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -14205,7 +14205,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_l_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -14217,7 +14217,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_l_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14229,7 +14229,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_l_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14241,7 +14241,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_l_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14254,7 +14254,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,intent(in) :: hostptr
     !
@@ -14266,7 +14266,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:),intent(in) :: hostptr
     !
@@ -14278,7 +14278,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -14290,7 +14290,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -14302,7 +14302,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -14314,7 +14314,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14326,7 +14326,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14338,7 +14338,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14351,7 +14351,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i2_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,intent(in) :: hostptr
     !
@@ -14363,7 +14363,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i2_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:),intent(in) :: hostptr
     !
@@ -14375,7 +14375,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i2_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -14387,7 +14387,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i2_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -14399,7 +14399,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i2_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -14411,7 +14411,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i2_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14423,7 +14423,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i2_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14435,7 +14435,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i2_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14448,7 +14448,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i4_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,intent(in) :: hostptr
     !
@@ -14460,7 +14460,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i4_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:),intent(in) :: hostptr
     !
@@ -14472,7 +14472,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i4_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -14484,7 +14484,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i4_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -14496,7 +14496,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i4_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -14508,7 +14508,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i4_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14520,7 +14520,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i4_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14532,7 +14532,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i4_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14545,7 +14545,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i8_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,intent(in) :: hostptr
     !
@@ -14557,7 +14557,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i8_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:),intent(in) :: hostptr
     !
@@ -14569,7 +14569,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i8_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -14581,7 +14581,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i8_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -14593,7 +14593,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i8_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -14605,7 +14605,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i8_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14617,7 +14617,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i8_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14629,7 +14629,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_i8_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14642,7 +14642,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_r4_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,intent(in) :: hostptr
     !
@@ -14654,7 +14654,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_r4_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:),intent(in) :: hostptr
     !
@@ -14666,7 +14666,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_r4_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -14678,7 +14678,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_r4_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -14690,7 +14690,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_r4_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -14702,7 +14702,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_r4_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14714,7 +14714,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_r4_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14726,7 +14726,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_r4_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14739,7 +14739,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_r8_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,intent(in) :: hostptr
     !
@@ -14751,7 +14751,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_r8_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:),intent(in) :: hostptr
     !
@@ -14763,7 +14763,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_r8_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -14775,7 +14775,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_r8_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -14787,7 +14787,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_r8_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -14799,7 +14799,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_r8_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14811,7 +14811,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_r8_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14823,7 +14823,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_r8_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14836,7 +14836,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c4_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,intent(in) :: hostptr
     !
@@ -14848,7 +14848,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c4_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:),intent(in) :: hostptr
     !
@@ -14860,7 +14860,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c4_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -14872,7 +14872,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c4_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -14884,7 +14884,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c4_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -14896,7 +14896,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c4_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14908,7 +14908,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c4_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14920,7 +14920,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c4_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -14933,7 +14933,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c8_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,intent(in) :: hostptr
     !
@@ -14945,7 +14945,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c8_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:),intent(in) :: hostptr
     !
@@ -14957,7 +14957,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c8_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -14969,7 +14969,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c8_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -14981,7 +14981,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c8_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -14993,7 +14993,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c8_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -15005,7 +15005,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c8_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -15017,7 +15017,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copy_c8_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -15031,7 +15031,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
    ! gpufortrt_map_copyin
   function gpufortrt_map_copyin_b(hostptr,num_bytes,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     !
     type(c_ptr),intent(in)       :: hostptr
@@ -15050,7 +15050,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_l_0(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15063,7 +15063,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_l_1(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15076,7 +15076,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_l_2(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15089,7 +15089,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_l_3(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15102,7 +15102,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_l_4(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15115,7 +15115,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_l_5(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15128,7 +15128,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_l_6(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15141,7 +15141,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_l_7(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15155,7 +15155,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c_0(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15168,7 +15168,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c_1(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15181,7 +15181,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c_2(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15194,7 +15194,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c_3(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15207,7 +15207,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c_4(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15220,7 +15220,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c_5(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15233,7 +15233,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c_6(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15246,7 +15246,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c_7(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15260,7 +15260,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i2_0(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15273,7 +15273,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i2_1(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15286,7 +15286,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i2_2(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15299,7 +15299,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i2_3(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15312,7 +15312,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i2_4(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15325,7 +15325,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i2_5(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15338,7 +15338,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i2_6(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15351,7 +15351,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i2_7(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15365,7 +15365,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i4_0(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15378,7 +15378,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i4_1(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15391,7 +15391,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i4_2(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15404,7 +15404,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i4_3(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15417,7 +15417,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i4_4(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15430,7 +15430,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i4_5(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15443,7 +15443,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i4_6(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15456,7 +15456,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i4_7(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15470,7 +15470,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i8_0(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15483,7 +15483,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i8_1(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15496,7 +15496,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i8_2(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15509,7 +15509,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i8_3(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15522,7 +15522,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i8_4(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15535,7 +15535,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i8_5(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15548,7 +15548,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i8_6(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15561,7 +15561,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_i8_7(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15575,7 +15575,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_r4_0(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15588,7 +15588,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_r4_1(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15601,7 +15601,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_r4_2(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15614,7 +15614,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_r4_3(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15627,7 +15627,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_r4_4(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15640,7 +15640,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_r4_5(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15653,7 +15653,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_r4_6(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15666,7 +15666,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_r4_7(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15680,7 +15680,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_r8_0(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15693,7 +15693,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_r8_1(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15706,7 +15706,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_r8_2(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15719,7 +15719,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_r8_3(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15732,7 +15732,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_r8_4(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15745,7 +15745,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_r8_5(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15758,7 +15758,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_r8_6(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15771,7 +15771,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_r8_7(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15785,7 +15785,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c4_0(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15798,7 +15798,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c4_1(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15811,7 +15811,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c4_2(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15824,7 +15824,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c4_3(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15837,7 +15837,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c4_4(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15850,7 +15850,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c4_5(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15863,7 +15863,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c4_6(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15876,7 +15876,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c4_7(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15890,7 +15890,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c8_0(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15903,7 +15903,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c8_1(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15916,7 +15916,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c8_2(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15929,7 +15929,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c8_3(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15942,7 +15942,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c8_4(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15955,7 +15955,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c8_5(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15968,7 +15968,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c8_6(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15981,7 +15981,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyin_c8_7(hostptr,declared_module_var) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
      logical,intent(in),optional :: declared_module_var
@@ -15996,7 +15996,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
    ! gpufortrt_map_copyout
   function gpufortrt_map_copyout_b(hostptr,num_bytes) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     !
     type(c_ptr),intent(in)       :: hostptr
@@ -16013,7 +16013,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_l_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,intent(in) :: hostptr
     !
@@ -16025,7 +16025,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_l_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:),intent(in) :: hostptr
     !
@@ -16037,7 +16037,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_l_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:),intent(in) :: hostptr
     !
@@ -16049,7 +16049,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_l_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -16061,7 +16061,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_l_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -16073,7 +16073,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_l_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16085,7 +16085,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_l_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16097,7 +16097,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_l_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16110,7 +16110,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,intent(in) :: hostptr
     !
@@ -16122,7 +16122,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:),intent(in) :: hostptr
     !
@@ -16134,7 +16134,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -16146,7 +16146,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -16158,7 +16158,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -16170,7 +16170,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16182,7 +16182,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16194,7 +16194,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16207,7 +16207,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i2_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,intent(in) :: hostptr
     !
@@ -16219,7 +16219,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i2_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:),intent(in) :: hostptr
     !
@@ -16231,7 +16231,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i2_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -16243,7 +16243,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i2_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -16255,7 +16255,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i2_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -16267,7 +16267,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i2_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16279,7 +16279,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i2_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16291,7 +16291,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i2_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16304,7 +16304,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i4_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,intent(in) :: hostptr
     !
@@ -16316,7 +16316,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i4_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:),intent(in) :: hostptr
     !
@@ -16328,7 +16328,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i4_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -16340,7 +16340,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i4_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -16352,7 +16352,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i4_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -16364,7 +16364,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i4_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16376,7 +16376,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i4_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16388,7 +16388,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i4_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16401,7 +16401,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i8_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,intent(in) :: hostptr
     !
@@ -16413,7 +16413,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i8_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:),intent(in) :: hostptr
     !
@@ -16425,7 +16425,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i8_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -16437,7 +16437,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i8_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -16449,7 +16449,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i8_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -16461,7 +16461,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i8_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16473,7 +16473,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i8_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16485,7 +16485,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_i8_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16498,7 +16498,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_r4_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,intent(in) :: hostptr
     !
@@ -16510,7 +16510,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_r4_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:),intent(in) :: hostptr
     !
@@ -16522,7 +16522,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_r4_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -16534,7 +16534,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_r4_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -16546,7 +16546,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_r4_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -16558,7 +16558,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_r4_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16570,7 +16570,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_r4_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16582,7 +16582,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_r4_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16595,7 +16595,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_r8_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,intent(in) :: hostptr
     !
@@ -16607,7 +16607,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_r8_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:),intent(in) :: hostptr
     !
@@ -16619,7 +16619,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_r8_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -16631,7 +16631,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_r8_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -16643,7 +16643,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_r8_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -16655,7 +16655,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_r8_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16667,7 +16667,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_r8_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16679,7 +16679,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_r8_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16692,7 +16692,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c4_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,intent(in) :: hostptr
     !
@@ -16704,7 +16704,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c4_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:),intent(in) :: hostptr
     !
@@ -16716,7 +16716,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c4_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -16728,7 +16728,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c4_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -16740,7 +16740,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c4_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -16752,7 +16752,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c4_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16764,7 +16764,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c4_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16776,7 +16776,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c4_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16789,7 +16789,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c8_0(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,intent(in) :: hostptr
     !
@@ -16801,7 +16801,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c8_1(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:),intent(in) :: hostptr
     !
@@ -16813,7 +16813,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c8_2(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:),intent(in) :: hostptr
     !
@@ -16825,7 +16825,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c8_3(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:),intent(in) :: hostptr
     !
@@ -16837,7 +16837,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c8_4(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
     !
@@ -16849,7 +16849,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c8_5(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16861,7 +16861,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c8_6(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
     !
@@ -16873,7 +16873,7 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
                                                                 
   function gpufortrt_map_copyout_c8_7(hostptr) result(retval)
     use iso_c_binding
-    use gpufortrt_base, only: mapping_t
+    use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
     !

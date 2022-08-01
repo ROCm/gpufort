@@ -83,6 +83,7 @@ void gpufortrt::record_t::release() {
 }
 
 void gpufortrt::record_t::setup(
+    int id,
     void* hostptr,
     size_t num_bytes,
     gpufortrt::map_kind_t map_kind,
@@ -95,7 +96,7 @@ void gpufortrt::record_t::setup(
   this->map_kind = map_kind;
   this->num_bytes_used = num_bytes;
   if ( !reuse_existing ) {
-    this->id = gpufortrt::record_counter++; // TODO not thread-safe
+    this->id = id; // TODO not thread-safe
     this->num_bytes = gpufortrt::blocked_size(num_bytes);
   }
   switch (map_kind) {

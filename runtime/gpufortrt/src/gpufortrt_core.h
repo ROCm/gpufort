@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 #include <iostream>
 #include <vector>
 
@@ -51,7 +53,7 @@ namespace gpufortrt {
     size_t num_bytes_used = 0;
     int struct_refs       = 0;
     int dyn_refs          = 0;
-    mapkind_t map_kind    = map_kind_t::Undefined
+    gpufortrt::mapkind_t map_kind = gpufortrt::map_kind_t::Undefined;
 
   public:
     /** Default constructor */
@@ -95,6 +97,8 @@ namespace gpufortrt {
     /* Destroy this record. */
     void destroy();
   };
+
+  size_t num_records = 0;
 
   struct record_list_t {
     std::vector<record_t> records;
@@ -174,23 +178,22 @@ namespace gpufortrt {
 
   // global parameters, influenced by environment variables
   extern int LOG_LEVEL;               //= 0
-  extern int MAX_QUEUES;              //= 64
-  extern int INITIAL_RECORDS_CAPACITY;//= 4096
-  ! reuse/fragmentation controls
+  extern size_t MAX_QUEUES;              //= 64
+  extern size_t INITIAL_RECORDS_CAPACITY;//= 4096
+  // reuse/fragmentation controls
   extern int BLOCK_SIZE;            // = 32
-  extern double REUSE_THRESHOLD;       // = 0.9 //> only reuse record if mem_new>=factor*mem_old
+  extern double REUSE_THRESHOLD;    // = 0.9 //> only reuse record if mem_new>=factor*mem_old
   extern int NUM_REFS_TO_DEALLOCATE;// = -5  //> dealloc device mem only if struct_refs takes this value
 
   // global variables
-  extern size_t record_counter;
+  extern int num_records;
   extern record_list_t record_list;
   extern queue_list_t queue_list; 
-
-  // C++ API
-  /**
-   * Performs a copy action.
-   * \return The device pointer for the given hostptr.
-   */
+  
+  // Core C++ API
+  void init();
+  void shutdown();
+  
   void* use_device_b(void* hostptr,size_t num_bytes,
                      bool condition,bool if_present);
   void* present_b(void* hostptr,size_t num_bytes

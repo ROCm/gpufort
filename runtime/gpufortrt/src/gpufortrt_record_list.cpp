@@ -111,6 +111,7 @@ size_t gpufortrt::record_list::use_increment_record(
     assert(loc <= this->records.size());
     gpufortrt::record_t& record = this->records[loc];
     record.setup(
+      gpufortrt::num_records++, // increment global not thread-safe
       hostptr,
       num_bytes,
       map_kind,

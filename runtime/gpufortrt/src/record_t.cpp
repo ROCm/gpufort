@@ -92,7 +92,7 @@ void gpufortrt::internal::record_t::setup(
     size_t num_bytes,
     gpufortrt_map_kind_t map_kind,
     bool blocking_copy,
-    gpufortrt::internal::queue_t queue,
+    gpufortrt_queue_t queue,
     bool reuse_existing) {
   this->hostptr = hostptr;
   this->struct_refs = 0;
@@ -134,7 +134,7 @@ void gpufortrt::internal::record_t::destroy() {
 
 void gpufortrt::internal::record_t::copy_to_device(
   bool blocking_copy,
-  gpufortrt::internal::queue_t queue) {
+  gpufortrt_queue_t queue) {
   #ifndef BLOCKING_COPIES
   if ( blocking_copy ) then
     // TODO backend-specific, externalize
@@ -151,7 +151,7 @@ void gpufortrt::internal::record_t::copy_to_device(
 
 void gpufortrt::internal::record_t::copy_to_host(
   bool blocking_copy,
-  gpufortrt::internal::queue_t queue) {
+  gpufortrt_queue_t queue) {
   #ifndef BLOCKING_COPIES
   if ( blocking_copy ) then
     // TODO backend-specific, externalize

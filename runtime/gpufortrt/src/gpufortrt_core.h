@@ -18,9 +18,6 @@ std::ostream& operator<<(std::ostream& os, gpufortrt_map_kind_t map_kind);
 
 namespace gpufortrt {
   namespace internal {
-    typedef hipStream_t queue_t;
-    queue_t default_queue = nullptr;
-
     /**
      * \note: Data layout must match that of Fortran `record_t` type!
      */
@@ -32,7 +29,7 @@ namespace gpufortrt {
       size_t num_bytes_used = 0;
       int struct_refs       = 0;
       int dyn_refs          = 0;
-      gpufortrt::mapkind_t map_kind = gpufortrt_map_kind_undefined;
+      gpufortrt_map_kind_t map_kind = gpufortrt_map_kind_undefined;
 
     public:
       /** Write string representation of 
@@ -63,11 +60,11 @@ namespace gpufortrt {
       /** Copy host data to device. */
       void copy_to_device(
         bool blocking_copy,
-        gpufortrt::internal::queue_t queue);
+        gpufortrt_queue_t queue);
       /** Copy device data to host. */
       void copy_to_host(
         bool blocking_copy,
-        gpufortrt::internal::queue_t queue);
+        gpufortrt_queue_t queue);
       bool is_subarray(
         void* hostptr, size_t num_bytes, size_t& offset_bytes) const;
       
@@ -78,7 +75,7 @@ namespace gpufortrt {
         size_t num_bytes,
         gpufortrt_map_kind_t map_kind,
         bool blocking_copy,
-        gpufortrt::internal::queue_t queue,
+        gpufortrt_queue_t queue,
         bool reuse_existing);
       
       /* Release this record, i.e. allocated device buffers
@@ -141,7 +138,7 @@ namespace gpufortrt {
          gpufortrt_map_kind_t map_kind,
          counter_t ctr_to_update
          bool blocking_copy,
-         gpufortrt::internal::queue_t queue,
+         gpufortrt_queue_t queue,
          bool never_deallocate);
 
       /**
@@ -155,13 +152,13 @@ namespace gpufortrt {
          void* hostptr,
          gpufortrt_counter_t ctr_to_update,
          bool blocking_copy,
-         gpufortrt::internal::queue_t queue,
+         gpufortrt_queue_t queue,
          bool finalize);
     };
 
     struct queue_record_t {
       int id;
-      gpufortrt::internal::queue_t queue;
+      gpufortrt_queue_t queue;
     public:
       /** Initialize this queue record,
        * create a new queue. */
@@ -185,7 +182,7 @@ namespace gpufortrt {
        *
        * \return a queue if `id` is greater than 0, or `nullptr`.
        */
-      gpufortrt::internal::queue_t use_create_queue(const int id);
+      gpufortrt_queue_t use_create_queue(const int id);
     }
 
     // global parameters, influenced by environment variables

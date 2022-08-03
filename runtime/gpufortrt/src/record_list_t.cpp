@@ -89,7 +89,7 @@ size_t gpufortrt::internal::record_list_t::use_increment_record(
    gpufortrt_map_kind_t map_kind,
    counter_t ctr_to_update
    bool blocking_copy,
-   gpufortrt::internal::queue_t queue,
+   gpufortrt_queue_t queue,
    bool never_deallocate) {
   bool success;
   size_t loc = this->find_record(hostptr,success/*inout*/);
@@ -133,7 +133,7 @@ void gpufortrt::internal::record_list_t::decrement_release_record(
     void* hostptr,
     gpufortrt_counter_t ctr_to_update,
     bool blocking_copy,
-    gpufortrt::internal::queue_t queue,
+    gpufortrt_queue_t queue,
     bool finalize) {
   bool success;
   size_t loc = this->find_record(hostptr,success/*inout*/);

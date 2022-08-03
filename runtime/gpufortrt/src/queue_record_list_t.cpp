@@ -49,11 +49,11 @@ size_t gpufortrt::internal::queue_record_list_t::find_available_record(int id) c
   return loc;
 }
 
-gpufortrt::internal::queue_t gpufortrt::internal::queue_record_list_t::use_create_queue(int id) {
+gpufortrt_queue_t gpufortrt_queue_record_list_t::use_create_queue(int id) {
   if ( id > 0 ) { 
     size_t loc = this->find_record(int id); 
     if ( loc >= 0 ) {
-      return this->records(loc).queue; 
+      return this->records[loc].queue; 
     } else {
       size_t loc = this->find_available_record(int id);
       if ( loc == this->records.size() ) {
@@ -61,9 +61,9 @@ gpufortrt::internal::queue_t gpufortrt::internal::queue_record_list_t::use_creat
         record.setup(id);
         this->records.push_back(record);
       }
-      return this->records(loc).queue;
+      return this->records[loc].queue;
     }
   else {
-    return gpufortrt::internal::default_queue;
+    return gpufortrt_default_queue;
   }
 }

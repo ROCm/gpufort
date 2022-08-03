@@ -32,16 +32,19 @@ extern "C" {
   struct gpufortrt_mapping_t {
     void* hostptr                = nullptr;
     size_t num_bytes             = 0;
-    gpufortrt_mapkind_t map_kind = gpufortrt_map_kind_undefined;
+    gpufortrt_map_kind_t map_kind = gpufortrt_map_kind_undefined;
     bool never_deallocate     = false;
   };
     
-  void gpufort_mapping_init(
+  void gpufortrt_mapping_init(
     gpufortrt_mapping_t* mapping,
     void* hostptr,
     size_t num_bytes,
-    gpufortrt_mapkind_t map_kind,
+    gpufortrt_map_kind_t map_kind,
     bool never_deallocate);
+    
+  typedef hipStream_t gpufortrt_queue_t;
+  gpufortrt_queue_t gpufortrt_default_queue = nullptr;
 #ifdef __cplusplus
 } // extern "C"
 #endif

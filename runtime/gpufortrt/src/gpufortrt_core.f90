@@ -70,12 +70,10 @@ module gpufortrt_core
   end enum
 
   type, public :: mapping_t
-     type(c_ptr)       :: hostptr   = c_null_ptr
-     integer(c_size_t) :: num_bytes =  0
-     integer(kind(gpufortrt_map_kind_undefined)) :: map_kind = gpufortrt_map_kind_undefined
-     logical           :: declared_module_var = .false.
-     contains
-       procedure :: init => mapping_init_
+    type(c_ptr)       :: hostptr   = c_null_ptr
+    integer(c_size_t) :: num_bytes =  0
+    integer(kind(gpufortrt_map_kind_undefined)) :: map_kind = gpufortrt_map_kind_undefined
+    logical           :: never_deallocate = .false.
   end type
 
   !> Data structure that maps a host to a device pointer.
@@ -246,7 +244,7 @@ module gpufortrt_core
 
     ! mapping_t-bound procedures
 
-    recursive subroutine mapping_init_(this,hostptr,num_bytes,map_kind,declared_module_var)
+    recursive subroutine mapping_init_(this,hostptr,num_bytes,map_kind,never_deallocate)
        use iso_c_binding
        implicit none
        !
@@ -254,12 +252,12 @@ module gpufortrt_core
        type(c_ptr),intent(in)         :: hostptr
        integer(c_size_t),intent(in)   :: num_bytes
        integer(kind(gpufortrt_map_kind_undefined)),intent(in) :: map_kind
-       logical,intent(in)             :: declared_module_var
+       logical,intent(in)             :: never_deallocate
        !
        this%hostptr    = hostptr
        this%num_bytes  = num_bytes
        this%map_kind   = map_kind
-       this%declared_module_var = declared_module_var
+       this%never_deallocate = never_deallocate
     end subroutine
 
     !
@@ -697,7 +695,7 @@ module gpufortrt_core
     !> \note Not thread safe.
     function record_list_use_increment_record_(record_list,&
         hostptr,num_bytes,map_kind,&
-        async,declared_module_var,&
+        async,never_deallocate,&
         update_struct_refs,update_dyn_refs) result(loc)
       use iso_c_binding
       use iso_fortran_env
@@ -709,7 +707,7 @@ module gpufortrt_core
       integer(c_size_t), intent(in)                       :: num_bytes
       integer(kind(gpufortrt_map_kind_create)), intent(in) :: map_kind
       integer,intent(in),optional                         :: async
-      logical,intent(in),optional                         :: declared_module_var
+      logical,intent(in),optional                         :: never_deallocate
       logical,intent(in),optional                         :: update_struct_refs,update_dyn_refs
       !
       integer :: loc
@@ -724,7 +722,7 @@ module gpufortrt_core
          !
          call record_list%records(loc)%setup(hostptr,&
            num_bytes,map_kind,reuse_existing)
-         if ( eval_optval_(update_struct_refs,.false.) .and. eval_optval_(declared_module_var,.false.) ) then
+         if ( eval_optval_(update_struct_refs,.false.) .and. eval_optval_(never_deallocate,.false.) ) then
            record_list%records(loc)%struct_refs=1
          endif
          if ( map_kind .eq. gpufortrt_map_kind_copyin .or. &
@@ -954,11 +952,11 @@ module gpufortrt_core
                 update_struct_refs)
             case(gpufortrt_map_kind_create)
               deviceptr = gpufortrt_create_b(mapping%hostptr,mapping%num_bytes,async,&
-                mapping%declared_module_var,&
+                mapping%never_deallocate,&
                 update_struct_refs,update_dyn_refs)
             case(gpufortrt_map_kind_copyin)
               deviceptr = gpufortrt_copyin_b(mapping%hostptr,mapping%num_bytes,async,&
-                mapping%declared_module_var,&
+                mapping%never_deallocate,&
                 update_struct_refs,update_dyn_refs)
             case(gpufortrt_map_kind_copyout)
               deviceptr = gpufortrt_copyout_b(mapping%hostptr,mapping%num_bytes,async,&
@@ -1190,14 +1188,14 @@ module gpufortrt_core
     !> counts are zero, the device memory is deallocated.
     !>
     !> \note Only use this when entering not when exiting
-    function gpufortrt_create_b(hostptr,num_bytes,async,declared_module_var,&
+    function gpufortrt_create_b(hostptr,num_bytes,async,never_deallocate,&
                                 update_struct_refs,update_dyn_refs) result(deviceptr)
       use iso_c_binding
       implicit none
       type(c_ptr),intent(in)       :: hostptr
       integer(c_size_t),intent(in) :: num_bytes
       integer,intent(in),optional  :: async ! ignored as there is no hipMallocAsync
-      logical,intent(in),optional  :: declared_module_var
+      logical,intent(in),optional  :: never_deallocate
       logical,intent(in),optional  :: update_struct_refs,update_dyn_refs
       !
       type(c_ptr) :: deviceptr
@@ -1209,7 +1207,7 @@ module gpufortrt_core
         ERROR STOP "gpufortrt_create_b: hostptr not c_associated"
       else
         loc       = record_list_use_increment_record_(hostptr,num_bytes,&
-                      gpufortrt_map_kind_create,async,declared_module_var,&
+                      gpufortrt_map_kind_create,async,never_deallocate,&
                       update_struct_refs,update_dyn_refs)
         deviceptr = record_list_%records(loc)%deviceptr
       endif
@@ -1280,14 +1278,14 @@ module gpufortrt_core
     !> zero, the device memory is deallocated.
     !>
     !> \note Exiting case handled in gpufortrt_exit_region
-    function gpufortrt_copyin_b(hostptr,num_bytes,async,declared_module_var,&
+    function gpufortrt_copyin_b(hostptr,num_bytes,async,never_deallocate,&
         update_struct_refs,update_dyn_refs) result(deviceptr)
       use iso_c_binding
       implicit none
       type(c_ptr), intent(in)      :: hostptr
       integer(c_size_t),intent(in) :: num_bytes
       integer,intent(in),optional  :: async
-      logical,intent(in),optional  :: declared_module_var
+      logical,intent(in),optional  :: never_deallocate
       logical,intent(in),optional  :: update_struct_refs,update_dyn_refs
       !
       type(c_ptr) :: deviceptr
@@ -1301,7 +1299,7 @@ module gpufortrt_core
 #endif
         deviceptr = c_null_ptr
       else
-        loc       = record_list_use_increment_record_(hostptr,num_bytes,gpufortrt_map_kind_copyin,async,declared_module_var)
+        loc       = record_list_use_increment_record_(hostptr,num_bytes,gpufortrt_map_kind_copyin,async,never_deallocate)
         deviceptr = record_list_%records(loc)%deviceptr
       endif
     end function

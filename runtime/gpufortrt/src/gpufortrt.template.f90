@@ -42,7 +42,7 @@ end function
 
 {% for clause in data_clauses -%}
 {% set is_acc_declare_module_clause = clause in ["create","copyin"] %} {# plus: device_resident, link #}
-{% set extra_args = ",declared_module_var" if is_acc_declare_module_clause else "" %}
+{% set extra_args = ",never_deallocate" if is_acc_declare_module_clause else "" %}
 {% set routine = "gpufortrt_map_" + clause %}
 ! {{routine}}
 function {{routine}}_b(hostptr,num_bytes{{extra_args}}) result(retval)
@@ -53,18 +53,18 @@ function {{routine}}_b(hostptr,num_bytes{{extra_args}}) result(retval)
   type(c_ptr),intent(in)       :: hostptr
   integer(c_size_t),intent(in) :: num_bytes
 {% if is_acc_declare_module_clause %}
-   logical,intent(in),optional :: declared_module_var
+   logical,intent(in),optional :: never_deallocate
 {% endif %}
   !
   type(mapping_t) :: retval
   !
-  logical :: opt_declared_module_var
+  logical :: opt_never_deallocate
   !
-  opt_declared_module_var = .false.
+  opt_never_deallocate = .false.
 {% if is_acc_declare_module_clause %}
-  if ( present(declared_module_var) ) opt_declared_module_var = declared_module_var
+  if ( present(never_deallocate) ) opt_never_deallocate = never_deallocate
 {% endif %}
-  call retval%init(hostptr,num_bytes,gpufortrt_map_kind_{{clause}},opt_declared_module_var)
+  call retval%init(hostptr,num_bytes,gpufortrt_map_kind_{{clause}},opt_never_deallocate)
 end function
 
 {% for tuple in datatypes -%}
@@ -83,7 +83,7 @@ function {{routine}}_{{suffix}}(hostptr{{extra_args}}) result(retval)
   implicit none
   {{tuple[2]}},target{{ rank }},intent(in) :: hostptr
 {%     if is_acc_declare_module_clause %}
-   logical,intent(in),optional :: declared_module_var
+   logical,intent(in),optional :: never_deallocate
 {%     endif %}
   !
   type(mapping_t) :: retval

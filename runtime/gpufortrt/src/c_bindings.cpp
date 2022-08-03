@@ -29,7 +29,7 @@
 //              << ", base_num_bytes: " << base_num_bytes << "]" << std::endl;
 //  }
 //
-//  void print_record(gpufortrt::record_t& record) {
+//  void print_record(gpufortrt::internal::record_t& record) {
 //    std::cout << record << std::endl;
 //  }
 //}

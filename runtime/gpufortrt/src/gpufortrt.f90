@@ -10510,10 +10510,10 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     !
     type(mapping_t) :: retval
     !
-    logical :: opt_declared_module_var
+    logical :: opt_never_deallocate
     !
-    opt_declared_module_var = .false.
-    call retval%init(hostptr,num_bytes,gpufortrt_map_kind_delete,opt_declared_module_var)
+    opt_never_deallocate = .false.
+    call retval%init(hostptr,num_bytes,gpufortrt_map_kind_delete,opt_never_deallocate)
   end function
 
                                                                 
@@ -11401,10 +11401,10 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     !
     type(mapping_t) :: retval
     !
-    logical :: opt_declared_module_var
+    logical :: opt_never_deallocate
     !
-    opt_declared_module_var = .false.
-    call retval%init(hostptr,num_bytes,gpufortrt_map_kind_present,opt_declared_module_var)
+    opt_never_deallocate = .false.
+    call retval%init(hostptr,num_bytes,gpufortrt_map_kind_present,opt_never_deallocate)
   end function
 
                                                                 
@@ -12292,10 +12292,10 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     !
     type(mapping_t) :: retval
     !
-    logical :: opt_declared_module_var
+    logical :: opt_never_deallocate
     !
-    opt_declared_module_var = .false.
-    call retval%init(hostptr,num_bytes,gpufortrt_map_kind_no_create,opt_declared_module_var)
+    opt_never_deallocate = .false.
+    call retval%init(hostptr,num_bytes,gpufortrt_map_kind_no_create,opt_never_deallocate)
   end function
 
                                                                 
@@ -13173,966 +13173,966 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
    
    
    ! gpufortrt_map_create
-  function gpufortrt_map_create_b(hostptr,num_bytes,declared_module_var) result(retval)
+  function gpufortrt_map_create_b(hostptr,num_bytes,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     !
     type(c_ptr),intent(in)       :: hostptr
     integer(c_size_t),intent(in) :: num_bytes
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    logical :: opt_declared_module_var
+    logical :: opt_never_deallocate
     !
-    opt_declared_module_var = .false.
-    if ( present(declared_module_var) ) opt_declared_module_var = declared_module_var
-    call retval%init(hostptr,num_bytes,gpufortrt_map_kind_create,opt_declared_module_var)
+    opt_never_deallocate = .false.
+    if ( present(never_deallocate) ) opt_never_deallocate = never_deallocate
+    call retval%init(hostptr,num_bytes,gpufortrt_map_kind_create,opt_never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_l_0(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_l_0(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_l_1(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_l_1(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_l_2(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_l_2(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_l_3(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_l_3(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_l_4(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_l_4(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_l_5(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_l_5(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_l_6(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_l_6(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_l_7(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_l_7(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
    
                                                                 
-  function gpufortrt_map_create_c_0(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c_0(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c_1(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c_1(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c_2(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c_2(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c_3(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c_3(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c_4(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c_4(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c_5(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c_5(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c_6(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c_6(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c_7(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c_7(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
    
                                                                 
-  function gpufortrt_map_create_i2_0(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i2_0(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(2,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(2,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i2_1(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i2_1(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i2_2(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i2_2(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i2_3(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i2_3(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i2_4(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i2_4(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i2_5(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i2_5(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i2_6(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i2_6(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i2_7(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i2_7(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),never_deallocate)
   end function
 
    
                                                                 
-  function gpufortrt_map_create_i4_0(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i4_0(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i4_1(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i4_1(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i4_2(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i4_2(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i4_3(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i4_3(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i4_4(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i4_4(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i4_5(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i4_5(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i4_6(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i4_6(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i4_7(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i4_7(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
    
                                                                 
-  function gpufortrt_map_create_i8_0(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i8_0(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i8_1(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i8_1(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i8_2(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i8_2(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i8_3(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i8_3(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i8_4(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i8_4(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i8_5(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i8_5(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i8_6(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i8_6(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_i8_7(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_i8_7(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
    
                                                                 
-  function gpufortrt_map_create_r4_0(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_r4_0(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_r4_1(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_r4_1(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_r4_2(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_r4_2(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_r4_3(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_r4_3(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_r4_4(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_r4_4(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_r4_5(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_r4_5(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_r4_6(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_r4_6(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_r4_7(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_r4_7(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
    
                                                                 
-  function gpufortrt_map_create_r8_0(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_r8_0(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_r8_1(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_r8_1(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_r8_2(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_r8_2(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_r8_3(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_r8_3(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_r8_4(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_r8_4(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_r8_5(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_r8_5(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_r8_6(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_r8_6(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_r8_7(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_r8_7(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
    
                                                                 
-  function gpufortrt_map_create_c4_0(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c4_0(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(2*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(2*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c4_1(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c4_1(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c4_2(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c4_2(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c4_3(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c4_3(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c4_4(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c4_4(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c4_5(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c4_5(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c4_6(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c4_6(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c4_7(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c4_7(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),never_deallocate)
   end function
 
    
                                                                 
-  function gpufortrt_map_create_c8_0(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c8_0(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(2*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(2*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c8_1(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c8_1(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c8_2(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c8_2(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c8_3(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c8_3(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c8_4(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c8_4(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c8_5(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c8_5(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c8_6(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c8_6(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_create_c8_7(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_create_c8_7(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_create_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),never_deallocate)
   end function
 
    
@@ -14148,10 +14148,10 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     !
     type(mapping_t) :: retval
     !
-    logical :: opt_declared_module_var
+    logical :: opt_never_deallocate
     !
-    opt_declared_module_var = .false.
-    call retval%init(hostptr,num_bytes,gpufortrt_map_kind_copy,opt_declared_module_var)
+    opt_never_deallocate = .false.
+    call retval%init(hostptr,num_bytes,gpufortrt_map_kind_copy,opt_never_deallocate)
   end function
 
                                                                 
@@ -15029,966 +15029,966 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
    
    
    ! gpufortrt_map_copyin
-  function gpufortrt_map_copyin_b(hostptr,num_bytes,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_b(hostptr,num_bytes,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     !
     type(c_ptr),intent(in)       :: hostptr
     integer(c_size_t),intent(in) :: num_bytes
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    logical :: opt_declared_module_var
+    logical :: opt_never_deallocate
     !
-    opt_declared_module_var = .false.
-    if ( present(declared_module_var) ) opt_declared_module_var = declared_module_var
-    call retval%init(hostptr,num_bytes,gpufortrt_map_kind_copyin,opt_declared_module_var)
+    opt_never_deallocate = .false.
+    if ( present(never_deallocate) ) opt_never_deallocate = never_deallocate
+    call retval%init(hostptr,num_bytes,gpufortrt_map_kind_copyin,opt_never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_l_0(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_l_0(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_l_1(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_l_1(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_l_2(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_l_2(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_l_3(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_l_3(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_l_4(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_l_4(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_l_5(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_l_5(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_l_6(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_l_6(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_l_7(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_l_7(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     logical,target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
    
                                                                 
-  function gpufortrt_map_copyin_c_0(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c_0(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c_1(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c_1(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c_2(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c_2(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c_3(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c_3(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c_4(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c_4(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c_5(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c_5(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c_6(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c_6(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c_7(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c_7(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     character(c_char),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*1,c_size_t),never_deallocate)
   end function
 
    
                                                                 
-  function gpufortrt_map_copyin_i2_0(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i2_0(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(2,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(2,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i2_1(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i2_1(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i2_2(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i2_2(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i2_3(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i2_3(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i2_4(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i2_4(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i2_5(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i2_5(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i2_6(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i2_6(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i2_7(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i2_7(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_short),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2,c_size_t),never_deallocate)
   end function
 
    
                                                                 
-  function gpufortrt_map_copyin_i4_0(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i4_0(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i4_1(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i4_1(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i4_2(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i4_2(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i4_3(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i4_3(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i4_4(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i4_4(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i4_5(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i4_5(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i4_6(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i4_6(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i4_7(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i4_7(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_int),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
    
                                                                 
-  function gpufortrt_map_copyin_i8_0(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i8_0(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i8_1(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i8_1(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i8_2(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i8_2(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i8_3(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i8_3(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i8_4(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i8_4(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i8_5(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i8_5(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i8_6(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i8_6(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_i8_7(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_i8_7(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     integer(c_long),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
    
                                                                 
-  function gpufortrt_map_copyin_r4_0(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_r4_0(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_r4_1(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_r4_1(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_r4_2(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_r4_2(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_r4_3(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_r4_3(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_r4_4(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_r4_4(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_r4_5(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_r4_5(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_r4_6(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_r4_6(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_r4_7(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_r4_7(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_float),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*4,c_size_t),never_deallocate)
   end function
 
    
                                                                 
-  function gpufortrt_map_copyin_r8_0(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_r8_0(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_r8_1(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_r8_1(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_r8_2(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_r8_2(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_r8_3(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_r8_3(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_r8_4(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_r8_4(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_r8_5(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_r8_5(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_r8_6(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_r8_6(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_r8_7(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_r8_7(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     real(c_double),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*8,c_size_t),never_deallocate)
   end function
 
    
                                                                 
-  function gpufortrt_map_copyin_c4_0(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c4_0(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(2*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(2*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c4_1(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c4_1(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c4_2(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c4_2(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c4_3(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c4_3(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c4_4(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c4_4(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c4_5(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c4_5(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c4_6(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c4_6(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c4_7(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c4_7(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_float_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*4,c_size_t),never_deallocate)
   end function
 
    
                                                                 
-  function gpufortrt_map_copyin_c8_0(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c8_0(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(2*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(2*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c8_1(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c8_1(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c8_2(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c8_2(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c8_3(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c8_3(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c8_4(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c8_4(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c8_5(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c8_5(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c8_6(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c8_6(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),never_deallocate)
   end function
 
                                                                 
-  function gpufortrt_map_copyin_c8_7(hostptr,declared_module_var) result(retval)
+  function gpufortrt_map_copyin_c8_7(hostptr,never_deallocate) result(retval)
     use iso_c_binding
     use gpufortrt_core, only: mapping_t
     implicit none
     complex(c_double_complex),target,dimension(:,:,:,:,:,:,:),intent(in) :: hostptr
-     logical,intent(in),optional :: declared_module_var
+     logical,intent(in),optional :: never_deallocate
     !
     type(mapping_t) :: retval
     !
-    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),declared_module_var)
+    retval = gpufortrt_map_copyin_b(c_loc(hostptr),int(size(hostptr)*2*8,c_size_t),never_deallocate)
   end function
 
    
@@ -16004,10 +16004,10 @@ module procedure :: gpufortrt_map_dec_struct_refs_c8_scal,&
     !
     type(mapping_t) :: retval
     !
-    logical :: opt_declared_module_var
+    logical :: opt_never_deallocate
     !
-    opt_declared_module_var = .false.
-    call retval%init(hostptr,num_bytes,gpufortrt_map_kind_copyout,opt_declared_module_var)
+    opt_never_deallocate = .false.
+    call retval%init(hostptr,num_bytes,gpufortrt_map_kind_copyout,opt_never_deallocate)
   end function
 
                                                                 

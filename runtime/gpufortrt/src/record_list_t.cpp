@@ -8,19 +8,15 @@
 
 #include <hip/hip_runtime_api>
 
-bool gpufortrt::record_list::is_initialized() {
+bool gpufortrt::internal::record_list_t::is_initialized() {
   return this->records.capacity() >= gpufortrt::INITIAL_RECORDS_CAPACITY;
 }
 
-void gpufortrt::record_list::initialize() {
+void gpufortrt::internal::record_list_t::initialize() {
   this->records.reserve(INITIAL_RECORDS_CAPACITY); 
 }
 
-void gpufortrt::record_list::grow() {
-  this->records.reserve(2*records.capacity());
-}
-
-void gpufortrt::record_list::destroy() {
+void gpufortrt::internal::record_list_t::destroy() {
   for (size_t i = 0; i < records.size(); i++) {
     if ( this->records[i].is_initialized() ) {
       this->records[i].destroy();
@@ -29,7 +25,7 @@ void gpufortrt::record_list::destroy() {
   this->records.clear();
 }
 
-size_t gpufortrt::record_list::find_record(void* hostptr,bool& success) {
+size_t gpufortrt::internal::record_list_t::find_record(void* hostptr,bool& success) {
   success = false;
   size_t loc = -1;
   size_t offset_bytes = 0;
@@ -46,20 +42,20 @@ size_t gpufortrt::record_list::find_record(void* hostptr,bool& success) {
     // log
     if ( gpufortrt::LOG_LEVEL > 2 ) {
       if ( success ) {
-        LOG_ERROR(3,"lookup record: " << this->records[loc])
+        LOG_INFO(3,"lookup record: " << this->records[loc])
       } else {
-        LOG_ERROR(3,"lookup record: NOT FOUND")
+        LOG_INFO(3,"lookup record: NOT FOUND")
       }
     }
     return loc;
   }
 }
 
-size_t gpufortrt::record_list::find_available_record(size_t num_bytes,bool& reuse_existing) {
+size_t gpufortrt::internal::record_list_t::find_available_record(size_t num_bytes,bool& reuse_existing) {
   size_t loc = this->records.size(); // element after last record
   reuse_existing = false;
   for ( size_t i = 0; i < this->records.size(); i++ ) {
-    gpufortrt::record_t& record = record;
+    gpufortrt::internal::record_t& record = record;
     if ( !record.is_initialized() ) {
       loc = i;
       break; // break outer loop
@@ -87,86 +83,80 @@ size_t gpufortrt::record_list::find_available_record(size_t num_bytes,bool& reus
   return loc;
 }
 
-size_t gpufortrt::record_list::use_increment_record(
+size_t gpufortrt::internal::record_list_t::use_increment_record(
    void* hostptr,
    size_t num_bytes,
-   gpufortrt::map_kind_t map_kind,
+   gpufortrt_map_kind_t map_kind,
    counter_t ctr_to_update
    bool blocking_copy,
-   gpufortrt::queue_t queue,
-   bool declared_module_var) {
+   gpufortrt::internal::queue_t queue,
+   bool never_deallocate) {
   bool success;
   size_t loc = this->find_record(hostptr,success/*inout*/);
   if ( success ) {
     this->record[loc].inc_refs(ctr_to_update);
   } else {
     loc = this->find_available_record(num_bytes,reuse_existing/*inout*/);
-    if ( loc >= this->records.capacity() ) {
-      this->grow();
-    }
-    if ( loc >= this->records.size() ) {
-      this->records.emplace_back(); // initialize record at vector's end
-    }
     assert(loc >= 0);
-    assert(loc <= this->records.size());
-    gpufortrt::record_t& record = this->records[loc];
-    record.setup(
-      gpufortrt::num_records++, // increment global not thread-safe
-      hostptr,
-      num_bytes,
-      map_kind,
-      blocking_copy,
-      queue,
-      reuse_existing/*in*/);
-    // Initialize fixed-size Fortran module variables with 
-    // structured references counter set to '1'.
-    if ( ctr_to_update == gpufortrt::counter_t::Structured
-         && declared_module_var ) {
-       record.struct_refs = 1; 
-    }
-    // Update consumed memory statistics only if
-    // no record was reused, i.e. a new one was created
-    if ( !reuse_existing ) {
-      this->total_memory_bytes += record.num_bytes;
-    }
-    if ( gpufortrt::LOG_LEVEL > 1 ) {
-      if ( reuse_existing ) {
-        LOG_ERROR(2,"reuse record: " << record)
-      } else {
-        LOG_ERROR(2,"create record: " << record)
+    if ( loc == this->records.size() ) {
+      gpufortrt::internal::record_t record;
+      record.setup(
+        gpufortrt::num_records++, // increment global not thread-safe
+        hostptr,
+        num_bytes,
+        map_kind,
+        blocking_copy,
+        queue,
+        reuse_existing/*in*/);
+      // Initialize fixed-size Fortran module variables with 
+      // structured references counter set to '1'.
+      if ( ctr_to_update == gpufortrt_counter_structured
+           && never_deallocate ) {
+         record.struct_refs = 1; 
       }
+      // Update consumed memory statistics only if
+      // no record was reused, i.e. a new one was created
+      if ( !reuse_existing ) {
+        this->total_memory_bytes += record.num_bytes;
+        LOG_INFO(2,"create record: " << record)
+      } else {
+        LOG_INFO(2,"reuse record: " << record)
+      }
+      this->records.push_back(record);
     }
+    assert(loc <= this->records.size());
   }
   return loc;
 }
 
-void gpufortrt::record_list::decrement_release_record(
-  void* hostptr,
-  gpufortrt::counter_t ctr_to_update,
-  bool veto_copy_to_host,
-  bool blocking_copy,
-  gpufortrt::queue_t queue) {
+void gpufortrt::internal::record_list_t::decrement_release_record(
+    void* hostptr,
+    gpufortrt_counter_t ctr_to_update,
+    bool blocking_copy,
+    gpufortrt::internal::queue_t queue,
+    bool finalize) {
   bool success;
   size_t loc = this->find_record(hostptr,success/*inout*/);
   if ( success ) {
     assert(loc >= 0);
     assert(loc <= this->records.size());
-    gpufortrt::record_t& record = this->records[loc];
+    gpufortrt::internal::record_t& record = this->records[loc];
 
     record.dec_refs(ctr_to_update);
     if ( record.hostptr != hostptr ) {
       throw std::invalid_argument(
-              "decrement_release_record_: argument 'hostptr' points to section of mapped data");
+        "decrement_release_record_: argument 'hostptr' points to section of mapped data");
     } else {
       record.dec_refs(ctr_to_update);
-      if ( record.can_be_destroyed(0) ) {
+      if ( record.can_be_destroyed(0) || finalize ) {
         // if both structured and dynamic reference counters are zero, 
         // a copyout action is performed
-        if ( !veto_copy_to_host &&
-             (record.map_kind == gpufortrt::map_kind_t::Copyout
-             || record.map_kind == gpufortrt::map_kind_t::Copy ) {
+        if ( !finalize &&
+             (record.map_kind == gpufortrt_map_kind_copyout
+             || record.map_kind == gpufortrt_map_kind_copy ) {
           record.copy_to_host(blocking_copy,queue);
         }
+        record.release();
       }
     }
   }

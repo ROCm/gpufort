@@ -45,7 +45,8 @@ extern "C" {
   void gpufortrt_delete_b(
           void* hostptr,
           bool finalize);
-  
+ 
+  //
   void* gpufortrt_no_create_b(
           void* hostptr,
           size_t num_bytes,
@@ -84,14 +85,37 @@ extern "C" {
   void gpufortrt_update_host_b(
          void* hostptr,
          bool condition,
+         bool if_present);
+  
+  void gpufortrt_update_host_async_b(
+         void* hostptr,
+         bool condition,
          bool if_present,
          int async);
 
   void gpufortrt_update_device_b(
          void* hostptr,
          bool condition,
+         bool if_present);
+  
+  void gpufortrt_update_device_async_b(
+         void* hostptr,
+         bool condition,
          bool if_present,
          int async);
+
+  void gpufortrt_wait_all(bool condition);
+  
+  void gpufortrt_wait(int* wait_arg,
+                      int num_wait,
+                      bool condition);
+  
+  void gpufortrt_wait_async(int* wait_arg,int num_wait,
+                            int* async,int num_async,
+                            bool condition);
+  
+  void gpufortrt_wait_all_async(int* async,int num_async,
+                                bool condition);
 
   gpufortrt_queue_t gpufortrt_get_stream(int async);
 } // extern "C"

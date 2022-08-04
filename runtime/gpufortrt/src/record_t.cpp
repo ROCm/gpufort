@@ -8,20 +8,20 @@
 
 std::ostream& operator<<(std::ostream& os, gpufortrt_map_kind_t map_kind);
 {
-    switch(ce)
-    {
-       case gpufortrt_map_kind_dec_struct_refs: os << "dec_struct_refs"; break;
-       case gpufortrt_map_kind_undefined      : os << "undefined"; break;
-       case gpufortrt_map_kind_present        : os << "present"; break;
-       case gpufortrt_map_kind_delete         : os << "delete"; break;
-       case gpufortrt_map_kind_create         : os << "create"; break;
-       case gpufortrt_map_kind_no_create      : os << "no_create"; break;
-       case gpufortrt_map_kind_copyin         : os << "copyin"; break;
-       case gpufortrt_map_kind_copyout        : os << "copyout"; break;
-       case gpufortrt_map_kind_copy           : os << "copy"; break;
-       default: throw invalid_argument("operator<<: invalid value for `map_kind`");
-    }
-    return os;
+  switch(ce)
+  {
+     case gpufortrt_map_kind_dec_struct_refs: os << "dec_struct_refs"; break;
+     case gpufortrt_map_kind_undefined      : os << "undefined"; break;
+     case gpufortrt_map_kind_present        : os << "present"; break;
+     case gpufortrt_map_kind_delete         : os << "delete"; break;
+     case gpufortrt_map_kind_create         : os << "create"; break;
+     case gpufortrt_map_kind_no_create      : os << "no_create"; break;
+     case gpufortrt_map_kind_copyin         : os << "copyin"; break;
+     case gpufortrt_map_kind_copyout        : os << "copyout"; break;
+     case gpufortrt_map_kind_copy           : os << "copy"; break;
+     default: throw invalid_argument("operator<<: invalid value for `map_kind`");
+  }
+  return os;
 }
 
 void gpufortrt::internal::record_t::to_string(std::ostream& os) const {
@@ -136,7 +136,7 @@ void gpufortrt::internal::record_t::copy_to_device(
   bool blocking_copy,
   gpufortrt_queue_t queue) {
   #ifndef BLOCKING_COPIES
-  if ( blocking_copy ) then
+  if ( !blocking_copy ) then
     // TODO backend-specific, externalize
     HIP_CHECK(hipMemcpyAsync(this->deviceptr,this->hostptr,&
       this->num_bytes_used,hipMemcpyHostToDevice,queue))
@@ -153,7 +153,7 @@ void gpufortrt::internal::record_t::copy_to_host(
   bool blocking_copy,
   gpufortrt_queue_t queue) {
   #ifndef BLOCKING_COPIES
-  if ( blocking_copy ) then
+  if ( !blocking_copy ) then
     // TODO backend-specific, externalize
     HIP_CHECK(hipMemcpyAsync(this->hostptr,this->deviceptr,&
       this->num_bytes_used,hipMemcpyDeviceToHost,queue))
@@ -170,4 +170,72 @@ bool gpufortrt::internal::record_t::is_subarray(
     void* hostptr, size_t num_bytes, size_t& offset_bytes) const {
   offset_bytes = hostptr - this->hostptr;
   return (offset_bytes >= 0) && ((offset_bytes+num_bytes) < this->num_bytes);    
+}
+
+void gpufortrt::internal::record_t::copy_section_to_device(
+  void* hostptr,
+  size_t num_bytes,
+  bool blocking_copy,
+  gpufortrt_queue_t queue) {
+  size_t offset_bytes;
+  if ( !this->is_subarray(hostptr,num_bytes,offset_bytes/*inout*/ ) {
+    throw std::invalid_argument("copy_section_to_device: data section is no subset of record data");
+  }
+  void* deviceptr_section_begin = static_cast<void*>(
+      static_cast<char*>(this->deviceptr) + offset_bytes);
+  void* hostptr_section_begin = static_cast<void*>(
+      static_cast<char*>(this->hostptr) + offset_bytes);
+  #ifndef BLOCKING_COPIES
+  if ( !blocking_copy ) then
+    // TODO backend-specific, externalize
+    HIP_CHECK(hipMemcpyAsync(
+      deviceptr_section_begin,
+      hostptr_section_begin,
+      num_bytes,
+      hipMemcpyHostToDevice,queue))
+  else {
+  #endif
+    // TODO backend-specific, externalize
+    HIP_CHECK(hipMemcpy(
+      deviceptr_section_begin,
+      hostptr_section_begin,
+      num_bytes,
+      hipMemcpyHostToDevice))
+  #ifndef BLOCKING_COPIES
+  }
+  #endif
+}
+
+void gpufortrt::internal::record_t::copy_section_to_host(
+  void* hostptr,
+  size_t num_bytes,
+  bool blocking_copy,
+  gpufortrt_queue_t queue) {
+  size_t offset_bytes;
+  if ( !this->is_subarray(hostptr,num_bytes,offset_bytes/*inout*/ ) {
+    throw std::invalid_argument("copy_section_to_host: data section is no subset of record data");
+  }
+  void* deviceptr_section_begin = static_cast<void*>(
+      static_cast<char*>(this->deviceptr) + offset_bytes);
+  void* hostptr_section_begin = static_cast<void*>(
+      static_cast<char*>(this->hostptr) + offset_bytes);
+  #ifndef BLOCKING_COPIES
+  if ( !blocking_copy ) then
+    // TODO backend-specific, externalize
+    HIP_CHECK(hipMemcpyAsync(
+      hostptr_section_begin,
+      deviceptr_section_begin,
+      num_bytes,
+      hipMemcpyDeviceToHost,queue))
+  else {
+  #endif
+    // TODO backend-specific, externalize
+    HIP_CHECK(hipMemcpy(
+      hostptr_section_begin,
+      deviceptr_section_begin,
+      num_bytes,
+      hipMemcpyDeviceToHost))
+  #ifndef BLOCKING_COPIES
+  }
+  #endif
 }

@@ -2,10 +2,14 @@
 // Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 #include "gpufortrt_core.h"
 
-#include "gpufortrt_auxiliary.h"
-
 #include <string>
 #include <sstream>
+
+#include <hip/hip_runtime_api.h>
+
+#include "gpufortrt_auxiliary.h"
+
+gpufortrt_async_noval = -1;
 
 void gpufortrt_mapping_init(
     gpufortrt_mapping_t* mapping,
@@ -115,15 +119,37 @@ namespace {
        }
     }
   }
+
+  void wait(int* wait_arg,int num_wait) {
+    for (int i = 0; i < num_wait; i++) {
+      auto& queue_record = gpufortrt::internal::queue_record_list.use_create_queue(wait_arg[i]]);
+      HIP_CHECK(hipStreamSynchronize(queue_record.queue)) // TODO backend specific, externalize
+    }
+  }
+
+  void wait_async(int* wait_arg,int num_wait,
+                  int* async,int num_async) {
+    for (int i = 0; i < num_wait; i++) {
+      hipEvent_t event;// TODO backend specific, externalize
+      HIP_CHECK(hipEventCreateWithFlags(&event,hipEventDisableTiming))// TODO backend specific, externalize
+      auto& queue_record = gpufortrt::internal::queue_record_list.use_create_queue(wait_arg[i]]);
+      HIP_CHECK(hipEventRecord(event,record.queue))// TODO backend specific, externalize
+      for (int j = 0; j < num_async; j++) {
+        auto& queue_record_async = gpufortrt::internal::queue_record_list.use_create_queue(async[i]]);
+        HIP_CHECK(hipStreamWaitEvent(queue_record_async.queue,event);// TODO backend specific, externalize
+      }
+    }
+  }
 }
 
-void gpufortrt_data_start(gpufortrt_mapping_t* mappings,const int num_mappings) {
+void gpufortrt_data_start(gpufortrt_mapping_t* mappings,int num_mappings) {
   apply_mappings(mappings,
                  num_mappings,
                  gpufortrt_counter_t_structured,
                  -1/*async*/,false/*finalize*/);
 }
-void gpufortrt_data_end(gpufortrt_mapping_t* mappings,const int num_mappings) {
+
+void gpufortrt_data_end(gpufortrt_mapping_t* mappings,int num_mappings) {
   gpufortrt_data_start(mappings,num_mappings);
 }
 
@@ -324,3 +350,22 @@ void gpufortrt_update_device_b(
     }
   }
 }
+
+void gpufortrt_wait(
+    int* wait_arg,
+    int num_wait,
+    int* async,
+    int num_async,
+    bool condition) {
+  if ( condition ) { 
+    if ( !gpufortrt::internal::initialized ) {
+      throw std::invalid_argument("wait: runtime has not been initialized");
+    }
+    bool async_specified = async[0] != gpufortrt_async_noval;
+    if ( async_specified ) {
+      ::wait_async(wait_arg,num_wait,async,num_async);
+    } else {
+      ::wait(wait_arg,num_wait);
+    }
+  }
+}                

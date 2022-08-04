@@ -86,7 +86,6 @@ namespace gpufortrt {
       void destroy();
     };
 
-    size_t num_records = 0;
     struct record_list_t {
       std::vector<record_t> records;
       int last_record_index = 0;

@@ -101,7 +101,7 @@ size_t gpufortrt::internal::record_list_t::use_increment_record(
     if ( loc == this->records.size() ) {
       gpufortrt::internal::record_t record;
       record.setup(
-        gpufortrt::num_records++, // increment global not thread-safe
+        gpufortrt::internal::num_records++, // increment global not thread-safe
         hostptr,
         num_bytes,
         map_kind,

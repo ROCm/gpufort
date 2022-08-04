@@ -20,6 +20,6 @@ size_t gpufortrt::internal::blocked_size(size_t num_bytes,size_t block_size) {
 
 // global variables
 bool gpufortrt::initialized = false;
-size_t gpufortrt::num_records = 0; // TODO where is it now?
+size_t gpufortrt::internal::num_records = 0; 
 gpufortrt::internal::record_list_t                 gpufortrt::record_list;
 gpufortrt::internal::queue_record_list_t gpufortrt::internal::queue_record_list;

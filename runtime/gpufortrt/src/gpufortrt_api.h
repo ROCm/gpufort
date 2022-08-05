@@ -27,79 +27,100 @@ extern "C" {
           int async,
           bool finalize);
   
-  void* gpufortrt_use_device_b(
+  void* gpufortrt_use_device(
           void* hostptr,
           size_t num_bytes,
           bool condition,
           bool if_present);
  
-  void* gpufortrt_present_b(
+  void* gpufortrt_present(
           void* hostptr,
           size_t num_bytes
           gpufortrt_counter_t ctr_to_update);
   
-  void gpufortrt_dec_struct_refs_b(
+  void gpufortrt_dec_struct_refs(
           void* hostptr,
           int async);
   
-  void gpufortrt_delete_b(
+  void gpufortrt_delete(
           void* hostptr,
           bool finalize);
  
   //
-  void* gpufortrt_no_create_b(
+  void* gpufortrt_no_create(
           void* hostptr,
           size_t num_bytes,
           int async,
           bool never_deallocate,
           gpufortrt_counter_t ctr_to_update);
   
-  void* gpufortrt_create_b(
+  void* gpufortrt_create(
           void* hostptr,
           size_t num_bytes,
           int async,
           bool never_deallocate,
           gpufortrt_counter_t ctr_to_update);
   
-  void* gpufortrt_copyin_b(
+  void* gpufortrt_copyin(
           void* hostptr,
           size_t num_bytes,
           int async,
           bool never_deallocate,
           gpufortrt_counter_t ctr_to_update);
 
-  void* gpufortrt_copyout_b(
+  void* gpufortrt_copyout(
          void* hostptr,
          size_t num_bytes,
          int async,
          bool never_deallocate,
          gpufortrt_counter_t ctr_to_update);
   
-  void* gpufortrt_copy_b(
+  void* gpufortrt_copy(
          void* hostptr,
          size_t num_bytes,
          int async,
          bool never_deallocate
          gpufortrt_counter_t ctr_to_update);
 
-  void gpufortrt_update_host_b(
+  void gpufortrt_update_host(
          void* hostptr,
          bool condition,
          bool if_present);
-  
-  void gpufortrt_update_host_async_b(
+  void gpufortrt_update_self_async(
          void* hostptr,
          bool condition,
          bool if_present,
          int async);
-
-  void gpufortrt_update_device_b(
+  void gpufortrt_update_self_section(
          void* hostptr,
+         size_t num_bytes,
          bool condition,
          bool if_present);
-  
-  void gpufortrt_update_device_async_b(
+  void gpufortrt_update_self_section_async(
          void* hostptr,
+         size_t num_bytes,
+         bool condition,
+         bool if_present,
+         int async);
+
+  void gpufortrt_update_device(
+         void* hostptr,
+         size_t num_bytes,
+         bool condition,
+         bool if_present);
+  void gpufortrt_update_device_async(
+         void* hostptr,
+         bool condition,
+         bool if_present,
+         int async);
+  void gpufortrt_update_device_section(
+         void* hostptr,
+         size_t num_bytes,
+         bool condition,
+         bool if_present);
+  void gpufortrt_update_device_section_async(
+         void* hostptr,
+         size_t num_bytes,
          bool condition,
          bool if_present,
          int async);

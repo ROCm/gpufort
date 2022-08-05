@@ -13,7 +13,7 @@ module gpufortrt_core
             gpufortrt_delete_b,&
             gpufortrt_dec_struct_refs_b
 
-  public :: gpufortrt_update_host_b, gpufortrt_update_device_b
+  public :: gpufortrt_update_self_b, gpufortrt_update_device_b
   public :: gpufortrt_init, gpufortrt_shutdown
   public :: gpufortrt_enter_exit_data, gpufortrt_data_start, gpufortrt_data_end
   public :: gpufortrt_wait
@@ -75,16 +75,17 @@ module gpufortrt_core
 
   !> evaluate optional values
   interface eval_optval_
-     module procedure :: eval_optval_l_, eval_optval_i_
+     module procedure :: eval_optval_c_bool_, eval_optval_c_int_, eval_optval_c_size_t_
   end interface
 
   contains
 
-    function eval_optval_l_(optval,fallback) result(retval)
+    function eval_optval_c_bool_(optval,fallback) result(retval)
       implicit none
-      logical,intent(in),optional :: optval
-      logical,intent(in)          :: fallback
-      logical                     :: retval
+      use iso_c_binding
+      logical(c_bool),intent(in),optional :: optval
+      logical(c_bool),intent(in)          :: fallback
+      logical(c_bool)                     :: retval
       if ( present(optval) ) then
          retval = optval
       else
@@ -92,11 +93,25 @@ module gpufortrt_core
       endif
     end function
 
-    function eval_optval_i_(optval,fallback) result(retval)
+    function eval_optval_c_int_(optval,fallback) result(retval)
       implicit none
-      integer,intent(in),optional :: optval
-      integer,intent(in)          :: fallback
-      integer                     :: retval
+      use iso_c_binding
+      integer(c_int),intent(in),optional :: optval
+      integer(c_int),intent(in)          :: fallback
+      integer(c_int)                     :: retval
+      if ( present(optval) ) then
+         retval = optval
+      else
+         retval = fallback
+      endif
+    end function
+    
+    function eval_optval_c_size_t_(optval,fallback) result(retval)
+      implicit none
+      use iso_c_binding
+      integer(c_size_t),intent(in),optional :: optval
+      integer(c_size_t),intent(in)          :: fallback
+      integer(c_size_t)                     :: retval
       if ( present(optval) ) then
          retval = optval
       else
@@ -396,73 +411,131 @@ module gpufortrt_core
       type(c_ptr) :: deviceptr
     end function
 
-    subroutine gpufortrt_update_host_b(hostptr,num_bytes,condition,if_present,async)
+    subroutine gpufortrt_update_self_b(hostptr,num_bytes,condition,if_present,async)
       use iso_c_binding
       implicit none
-      type(c_ptr),intent(in)             :: hostptr
-      integer(c_int),optional,intent(in) :: num_bytes
-      logical,intent(in),optional        :: condition, if_present
-      integer,intent(in),optional        :: async
+      type(c_ptr),intent(in)                :: hostptr
+      integer(c_size_t),intent(in),optional :: num_bytes
+      logical(c_bool),intent(in),optional   :: condition, if_present
+      integer(c_int),intent(in),optional    :: async
       !
       interface
-        subroutine gpufortrt_update_host_c_impl(hostptr,condition,if_present) &
+        subroutine gpufortrt_update_self_c_impl(hostptr,condition,if_present) &
                 bind(c,name="gpufortrt_update_host")
           type(c_ptr),value,intent(in)     :: hostptr
           logical(c_bool),value,intent(in) :: condition, if_present
         end subroutine
-        subroutine gpufortrt_update_host_bytes_c_impl(hostptr,num_bytes,condition,if_present) &
-                bind(c,name="gpufortrt_update_host_bytes")
-          type(c_ptr),value,intent(in)     :: hostptr
-          integer(c_int),value,intent(in)  :: num_bytes
-          logical(c_bool),value,intent(in) :: condition, if_present
+        subroutine gpufortrt_update_self_section_c_impl(hostptr,num_bytes,condition,if_present) &
+                bind(c,name="gpufortrt_update_self_section")
+          type(c_ptr),value,intent(in)       :: hostptr
+          integer(c_size_t),value,intent(in) :: num_bytes
+          logical(c_bool),value,intent(in)   :: condition, if_present
         end subroutine
-        subroutine gpufortrt_update_host_async_c_impl(hostptr,condition,if_present,async) &
-                bind(c,name="gpufortrt_update_host_async")
+        subroutine gpufortrt_update_self_async_c_impl(hostptr,condition,if_present,async) &
+                bind(c,name="gpufortrt_update_self_async")
           type(c_ptr),value,intent(in)     :: hostptr
           logical(c_bool),value,intent(in) :: condition, if_present
           integer(c_int),value,intent(in)  :: async
         end subroutine
-        subroutine gpufortrt_update_host_async_bytes_c_impl(hostptr,num_bytes,condition,if_present,async) &
-                bind(c,name="gpufortrt_update_host_async_bytes")
-          type(c_ptr),value,intent(in)     :: hostptr
-          integer(c_int),value,intent(in)  :: num_bytes
-          logical(c_bool),value,intent(in) :: condition, if_present
-          integer(c_int),value,intent(in)  :: async
+        subroutine gpufortrt_update_self_section_async_c_impl(hostptr,num_bytes,condition,if_present,async) &
+                bind(c,name="gpufortrt_update_self_section_async")
+          type(c_ptr),value,intent(in)       :: hostptr
+          integer(c_size_t),value,intent(in) :: num_bytes
+          logical(c_bool),value,intent(in)   :: condition, if_present
+          integer(c_int),value,intent(in)    :: async
         end subroutine
       end interface
       if ( present(num_bytes) ) then
         if ( present(async) ) then
+          call gpufortrt_update_self_section_async_c_impl(hostptr,&
+                                                          num_bytes,&
+                                                          eval_optval_(condition,.false._c_bool),&
+                                                          eval_optval_(if_present,.false._c_bool),&
+                                                          async)
         else
+          call gpufortrt_update_self_section_c_impl(hostptr,&
+                                                    num_bytes,&
+                                                    eval_optval_(condition,.false._c_bool),&
+                                                    eval_optval_(if_present,.false._c_bool),&
+                                                    gpufortrt_async_noval)
         endif
       else
         if ( present(async) ) then
-          call gpufortrt_update_host_c_impl(hostptr,&
-                                            logical(eval_optval_(condition,.false.),kind=c_bool),
-                                            logical(eval_optval_(if_present,.false.),kind=c_bool),
-                                            int(eval_optval_(async,gpufortrt_async_noval),kind=c_int))
+          call gpufortrt_update_self_async_c_impl(hostptr,&
+                                                  eval_optval_(condition,.false._c_bool),&
+                                                  eval_optval_(if_present,.false._c_bool),&
+                                                  async)
         else
-          call gpufortrt_update_host_c_impl(hostptr,&
-                                            logical(eval_optval_(condition,.false.),kind=c_bool),
-                                            logical(eval_optval_(if_present,.false.),kind=c_bool),
-                                            int(eval_optval_(async,gpufortrt_async_noval),kind=c_int))
+          call gpufortrt_update_self_c_impl(hostptr,&
+                                            eval_optval_(condition,.false._c_bool),&
+                                            eval_optval_(if_present,.false._c_bool),&
+                                            gpufortrt_async_noval)
         endif
       endif
     end subroutine
 
     !> Update Directive
-    subroutine gpufortrt_update_device_b(hostptr,condition,if_present,async)
+    subroutine gpufortrt_update_device_b(hostptr,num_bytes,condition,if_present,async)
       use iso_c_binding
       implicit none
-      type(c_ptr),intent(in)      :: hostptr
-      logical,intent(in),optional :: condition, if_present
-      integer,intent(in),optional :: async
-
-  void gpufortrt_update_device_b(
-         void* hostptr,
-         bool condition,
-         bool if_present,
-         int async);
+      type(c_ptr),intent(in)                :: hostptr
+      integer(c_size_t),intent(in),optional :: num_bytes
+      logical(c_bool),intent(in),optional   :: condition, if_present
+      integer(c_int),intent(in),optional    :: async
       !
+      interface
+        subroutine gpufortrt_update_device_c_impl(hostptr,condition,if_present) &
+                bind(c,name="gpufortrt_update_host")
+          type(c_ptr),value,intent(in)     :: hostptr
+          logical(c_bool),value,intent(in) :: condition, if_present
+        end subroutine
+        subroutine gpufortrt_update_device_section_c_impl(hostptr,num_bytes,condition,if_present) &
+                bind(c,name="gpufortrt_update_device_section")
+          type(c_ptr),value,intent(in)       :: hostptr
+          integer(c_size_t),value,intent(in) :: num_bytes
+          logical(c_bool),value,intent(in)   :: condition, if_present
+        end subroutine
+        subroutine gpufortrt_update_device_async_c_impl(hostptr,condition,if_present,async) &
+                bind(c,name="gpufortrt_update_device_async")
+          type(c_ptr),value,intent(in)     :: hostptr
+          logical(c_bool),value,intent(in) :: condition, if_present
+          integer(c_int),value,intent(in)  :: async
+        end subroutine
+        subroutine gpufortrt_update_device_section_async_c_impl(hostptr,num_bytes,condition,if_present,async) &
+                bind(c,name="gpufortrt_update_device_section_async")
+          type(c_ptr),value,intent(in)       :: hostptr
+          integer(c_size_t),value,intent(in) :: num_bytes
+          logical(c_bool),value,intent(in)   :: condition, if_present
+          integer(c_int),value,intent(in)    :: async
+        end subroutine
+      end interface
+      if ( present(num_bytes) ) then
+        if ( present(async) ) then
+          call gpufortrt_update_device_section_async_c_impl(hostptr,&
+                                                          num_bytes,&
+                                                          eval_optval_(condition,.false._c_bool),&
+                                                          eval_optval_(if_present,.false._c_bool),&
+                                                          async)
+        else
+          call gpufortrt_update_device_section_c_impl(hostptr,&
+                                                    num_bytes,&
+                                                    eval_optval_(condition,.false._c_bool),&
+                                                    eval_optval_(if_present,.false._c_bool),&
+                                                    gpufortrt_async_noval)
+        endif
+      else
+        if ( present(async) ) then
+          call gpufortrt_update_device_async_c_impl(hostptr,&
+                                                  eval_optval_(condition,.false._c_bool),&
+                                                  eval_optval_(if_present,.false._c_bool),&
+                                                  async)
+        else
+          call gpufortrt_update_device_c_impl(hostptr,&
+                                            eval_optval_(condition,.false._c_bool),&
+                                            eval_optval_(if_present,.false._c_bool),&
+                                            gpufortrt_async_noval)
+        endif
+      endif
     end subroutine
 
     function gpufortrt_get_stream(queue_id) result (stream)

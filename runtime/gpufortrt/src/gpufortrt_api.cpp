@@ -274,9 +274,10 @@ void* gpufortrt_copy(void* hostptr,size_t num_bytes,int async,bool never_dealloc
 }
 
 namespace {
-  template <bool update_host,bool blocking_copy>
+  template <bool update_host,bool update_section,bool blocking_copy>
   void update(
       void* hostptr,
+      int num_bytes,
       bool condition,
       bool if_present,
       int async_arg) {
@@ -298,9 +299,17 @@ namespace {
           queue = gpufortrt::internal::queue_record_list.use_create_queue(async);
         }
         if ( update_host ) {
-          record.copy_to_host(blocking_copy,queue);
+          if ( update_section ) {
+            record.copy_section_to_host(hostptr,num_bytes,blocking_copy,queue);
+          } else {
+            record.copy_to_host(blocking_copy,queue);
+          }
         } else {
-          record.copy_to_device(blocking_copy,queue);
+          if ( update_section ) {
+            record.copy_section_to_device(hostptr,num_bytes,blocking_copy,queue);
+          } else {
+            record.copy_to_device(blocking_copy,queue);
+          }
         }
       }
     }
@@ -311,30 +320,58 @@ void gpufortrt_update_host(
     void* hostptr,
     bool condition,
     bool if_present) {
-  ::update<true,true>(hostptr,condition,if_present,-1); 
+  ::update<true,false,true>(hostptr,0,condition,if_present,-1); 
 }
-
-void gpufortrt_update_host_async(
+void gpufortrt_update_self_async(
     void* hostptr,
     bool condition,
     bool if_present,
     int async) {
-  ::update<false,true>(hostptr,condition,if_present,async); 
+  ::update<false,false,true>(hostptr,0,condition,if_present,async); 
+}
+void gpufortrt_update_self_section(
+    void* hostptr,
+    size_t num_bytes,
+    bool condition,
+    bool if_present) {
+  ::update<true,true,true>(hostptr,num_bytes,condition,if_present,-1); 
+}
+void gpufortrt_update_self_section_async(
+    void* hostptr,
+    size_t num_bytes,
+    bool condition,
+    bool if_present,
+    int async) {
+  ::update<false,true,true>(hostptr,num_bytes,condition,if_present,async); 
 }
 
 void gpufortrt_update_device(
     void* hostptr,
     bool condition,
     bool if_present) {
-  ::update<true,false>(hostptr,condition,if_present,-1); 
+  ::update<true,false,false>(hostptr,0,condition,if_present,-1); 
 }
-
 void gpufortrt_update_device_async(
     void* hostptr,
     bool condition,
     bool if_present,
     int async) {
-  ::update<false,false>(hostptr,condition,if_present,async); 
+  ::update<false,false,false>(hostptr,0,condition,if_present,async); 
+}
+void gpufortrt_update_device_section(
+    void* hostptr,
+    size_t num_bytes,
+    bool condition,
+    bool if_present) {
+  ::update<true,false,false>(hostptr,num_bytes,condition,if_present,-1); 
+}
+void gpufortrt_update_device_section_async(
+    void* hostptr,
+    size_t num_bytes,
+    bool condition,
+    bool if_present,
+    int async) {
+  ::update<false,false,false>(hostptr,num_bytes,condition,if_present,async); 
 }
 
 void gpufortrt_wait_all(bool condition) {

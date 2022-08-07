@@ -91,7 +91,7 @@ void gpufortrt::internal::record_t::setup(
     void* hostptr,
     size_t num_bytes,
     gpufortrt_map_kind_t map_kind,
-    bool blocking_copy,
+    bool blocking,
     gpufortrt_queue_t queue,
     bool reuse_existing) {
   this->hostptr = hostptr;
@@ -112,7 +112,7 @@ void gpufortrt::internal::record_t::setup(
     case gpufortrt_map_kind_copyin:
     case gpufortrt_map_kind_copy:
       HIP_CHECK(hipMalloc(this->deviceptr,this->num_bytes)) // TODO backend-specific, externalize
-      this->copy_to_device(blocking_copy,queue);
+      this->copy_to_device(blocking,queue);
       break;
   }
 }
@@ -133,10 +133,10 @@ void gpufortrt::internal::record_t::destroy() {
 }
 
 void gpufortrt::internal::record_t::copy_to_device(
-  bool blocking_copy,
+  bool blocking,
   gpufortrt_queue_t queue) {
   #ifndef BLOCKING_COPIES
-  if ( !blocking_copy ) then
+  if ( !blocking ) then
     // TODO backend-specific, externalize
     HIP_CHECK(hipMemcpyAsync(this->deviceptr,this->hostptr,&
       this->num_bytes_used,hipMemcpyHostToDevice,queue))
@@ -150,10 +150,10 @@ void gpufortrt::internal::record_t::copy_to_device(
 }
 
 void gpufortrt::internal::record_t::copy_to_host(
-  bool blocking_copy,
+  bool blocking,
   gpufortrt_queue_t queue) {
   #ifndef BLOCKING_COPIES
-  if ( !blocking_copy ) then
+  if ( !blocking ) then
     // TODO backend-specific, externalize
     HIP_CHECK(hipMemcpyAsync(this->hostptr,this->deviceptr,&
       this->num_bytes_used,hipMemcpyDeviceToHost,queue))
@@ -175,7 +175,7 @@ bool gpufortrt::internal::record_t::is_subarray(
 void gpufortrt::internal::record_t::copy_section_to_device(
   void* hostptr,
   size_t num_bytes,
-  bool blocking_copy,
+  bool blocking,
   gpufortrt_queue_t queue) {
   size_t offset_bytes;
   if ( !this->is_subarray(hostptr,num_bytes,offset_bytes/*inout*/ ) {
@@ -186,7 +186,7 @@ void gpufortrt::internal::record_t::copy_section_to_device(
   void* hostptr_section_begin = static_cast<void*>(
       static_cast<char*>(this->hostptr) + offset_bytes);
   #ifndef BLOCKING_COPIES
-  if ( !blocking_copy ) then
+  if ( !blocking ) then
     // TODO backend-specific, externalize
     HIP_CHECK(hipMemcpyAsync(
       deviceptr_section_begin,
@@ -209,7 +209,7 @@ void gpufortrt::internal::record_t::copy_section_to_device(
 void gpufortrt::internal::record_t::copy_section_to_host(
   void* hostptr,
   size_t num_bytes,
-  bool blocking_copy,
+  bool blocking,
   gpufortrt_queue_t queue) {
   size_t offset_bytes;
   if ( !this->is_subarray(hostptr,num_bytes,offset_bytes/*inout*/ ) {
@@ -220,7 +220,7 @@ void gpufortrt::internal::record_t::copy_section_to_host(
   void* hostptr_section_begin = static_cast<void*>(
       static_cast<char*>(this->hostptr) + offset_bytes);
   #ifndef BLOCKING_COPIES
-  if ( !blocking_copy ) then
+  if ( !blocking ) then
     // TODO backend-specific, externalize
     HIP_CHECK(hipMemcpyAsync(
       hostptr_section_begin,

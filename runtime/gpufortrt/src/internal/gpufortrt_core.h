@@ -59,11 +59,11 @@ namespace gpufortrt {
       
       /** Copy host data to device. */
       void copy_to_device(
-        bool blocking_copy,
+        bool blocking,
         gpufortrt_queue_t queue);
       /** Copy device data to host. */
       void copy_to_host(
-        bool blocking_copy,
+        bool blocking,
         gpufortrt_queue_t queue);
       bool is_subarray(
         void* hostptr, size_t num_bytes, size_t& offset_bytes) const;
@@ -74,7 +74,7 @@ namespace gpufortrt {
         void* hostptr,
         size_t num_bytes,
         gpufortrt_map_kind_t map_kind,
-        bool blocking_copy,
+        bool blocking,
         gpufortrt_queue_t queue,
         bool reuse_existing);
       
@@ -136,7 +136,7 @@ namespace gpufortrt {
          size_t num_bytes,
          gpufortrt_map_kind_t map_kind,
          counter_t ctr_to_update
-         bool blocking_copy,
+         bool blocking,
          gpufortrt_queue_t queue,
          bool never_deallocate);
 
@@ -150,7 +150,7 @@ namespace gpufortrt {
        void decrement_release_record(
          void* hostptr,
          gpufortrt_counter_t ctr_to_update,
-         bool blocking_copy,
+         bool blocking,
          gpufortrt_queue_t queue,
          bool finalize);
     };

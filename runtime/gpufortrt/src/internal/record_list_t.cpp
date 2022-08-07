@@ -88,7 +88,7 @@ size_t gpufortrt::internal::record_list_t::use_increment_record(
    size_t num_bytes,
    gpufortrt_map_kind_t map_kind,
    counter_t ctr_to_update
-   bool blocking_copy,
+   bool blocking,
    gpufortrt_queue_t queue,
    bool never_deallocate) {
   bool success;
@@ -105,7 +105,7 @@ size_t gpufortrt::internal::record_list_t::use_increment_record(
         hostptr,
         num_bytes,
         map_kind,
-        blocking_copy,
+        blocking,
         queue,
         reuse_existing/*in*/);
       // Initialize fixed-size Fortran module variables with 
@@ -132,7 +132,7 @@ size_t gpufortrt::internal::record_list_t::use_increment_record(
 void gpufortrt::internal::record_list_t::decrement_release_record(
     void* hostptr,
     gpufortrt_counter_t ctr_to_update,
-    bool blocking_copy,
+    bool blocking,
     gpufortrt_queue_t queue,
     bool finalize) {
   bool success;
@@ -154,7 +154,7 @@ void gpufortrt::internal::record_list_t::decrement_release_record(
         if ( !finalize &&
              (record.map_kind == gpufortrt_map_kind_copyout
              || record.map_kind == gpufortrt_map_kind_copy ) {
-          record.copy_to_host(blocking_copy,queue);
+          record.copy_to_host(blocking,queue);
         }
         record.release();
       }

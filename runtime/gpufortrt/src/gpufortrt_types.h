@@ -24,9 +24,9 @@ extern "C" {
    * \note: Data layout must match that of Fortran `counter_t` type!
    */
   enum gpufortrt_counter_t {
-    gpufortrt_counter_t_none = 0,
-    gpufortrt_counter_t_structured = 1,
-    gpufortrt_counter_t_dynamic = 2
+    gpufortrt_counter_none = 0,
+    gpufortrt_counter_structured = 1,
+    gpufortrt_counter_dynamic = 2
   }
 
   struct gpufortrt_mapping_t {

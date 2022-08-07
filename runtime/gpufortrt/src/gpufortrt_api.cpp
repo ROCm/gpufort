@@ -61,6 +61,7 @@ namespace {
       void*& hostptr,
       size_t num_bytes,
       gpufortrt_map_kind_t map_kind,
+      bool blocking,
       int async,
       bool never_deallocate,
       gpufortrt_counter_t ctr_to_update) {
@@ -73,15 +74,16 @@ namespace {
       #endif
       return nullptr;
     } else {
-      bool blocking_copy = async < 0; // TODO nullptr vs blocking
-      gpufortrt_queue_t queue = gpufortrt::internal::queue_record_list.use_create_queue(async);
-      
+      gpufortrt_queue_t& queue = gpufortrt_default_queue;
+      if ( !blocking ) {
+        queue = gpufortrt::internal::queue_record_list.use_create_queue(async);
+      }
       size_t loc = gpufortrt::internal::record_list.use_increment_record(
         hostptr,
         num_bytes,&
         map_kind,&
         ctr_to_update,
-        blocking_copy,
+        blocking,
         queue,
         never_deallocate);
       return gpufortrt::internal::record_list.records[loc].deviceptr;
@@ -91,6 +93,7 @@ namespace {
   void apply_mappings(gpufortrt_mapping_t* mappings,
                       int num_mappings,
                       gpufortrt_counter_t ctr_to_update,
+                      bool blocking,
                       int async,bool finalize) {
     for (int i = 0; i < num_mappings; i++) {
        auto& mapping = mappings[i];
@@ -99,7 +102,29 @@ namespace {
             gpufortrt_dec_struct_refs(mapping.hostptr,async);
             break;
          case gpufortrt_map_kind_delete:
-            gpufortrt_delete(mapping.hostptr,finalize);
+            if ( blocking ) {
+              if ( finalize ) {
+                gpufortrt_delete_finalize(
+                  mapping.hostptr,
+                  ctr_to_update);
+              } else {
+                gpufortrt_delete(
+                  mapping.hostptr,
+                  ctr_to_update);
+              }
+            } else {
+              if ( finalize ) {
+                gpufortrt_delete_finalize_async(
+                  mapping.hostptr,
+                  async,
+                  ctr_to_update);
+              } else {
+                gpufortrt_delete_async(
+                  mapping.hostptr,
+                  async,
+                  ctr_to_update);
+              }
+            }
             break;
          case gpufortrt_map_kind_present:
          case gpufortrt_map_kind_create:
@@ -111,6 +136,7 @@ namespace {
               mapping.hostptr,
               mapping.num_bytes,
               mapping.map_kind
+              blocking,
               async,
               mapping.never_deallocate, 
               ctr_to_update);
@@ -125,7 +151,7 @@ namespace {
 void gpufortrt_data_start(gpufortrt_mapping_t* mappings,int num_mappings) {
   ::apply_mappings(mappings,
                  num_mappings,
-                 gpufortrt_counter_t_structured,
+                 gpufortrt_counter_structured,
                  -1/*async*/,false/*finalize*/);
 }
 
@@ -135,12 +161,23 @@ void gpufortrt_data_end(gpufortrt_mapping_t* mappings,int num_mappings) {
 
 void gpufortrt_enter_exit_data(gpufortrt_mapping_t* mappings,
                                int num_mappings,
-                               int async,
                                bool finalize) {
   ::apply_mappings(mappings,
                  num_mappings,
-                 gpufortrt_counter_t_dynamic,
-                 async,finalize);
+                 gpufortrt_counter_dynamic,
+                 true,gpufortrt_async_noval,
+                 finalize);
+}
+
+void gpufortrt_enter_exit_data_async(gpufortrt_mapping_t* mappings,
+                                     int num_mappings,
+                                     int async,
+                                     bool finalize) {
+  ::apply_mappings(mappings,
+                 num_mappings,
+                 gpufortrt_counter_dynamic,
+                 false,async,
+                 finalize);
 }
 
 void* gpufortrt_use_device(void* hostptr,size_t num_bytes,
@@ -174,20 +211,22 @@ void  gpufortrt_dec_struct_refs(void* hostptr,int async) {
 #endif
     return
   else {
-    bool blocking_copy = async < 0; // TODO nullptr vs blocking
+    bool blocking = async < 0; // TODO nullptr vs blocking
     gpufortrt_queue_t queue = gpufortrt::internal::queue_record_list.use_create_queue(async);
     
     gpufortrt::internal::record_list.decrement_release_record(
       hostptr,
-      gpufortrt_counter_t_structured,
+      gpufortrt_counter_structured,
       veto_copy_to_host,
-      blocking_copy,
+      blocking,
       queue,
       false);
   }
 }
 
-void gpufortrt_delete(void* hostptr,bool finalize) {
+void gpufortrt_delete(
+  void* hostptr,
+  gpufortrt_counter_t ctr_to_update) {
   if ( !initialized_ ) LOG_ERROR("gpufortrt_delete: runtime not initialized")
   if ( hostptr == nullptr ) {
 #ifndef NULLPTR_MEANS_NOOP
@@ -197,16 +236,34 @@ void gpufortrt_delete(void* hostptr,bool finalize) {
   else {
     gpufortrt::internal::record_list.decrement_release_record(
       hostptr,
-      gpufortrt_counter_t_dynamic,
+      gpufortrt_counter_dynamic,
       veto_copy_to_host,
-      blocking_copy,
+      blocking,
       queue,
-      finalize);
+      .false.);
+  }
+}
+
+void gpufortrt_delete_finalize(void* hostptr) {
+  if ( !initialized_ ) LOG_ERROR("gpufortrt_delete: runtime not initialized")
+  if ( hostptr == nullptr ) {
+#ifndef NULLPTR_MEANS_NOOP
+    throw std::invalid_argument("gpufortrt_delete: hostptr is nullptr");
+#endif
+    return
+  else {
+    gpufortrt::internal::record_list.decrement_release_record(
+      hostptr,
+      gpufortrt_counter_dynamic,
+      veto_copy_to_host,
+      blocking,
+      queue,
+      .true.);
   }
 }
 
 void* gpufortrt_present(void* hostptr,size_t num_bytes,
-                          gpufortrt_counter_t ctr_to_update) {
+                        gpufortrt_counter_t ctr_to_update) {
   return ::run_use_increment_action(
     hostptr,
     num_bytes,
@@ -262,8 +319,19 @@ void* gpufortrt_copyout(void* hostptr,size_t num_bytes,int async,bool never_deal
     ctr_to_update);
 }
 
-void* gpufortrt_copy(void* hostptr,size_t num_bytes,int async,bool never_deallocate,
-                       gpufortrt_counter_t ctr_to_update) {
+void* gpufortrt_copy(void* hostptr,size_t num_bytes,bool never_deallocate,
+                     gpufortrt_counter_t ctr_to_update) {
+  return ::run_use_increment_action(
+    hostptr,
+    num_bytes,
+    gpufortrt_map_kind_copy,
+    async,
+    never_deallocate,
+    ctr_to_update);
+}
+
+void* gpufortrt_copy_async(void* hostptr,size_t num_bytes,int async,bool never_deallocate,
+                     gpufortrt_counter_t ctr_to_update) {
   return ::run_use_increment_action(
     hostptr,
     num_bytes,
@@ -274,7 +342,7 @@ void* gpufortrt_copy(void* hostptr,size_t num_bytes,int async,bool never_dealloc
 }
 
 namespace {
-  template <bool update_host,bool update_section,bool blocking_copy>
+  template <bool update_host,bool update_section,bool blocking>
   void update(
       void* hostptr,
       int num_bytes,
@@ -295,20 +363,20 @@ namespace {
       } else if ( success ) {
         auto& record = gpufortrt::internal::record_list.records[loc];
         gpufortrt_queue_t& queue = gpufortrt_default_queue; 
-        if ( !blocking_copy ) {
+        if ( !blocking ) {
           queue = gpufortrt::internal::queue_record_list.use_create_queue(async);
         }
         if ( update_host ) {
           if ( update_section ) {
-            record.copy_section_to_host(hostptr,num_bytes,blocking_copy,queue);
+            record.copy_section_to_host(hostptr,num_bytes,blocking,queue);
           } else {
-            record.copy_to_host(blocking_copy,queue);
+            record.copy_to_host(blocking,queue);
           }
         } else {
           if ( update_section ) {
-            record.copy_section_to_device(hostptr,num_bytes,blocking_copy,queue);
+            record.copy_section_to_device(hostptr,num_bytes,blocking,queue);
           } else {
-            record.copy_to_device(blocking_copy,queue);
+            record.copy_to_device(blocking,queue);
           }
         }
       }
@@ -379,7 +447,6 @@ void gpufortrt_wait_all(bool condition) {
     HIP_CHECK(hipDeviceSynchronize()) // TODO backend specific, externalize
   }
 }
-
 void gpufortrt_wait(int* wait_arg,
                     int num_wait,
                     bool condition) {
@@ -390,7 +457,6 @@ void gpufortrt_wait(int* wait_arg,
     }
   }
 }
-
 void gpufortrt_wait_async(int* wait_arg,int num_wait,
                           int* async,int num_async,
                           bool condition) {
@@ -407,7 +473,6 @@ void gpufortrt_wait_async(int* wait_arg,int num_wait,
     }
   }
 }
-
 void gpufortrt_wait_all_async(int* async,int num_async,
                               bool condition) {
   if ( condition ) {

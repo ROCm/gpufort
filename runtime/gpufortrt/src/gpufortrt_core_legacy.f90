@@ -104,13 +104,13 @@ module gpufortrt_core
   type(queue_t),allocatable,save :: queues_(:)
 
   !> evaluate optional values
-  interface eval_optval_
-     module procedure :: eval_optval_l_, eval_optval_i_
+  interface eval_optval
+     module procedure :: eval_optval_l, eval_optval_i
   end interface
 
   contains
 
-    function eval_optval_l_(optval,fallback) result(retval)
+    function eval_optval_l(optval,fallback) result(retval)
       implicit none
       logical,intent(in),optional :: optval
       logical,intent(in)          :: fallback
@@ -122,7 +122,7 @@ module gpufortrt_core
       endif
     end function
 
-    function eval_optval_i_(optval,fallback) result(retval)
+    function eval_optval_i(optval,fallback) result(retval)
       implicit none
       integer,intent(in),optional :: optval
       integer,intent(in)          :: fallback
@@ -134,7 +134,7 @@ module gpufortrt_core
       endif
     end function
 
-    !function eval_optval_3_(optval,fallback) result(retval)
+    !function eval_optval_3(optval,fallback) result(retval)
     !  implicit none
     !  integer(kind(gpufortrt_map_kind_undefined)),intent(in),optional :: optval
     !  integer(kind(gpufortrt_map_kind_undefined)),intent(in)          :: fallback
@@ -526,10 +526,10 @@ module gpufortrt_core
       type(record_t),intent(inout) :: record
       logical,intent(in),optional :: update_struct_refs, update_dyn_refs
       !
-      if ( eval_optval_(update_struct_refs,.false.) ) then
+      if ( eval_optval(update_struct_refs,.false.) ) then
         record%struct_refs = record%struct_refs + 1
       endif
-      if ( eval_optval_(update_dyn_refs,.false.) ) then
+      if ( eval_optval(update_dyn_refs,.false.) ) then
         record%dyn_refs = record%dyn_refs + 1
       endif
     end subroutine
@@ -546,13 +546,13 @@ module gpufortrt_core
       !
       logical :: ret
       !
-      if ( eval_optval_(update_struct_refs,.false.) ) then
+      if ( eval_optval(update_struct_refs,.false.) ) then
         record%struct_refs = record%struct_refs - 1
       endif
-      if ( eval_optval_(update_dyn_refs,.false.) ) then
+      if ( eval_optval(update_dyn_refs,.false.) ) then
         record%dyn_refs = record%dyn_refs - 1
       endif
-      ret = record%dyn_refs == 0 .and. (record%struct_refs <= eval_optval_(threshold,0))
+      ret = record%dyn_refs == 0 .and. (record%struct_refs <= eval_optval(threshold,0))
     end function
 
     !
@@ -722,7 +722,7 @@ module gpufortrt_core
          !
          call record_list%records(loc)%setup(hostptr,&
            num_bytes,map_kind,reuse_existing)
-         if ( eval_optval_(update_struct_refs,.false.) .and. eval_optval_(never_deallocate,.false.) ) then
+         if ( eval_optval(update_struct_refs,.false.) .and. eval_optval(never_deallocate,.false.) ) then
            record_list%records(loc)%struct_refs=1
          endif
          if ( map_kind .eq. gpufortrt_map_kind_copyin .or. &
@@ -772,7 +772,7 @@ module gpufortrt_core
         endif
         if ( record_list%records(loc)%dec_refs(update_struct_refs,update_dyn_refs,0) ) then
           ! if both structured and dynamic reference counters are zero, a copyout action is performed
-          if ( .not. eval_optval_(veto_copy_to_host,.false.) ) then
+          if ( .not. eval_optval(veto_copy_to_host,.false.) ) then
               if ( record_list_%records(loc)%map_kind .eq. gpufortrt_map_kind_copyout .or. &
                    record_list_%records(loc)%map_kind .eq. gpufortrt_map_kind_copy ) then
                 call record_list%records(loc)%copy_to_host()
@@ -1053,13 +1053,13 @@ module gpufortrt_core
       resultptr = hostptr
       if ( .not. c_associated(hostptr) ) then
          resultptr = c_null_ptr
-      else if ( eval_optval_(condition,.true.) ) then
+      else if ( eval_optval(condition,.true.) ) then
         loc = record_list_find_record_(hostptr,success) ! TODO already detect a suitable candidate here on-the-fly
         if ( success ) then
             fits      = record_is_subarray_(record_list_%records(loc),hostptr,num_bytes,offset_bytes) ! TODO might not fit, i.e. only subarray
                                                                                               ! might have been mapped before
             resultptr = inc_cptr(record_list_%records(loc)%deviceptr,offset_bytes)
-        else if ( eval_optval_(if_present,.false.) ) then
+        else if ( eval_optval(if_present,.false.) ) then
             resultptr = hostptr
         else
             print *, "ERROR: did not find record for hostptr:"
@@ -1342,13 +1342,13 @@ module gpufortrt_core
 #endif
         deviceptr = c_null_ptr
       else
-        if ( eval_optval_(update_struct_refs,.false.) ) then
+        if ( eval_optval(update_struct_refs,.false.) ) then
             ! clause attached to data directive
             loc       = record_list_use_increment_record_(hostptr,num_bytes,&
                           gpufortrt_map_kind_copyout,async,.false.,&
                           update_struct_refs,update_dyn_refs)
             deviceptr = c_null_ptr ! not needed in this case
-        else if ( eval_optval_(update_dyn_refs,.false.) ) then
+        else if ( eval_optval(update_dyn_refs,.false.) ) then
             ! clause attached to exit data directive
             call record_list_decrement_release_record_(&
                 hostptr,.false.,.false.,.false.)

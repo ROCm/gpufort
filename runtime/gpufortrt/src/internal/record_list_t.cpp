@@ -151,9 +151,8 @@ void gpufortrt::internal::record_list_t::decrement_release_record(
       if ( record.can_be_destroyed(0) || finalize ) {
         // if both structured and dynamic reference counters are zero, 
         // a copyout action is performed
-        if ( !finalize &&
-             (record.map_kind == gpufortrt_map_kind_copyout
-             || record.map_kind == gpufortrt_map_kind_copy ) {
+        if (  record.map_kind == gpufortrt_map_kind_copyout
+           || record.map_kind == gpufortrt_map_kind_copy ) {
           record.copy_to_host(blocking,queue);
         }
         record.release();

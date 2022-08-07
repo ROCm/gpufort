@@ -203,7 +203,7 @@ void* gpufortrt_use_device(void* hostptr,size_t num_bytes,
   }
 }
 
-void  gpufortrt_dec_struct_refs(void* hostptr,int async) {
+void  gpufortrt_dec_struct_refs(void* hostptr) {
   if ( !initialized_ ) LOG_ERROR("gpufortrt_delete: runtime not initialized")
   if ( hostptr == nullptr ) {
 #ifndef NULLPTR_MEANS_NOOP
@@ -211,14 +211,31 @@ void  gpufortrt_dec_struct_refs(void* hostptr,int async) {
 #endif
     return
   else {
-    bool blocking = async < 0; // TODO nullptr vs blocking
     gpufortrt_queue_t queue = gpufortrt::internal::queue_record_list.use_create_queue(async);
     
     gpufortrt::internal::record_list.decrement_release_record(
       hostptr,
       gpufortrt_counter_structured,
-      veto_copy_to_host,
-      blocking,
+      true,
+      queue,
+      false);
+  }
+}
+
+void  gpufortrt_dec_struct_refs_async(void* hostptr,int async) {
+  if ( !initialized_ ) LOG_ERROR("gpufortrt_delete: runtime not initialized")
+  if ( hostptr == nullptr ) {
+#ifndef NULLPTR_MEANS_NOOP
+    throw std::invalid_argument("gpufortrt_delete: hostptr is nullptr");
+#endif
+    return
+  else {
+    gpufortrt_queue_t queue = gpufortrt::internal::queue_record_list.use_create_queue(async);
+    
+    gpufortrt::internal::record_list.decrement_release_record(
+      hostptr,
+      gpufortrt_counter_structured,
+      false,
       queue,
       false);
   }

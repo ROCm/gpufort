@@ -7,10 +7,8 @@ extern "C" {
 #endif
   int gpufortrt_async_noval;
 
-
   void gpufortrt_init();
   void gpufortrt_shutdown();
-  
   
   void gpufortrt_data_start(
           gpufortrt_mapping_t* mappings,
@@ -43,6 +41,8 @@ extern "C" {
           gpufortrt_counter_t ctr_to_update);
   
   void gpufortrt_dec_struct_refs(
+          void* hostptr);
+  void gpufortrt_dec_struct_refs_async(
           void* hostptr,
           int async);
 

@@ -7,23 +7,7 @@ module gpufortrt_core
   public
 
 contains
-
-  recursive subroutine mapping_init_(this,hostptr,num_bytes,map_kind,never_deallocate)
-    use iso_c_binding
-    implicit none
-    !
-    class(mapping_t),intent(inout) :: this
-    type(c_ptr),intent(in)         :: hostptr
-    integer(c_size_t),intent(in)   :: num_bytes
-    integer(kind(gpufortrt_map_kind_undefined)),intent(in) :: map_kind
-    logical,intent(in)             :: never_deallocate
-    !
-    this%hostptr    = hostptr
-    this%num_bytes  = num_bytes
-    this%map_kind   = map_kind
-    this%never_deallocate = never_deallocate
-  end subroutine
-
+  
   !
   ! public
   !
@@ -177,7 +161,7 @@ contains
       implicit none
       type(c_ptr),intent(in)       :: hostptr
       integer(c_size_t),intent(in) :: num_bytes
-      logical(c_bool),intent(in),optional  :: condition, if_present
+      logical,intent(in),optional  :: condition, if_present
       !
       type(c_ptr) :: resultptr
       !
@@ -191,8 +175,8 @@ contains
         end function
       end interface
       resultptr = gpufortrt_use_device_c_impl(hostptr,num_bytes,&
-          eval_optval(condition,.false._c_bool),&
-          eval_optval(if_present,.false._c_bool),&
+          eval_optval(logical(condition,kind=c_bool),.false._c_bool),&
+          eval_optval(logical(if_present,kind=c_bool).false._c_bool),&
     end function
     ! TODO rank-bound procedures via jinja template
 

@@ -7,7 +7,6 @@ module types
   
   !> Mapping kinds.
   enum, bind(c)
-    enumerator :: gpufortrt_map_kind_dec_struct_refs = -1
     enumerator :: gpufortrt_map_kind_undefined       = 0
     enumerator :: gpufortrt_map_kind_present         = 1
     enumerator :: gpufortrt_map_kind_delete          = 2

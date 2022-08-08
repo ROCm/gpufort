@@ -8,12 +8,8 @@
 
 #include <hip/hip_runtime_api>
 
-bool gpufortrt::internal::record_list_t::is_initialized() {
-  return this->records.capacity() >= gpufortrt::INITIAL_RECORDS_CAPACITY;
-}
-
-void gpufortrt::internal::record_list_t::initialize() {
-  this->records.reserve(INITIAL_RECORDS_CAPACITY); 
+void gpufortrt::internal::record_list_t::reserve(int capacity) {
+  this->records.reserve(capacity); 
 }
 
 void gpufortrt::internal::record_list_t::destroy() {
@@ -141,22 +137,14 @@ void gpufortrt::internal::record_list_t::decrement_release_record(
     assert(loc >= 0);
     assert(loc <= this->records.size());
     gpufortrt::internal::record_t& record = this->records[loc];
-
-    record.dec_refs(ctr_to_update);
     if ( record.hostptr != hostptr ) {
       throw std::invalid_argument(
-        "decrement_release_record_: argument 'hostptr' points to section of mapped data");
+        "decrement_release_record: argument 'hostptr' points to section of mapped data");
     } else {
-      record.dec_refs(ctr_to_update);
-      if ( record.can_be_destroyed(0) || finalize ) {
-        // if both structured and dynamic reference counters are zero, 
-        // a copyout action is performed
-        if (  record.map_kind == gpufortrt_map_kind_copyout
-           || record.map_kind == gpufortrt_map_kind_copy ) {
-          record.copy_to_host(blocking,queue);
-        }
-        record.release();
-      }
+      record.decrement_release_record(
+        gpufortrt_counter_structured,
+        blocking,queue,
+        finalize);
     }
   }
 }

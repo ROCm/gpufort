@@ -12,13 +12,14 @@ extern "C" {
   
   void gpufortrt_data_start(
           gpufortrt_mapping_t* mappings,
-          const int num_mappings);
-  
-  void gpufortrt_data_end(
+          int num_mappings);
+  void gpufortrt_data_start_async(
           gpufortrt_mapping_t* mappings,
-          const int num_mappings);
-  //void gpufortrt_data_end(); // TODO discuss if internal stack shall be used instead of relying on frontend
-                               // to decrement structured reference counters
+          int num_mappings,
+          int async);
+  void gpufortrt_data_end();
+  void gpufortrt_data_end_async(int async);
+  
   void gpufortrt_enter_exit_data(
           gpufortrt_mapping_t* mappings,
           int num_mappings,
@@ -40,12 +41,6 @@ extern "C" {
           size_t num_bytes
           gpufortrt_counter_t ctr_to_update);
   
-  void gpufortrt_dec_struct_refs(
-          void* hostptr);
-  void gpufortrt_dec_struct_refs_async(
-          void* hostptr,
-          int async);
-
   void gpufortrt_delete(
           void* hostptr,
           gpufortrt_counter_t ctr_to_update);
@@ -175,4 +170,11 @@ extern "C" {
                                 bool condition);
 
   gpufortrt_queue_t gpufortrt_get_stream(int async);
+ 
+  /** \return device pointer associated with `hostptr`, or nullptr.
+   *  First searches through the structured region stack and then
+   *  through the whole record list.
+   */
+  void* gpufortrt_deviceptr(void* hostptr);
+
 } // extern "C"

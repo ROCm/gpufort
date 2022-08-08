@@ -24,14 +24,6 @@ module gpufortrt
   !> \note Returns a c_null_ptr if the host pointer is invalid, i.e. not C associated.
 {{ render_interface("gpufortrt_use_device",True) | indent(2,True) }}
 
-  !> Decrement the structured reference counter of a record.
-  interface gpufortrt_map_dec_struct_refs
-{% for tuple in datatypes -%}
-    module procedure :: gpufortrt_map_dec_struct_refs_{{tuple[0]}}_scal,&
-                        gpufortrt_map_dec_struct_refs_{{tuple[0]}}_arr
-{% endfor %}
-  end interface
-
 {% for mapping in data_clauses %} 
 {{ render_interface("gpufortrt_"+mapping,True) | indent(2,True) }}
 

@@ -8,12 +8,8 @@
 
 #include <hip/hip_runtime_api>
 
-bool gpufortrt::internal::queue_record_list_t::is_initialized() {
-  return this->records.capacity() >= gpufortrt::internal::INITIAL_QUEUE_RECORDS_CAPACITY;
-}
-
-void gpufortrt::internal::queue_record_list_t::initialize() {
-  this->records.reserve(gpufort::internal::INITIAL_QUEUE_RECORDS_CAPACITY); 
+void gpufortrt::internal::queue_record_list_t::reserve(int capacity) {
+  this->records.reserve(capacity); 
 }
 
 void gpufortrt::internal::queue_record_list_t::destroy() {

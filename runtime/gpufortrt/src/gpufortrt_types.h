@@ -8,7 +8,6 @@ extern "C" {
    * \note: Upper case first letter used because `delete` is C++ keyword.
    */
   enum gpufortrt_map_kind_t {
-    gpufortrt_map_kind_dec_struct_refs = -1,
     gpufortrt_map_kind_undefined       = 0,
     gpufortrt_map_kind_present         = 1,
     gpufortrt_map_kind_delete          = 2,

@@ -10,7 +10,6 @@ std::ostream& operator<<(std::ostream& os, gpufortrt_map_kind_t map_kind);
 {
   switch(ce)
   {
-     case gpufortrt_map_kind_dec_struct_refs: os << "dec_struct_refs"; break;
      case gpufortrt_map_kind_undefined      : os << "undefined"; break;
      case gpufortrt_map_kind_present        : os << "present"; break;
      case gpufortrt_map_kind_delete         : os << "delete"; break;
@@ -238,4 +237,20 @@ void gpufortrt::internal::record_t::copy_section_to_host(
   #ifndef BLOCKING_COPIES
   }
   #endif
+}
+
+void gpufortrt::internal::record_t::decrement_release_record(
+     gpufortrt_counter_t ctr_to_update,
+     bool blocking, gpufortrt_queue_t queue,
+     bool finalize) {
+  this->dec_refs(ctr_to_update);
+  if ( this->can_be_destroyed(0) || finalize ) {
+    // if both structured and dynamic reference counters are zero, 
+    // a copyout action is performed
+    if (  this->map_kind == gpufortrt_map_kind_copyout
+       || this->map_kind == gpufortrt_map_kind_copy ) {
+      this->copy_to_host(blocking,queue);
+    }
+    this->release();
+  }
 }

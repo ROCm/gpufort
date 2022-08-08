@@ -14,6 +14,10 @@ module gpufortrt_core
     subroutine gpufortrt_shutdown() bind(c,name="gpufortrt_shutdown")
       implicit none
     end subroutine
+    
+    subroutine gpufortrt_data_end() bind(c,name="gpufortrt_data_end")
+      implicit none
+    end subroutine
   
     function gpufortrt_get_stream(async_arg) &
         bind(c,name="gpufortrt_get_stream") &
@@ -116,32 +120,6 @@ contains
       call gpufortrt_data_start_c_impl(c_loc(mappings),size(mappings))  
     else
       call gpufortrt_data_start_c_impl(c_null_ptr,0)  
-    endif
-  end subroutine
-
-  !> Only supposed to apply gpufortrt_map_kind_dec_struct_refs mappings.
-  !> Updates the stored last record index.
-  subroutine gpufortrt_data_end(mappings)
-  !subroutine gpufortrt_data_start(device_kind,mappings)
-    use iso_c_binding
-    use openacc
-    implicit none
-    !integer,intent(in)                               :: device_kind
-    type(mapping_t),dimension(:),intent(in),optional :: mappings
-    !
-    interface
-      subroutine gpufortrt_data_end_c_impl(mappings,num_mappings) bind(c,name="gpufortrt_data_end")
-        use iso_c_binding
-        implicit none
-        type(c_ptr),value :: mappings
-        integer(c_int),value :: num_mappings
-      end subroutine
-    end interface 
-    !
-    if ( present(mappings) ) then
-      call gpufortrt_data_end_c_impl(c_loc(mappings),size(mappings,kind=c_int))  
-    else
-      call gpufortrt_data_end_c_impl(c_null_ptr,0_c_int)  
     endif
   end subroutine
 

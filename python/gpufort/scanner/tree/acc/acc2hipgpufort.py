@@ -40,12 +40,11 @@ _ACC_MAP_COPY = "gpufortrt_map_copy({args})"
 _ACC_MAP_COPYIN = "gpufortrt_map_copyin({args})"
 _ACC_MAP_COPYOUT = "gpufortrt_map_copyout({args})"
 
-_ACC_MAP_DEC_STRUCT_REFS = "gpufortrt_map_dec_struct_refs({args})"
-
 _DATA_CLAUSE_2_TEMPLATE_MAP = {
   "present": _ACC_MAP_PRESENT,
   "create": _ACC_MAP_CREATE,
-  "no_create": _ACC_MAP_NO_CREATE,
+  #"no_create": _ACC_MAP_NO_CREATE,
+  "no_create": _ACC_MAP_CREATE,
   "delete": _ACC_MAP_DELETE,
   "copyin": _ACC_MAP_COPYIN,
   "copyout": _ACC_MAP_COPYOUT,
@@ -267,12 +266,6 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         elif stnode.is_directive(["acc","end","host_data"]):
             # TODO legacy
             result.append("end associate")
-        elif (stnode.is_directive(["acc","parallel"])
-             or stnode.is_directive(["acc","serial"])
-             or stnode.is_directive(["acc","parallel","loop"])
-             or stnode.is_directive(["acc","kernels","loop"])):
-            assert False, "should not be called for serial, parallel (loop) and kernels loop directive"
-        ## data and kernels regions
         elif stnode.is_directive(["acc","enter","data"]):
             result += self._handle_wait_clause()
             mappings = self._handle_data_clauses(stnode,index)
@@ -294,10 +287,8 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
                 args=_create_mappings_str(mappings,[],indent)))
         elif stnode.is_directive(["acc","end","data"]):
             stparentdir = stnode.parent_directive
-            mappings = self._handle_data_clauses(
-                stparentdir,index,template=_ACC_MAP_DEC_STRUCT_REFS)
             result.append(_ACC_DATA_END.format(
-                args=_create_mappings_str(mappings,[],indent)))
+                args=_create_mappings_str([],[],indent)))
         elif stnode.is_directive(["acc","kernels"]):
             result += self._handle_wait_clause()
             mappings = self._handle_data_clauses(stnode,index)
@@ -306,11 +297,9 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
                 args=_create_mappings_str(mappings,options,indent)))
         elif stnode.is_directive(["acc","end","kernels"]):
             stparentdir = stnode.parent_directive
-            mappings = self._handle_data_clauses(
-                stparentdir,index,template=_ACC_MAP_DEC_STRUCT_REFS)
             options = [ self._get_async_clause_expr(stparentdir) ]
             result.append(_ACC_DATA_END.format(
-                args=_create_mappings_str(mappings,options,indent)))
+                args=_create_mappings_str([],options,indent)))
         # _handle if
         self._handle_if_clause(stnode,result)
 
@@ -319,20 +308,12 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
 
 class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
 
-    def _map_array(clause_kind1,var_expr,tavar,**kwargs):
+    def _map_array1(clause_kind,var_expr,tavar,**kwargs):
         asyncr,_   = util.kwargs.get_value("asyncr","",**kwargs)
-        prepend_present,_ = util.kwargs.get_value("prepend_present",False,**kwargs)       
 
-        if prepend_present and clause_kind1.startswith("copy"):
-            clause_kind = "".join(["present_or_",clause_kind1])
-        else:
-            clause_kind = clause_kind1
         if clause_kind in _DATA_CLAUSE_2_TEMPLATE_MAP:
-            runtime_call_tokens = ["gpufortrt_",clause_kind,"("]
-            runtime_call_tokens.append(var_expr)
-            if len(asyncr) and clause_kind in _DATA_CLAUSES_WITH_ASYNC:
-                runtime_call_tokens += [",",asyncr]
-            runtime_call_tokens.append(")") 
+            #runtime_call_tokens = ["gpufortrt_",clause_kind,"("]
+            runtime_call_tokens = ["gpufortrt_deviceptr(", var_expr,")"]
             tokens = [
               "gpufort_array",str(tavar["c_rank"]),"_wrap_device_cptr(&\n",
               " "*4,"".join(runtime_call_tokens),
@@ -341,6 +322,25 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
             return "".join(tokens)
         else:
             raise util.error.SyntaxError("clause not supported") 
+   
+    # TODO rename 
+    def _map_array2(clause_kind,var_expr,tavar,**kwargs):
+        asyncr,_   = util.kwargs.get_value("asyncr","",**kwargs)
+
+        if clause_kind in _DATA_CLAUSE_2_TEMPLATE_MAP:
+            tokens = ["gpufortrt_map_",clause_kind,"(",var_expr]
+            if ( tavar["c_rank"] > 0 ):
+                tokens += [",size(",var_expr,")"]
+            if len(asyncr) and clause_kind in _DATA_CLAUSES_WITH_ASYNC:
+                tokens += [",",asyncr]
+            tokens.append(")") 
+            return "".join(tokens)
+        else:
+            raise util.error.SyntaxError("clause not supported") 
+    
+    def _map_array(*args,**kwargs):
+        return (AccComputeConstruct2HipGpufortRT._map_array1(*args,**kwargs),
+                AccComputeConstruct2HipGpufortRT._map_array2(*args,**kwargs))
     
     def derive_kernel_call_arguments(self):
         """
@@ -349,8 +349,6 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
                Put them before this directive's own clauses.
                translator.analysis routine processes them in reversed order.
         """
-        result = []
-        
         acc_clauses = []
         data_and_kernels_ancestors  = self.stnode.get_acc_data_ancestors()
         kernels_ancestor = self.stnode.get_acc_kernels_ancestor()
@@ -368,15 +366,19 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
           "asyncr":self._get_async_clause_expr(self.stnode),
         }
         
-        mappings = translator.analysis.kernel_args_to_acc_mappings_no_types(
-                       acc_clauses,
-                       self.stnode.kernel_args_tavars,
-                       self.stnode.get_vars_present_per_default(),
-                       AccComputeConstruct2HipGpufortRT._map_array,
-                       **kwargs)
-        for var_expr, argument in mappings:
-            result.append(argument)
-        return result
+        mapping_tuples = translator.analysis.kernel_args_to_acc_mappings_no_types(
+                                 acc_clauses,
+                                 self.stnode.kernel_args_tavars,
+                                 self.stnode.get_vars_present_per_default(),
+                                 AccComputeConstruct2HipGpufortRT._map_array,
+                                 **kwargs)
+
+        mappings  = []
+        arguments = []
+        for var_expr, inner_tuple in mapping_tuples:
+            arguments.append(inner_tuple[0])
+            mappings.append(inner_tuple[1])
+        return mappings, arguments
         
     def transform(self,
                   joined_lines,
@@ -384,24 +386,39 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
                   statements_fully_cover_lines,
                   index=[]):
         result = []
-        stloopnest = self.stnode
-        ttloopnest = stloopnest.parse_result
+        stcomputeconstruct = self.stnode
+        indent = stcomputeconstruct.first_line_indent()
+        ttcomputeconstruct = stcomputeconstruct.parse_result
         
-        queue, found_async = stloopnest.get_async_clause_queue()
-        if not found_async:
-            queue = "0"
-        stloopnest.stream_f_str = "gpufortrt_get_stream({})".format(queue)
-        stloopnest.async_launch_f_str = ".{}.".format(str(found_async)).lower()
-       
-        stloopnest.kernel_args_names = self.derive_kernel_call_arguments()
-        result_loopnest, _ = nodes.STComputeConstruct.transform(
-                                 stloopnest, joined_lines, joined_statements,
-                                 statements_fully_cover_lines, index)
-        result.append(textwrap.dedent(result_loopnest))
-        
-        self._handle_if_clause(stloopnest,result)
+        #queue, found_async = stcomputeconstruct.get_async_clause_queue()
+        #if not found_async:
+        #    queue = "0"
+        #stcomputeconstruct.stream_f_str = "gpufortrt_get_stream({})".format(queue)
+        #stcomputeconstruct.async_launch_f_str = ".{}.".format(str(found_async)).lower()
+        mappings, arguments = self.derive_kernel_call_arguments()
+      
+        # enter structured region region
+        result += self._handle_wait_clause()
+        options = [ self._get_async_clause_expr(stcomputeconstruct) ]
+        result.append(_ACC_DATA_START.format(
+            args=_create_mappings_str(mappings,options,indent)))
 
-        indent = stloopnest.first_line_indent()
+        # kernel launch 
+        stcomputeconstruct.kernel_args_names = arguments
+        result_computeconstruct, _ = nodes.STComputeConstruct.transform(
+                                 stcomputeconstruct, joined_lines, joined_statements,
+                                 statements_fully_cover_lines, index)
+        result.append(textwrap.dedent(result_computeconstruct))
+
+        # leave structured region
+        stparentdir = stcomputeconstruct.parent_directive
+        options = [ self._get_async_clause_expr(stparentdir) ]
+        result.append(_ACC_DATA_END.format(
+            args=_create_mappings_str([],options,indent)))
+        
+        self._handle_if_clause(stcomputeconstruct,result)
+
+        indent = stcomputeconstruct.first_line_indent()
         return textwrap.indent("".join(result),indent), len(result)
 
 def AllocateHipGpufortRT(stallocate, joined_statements, index):

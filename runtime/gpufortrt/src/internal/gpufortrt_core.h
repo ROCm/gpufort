@@ -84,21 +84,29 @@ namespace gpufortrt {
 
       /* Destroy this record. */
       void destroy();
-    };
 
+      /** Decrement the specified counter,
+       *  release the record if all counters are zero.
+       *  Perform a copy out operation if record's map kind requires this.
+       */
+      void decrement_release_record(record_t& record,
+                                    gpufortrt_counter_t ctr_to_update,
+                                    bool blocking, gpufortrt_queue_t queue,
+                                    bool finalize);
+    };
+    
     struct record_list_t {
       std::vector<record_t> records;
       int last_record_index = 0;
       size_t total_memory_bytes = 0;
     public:
+       void reserve(int capacity);
+       
        /** 
         * Write string representation of 
-        * this record to the ostream. */
+        * this record to the ostream. 
+        */
        void to_string(std::ostream& os) const;
-
-       bool is_initialized() const;
-       
-       void initialize();
        
        void destroy();
     
@@ -155,6 +163,49 @@ namespace gpufortrt {
          bool finalize);
     };
 
+    struct structured_region_stack_entry_t {
+      int region_id = -1;
+      record_t* record;
+    public:
+      structured_region_stack_entry_t(int region_id,record_t& record);
+    }
+
+    struct structured_region_stack_t {
+      int current_region = 0;
+      std::vector<structured_region_stack_entry_t> entries;
+    public:
+      void reserve(int capacity);
+      
+      /** 
+       * Decrement the structured reference counter of 
+       * all records associated with the current structured
+       * region and then remove them from the stack.
+       */ 
+      void enter_structured_region();
+      /**
+       * Push a new record on the stack 
+       * and associate it with the current region.
+       */
+      void push_back(record_t& record);
+      
+      /**
+       * Find an entry in the current region.
+       * \note: This method is specifically for retrieving
+       * records associated with the implicit region
+       * that is introduced around a compute region.
+       * \return a pointer to a record that contains the data that the `hostptr`
+                 points too, or nullptr.
+       */
+      record_t* find_in_current_region(void* hostptr);
+
+      /** 
+       * Decrement the structured reference counter of 
+       * all records associated with the current structured
+       * region and then remove them from the stack.
+       */ 
+      void leave_structured_region();
+    }
+
     struct queue_record_t {
       int id;
       gpufortrt_queue_t queue;
@@ -173,6 +224,8 @@ namespace gpufortrt {
     struct queue_record_list_t {
       std::vector<queue_t> records;
     public:
+      void reserve(int capacity);
+
       size_t find_record(const int id) const;
       size_t find_available_record(const int id) const;
       /**
@@ -187,6 +240,7 @@ namespace gpufortrt {
     // global parameters, influenced by environment variables
     extern size_t INITIAL_QUEUE_RECORDS_CAPACITY;//= 128
     extern size_t INITIAL_RECORDS_CAPACITY;//= 4096
+    extern size_t INITIAL_STRUCTURED_REGION_STACK_CAPACITY;//= 128
     // reuse/fragmentation controls
     extern int BLOCK_SIZE;            // = 32
     extern double REUSE_THRESHOLD;    // = 0.9 //> only reuse record if mem_new>=factor*mem_old
@@ -196,5 +250,6 @@ namespace gpufortrt {
     extern int num_records;
     extern record_list_t record_list;
     extern queue_record_list_t queue_record_list; 
+    extern structured_region_stack_t structured_region_stack; 
   } // namespace internal
 }

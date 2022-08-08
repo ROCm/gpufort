@@ -26,33 +26,6 @@ interface {{interface_name}}
 end interface
 {% endmacro %}
 {########################################################################################}
-{%- macro render_map_dec_struct_refs_routines(datatypes) -%}
-{# NOTE: type(*) is a Fortran 2018 feature.
-{########################################################################################}
-{% for tuple in datatypes -%}
-function gpufortrt_map_dec_struct_refs_{{tuple[0]}}_scal(hostptr) result(retval)
-  use iso_c_binding
-  use gpufortrt_types
-  implicit none
-  {{tuple[2]}},target,intent(in) :: hostptr
-  !
-  type(mapping_t) :: retval
-  !
-  call gpufort_mapping_init(retval,c_loc(hostptr),0_c_size_t,gpufortrt_map_kind_dec_struct_refs,.false.)
-end function
-
-function gpufortrt_map_dec_struct_refs_{{tuple[0]}}_arr(hostptr) result(retval)
-  use iso_c_binding
-  use gpufortrt_types
-  implicit none
-  {{tuple[2]}},dimension(*),target,intent(in) :: hostptr
-  !
-  type(mapping_t) :: retval
-  !
-  call gpufort_mapping_init(retval,c_loc(hostptr),0_c_size_t,gpufortrt_map_kind_dec_struct_refs,.false.)
-end function
-{% endfor %}
-{########################################################################################}
 {%- macro render_map_routines(data_clauses,datatypes) -%}
 {# NOTE: type(*) is a Fortran 2018 feature.
 {########################################################################################}

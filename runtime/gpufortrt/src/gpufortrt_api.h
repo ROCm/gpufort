@@ -89,6 +89,18 @@ extern "C" {
           int async,
           bool never_deallocate,
           gpufortrt_counter_t ctr_to_update);
+  
+  void* gpufortrt_copy(
+         void* hostptr,
+         size_t num_bytes,
+         bool never_deallocate,
+         gpufortrt_counter_t ctr_to_update);
+  void* gpufortrt_copy_async(
+         void* hostptr,
+         size_t num_bytes,
+         int async,
+         bool never_deallocate,
+         gpufortrt_counter_t ctr_to_update);
 
   void* gpufortrt_copyout(
          void* hostptr,
@@ -108,18 +120,6 @@ extern "C" {
          void* hostptr,
          size_t num_bytes,
          int async);
-  
-  void* gpufortrt_copy(
-         void* hostptr,
-         size_t num_bytes,
-         bool never_deallocate,
-         gpufortrt_counter_t ctr_to_update);
-  void* gpufortrt_copy_async(
-         void* hostptr,
-         size_t num_bytes,
-         int async,
-         bool never_deallocate,
-         gpufortrt_counter_t ctr_to_update);
 
   void gpufortrt_update_host(
          void* hostptr,

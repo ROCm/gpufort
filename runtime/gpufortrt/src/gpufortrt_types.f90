@@ -3,6 +3,7 @@
 !> All type definitions must match those in `gpufortrt_types.h`.
 module types
   integer, parameter :: gpufortrt_async_noval = -1 
+  integer,parameter  :: gpufortrt_handle_kind = c_int
   
   !> Mapping kinds.
   enum, bind(c)
@@ -30,60 +31,24 @@ module types
     logical(c_bool) :: never_deallocate = .false.
   end type
 
-  interface gpufortrt_mapping_init
-    module procedure :: gpufortrt_mapping_init_cptr,&
-                        gpufortrt_mapping_init_scal,&
-                        gpufortrt_mapping_init_arr
-  end interface
-
 contains
 
-  subroutine gpufortrt_mapping_init_cptr(mapping,hostptr,num_bytes,map_kind,never_deallocate)
+  subroutine gpufortrt_mapping_init(mapping,hostptr,num_bytes,map_kind,never_deallocate)
     use iso_c_binding
+    use gpufortrt_auxiliary
     implicit none
     !
     type(gpufortrt_mapping_init),intent(inout) :: mapping
     type(c_ptr),intent(in) :: hostptr
     integer(c_size_t),intent(in) :: num_bytes
     integer(kind(gpufortrt_map_kind_undefined)),intent(in) :: map_kind
-    logical,intent(in) :: never_deallocate
+    logical,intent(in),optional :: never_deallocate
     !
     mapping%hostptr    = hostptr
     mapping%num_bytes  = num_bytes
     mapping%map_kind   = map_kind
-    mapping%never_deallocate = never_deallocate
-  end subroutine
-  
-  subroutine gpufortrt_mapping_init_scal(mapping,hostptr,num_bytes,map_kind,never_deallocate)
-    use iso_c_binding
-    implicit none
-    !
-    type(gpufortrt_mapping_init),intent(inout) :: mapping
-    type(*),target,intent(in) :: hostptr
-    integer(c_size_t),intent(in) :: num_bytes
-    integer(kind(gpufortrt_map_kind_undefined)),intent(in) :: map_kind
-    logical,intent(in) :: never_deallocate
-    !
-    mapping%hostptr    = c_loc(hostptr)
-    mapping%num_bytes  = num_bytes
-    mapping%map_kind   = map_kind
-    mapping%never_deallocate = never_deallocate
-  end subroutine
-  
-  subroutine gpufortrt_mapping_init_arr(mapping,hostptr,num_bytes,map_kind,never_deallocate)
-    use iso_c_binding
-    implicit none
-    !
-    type(gpufortrt_mapping_init),intent(inout) :: mapping
-    type(*),dimension(*),target,intent(in) :: hostptr
-    integer(c_size_t),intent(in) :: num_bytes
-    integer(kind(gpufortrt_map_kind_undefined)),intent(in) :: map_kind
-    logical,intent(in) :: never_deallocate
-    !
-    mapping%hostptr    = c_loc(hostptr)
-    mapping%num_bytes  = num_bytes
-    mapping%map_kind   = map_kind
-    mapping%never_deallocate = never_deallocate
+    mapping%never_deallocate = logical(eval_optval(never_deallocate,.false._c_bool),&
+                                       kind=c_bool)
   end subroutine
 
 end module

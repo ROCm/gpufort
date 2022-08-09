@@ -188,8 +188,16 @@ namespace gpufortrt {
        */
       void push_back(record_t& record);
       
+
       /**
-       * Find an entry in the current region.
+       * Find an entry in the stack that is associated with `hostptr`.
+       * \return a pointer to a record that contains the data that the `hostptr`
+                 points too, or nullptr.
+       */
+      record_t* find(void* hostptr);
+      
+      /**
+       * Find an entry in the current structured region that is associated with `hostptr`.
        * \note: This method is specifically for retrieving
        * records associated with the implicit region
        * that is introduced around a compute region.

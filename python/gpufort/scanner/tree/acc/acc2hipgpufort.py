@@ -323,14 +323,13 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
         else:
             raise util.error.SyntaxError("clause not supported") 
    
-    # TODO rename 
     def _map_array2(clause_kind,var_expr,tavar,**kwargs):
         asyncr,_   = util.kwargs.get_value("asyncr","",**kwargs)
 
         if clause_kind in _DATA_CLAUSE_2_TEMPLATE_MAP:
             tokens = ["gpufortrt_map_",clause_kind,"(",var_expr]
             if ( tavar["c_rank"] > 0 ):
-                tokens += [",size(",var_expr,")"]
+                tokens += [",size(",var_expr,",kind=c_int)"]
             if len(asyncr) and clause_kind in _DATA_CLAUSES_WITH_ASYNC:
                 tokens += [",",asyncr]
             tokens.append(")") 
@@ -390,11 +389,6 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
         indent = stcomputeconstruct.first_line_indent()
         ttcomputeconstruct = stcomputeconstruct.parse_result
         
-        #queue, found_async = stcomputeconstruct.get_async_clause_queue()
-        #if not found_async:
-        #    queue = "0"
-        #stcomputeconstruct.stream_f_str = "gpufortrt_get_stream({})".format(queue)
-        #stcomputeconstruct.async_launch_f_str = ".{}.".format(str(found_async)).lower()
         mappings, arguments = self.derive_kernel_call_arguments()
       
         # enter structured region region
@@ -411,8 +405,7 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
         result.append(textwrap.dedent(result_computeconstruct))
 
         # leave structured region
-        stparentdir = stcomputeconstruct.parent_directive
-        options = [ self._get_async_clause_expr(stparentdir) ]
+        options = [ self._get_async_clause_expr(stcomputeconstruct) ]
         result.append(_ACC_DATA_END.format(
             args=_create_mappings_str([],options,indent)))
         

@@ -39,6 +39,17 @@ gpufortrt::internal::record_t* gpufortrt::internal::structured_region_stack_t::f
   }
 }
 
+gpufortrt::internal::record_t* gpufortrt::internal::structured_region_stack_t::find(void* hostptr) {
+  for (int i = this->entries.size(); i >= 0; i--) {
+    auto& entry = this->entries[i];
+    size_t offset_bytes;
+    if ( entry.record->is_subarray(hostptr,0,offset_bytes/*inout*/) ) {
+       return entry.record;
+    } 
+  }
+  return nullptr;
+}
+
 void gpufortrt::internal::structured_region_stack_t::leave_structured_region(bool blocking,gpufortrt_queue_t queue) {
   for (int i = this->entries.size(); i >= 0; i--) {
     auto& entry = this->entries[i];

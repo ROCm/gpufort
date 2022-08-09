@@ -3,7 +3,7 @@
 !> All type definitions must match those in `gpufortrt_types.h`.
 module types
   integer, parameter :: gpufortrt_async_noval = -1 
-  integer,parameter  :: gpufortrt_handle_kind = c_int
+  integer, parameter :: gpufortrt_handle_kind = c_int
   
   !> Mapping kinds.
   enum, bind(c)
@@ -43,11 +43,15 @@ contains
     integer(kind(gpufortrt_map_kind_undefined)),intent(in) :: map_kind
     logical,intent(in),optional :: never_deallocate
     !
+    logical :: opt_never_deallocate
+    !
+    opt_never_deallocate = .false.
+    if ( present(never_deallocate) ) opt_never_deallocate = never_deallocate 
+    !
     mapping%hostptr    = hostptr
     mapping%num_bytes  = num_bytes
     mapping%map_kind   = map_kind
-    mapping%never_deallocate = logical(eval_optval(never_deallocate,.false._c_bool),&
-                                       kind=c_bool)
+    mapping%never_deallocate = logical(opt_never_deallocate,kind=c_bool)
   end subroutine
 
 end module

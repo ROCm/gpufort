@@ -1,18 +1,21 @@
-include ../rules.mk
+include ../../rules.mk
 
 .PHONY: clean
 
-CXX_OBJ = ... 
-F_OBJ   = ... 
+CXX_SRC = ./queue_record_t.cpp \
+          ./structured_region_stack_t.cpp \
+          ./queue_record_list_t.cpp \
+          ./record_list_t.cpp \
+          ./record_t.cpp \
+          ./auxiliary.cpp \
+          ./gpufortrt_core.cpp
 
-$(LIBGPUFORTRT): $(CXX_OBJ) $(F_OBJ)
-	ar -crs $@ $^ 
+CXX_OBJ = $(CXX_SRC:.cpp=.cpp.o) 
+
+all: $(CXX_OBJ)
 
 $(CXX_OBJ): %.cpp.o: %.cpp
 	$(CXX) -c $< $(CXXFLAGS)
-
-$(F_OBJ): %.o: %.f90
-	$(FC) -c $< $(FCFLAGS)
 
 clean:
 	rm -f *.o *.mod *.a

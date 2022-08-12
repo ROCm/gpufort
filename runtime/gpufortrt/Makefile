@@ -5,7 +5,7 @@ include rules.mk
 lib/$(LIBGPUFORTRT): | codegen build
 
 codegen:
-	python3 codegen.py src/gpufortrt.template.f90 -d 7
+	python3 codegen.py src/gpufortrt_api.template.f90 -d 7
 
 build:
 	mkdir -p lib/

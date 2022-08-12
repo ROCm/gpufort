@@ -34,7 +34,6 @@ contains
 
   subroutine gpufortrt_mapping_init(mapping,hostptr,num_bytes,map_kind,never_deallocate)
     use iso_c_binding
-    use gpufortrt_auxiliary
     implicit none
     !
     type(gpufortrt_mapping_init),intent(inout) :: mapping
@@ -43,15 +42,15 @@ contains
     integer(kind(gpufortrt_map_kind_undefined)),intent(in) :: map_kind
     logical,intent(in),optional :: never_deallocate
     !
-    logical :: opt_never_deallocate
+    logical(c_bool) :: opt_never_deallocate
     !
-    opt_never_deallocate = .false.
-    if ( present(never_deallocate) ) opt_never_deallocate = never_deallocate 
+    opt_never_deallocate = .false._c_bool
+    if ( present(never_deallocate) ) opt_never_deallocate = logical(never_deallocate,kind=c_bool)
     !
     mapping%hostptr    = hostptr
     mapping%num_bytes  = num_bytes
     mapping%map_kind   = map_kind
-    mapping%never_deallocate = logical(opt_never_deallocate,kind=c_bool)
+    mapping%never_deallocate = opt_never_deallocate
   end subroutine
 
 end module

@@ -73,24 +73,29 @@ contains
       end subroutine
     end interface
     !
+    logical(c_bool) :: opt_condition
+    !
+    opt_condition = .true._c_bool
+    if ( present(condition) ) opt_condition = logical(condition,kind=c_bool)
+    !
     if ( present(wait_arg) ) then
       if ( present(async_arg) ) then
         call gpufortrt_wait_async_c_impl(&
              c_loc(wait_arg),size(wait_arg,kind=c_int),&
              c_loc(async_arg),size(async_arg,kind=c_int),&
-             logical(eval_optval(condition,.true.),c_bool))
+             opt_condition)
       else
         call gpufortrt_wait_c_impl(&
              c_loc(wait_arg),size(wait_arg,kind=c_int),&
-             logical(eval_optval(condition,.true.),c_bool))
+             opt_condition)
       endif
     else
       if ( present(async_arg) ) then
         call gpufortrt_wait_all_async_c_impl(&
              c_loc(async_arg),size(async_arg,kind=c_int),&
-             logical(eval_optval(condition,.true.),c_bool))
+             opt_condition)
       else
-        call gpufortrt_wait_all_c_impl(logical(eval_optval(condition,.true.),c_bool))
+        call gpufortrt_wait_all_c_impl(opt_condition)
       endif
     endif
   end subroutine
@@ -162,7 +167,6 @@ contains
 
   subroutine gpufortrt_enter_exit_data(mappings,async,finalize)
     use iso_c_binding
-    use gpufortrt_auxiliary
     implicit none
     !
     !integer,intent(in)                              :: device_kind
@@ -188,31 +192,36 @@ contains
       end subroutine
     end interface 
     !
+    logical(c_bool)  :: opt_finalize
+    !
+    opt_finalize = .false._c_bool
+    if ( present(finalize) ) opt_finalize = logical(finalize,kind=c_bool)
+    !
     if ( present(async) ) then
       if ( present(mappings) ) then
         call gpufortrt_enter_exit_data_async_c_impl(&
           c_loc(mappings),&
           size(mappings,kind=c_int_t),&
           async,&
-          logical(eval_optval(finalize,.false.),kind=c_bool)) 
+          opt_finalize) 
       else
         call gpufortrt_enter_exit_data_async_c_impl(&
           c_null_ptr,&
           0_c_size_t,&
           async,&
-          logical(eval_optval(finalize,.false.),kind=c_bool)) 
+          opt_finalize) 
       endif
     else
       if ( present(mappings) ) then
         call gpufortrt_enter_exit_data_c_impl(&
           c_loc(mappings),&
           size(mappings,kind=c_int_t),&
-          logical(eval_optval(finalize,.false.),kind=c_bool)) 
+          opt_finalize) 
       else
         call gpufortrt_enter_exit_data_c_impl(&
           c_null_ptr,&
           0_c_int_t,&
-          logical(eval_optval(finalize,.false.),kind=c_bool)) 
+          opt_finalize) 
       endif
     endif
   end subroutine
@@ -222,27 +231,32 @@ contains
   !> \param[in] if_present Only return device pointer if one could be found for the host pointer.
   !>                       otherwise host pointer is returned. Defaults to '.false.'.
   !> \note Returns a c_null_ptr if the host pointer is invalid, i.e. not C associated.
-  function gpufortrt_use_device_b(hostptr,num_bytes,condition,if_present) result(resultptr)
+  function gpufortrt_use_device_b(hostptr,condition,if_present) result(resultptr)
     use iso_c_binding
     implicit none
     type(c_ptr),intent(in)       :: hostptr
-    integer(c_size_t),intent(in) :: num_bytes
     logical,intent(in),optional  :: condition, if_present
     !
     type(c_ptr) :: resultptr
     !
     interface
-      function gpufortrt_use_device_c_impl(hostptr,num_bytes,condition,if_present) &
+      function gpufortrt_use_device_c_impl(hostptr,condition,if_present) &
           bind(c,name="gpufortrt_use_device") &
           result(deviceptr)
         type(c_ptr),value,intent(in)       :: hostptr
-        integer(c_size_t),value,intent(in) :: num_bytes
         logical(c_bool),value,intent(in)   :: condition, if_present
       end function
     end interface
+    !
+    logical(c_bool)  :: opt_condition, opt_if_present
+    !
+    opt_condition = .true._c_bool
+    opt_if_present = .false._c_bool
+    if ( present(condition) ) opt_condition = logical(condition,kind=c_bool)
+    if ( present(if_present) ) opt_if_present = logical(if_present,kind=c_bool)
+    !
     resultptr = gpufortrt_use_device_c_impl(hostptr,num_bytes,&
-        eval_optval(logical(condition,kind=c_bool),.false._c_bool),&
-        eval_optval(logical(if_present,kind=c_bool).false._c_bool),&
+                                            opt_condition,opt_if_present)
   end function
 
   subroutine gpufortrt_delete_b(hostptr,finalize)
@@ -278,7 +292,7 @@ contains
     implicit none
     type(c_ptr),intent(in) :: hostptr
     integer(c_size_t),intent(in) :: num_bytes
-    integer(kind(gpufortrt_counter_none)),optional,intent(in) :: ctr_to_update
+    integer(kind(gpufortrt_counter_none)),intent(in),optional :: ctr_to_update
     !
     type(c_ptr) :: deviceptr
     !
@@ -291,7 +305,11 @@ contains
       end function
     end interface
     !
-    deviceptr = gpufortrt_present_c_impl(hostptr,num_bytes,&
-        eval_optval(ctr_to_update,gpufortrt_counter_none))
+    integer(kind(gpufortrt_counter_none)) :: opt_ctr_to_update
+    !
+    opt_ctr_to_update = gpufortrt_counter_none
+    if ( present(ctr_to_update) ) opt_ctr_to_update = ctr_to_update
+    !
+    deviceptr = gpufortrt_present_c_impl(hostptr,num_bytes,opt_ctr_to_update)
   end function
 end module

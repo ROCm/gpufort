@@ -1,38 +1,13 @@
 {# SPDX-License-Identifier: MIT #}
 {# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved. #}
-{########################################################################################}
-{%- macro render_set_fptr_lower_bound(fptr,array,rank) -%}
-{########################################################################################}
-{% set rank_ub=rank+1 %}
-{{fptr}}(&
-{% for i in range(1,rank_ub) %}
-  lbound({{array}},{{i}}):{{ "," if not loop.last else ")" }}&
-{% endfor %}
-    => {{fptr}}
-{%- endmacro  -%}
 {#######################################################################################}
-{% macro render_interface(interface_name,has_backend=False) %}
+{% macro render_interface(routine,datatypes) %}
 {#######################################################################################}
-interface {{interface_name}}
-  module procedure &
-{% if has_backend %}
-    {{interface_name}}_b, &
-{% endif %}
-{% for tuple in datatypes %}
-{%   for dims in dimensions %}
-{%     set name = interface_name+"_" + tuple[0] + "_" + dims|string %}
-    {{name}}{{",&\n" if not loop.last}}{% endfor %}{{ ",&" if not loop.last}}
-{% endfor %}
-end interface
-{% endmacro %}
-{#######################################################################################}
-{% macro render_interface_v2(routine,datatypes) %}
-{#######################################################################################}
-interface gpufortrt_{{routine}}
-  module procedure :: gpufortrt_{{routine}}_b
-{%   for tuple in datatypes -%}
-  module procedure :: gpufortrt_{{routine}}_{{tuple[0]}}_scal
-  module procedure :: gpufortrt_{{routine}}_{{tuple[0]}}_arr
+interface {{routine}}
+  module procedure :: {{routine}}_b
+{%   for tuple in datatypes %}
+  module procedure :: {{routine}}_{{tuple[0]}}_scal
+  module procedure :: {{routine}}_{{tuple[0]}}_arr
 {%   endfor %}{# datatypes #}
 end interface
 {% endmacro %}
@@ -55,6 +30,7 @@ function {{routine}}_b(hostptr,num_bytes,never_deallocate) result(retval)
   call gpufortrt_mapping_init(retval,c_loc(hostptr),num_bytes,&
          gpufortrt_map_kind_{{clause}},never_deallocate)
 end function
+
 {%   for tuple in datatypes -%}
 !> \note never_deallocate only has effect on create,copyin,copyout, and copy mappings.
 function {{routine}}_{{tuple[0]}}_scal(hostptr,never_deallocate) result(retval)
@@ -82,6 +58,7 @@ function {{routine}}_{{tuple[0]}}_arr(hostptr,num_elements,never_deallocate) res
   !
   retval = {{routine}}_b(c_loc(hostptr),int({{tuple[1]}},c_size_t)*num_elements,never_deallocate)
 end function
+
 {%   endfor -%} 
 {% endfor -%} 
 {%- endmacro -%}
@@ -132,6 +109,7 @@ function gpufortrt_{{clause}}_b(hostptr,num_bytes,never_deallocate,&
         opt_ctr_to_update)
   endif
 end function
+
 {% endfor %}
 {% endmacro %}
 {#######################################################################################}
@@ -172,6 +150,7 @@ function gpufortrt_{{clause}}_{{tuple[0]}}_arr(hostptr,num_elements,&
   deviceptr = gpufortrt_{{clause}}_b(c_loc(hostptr),int(num_elements,kind=c_size_t)*int({{tuple[1]}},kind=c_size_t),&
                                      never_deallocate,async_arg,ctr_to_update)
 end function
+
 {%   endfor %}{# datatypes #}
 {% endfor %}{# clause #}
 {% endmacro %}
@@ -181,7 +160,6 @@ end function
 {% for tuple in datatypes -%}
 function gpufortrt_present_{{tuple[0]}}_scal(hostptr,ctr_to_update) result(deviceptr)
   use iso_c_binding
-  use gpufortrt_auxiliary
   implicit none
   {{tuple[2]}},target,intent(in) :: hostptr
   integer(kind(gpufortrt_counter_none)),intent(in),optional :: ctr_to_update
@@ -197,7 +175,6 @@ end function
 
 function gpufortrt_present_{{tuple[0]}}_arr(hostptr,num_elements,ctr_to_update) result(deviceptr)
   use iso_c_binding
-  use gpufortrt_auxiliary
   implicit none
   {{tuple[2]}},target,intent(in) :: hostptr
   integer(c_int),intent(in) :: num_elements
@@ -211,18 +188,22 @@ function gpufortrt_present_{{tuple[0]}}_arr(hostptr,num_elements,ctr_to_update) 
   deviceptr = gpufortrt_present_b(c_loc(hostptr),int({{tuple[1]}},kind=c_size_t)*num_elements,&
                                   opt_ctr_to_update)
 end function
+
 {% endfor %}{# datatypes #}
+{% endmacro %}
 {#######################################################################################}
 {% macro render_map_interfaces(datatypes) %}
 {#######################################################################################}
 {% for clause in ["present","create","copyin","copy","copyout"] %}
-{{ render_interface_v2("map_"+clause,datatypes) }}
+{{ render_interface("gpufortrt_map_"+clause,datatypes) }}
+{% endfor %}
 {% endmacro %}
 {#######################################################################################}
 {% macro render_map_and_lookup_interfaces(datatypes) %}
 {#######################################################################################}
 {% for clause in ["present","create","copyin","copy","copyout"] %}
-{{ render_interface_v2(clause,datatypes) }}
+{{ render_interface("gpufortrt_"+clause,datatypes) }}
+{% endfor %}
 {% endmacro %}
 {#######################################################################################}
 {% macro render_basic_update_routine(update_kind) %}
@@ -296,6 +277,7 @@ subroutine gpufortrt_{{update_kind}}_b(hostptr,num_bytes,condition,if_present,as
     endif
   endif
 end subroutine
+{% endmacro %}
 {#######################################################################################}
 {% macro render_specialized_update_routines(update_kind,datatypes) %}
 {#######################################################################################}
@@ -320,10 +302,70 @@ subroutine gpufortrt_{{update_kind}}_{{tuple[0]}}_arr(hostptr,num_elements,condi
   !
   call gpufortrt_{{update_kind}}_b(c_loc(hostptr),int({{tuple[1]}},c_size_t),condition,if_present,async_arg)
 end subroutine
+
+{% endfor %}{# datatypes #}
+{% endmacro %}
+{########################################################################################}
+{%- macro render_set_fptr_lower_bound(fptr,rank) -%}
+{########################################################################################}
+{{fptr}}(&
+{% for i in range(1,rank+1) %}
+  opt_lbounds({{i}}):{{ "," if not loop.last else ")" }}&
+{% endfor %}
+    => {{fptr}}
+{%- endmacro  -%}
+{#######################################################################################}
+{% macro render_specialized_use_device_routines(datatypes,max_rank) %}
+{#######################################################################################}
+{% for tuple in datatypes %}
+function gpufortrt_use_device0_{{tuple[0]}}(hostptr,condition,if_present) result(resultptr)
+  use iso_c_binding
+  implicit none
+  {{tuple[2]}},target,intent(in) :: hostptr
+  logical,intent(in),optional  :: condition, if_present
+  !
+  {{tuple[2]}},pointer :: resultptr
+  !
+  type(c_ptr) :: resultcptr
+  !
+  resultcptr = gpufortrt_use_device_b(hostptr,opt_condition,opt_if_present)
+  call c_f_pointer(resultcptr,resultptr)
+end function
+
+{% for rank in range(1,max_rank+1) %}
+function gpufortrt_use_device{{rank}}_{{tuple[0]}}(hostptr,sizes,lbounds,condition,if_present) result(resultptr)
+  use iso_c_binding
+  implicit none
+  {{tuple[2]}},target,intent(in) :: hostptr(*)
+  integer,intent(in),optional :: sizes({{rank}}), lbounds({{rank}})
+  logical,intent(in),optional  :: condition, if_present
+  !
+  {{tuple[2]}},pointer :: resultptr(:{% for i in range(1,rank) %},:{% endfor %}}})
+  !
+  type(c_ptr) :: tmp_cptr
+  integer :: opt_sizes({{rank}}), opt_lbounds({{rank}})
+  !
+  opt_sizes = 1
+  opt_lbounds = 1  
+  if ( present(sizes) ) opt_sizes = sizes
+  if ( present(lbounds) ) opt_lbounds = lbounds
+  tmp_cptr = gpufortrt_use_device_b(hostptr,opt_condition,opt_if_present)
+  call c_f_pointer(tmp_cptr,resultptr,shape=opt_sizes)
+{{ render_set_fptr_lower_bound("resultptr",rank) | indent(2,True) }}
+end function
+
+{%   endfor %}{# rank #}
 {% endfor %}{# datatypes #}
 {% endmacro %}
 {#######################################################################################}
-{% macro render_basic_use_device_routines() %}
-
+{% macro render_use_device_interface(datatypes,max_rank) %}
+{#######################################################################################}
+{% for rank in range(0,max_rank+1) %}
+interface gpufortrt_use_device{{rank}}
+{%   for tuple in datatypes %}
+  module procedure :: gpufortrt_use_device{{rank}}_{{tuple[0]}}
+{%   endfor %}{# datatypes #}
+end interface
+{% endfor %}{# rank #}
 {% endmacro %}
 {#######################################################################################}

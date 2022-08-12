@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-import os
+import os,sys
 import pprint
 import argparse
 
@@ -48,20 +48,8 @@ if __name__ == "__main__":
       ("c4","2*4","complex(c_float_complex)"),
       ("c8","2*8","complex(c_double_complex)"),
     ]
-    mappings = [
-      "dec_struct_refs",
-      "present",
-      "create",
-      "no_create",
-      "copy",
-      "copyin",
-      "copyout",
-      "delete",
-    ]
-    dimensions = range(0,max_dims+1)
     context = {"datatypes" : datatypes,
-               "mappings": mappings,
-               "dimensions" : dimensions}
+               "max_rank" : max_dims}
  
     Model(template_path).\
        generate_file(outfile_path,context)

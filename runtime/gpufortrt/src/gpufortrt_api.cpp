@@ -199,8 +199,7 @@ void gpufortrt_enter_exit_data_async(gpufortrt_mapping_t* mappings,
                  finalize);
 }
 
-void* gpufortrt_use_device(void* hostptr,size_t num_bytes,
-                              bool condition,bool if_present) {
+void* gpufortrt_use_device_bytes(void* hostptr,bool condition,bool if_present) {
   void* resultptr = hostptr;
   if ( hostptr == nullptr ) {
      return nullptr;
@@ -210,9 +209,7 @@ void* gpufortrt_use_device(void* hostptr,size_t num_bytes,
     if ( success ) {
       auto& record = gpufortrt::internal::record_list.records[loc];
       size_t offset_bytes;
-      bool fits = record.is_subarray(hostptr,num_bytes,offset_bytes/*inout*/); // TODO might not fit, i.e. only subarray
-                                                                      // might have been mapped before
-      if ( !fits ) LOG_ERROR("gpufortrt_use_device: input data region overlaps with previously mapped data but is no subset of it") 
+      record.is_subarray(hostptr,0,offset_bytes/*inout*/);
       return static_cast<void*>(static_cast<char*>(record.deviceptr) + offset_bytes);
     } else if ( if_present ) {
       return hostptr;

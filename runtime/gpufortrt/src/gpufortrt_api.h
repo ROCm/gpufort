@@ -32,7 +32,6 @@ extern "C" {
   
   void* gpufortrt_use_device(
           void* hostptr,
-          size_t num_bytes,
           bool condition,
           bool if_present);
  

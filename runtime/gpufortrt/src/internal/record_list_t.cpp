@@ -6,7 +6,9 @@
 
 #include "assert.h"
 
-#include <hip/hip_runtime_api>
+#include "hip/hip_runtime_api.h"
+
+#include "auxiliary.h"
 
 void gpufortrt::internal::record_list_t::reserve(int capacity) {
   this->records.reserve(capacity); 
@@ -30,13 +32,13 @@ size_t gpufortrt::internal::record_list_t::find_record(void* hostptr,bool& succe
   } else {
     for ( size_t i = 0; i < this->records.size(); i++ ) {
       if ( this->records[i].is_subarray(hostptr,0,offset_bytes) ) {
-        loc = i
+        loc = i;
         success = true;
         break;
       }
     }
     // log
-    if ( gpufortrt::LOG_LEVEL > 2 ) {
+    if ( gpufortrt::internal::LOG_LEVEL > 2 ) {
       if ( success ) {
         LOG_INFO(3,"lookup record: " << this->records[loc])
       } else {
@@ -51,7 +53,7 @@ size_t gpufortrt::internal::record_list_t::find_available_record(size_t num_byte
   size_t loc = this->records.size(); // element after last record
   reuse_existing = false;
   for ( size_t i = 0; i < this->records.size(); i++ ) {
-    gpufortrt::internal::record_t& record = record;
+    gpufortrt::internal::record_t& record = this->records[i];
     if ( !record.is_initialized() ) {
       loc = i;
       break; // break outer loop
@@ -61,8 +63,8 @@ size_t gpufortrt::internal::record_list_t::find_available_record(size_t num_byte
       // multiple times in a row
       if ( record.num_bytes < num_bytes
            || num_bytes < record.num_bytes * REUSE_THRESHOLD ) {
-        record.dec_refs(gpufortrt::Structured); // decrement structured references
-        if ( record.can_be_destroyed(gpufortrt::NUM_REFS_TO_DEALLOCATE) ) {
+        record.dec_refs(gpufortrt_counter_structured); // decrement structured references
+        if ( record.can_be_destroyed(gpufortrt::internal::NUM_REFS_TO_DEALLOCATE) ) {
           record.destroy();
           this->total_memory_bytes -= record.num_bytes;
           loc = i;
@@ -83,15 +85,16 @@ size_t gpufortrt::internal::record_list_t::use_increment_record(
    void* hostptr,
    size_t num_bytes,
    gpufortrt_map_kind_t map_kind,
-   counter_t ctr_to_update
+   gpufortrt_counter_t ctr_to_update,
    bool blocking,
    gpufortrt_queue_t queue,
    bool never_deallocate) {
   bool success;
   size_t loc = this->find_record(hostptr,success/*inout*/);
   if ( success ) {
-    this->record[loc].inc_refs(ctr_to_update);
+    this->records[loc].inc_refs(ctr_to_update);
   } else {
+    bool reuse_existing = false;
     loc = this->find_available_record(num_bytes,reuse_existing/*inout*/);
     assert(loc >= 0);
     if ( loc == this->records.size() ) {

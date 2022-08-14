@@ -4,7 +4,9 @@
 
 #include <iostream>
 
-#include <hip/hip_runtime_api>
+#include "assert.h"
+
+#include "hip/hip_runtime_api.h"
 
 void gpufortrt::internal::queue_record_t::to_string(std::ostream& os) const {
   os << "id: "             << this->id
@@ -18,18 +20,18 @@ std::ostream& operator<<(std::ostream& os,const gpufortrt::internal::queue_recor
 }
   
 bool gpufortrt::internal::queue_record_t::is_initialized() const {
-  return this->id > 1;
+  return this->id > 0;
 }
 
-void gpufortrtrt::queue_record_t::setup(const int id) {
+void gpufortrt::internal::queue_record_t::setup(const int id) {
   assert(id > 0);
   assert(!this->is_initialized());
   this->id = id;
-  HIP_CHECK(hipStreamCreate(this->queue))
+  HIP_CHECK(hipStreamCreate(&this->queue))
 }
 
-void gpufortrtrt::queue_record_t::destroy() {
-  assert(this->is_initialized())
+void gpufortrt::internal::queue_record_t::destroy() {
+  assert(this->is_initialized());
   HIP_CHECK(hipStreamDestroy(this->queue))
   this->id = -1;
 }

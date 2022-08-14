@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+#ifndef AUXILIARY_H
+#define AUXILIARY_H
+
 #define LOG_INFO(level,msg) \
     if ( level <= gpufortrt::internal::LOG_LEVEL ) { std::stringstream ss; ss << msg; log_info(level,ss.str()); }
 
@@ -13,7 +16,7 @@ namespace gpufortrt {
     void set_from_environment(size_t& variable,const char* env_var);
     void set_from_environment(double& variable,const char* env_var);
 
-    int LOG_LEVEL; //< The global log level, defaults to 0.
+    extern int LOG_LEVEL; //< The global log level, defaults to 0.
 
     /** Prints info output to error output stream if log `level`
      * is less than or equal to global `LOG_LEVEL`.
@@ -29,3 +32,4 @@ namespace gpufortrt {
     void log_error(const std::string& msg);
   }
 }
+#endif // AUXILIARY_H

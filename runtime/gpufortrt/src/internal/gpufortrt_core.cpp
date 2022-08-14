@@ -2,7 +2,7 @@
 // Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 #include "gpufortrt_core.h"
 
-#include "gpufortrt_auxiliary.h"
+#include "auxiliary.h"
 
 #include <string>
 #include <sstream>
@@ -15,13 +15,9 @@ int gpufortrt::internal::BLOCK_SIZE = 32;
 double gpufortrt::internal::REUSE_THRESHOLD = 0.9;
 int gpufortrt::internal::NUM_REFS_TO_DEALLOCATE = -5;
 
-size_t gpufortrt::internal::blocked_size(size_t num_bytes,size_t block_size) {
-  return (((num_bytes)+block_size-1)/block_size) * block_size;
-}
-
 // global variables
-bool gpufortrt::initialized = false;
+bool gpufortrt::internal::initialized = false;
 size_t gpufortrt::internal::num_records = 0; 
-gpufortrt::internal::record_list_t gpufortrt::record_list;
+gpufortrt::internal::record_list_t gpufortrt::internal::record_list;
 gpufortrt::internal::queue_record_list_t gpufortrt::internal::queue_record_list;
 gpufortrt::internal::structured_region_stack_t gpufortrt::internal::structured_region_stack;

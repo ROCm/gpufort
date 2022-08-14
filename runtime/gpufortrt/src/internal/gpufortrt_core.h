@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+#ifndef GPUFORTRT_CORE_H
+#define GPUFORTRT_CORE_H
+
 #include <iostream>
 #include <vector>
 
-#include "gpufortrt_api.h"
+#include "../gpufortrt_api.h"
 
 #define HIP_CHECK(condition)         \
   {                                  \
@@ -13,8 +16,6 @@
         exit(error); \
     } \
   }
-
-std::ostream& operator<<(std::ostream& os, gpufortrt_map_kind_t map_kind);
 
 namespace gpufortrt {
   namespace internal {
@@ -53,18 +54,29 @@ namespace gpufortrt {
        */
       bool can_be_destroyed(int struct_ref_threshold = 0);
       /**Increments specified counter.*/
-      void inc_refs(counter_t ctr);
+      void inc_refs(gpufortrt_counter_t ctr);
       /**Decrements specified counter.*/
-      void dec_refs(counter_t ctr);
+      void dec_refs(gpufortrt_counter_t ctr);
       
       /** Copy host data to device. */
       void copy_to_device(
+        bool blocking,
+        gpufortrt_queue_t queue);
+      void copy_section_to_device(
+        void* hostptr,
+        size_t num_bytes,
         bool blocking,
         gpufortrt_queue_t queue);
       /** Copy device data to host. */
       void copy_to_host(
         bool blocking,
         gpufortrt_queue_t queue);
+      void copy_section_to_host(
+        void* hostptr,
+        size_t num_bytes,
+        bool blocking,
+        gpufortrt_queue_t queue);
+
       bool is_subarray(
         void* hostptr, size_t num_bytes, size_t& offset_bytes) const;
       
@@ -89,8 +101,7 @@ namespace gpufortrt {
        *  release the record if all counters are zero.
        *  Perform a copy out operation if record's map kind requires this.
        */
-      void decrement_release_record(record_t& record,
-                                    gpufortrt_counter_t ctr_to_update,
+      void decrement_release_record(gpufortrt_counter_t ctr_to_update,
                                     bool blocking, gpufortrt_queue_t queue,
                                     bool finalize);
     };
@@ -128,8 +139,10 @@ namespace gpufortrt {
         * associated device data if that has happend NUM_REFS_TO_DEALLOCATE times (or more).
         *
         * \note Not thread safe.
+        *
+        * \param[inout] reuse_existing Is set to true if an existing record and its device buffer were reused.
         */
-       size_t find_available_record(size_t num_bytes,bool reuse_existing);
+       size_t find_available_record(size_t num_bytes,bool& reuse_existing);
      
        /**
         * Inserts a record (inclusive the host-to-device memcpy where required) or increments a record's
@@ -143,7 +156,7 @@ namespace gpufortrt {
          void* hostptr,
          size_t num_bytes,
          gpufortrt_map_kind_t map_kind,
-         counter_t ctr_to_update
+         gpufortrt_counter_t ctr_to_update,
          bool blocking,
          gpufortrt_queue_t queue,
          bool never_deallocate);
@@ -168,7 +181,7 @@ namespace gpufortrt {
       record_t* record;
     public:
       structured_region_stack_entry_t(int region_id,record_t& record);
-    }
+    };
 
     struct structured_region_stack_t {
       int current_region = 0;
@@ -211,31 +224,39 @@ namespace gpufortrt {
        * all records associated with the current structured
        * region and then remove them from the stack.
        */ 
-      void leave_structured_region();
-    }
+      void leave_structured_region(bool blocking,gpufortrt_queue_t queue);
+    };
 
     struct queue_record_t {
       int id;
       gpufortrt_queue_t queue;
     public:
+      void to_string(std::ostream& os) const;
       /** Initialize this queue record,
        * create a new queue. */
       void setup(const int id);
       /** Destroy this queue record,
        * set the `id` to negative value. */
       void destroy();
-
       /** If this queue is initialized or destroyed. */
       bool is_initialized() const;
-    }
+    };
 
     struct queue_record_list_t {
-      std::vector<queue_t> records;
+      std::vector<queue_record_t> records;
+    private:
+      /** Find queue record with the given `id`. */
+      size_t find_record(const int id) const;
+      
+      /** Find first available empty record that can be
+       * used for a new queue. */
+      size_t find_available_record() const;
     public:
+      /** Reserve space for `capacity` queues. */
       void reserve(int capacity);
 
-      size_t find_record(const int id) const;
-      size_t find_available_record(const int id) const;
+      /** Destroy all existing queues. */
+      void destroy(); 
       /**
        * Use an existing queue with identifier `id` or
        * create one for that identifier and return it.
@@ -243,7 +264,7 @@ namespace gpufortrt {
        * \return a queue if `id` is greater than 0, or `nullptr`.
        */
       gpufortrt_queue_t use_create_queue(const int id);
-    }
+    };
 
     // global parameters, influenced by environment variables
     extern size_t INITIAL_QUEUE_RECORDS_CAPACITY;//= 128
@@ -255,9 +276,14 @@ namespace gpufortrt {
     extern int NUM_REFS_TO_DEALLOCATE;// = -5  //> dealloc device mem only if struct_refs takes this value
 
     // global variables
-    extern int num_records;
+    extern bool initialized;
+    extern size_t num_records;
     extern record_list_t record_list;
     extern queue_record_list_t queue_record_list; 
     extern structured_region_stack_t structured_region_stack; 
   } // namespace internal
-}
+} // namespace gpufortrt
+
+std::ostream& operator<<(std::ostream& os, gpufortrt_map_kind_t map_kind);
+std::ostream& operator<<(std::ostream& os,const gpufortrt::internal::record_t& record);
+#endif // GPUFORTRT_CORE_H

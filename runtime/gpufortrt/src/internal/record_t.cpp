@@ -41,7 +41,8 @@ std::ostream& operator<<(std::ostream& os,const gpufortrt::internal::record_t& r
   record.to_string(os); 
   return os;
 }
-  
+
+
 bool gpufortrt::internal::record_t::is_initialized() const {
   return this->deviceptr != nullptr;
 }
@@ -249,7 +250,7 @@ void gpufortrt::internal::record_t::copy_section_to_host(
   #endif
 }
 
-void gpufortrt::internal::record_t::decrement_release_record(
+void gpufortrt::internal::record_t::decrement_release(
      gpufortrt_counter_t ctr_to_update,
      bool blocking, gpufortrt_queue_t queue,
      bool finalize) {

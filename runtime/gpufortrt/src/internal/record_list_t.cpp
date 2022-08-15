@@ -10,6 +10,14 @@
 
 #include "auxiliary.h"
 
+gpufortrt::internal::record_t& gpufortrt::internal::record_list_t::operator[](const int i) {
+  return this->records[i];  
+}
+
+const gpufortrt::internal::record_t& gpufortrt::internal::record_list_t::operator[](const int i) const {
+  return this->records[i];  
+}
+
 void gpufortrt::internal::record_list_t::reserve(int capacity) {
   this->records.reserve(capacity); 
 }
@@ -144,8 +152,8 @@ void gpufortrt::internal::record_list_t::decrement_release_record(
       throw std::invalid_argument(
         "decrement_release_record: argument 'hostptr' points to section of mapped data");
     } else {
-      record.decrement_release_record(
-        gpufortrt_counter_structured,
+      record.decrement_release(
+        ctr_to_update,
         blocking,queue,
         finalize);
     }

@@ -101,9 +101,9 @@ namespace gpufortrt {
        *  release the record if all counters are zero.
        *  Perform a copy out operation if record's map kind requires this.
        */
-      void decrement_release_record(gpufortrt_counter_t ctr_to_update,
-                                    bool blocking, gpufortrt_queue_t queue,
-                                    bool finalize);
+      void decrement_release(gpufortrt_counter_t ctr_to_update,
+                             bool blocking, gpufortrt_queue_t queue,
+                             bool finalize);
     };
     
     struct record_list_t {
@@ -111,6 +111,9 @@ namespace gpufortrt {
       int last_record_index = 0;
       size_t total_memory_bytes = 0;
     public:
+       record_t& operator[](const int i);
+       const record_t& operator[](const int i) const;
+
        void reserve(int capacity);
        
        /** 
@@ -252,6 +255,9 @@ namespace gpufortrt {
        * used for a new queue. */
       size_t find_available_record() const;
     public:
+      queue_record_t& operator[](const int i);
+      const queue_record_t& operator[](const int i) const;
+     
       /** Reserve space for `capacity` queues. */
       void reserve(int capacity);
 

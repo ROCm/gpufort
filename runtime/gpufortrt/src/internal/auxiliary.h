@@ -4,10 +4,12 @@
 #define AUXILIARY_H
 
 #define LOG_INFO(level,msg) \
-    if ( level <= gpufortrt::internal::LOG_LEVEL ) { std::stringstream ss; ss << msg; log_info(level,ss.str()); }
+    if ( level <= gpufortrt::internal::LOG_LEVEL ) { std::stringstream ss; ss << msg; \
+        gpufortrt::internal::log_info(level,ss.str()); }
 
 #define LOG_ERROR(msg) \
-    { std::stringstream ss; ss << msg; log_error(ss.str()); }
+    { std::stringstream ss; ss << msg; \
+        gpufortrt::internal::log_error(ss.str()); }
 
 namespace gpufortrt {
   namespace internal {

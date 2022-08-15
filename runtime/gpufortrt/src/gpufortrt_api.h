@@ -5,7 +5,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  int gpufortrt_async_noval;
+  extern int gpufortrt_async_noval;
 
   void gpufortrt_init();
   void gpufortrt_shutdown();
@@ -37,7 +37,7 @@ extern "C" {
  
   void* gpufortrt_present(
           void* hostptr,
-          size_t num_bytes
+          size_t num_bytes,
           gpufortrt_counter_t ctr_to_update);
   
   void gpufortrt_delete(

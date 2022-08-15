@@ -8,6 +8,14 @@
 
 #include "hip/hip_runtime_api.h"
 
+gpufortrt::internal::queue_record_t& gpufortrt::internal::queue_record_list_t::operator[](const int i) {
+  return this->records[i];  
+}
+
+const gpufortrt::internal::queue_record_t& gpufortrt::internal::queue_record_list_t::operator[](const int i) const {
+  return this->records[i];  
+}
+
 void gpufortrt::internal::queue_record_list_t::reserve(int capacity) {
   this->records.reserve(capacity); 
 }

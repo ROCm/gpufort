@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+#ifndef GPUFORTRT_TYPES_H
+#define GPUFORTRT_TYPES_H
+
+#include "hip/hip_runtime_api.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -8,31 +13,31 @@ extern "C" {
    * \note: Upper case first letter used because `delete` is C++ keyword.
    */
   enum gpufortrt_map_kind_t {
-    gpufortrt_map_kind_undefined       = 0,
-    gpufortrt_map_kind_present         = 1,
-    gpufortrt_map_kind_delete          = 2,
-    gpufortrt_map_kind_create          = 3,
-    gpufortrt_map_kind_no_create       = 4,
-    gpufortrt_map_kind_copyin          = 5,
-    gpufortrt_map_kind_copyout         = 6,
-    gpufortrt_map_kind_copy            = 7
+    gpufortrt_map_kind_undefined = 0,
+    gpufortrt_map_kind_present   = 1,
+    gpufortrt_map_kind_delete    = 2,
+    gpufortrt_map_kind_create    = 3,
+    gpufortrt_map_kind_no_create = 4,
+    gpufortrt_map_kind_copyin    = 5,
+    gpufortrt_map_kind_copyout   = 6,
+    gpufortrt_map_kind_copy      = 7
   };
   
   /**
    * Reference counter type.
-   * \note: Data layout must match that of Fortran `counter_t` type!
+   * \note: Data layout must match that of Fortran `gpufortrt_counter_t` type!
    */
   enum gpufortrt_counter_t {
     gpufortrt_counter_none = 0,
     gpufortrt_counter_structured = 1,
     gpufortrt_counter_dynamic = 2
-  }
+  };
 
   struct gpufortrt_mapping_t {
-    void* hostptr                = nullptr;
-    size_t num_bytes             = 0;
+    void* hostptr                 = nullptr;
+    size_t num_bytes              = 0;
     gpufortrt_map_kind_t map_kind = gpufortrt_map_kind_undefined;
-    bool never_deallocate     = false;
+    bool never_deallocate         = false;
   };
     
   void gpufortrt_mapping_init(
@@ -43,7 +48,8 @@ extern "C" {
     bool never_deallocate);
     
   typedef hipStream_t gpufortrt_queue_t;
-  gpufortrt_queue_t gpufortrt_default_queue = nullptr;
+  extern gpufortrt_queue_t gpufortrt_default_queue;
 #ifdef __cplusplus
 } // extern "C"
 #endif
+#endif // GPUFORTRT_TYPES_H

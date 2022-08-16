@@ -11,11 +11,12 @@ module gpufortrt_api
 
 {{ gam.render_map_and_lookup_interfaces(datatypes) | indent(2,True) }}
 
-  !> Update Directive
 {{ gam.render_interface("gpufortrt_update_self",datatypes) | indent(2,True) }}
 {{ gam.render_interface("gpufortrt_update_device",datatypes) | indent(2,True) }}
 
 {{ gam.render_use_device_interface(datatypes,max_rank) }}
+
+{{ gam.render_interface("gpufortrt_deviceptr",datatypes) | indent(2,True) }}
 
 contains
 
@@ -32,4 +33,7 @@ contains
 {{ gam.render_specialized_update_routines("device",datatypes) }}
 
 {{ gam.render_specialized_use_device_routines(datatypes,max_rank) | indent(2,True) }}
+
+{{ gam.render_basic_deviceptr_routine() | indent(2,True) }}
+{{ gam.render_specialized_deviceptr_routines(datatypes) | indent(2,True) }}
 end module

@@ -494,7 +494,7 @@ def _add_structured_data_region(stcontainer,data_start_mappings,data_end_mapping
 def Acc2HipGpufortRTPostprocess(stree, index):
     """:param stree: the full scanner tree
        :param staccdirectives: All acc directive tree accnodes."""
-    accbackends.add_runtime_module_use_statements(stree,"gpufortrt")
+    accbackends.add_runtime_module_use_statements(stree,"gpufortrt_api")
 
     # TODO check if there is any acc used in the
     # construct at all

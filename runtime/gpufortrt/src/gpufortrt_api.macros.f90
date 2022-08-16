@@ -171,6 +171,47 @@ end function
 {% endfor %}{# clause #}
 {% endmacro %}
 {#######################################################################################}
+{% macro render_basic_deviceptr_routine() %}
+{#######################################################################################}
+function gpufortrt_deviceptr_b(hostptr) & 
+    bind(c,name="gpufortrt_deviceptr") &
+      result(deviceptr)
+  use iso_c_binding, only: c_ptr
+  implicit none
+  type(c_ptr),value,intent(in) :: hostptr
+  !
+  type(c_ptr) :: deviceptr
+end function
+{% endmacro %}
+{#######################################################################################}
+{% macro render_specialized_deviceptr_routines(datatypes) %}
+{#######################################################################################}
+{% for tuple in datatypes -%}
+function gpufortrt_deviceptr_{{tuple[0]}}_scal(hostptr) result(deviceptr)
+  use iso_c_binding
+  use gpufortrt_types
+  implicit none
+  {{tuple[2]}},target,intent(in) :: hostptr
+  !
+  type(c_ptr) :: deviceptr
+  !
+  deviceptr = gpufortrt_deviceptr_b(c_loc(hostptr))
+end function
+
+function gpufortrt_deviceptr_{{tuple[0]}}_arr(hostptr) result(deviceptr)
+  use iso_c_binding
+  use gpufortrt_types
+  implicit none
+  {{tuple[2]}},dimension(*),target,intent(in) :: hostptr
+  !
+  type(c_ptr) :: deviceptr
+  !
+  deviceptr = gpufortrt_deviceptr_b(c_loc(hostptr))
+end function
+
+{% endfor %}{# datatypes #}
+{% endmacro %}
+{#######################################################################################}
 {% macro render_specialized_present_routines(datatypes) %}
 {#######################################################################################}
 {% for tuple in datatypes -%}

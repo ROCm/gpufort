@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-#!/usr/bin/env python3
 import os, sys, subprocess
 import copy
 import re

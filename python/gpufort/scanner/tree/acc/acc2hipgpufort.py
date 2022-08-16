@@ -30,7 +30,7 @@ _ACC_ENTER_EXIT_DATA = "call gpufortrt_enter_exit_data({args})\n"
 
 # clauses
 #_ACC_USE_DEVICE = "gpufortrt_use_device({args},lbound({args}){options})\n"
-_ACC_USE_DEVICE = "gpufortrt_use_device({args})\n"
+_ACC_USE_DEVICE = "gpufortrt_use_device{{rank}}({args})\n"
 
 _ACC_MAP_CREATE = "gpufortrt_map_create({args})"
 _ACC_MAP_NO_CREATE = "gpufortrt_map_no_create({args})"
@@ -137,9 +137,12 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             for var_expr in args:
                 if template == None:
                     template = _DATA_CLAUSE_2_TEMPLATE_MAP[kind.lower()]
-                result.append(template.format(args=var_expr))
-                if not opts.acc_map_derived_types: 
-                    ivar = indexer.scope.search_index_for_var(index,staccdir.parent.tag(),var_expr)
+                ivar = indexer.scope.search_index_for_var(index,staccdir.parent.tag(),var_expr)
+                args = [var_expr]
+                if ivar["rank"] > 0:
+                  args.append("size({})".format(var_expr))
+                result.append(template.format(args=",".join(args)))
+                #if not opts.acc_map_derived_types: 
                     #if ivar["f_type"] == "type":
                     #    result.pop(-1)
         return result
@@ -167,14 +170,17 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
                 options.append("=".join(["condition",options[0]]))
             elif kind == "if_present":
                 options.append("if_present=.true.")
-        for kind, args in self.stnode.get_matching_clauses(["self", "host", "device"]):
-            for var_expr in args:
+        for kind, clause_args in self.stnode.get_matching_clauses(["self", "host", "device"]):
+            for var_expr in clause_args:
+                args = [var_expr] 
+                tag = indexer.scope.create_index_search_tag_for_var(var_expr)
+                ivar = indexer.scope.search_index_for_var(index,self.stnode.parent.tag(),tag)
+                if ivar["rank"] > 0:
+                    args.append("size({})".format(var_expr))
                 result.append(_ACC_UPDATE.format(
-                    args=_create_args_str([var_expr]+options,indent="",sep=","),
+                    args=_create_args_str(args+options,indent="",sep=","),
                     kind=kind.lower()))
                 if not opts.acc_map_derived_types: 
-                    tag = indexer.scope.create_index_search_tag_for_var(var_expr)
-                    ivar = indexer.scope.search_index_for_var(index,self.stnode.parent.tag(),tag)
                     if ("%" in tag and ivar["rank"] == 0
                        or ivar["f_type"] == "type"):
                             result.pop(-1)
@@ -329,7 +335,7 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
         if clause_kind in _DATA_CLAUSE_2_TEMPLATE_MAP:
             tokens = ["gpufortrt_map_",clause_kind,"(",var_expr]
             if ( tavar["c_rank"] > 0 ):
-                tokens += [",size(",var_expr,",kind=c_int)"]
+                tokens += [",size(",var_expr,")"]
             if len(asyncr) and clause_kind in _DATA_CLAUSES_WITH_ASYNC:
                 tokens += [",",asyncr]
             tokens.append(")") 
@@ -430,9 +436,7 @@ def AllocateHipGpufortRT(stallocate, joined_statements, index):
             is_local_var = var_expr in local_var_names
             is_arg = var_expr in dummy_arg_names
             is_used_module_var = not is_local_var and not is_arg
-            is_allocatable_or_pointer = "allocatable" in ivar["attributes"] or\
-                                 "pointer" in ivar["attributes"]
-            if not is_allocatable_or_pointer:
+            if not indexer.props.has_any_attribute(ivar,["allocatable","pointer"]):
                 raise error.SyntaxError("variable '{}' that is subject to `allocate` intrinsic must have 'allocatable' or 'pointer' qualifier".
                         format(var_expr))
             declare = ivar["declare_on_target"]
@@ -513,10 +517,8 @@ def Acc2HipGpufortRTPostprocess(stree, index):
                 is_local_var = var_expr in local_var_names
                 is_arg = var_expr in dummy_arg_names
                 is_used_module_var = not is_local_var and not is_arg
-                is_allocatable = "allocatable" in ivar["attributes"]
-                is_pointer = "pointer" in ivar["attributes"]
-                if not is_allocatable:
-                    module_var = "module_var=.true." if is_used_module_var else ""
+                if not indexer.props.has_any_attribute(ivar,["allocatable","pointer"]):
+                    module_var = "never_deallocate=.true." if is_used_module_var else ""
                     # find return and end, emit 1 new implicit region for all
                     declare = ivar["declare_on_target"]
                     if declare in _CLAUSES_OMP2ACC.keys():
@@ -527,8 +529,6 @@ def Acc2HipGpufortRTPostprocess(stree, index):
                         #    map_template = "".join(["if (associated({var})) ",map_template])
                         data_start_mappings.append(map_template.format(
                             args=_create_args_str([var_expr,module_var],"",sep=",")))
-                        data_end_mappings.append(_ACC_MAP_DEC_STRUCT_REFS.format(
-                            args=_create_args_str([var_expr],"",sep=",")))
         if len(data_start_mappings):
             _add_structured_data_region(stcontainer,data_start_mappings,data_end_mappings)
 

@@ -46,17 +46,17 @@ function {{routine}}_{{tuple[0]}}_scal(hostptr,never_deallocate) result(retval)
 end function
 
 !> \note never_deallocate only has effect on create,copyin,copyout, and copy mappings.
-function {{routine}}_{{tuple[0]}}_arr(hostptr,num_elements,never_deallocate) result(retval)
+function {{routine}}_{{tuple[0]}}_arr(hostptr,num_entries,never_deallocate) result(retval)
   use iso_c_binding
   use gpufortrt_types
   implicit none
   {{tuple[2]}},dimension(*),target,intent(in) :: hostptr
-  integer,intent(in) :: num_elements
+  integer,intent(in) :: num_entries
   logical,intent(in),optional :: never_deallocate
   !
   type(gpufortrt_mapping_t) :: retval
   !
-  retval = {{routine}}_b(c_loc(hostptr),int({{tuple[1]}},c_size_t)*num_elements,never_deallocate)
+  retval = {{routine}}_b(c_loc(hostptr),int({{tuple[1]}},c_size_t)*num_entries,never_deallocate)
 end function
 
 {%   endfor -%} 
@@ -150,20 +150,20 @@ end function
 
 !> Map and directly return the corresponding deviceptr.
 !> (Specialized version for Fortran array arguments)
-function gpufortrt_{{clause}}_{{tuple[0]}}_arr(hostptr,num_elements,&
+function gpufortrt_{{clause}}_{{tuple[0]}}_arr(hostptr,num_entries,&
     never_deallocate,async_arg,ctr_to_update) result(deviceptr)
   use iso_c_binding
   use gpufortrt_types
   implicit none
   {{tuple[2]}},dimension(*),target,intent(in) :: hostptr
-  integer,intent(in) :: num_elements
+  integer,intent(in) :: num_entries
   logical,intent(in),optional :: never_deallocate
   integer(gpufortrt_handle_kind),intent(in),optional :: async_arg 
   integer(kind(gpufortrt_counter_none)),intent(in),optional :: ctr_to_update
   !
   type(c_ptr) :: deviceptr
   !
-  deviceptr = gpufortrt_{{clause}}_b(c_loc(hostptr),int(num_elements,kind=c_size_t)*int({{tuple[1]}},kind=c_size_t),&
+  deviceptr = gpufortrt_{{clause}}_b(c_loc(hostptr),int(num_entries,kind=c_size_t)*int({{tuple[1]}},kind=c_size_t),&
                                      never_deallocate,async_arg,ctr_to_update)
 end function
 
@@ -190,12 +190,12 @@ function gpufortrt_present_{{tuple[0]}}_scal(hostptr,ctr_to_update) result(devic
                                   opt_ctr_to_update)
 end function
 
-function gpufortrt_present_{{tuple[0]}}_arr(hostptr,num_elements,ctr_to_update) result(deviceptr)
+function gpufortrt_present_{{tuple[0]}}_arr(hostptr,num_entries,ctr_to_update) result(deviceptr)
   use iso_c_binding
   use gpufortrt_types
   implicit none
   {{tuple[2]}},dimension(*),target,intent(in) :: hostptr
-  integer(c_int),intent(in) :: num_elements
+  integer(c_int),intent(in) :: num_entries
   integer(kind(gpufortrt_counter_none)),intent(in),optional :: ctr_to_update
   !
   type(c_ptr) :: deviceptr
@@ -203,7 +203,7 @@ function gpufortrt_present_{{tuple[0]}}_arr(hostptr,num_elements,ctr_to_update) 
   integer(kind(gpufortrt_counter_none)) :: opt_ctr_to_update
   !
   opt_ctr_to_update = gpufortrt_counter_none
-  deviceptr = gpufortrt_present_b(c_loc(hostptr),int({{tuple[1]}},kind=c_size_t)*num_elements,&
+  deviceptr = gpufortrt_present_b(c_loc(hostptr),int({{tuple[1]}},kind=c_size_t)*num_entries,&
                                   opt_ctr_to_update)
 end function
 
@@ -318,16 +318,16 @@ subroutine gpufortrt_update_{{update_kind}}_{{tuple[0]}}_scal(hostptr,condition,
   call gpufortrt_update_{{update_kind}}_b(c_loc(hostptr),int({{tuple[1]}},c_size_t),condition,if_present,async_arg)
 end subroutine
 
-subroutine gpufortrt_update_{{update_kind}}_{{tuple[0]}}_arr(hostptr,num_elements,condition,if_present,async_arg)
+subroutine gpufortrt_update_{{update_kind}}_{{tuple[0]}}_arr(hostptr,num_entries,condition,if_present,async_arg)
   use iso_c_binding
   use gpufortrt_types
   implicit none
   {{tuple[2]}},target,intent(in) :: hostptr
-  integer,intent(in) :: num_elements
+  integer,intent(in) :: num_entries
   logical,intent(in),optional :: condition, if_present
   integer(gpufortrt_handle_kind),intent(in),optional :: async_arg
   !
-  call gpufortrt_update_{{update_kind}}_b(c_loc(hostptr),int({{tuple[1]}},c_size_t),condition,if_present,async_arg)
+  call gpufortrt_update_{{update_kind}}_b(c_loc(hostptr),int({{tuple[1]}},c_size_t)*num_entries,condition,if_present,async_arg)
 end subroutine
 
 {% endfor %}{# datatypes #}

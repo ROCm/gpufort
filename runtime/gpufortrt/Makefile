@@ -1,5 +1,3 @@
-include rules.mk
-
 .PHONY: build codegen lib/$(LIBGPUFORTRT) clean
 
 lib/$(LIBGPUFORTRT): | codegen build

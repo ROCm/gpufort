@@ -23,6 +23,13 @@ contains
 
 {{ gam.render_basic_map_and_lookup_routines() | indent(2,True) }}
 {{ gam.render_specialized_map_and_lookup_routines(datatypes) | indent(2,True) }}
+{{ gam.render_specialized_present_routines(datatypes) | indent(2,True) }}
+
+{{ gam.render_basic_update_routine("self") }}
+{{ gam.render_specialized_update_routines("self",datatypes) }}
+
+{{ gam.render_basic_update_routine("device") }}
+{{ gam.render_specialized_update_routines("device",datatypes) }}
 
 {{ gam.render_specialized_use_device_routines(datatypes,max_rank) | indent(2,True) }}
 end module

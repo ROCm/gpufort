@@ -1,10 +1,7 @@
 ! SPDX-License-Identifier: MIT
 ! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-module gpufortrt_core
-  use iso_c_binding
+module gpufortrt_api_core
   use gpufortrt_types
-
-  public
 
   interface
     subroutine gpufortrt_init() bind(c,name="gpufortrt_init")
@@ -18,6 +15,8 @@ module gpufortrt_core
     function gpufortrt_get_stream(async_arg) &
         bind(c,name="gpufortrt_get_stream") &
           result(stream)
+      use iso_c_binding, only: c_ptr
+      use gpufortrt_types, only: gpufortrt_handle_kind
       implicit none
       integer(gpufortrt_handle_kind),value,intent(in) :: async_arg
       !
@@ -30,26 +29,28 @@ contains
   !> Ignore the result of a mapping routine.
   !> \param[in] deviceptr a device pointer.
   subroutine gpufortrt_ignore(deviceptr)
+    use iso_c_binding, only: c_ptr
+    implicit none
     type(c_ptr),intent(in) :: deviceptr
     ! nop
   end subroutine
 
   subroutine gpufortrt_wait(wait_arg,async_arg,condition)
     use iso_c_binding
-    use hipfort
-    use hipfort_check
     implicit none
     integer(gpufortrt_handle_kind),target,dimension(:),intent(in),optional :: wait_arg,async_arg
-    logical,intent(in),optional                                            :: condition
+    logical,intent(in),optional :: condition
     !
     interface
       subroutine gpufortrt_wait_all_c_impl(condition) &
           bind(c,name="gpufortrt_wait_all")
+        use iso_c_binding
         implicit none
         logical(c_bool) :: condition 
       end subroutine
       subroutine gpufortrt_wait_all_async_c_impl(async_arg,num_async_args,condition) &
           bind(c,name="gpufortrt_wait_all_async")
+        use iso_c_binding
         implicit none
         type(c_ptr) :: async_arg
         integer(c_int) :: num_async_args
@@ -57,6 +58,7 @@ contains
       end subroutine
       subroutine gpufortrt_wait_c_impl(wait_arg,num_wait_args,condition) &
           bind(c,name="gpufortrt_wait_async")
+        use iso_c_binding
         implicit none
         type(c_ptr) :: wait_arg
         integer(c_int) :: num_wait_args
@@ -66,6 +68,7 @@ contains
                                              async_arg,num_async_args,&
                                              condition) &
           bind(c,name="gpufortrt_wait_async")
+        use iso_c_binding
         implicit none
         type(c_ptr) :: wait_arg, async_arg
         integer(c_int) :: num_wait_args, num_async_args
@@ -103,10 +106,9 @@ contains
   subroutine gpufortrt_data_start(mappings,async_arg)
   !subroutine gpufortrt_data_start(device_kind,mappings,async_arg)
     use iso_c_binding
-    use openacc
     implicit none
     !integer,intent(in) :: device_kind
-    type(mapping_t),dimension(:),intent(in),optional :: mappings
+    type(gpufortrt_mapping_t),target,dimension(:),intent(in),optional :: mappings
     integer(gpufortrt_handle_kind),intent(in),optional :: async_arg
     !
     interface
@@ -118,10 +120,11 @@ contains
       end subroutine
       subroutine gpufortrt_data_start_async_c_impl(mappings,num_mappings,async_arg) bind(c,name="gpufortrt_data_start_async")
         use iso_c_binding
+        use gpufortrt_types, only: gpufortrt_handle_kind
         implicit none
         type(c_ptr),intent(in),value :: mappings
         integer(c_int),intent(in),value :: num_mappings
-        integer(c_int),intent(in),value :: async_arg
+        integer(gpufortrt_handle_kind),intent(in),value :: async_arg
       end subroutine
     end interface 
     !
@@ -130,31 +133,33 @@ contains
         call gpufortrt_data_start_async_c_impl(c_loc(mappings),size(mappings),&
                                                int(async_arg,kind=c_int))
       else
-        call gpufortrt_data_start_async_c_impl(c_null_ptr,0_c_int_t,&
+        call gpufortrt_data_start_async_c_impl(c_null_ptr,0_c_int,&
                                                int(async_arg,kind=c_int)) 
       endif
     else
       if ( present(mappings) ) then
         call gpufortrt_data_start_c_impl(c_loc(mappings),size(mappings))  
       else
-        call gpufortrt_data_start_c_impl(c_null_ptr,0_c_int_t)  
+        call gpufortrt_data_start_c_impl(c_null_ptr,0_c_int)  
       endif
     endif
   end subroutine
    
-  subroutine gpufortrt_data_end(async_arg) bind(c,name="gpufortrt_data_end")
+  subroutine gpufortrt_data_end(async_arg)
     implicit none
     integer(gpufortrt_handle_kind),intent(in),optional :: async_arg
     !
     interface
       subroutine gpufortrt_data_end_c_impl() bind(c,name="gpufortrt_data_end")
         use iso_c_binding
+        use gpufortrt_types, only: gpufortrt_handle_kind
         implicit none
       end subroutine
       subroutine gpufortrt_data_end_async_c_impl(async_arg) bind(c,name="gpufortrt_data_end_async")
         use iso_c_binding
+        use gpufortrt_types, only: gpufortrt_handle_kind
         implicit none
-        integer(c_int),intent(in),value :: async_arg
+        integer(gpufortrt_handle_kind),intent(in),value :: async_arg
       end subroutine
     end interface 
     !
@@ -165,62 +170,63 @@ contains
     endif
   end subroutine
 
-  subroutine gpufortrt_enter_exit_data(mappings,async,finalize)
+  subroutine gpufortrt_enter_exit_data(mappings,async_arg,finalize)
     use iso_c_binding
     implicit none
     !
-    !integer,intent(in)                              :: device_kind
-    type(mapping_t),dimension(:),intent(in),optional :: mappings
-    integer,intent(in),optional                      :: async
-    logical,intent(in),optional                      :: finalize
+    !integer,intent(in) :: device_kind
+    type(gpufortrt_mapping_t),target,dimension(:),intent(in),optional :: mappings
+    integer,intent(in),optional :: async_arg
+    logical,intent(in),optional :: finalize
     !
     interface
       subroutine gpufortrt_enter_exit_data_c_impl(mappings,num_mappings,finalize) bind(c,name="gpufortrt_enter_exit_data")
         use iso_c_binding
         implicit none
-        type(c_ptr),value,intent(in)    :: mappings
+        type(c_ptr),value,intent(in) :: mappings
         integer(c_int),value,intent(in) :: num_mappings
         logical(c_bool),value,intent(in) :: finalize
       end subroutine
-      subroutine gpufortrt_enter_exit_data_async_c_impl(mappings,num_mappings,async,finalize) bind(c,name="gpufortrt_enter_exit_data_async")
+      subroutine gpufortrt_enter_exit_data_async_arg_c_impl(mappings,num_mappings,async_arg,finalize) bind(c,name="gpufortrt_enter_exit_data_async")
         use iso_c_binding
+        use gpufortrt_types, only: gpufortrt_handle_kind
         implicit none
-        type(c_ptr),value,intent(in)    :: mappings
+        type(c_ptr),value,intent(in) :: mappings
         integer(c_int),value,intent(in) :: num_mappings
-        integer(c_int),value,intent(in) :: async
+        integer(gpufortrt_handle_kind),value,intent(in) :: async_arg
         logical(c_bool),value,intent(in) :: finalize
       end subroutine
     end interface 
     !
-    logical(c_bool)  :: opt_finalize
+    logical(c_bool) :: opt_finalize
     !
     opt_finalize = .false._c_bool
     if ( present(finalize) ) opt_finalize = logical(finalize,kind=c_bool)
     !
-    if ( present(async) ) then
+    if ( present(async_arg) ) then
       if ( present(mappings) ) then
         call gpufortrt_enter_exit_data_async_c_impl(&
           c_loc(mappings),&
-          size(mappings,kind=c_int_t),&
-          async,&
+          size(mappings,kind=c_int),&
+          async_arg,&
           opt_finalize) 
       else
         call gpufortrt_enter_exit_data_async_c_impl(&
           c_null_ptr,&
           0_c_size_t,&
-          async,&
+          async_arg,&
           opt_finalize) 
       endif
     else
       if ( present(mappings) ) then
         call gpufortrt_enter_exit_data_c_impl(&
           c_loc(mappings),&
-          size(mappings,kind=c_int_t),&
+          size(mappings,kind=c_int),&
           opt_finalize) 
       else
         call gpufortrt_enter_exit_data_c_impl(&
           c_null_ptr,&
-          0_c_int_t,&
+          0_c_int,&
           opt_finalize) 
       endif
     endif
@@ -234,61 +240,90 @@ contains
   function gpufortrt_use_device_b(hostptr,condition,if_present) result(resultptr)
     use iso_c_binding
     implicit none
-    type(c_ptr),intent(in)       :: hostptr
-    logical,intent(in),optional  :: condition, if_present
+    type(c_ptr),intent(in) :: hostptr
+    logical,intent(in),optional :: condition, if_present
     !
     type(c_ptr) :: resultptr
     !
     interface
       function gpufortrt_use_device_c_impl(hostptr,condition,if_present) &
-          bind(c,name="gpufortrt_use_device") &
-          result(deviceptr)
-        type(c_ptr),value,intent(in)       :: hostptr
-        logical(c_bool),value,intent(in)   :: condition, if_present
+          bind(c,name="gpufortrt_use_device") result(deviceptr)
+        use iso_c_binding
+        implicit none
+        type(c_ptr),value,intent(in) :: hostptr
+        logical(c_bool),value,intent(in) :: condition, if_present
+        !
+        type(c_ptr) :: deviceptr
       end function
     end interface
     !
-    logical(c_bool)  :: opt_condition, opt_if_present
+    logical(c_bool) :: opt_condition, opt_if_present
     !
     opt_condition = .true._c_bool
     opt_if_present = .false._c_bool
     if ( present(condition) ) opt_condition = logical(condition,kind=c_bool)
     if ( present(if_present) ) opt_if_present = logical(if_present,kind=c_bool)
     !
-    resultptr = gpufortrt_use_device_c_impl(hostptr,num_bytes,&
-                                            opt_condition,opt_if_present)
+    resultptr = gpufortrt_use_device_c_impl(hostptr,opt_condition,opt_if_present)
   end function
 
-  subroutine gpufortrt_delete_b(hostptr,finalize)
+  subroutine gpufortrt_delete_b(hostptr,async_arg,finalize)
     use iso_c_binding
+    use gpufortrt_types, only: gpufortrt_handle_kind
     implicit none
-    type(c_ptr), intent(in)     :: hostptr
+    type(c_ptr), intent(in) :: hostptr
+    integer(gpufortrt_handle_kind),intent(in),optional :: async_arg
     logical,intent(in),optional :: finalize
     !
     interface
       subroutine gpufortrt_delete_c_impl(hostptr) &
-          bind(c,name="gpufortrt_delete") result(deviceptr)
+          bind(c,name="gpufortrt_delete")
+        use iso_c_binding
+        implicit none
         type(c_ptr),value,intent(in) :: hostptr
       end subroutine
-      subroutine gpufortrt_delete_finalize_c_impl(hostptr,finalize) &
-          bind(c,name="gpufortrt_delete_finalize") result(deviceptr)
-        type(c_ptr),value,intent(in) :: hostptr
-        logical(c_bool),value,intent(in) :: finalize
-      end subroutine
-      subroutine gpufortrt_delete_async_c_impl(hostptr) &
-          bind(c,name="gpufortrt_delete") result(deviceptr)
+      subroutine gpufortrt_delete_finalize_c_impl(hostptr) &
+          bind(c,name="gpufortrt_delete_finalize")
+        use iso_c_binding
+        implicit none
         type(c_ptr),value,intent(in) :: hostptr
       end subroutine
-      subroutine gpufortrt_delete_finalize_async_c_impl(hostptr,finalize) &
-          bind(c,name="gpufortrt_delete_finalize") result(deviceptr)
+      subroutine gpufortrt_delete_async_c_impl(hostptr,async_arg) &
+          bind(c,name="gpufortrt_delete_async")
+        use iso_c_binding
+        use gpufortrt_types, only: gpufortrt_handle_kind
+        implicit none
         type(c_ptr),value,intent(in) :: hostptr
-        logical(c_bool),value,intent(in) :: finalize
+        integer(gpufortrt_handle_kind),value,intent(in) :: async_arg
+      end subroutine
+      subroutine gpufortrt_delete_finalize_async_c_impl(hostptr,async_arg) &
+          bind(c,name="gpufortrt_delete_finalize_async")
+        use iso_c_binding
+        use gpufortrt_types, only: gpufortrt_handle_kind
+        implicit none
+        type(c_ptr),value,intent(in) :: hostptr
+        integer(gpufortrt_handle_kind),value,intent(in) :: async_arg
       end subroutine
     end interface
+    !
+    if ( present(async_arg) ) then
+      if ( present(finalize) ) then
+        call gpufortrt_delete_finalize_async_c_impl(hostptr,async_arg)
+      else
+        call gpufortrt_delete_async_c_impl(hostptr,async_arg)
+      endif
+    else
+      if ( present(finalize) ) then
+        call gpufortrt_delete_finalize_c_impl(hostptr)
+      else
+        call gpufortrt_delete_c_impl(hostptr)
+      endif
+    endif
   end subroutine
 
   function gpufortrt_present_b(hostptr,num_bytes,ctr_to_update) result(deviceptr)
     use iso_c_binding
+    use gpufortrt_types, only: gpufortrt_counter_none
     implicit none
     type(c_ptr),intent(in) :: hostptr
     integer(c_size_t),intent(in) :: num_bytes
@@ -299,9 +334,14 @@ contains
     interface
       function gpufortrt_present_c_impl(hostptr,num_bytes,ctr_to_update) &
           bind(c,name="gpufortrt_present") result(deviceptr)
+        use iso_c_binding
+        use gpufortrt_types, only: gpufortrt_counter_none
+        implicit none
         type(c_ptr),value,intent(in) :: hostptr
         integer(c_size_t),value,intent(in) :: num_bytes
         integer(kind(gpufortrt_counter_none)),value,intent(in) :: ctr_to_update
+        !
+        type(c_ptr) :: deviceptr
       end function
     end interface
     !

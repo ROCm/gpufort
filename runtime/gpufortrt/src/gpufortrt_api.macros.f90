@@ -219,27 +219,27 @@ subroutine gpufortrt_{{update_kind}}_b(hostptr,num_bytes,condition,if_present,as
   interface
     subroutine gpufortrt_{{update_kind}}_c_impl(hostptr,condition,if_present) &
             bind(c,name="gpufortrt_update_host")
-      type(c_ptr),value,intent(in)     :: hostptr
+      type(c_ptr),value,intent(in) :: hostptr
       logical(c_bool),value,intent(in) :: condition, if_present
     end subroutine
     subroutine gpufortrt_{{update_kind}}_section_c_impl(hostptr,num_bytes,condition,if_present) &
             bind(c,name="gpufortrt_{{update_kind}}_section")
-      type(c_ptr),value,intent(in)       :: hostptr
+      type(c_ptr),value,intent(in) :: hostptr
       integer(c_size_t),value,intent(in) :: num_bytes
-      logical(c_bool),value,intent(in)   :: condition, if_present
+      logical(c_bool),value,intent(in) :: condition, if_present
     end subroutine
     subroutine gpufortrt_{{update_kind}}_async_c_impl(hostptr,condition,if_present,async_arg) &
             bind(c,name="gpufortrt_{{update_kind}}_async")
-      type(c_ptr),value,intent(in)     :: hostptr
+      type(c_ptr),value,intent(in) :: hostptr
       logical(c_bool),value,intent(in) :: condition, if_present
-      integer(c_int),value,intent(in)  :: async_arg
+      integer(c_int),value,intent(in) :: async_arg
     end subroutine
     subroutine gpufortrt_{{update_kind}}_section_async_c_impl(hostptr,num_bytes,condition,if_present,async_arg) &
             bind(c,name="gpufortrt_{{update_kind}}_section_async")
-      type(c_ptr),value,intent(in)       :: hostptr
+      type(c_ptr),value,intent(in) :: hostptr
       integer(c_size_t),value,intent(in) :: num_bytes
-      logical(c_bool),value,intent(in)   :: condition, if_present
-      integer(c_int),value,intent(in)    :: async_arg
+      logical(c_bool),value,intent(in) :: condition, if_present
+      integer(c_int),value,intent(in) :: async_arg
     end subroutine
   end interface
   logical :: opt_condition, opt_if_present
@@ -322,7 +322,7 @@ function gpufortrt_use_device0_{{tuple[0]}}(hostptr,condition,if_present) result
   use iso_c_binding
   implicit none
   {{tuple[2]}},target,intent(in) :: hostptr
-  logical,intent(in),optional  :: condition, if_present
+  logical,intent(in),optional :: condition, if_present
   !
   {{tuple[2]}},pointer :: resultptr
   !
@@ -338,7 +338,7 @@ function gpufortrt_use_device{{rank}}_{{tuple[0]}}(hostptr,sizes,lbounds,conditi
   implicit none
   {{tuple[2]}},target,intent(in) :: hostptr(*)
   integer,intent(in),optional :: sizes({{rank}}), lbounds({{rank}})
-  logical,intent(in),optional  :: condition, if_present
+  logical,intent(in),optional :: condition, if_present
   !
   {{tuple[2]}},pointer :: resultptr(:{% for i in range(1,rank) %},:{% endfor %}}})
   !

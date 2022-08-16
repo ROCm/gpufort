@@ -1,7 +1,10 @@
 ! SPDX-License-Identifier: MIT
 ! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 !> All type definitions must match those in `gpufortrt_types.h`.
-module types
+module gpufortrt_types
+  use iso_c_binding, only: c_int, c_size_t, c_bool, c_ptr, c_null_ptr
+  private :: c_int, c_size_t, c_bool, c_ptr, c_null_ptr
+  
   integer, parameter :: gpufortrt_async_noval = -1 
   integer, parameter :: gpufortrt_handle_kind = c_int
   
@@ -36,7 +39,7 @@ contains
     use iso_c_binding
     implicit none
     !
-    type(gpufortrt_mapping_init),intent(inout) :: mapping
+    type(gpufortrt_mapping_t),intent(inout) :: mapping
     type(c_ptr),intent(in) :: hostptr
     integer(c_size_t),intent(in) :: num_bytes
     integer(kind(gpufortrt_map_kind_undefined)),intent(in) :: map_kind

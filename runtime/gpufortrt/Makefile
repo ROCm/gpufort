@@ -8,8 +8,8 @@ CXXFLAGS += -I./src -I./src/internal
 VPATH = ./src:./src/internal
 
 # gather objects
-include src/internal/make.inc
-include src/make.inc
+include src/internal/obj.mk
+include src/obj.mk
 
 .PHONY: build codegen lib/$(LIBGPUFORTRT) clean clean_all
 

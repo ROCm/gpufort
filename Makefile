@@ -1,7 +1,7 @@
 .PHONY: clean_all gpufort_headers gpufort_sources gpufort_templates share/gpufort_sources lib/$(LIBGPUFORT) lib/$(LIBGPUFORTRT)
 
-SUFFIX         = $(if $(HIP_PLATFORM),$(HIP_PLATFORM),amd)
-LIBGPUFORT     = libgpufort_$(SUFFIX).a
+SUFFIX       = $(if $(HIP_PLATFORM),$(HIP_PLATFORM),amd)
+LIBGPUFORT   = libgpufort_$(SUFFIX).a
 LIBGPUFORTRT = libgpufortrt_$(SUFFIX).a
 
 GPUFORT_DIR     = .

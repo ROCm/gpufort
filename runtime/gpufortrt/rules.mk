@@ -1,6 +1,5 @@
 HIP_PLATFORM ?= amd
-SUFFIX       ?= $(if $(HIP_PLATFORM),$(HIP_PLATFORM),amd)
-LIBGPUFORTRT  = libgpufortrt_$(SUFFIX).a
+LIBGPUFORTRT  = libgpufortrt_$(HIP_PLATFORM).a
 
 FC      = gfortran
 FCFLAGS ?= -std=f2008 -ffree-line-length-none -cpp

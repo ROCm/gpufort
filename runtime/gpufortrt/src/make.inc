@@ -1,10 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-HIP_PLATFORM ?= amd
-SUFFIX       ?= $(if $(HIP_PLATFORM),$(HIP_PLATFORM),amd)
-LIBGPUFORTRT = libgpufortrt_$(SUFFIX).a
-
-include rules.mk
+include ../rules.mk
 
 CXXFLAGS ?= 
 CXXFLAGS += -I./internal 
@@ -12,6 +8,7 @@ CXXFLAGS += -I./internal
 VPATH = ./:internal
 
 # object files
+include src/make.inc
 include internal/make.inc
 
 F_OBJ += ./gpufortrt_api.o \

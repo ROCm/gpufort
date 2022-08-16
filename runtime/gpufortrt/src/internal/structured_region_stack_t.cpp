@@ -55,7 +55,7 @@ void gpufortrt::internal::structured_region_stack_t::leave_structured_region(boo
   for (int i = this->entries.size()-1; i >= 0; i--) {
     auto& entry = this->entries[i];
     if ( entry.region_id == this->current_region ) {
-      entry.record->decrement_release_record(
+      entry.record->decrement_release(
         gpufortrt_counter_structured,
         blocking,queue,
         false/*finalize*/);

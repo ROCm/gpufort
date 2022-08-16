@@ -2,7 +2,7 @@ HIP_PLATFORM ?= amd
 SUFFIX       ?= $(if $(HIP_PLATFORM),$(HIP_PLATFORM),amd)
 LIBGPUFORTRT  = libgpufortrt_$(SUFFIX).a
 
-FC      ?= gfortran
+FC      = gfortran
 FCFLAGS ?= -std=f2008 -ffree-line-length-none -cpp
 
 FCFLAGS += -DNULLPTR_MEANS_NOOP -DDELETE_NORECORD_MEANS_NOOP
@@ -10,5 +10,5 @@ FCFLAGS += -DNULLPTR_MEANS_NOOP -DDELETE_NORECORD_MEANS_NOOP
 #FCFLAGS += -DEXIT_REGION_SYNCHRONIZE_STREAMS
 #FCFLAGS += -g -ggdb -O0 -fbacktrace -fmax-errors=5 # -DDEBUG=3
 
-CXX       ?= hipcc
+CXX       = hipcc
 CXX_FLAGS ?= 

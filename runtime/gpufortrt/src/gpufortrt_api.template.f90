@@ -5,7 +5,7 @@
 {########################################################################################}
 ! SPDX-License-Identifier: MIT
 ! Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-module gpufortrt
+module gpufortrt_api
   use gpufortrt_api_core
 {{ gam.render_map_interfaces(datatypes) | indent(2,True) }}
 

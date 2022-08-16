@@ -1,20 +1,43 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 include rules.mk
 
-.PHONY: build codegen lib/$(LIBGPUFORTRT) clean
+CXXFLAGS ?= 
+CXXFLAGS += -I./src -I./src/internal
 
-lib/$(LIBGPUFORTRT): | codegen build
+VPATH = ./src:./src/internal
+
+# gather objects
+include src/internal/make.inc
+include src/make.inc
+
+.PHONY: build codegen lib/$(LIBGPUFORTRT) clean clean_all
+
+# targets
+
+build: lib/$(LIBGPUFORTRT)
+
+lib/$(LIBGPUFORTRT): | codegen $(LIBGPUFORTRT)
+	mkdir -p lib/
+	mkdir -p include/
+	mv *.mod include/
+	mv $(LIBGPUFORTRT) lib/
+
+$(LIBGPUFORTRT): $(CXX_OBJ) $(F_OBJ)
+	ar -crs $@ $^ 
+
+$(CXX_OBJ): %.cpp.o: %.cpp
+	$(CXX) -c $< $(CXXFLAGS) -o $@
+
+$(F_OBJ): %.o: %.f90
+	$(FC) -c $< $(FCFLAGS)
 
 codegen:
 	python3 codegen.py src/gpufortrt_api.template.f90 -d 7
 
-build:
-	mkdir -p lib/
-	mkdir -p include/
-	make -C src/ $(LIBGPUFORTRT)
-	mv src/*.mod include/
-	mv src/$(LIBGPUFORTRT) lib/
-	make -C src/ clean
+clean_all:
+	rm -f *.o *.mod *.a
+	rm -rf include/ lib/
 
 clean:
-	make -C src/ clean
-	rm -rf include/ lib/
+	rm -f *.o *.mod *.a

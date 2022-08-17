@@ -127,12 +127,12 @@ size_t gpufortrt::internal::record_list_t::use_increment_record(
   size_t loc = this->find_record(hostptr,success/*inout*/); // record.hostptr == hostptr
   if ( success ) {
     auto& record = this->records[loc];
-    if ( record.num_bytes == num_bytes ) {
+    if ( record.num_bytes_used == num_bytes ) {
       record.inc_refs(ctr_to_update);
     } else {
       std::stringstream ss;
       ss << "host data to map (" << hostptr << " x " << num_bytes << " B) is not identical to already existing record's host data ("
-         << record.hostptr << " x " << record.num_bytes << " B)";
+         << record.hostptr << " x " << record.num_bytes_used << " B)";
       throw std::invalid_argument(ss.str());
     }
   } else {
@@ -155,7 +155,6 @@ size_t gpufortrt::internal::record_list_t::use_increment_record(
            && never_deallocate ) {
          record.struct_refs = 1; 
       }
-      record.inc_refs(ctr_to_update);
       // Update consumed memory statistics only if
       // no record was reused, i.e. a new one was created
       if ( !reuse_existing ) {
@@ -164,6 +163,7 @@ size_t gpufortrt::internal::record_list_t::use_increment_record(
       } else {
         LOG_INFO(3,"reuse record: " << record)
       }
+      record.inc_refs(ctr_to_update);
       this->records.push_back(record);
     }
     assert(loc <= this->records.size());

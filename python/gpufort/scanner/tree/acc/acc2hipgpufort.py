@@ -123,24 +123,18 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         return result
 
     # TODO clean up
-    def _handle_data_clauses(self,staccdir,index,
-                             template=None):#,async_expr,finalize_expr):
-        """
-        Handle all data clauses of the current directive and/or of the preceding data clauses.
-        :param str template: Overwrite the default mapping templates by a specific one.
-                             In the context of structured data regions, can be used to enqueue
-                             counter modification mappings for each original mapping.
+    def _handle_data_clauses(self,staccdir,index):
+        """Handle all data clauses of the current directive and/or of the preceding data clauses.
         """
         result = [] 
         #
-        for kind, args in staccdir.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP.keys()):
-            for var_expr in args:
-                if template == None:
-                    template = _DATA_CLAUSE_2_TEMPLATE_MAP[kind.lower()]
+        for kind, var_exprs in staccdir.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP.keys()):
+            for var_expr in var_exprs:
+                template = _DATA_CLAUSE_2_TEMPLATE_MAP[kind.lower()]
                 ivar = indexer.scope.search_index_for_var(index,staccdir.parent.tag(),var_expr)
                 args = [var_expr]
                 if ivar["rank"] > 0:
-                  args.append("size({})".format(var_expr))
+                    args.append("size({})".format(var_expr))
                 result.append(template.format(args=",".join(args)))
                 #if not opts.acc_map_derived_types: 
                     #if ivar["f_type"] == "type":

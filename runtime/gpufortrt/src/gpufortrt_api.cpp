@@ -117,7 +117,7 @@ namespace {
              << ", blocking:" << blocking
              << ", async_arg:" << async_arg
              << ", finalize:" << finalize)
-    if ( gpufortrt::internal::LOG_LEVEL > 1 ) { 
+    if ( gpufortrt::internal::LOG_LEVEL > 0 ) { 
       for (int i = 0; i < num_mappings; i++) {
          auto mapping = mappings[i];
          LOG_INFO(1,"  mapping "<<i<<": "<<mapping) 

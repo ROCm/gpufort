@@ -63,12 +63,117 @@ end function
 {% endfor -%} 
 {%- endmacro -%}
 {#######################################################################################}
+{% macro render_basic_delete_copyout_routines() %}
+{#######################################################################################}
+{% for clause in ["delete","copyout"] %}
+subroutine gpufortrt_{{clause}}_b(hostptr,num_bytes,async_arg,finalize)
+  use iso_c_binding
+  use gpufortrt_types, only: gpufortrt_handle_kind
+  implicit none
+  type(c_ptr), intent(in) :: hostptr
+  type(c_ptr),value,intent(in) :: num_bytes
+  integer(gpufortrt_handle_kind),intent(in),optional :: async_arg
+  logical,intent(in),optional :: finalize
+  !
+  interface
+    subroutine gpufortrt_{{clause}}_c_impl(hostptr,num_bytes) &
+        bind(c,name="gpufortrt_{{clause}}")
+      use iso_c_binding
+      implicit none
+      type(c_ptr),value,intent(in) :: hostptr
+      integer(c_size_t),value,intent(in) :: num_bytes
+    end subroutine
+    subroutine gpufortrt_{{clause}}_finalize_c_impl(hostptr,num_bytes) &
+        bind(c,name="gpufortrt_{{clause}}_finalize")
+      use iso_c_binding
+      implicit none
+      type(c_ptr),value,intent(in) :: hostptr
+      integer(c_size_t),value,intent(in) :: num_bytes
+    end subroutine
+    subroutine gpufortrt_{{clause}}_async_c_impl(hostptr,num_bytes,async_arg) &
+        bind(c,name="gpufortrt_{{clause}}_async")
+      use iso_c_binding
+      use gpufortrt_types, only: gpufortrt_handle_kind
+      implicit none
+      type(c_ptr),value,intent(in) :: hostptr
+      integer(c_size_t),value,intent(in) :: num_bytes
+      integer(gpufortrt_handle_kind),value,intent(in) :: async_arg
+    end subroutine
+    subroutine gpufortrt_{{clause}}_finalize_async_c_impl(hostptr,num_bytes,async_arg) &
+        bind(c,name="gpufortrt_{{clause}}_finalize_async")
+      use iso_c_binding
+      use gpufortrt_types, only: gpufortrt_handle_kind
+      implicit none
+      type(c_ptr),value,intent(in) :: hostptr
+      integer(c_size_t),value,intent(in) :: num_bytes
+      integer(gpufortrt_handle_kind),value,intent(in) :: async_arg
+    end subroutine
+  end interface
+  !
+  if ( present(async_arg) ) then
+    if ( present(finalize) ) then
+      call gpufortrt_{{clause}}_finalize_async_c_impl(hostptr,num_bytes,async_arg)
+    else
+      call gpufortrt_{{clause}}_async_c_impl(hostptr,num_bytes,async_arg)
+    endif
+  else
+    if ( present(finalize) ) then
+      call gpufortrt_{{clause}}_finalize_c_impl(hostptr,num_bytes)
+    else
+      call gpufortrt_{{clause}}_c_impl(hostptr,num_bytes)
+    endif
+  endif
+end subroutine
+{% endfor %}
+{% endmacro %}
+{#######################################################################################}
+{% macro render_specialized_delete_copyout_routines(datatypes) %}
+{#######################################################################################}
+{% for clause in ["delete","copyout"] %}
+{%   for tuple in datatypes -%}
+!> Map and directly return the corresponding deviceptr.
+!> (Specialized version for Fortran scalar arguments)
+function gpufortrt_{{clause}}_{{tuple[0]}}_scal(hostptr,async_arg,finalize) result(deviceptr)
+  use iso_c_binding
+  use gpufortrt_types
+  implicit none
+  {{tuple[2]}},target,intent(in) :: hostptr
+  integer(gpufortrt_handle_kind),intent(in),optional :: async_arg
+  logical,intent(in),optional :: finalize
+  !
+  type(c_ptr) :: deviceptr
+  !
+  deviceptr = gpufortrt_{{clause}}_b(c_loc(hostptr),int({{tuple[1]}},kind=c_size_t),&
+                                     never_deallocate,async_arg)
+end function
+
+!> Map and directly return the corresponding deviceptr.
+!> (Specialized version for Fortran array arguments)
+function gpufortrt_{{clause}}_{{tuple[0]}}_arr(hostptr,num_entries,async_arg,finalize) result(deviceptr)
+  use iso_c_binding
+  use gpufortrt_types
+  implicit none
+  {{tuple[2]}},dimension(*),target,intent(in) :: hostptr
+  integer,intent(in) :: num_entries
+  integer(gpufortrt_handle_kind),intent(in),optional :: async_arg
+  logical,intent(in),optional :: finalize
+  !
+  type(c_ptr) :: deviceptr
+  !
+  deviceptr = gpufortrt_{{clause}}_b(c_loc(hostptr),int(num_entries,kind=c_size_t)*int({{tuple[1]}},kind=c_size_t),&
+                                     never_deallocate,async_arg)
+end function
+
+{%   endfor %}{# datatypes #}
+{% endfor %}{# clause #}
+{% endmacro %}
+{#######################################################################################}
 {% macro render_basic_map_and_lookup_routines() %}
 {#######################################################################################}
-{% for clause in ["create","copyin","copy","copyout"] %}
+{% for clause in ["create","copyin","copy"] %}
 !> Map and directly return the corresponding deviceptr.
 function gpufortrt_{{clause}}_b(hostptr,num_bytes,never_deallocate,&
-    async_arg,ctr_to_update) result(deviceptr)
+    async_arg) result(deviceptr)
   use iso_c_binding
   use gpufortrt_types
   implicit none
@@ -76,12 +181,11 @@ function gpufortrt_{{clause}}_b(hostptr,num_bytes,never_deallocate,&
   integer(c_size_t),intent(in) :: num_bytes
   logical,intent(in),optional :: never_deallocate
   integer(gpufortrt_handle_kind),intent(in),optional :: async_arg 
-  integer(kind(gpufortrt_counter_none)),intent(in),optional :: ctr_to_update
   !
   type(c_ptr) :: deviceptr
   !
   interface
-    function gpufortrt_{{clause}}_c_impl(hostptr,num_bytes,never_deallocate,ctr_to_update) &
+    function gpufortrt_{{clause}}_c_impl(hostptr,num_bytes,never_deallocate) &
         bind(c,name="gpufortrt_{{clause}}") result(deviceptr)
       use iso_c_binding
       use gpufortrt_types
@@ -89,11 +193,10 @@ function gpufortrt_{{clause}}_b(hostptr,num_bytes,never_deallocate,&
       type(c_ptr),value,intent(in) :: hostptr
       integer(c_size_t),value,intent(in) :: num_bytes
       logical(c_bool),value,intent(in) :: never_deallocate
-      integer(kind(gpufortrt_counter_none)),value,intent(in) :: ctr_to_update
       !
       type(c_ptr) :: deviceptr
     end function
-    function gpufortrt_{{clause}}_async_c_impl(hostptr,num_bytes,never_deallocate,async_arg,ctr_to_update) &
+    function gpufortrt_{{clause}}_async_c_impl(hostptr,num_bytes,never_deallocate,async_arg) &
         bind(c,name="gpufortrt_{{clause}}_async") result(deviceptr)
       use iso_c_binding
       use gpufortrt_types
@@ -102,25 +205,19 @@ function gpufortrt_{{clause}}_b(hostptr,num_bytes,never_deallocate,&
       integer(c_size_t),value,intent(in) :: num_bytes
       logical(c_bool),value,intent(in) :: never_deallocate
       integer(gpufortrt_handle_kind),value,intent(in) :: async_arg
-      integer(kind(gpufortrt_counter_none)),value,intent(in) :: ctr_to_update
       !
       type(c_ptr) :: deviceptr
     end function
   end interface
   !
-  integer(kind(gpufortrt_counter_none)) :: opt_ctr_to_update
   logical(c_bool) :: opt_never_deallocate
   !
-  opt_ctr_to_update = gpufortrt_counter_none
   opt_never_deallocate = .false._c_bool
-  if ( present(ctr_to_update) ) opt_ctr_to_update = ctr_to_update
   if ( present(never_deallocate) ) opt_never_deallocate = never_deallocate
   if ( present(async_arg) ) then
-    deviceptr = gpufortrt_{{clause}}_async_c_impl(hostptr,num_bytes,opt_never_deallocate,async_arg,&
-        opt_ctr_to_update)
+    deviceptr = gpufortrt_{{clause}}_async_c_impl(hostptr,num_bytes,opt_never_deallocate,async_arg)
   else
-    deviceptr = gpufortrt_{{clause}}_c_impl(hostptr,num_bytes,opt_never_deallocate,&
-        opt_ctr_to_update)
+    deviceptr = gpufortrt_{{clause}}_c_impl(hostptr,num_bytes,opt_never_deallocate)
   endif
 end function
 
@@ -129,29 +226,28 @@ end function
 {#######################################################################################}
 {% macro render_specialized_map_and_lookup_routines(datatypes) %}
 {#######################################################################################}
-{% for clause in ["create","copyin","copy","copyout"] %}
+{% for clause in ["create","copyin","copy"] %}
 {%   for tuple in datatypes -%}
 !> Map and directly return the corresponding deviceptr.
 !> (Specialized version for Fortran scalar arguments)
-function gpufortrt_{{clause}}_{{tuple[0]}}_scal(hostptr,never_deallocate,async_arg,ctr_to_update) result(deviceptr)
+function gpufortrt_{{clause}}_{{tuple[0]}}_scal(hostptr,never_deallocate,async_arg) result(deviceptr)
   use iso_c_binding
   use gpufortrt_types
   implicit none
   {{tuple[2]}},target,intent(in) :: hostptr
   logical,intent(in),optional :: never_deallocate
   integer(gpufortrt_handle_kind),intent(in),optional :: async_arg 
-  integer(kind(gpufortrt_counter_none)),intent(in),optional :: ctr_to_update
   !
   type(c_ptr) :: deviceptr
   !
   deviceptr = gpufortrt_{{clause}}_b(c_loc(hostptr),int({{tuple[1]}},kind=c_size_t),&
-                                     never_deallocate,async_arg,ctr_to_update)
+                                     never_deallocate,async_arg)
 end function
 
 !> Map and directly return the corresponding deviceptr.
 !> (Specialized version for Fortran array arguments)
 function gpufortrt_{{clause}}_{{tuple[0]}}_arr(hostptr,num_entries,&
-    never_deallocate,async_arg,ctr_to_update) result(deviceptr)
+    never_deallocate,async_arg) result(deviceptr)
   use iso_c_binding
   use gpufortrt_types
   implicit none
@@ -159,12 +255,11 @@ function gpufortrt_{{clause}}_{{tuple[0]}}_arr(hostptr,num_entries,&
   integer,intent(in) :: num_entries
   logical,intent(in),optional :: never_deallocate
   integer(gpufortrt_handle_kind),intent(in),optional :: async_arg 
-  integer(kind(gpufortrt_counter_none)),intent(in),optional :: ctr_to_update
   !
   type(c_ptr) :: deviceptr
   !
   deviceptr = gpufortrt_{{clause}}_b(c_loc(hostptr),int(num_entries,kind=c_size_t)*int({{tuple[1]}},kind=c_size_t),&
-                                     never_deallocate,async_arg,ctr_to_update)
+                                     never_deallocate,async_arg)
 end function
 
 {%   endfor %}{# datatypes #}
@@ -221,37 +316,27 @@ end function
 {% macro render_specialized_present_routines(datatypes) %}
 {#######################################################################################}
 {% for tuple in datatypes -%}
-function gpufortrt_present_{{tuple[0]}}_scal(hostptr,ctr_to_update) result(deviceptr)
+function gpufortrt_present_{{tuple[0]}}_scal(hostptr) result(deviceptr)
   use iso_c_binding
   use gpufortrt_types
   implicit none
   {{tuple[2]}},target,intent(in) :: hostptr
-  integer(kind(gpufortrt_counter_none)),intent(in),optional :: ctr_to_update
   !
   type(c_ptr) :: deviceptr
   !
-  integer(kind(gpufortrt_counter_none)) :: opt_ctr_to_update
-  !
-  opt_ctr_to_update = gpufortrt_counter_none
-  deviceptr = gpufortrt_present_b(c_loc(hostptr),int({{tuple[1]}},kind=c_size_t),&
-                                  opt_ctr_to_update)
+  deviceptr = gpufortrt_present_b(c_loc(hostptr),int({{tuple[1]}},kind=c_size_t))
 end function
 
-function gpufortrt_present_{{tuple[0]}}_arr(hostptr,num_entries,ctr_to_update) result(deviceptr)
+function gpufortrt_present_{{tuple[0]}}_arr(hostptr,num_entries) result(deviceptr)
   use iso_c_binding
   use gpufortrt_types
   implicit none
   {{tuple[2]}},dimension(*),target,intent(in) :: hostptr
   integer(c_int),intent(in) :: num_entries
-  integer(kind(gpufortrt_counter_none)),intent(in),optional :: ctr_to_update
   !
   type(c_ptr) :: deviceptr
   !
-  integer(kind(gpufortrt_counter_none)) :: opt_ctr_to_update
-  !
-  opt_ctr_to_update = gpufortrt_counter_none
-  deviceptr = gpufortrt_present_b(c_loc(hostptr),int({{tuple[1]}},kind=c_size_t)*num_entries,&
-                                  opt_ctr_to_update)
+  deviceptr = gpufortrt_present_b(c_loc(hostptr),int({{tuple[1]}},kind=c_size_t)*num_entries)
 end function
 
 {% endfor %}{# datatypes #}
@@ -259,14 +344,14 @@ end function
 {#######################################################################################}
 {% macro render_map_interfaces(datatypes) %}
 {#######################################################################################}
-{% for clause in ["present","create","copyin","copy","copyout"] %}
+{% for clause in ["present","create","copyin","copy"] %}
 {{ render_interface("gpufortrt_map_"+clause,datatypes) }}
 {% endfor %}
 {% endmacro %}
 {#######################################################################################}
 {% macro render_map_and_lookup_interfaces(datatypes) %}
 {#######################################################################################}
-{% for clause in ["present","create","copyin","copy","copyout"] %}
+{% for clause in ["present","create","copyin","copy"] %}
 {{ render_interface("gpufortrt_"+clause,datatypes) }}
 {% endfor %}
 {% endmacro %}

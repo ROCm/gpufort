@@ -34,86 +34,72 @@ extern "C" {
           void* hostptr,
           bool condition,
           bool if_present);
- 
-  void* gpufortrt_present(
-          void* hostptr,
-          size_t num_bytes,
-          gpufortrt_counter_t ctr_to_update);
   
   void gpufortrt_delete(
           void* hostptr,
-          gpufortrt_counter_t ctr_to_update);
+          size_t num_bytes);
   void gpufortrt_delete_finalize(
           void* hostptr,
-          gpufortrt_counter_t ctr_to_update);
+          size_t num_bytes);
   void gpufortrt_delete_async(
           void* hostptr,
-          int async,
-          gpufortrt_counter_t ctr_to_update);
+          size_t num_bytes,
+          int async);
   void gpufortrt_delete_finalize_async(
           void* hostptr,
-          int async,
-          gpufortrt_counter_t ctr_to_update);
+          size_t num_bytes,
+          int async);
+  
+  void gpufortrt_copyout(
+         void* hostptr,
+         size_t num_bytes,
+         bool never_deallocate);
+  void gpufortrt_copyout_async(
+         void* hostptr,
+         size_t num_bytes,
+         int async,
+         bool never_deallocate);
+  void gpufortrt_copyout_finalize(
+         void* hostptr,
+         size_t num_bytes);
+  void gpufortrt_copyout_finalize_async(
+         void* hostptr,
+         size_t num_bytes,
+         int async);
    
   void* gpufortrt_no_create(
           void* hostptr,
-          size_t num_bytes,
-          gpufortrt_counter_t ctr_to_update);
+          size_t num_bytes);
   
   void* gpufortrt_create(
           void* hostptr,
           size_t num_bytes,
-          bool never_deallocate,
-          gpufortrt_counter_t ctr_to_update);
+          bool never_deallocate);
   void* gpufortrt_create_async(
           void* hostptr,
           size_t num_bytes,
           int async,
-          bool never_deallocate,
-          gpufortrt_counter_t ctr_to_update);
+          bool never_deallocate);
   
   void* gpufortrt_copyin(
           void* hostptr,
           size_t num_bytes,
-          bool never_deallocate,
-          gpufortrt_counter_t ctr_to_update);
+          bool never_deallocate);
   void* gpufortrt_copyin_async(
           void* hostptr,
           size_t num_bytes,
           int async,
-          bool never_deallocate,
-          gpufortrt_counter_t ctr_to_update);
+          bool never_deallocate);
   
   void* gpufortrt_copy(
          void* hostptr,
          size_t num_bytes,
-         bool never_deallocate,
-         gpufortrt_counter_t ctr_to_update);
+         bool never_deallocate);
   void* gpufortrt_copy_async(
          void* hostptr,
          size_t num_bytes,
          int async,
-         bool never_deallocate,
-         gpufortrt_counter_t ctr_to_update);
-
-  void* gpufortrt_copyout(
-         void* hostptr,
-         size_t num_bytes,
-         bool never_deallocate,
-         gpufortrt_counter_t ctr_to_update);
-  void* gpufortrt_copyout_async(
-         void* hostptr,
-         size_t num_bytes,
-         int async,
-         bool never_deallocate,
-         gpufortrt_counter_t ctr_to_update);
-  void* gpufortrt_copyout_finalize(
-         void* hostptr,
-         size_t num_bytes);
-  void* gpufortrt_copyout_finalize_async(
-         void* hostptr,
-         size_t num_bytes,
-         int async);
+         bool never_deallocate);
 
   void gpufortrt_update_host(
          void* hostptr,

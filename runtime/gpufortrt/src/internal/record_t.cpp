@@ -252,16 +252,28 @@ void gpufortrt::internal::record_t::copy_section_to_host(
   #endif
 }
 
-void gpufortrt::internal::record_t::decrement_release(
-     gpufortrt_counter_t ctr_to_update,
-     bool blocking, gpufortrt_queue_t queue,
-     bool finalize) {
-  this->dec_refs(ctr_to_update);
-  if ( this->can_be_destroyed(0) || finalize ) {
+void gpufortrt::internal::record_t::structured_decrement_release(
+     bool blocking, gpufortrt_queue_t queue) {
+  this->dec_refs(gpufortrt_counter_structured);
+  if ( this->can_be_destroyed(0) ) {
     // if both structured and dynamic reference counters are zero, 
     // a copyout action is performed
     if (  this->map_kind == gpufortrt_map_kind_copyout
        || this->map_kind == gpufortrt_map_kind_copy ) {
+      this->copy_to_host(blocking,queue);
+    }
+    this->release();
+  }
+}
+
+void gpufortrt::internal::record_t::unstructured_decrement_release(
+        bool copyout, bool finalize,
+        bool blocking, gpufortrt_queue_t queue) {
+  this->dec_refs(gpufortrt_counter_dynamic);
+  if ( this->can_be_destroyed(0) || finalize ) {
+    // if both structured and dynamic reference counters are zero, 
+    // a copyout action is performed
+    if (  copyout ) {
       this->copy_to_host(blocking,queue);
     }
     this->release();

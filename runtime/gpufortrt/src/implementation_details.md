@@ -15,7 +15,7 @@ of the runtime.
 
 Per default, the mapping procedures (`gpufortrt_<clause-name>`, `<clause-name` is one of `present`, `create`, ... ) do not increment 
 the structured or dynamic reference counters of a record. 
-This has to specified via the optional arguments `update_struct_refs` and `update_dyn_refs`.
+This has to be specified via the optional arguments `update_struct_refs` and `update_dyn_refs`.
 The runtime calls for starting and ending structured and unstructured
 data regions (`gpufortrt_data_start`, `gpufortrt_data_end`, and `gpufortrt_enter_exit_data`)
 use these optional arguments.

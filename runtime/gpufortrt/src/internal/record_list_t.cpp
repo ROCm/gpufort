@@ -115,6 +115,24 @@ size_t gpufortrt::internal::record_list_t::find_available_record(size_t num_byte
   return loc;
 }
 
+namespace {
+  bool verify_is_proper_section_of_host_data(
+     gpufortrt::internal::record_t& record,
+     void* hostptr,
+     size_t num_bytes){
+    size_t offset_bytes;
+    if ( record.is_subarray(hostptr,num_bytes,offset_bytes/*inout*/) ) {
+      return true;
+    } else {
+      std::stringstream ss;
+      ss << "host data to map (" << hostptr << " x " << num_bytes << " B) is no subset of already existing record's host data ("
+         << record.hostptr << " x " << record.num_bytes_used << " B)";
+      throw std::invalid_argument(ss.str());
+    }
+    return false;
+  }
+} // namespace
+
 size_t gpufortrt::internal::record_list_t::use_increment_record(
    void* hostptr,
    size_t num_bytes,
@@ -123,17 +141,12 @@ size_t gpufortrt::internal::record_list_t::use_increment_record(
    bool blocking,
    gpufortrt_queue_t queue,
    bool never_deallocate) {
-  bool success;
-  size_t loc = this->find_record(hostptr,success/*inout*/); // record.hostptr == hostptr
-  if ( success ) {
+  bool host_data_contains_hostptr = false;
+  size_t loc = this->find_record(hostptr,1,host_data_contains_hostptr/*inout*/);
+  if ( host_data_contains_hostptr ) {
     auto& record = this->records[loc];
-    if ( record.num_bytes_used == num_bytes ) {
+    if ( ::verify_is_proper_section_of_host_data(record,hostptr,num_bytes) ) {
       record.inc_refs(ctr_to_update);
-    } else {
-      std::stringstream ss;
-      ss << "host data to map (" << hostptr << " x " << num_bytes << " B) is not identical to already existing record's host data ("
-         << record.hostptr << " x " << record.num_bytes_used << " B)";
-      throw std::invalid_argument(ss.str());
     }
   } else {
     bool reuse_existing = false;
@@ -171,26 +184,41 @@ size_t gpufortrt::internal::record_list_t::use_increment_record(
   return loc;
 }
 
-void gpufortrt::internal::record_list_t::decrement_release_record(
+void gpufortrt::internal::record_list_t::structured_decrement_release_record(
     void* hostptr,
-    gpufortrt_counter_t ctr_to_update,
+    size_t num_bytes,
     bool blocking,
-    gpufortrt_queue_t queue,
-    bool finalize) {
-  bool success;
-  size_t loc = this->find_record(hostptr,success/*inout*/); // record.hostptr == hostptr
-  if ( success ) {
+    gpufortrt_queue_t queue) {
+  bool host_data_contains_hostptr = false;
+  size_t loc = this->find_record(hostptr,1,host_data_contains_hostptr/*inout*/);
+  if ( host_data_contains_hostptr ) {
     assert(loc >= 0);
     assert(loc <= this->records.size());
     gpufortrt::internal::record_t& record = this->records[loc];
-    if ( record.hostptr != hostptr ) {
-      throw std::invalid_argument(
-        "decrement_release_record: argument 'hostptr' points to section of mapped data");
-    } else {
-      record.decrement_release(
-        ctr_to_update,
-        blocking,queue,
-        finalize);
+    if ( ::verify_is_proper_section_of_host_data(record,hostptr,num_bytes) ) { 
+      record.structured_decrement_release(
+        blocking,queue);
+    }
+  }
+}
+
+void gpufortrt::internal::record_list_t::unstructured_decrement_release_record(
+    void* hostptr,
+    size_t num_bytes,
+    bool copyout,
+    bool finalize,
+    bool blocking,
+    gpufortrt_queue_t queue) {
+  bool host_data_contains_hostptr;
+  size_t loc = this->find_record(hostptr,1,host_data_contains_hostptr/*inout*/);
+  if ( host_data_contains_hostptr ) {
+    assert(loc >= 0);
+    assert(loc <= this->records.size());
+    gpufortrt::internal::record_t& record = this->records[loc];
+    if ( ::verify_is_proper_section_of_host_data(record,hostptr,num_bytes) ) { 
+      record.unstructured_decrement_release(
+        copyout,finalize,
+        blocking,queue);
     }
   }
 }

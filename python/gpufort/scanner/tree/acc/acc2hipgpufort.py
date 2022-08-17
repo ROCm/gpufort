@@ -269,17 +269,17 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         elif stnode.is_directive(["acc","enter","data"]):
             result += self._handle_wait_clause()
             mappings = self._handle_data_clauses(stnode,index)
-            options = [ self._get_async_clause_expr() ]
+            options = [ self._get_async_clause_expr(stnode) ]
             result.append(_ACC_ENTER_EXIT_DATA.format(
-                args="&\n"+_create_args_str(mappings+options,indent)))
+                args=_create_mappings_str(mappings,options,indent)))
             # emit gpufortrt_enter_exit_data
         elif stnode.is_directive(["acc","exit","data"]):
             result += self._handle_wait_clause()
             mappings = self._handle_data_clauses(stnode,index)
-            options = [ self._get_async_clause_expr(),
+            options = [ self._get_async_clause_expr(stnode),
                         self._get_finalize_clause_expr() ]
             result.append(_ACC_ENTER_EXIT_DATA.format(
-                args="&\n"+_create_args_str(mappings+options,indent)))
+                args=_create_mappings_str(mappings,options,indent)))
         elif stnode.is_directive(["acc","data"]):
             result += self._handle_wait_clause()
             mappings = self._handle_data_clauses(stnode,index)

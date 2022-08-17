@@ -30,7 +30,7 @@ namespace gpufortrt {
       size_t num_bytes_used = 0;
       int struct_refs       = 0;
       int dyn_refs          = 0;
-      gpufortrt_map_kind_t map_kind = gpufortrt_map_kind_undefined;
+      gpufortrt_map_kind_t map_kind = gpufortrt_map_kind_undefined; //< Relevant for structured data regions. TODO move into structured region stack?
 
     public:
       /** Write string representation of 
@@ -105,15 +105,22 @@ namespace gpufortrt {
       /* Destroy this record. */
       void destroy();
 
-      /** Decrement the specified counter,
+      /** Decrement the structured reference counter,
        *  release the record if all counters are zero.
-       *  Perform a copy out operation if record's map kind requires this.
+       *  Perform a copy out operation if map kind requires this.
        */
-      void decrement_release(gpufortrt_counter_t ctr_to_update,
-                             bool blocking, gpufortrt_queue_t queue,
-                             bool finalize);
+      void structured_decrement_release(
+              bool blocking, gpufortrt_queue_t queue);
+
+      /** Decrement the unstructured reference counter,
+       *  release the record if all counters are zero.
+       *  Perform a copy out operation if specified.
+       */
+      void unstructured_decrement_release(
+              bool copyout, bool finalize,
+              bool blocking, gpufortrt_queue_t queue);
     };
-    
+
     struct record_list_t {
       std::vector<record_t> records;
       int last_record_index = 0;
@@ -185,17 +192,23 @@ namespace gpufortrt {
 
       /**
        * Decrements a record's reference counter and destroys the record if
-       * the reference counter is zero. Copies the data to the host beforehand
-       * if specified.
+       * structured and dynamic reference counter are zero. Copies the data to the host
+       * before destruction if specified.
        * 
        * \note Not thread safe.
        */
-       void decrement_release_record(
-         void* hostptr,
-         gpufortrt_counter_t ctr_to_update,
-         bool blocking,
-         gpufortrt_queue_t queue,
-         bool finalize);
+       void structured_decrement_release_record(
+           void* hostptr,
+           size_t num_bytes,
+           bool blocking,
+           gpufortrt_queue_t queue);
+       void unstructured_decrement_release_record(
+           void* hostptr,
+           size_t num_bytes,
+           bool copyout,
+           bool finalize,
+           bool blocking,
+           gpufortrt_queue_t queue);
     };
 
     struct structured_region_stack_entry_t {
@@ -219,13 +232,13 @@ namespace gpufortrt {
        * region and then remove them from the stack.
        */ 
       void enter_structured_region();
+      
       /**
        * Push a new record on the stack 
        * and associate it with the current region.
        */
       void push_back(record_t& record);
       
-
       /**
        * Find an entry in the stack that is associated with `hostptr`.
        * \return a pointer to a record that contains the data that the `hostptr`

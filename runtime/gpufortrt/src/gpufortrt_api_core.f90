@@ -321,35 +321,28 @@ contains
     endif
   end subroutine
 
-  function gpufortrt_present_b(hostptr,num_bytes,ctr_to_update) result(deviceptr)
+  function gpufortrt_present_b(hostptr,num_bytes) result(deviceptr)
     use iso_c_binding
     use gpufortrt_types, only: gpufortrt_counter_none
     implicit none
     type(c_ptr),intent(in) :: hostptr
     integer(c_size_t),intent(in) :: num_bytes
-    integer(kind(gpufortrt_counter_none)),intent(in),optional :: ctr_to_update
     !
     type(c_ptr) :: deviceptr
     !
     interface
-      function gpufortrt_present_c_impl(hostptr,num_bytes,ctr_to_update) &
+      function gpufortrt_present_c_impl(hostptr,num_bytes) &
           bind(c,name="gpufortrt_present") result(deviceptr)
         use iso_c_binding
         use gpufortrt_types, only: gpufortrt_counter_none
         implicit none
         type(c_ptr),value,intent(in) :: hostptr
         integer(c_size_t),value,intent(in) :: num_bytes
-        integer(kind(gpufortrt_counter_none)),value,intent(in) :: ctr_to_update
         !
         type(c_ptr) :: deviceptr
       end function
     end interface
     !
-    integer(kind(gpufortrt_counter_none)) :: opt_ctr_to_update
-    !
-    opt_ctr_to_update = gpufortrt_counter_none
-    if ( present(ctr_to_update) ) opt_ctr_to_update = ctr_to_update
-    !
-    deviceptr = gpufortrt_present_c_impl(hostptr,num_bytes,opt_ctr_to_update)
+    deviceptr = gpufortrt_present_c_impl(hostptr,num_bytes)
   end function
 end module

@@ -171,17 +171,23 @@ end function
 {% endfor %}{# clause #}
 {% endmacro %}
 {#######################################################################################}
-{% macro render_basic_deviceptr_routine() %}
+{% macro render_deviceptr_interfaces(datatypes) %}
 {#######################################################################################}
-function gpufortrt_deviceptr_b(hostptr) & 
-    bind(c,name="gpufortrt_deviceptr") &
-      result(deviceptr)
-  use iso_c_binding, only: c_ptr
-  implicit none
-  type(c_ptr),value,intent(in) :: hostptr
-  !
-  type(c_ptr) :: deviceptr
-end function
+interface gpufortrt_deviceptr
+  function gpufortrt_deviceptr_b(hostptr) & 
+      bind(c,name="gpufortrt_deviceptr") &
+        result(deviceptr)
+    use iso_c_binding, only: c_ptr
+    implicit none
+    type(c_ptr),value,intent(in) :: hostptr
+    !
+    type(c_ptr) :: deviceptr
+  end function
+{% for tuple in datatypes %}
+  module procedure :: gpufortrt_deviceptr_{{tuple[0]}}_scal
+  module procedure :: gpufortrt_deviceptr_{{tuple[0]}}_arr
+{% endfor %}{# datatypes #}
+end interface
 {% endmacro %}
 {#######################################################################################}
 {% macro render_specialized_deviceptr_routines(datatypes) %}
@@ -295,19 +301,21 @@ subroutine gpufortrt_update_{{update_kind}}_b(hostptr,num_bytes,condition,if_pre
     subroutine gpufortrt_update_{{update_kind}}_async_c_impl(hostptr,condition,if_present,async_arg) &
             bind(c,name="gpufortrt_update_{{update_kind}}_async")
       use iso_c_binding
+      use gpufortrt_types
       implicit none
       type(c_ptr),value,intent(in) :: hostptr
       logical(c_bool),value,intent(in) :: condition, if_present
-      integer(c_int),value,intent(in) :: async_arg
+      integer(gpufortrt_handle_kind),value,intent(in) :: async_arg
     end subroutine
     subroutine gpufortrt_update_{{update_kind}}_section_async_c_impl(hostptr,num_bytes,condition,if_present,async_arg) &
             bind(c,name="gpufortrt_update_{{update_kind}}_section_async")
       use iso_c_binding
+      use gpufortrt_types
       implicit none
       type(c_ptr),value,intent(in) :: hostptr
       integer(c_size_t),value,intent(in) :: num_bytes
       logical(c_bool),value,intent(in) :: condition, if_present
-      integer(c_int),value,intent(in) :: async_arg
+      integer(gpufortrt_handle_kind),value,intent(in) :: async_arg
     end subroutine
   end interface
   logical :: opt_condition, opt_if_present

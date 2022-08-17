@@ -14,9 +14,9 @@ module gpufortrt_api
 {{ gam.render_interface("gpufortrt_update_self",datatypes) | indent(2,True) }}
 {{ gam.render_interface("gpufortrt_update_device",datatypes) | indent(2,True) }}
 
-{{ gam.render_use_device_interface(datatypes,max_rank) }}
+{{ gam.render_use_device_interface(datatypes,max_rank) | indent(2,True) }}
 
-{{ gam.render_interface("gpufortrt_deviceptr",datatypes) | indent(2,True) }}
+{{ gam.render_deviceptr_interfaces(datatypes) | indent(2,True) }}
 
 contains
 
@@ -29,11 +29,10 @@ contains
 {{ gam.render_basic_update_routine("self") }}
 {{ gam.render_specialized_update_routines("self",datatypes) }}
 
-{{ gam.render_basic_update_routine("device") }}
-{{ gam.render_specialized_update_routines("device",datatypes) }}
+{{ gam.render_basic_update_routine("device") | indent(2,True) }}
+{{ gam.render_specialized_update_routines("device",datatypes) | indent(2,True) }}
 
 {{ gam.render_specialized_use_device_routines(datatypes,max_rank) | indent(2,True) }}
 
-{{ gam.render_basic_deviceptr_routine() | indent(2,True) }}
 {{ gam.render_specialized_deviceptr_routines(datatypes) | indent(2,True) }}
 end module

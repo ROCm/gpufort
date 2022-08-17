@@ -4,4 +4,5 @@ F_OBJ += ./gpufortrt_types.o \
          ./gpufortrt_api_core.o \
          ./gpufortrt_api.o
 
-CXX_OBJ += ./gpufortrt_api.cpp.o
+CXX_OBJ += ./gpufortrt_types.cpp.o \
+		   ./gpufortrt_api.cpp.o

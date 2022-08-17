@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-#include "internal/gpufortrt_core.h"
+#include "gpufortrt_api.h"
 
 #include <string>
 #include <sstream>
@@ -8,6 +8,7 @@
 #include "hip/hip_runtime_api.h"
 
 #include "internal/auxiliary.h"
+#include "internal/gpufortrt_core.h"
 
 int gpufortrt_async_noval = -1;
 
@@ -223,7 +224,8 @@ void* gpufortrt_use_device(void* hostptr,bool condition,bool if_present) {
 
 namespace {
   template <bool blocking, bool finalize>
-  void run_delete_action(void* hostptr,int async_arg) {
+  void run_delete_action(void* hostptr,int async_arg,
+       gpufortrt_counter_t ctr_to_update) {
     if ( !gpufortrt::internal::initialized ) LOG_ERROR("gpufortrt_delete: runtime not initialized")
     if ( hostptr == nullptr ) {
   #ifndef NULLPTR_MEANS_NOOP
@@ -236,7 +238,7 @@ namespace {
       }
       gpufortrt::internal::record_list.decrement_release_record(
         hostptr,
-        gpufortrt_counter_dynamic,
+        ctr_to_update,
         blocking,
         queue,
         finalize);
@@ -244,24 +246,30 @@ namespace {
   }
 }
 
-void gpufortrt_delete(void* hostptr) {
-  ::run_delete_action<true,false>(hostptr,gpufortrt_async_noval);
+void gpufortrt_delete(
+        void* hostptr,
+        gpufortrt_counter_t ctr_to_update) {
+  ::run_delete_action<true,false>(hostptr,gpufortrt_async_noval,ctr_to_update);
 }
 
-void gpufortrt_delete_finalize(void* hostptr) {
-  ::run_delete_action<true,true>(hostptr,gpufortrt_async_noval);
+void gpufortrt_delete_finalize(
+        void* hostptr,
+        gpufortrt_counter_t ctr_to_update) {
+  ::run_delete_action<true,true>(hostptr,gpufortrt_async_noval,ctr_to_update);
 }
 
 void gpufortrt_delete_async(
-    void* hostptr,
-    int async_arg) {
-  ::run_delete_action<false,false>(hostptr,async_arg);
+        void* hostptr,
+        int async_arg,
+        gpufortrt_counter_t ctr_to_update) {
+  ::run_delete_action<false,false>(hostptr,async_arg,ctr_to_update);
 }
 
 void gpufortrt_delete_finalize_async(
-    void* hostptr,
-    int async_arg) {
-  ::run_delete_action<false,true>(hostptr,async_arg);
+        void* hostptr,
+        int async_arg,
+        gpufortrt_counter_t ctr_to_update) {
+  ::run_delete_action<false,true>(hostptr,async_arg,ctr_to_update);
 }
 
 void* gpufortrt_present(void* hostptr,size_t num_bytes,

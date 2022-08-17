@@ -38,7 +38,7 @@ contains
   subroutine gpufortrt_wait(wait_arg,async_arg,condition)
     use iso_c_binding
     implicit none
-    integer(gpufortrt_handle_kind),target,dimension(:),intent(in),optional :: wait_arg,async_arg
+    integer(gpufortrt_handle_kind),dimension(:),target,intent(in),optional :: wait_arg,async_arg
     logical,intent(in),optional :: condition
     !
     interface
@@ -108,7 +108,7 @@ contains
     use iso_c_binding
     implicit none
     !integer,intent(in) :: device_kind
-    type(gpufortrt_mapping_t),target,dimension(:),intent(in),optional :: mappings
+    type(gpufortrt_mapping_t),dimension(:),target,intent(in),optional :: mappings
     integer(gpufortrt_handle_kind),intent(in),optional :: async_arg
     !
     interface
@@ -175,8 +175,8 @@ contains
     implicit none
     !
     !integer,intent(in) :: device_kind
-    type(gpufortrt_mapping_t),target,dimension(:),intent(in),optional :: mappings
-    integer,intent(in),optional :: async_arg
+    type(gpufortrt_mapping_t),dimension(:),target,intent(in),optional :: mappings
+    integer(gpufortrt_handle_kind),intent(in),optional :: async_arg
     logical,intent(in),optional :: finalize
     !
     interface
@@ -187,7 +187,7 @@ contains
         integer(c_int),value,intent(in) :: num_mappings
         logical(c_bool),value,intent(in) :: finalize
       end subroutine
-      subroutine gpufortrt_enter_exit_data_async_arg_c_impl(mappings,num_mappings,async_arg,finalize) bind(c,name="gpufortrt_enter_exit_data_async")
+      subroutine gpufortrt_enter_exit_data_async_c_impl(mappings,num_mappings,async_arg,finalize) bind(c,name="gpufortrt_enter_exit_data_async")
         use iso_c_binding
         use gpufortrt_types, only: gpufortrt_handle_kind
         implicit none
@@ -213,7 +213,7 @@ contains
       else
         call gpufortrt_enter_exit_data_async_c_impl(&
           c_null_ptr,&
-          0_c_size_t,&
+          0_c_int,&
           async_arg,&
           opt_finalize) 
       endif

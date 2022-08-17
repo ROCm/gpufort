@@ -51,5 +51,9 @@ extern "C" {
   extern gpufortrt_queue_t gpufortrt_default_queue;
 #ifdef __cplusplus
 } // extern "C"
+
+std::ostream& operator<<(std::ostream& os, gpufortrt_map_kind_t map_kind);
+std::ostream& operator<<(std::ostream& os, gpufortrt_counter_t counter);
+std::ostream& operator<<(std::ostream& os,const gpufortrt_mapping_t& mapping);
 #endif
 #endif // GPUFORTRT_TYPES_H

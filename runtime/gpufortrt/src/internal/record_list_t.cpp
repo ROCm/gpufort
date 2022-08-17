@@ -3,6 +3,7 @@
 #include "gpufortrt_core.h"
 
 #include <iostream>
+#include <sstream>
 
 #include "assert.h"
 
@@ -31,15 +32,14 @@ void gpufortrt::internal::record_list_t::destroy() {
   this->records.clear();
 }
 
-size_t gpufortrt::internal::record_list_t::find_record(void* hostptr,bool& success) {
+size_t gpufortrt::internal::record_list_t::find_record(void* hostptr,bool& success) const {
   success = false;
   size_t loc = -1;
-  size_t offset_bytes = 0;
   if ( hostptr == nullptr ) {
     throw std::invalid_argument("find_record: argument 'hostptr' is null");
   } else {
     for ( size_t i = 0; i < this->records.size(); i++ ) {
-      if ( this->records[i].is_subarray(hostptr,0,offset_bytes) ) {
+      if ( this->records[i].hostptr == hostptr ) {
         loc = i;
         success = true;
         break;
@@ -48,9 +48,35 @@ size_t gpufortrt::internal::record_list_t::find_record(void* hostptr,bool& succe
     // log
     if ( gpufortrt::internal::LOG_LEVEL > 2 ) {
       if ( success ) {
-        LOG_INFO(3,"lookup record: " << this->records[loc])
+        LOG_INFO(3,"record found for hostptr="<<hostptr << "; " << this->records[loc])
       } else {
-        LOG_INFO(3,"lookup record: NOT FOUND")
+        LOG_INFO(3,"no record found for hostptr="<<hostptr)
+      }
+    }
+    return loc;
+  }
+}
+
+size_t gpufortrt::internal::record_list_t::find_record(void* hostptr,size_t num_bytes,bool& success) const {
+  success = false;
+  size_t loc = -1;
+  if ( hostptr == nullptr ) {
+    throw std::invalid_argument("find_record: argument 'hostptr' is null");
+  } else {
+    for ( size_t i = 0; i < this->records.size(); i++ ) {
+      size_t offset_bytes = 0;
+      if ( this->records[i].is_subarray(hostptr,num_bytes,offset_bytes/*inout*/) ) {
+        loc = i;
+        success = true;
+        break;
+      }
+    }
+    // log
+    if ( gpufortrt::internal::LOG_LEVEL > 2 ) {
+      if ( success ) {
+        LOG_INFO(3,"record found for hostptr="<<hostptr << "; " << this->records[loc])
+      } else {
+        LOG_INFO(3,"no record found for hostptr="<<hostptr)
       }
     }
     return loc;
@@ -98,9 +124,17 @@ size_t gpufortrt::internal::record_list_t::use_increment_record(
    gpufortrt_queue_t queue,
    bool never_deallocate) {
   bool success;
-  size_t loc = this->find_record(hostptr,success/*inout*/);
+  size_t loc = this->find_record(hostptr,success/*inout*/); // record.hostptr == hostptr
   if ( success ) {
-    this->records[loc].inc_refs(ctr_to_update);
+    auto& record = this->records[loc];
+    if ( record.num_bytes == num_bytes ) {
+      record.inc_refs(ctr_to_update);
+    } else {
+      std::stringstream ss;
+      ss << "host data to map (" << hostptr << " x " << num_bytes << " B) is not identical to already existing record's host data ("
+         << record.hostptr << " x " << record.num_bytes << " B)";
+      throw std::invalid_argument(ss.str());
+    }
   } else {
     bool reuse_existing = false;
     loc = this->find_available_record(num_bytes,reuse_existing/*inout*/);
@@ -121,13 +155,14 @@ size_t gpufortrt::internal::record_list_t::use_increment_record(
            && never_deallocate ) {
          record.struct_refs = 1; 
       }
+      record.inc_refs(ctr_to_update);
       // Update consumed memory statistics only if
       // no record was reused, i.e. a new one was created
       if ( !reuse_existing ) {
         this->total_memory_bytes += record.num_bytes;
-        LOG_INFO(2,"create record: " << record)
+        LOG_INFO(3,"create record: " << record)
       } else {
-        LOG_INFO(2,"reuse record: " << record)
+        LOG_INFO(3,"reuse record: " << record)
       }
       this->records.push_back(record);
     }
@@ -143,7 +178,7 @@ void gpufortrt::internal::record_list_t::decrement_release_record(
     gpufortrt_queue_t queue,
     bool finalize) {
   bool success;
-  size_t loc = this->find_record(hostptr,success/*inout*/);
+  size_t loc = this->find_record(hostptr,success/*inout*/); // record.hostptr == hostptr
   if ( success ) {
     assert(loc >= 0);
     assert(loc <= this->records.size());

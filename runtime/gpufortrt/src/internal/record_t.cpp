@@ -8,21 +8,6 @@
 
 #include "auxiliary.h"
 
-std::ostream& operator<<(std::ostream& os, gpufortrt_map_kind_t map_kind) {
-  switch(map_kind) {
-    case gpufortrt_map_kind_undefined      : os << "undefined"; break;
-    case gpufortrt_map_kind_present        : os << "present"; break;
-    case gpufortrt_map_kind_delete         : os << "delete"; break;
-    case gpufortrt_map_kind_create         : os << "create"; break;
-    case gpufortrt_map_kind_no_create      : os << "no_create"; break;
-    case gpufortrt_map_kind_copyin         : os << "copyin"; break;
-    case gpufortrt_map_kind_copyout        : os << "copyout"; break;
-    case gpufortrt_map_kind_copy           : os << "copy"; break;
-    default: throw std::invalid_argument("operator<<: invalid value for `map_kind`");
-  }
-  return os;
-}
-
 void gpufortrt::internal::record_t::to_string(std::ostream& os) const {
   os << "global id:"          << this->id        
      << ", hostptr:"          << this->hostptr  
@@ -34,14 +19,13 @@ void gpufortrt::internal::record_t::to_string(std::ostream& os) const {
      << ", struct_refs:"      << this->struct_refs  
      << ", dyn_refs:"         << this->dyn_refs  
      << ", map_kind:"         << 
-     static_cast<gpufortrt_map_kind_t>(map_kind);
+     static_cast<gpufortrt_map_kind_t>(this->map_kind);
 }
 
 std::ostream& operator<<(std::ostream& os,const gpufortrt::internal::record_t& record) {
   record.to_string(os); 
   return os;
 }
-
 
 bool gpufortrt::internal::record_t::is_initialized() const {
   return this->deviceptr != nullptr;
@@ -79,7 +63,7 @@ void gpufortrt::internal::record_t::dec_refs(gpufortrt_counter_t ctr) {
 }
 
 void gpufortrt::internal::record_t::release() {
-  LOG_INFO(2,"release record:" << *this)
+  LOG_INFO(3,"release record; " << *this)
   this->hostptr     = nullptr;
   this->struct_refs = 0;
   this->dyn_refs    = 0;
@@ -126,7 +110,7 @@ void gpufortrt::internal::record_t::setup(
 
 void gpufortrt::internal::record_t::destroy() {
   // TODO move into C binding
-  LOG_INFO(2,"destroy record:" << *this)
+  LOG_INFO(3,"destroy record; " << *this)
   switch (map_kind) {
     case gpufortrt_map_kind_create:
     case gpufortrt_map_kind_copyout:
@@ -178,6 +162,9 @@ void gpufortrt::internal::record_t::copy_to_host(
 
 bool gpufortrt::internal::record_t::is_subarray(
     void* hostptr, size_t num_bytes, size_t& offset_bytes) const {
+  if ( num_bytes < 1 ) {
+    throw std::invalid_argument("is_subarray: argument `num_bytes` must be greater than or equal to 1");
+  }
   offset_bytes = static_cast<char*>(hostptr) - static_cast<char*>(this->hostptr);
   return (offset_bytes >= 0) && ((offset_bytes+num_bytes) < this->num_bytes);    
 }

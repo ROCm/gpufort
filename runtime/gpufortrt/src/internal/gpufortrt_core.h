@@ -6,7 +6,7 @@
 #include <iostream>
 #include <vector>
 
-#include "../gpufortrt_api.h"
+#include "../gpufortrt_types.h"
 
 #define HIP_CHECK(condition)         \
   {                                  \
@@ -77,6 +77,14 @@ namespace gpufortrt {
         bool blocking,
         gpufortrt_queue_t queue);
 
+      /**
+       * \return If the host data section described by `hostptr` and num_bytes
+       * fits into the host data region associated with this record.
+       * \param[in] num_bytes Number of bytes of the searched region,
+       *            must be at least 1. Otherwise, an exception is thrown.
+       * \param[inout] offset_bytes Offset of `hostptr`in bytes with respect to this
+       *               record's `hostptr` member.
+       */
       bool is_subarray(
         void* hostptr, size_t num_bytes, size_t& offset_bytes) const;
       
@@ -125,11 +133,22 @@ namespace gpufortrt {
        void destroy();
     
        /**
-        * Finds a record for a given host ptr and returns the location.
+        * Finds a record that carries the given hostptr and returns the location.
         *
         * \note Not thread safe
         */
-       size_t find_record(void* hostptr,bool& success); // TODO why success and return value (can be negative)?
+       size_t find_record(void* hostptr,bool& success) const;
+       
+       /**
+        * Finds a record whose associated host data fits the data
+        * section described by `hostptr` and `num_bytes`.
+        *
+        * \param[in] num_bytes Number of bytes of the searched region,
+        *            must be at least 1. Otherwise, an exception is thrown.
+        *
+        * \note Not thread safe
+        */
+       size_t find_record(void* hostptr,size_t num_bytes,bool& success) const;
 
        /**
         * Searches first available record from the begin of the record search space.
@@ -184,6 +203,8 @@ namespace gpufortrt {
       record_t* record;
     public:
       structured_region_stack_entry_t(int region_id,record_t& record);
+      /** Write string representation to the ostream. */
+      void to_string(std::ostream& os) const;
     };
 
     struct structured_region_stack_t {
@@ -208,9 +229,11 @@ namespace gpufortrt {
       /**
        * Find an entry in the stack that is associated with `hostptr`.
        * \return a pointer to a record that contains the data that the `hostptr`
-                 points too, or nullptr.
+       *         points too, or nullptr.
+       * \param[in] num_bytes Number of bytes of the searched region,
+       *            must be at least 1. Otherwise, an exception is thrown.
        */
-      record_t* find(void* hostptr);
+      record_t* find(void* hostptr,size_t num_bytes);
       
       /**
        * Find an entry in the current structured region that is associated with `hostptr`.
@@ -218,9 +241,11 @@ namespace gpufortrt {
        * records associated with the implicit region
        * that is introduced around a compute region.
        * \return a pointer to a record that contains the data that the `hostptr`
-                 points too, or nullptr.
+       *         points too, or nullptr.
+       * \param[in] num_bytes Number of bytes of the searched region,
+       *            must be at least 1. Otherwise, an exception is thrown.
        */
-      record_t* find_in_current_region(void* hostptr);
+      record_t* find_in_current_region(void* hostptr,size_t num_bytes);
 
       /** 
        * Decrement the structured reference counter of 
@@ -290,6 +315,6 @@ namespace gpufortrt {
   } // namespace internal
 } // namespace gpufortrt
 
-std::ostream& operator<<(std::ostream& os, gpufortrt_map_kind_t map_kind);
 std::ostream& operator<<(std::ostream& os,const gpufortrt::internal::record_t& record);
+std::ostream& operator<<(std::ostream& os,const gpufortrt::internal::structured_region_stack_entry_t& entry);
 #endif // GPUFORTRT_CORE_H

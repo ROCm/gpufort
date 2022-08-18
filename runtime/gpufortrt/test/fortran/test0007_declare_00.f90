@@ -1,6 +1,6 @@
 program main
   integer,parameter :: n = 10
-  logical :: x(n)
+  logical(c_bool) :: x(n)
   logical, allocatable :: y(:)
   logical, pointer :: z(:)
   !$acc declare copyin(x) create(y,z) 

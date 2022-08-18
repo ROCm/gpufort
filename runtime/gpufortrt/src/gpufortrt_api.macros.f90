@@ -409,7 +409,7 @@ subroutine gpufortrt_update_{{update_kind}}_b(hostptr,num_bytes,condition,if_pre
   end interface
   logical :: opt_condition, opt_if_present
   !
-  opt_condition = .false.
+  opt_condition = .true.
   opt_if_present = .false.
   if ( present(condition) ) opt_condition = condition
   if ( present(if_present) ) opt_if_present = if_present

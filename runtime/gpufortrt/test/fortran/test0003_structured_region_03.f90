@@ -1,6 +1,6 @@
 program main
   integer,parameter :: n = 10
-  logical :: x(n), y(n)
+  logical(c_bool) :: x(n), y(n)
   !$acc init
   !$acc data copy(x)
     !$acc data present(x) copyout(y)

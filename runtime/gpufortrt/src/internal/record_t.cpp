@@ -195,14 +195,20 @@ void gpufortrt::internal::record_t::copy_section_to_device(
   }
   void* deviceptr_section_begin = static_cast<void*>(
       static_cast<char*>(this->deviceptr) + offset_bytes);
-  void* hostptr_section_begin = static_cast<void*>(
-      static_cast<char*>(this->hostptr) + offset_bytes);
+  LOG_INFO(3,"copy_section_to_device" 
+           << "; hostptr:" << hostptr
+           << ", deviceptr:" << deviceptr_section_begin
+           << ", num_bytes:" << num_bytes
+           << ", offset_bytes:" << offset_bytes
+           << ", record_hostptr:" << this->hostptr
+           << ", record_deviceptr:" << this->deviceptr
+           << ", record_num_bytes_used: " << this->num_bytes_used)
   #ifndef BLOCKING_COPIES
   if ( !blocking ) {
     // TODO backend-specific, externalize
     HIP_CHECK(hipMemcpyAsync(
       deviceptr_section_begin,
-      hostptr_section_begin,
+      hostptr,
       num_bytes,
       hipMemcpyHostToDevice,queue))
 } else {
@@ -210,7 +216,7 @@ void gpufortrt::internal::record_t::copy_section_to_device(
     // TODO backend-specific, externalize
     HIP_CHECK(hipMemcpy(
       deviceptr_section_begin,
-      hostptr_section_begin,
+      hostptr,
       num_bytes,
       hipMemcpyHostToDevice))
   #ifndef BLOCKING_COPIES
@@ -229,13 +235,19 @@ void gpufortrt::internal::record_t::copy_section_to_host(
   }
   void* deviceptr_section_begin = static_cast<void*>(
       static_cast<char*>(this->deviceptr) + offset_bytes);
-  void* hostptr_section_begin = static_cast<void*>(
-      static_cast<char*>(this->hostptr) + offset_bytes);
+  LOG_INFO(3,"copy_section_to_host" 
+           << "; hostptr:" << hostptr
+           << ", deviceptr:" << deviceptr_section_begin
+           << ", num_bytes:" << num_bytes
+           << ", offset_bytes:" << offset_bytes
+           << ", record_hostptr:" << this->hostptr
+           << ", record_deviceptr:" << this->deviceptr
+           << ", record_num_bytes_used: " << this->num_bytes_used)
   #ifndef BLOCKING_COPIES
   if ( !blocking ) {
     // TODO backend-specific, externalize
     HIP_CHECK(hipMemcpyAsync(
-      hostptr_section_begin,
+      hostptr,
       deviceptr_section_begin,
       num_bytes,
       hipMemcpyDeviceToHost,queue))
@@ -243,7 +255,7 @@ void gpufortrt::internal::record_t::copy_section_to_host(
   #endif
     // TODO backend-specific, externalize
     HIP_CHECK(hipMemcpy(
-      hostptr_section_begin,
+      hostptr,
       deviceptr_section_begin,
       num_bytes,
       hipMemcpyDeviceToHost))

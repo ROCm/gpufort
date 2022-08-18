@@ -394,7 +394,7 @@ namespace {
             << ((!blocking) ? ", async_arg:" : "")
             << ((!blocking) ? std::to_string(async_arg).c_str() : ""))
     if ( condition ) {
-      if ( !gpufortrt::internal::initialized ) LOG_ERROR("update_host: runtime not initialized")
+      if ( !gpufortrt::internal::initialized ) LOG_ERROR("update: runtime not initialized")
       if ( hostptr != nullptr ) { // nullptr means no-op
         bool success = false;
         size_t loc = -1;
@@ -404,7 +404,7 @@ namespace {
           loc = gpufortrt::internal::record_list.find_record(hostptr,success/*inout*/); 
         }
         if ( !success && !if_present ) { 
-          LOG_ERROR("update_host: no record found for hostptr="<<hostptr)
+          LOG_ERROR("update: no record found for hostptr="<<hostptr)
         } else if ( success ) {
           auto& record = gpufortrt::internal::record_list.records[loc];
           gpufortrt_queue_t queue = gpufortrt_default_queue; 

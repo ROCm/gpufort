@@ -16,7 +16,7 @@ program test_c_bindings
   sub  = c_loc(array(:,2)) ! offset_bytes should be (2-1)*10*4 bytes from base pointer
   CALL print_cptr(base); Print *, ""
   CALL print_cptr(sub); Print *, ""
-  fits = is_subarray(base,size(array)*4_8,sub,0_8,offset_bytes)
+  fits = is_host_data_subset(base,size(array)*4_8,sub,0_8,offset_bytes)
   print *, "offset_bytes=", offset_bytes 
   tmp = inc_cptr(base,offset_bytes)
   CALL print_cptr(tmp); Print *, ""

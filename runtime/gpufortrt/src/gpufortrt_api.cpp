@@ -78,12 +78,7 @@ namespace {
              << ((!blocking) ? std::to_string(async_arg).c_str() : "")
              << ", never_deallocate:" << never_deallocate 
              << ", ctr_to_update:" << ctr_to_update)
-    if ( hostptr == nullptr) {
-      #ifndef NULLPTR_MEANS_NOOP
-      std::stringstream ss;
-      ss << "gpufortrt_" << map_kind << ": " << "hostptr must not be null"; 
-      throw std::invalid_argument(ss.str());
-      #endif
+    if ( hostptr == nullptr) { // nullptr means no-op
       return nullptr;
     } else {
       gpufortrt_queue_t queue = gpufortrt_default_queue;
@@ -116,11 +111,7 @@ namespace {
             << ((!blocking) ? ", async_arg:" : "")
             << ((!blocking) ? std::to_string(async_arg).c_str() : ""))
     if ( !gpufortrt::internal::initialized ) LOG_ERROR("gpufortrt_delete: runtime not initialized")
-    if ( hostptr == nullptr ) {
-  #ifndef NULLPTR_MEANS_NOOP
-      throw std::invalid_argument("hostptr is nullptr");
-  #endif
-    } else {
+    if ( hostptr != nullptr ) { // nullptr means no-op
       gpufortrt_queue_t queue = gpufortrt_default_queue;
       if ( !blocking ) {
         queue = gpufortrt::internal::queue_record_list.use_create_queue(async_arg);
@@ -217,7 +208,7 @@ void gpufortrt_data_start(gpufortrt_mapping_t* mappings,int num_mappings) {
 }
 
 void gpufortrt_data_end() {
-  LOG_INFO(1,"data end") 
+  LOG_INFO(1,"data end;") 
   if ( !gpufortrt::internal::initialized ) LOG_ERROR("gpufortrt_data_end: runtime not initialized")
   gpufortrt::internal::structured_region_stack.leave_structured_region(false,nullptr);
 }
@@ -404,38 +395,34 @@ namespace {
             << ((!blocking) ? std::to_string(async_arg).c_str() : ""))
     if ( condition ) {
       if ( !gpufortrt::internal::initialized ) LOG_ERROR("update_host: runtime not initialized")
-      if ( hostptr == nullptr ) {
-        #if NULLPTR_MEANS_NOOP
-        throw std::invalid_argument("update_host: hostptr is nullptr")
-        #endif
-        return;
-      }
-      bool success = false;
-      size_t loc = -1;
-      if ( update_section ) {
-        loc = gpufortrt::internal::record_list.find_record(hostptr,num_bytes,success/*inout*/); 
-      } else {
-        loc = gpufortrt::internal::record_list.find_record(hostptr,success/*inout*/); 
-      }
-      if ( !success && !if_present ) { 
-        LOG_ERROR("update_host: no record found for hostptr="<<hostptr)
-      } else if ( success ) {
-        auto& record = gpufortrt::internal::record_list.records[loc];
-        gpufortrt_queue_t queue = gpufortrt_default_queue; 
-        if ( !blocking ) {
-          queue = gpufortrt::internal::queue_record_list.use_create_queue(async_arg);
-        }
-        if ( update_host ) {
-          if ( update_section ) {
-            record.copy_section_to_host(hostptr,num_bytes,blocking,queue);
-          } else {
-            record.copy_to_host(blocking,queue);
-          }
+      if ( hostptr != nullptr ) { // nullptr means no-op
+        bool success = false;
+        size_t loc = -1;
+        if ( update_section ) {
+          loc = gpufortrt::internal::record_list.find_record(hostptr,num_bytes,success/*inout*/); 
         } else {
-          if ( update_section ) {
-            record.copy_section_to_device(hostptr,num_bytes,blocking,queue);
+          loc = gpufortrt::internal::record_list.find_record(hostptr,success/*inout*/); 
+        }
+        if ( !success && !if_present ) { 
+          LOG_ERROR("update_host: no record found for hostptr="<<hostptr)
+        } else if ( success ) {
+          auto& record = gpufortrt::internal::record_list.records[loc];
+          gpufortrt_queue_t queue = gpufortrt_default_queue; 
+          if ( !blocking ) {
+            queue = gpufortrt::internal::queue_record_list.use_create_queue(async_arg);
+          }
+          if ( update_host ) {
+            if ( update_section ) {
+              record.copy_section_to_host(hostptr,num_bytes,blocking,queue);
+            } else {
+              record.copy_to_host(blocking,queue);
+            }
           } else {
-            record.copy_to_device(blocking,queue);
+            if ( update_section ) {
+              record.copy_section_to_device(hostptr,num_bytes,blocking,queue);
+            } else {
+              record.copy_to_device(blocking,queue);
+            }
           }
         }
       }

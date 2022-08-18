@@ -1,5 +1,20 @@
 program main
-  integer,parameter :: N = 10
-  logical :: x(N),y(2*N),z(3*N)
+  integer,parameter :: n = 10
+  logical :: x(n)
+  logical, allocatable :: y(:)
+  logical, pointer :: z(:)
+  !$acc declare copyin(x) create(y,z) 
 
+  call alloc()
+  call dealloc()
+contains
+  subroutine alloc()
+    implicit none
+    allocate(y(n),z(n))
+  end subroutine
+
+  subroutine dealloc()
+    implicit none
+    deallocate(y,z)
+  end subroutine
 end program

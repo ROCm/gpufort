@@ -2,7 +2,6 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 include rules.mk
 
-CXXFLAGS ?= -fPIC
 CXXFLAGS += -I./src -I./src/internal
 
 VPATH = ./src:./src/internal

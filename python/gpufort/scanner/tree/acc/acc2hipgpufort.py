@@ -91,6 +91,12 @@ def _create_mappings_str(mappings,options,indent):
     result += options_str
     return result
 
+def _make_map_args(var_expr,ivar,fixed_size_module_var=True):
+    args=[var_expr]
+    #if ivar["rank"] > 0:
+    #    args.append("size({})".format(var_expr))
+    return args
+
 class Acc2HipGpufortRT(accbackends.AccBackendBase):
     
     def _get_finalize_clause_expr(self):
@@ -132,10 +138,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             for var_expr in var_exprs:
                 template = _DATA_CLAUSE_2_TEMPLATE_MAP[kind.lower()]
                 ivar = indexer.scope.search_index_for_var(index,staccdir.parent.tag(),var_expr)
-                args = [var_expr]
-                if ivar["rank"] > 0:
-                    args.append("size({})".format(var_expr))
-                result.append(template.format(args=",".join(args)))
+                result.append(template.format(args=",".join(_make_map_args(var_expr,ivar))))
                 #if not opts.acc_map_derived_types: 
                     #if ivar["f_type"] == "type":
                     #    result.pop(-1)
@@ -413,12 +416,6 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
 
         indent = stcomputeconstruct.first_line_indent()
         return textwrap.indent("".join(result),indent), len(result)
-
-def _make_map_args(var_expr,ivar,fixed_size_module_var=True):
-    args=[var_expr]
-    #if ivar["rank"] > 0:
-    #    args.append("size({})".format(var_expr))
-    return args
 
 def AllocateHipGpufortRT(stallocate, joined_statements, index):
     stcontainer = stallocate.parent

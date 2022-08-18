@@ -169,13 +169,10 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
                 options.append("if_present=.true.")
         for kind, clause_args in self.stnode.get_matching_clauses(["self", "host", "device"]):
             for var_expr in clause_args:
-                args = [var_expr] 
                 tag = indexer.scope.create_index_search_tag_for_var(var_expr)
                 ivar = indexer.scope.search_index_for_var(index,self.stnode.parent.tag(),tag)
-                if ivar["rank"] > 0:
-                    args.append("size({})".format(var_expr))
                 result.append(_ACC_UPDATE.format(
-                    args=_create_args_str(args+options,indent="",sep=","),
+                    args=_create_args_str(_make_map_args(var_expr,ivar)+options,indent="",sep=","),
                     kind=kind.lower()))
                 if not opts.acc_map_derived_types: 
                     if ("%" in tag and ivar["rank"] == 0
@@ -331,8 +328,6 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
 
         if clause_kind in _DATA_CLAUSE_2_TEMPLATE_MAP:
             tokens = ["gpufortrt_map_",clause_kind,"(",var_expr]
-            #if ( tavar["c_rank"] > 0 ):
-            #    tokens += [",size(",var_expr,")"]
             if len(asyncr) and clause_kind in _DATA_CLAUSES_WITH_ASYNC:
                 tokens += [",",asyncr]
             tokens.append(")") 
@@ -374,12 +369,15 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
                                  self.stnode.get_vars_present_per_default(),
                                  AccComputeConstruct2HipGpufortRT._map_array,
                                  **kwargs)
-
         mappings  = []
         arguments = []
-        for var_expr, inner_tuple in mapping_tuples:
-            arguments.append(inner_tuple[0])
-            mappings.append(inner_tuple[1])
+        for var_expr, inner in mapping_tuples:
+            if isinstance(inner,tuple):
+                arguments.append(inner[0])
+                mappings.append(inner[1])
+            else:
+                arguments.append(inner)
+                pass # scalars
         return mappings, arguments
         
     def transform(self,

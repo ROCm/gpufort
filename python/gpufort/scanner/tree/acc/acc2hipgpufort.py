@@ -139,9 +139,10 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
                 template = _DATA_CLAUSE_2_TEMPLATE_MAP[kind.lower()]
                 ivar = indexer.scope.search_index_for_var(index,staccdir.parent.tag(),var_expr)
                 result.append(template.format(args=",".join(_make_map_args(var_expr,ivar))))
-                #if not opts.acc_map_derived_types: 
-                    #if ivar["f_type"] == "type":
-                    #    result.pop(-1)
+                # TODO hack, removes derived types from list
+                if not opts.acc_map_derived_types: 
+                    if ivar["f_type"] == "type":
+                        result.pop(-1)
         return result
 
     def _handle_if_clause(self,staccdir,result):
@@ -173,7 +174,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
                 ivar = indexer.scope.search_index_for_var(index,self.stnode.parent.tag(),tag)
                 result.append(_ACC_UPDATE.format(
                     args=_create_args_str(_make_map_args(var_expr,ivar)+options,indent="",sep=","),
-                    kind=kind.lower()))
+                    kind=kind.lower().replace("host","self")))
                 if not opts.acc_map_derived_types: 
                     if ("%" in tag and ivar["rank"] == 0
                        or ivar["f_type"] == "type"):

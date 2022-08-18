@@ -267,60 +267,6 @@ contains
     resultptr = gpufortrt_use_device_c_impl(hostptr,opt_condition,opt_if_present)
   end function
 
-  subroutine gpufortrt_delete_b(hostptr,async_arg,finalize)
-    use iso_c_binding
-    use gpufortrt_types, only: gpufortrt_handle_kind
-    implicit none
-    type(c_ptr), intent(in) :: hostptr
-    integer(gpufortrt_handle_kind),intent(in),optional :: async_arg
-    logical,intent(in),optional :: finalize
-    !
-    interface
-      subroutine gpufortrt_delete_c_impl(hostptr) &
-          bind(c,name="gpufortrt_delete")
-        use iso_c_binding
-        implicit none
-        type(c_ptr),value,intent(in) :: hostptr
-      end subroutine
-      subroutine gpufortrt_delete_finalize_c_impl(hostptr) &
-          bind(c,name="gpufortrt_delete_finalize")
-        use iso_c_binding
-        implicit none
-        type(c_ptr),value,intent(in) :: hostptr
-      end subroutine
-      subroutine gpufortrt_delete_async_c_impl(hostptr,async_arg) &
-          bind(c,name="gpufortrt_delete_async")
-        use iso_c_binding
-        use gpufortrt_types, only: gpufortrt_handle_kind
-        implicit none
-        type(c_ptr),value,intent(in) :: hostptr
-        integer(gpufortrt_handle_kind),value,intent(in) :: async_arg
-      end subroutine
-      subroutine gpufortrt_delete_finalize_async_c_impl(hostptr,async_arg) &
-          bind(c,name="gpufortrt_delete_finalize_async")
-        use iso_c_binding
-        use gpufortrt_types, only: gpufortrt_handle_kind
-        implicit none
-        type(c_ptr),value,intent(in) :: hostptr
-        integer(gpufortrt_handle_kind),value,intent(in) :: async_arg
-      end subroutine
-    end interface
-    !
-    if ( present(async_arg) ) then
-      if ( present(finalize) ) then
-        call gpufortrt_delete_finalize_async_c_impl(hostptr,async_arg)
-      else
-        call gpufortrt_delete_async_c_impl(hostptr,async_arg)
-      endif
-    else
-      if ( present(finalize) ) then
-        call gpufortrt_delete_finalize_c_impl(hostptr)
-      else
-        call gpufortrt_delete_c_impl(hostptr)
-      endif
-    endif
-  end subroutine
-
   function gpufortrt_present_b(hostptr,num_bytes) result(deviceptr)
     use iso_c_binding
     use gpufortrt_types, only: gpufortrt_counter_none

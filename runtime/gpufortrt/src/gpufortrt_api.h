@@ -34,6 +34,8 @@ extern "C" {
           void* hostptr,
           bool condition,
           bool if_present);
+
+  // decrement dynamic reference counter
   
   void gpufortrt_delete(
           void* hostptr,
@@ -52,13 +54,11 @@ extern "C" {
   
   void gpufortrt_copyout(
          void* hostptr,
-         size_t num_bytes,
-         bool never_deallocate);
+         size_t num_bytes);
   void gpufortrt_copyout_async(
          void* hostptr,
          size_t num_bytes,
-         int async,
-         bool never_deallocate);
+         int async);
   void gpufortrt_copyout_finalize(
          void* hostptr,
          size_t num_bytes);
@@ -66,6 +66,12 @@ extern "C" {
          void* hostptr,
          size_t num_bytes,
          int async);
+  
+  // increment dynamic reference counter
+  
+  void* gpufortrt_present(
+          void* hostptr,
+          size_t num_bytes);
    
   void* gpufortrt_no_create(
           void* hostptr,
@@ -100,6 +106,8 @@ extern "C" {
          size_t num_bytes,
          int async,
          bool never_deallocate);
+
+  // other runtime calls
 
   void gpufortrt_update_host(
          void* hostptr,

@@ -9,7 +9,9 @@ module gpufortrt_api
   use gpufortrt_api_core
 {{ gam.render_map_interfaces(datatypes) | indent(2,True) }}
 
-{{ gam.render_map_and_lookup_interfaces(datatypes) | indent(2,True) }}
+{{ gam.render_copy_interfaces(datatypes) | indent(2,True) }}
+{{ gam.render_interface("gpufortrt_delete",datatypes) | indent(2,True) }}
+{{ gam.render_interface("gpufortrt_copyout",datatypes) | indent(2,True) }}
 
 {{ gam.render_interface("gpufortrt_update_self",datatypes) | indent(2,True) }}
 {{ gam.render_interface("gpufortrt_update_device",datatypes) | indent(2,True) }}
@@ -22,9 +24,11 @@ contains
 
 {{ gam.render_map_routines(datatypes) | indent(2,True) }}
 
-{{ gam.render_basic_map_and_lookup_routines() | indent(2,True) }}
-{{ gam.render_specialized_map_and_lookup_routines(datatypes) | indent(2,True) }}
+{{ gam.render_basic_copy_routines() | indent(2,True) }}
+{{ gam.render_specialized_copy_routines(datatypes) | indent(2,True) }}
 {{ gam.render_specialized_present_routines(datatypes) | indent(2,True) }}
+{{ gam.render_basic_delete_copyout_routines() | indent(2,True) }}
+{{ gam.render_specialized_delete_copyout_routines(datatypes) | indent(2,True) }}
 
 {{ gam.render_basic_update_routine("self") }}
 {{ gam.render_specialized_update_routines("self",datatypes) }}

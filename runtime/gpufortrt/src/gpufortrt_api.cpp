@@ -40,24 +40,24 @@ void gpufortrt_init() {
     gpufortrt::internal::structured_region_stack.reserve(gpufortrt::internal::INITIAL_STRUCTURED_REGION_STACK_CAPACITY);
     gpufortrt::internal::initialized = true;
     //
-    LOG_INFO(1,"initialized runtime")
-    LOG_INFO(1,"GPUFORTRT_LOG_LEVEL=" << gpufortrt::internal::LOG_LEVEL)
-    LOG_INFO(1,"GPUFORTRT_INITIAL_RECORDS_CAPACITY=" << gpufortrt::internal::INITIAL_RECORDS_CAPACITY)
-    LOG_INFO(1,"GPUFORTRT_INITIAL_QUEUE_RECORDS_CAPACITY=" << gpufortrt::internal::INITIAL_QUEUE_RECORDS_CAPACITY)
-    LOG_INFO(1,"GPUFORTRT_INITIAL_STRUCTURED_REGION_STACK_CAPACITY=" << gpufortrt::internal::INITIAL_STRUCTURED_REGION_STACK_CAPACITY)
-    LOG_INFO(1,"GPUFORTRT_BLOCK_SIZE=" << gpufortrt::internal::BLOCK_SIZE)
-    LOG_INFO(1,"GPUFORTRT_REUSE_THRESHOLD=" << gpufortrt::internal::REUSE_THRESHOLD)
-    LOG_INFO(1,"GPUFORTRT_NUM_REFS_TO_DEALLOCATE=" << gpufortrt::internal::NUM_REFS_TO_DEALLOCATE)
+    LOG_INFO(1,"init;")
+    LOG_INFO(1,"  GPUFORTRT_LOG_LEVEL=" << gpufortrt::internal::LOG_LEVEL)
+    LOG_INFO(1,"  GPUFORTRT_INITIAL_RECORDS_CAPACITY=" << gpufortrt::internal::INITIAL_RECORDS_CAPACITY)
+    LOG_INFO(1,"  GPUFORTRT_INITIAL_QUEUE_RECORDS_CAPACITY=" << gpufortrt::internal::INITIAL_QUEUE_RECORDS_CAPACITY)
+    LOG_INFO(1,"  GPUFORTRT_INITIAL_STRUCTURED_REGION_STACK_CAPACITY=" << gpufortrt::internal::INITIAL_STRUCTURED_REGION_STACK_CAPACITY)
+    LOG_INFO(1,"  GPUFORTRT_BLOCK_SIZE=" << gpufortrt::internal::BLOCK_SIZE)
+    LOG_INFO(1,"  GPUFORTRT_REUSE_THRESHOLD=" << gpufortrt::internal::REUSE_THRESHOLD)
+    LOG_INFO(1,"  GPUFORTRT_NUM_REFS_TO_DEALLOCATE=" << gpufortrt::internal::NUM_REFS_TO_DEALLOCATE)
   }
 }
 
 void gpufortrt_shutdown() {
+  LOG_INFO(1,"shutdown;")
   if ( !gpufortrt::internal::initialized ) {
     LOG_ERROR("gpufortrt_shutdown: runtime has not been initialized")
   }
   gpufortrt::internal::record_list.destroy();
   gpufortrt::internal::queue_record_list.destroy();
-  LOG_INFO(1,"terminated runtime")
 }
 
 namespace {
@@ -109,7 +109,7 @@ namespace {
   
   void run_decrement_release_action(void* hostptr,size_t num_bytes,int async_arg,
                                     bool blocking, bool finalize, bool copyout) {
-    LOG_INFO(1, ((copyout) ? "copyout" : "delete")
+    LOG_INFO(2, ((copyout) ? "copyout" : "delete")
             << ((finalize) ? "_finalize" : "")
             << ((!blocking) ? "_async" : "")
             << "; hostptr:"<<hostptr 
@@ -153,8 +153,6 @@ namespace {
     }
     for (int i = 0; i < num_mappings; i++) {
       auto mapping = mappings[i];
-      LOG_INFO(2,((ctr_to_update == gpufortrt_counter_structured) ? "data start" : "enter/exit data") 
-               << ": handle mapping "<<i<<": "<<mapping) 
       switch (mapping.map_kind) {
         case gpufortrt_map_kind_delete:
            ::run_decrement_release_action(
@@ -285,8 +283,7 @@ void* gpufortrt_use_device(void* hostptr,bool condition,bool if_present) {
   return nullptr; 
 }
 
-void* gpufortrt_present(void* hostptr,size_t num_bytes,
-                        gpufortrt_counter_t ctr_to_update) {
+void* gpufortrt_present(void* hostptr,size_t num_bytes) {
   return ::run_use_increment_action(
     hostptr,
     num_bytes,
@@ -294,7 +291,7 @@ void* gpufortrt_present(void* hostptr,size_t num_bytes,
     false,
     gpufortrt_async_noval,
     false, 
-    ctr_to_update);
+    gpufortrt_counter_dynamic);
 }
 
 void* gpufortrt_create(void* hostptr,size_t num_bytes,bool never_deallocate) {

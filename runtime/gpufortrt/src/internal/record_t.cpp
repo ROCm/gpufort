@@ -49,11 +49,11 @@ void gpufortrt::internal::record_t::inc_refs(gpufortrt_counter_t ctr) {
   switch(ctr) {
     case gpufortrt_counter_structured: 
         this->struct_refs++;
-        LOG_INFO(4,"increment " << ctr << " reference counter; result: " << *this)
+        LOG_INFO(4,"increment " << ctr << " references; result: " << *this)
         break;;
     case gpufortrt_counter_dynamic:    
         this->dyn_refs++;
-        LOG_INFO(4,"increment " << ctr << " reference counter; result: " << *this)
+        LOG_INFO(4,"increment " << ctr << " references; result: " << *this)
         break;;
     case gpufortrt_counter_none: 
         /* do nothing */;break;;
@@ -65,11 +65,11 @@ void gpufortrt::internal::record_t::dec_refs(gpufortrt_counter_t ctr) {
   switch(ctr) {
     case gpufortrt_counter_structured: 
         this->struct_refs--;
-        LOG_INFO(4,"decrement " << ctr << " reference counter; result: " << *this)
+        LOG_INFO(4,"decrement " << ctr << " references; result: " << *this)
         break;;
     case gpufortrt_counter_dynamic:
         this->dyn_refs--;
-        LOG_INFO(4,"decrement " << ctr << " reference counter; result: " << *this)
+        LOG_INFO(4,"decrement " << ctr << " references; result: " << *this)
         break;;
     case gpufortrt_counter_none:
         /* do nothing */;break;;
@@ -181,7 +181,7 @@ bool gpufortrt::internal::record_t::is_subarray(
     throw std::invalid_argument("is_subarray: argument `num_bytes` must be greater than or equal to 1");
   }
   offset_bytes = static_cast<char*>(hostptr) - static_cast<char*>(this->hostptr);
-  return (offset_bytes >= 0) && ((offset_bytes+num_bytes) < this->num_bytes_used);    
+  return (offset_bytes >= 0) && ((offset_bytes+num_bytes) <= this->num_bytes_used);    
 }
 
 void gpufortrt::internal::record_t::copy_section_to_device(

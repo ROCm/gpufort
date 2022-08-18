@@ -30,13 +30,13 @@ void gpufortrt::internal::structured_region_stack_t::reserve(int capacity) {
 
 void gpufortrt::internal::structured_region_stack_t::enter_structured_region() {
   this->current_region++;
-  LOG_INFO(4,"enter structured region "<<this->current_region)
+  LOG_INFO(5,"enter structured region "<<this->current_region)
 }
 
 void gpufortrt::internal::structured_region_stack_t::push_back(gpufortrt::internal::record_t& record) {
   structured_region_stack_entry_t entry(this->current_region,record);
-  LOG_INFO(4,"structured region stack: push entry to back: "<<entry)
-  LOG_INFO(5,"  record: "<<*entry.record)
+  LOG_INFO(5,"structured region stack: push entry to back: "<<entry)
+  LOG_INFO(6,"  record: "<<*entry.record)
   this->entries.push_back(entry); 
 }
       
@@ -67,11 +67,11 @@ gpufortrt::internal::record_t* gpufortrt::internal::structured_region_stack_t::f
 }
 
 void gpufortrt::internal::structured_region_stack_t::leave_structured_region(bool blocking,gpufortrt_queue_t queue) {
-  LOG_INFO(4,"leave structured region "<<this->current_region)
+  LOG_INFO(5,"leave structured region "<<this->current_region)
   for (int i = this->entries.size()-1; i >= 0; i--) {
     auto& entry = this->entries[i];
     if ( entry.region_id == this->current_region ) {
-      LOG_INFO(4,"leave structured region: remove stack entry "<<i<<"; "<<entry)
+      LOG_INFO(5,"leave structured region: remove stack entry "<<i<<"; "<<entry)
       entry.record->structured_decrement_release(blocking,queue);
       this->entries.pop_back();
     } else {

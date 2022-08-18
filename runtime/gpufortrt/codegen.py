@@ -37,9 +37,11 @@ if __name__ == "__main__":
     template_path = args.input
     outfile_path  = template_path.replace(".template","")
 
+    # suffix, bytes, Fortran type (please double check bytes)
     datatypes  =  [
-      ("l","1","logical"), 
-      ("c", "1", "character(c_char)") ,
+      ("l1","1","logical(c_bool)"), 
+      ("l4","4","logical"), 
+      ("ch1", "1", "character(c_char)") ,
       ("i2","2","integer(c_short)"), 
       ("i4", "4", "integer(c_int)") ,
       ("i8","8","integer(c_long)"), 

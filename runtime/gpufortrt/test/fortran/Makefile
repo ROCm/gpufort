@@ -23,7 +23,9 @@ TEST_NAME     = $(TEST_SRC:.f90=)
 TEST_CONV_SRC = $(TEST_SRC:.f90=.f90-gpufort.f08)
 
 # targets
-.PHONY: clean $(TEST_NAME)
+.PHONY: all clean $(TEST_NAME)
+
+all: $(TEST_NAME)
 
 $(TEST_NAME): %: %.f90-gpufort.f08
 	$(HIPCC) $(HIPCC_CFLAGS) -c $@.f90-gpufort.cpp

@@ -545,7 +545,12 @@ void* gpufortrt_deviceptr(void* hostptr) {
   if ( record != nullptr ) {
     size_t offset_bytes;
     record->is_host_data_subset(hostptr,1/*num_bytes*/,offset_bytes/*inout*/);
-    return static_cast<void*>(static_cast<char*>(record->deviceptr) + offset_bytes);
+    void* result = static_cast<void*>(static_cast<char*>(record->deviceptr) + offset_bytes);
+    LOG_INFO(2,"deviceptr"
+             << "; deviceptr:" << result 
+             << ", record_deviceptr:" << record->deviceptr
+             << ", offset_bytes:" << offset_bytes)
+    return result;
   } else {
     return nullptr;
   } 

@@ -2,27 +2,23 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import copy
 
-from gpufort import translator
-
-__UNKNOWN = "UNKNOWN"
-
 EMPTY_TYPE = {
-    "name": __UNKNOWN, 
+    "name": None, 
     "variables": [],
-    "file" : __UNKNOWN,
+    "file" : None,
     "lineno" : -1,
 }
 
 EMPTY_PROCEDURE = {
-    "kind": __UNKNOWN,
-    "name": __UNKNOWN,
-    "result_name": __UNKNOWN,
+    "kind": None,
+    "name": None,
+    "result_name": None,
     "attributes": [],
     "dummy_args": [],
     "variables": [],
     "procedures": [],
     "used_modules": [],
-    "file" : __UNKNOWN,
+    "file" : None,
     "lineno" : -1,
 }
 
@@ -30,28 +26,39 @@ EMPTY_SCOPE = {"tag": "", "types": [], "variables": [], "procedures": []}
 SCOPE_ENTRY_TYPES = ["types", "variables", "procedures"]
 
 EMPTY_VAR = {
-        "name"   : __UNKNOWN,
-        "f_type" : __UNKNOWN,
-        "len"    : __UNKNOWN,
-        "kind"   : __UNKNOWN,
+        "name"   : None,
+        "f_type" : None,
+        "len"    : None,
+        "kind"   : None,
         "params" : [],
         # TODO bytes per element can be computed on the fly
-        "bytes_per_element" : __UNKNOWN,
-        "c_type" : __UNKNOWN,
+        "bytes_per_element" : None,
+        "c_type" : None,
         "attributes" : [],
         # ACC/OMP
-        "declare_on_target" : False,
+        "declare_on_target" : None,
         # arrays
         "bounds" : [],
         "rank"   : -1,
         # parse rhs if necessary
-        "rhs" : __UNKNOWN,
+        "rhs" : None,
         # meta information
-        "file" : __UNKNOWN,
+        "module": None,
+        "file" : None,
         "lineno" : -1,
 }
 
-def create_index_var(f_type,f_len,kind,params,name,qualifiers=[],bounds=[],rhs=None,filepath="<unknown>",lineno=-1):
+def create_index_var(f_type,
+                     f_len,
+                     kind,
+                     params,
+                     name,
+                     attributes=[],
+                     bounds=[],
+                     rhs=None,
+                     module=None,
+                     filepath="<unknown>",
+                     lineno=-1):
     ivar = copy.deepcopy(EMPTY_VAR)
     # basic
     ivar["name"]        = name
@@ -60,7 +67,7 @@ def create_index_var(f_type,f_len,kind,params,name,qualifiers=[],bounds=[],rhs=N
     ivar["len"]         = f_len
     ivar["params"]      = params
     # TODO bytes per element can be computed on the fly
-    ivar["attributes"] += qualifiers
+    ivar["attributes"] += attributes
     # arrays
     ivar["bounds"] += bounds
     ivar["rank"]   = len(bounds)

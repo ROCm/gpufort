@@ -12,6 +12,12 @@ def has_any_attribute(irecord,attributes):
             return True
     return False
 
+def index_var_is_module_var(ivar):
+    """If the index var has been declared
+    in the declaration list of a module.
+    """
+    return ivar["module"] != None 
+
 def index_var_is_array(ivar):
     """If the index var is an array."""
     return ivar["rank"] > 0

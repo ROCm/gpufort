@@ -328,8 +328,8 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
 
         if clause_kind in _DATA_CLAUSE_2_TEMPLATE_MAP:
             tokens = ["gpufortrt_map_",clause_kind,"(",var_expr]
-            if ( tavar["c_rank"] > 0 ):
-                tokens += [",size(",var_expr,")"]
+            #if ( tavar["c_rank"] > 0 ):
+            #    tokens += [",size(",var_expr,")"]
             if len(asyncr) and clause_kind in _DATA_CLAUSES_WITH_ASYNC:
                 tokens += [",",asyncr]
             tokens.append(")") 
@@ -414,6 +414,12 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
         indent = stcomputeconstruct.first_line_indent()
         return textwrap.indent("".join(result),indent), len(result)
 
+def _make_map_args(var_expr,ivar,fixed_size_module_var=True):
+    args=[var_expr]
+    #if ivar["rank"] > 0:
+    #    args.append("size({})".format(var_expr))
+    return args
+
 def AllocateHipGpufortRT(stallocate, joined_statements, index):
     stcontainer = stallocate.parent
     parent_tag = stcontainer.tag()
@@ -427,18 +433,12 @@ def AllocateHipGpufortRT(stallocate, joined_statements, index):
         ivar = indexer.scope.search_index_for_var(index, parent_tag, var)
         if opts.acc_map_derived_types or ivar["f_type"] != "type":
             var_expr = ivar["name"]
-            is_local_var = var_expr in local_var_names
-            is_arg = var_expr in dummy_arg_names
-            is_used_module_var = not is_local_var and not is_arg
             if not indexer.props.has_any_attribute(ivar,["allocatable","pointer"]):
                 raise error.SyntaxError("variable '{}' that is subject to `allocate` intrinsic must have 'allocatable' or 'pointer' qualifier".
                         format(var_expr))
-            declare = ivar["declare_on_target"]
-            if declare in _CLAUSES_OMP2ACC.keys():
-                map_kind     = _CLAUSES_OMP2ACC[declare]
-                map_template =  _DATA_CLAUSE_2_TEMPLATE_MAP[map_kind]
-                enter_data_mappings.append(map_template.format(
-                  args=_create_args_str([var_expr],"",sep=",")))
+            if ivar["declare_on_target"] in ["alloc"]:
+                enter_data_mappings.append(_ACC_MAP_CREATE.format(
+                  args=_create_args_str(_make_map_args(var_expr,ivar),"",sep=",")))
     if len(enter_data_mappings):
         enter_data_str = _ACC_ENTER_EXIT_DATA.format(
             args=_create_mappings_str(enter_data_mappings,[]," "*2))
@@ -459,17 +459,12 @@ def DeallocateHipGpufortRT(stdeallocate, joined_statements, index):
         ivar = indexer.scope.search_index_for_var(index, parent_tag, var)
         if opts.acc_map_derived_types or ivar["f_type"] != "type":
             var_expr = ivar["name"]
-            is_local_var = var_expr in local_var_names
-            is_arg = var_expr in dummy_arg_names
-            is_used_module_var = not is_local_var and not is_arg
-            is_allocatable_or_pointer = "allocatable" in ivar["attributes"] or\
-                                 "pointer" in ivar["attributes"]
-            if not is_allocatable_or_pointer:
+            if not indexer.props.has_any_attribute(ivar,["allocatable","pointer"]):
                 raise error.SyntaxError("variable '{}' that is subject to `deallocate` intrinsic must have 'allocatable' or 'pointer' qualifier".
                         format(var_expr))
-            if ivar["declare_on_target"] in ["alloc", "to", "tofrom"]:
+            if ivar["declare_on_target"] in ["alloc"]:
                 exit_data_mappings.append(_ACC_MAP_DELETE.format(
-                  args=_create_args_str([var_expr],"",sep=",")))
+                  args=_create_args_str(_make_map_args(var_expr,ivar),"",sep=",")))
     if len(exit_data_mappings):
         exit_data_str = _ACC_ENTER_EXIT_DATA.format(
             args=_create_mappings_str(exit_data_mappings,[]," "*2))
@@ -483,7 +478,7 @@ def _add_structured_data_region(stcontainer,data_start_mappings,data_end_mapping
     data_end_str = _ACC_DATA_END.format(
         args=_create_mappings_str(data_end_mappings,[]," "*2))
     stcontainer.append_to_decl_list([data_start_str])
-    stcontainer.prepend_to_return_or_end_statements([data_end_str])
+    stcontainer.prepend_to_procedure_exit_statements([data_end_str])
 
 def Acc2HipGpufortRTPostprocess(stree, index):
     """:param stree: the full scanner tree
@@ -491,7 +486,7 @@ def Acc2HipGpufortRTPostprocess(stree, index):
     accbackends.add_runtime_module_use_statements(stree,"gpufortrt_api")
 
     # TODO check if there is any acc used in the
-    # construct at all
+    # construct at all, also check if there is a allocate/deallocate statement
     # TODO handle directly via directives; only variables occuring
     # in directives need to be available on device
     containers = stree.find_all(\
@@ -507,22 +502,21 @@ def Acc2HipGpufortRTPostprocess(stree, index):
         data_end_mappings   = []
         for ivar in scope_vars:
             var_expr = ivar["name"]
-            if opts.acc_map_derived_types or ivar["f_type"] != "type":
-                is_local_var = var_expr in local_var_names
-                is_arg = var_expr in dummy_arg_names
-                is_used_module_var = not is_local_var and not is_arg
-                if not indexer.props.has_any_attribute(ivar,["allocatable","pointer"]):
-                    module_var = "never_deallocate=.true." if is_used_module_var else ""
-                    # find return and end, emit 1 new implicit region for all
+            if (var_expr in local_var_names
+               or var_expr in dummy_arg_names
+               or indexer.props.index_var_is_module_var(ivar)):
+                if opts.acc_map_derived_types or ivar["f_type"] != "type":
+                    # find return and end/contains, emit 1 new implicit region for all
                     declare = ivar["declare_on_target"]
                     if declare in _CLAUSES_OMP2ACC.keys():
                         map_kind     = _CLAUSES_OMP2ACC[declare]
                         map_template = _DATA_CLAUSE_2_TEMPLATE_MAP[map_kind]
-                        # TODO legacy
-                        #if is_pointer:
-                        #    map_template = "".join(["if (associated({var})) ",map_template])
+                        args=_make_map_args(var_expr,ivar)
+                        if (indexer.props.index_var_is_module_var(ivar)
+                           and not indexer.props.has_any_attribute(ivar,["allocatable","pointer"])):
+                            args.append("never_deallocate=.true.") 
                         data_start_mappings.append(map_template.format(
-                            args=_create_args_str([var_expr,module_var],"",sep=",")))
+                            args=_create_args_str(args,"",sep=",")))
         if len(data_start_mappings):
             _add_structured_data_region(stcontainer,data_start_mappings,data_end_mappings)
 

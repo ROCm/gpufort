@@ -91,85 +91,6 @@ def combine_use_statements(iused_modules):
                                                + copy.deepcopy(iused_module["renamings"]))
     return result
 
-#def condense_only_groups(iused_modules):
-#    """Group consecutive used modules with same name
-#    if both have non-empty 'only' list.
-#    """
-#    result = []
-#    for iused_module in iused_modules:
-#        if not len(result):
-#            result.append(iused_module)
-#        else:
-#            #print(iused_module)
-#            last = result[-1]
-#            if (iused_module["name"] == last["name"]
-#               and iused_module["attributes"] == last["attributes"]
-#               and (len(iused_module["only"])>0) 
-#                   and (len(last["only"])>0)):
-#                last["only"] += iused_module["only"] # TODO check for duplicates
-#            else:
-#                result.append(iused_module)
-#    return result
-#
-#def condense_non_only_groups(iused_modules):
-#    """Group consecutive used modules with same name
-#    if both have no 'only' list.
-#
-#    Background:
-#
-#    Given a consecutive list of use statements that include the
-#    same module, one can group them together to just two use statements.
-#
-#    Example (as seen in WRF):
-#
-#    ```
-#    use a, b1 => a1 ! use all of a with orig. name except a1 which shall be named b1
-#    use a, b2 => a2 ! use all of a with orig. name except a2 which shall be named b2
-#    use a, b3 => a3 ! use all of a with orig. name except a3 which shall be named b3; 
-#                    ! now a1,a2 are accessible via orig. name too but not a3
-#
-#    ```
-#    can be transformed to
-#
-#    ```
-#    use a, only: b1 => a1, b2 => a2
-#    use a, b3 => a3
-#    ```
-#    """
-#
-#    # - remove `use <mod>` statements before the end of the list
-#    # - combine renamings of `use <mod>`, statements before the end of the list
-#    # - for the time being, ignore `use <mod>, only: <only-list>` statements in the interior of the list (no use case)
-#    # group
-#    groups = []
-#    for iused_module in iused_modules:
-#        if not len(groups):
-#            groups.append([iused_module])
-#        else:
-#            last = groups[-1]
-#            if (iused_module["name"] == last[0]["name"] 
-#               and iused_module["attributes"] == last[0]["attributes"]
-#               and (len(iused_module["only"])==0) 
-#                   and (len(last[0]["only"])==0)):
-#                last.append(iused_module)
-#            else:
-#                groups.append([iused_module])
-#    # combine
-#    result = []
-#    for group in groups:
-#        if len(group) == 1:
-#            result.append(group[0])
-#        else:
-#            entry1 = copy.deepcopy(group[0])
-#            entry1["renamings"] = []
-#            for iused_module in group[:-1]: # exclude last
-#                 entry1["only"] += iused_module["renamings"]
-#            entry2 = group[-1]
-#            result.append(entry1)
-#            result.append(entry2)
-#    return result
-
-
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def _get_accessibility(ientry,iparent):
     """
@@ -648,23 +569,3 @@ def search_index_for_procedure(index, parent_tag, procedure_name):
         msg = e.args[0]+" (scope tag: '{}')".format(parent_tag)
         e.args = (msg, )
         raise
-
-def search_index_for_top_level_entry(index, name, kind=None):
-    """Search the index for module, program, subroutine,
-    or function entity that do not have a parent themselves.
-    :param str name: lower case name/tag of the searched entry.
-    :param str kind: Kind of the searched entry or None if any kind is accepted.
-                     If 'procedure' is specified, subroutine and functions are accepted."""
-    irecord = next((ientry for ientry in index if ientry["name"] == name),None)
-    if irecord != None:
-        if (kind == None 
-           or irecord["kind"] == kind
-           or (kind == "procedure" 
-              and irecord["kind"] == ["function","subroutine"])):
-            return irecord
-        else:
-          raise util.error.LookupError(
-            "no {} record found with name '{}'".format(kind,used_module["name"]))
-    else:
-        raise util.error.LookupError(
-          "no top level index entry found with name '{}'".format(used_module["name"]))

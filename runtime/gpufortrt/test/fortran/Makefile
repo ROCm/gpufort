@@ -17,7 +17,8 @@ TEST_SRC      = \
 				./test0004_unstructured_region_00.f90 \
 				./test0005_unstructured_region_01.f90 \
 				./test0006_mixed_regions_00.f90 \
-				./test0007_declare_00.f90
+				./test0007_declare_00.f90 \
+				./test0008_declare_01.f90
 TEST_NAME     = $(TEST_SRC:.f90=)
 TEST_CONV_SRC = $(TEST_SRC:.f90=.f90-gpufort.f08)
 

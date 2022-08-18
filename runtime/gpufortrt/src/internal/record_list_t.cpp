@@ -65,7 +65,7 @@ size_t gpufortrt::internal::record_list_t::find_record(void* hostptr,size_t num_
   } else {
     for ( size_t i = 0; i < this->records.size(); i++ ) {
       size_t offset_bytes = 0;
-      if ( this->records[i].is_subarray(hostptr,num_bytes,offset_bytes/*inout*/) ) {
+      if ( this->records[i].is_host_data_subset(hostptr,num_bytes,offset_bytes/*inout*/) ) {
         loc = i;
         success = true;
         break;
@@ -121,7 +121,7 @@ namespace {
      void* hostptr,
      size_t num_bytes){
     size_t offset_bytes;
-    if ( record.is_subarray(hostptr,num_bytes,offset_bytes/*inout*/) ) {
+    if ( record.is_host_data_subset(hostptr,num_bytes,offset_bytes/*inout*/) ) {
       return true;
     } else {
       std::stringstream ss;

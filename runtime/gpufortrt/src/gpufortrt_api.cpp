@@ -272,7 +272,7 @@ void* gpufortrt_use_device(void* hostptr,bool condition,bool if_present) {
     if ( success ) {
       auto& record = gpufortrt::internal::record_list.records[loc];
       size_t offset_bytes;
-      record.is_subarray(hostptr,1/*num_bytes*/,offset_bytes/*inout*/); // get offset_bytes
+      record.is_host_data_subset(hostptr,1/*num_bytes*/,offset_bytes/*inout*/); // get offset_bytes
       return static_cast<void*>(static_cast<char*>(record.deviceptr) + offset_bytes);
     } else if ( if_present ) {
       return hostptr;
@@ -557,7 +557,7 @@ void* gpufortrt_deviceptr(void* hostptr) {
   }
   if ( record != nullptr ) {
     size_t offset_bytes;
-    record->is_subarray(hostptr,1/*num_bytes*/,offset_bytes/*inout*/);
+    record->is_host_data_subset(hostptr,1/*num_bytes*/,offset_bytes/*inout*/);
     return static_cast<void*>(static_cast<char*>(record->deviceptr) + offset_bytes);
   } else {
     return nullptr;

@@ -45,7 +45,7 @@ gpufortrt::internal::record_t* gpufortrt::internal::structured_region_stack_t::f
     auto& entry = this->entries[i];
     if ( entry.region_id == this->current_region ) {
       size_t offset_bytes = 0;
-      if ( entry.record->is_subarray(hostptr,num_bytes,offset_bytes/*inout*/) ) {
+      if ( entry.record->is_host_data_subset(hostptr,num_bytes,offset_bytes/*inout*/) ) {
          return entry.record;
       }
     } else {
@@ -59,7 +59,7 @@ gpufortrt::internal::record_t* gpufortrt::internal::structured_region_stack_t::f
   for (int i = this->entries.size()-1; i >= 0; i--) {
     auto& entry = this->entries[i];
     size_t offset_bytes;
-    if ( entry.record->is_subarray(hostptr,num_bytes,offset_bytes/*inout*/) ) {
+    if ( entry.record->is_host_data_subset(hostptr,num_bytes,offset_bytes/*inout*/) ) {
       return entry.record;
     } 
   }

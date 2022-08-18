@@ -85,7 +85,7 @@ namespace gpufortrt {
        * \param[inout] offset_bytes Offset of `hostptr`in bytes with respect to this
        *               record's `hostptr` member.
        */
-      bool is_subarray(
+      bool is_host_data_subset(
         void* hostptr, size_t num_bytes, size_t& offset_bytes) const;
       
       /* Setup this record. Constructor. */

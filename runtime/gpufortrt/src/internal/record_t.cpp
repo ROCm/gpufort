@@ -175,10 +175,10 @@ void gpufortrt::internal::record_t::copy_to_host(
   #endif
 }
 
-bool gpufortrt::internal::record_t::is_subarray(
+bool gpufortrt::internal::record_t::is_host_data_subset(
     void* hostptr, size_t num_bytes, size_t& offset_bytes) const {
   if ( num_bytes < 1 ) {
-    throw std::invalid_argument("is_subarray: argument `num_bytes` must be greater than or equal to 1");
+    throw std::invalid_argument("is_host_data_subset: argument `num_bytes` must be greater than or equal to 1");
   }
   offset_bytes = static_cast<char*>(hostptr) - static_cast<char*>(this->hostptr);
   return (offset_bytes >= 0) && ((offset_bytes+num_bytes) <= this->num_bytes_used);    
@@ -190,7 +190,7 @@ void gpufortrt::internal::record_t::copy_section_to_device(
   bool blocking,
   gpufortrt_queue_t queue) {
   size_t offset_bytes;
-  if ( !this->is_subarray(hostptr,num_bytes,offset_bytes/*inout*/) ) {
+  if ( !this->is_host_data_subset(hostptr,num_bytes,offset_bytes/*inout*/) ) {
     throw std::invalid_argument("copy_section_to_device: data section is no subset of record data");
   }
   void* deviceptr_section_begin = static_cast<void*>(
@@ -224,7 +224,7 @@ void gpufortrt::internal::record_t::copy_section_to_host(
   bool blocking,
   gpufortrt_queue_t queue) {
   size_t offset_bytes;
-  if ( !this->is_subarray(hostptr,num_bytes,offset_bytes/*inout*/) ) {
+  if ( !this->is_host_data_subset(hostptr,num_bytes,offset_bytes/*inout*/) ) {
     throw std::invalid_argument("copy_section_to_host: data section is no subset of record data");
   }
   void* deviceptr_section_begin = static_cast<void*>(

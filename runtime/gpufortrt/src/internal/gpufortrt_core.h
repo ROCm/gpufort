@@ -26,8 +26,8 @@ namespace gpufortrt {
       int id                = -1;
       void* hostptr         = nullptr;
       void* deviceptr       = nullptr;
-      size_t num_bytes      = 0;
-      size_t num_bytes_used = 0;
+      size_t used_bytes     = 0;
+      size_t reserved_bytes = 0;
       int struct_refs       = 0;
       int dyn_refs          = 0;
       gpufortrt_map_kind_t map_kind = gpufortrt_map_kind_undefined; //< Relevant for structured data regions. TODO move into structured region stack?
@@ -269,8 +269,8 @@ namespace gpufortrt {
     };
 
     struct queue_record_t {
-      int id;
-      gpufortrt_queue_t queue;
+      int id = -1;
+      gpufortrt_queue_t queue = gpufortrt_default_queue;
     public:
       void to_string(std::ostream& os) const;
       /** Initialize this queue record,
@@ -286,12 +286,10 @@ namespace gpufortrt {
     struct queue_record_list_t {
       std::vector<queue_record_t> records;
     private:
-      /** Find queue record with the given `id`. */
-      size_t find_record(const int id) const;
-      
-      /** Find first available empty record that can be
-       * used for a new queue. */
-      size_t find_available_record() const;
+      /** Find queue record with the given `id`.
+       * \param[inout] success The returned index is only valid if success indicates 'true'.
+       */
+      size_t find_record(const int id,bool& success) const;
     public:
       queue_record_t& operator[](const int i);
       const queue_record_t& operator[](const int i) const;
@@ -330,4 +328,5 @@ namespace gpufortrt {
 
 std::ostream& operator<<(std::ostream& os,const gpufortrt::internal::record_t& record);
 std::ostream& operator<<(std::ostream& os,const gpufortrt::internal::structured_region_stack_entry_t& entry);
+std::ostream& operator<<(std::ostream& os,const gpufortrt::internal::queue_record_t& queue_record);
 #endif // GPUFORTRT_CORE_H

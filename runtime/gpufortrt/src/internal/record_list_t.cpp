@@ -34,7 +34,7 @@ void gpufortrt::internal::record_list_t::destroy() {
 
 size_t gpufortrt::internal::record_list_t::find_record(void* hostptr,bool& success) const {
   success = false;
-  size_t loc = -1;
+  size_t loc = 0; // typically size_t is unsigned
   if ( hostptr == nullptr ) {
     throw std::invalid_argument("find_record: argument 'hostptr' is null");
   } else {
@@ -59,7 +59,7 @@ size_t gpufortrt::internal::record_list_t::find_record(void* hostptr,bool& succe
 
 size_t gpufortrt::internal::record_list_t::find_record(void* hostptr,size_t num_bytes,bool& success) const {
   success = false;
-  size_t loc = -1;
+  size_t loc = 0; // typically size_t is unsigned
   if ( hostptr == nullptr ) {
     throw std::invalid_argument("find_record: argument 'hostptr' is null");
   } else {
@@ -95,12 +95,12 @@ size_t gpufortrt::internal::record_list_t::find_available_record(size_t num_byte
       loc = i;
       // deallocate memory blocks of regions that have not been reused
       // multiple times in a row
-      if ( record.num_bytes < num_bytes
-           || num_bytes < record.num_bytes * REUSE_THRESHOLD ) {
+      if ( record.reserved_bytes < num_bytes
+           || num_bytes < record.reserved_bytes * REUSE_THRESHOLD ) {
         record.dec_refs(gpufortrt_counter_structured); // decrement structured references
         if ( record.can_be_destroyed(gpufortrt::internal::NUM_REFS_TO_DEALLOCATE) ) {
           record.destroy();
-          this->total_memory_bytes -= record.num_bytes;
+          this->total_memory_bytes -= record.reserved_bytes;
           loc = i;
           break; // break outer loop
         }
@@ -126,7 +126,7 @@ namespace {
     } else {
       std::stringstream ss;
       ss << "host data to map (" << hostptr << " x " << num_bytes << " B) is no subset of already existing record's host data ("
-         << record.hostptr << " x " << record.num_bytes_used << " B)";
+         << record.hostptr << " x " << record.used_bytes << " B)";
       throw std::invalid_argument(ss.str());
     }
     return false;
@@ -171,7 +171,7 @@ size_t gpufortrt::internal::record_list_t::use_increment_record(
       // Update consumed memory statistics only if
       // no record was reused, i.e. a new one was created
       if ( !reuse_existing ) {
-        this->total_memory_bytes += record.num_bytes;
+        this->total_memory_bytes += record.reserved_bytes;
         LOG_INFO(3,"create record: " << record)
       } else {
         LOG_INFO(3,"reuse record: " << record)

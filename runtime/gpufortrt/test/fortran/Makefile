@@ -10,15 +10,17 @@ LDFLAGS = $(shell gpufort --print-acc-ldflags) -lgfortran
 
 # sources
 TEST_SRC      = \
-				./test0000_structured_region_00.f90 \
-				./test0001_structured_region_01.f90 \
-				./test0002_structured_region_02.f90 \
-				./test0003_structured_region_03.f90 \
-				./test0004_unstructured_region_00.f90 \
-				./test0005_unstructured_region_01.f90 \
-				./test0006_mixed_regions_00.f90 \
-				./test0007_declare_00.f90 \
-				./test0008_declare_01.f90
+				./test_structured_region_00.f90 \
+				./test_structured_region_01.f90 \
+				./test_structured_region_02.f90 \
+				./test_structured_region_03.f90 \
+				./test_unstructured_region_00.f90 \
+				./test_unstructured_region_01.f90 \
+				./test_unstructured_region_02.f90 \
+				./test_unstructured_region_03.f90 \
+				./test_mixed_regions_00.f90 \
+				./test_declare_00.f90 \
+				./test_declare_01.f90
 TEST_NAME     = $(TEST_SRC:.f90=)
 TEST_CONV_SRC = $(TEST_SRC:.f90=.f90-gpufort.f08)
 

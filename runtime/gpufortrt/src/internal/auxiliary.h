@@ -1,15 +1,40 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+#include <iomanip>
+#include <sstream>
+
 #ifndef AUXILIARY_H
 #define AUXILIARY_H
 
-#define LOG_INFO(level,msg) \
-    if ( level <= gpufortrt::internal::LOG_LEVEL ) { std::stringstream ss; ss << msg; \
-        gpufortrt::internal::log_info(level,ss.str()); }
+#define WS_FILE 40
+#define WS_LINE 4
 
-#define LOG_ERROR(msg) \
-    { std::stringstream ss; ss << msg; \
-        gpufortrt::internal::log_error(ss.str()); }
+#define LOG_INFO(level,msg) \
+    if ( level <= gpufortrt::internal::LOG_LEVEL ) {\
+        std::stringstream ss_prefix; \
+        std::string file(__FILE__); \
+        file.replace(0,6,""); \
+        std::string ws_file(WS_FILE-file.length(),' '); \
+        std::string line = std::to_string(__LINE__); \
+        std::string ws_line(WS_LINE-line.length(),' '); \
+        ss_prefix << std::noskipws << file << ws_file << ":" \
+           << line << ws_line << ":"; \
+        std::stringstream ss_msg; \
+        ss_msg << msg; \
+        gpufortrt::internal::log_info(level,ss_prefix.str(),ss_msg.str()); }
+
+#define LOG_ERROR(msg) {\
+        std::stringstream ss_prefix; \
+        std::string file(__FILE__); \
+        file.replace(0,6,""); \
+        std::string ws_file(WS_FILE-file.length(),' '); \
+        std::string line = std::to_string(__LINE__); \
+        std::string ws_line(WS_LINE-line.length(),' '); \
+        ss_prefix << std::noskipws << file << ws_file << ":" \
+           << line << ws_line << ":"; \
+        std::stringstream ss_msg; \
+        ss_msg << msg; \
+        gpufortrt::internal::log_error(ss_prefix.str(),ss_msg.str()); }
 
 namespace gpufortrt {
   namespace internal {
@@ -27,11 +52,11 @@ namespace gpufortrt {
      *
      * \note Use the LOG_INFO macro to use the << operator in the `msg` argument.
      */
-    void log_info(const int level,const std::string& msg);
+    void log_info(const int level,const std::string& prefix,const std::string& msg);
     /** Prints error output to error stream and terminates the application.
      * \note Use the LOG_INFO macro to use the << operator in the `msg` argument.
      */
-    void log_error(const std::string& msg);
+    void log_error(const std::string& prefix,const std::string& msg);
   }
 }
 #endif // AUXILIARY_H

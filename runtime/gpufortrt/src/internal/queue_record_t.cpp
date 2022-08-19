@@ -8,8 +8,11 @@
 
 #include "hip/hip_runtime_api.h"
 
+#include "auxiliary.h"
+
 void gpufortrt::internal::queue_record_t::to_string(std::ostream& os) const {
-  os << "id: "             << this->id
+  os << "id: " << this->id
+     << ", queue: "  << this->queue
      << ", initialized: "  << this->is_initialized();
 }
 
@@ -28,9 +31,11 @@ void gpufortrt::internal::queue_record_t::setup(const int id) {
   assert(!this->is_initialized());
   this->id = id;
   HIP_CHECK(hipStreamCreate(&this->queue))
+  LOG_INFO(4,"create queue; " << *this)
 }
 
 void gpufortrt::internal::queue_record_t::destroy() {
+  LOG_INFO(4,"destroy queue; " << *this)
   assert(this->is_initialized());
   HIP_CHECK(hipStreamDestroy(this->queue))
   this->id = -1;

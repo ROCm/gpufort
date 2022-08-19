@@ -53,6 +53,7 @@ void gpufortrt_init() {
 
 void gpufortrt_shutdown() {
   LOG_INFO(1,"shutdown;")
+  gpufortrt_wait_all(true);
   if ( !gpufortrt::internal::initialized ) {
     LOG_ERROR("gpufortrt_shutdown: runtime has not been initialized")
   }
@@ -71,7 +72,7 @@ namespace {
       gpufortrt_counter_t ctr_to_update) {
     if ( ! gpufortrt::internal::initialized ) gpufortrt_init();
     LOG_INFO(2, map_kind
-             << ((!blocking) ? "_async" : "")
+             << ((!blocking) ? " async" : "")
              << "; hostptr:" << hostptr 
              << ", num_bytes:" << num_bytes 
              << ((!blocking) ? ", async_arg:" : "")
@@ -105,8 +106,8 @@ namespace {
   void run_decrement_release_action(void* hostptr,size_t num_bytes,int async_arg,
                                     bool blocking, bool finalize, bool copyout) {
     LOG_INFO(2, ((copyout) ? "copyout" : "delete")
-            << ((finalize) ? "_finalize" : "")
-            << ((!blocking) ? "_async" : "")
+            << ((finalize) ? " finalize" : "")
+            << ((!blocking) ? " async" : "")
             << "; hostptr:"<<hostptr 
             << ((!blocking) ? ", async_arg:" : "")
             << ((!blocking) ? std::to_string(async_arg).c_str() : ""))
@@ -259,7 +260,7 @@ void* gpufortrt_use_device(void* hostptr,bool condition,bool if_present) {
   } else if ( condition ) {
     bool success = false;
     size_t loc = gpufortrt::internal::record_list.find_record(hostptr,1/*num_bytes*/,success/*inout*/); 
-        // success: hostptr in [record.hostptr,record.hostptr+record.num_bytes)
+        // success: hostptr in [record.hostptr,record.hostptrrecord.used_bytes)
     if ( success ) {
       auto& record = gpufortrt::internal::record_list.records[loc];
       size_t offset_bytes;
@@ -384,9 +385,9 @@ namespace {
       bool condition,
       bool if_present,
       int async_arg) {
-    LOG_INFO(1,((update_host) ? "update_host" : "update_device")
-            << ((update_section) ? "_section" : "")
-            << ((!blocking) ? "_async" : "")
+    LOG_INFO(1,((update_host) ? "update host" : "update device")
+            << ((update_section) ? " section" : "")
+            << ((!blocking) ? " async_arg" : "")
             << "; hostptr:"<<hostptr 
             << ", num_bytes:"<<num_bytes 
             << ", condition:"<<condition 
@@ -537,7 +538,7 @@ void* gpufortrt_deviceptr(void* hostptr) {
   if ( record == nullptr ) {
     bool success = false;
     size_t loc = gpufortrt::internal::record_list.find_record(hostptr,1/*num_bytes*/,success/*inout*/); 
-        // success: hostptr in [record.hostptr,record.hostptr+record.num_bytes)
+        // success: hostptr in [record.hostptr,record.hostptrrecord.used_bytes)
     if ( success ) {
       record = &gpufortrt::internal::record_list.records[loc];
     }

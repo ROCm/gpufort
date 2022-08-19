@@ -16,9 +16,9 @@ extern "C" {
   void gpufortrt_data_start_async(
           gpufortrt_mapping_t* mappings,
           int num_mappings,
-          int async);
+          int async_arg);
   void gpufortrt_data_end();
-  void gpufortrt_data_end_async(int async);
+  void gpufortrt_data_end_async(int async_arg);
   
   void gpufortrt_enter_exit_data(
           gpufortrt_mapping_t* mappings,
@@ -27,7 +27,7 @@ extern "C" {
   void gpufortrt_enter_exit_data_async(
           gpufortrt_mapping_t* mappings,
           int num_mappings,
-          int async,
+          int async_arg,
           bool finalize);
   
   void* gpufortrt_use_device(
@@ -46,11 +46,11 @@ extern "C" {
   void gpufortrt_delete_async(
           void* hostptr,
           size_t num_bytes,
-          int async);
+          int async_arg);
   void gpufortrt_delete_finalize_async(
           void* hostptr,
           size_t num_bytes,
-          int async);
+          int async_arg);
   
   void gpufortrt_copyout(
          void* hostptr,
@@ -58,14 +58,14 @@ extern "C" {
   void gpufortrt_copyout_async(
          void* hostptr,
          size_t num_bytes,
-         int async);
+         int async_arg);
   void gpufortrt_copyout_finalize(
          void* hostptr,
          size_t num_bytes);
   void gpufortrt_copyout_finalize_async(
          void* hostptr,
          size_t num_bytes,
-         int async);
+         int async_arg);
   
   // increment dynamic reference counter
   
@@ -84,7 +84,7 @@ extern "C" {
   void* gpufortrt_create_async(
           void* hostptr,
           size_t num_bytes,
-          int async,
+          int async_arg,
           bool never_deallocate);
   
   void* gpufortrt_copyin(
@@ -94,7 +94,7 @@ extern "C" {
   void* gpufortrt_copyin_async(
           void* hostptr,
           size_t num_bytes,
-          int async,
+          int async_arg,
           bool never_deallocate);
   
   void* gpufortrt_copy(
@@ -104,7 +104,7 @@ extern "C" {
   void* gpufortrt_copy_async(
          void* hostptr,
          size_t num_bytes,
-         int async,
+         int async_arg,
          bool never_deallocate);
 
   // other runtime calls
@@ -117,7 +117,7 @@ extern "C" {
          void* hostptr,
          bool condition,
          bool if_present,
-         int async);
+         int async_arg);
   void gpufortrt_update_self_section(
          void* hostptr,
          size_t num_bytes,
@@ -128,7 +128,7 @@ extern "C" {
          size_t num_bytes,
          bool condition,
          bool if_present,
-         int async);
+         int async_arg);
 
   void gpufortrt_update_device(
          void* hostptr,
@@ -139,7 +139,7 @@ extern "C" {
          void* hostptr,
          bool condition,
          bool if_present,
-         int async);
+         int async_arg);
   void gpufortrt_update_device_section(
          void* hostptr,
          size_t num_bytes,
@@ -150,19 +150,19 @@ extern "C" {
          size_t num_bytes,
          bool condition,
          bool if_present,
-         int async);
+         int async_arg);
 
   void gpufortrt_wait_all(bool condition);
   void gpufortrt_wait(int* wait_arg,
                       int num_wait,
                       bool condition);
   void gpufortrt_wait_async(int* wait_arg,int num_wait,
-                            int* async,int num_async,
+                            int* async_arg,int num_async,
                             bool condition);
-  void gpufortrt_wait_all_async(int* async,int num_async,
+  void gpufortrt_wait_all_async(int* async_arg,int num_async,
                                 bool condition);
 
-  gpufortrt_queue_t gpufortrt_get_stream(int async);
+  gpufortrt_queue_t gpufortrt_get_stream(int async_arg);
  
   /** \return device pointer associated with `hostptr`, or nullptr.
    *  First searches through the structured region stack and then

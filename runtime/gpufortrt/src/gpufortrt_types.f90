@@ -5,8 +5,9 @@ module gpufortrt_types
   use iso_c_binding, only: c_int, c_size_t, c_bool, c_ptr, c_null_ptr
   private :: c_int, c_size_t, c_bool, c_ptr, c_null_ptr
   
-  integer, parameter :: gpufortrt_async_noval = -1 
   integer, parameter :: gpufortrt_handle_kind = c_int
+
+  integer(gpufortrt_handle_kind), parameter :: gpufortrt_async_noval = -1 
   
   !> Mapping kinds.
   enum, bind(c)

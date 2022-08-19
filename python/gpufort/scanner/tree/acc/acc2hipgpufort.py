@@ -113,9 +113,9 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         async_queue, async_present = staccdir.get_async_clause_queue()
         async_expr = ""
         if async_present and async_queue!=None:
-            async_expr = "async={}".format(async_queue)
+            async_expr = "async_arg={}".format(async_queue)
         elif async_present and async_queue==None:
-            async_expr = "async=0"
+            async_expr = "async_arg=gpufortrt_async_noval"
         return async_expr
 
     def _handle_wait_clause(self):

@@ -14,11 +14,9 @@
         std::stringstream ss_prefix; \
         std::string file(__FILE__); \
         file.replace(0,6,""); \
-        std::string ws_file(WS_FILE-file.length(),' '); \
         std::string line = std::to_string(__LINE__); \
-        std::string ws_line(WS_LINE-line.length(),' '); \
-        ss_prefix << std::noskipws << file << ws_file << ":" \
-           << line << ws_line << ":"; \
+        ss_prefix << std::noskipws << std::left << std::setw(WS_FILE) << file << ":" \
+                  << std::setw(WS_LINE) << line << ":"; \
         std::stringstream ss_msg; \
         ss_msg << msg; \
         gpufortrt::internal::log_info(level,ss_prefix.str(),ss_msg.str()); }
@@ -27,11 +25,9 @@
         std::stringstream ss_prefix; \
         std::string file(__FILE__); \
         file.replace(0,6,""); \
-        std::string ws_file(WS_FILE-file.length(),' '); \
         std::string line = std::to_string(__LINE__); \
-        std::string ws_line(WS_LINE-line.length(),' '); \
-        ss_prefix << std::noskipws << file << ws_file << ":" \
-           << line << ws_line << ":"; \
+        ss_prefix << std::noskipws << std::left << std::setw(WS_FILE) << file << ":" \
+                  << std::setw(WS_LINE) << line << ":"; \
         std::stringstream ss_msg; \
         ss_msg << msg; \
         gpufortrt::internal::log_error(ss_prefix.str(),ss_msg.str()); }

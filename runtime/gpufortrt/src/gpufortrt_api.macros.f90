@@ -318,9 +318,9 @@ end function
 {% endfor %}{# datatypes #}
 {% endmacro %}
 {#######################################################################################}
-{% macro render_specialized_present_no_create_routines(datatypes,max_rank) %}
+{% macro render_specialized_present_routines(datatypes,max_rank) %}
 {#######################################################################################}
-{% for clause in ["present","no_create"] %}
+{% for clause in ["present"] %}
 {%   for triple in datatypes -%}
 function gpufortrt_{{clause}}0_{{triple[0]}}(hostptr) result(deviceptr)
   use iso_c_binding
@@ -359,7 +359,7 @@ end function
 {#######################################################################################}
 {% macro render_copy_interfaces(datatypes,max_rank) %}
 {#######################################################################################}
-{% for clause in ["present","no_create"] %}
+{% for clause in ["present"] %}
 {{ render_interface("gpufortrt_"+clause,datatypes,max_rank,False) }}
 
 {% endfor %}

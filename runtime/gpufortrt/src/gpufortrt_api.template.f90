@@ -26,7 +26,7 @@ contains
 
 {{ gam.render_basic_copy_routines() | indent(2,True) }}
 {{ gam.render_specialized_copy_routines(datatypes,max_rank) | indent(2,True) }}
-{{ gam.render_specialized_present_no_create_routines(datatypes,max_rank) | indent(2,True) }}
+{{ gam.render_specialized_present_routines(datatypes,max_rank) | indent(2,True) }}
 {{ gam.render_basic_delete_copyout_routines() | indent(2,True) }}
 {{ gam.render_specialized_delete_copyout_routines(datatypes,max_rank) | indent(2,True) }}
 

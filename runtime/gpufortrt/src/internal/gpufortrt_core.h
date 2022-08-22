@@ -30,7 +30,6 @@ namespace gpufortrt {
       size_t reserved_bytes = 0;
       int struct_refs       = 0;
       int dyn_refs          = 0;
-      gpufortrt_map_kind_t map_kind = gpufortrt_map_kind_undefined; //< Relevant for structured data regions. TODO move into structured region stack?
 
     public:
       /** Write string representation of 
@@ -52,29 +51,29 @@ namespace gpufortrt {
        * If the structured references counter is less or
        * equal than a certain non-positive threshold and all other counters are 0.
        */
-      bool can_be_destroyed(int struct_ref_threshold = 0);
+      bool can_be_destroyed(const int struct_ref_threshold = 0) const;
       /**Increments specified counter.*/
-      void inc_refs(gpufortrt_counter_t ctr);
+      void inc_refs(const gpufortrt_counter_t ctr);
       /**Decrements specified counter.*/
-      void dec_refs(gpufortrt_counter_t ctr);
+      void dec_refs(const gpufortrt_counter_t ctr);
       
       /** Copy host data to device. */
       void copy_to_device(
-        bool blocking,
+        const bool blocking,
         gpufortrt_queue_t queue);
       void copy_section_to_device(
         void* hostptr,
-        size_t num_bytes,
-        bool blocking,
+        const size_t num_bytes,
+        const bool blocking,
         gpufortrt_queue_t queue);
       /** Copy device data to host. */
       void copy_to_host(
-        bool blocking,
+        const bool blocking,
         gpufortrt_queue_t queue);
       void copy_section_to_host(
         void* hostptr,
-        size_t num_bytes,
-        bool blocking,
+        const size_t num_bytes,
+        const bool blocking,
         gpufortrt_queue_t queue);
 
       /**
@@ -90,13 +89,13 @@ namespace gpufortrt {
       
       /* Setup this record. Constructor. */
       void setup(
-        int id,
+        const int id,
         void* hostptr,
-        size_t num_bytes,
-        gpufortrt_map_kind_t map_kind,
-        bool blocking,
+        const size_t num_bytes,
+        const gpufortrt_map_kind_t map_kind,
+        const bool blocking,
         gpufortrt_queue_t queue,
-        bool reuse_existing);
+        const bool reuse_existing);
       
       /* Release this record, i.e. allocated device buffers
        * can be repurposed. */
@@ -110,15 +109,16 @@ namespace gpufortrt {
        *  Perform a copy out operation if map kind requires this.
        */
       void structured_decrement_release(
-              bool blocking, gpufortrt_queue_t queue);
+        const gpufortrt_map_kind_t map_kind, 
+        const bool blocking, gpufortrt_queue_t queue);
 
       /** Decrement the unstructured reference counter,
        *  release the record if all counters are zero.
        *  Perform a copy out operation if specified.
        */
       void unstructured_decrement_release(
-              bool copyout, bool finalize,
-              bool blocking, gpufortrt_queue_t queue);
+        const bool copyout, const bool finalize,
+        const bool blocking, gpufortrt_queue_t queue);
     };
 
     struct record_list_t {
@@ -129,7 +129,7 @@ namespace gpufortrt {
        record_t& operator[](const int i);
        const record_t& operator[](const int i) const;
 
-       void reserve(int capacity);
+       void reserve(const int capacity);
        
        /** 
         * Write string representation of 
@@ -155,7 +155,7 @@ namespace gpufortrt {
         *
         * \note Not thread safe
         */
-       size_t find_record(void* hostptr,size_t num_bytes,bool& success) const;
+       size_t find_record(void* hostptr,const size_t num_bytes,bool& success) const;
 
        /**
         * Searches first available record from the begin of the record search space.
@@ -171,24 +171,39 @@ namespace gpufortrt {
         *
         * \param[inout] reuse_existing Is set to true if an existing record and its device buffer were reused.
         */
-       size_t find_available_record(size_t num_bytes,bool& reuse_existing);
+       size_t find_available_record(const size_t num_bytes,bool& reuse_existing);
+
+       /**
+        * Increments a record's reference counter.
+        * \param[in] check_restrictions check the data clause restrictions
+        * \param[inout] success Indicates that a mapping of `hostptr` could be found.
+        * \throw std::invalid_argument if the data clause restrictions are violated, if not specified otherwise.
+        * \note Not thread safe.
+        */
+       size_t increment_record_if_present(
+         void* hostptr,
+         const size_t num_bytes,
+         const gpufortrt_counter_t ctr_to_update,
+         const bool check_restrictions,
+         bool& success);
      
        /**
-        * Inserts a record (inclusive the host-to-device memcpy where required) or increments a record's
+        * Creates a record (inclusive the host-to-device memcpy where required) or increments a record's
         * reference counter.
         *
         * \note Non-alloctable and non-pointer module variables are initialized
         * with structured reference counter value "1".
         * \note Not thread safe.
+        * \throw std::invalid_argument if the data clause restrictions are violated.
         */
-       size_t use_increment_record(
+       size_t create_increment_record(
          void* hostptr,
-         size_t num_bytes,
-         gpufortrt_map_kind_t map_kind,
-         gpufortrt_counter_t ctr_to_update,
-         bool blocking,
+         const size_t num_bytes,
+         const gpufortrt_map_kind_t map_kind,
+         const gpufortrt_counter_t ctr_to_update,
+         const bool blocking,
          gpufortrt_queue_t queue,
-         bool never_deallocate);
+         const bool never_deallocate);
 
       /**
        * Decrements a record's reference counter and destroys the record if
@@ -196,26 +211,31 @@ namespace gpufortrt {
        * before destruction if specified.
        * 
        * \note Not thread safe.
+       * \throw std::invalid_argument if the data clause restrictions are violated.
        */
        void structured_decrement_release_record(
-           void* hostptr,
-           size_t num_bytes,
-           bool blocking,
-           gpufortrt_queue_t queue);
+         void* hostptr,
+         const size_t num_bytes,
+         const gpufortrt_map_kind_t map_kind,
+         const bool blocking,
+         gpufortrt_queue_t queue);
        void unstructured_decrement_release_record(
-           void* hostptr,
-           size_t num_bytes,
-           bool copyout,
-           bool finalize,
-           bool blocking,
-           gpufortrt_queue_t queue);
+         void* hostptr,
+         const size_t num_bytes,
+         const bool copyout,
+         const bool finalize,
+         const bool blocking,
+         gpufortrt_queue_t queue);
     };
 
     struct structured_region_stack_entry_t {
       int region_id = -1;
-      record_t* record;
+      gpufortrt_map_kind_t map_kind = gpufortrt_map_kind_undefined;
+      record_t* record = nullptr;
     public:
-      structured_region_stack_entry_t(int region_id,record_t& record);
+      structured_region_stack_entry_t(const int region_id,
+                                      const gpufortrt_map_kind_t map_kind,
+                                      record_t* record);
       /** Write string representation to the ostream. */
       void to_string(std::ostream& os) const;
     };
@@ -224,7 +244,7 @@ namespace gpufortrt {
       int current_region = 0;
       std::vector<structured_region_stack_entry_t> entries;
     public:
-      void reserve(int capacity);
+      void reserve(const int capacity);
       
       /** 
        * Decrement the structured reference counter of 
@@ -237,7 +257,8 @@ namespace gpufortrt {
        * Push a new record on the stack 
        * and associate it with the current region.
        */
-      void push_back(record_t& record);
+      void push_back(const gpufortrt_map_kind_t map_kind,
+                     record_t* record);
       
       /**
        * Find an entry in the stack that is associated with `hostptr`.
@@ -245,27 +266,20 @@ namespace gpufortrt {
        *         points too, or nullptr.
        * \param[in] num_bytes Number of bytes of the searched region,
        *            must be at least 1. Otherwise, an exception is thrown.
+       * \param[inout] no_create_without_present_record Indicates that a `no_create`
+       *               mapping was applied to `hostptr` but no record exists for `hostptr`.
        */
-      record_t* find(void* hostptr,size_t num_bytes);
-      
-      /**
-       * Find an entry in the current structured region that is associated with `hostptr`.
-       * \note: This method is specifically for retrieving
-       * records associated with the implicit region
-       * that is introduced around a compute region.
-       * \return a pointer to a record that contains the data that the `hostptr`
-       *         points too, or nullptr.
-       * \param[in] num_bytes Number of bytes of the searched region,
-       *            must be at least 1. Otherwise, an exception is thrown.
-       */
-      record_t* find_in_current_region(void* hostptr,size_t num_bytes);
+      record_t* find_record(void* hostptr,
+                            const size_t num_bytes,
+                            bool& no_create_without_present_record) const;
 
       /** 
        * Decrement the structured reference counter of 
        * all records associated with the current structured
        * region and then remove them from the stack.
        */ 
-      void leave_structured_region(bool blocking,gpufortrt_queue_t queue);
+      void leave_structured_region(const bool blocking,
+                                   gpufortrt_queue_t queue);
     };
 
     struct queue_record_t {
@@ -295,10 +309,10 @@ namespace gpufortrt {
       const queue_record_t& operator[](const int i) const;
      
       /** Reserve space for `capacity` queues. */
-      void reserve(int capacity);
+      void reserve(const int capacity);
 
       /** Destroy all existing queues. */
-      void destroy(); 
+      void destroy();
       /**
        * Use an existing queue with identifier `id` or
        * create one for that identifier and return it.

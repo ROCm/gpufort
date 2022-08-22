@@ -119,11 +119,12 @@ namespace {
   bool verify_is_proper_section_of_host_data(
      gpufortrt::internal::record_t& record,
      void* hostptr,
-     size_t num_bytes){
+     size_t num_bytes,
+     bool check_restrictions = true) {
     size_t offset_bytes;
     if ( record.is_host_data_subset(hostptr,num_bytes,offset_bytes/*inout*/) ) {
       return true;
-    } else {
+    } else if ( check_restrictions ) {
       std::stringstream ss;
       ss << "host data to map (" << hostptr << " x " << num_bytes << " B) is no subset of already existing record's host data ("
          << record.hostptr << " x " << record.used_bytes << " B)";
@@ -133,7 +134,27 @@ namespace {
   }
 } // namespace
 
-size_t gpufortrt::internal::record_list_t::use_increment_record(
+// implements the data clause restriction
+size_t gpufortrt::internal::record_list_t::increment_record_if_present(
+   void* hostptr,
+   size_t num_bytes,
+   gpufortrt_counter_t ctr_to_update,
+   bool check_restrictions,
+   bool& success) {
+  success = false;
+  bool host_data_contains_hostptr = false;
+  size_t loc = this->find_record(hostptr,1,host_data_contains_hostptr/*inout*/);
+  if ( host_data_contains_hostptr ) {
+    auto& record = this->records[loc];
+    if ( ::verify_is_proper_section_of_host_data(record,hostptr,num_bytes,check_restrictions) ) {
+      record.inc_refs(ctr_to_update);
+      success = true;
+    }
+  }
+  return loc;
+}
+
+size_t gpufortrt::internal::record_list_t::create_increment_record(
    void* hostptr,
    size_t num_bytes,
    gpufortrt_map_kind_t map_kind,
@@ -141,14 +162,9 @@ size_t gpufortrt::internal::record_list_t::use_increment_record(
    bool blocking,
    gpufortrt_queue_t queue,
    bool never_deallocate) {
-  bool host_data_contains_hostptr = false;
-  size_t loc = this->find_record(hostptr,1,host_data_contains_hostptr/*inout*/);
-  if ( host_data_contains_hostptr ) {
-    auto& record = this->records[loc];
-    if ( ::verify_is_proper_section_of_host_data(record,hostptr,num_bytes) ) {
-      record.inc_refs(ctr_to_update);
-    }
-  } else {
+  bool found = false;
+  size_t loc = this->increment_record_if_present(hostptr,num_bytes,ctr_to_update,true/*check ...*/,found/*inout*/);
+  if ( !found ) { 
     bool reuse_existing = false;
     loc = this->find_available_record(num_bytes,reuse_existing/*inout*/);
     assert(loc >= 0);
@@ -187,6 +203,7 @@ size_t gpufortrt::internal::record_list_t::use_increment_record(
 void gpufortrt::internal::record_list_t::structured_decrement_release_record(
     void* hostptr,
     size_t num_bytes,
+    gpufortrt_map_kind_t map_kind,
     bool blocking,
     gpufortrt_queue_t queue) {
   bool host_data_contains_hostptr = false;
@@ -197,7 +214,7 @@ void gpufortrt::internal::record_list_t::structured_decrement_release_record(
     gpufortrt::internal::record_t& record = this->records[loc];
     if ( ::verify_is_proper_section_of_host_data(record,hostptr,num_bytes) ) { 
       record.structured_decrement_release(
-        blocking,queue);
+        map_kind,blocking,queue);
     }
   }
 }

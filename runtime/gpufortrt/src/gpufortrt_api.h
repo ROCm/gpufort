@@ -167,6 +167,14 @@ extern "C" {
   /** \return device pointer associated with `hostptr`, or nullptr.
    *  First searches through the structured region stack and then
    *  through the whole record list.
+   *
+   *  \note Does return a nullptr if `hostptr` is nullptr
+   *  \note Does return `hostptr` if hostptr mapped via `no_create`
+   *        and no record was found in the structured region stack,
+   *        which stores mappings associated with structured data regions and
+   *        compute constructs.
+   *  \note Searches structured region stack first and then
+   *        list of records, which also stores unstructured mappings.
    */
   void* gpufortrt_deviceptr(void* hostptr);
 

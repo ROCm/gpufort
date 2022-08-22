@@ -18,9 +18,7 @@ void gpufortrt::internal::record_t::to_string(std::ostream& os) const {
      << ", used_bytes:"       << this->used_bytes 
      << ", reserved_bytes:"   << this->reserved_bytes
      << ", struct_refs:"      << this->struct_refs  
-     << ", dyn_refs:"         << this->dyn_refs  
-     << ", map_kind:"         << 
-     static_cast<gpufortrt_map_kind_t>(this->map_kind);
+     << ", dyn_refs:"         << this->dyn_refs;
 }
 
 std::ostream& operator<<(std::ostream& os,const gpufortrt::internal::record_t& record) {
@@ -41,7 +39,7 @@ bool gpufortrt::internal::record_t::is_released() const {
       this->struct_refs <= 0 &&
       this->dyn_refs == 0;
 }
-bool gpufortrt::internal::record_t::can_be_destroyed(int struct_ref_threshold) {
+bool gpufortrt::internal::record_t::can_be_destroyed(int struct_ref_threshold) const {
   return this->is_released() && 
       this->struct_refs <= struct_ref_threshold;
 }
@@ -108,7 +106,6 @@ void gpufortrt::internal::record_t::setup(
   this->hostptr = hostptr;
   this->struct_refs = 0;
   this->dyn_refs = 0;
-  this->map_kind = map_kind;
   this->used_bytes = num_bytes;
   if ( !reuse_existing ) {
     this->id = id; // TODO not thread-safe
@@ -137,16 +134,11 @@ void gpufortrt::internal::record_t::setup(
 void gpufortrt::internal::record_t::destroy() {
   // TODO move into C binding
   LOG_INFO(3,"destroy record; " << *this)
-  switch (map_kind) {
-    case gpufortrt_map_kind_create:
-    case gpufortrt_map_kind_copyout:
-    case gpufortrt_map_kind_copyin:
-    case gpufortrt_map_kind_copy:
-      HIP_CHECK(hipFree(this->deviceptr)) // TODO backend-specific, externalize
-      break;
-    default:
-      // ignore
-      break;
+  if ( this->deviceptr != nullptr ) {
+    HIP_CHECK(hipFree(this->deviceptr)) // TODO backend-specific, externalize
+    this->deviceptr = nullptr;
+    this->used_bytes = 0;
+    this->reserved_bytes = 0;
   }
   this->hostptr     = nullptr;
   this->struct_refs = 0;
@@ -292,13 +284,14 @@ void gpufortrt::internal::record_t::copy_section_to_host(
 }
 
 void gpufortrt::internal::record_t::structured_decrement_release(
-     bool blocking, gpufortrt_queue_t queue) {
+    gpufortrt_map_kind_t map_kind, 
+    bool blocking, gpufortrt_queue_t queue) {
   this->dec_refs(gpufortrt_counter_structured);
   if ( this->can_be_destroyed(0) ) {
     // if both structured and dynamic reference counters are zero, 
     // a copyout action is performed
-    if (  this->map_kind == gpufortrt_map_kind_copyout
-       || this->map_kind == gpufortrt_map_kind_copy ) {
+    if (  map_kind == gpufortrt_map_kind_copyout
+       || map_kind == gpufortrt_map_kind_copy ) {
       this->copy_to_host(blocking,queue);
     }
     this->release();

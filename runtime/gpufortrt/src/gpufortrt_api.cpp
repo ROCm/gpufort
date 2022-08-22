@@ -62,14 +62,48 @@ void gpufortrt_shutdown() {
 }
 
 namespace {
-  void* run_use_increment_action(
+  void* offsetted_record_deviceptr(const gpufortrt::internal::record_t& record,void* hostptr) {
+    size_t offset_bytes = 0;
+    record.is_host_data_subset(hostptr,1/*num_bytes*/,offset_bytes/*inout*/); // get offset_bytes
+    return static_cast<void*>(static_cast<char*>(record.deviceptr) + offset_bytes);
+  }
+  
+  void* no_create_action(void* hostptr,
+                         size_t num_bytes,
+                         const gpufortrt_counter_t ctr_to_update) {
+    LOG_INFO(2, "no_create;")
+    if ( !gpufortrt::internal::initialized ) LOG_ERROR("no_create_action: runtime not initialized")
+    if ( hostptr != nullptr ) { // nullptr means no-op
+      bool success = false;
+      size_t loc = gpufortrt::internal::record_list.increment_record_if_present(
+              hostptr,num_bytes,ctr_to_update,false/*check ...*/,success/*inout*/);
+      if ( success ) { 
+        auto& record = gpufortrt::internal::record_list[loc];
+        if ( ctr_to_update == gpufortrt_counter_structured ) {
+          gpufortrt::internal::structured_region_stack.push_back(
+                  gpufortrt_map_kind_no_create,&record);
+        }
+        return ::offsetted_record_deviceptr(record,hostptr);
+      } else {
+        if ( ctr_to_update == gpufortrt_counter_structured ) {
+          gpufortrt::internal::structured_region_stack.push_back(
+                  gpufortrt_map_kind_no_create,nullptr);
+        }
+        return hostptr;
+      }
+    } else {
+      return nullptr;
+    }
+  }
+
+  void* create_increment_action(
       void* hostptr,
-      size_t num_bytes,
-      gpufortrt_map_kind_t map_kind,
-      bool blocking,
-      int async_arg,
-      bool never_deallocate,
-      gpufortrt_counter_t ctr_to_update) {
+      const size_t num_bytes,
+      const gpufortrt_map_kind_t map_kind,
+      const bool blocking,
+      const int async_arg,
+      const bool never_deallocate,
+      const gpufortrt_counter_t ctr_to_update) {
     if ( ! gpufortrt::internal::initialized ) gpufortrt_init();
     LOG_INFO(2, map_kind
              << ((!blocking) ? " async" : "")
@@ -86,7 +120,7 @@ namespace {
       if ( !blocking ) {
         queue = gpufortrt::internal::queue_record_list.use_create_queue(async_arg);
       }
-      size_t loc = gpufortrt::internal::record_list.use_increment_record(
+      size_t loc = gpufortrt::internal::record_list.create_increment_record(
         hostptr,
         num_bytes,
         map_kind,
@@ -97,21 +131,26 @@ namespace {
 
       auto& record = gpufortrt::internal::record_list[loc];
       if ( ctr_to_update == gpufortrt_counter_structured ) {
-        gpufortrt::internal::structured_region_stack.push_back(record);
+        gpufortrt::internal::structured_region_stack.push_back(
+                map_kind,&record);
       }
-      return record.deviceptr;
+      return ::offsetted_record_deviceptr(record,hostptr);
     }
   }
   
-  void run_decrement_release_action(void* hostptr,size_t num_bytes,int async_arg,
-                                    bool blocking, bool finalize, bool copyout) {
+  void decrement_release_action(void* hostptr,
+                                const size_t num_bytes,
+                                const int async_arg,
+                                const bool blocking,
+                                const bool finalize,
+                                const bool copyout) {
     LOG_INFO(2, ((copyout) ? "copyout" : "delete")
             << ((finalize) ? " finalize" : "")
             << ((!blocking) ? " async" : "")
             << "; hostptr:"<<hostptr 
             << ((!blocking) ? ", async_arg:" : "")
             << ((!blocking) ? std::to_string(async_arg).c_str() : ""))
-    if ( !gpufortrt::internal::initialized ) LOG_ERROR("gpufortrt_delete: runtime not initialized")
+    if ( !gpufortrt::internal::initialized ) LOG_ERROR("decrement_release_action: runtime not initialized")
     if ( hostptr != nullptr ) { // nullptr means no-op
       gpufortrt_queue_t queue = gpufortrt_default_queue;
       if ( !blocking ) {
@@ -125,7 +164,7 @@ namespace {
         blocking,
         queue);
     }
-  }
+  } // namespace
 
   void apply_mappings(gpufortrt_mapping_t* mappings,
                       int num_mappings,
@@ -147,7 +186,7 @@ namespace {
       auto mapping = mappings[i];
       switch (mapping.map_kind) {
         case gpufortrt_map_kind_delete:
-           ::run_decrement_release_action(
+           ::decrement_release_action(
                mapping.hostptr,
                mapping.num_bytes,
                async_arg,
@@ -158,7 +197,7 @@ namespace {
         case gpufortrt_map_kind_copyout:
            switch ( ctr_to_update ) {
              case gpufortrt_counter_structured:
-               ::run_use_increment_action(
+               ::create_increment_action(
                  mapping.hostptr,
                  mapping.num_bytes,
                  mapping.map_kind,
@@ -168,7 +207,7 @@ namespace {
                  ctr_to_update);
                break;
              case gpufortrt_counter_dynamic:
-               ::run_decrement_release_action(
+               ::decrement_release_action(
                    mapping.hostptr,
                    mapping.num_bytes,
                    async_arg,
@@ -179,12 +218,17 @@ namespace {
              default: std::invalid_argument("apply_mappings: invalid ctr_to_update"); break;
            }
            break;
+        case gpufortrt_map_kind_no_create:
+           ::no_create_action(
+             mapping.hostptr,
+             mapping.num_bytes,
+             ctr_to_update);
+           break;
         case gpufortrt_map_kind_present:
         case gpufortrt_map_kind_create:
-        case gpufortrt_map_kind_no_create:
         case gpufortrt_map_kind_copyin:
         case gpufortrt_map_kind_copy:
-           ::run_use_increment_action(
+           ::create_increment_action(
              mapping.hostptr,
              mapping.num_bytes,
              mapping.map_kind,
@@ -252,31 +296,8 @@ void gpufortrt_enter_exit_data_async(gpufortrt_mapping_t* mappings,
                  finalize);
 }
 
-void* gpufortrt_use_device(void* hostptr,bool condition,bool if_present) {
-  if ( !gpufortrt::internal::initialized ) LOG_ERROR("gpufortrt_use_device: runtime not initialized")
-  void* resultptr = hostptr;
-  if ( hostptr == nullptr ) {
-     return nullptr;
-  } else if ( condition ) {
-    bool success = false;
-    size_t loc = gpufortrt::internal::record_list.find_record(hostptr,1/*num_bytes*/,success/*inout*/); 
-        // success: hostptr in [record.hostptr,record.hostptrrecord.used_bytes)
-    if ( success ) {
-      auto& record = gpufortrt::internal::record_list.records[loc];
-      size_t offset_bytes;
-      record.is_host_data_subset(hostptr,1/*num_bytes*/,offset_bytes/*inout*/); // get offset_bytes
-      return static_cast<void*>(static_cast<char*>(record.deviceptr) + offset_bytes);
-    } else if ( if_present ) {
-      return hostptr;
-    } else {
-      LOG_ERROR("gpufortrt_use_device: did not find record for hostptr " << hostptr)
-    }
-  }
-  return nullptr; 
-}
-
 void* gpufortrt_present(void* hostptr,size_t num_bytes) {
-  return ::run_use_increment_action(
+  return ::create_increment_action(
     hostptr,
     num_bytes,
     gpufortrt_map_kind_present,
@@ -286,8 +307,12 @@ void* gpufortrt_present(void* hostptr,size_t num_bytes) {
     gpufortrt_counter_dynamic);
 }
 
+void* gpufortrt_no_create(void* hostptr,size_t num_bytes) {
+  return ::no_create_action(hostptr,num_bytes,gpufortrt_counter_dynamic);
+}
+
 void* gpufortrt_create(void* hostptr,size_t num_bytes,bool never_deallocate) {
-  return ::run_use_increment_action(
+  return ::create_increment_action(
     hostptr,
     num_bytes,
     gpufortrt_map_kind_copyin,
@@ -301,42 +326,34 @@ void* gpufortrt_create_async(void* hostptr,size_t num_bytes,int async_arg,bool n
   return gpufortrt_create(hostptr,num_bytes,never_deallocate);
 }
 
-void* gpufortrt_no_create(void* hostptr,size_t num_bytes,bool never_deallocate) {
-  return gpufortrt_create(hostptr,num_bytes,never_deallocate);
-}
-
-void* gpufortrt_no_create_async(void* hostptr,size_t num_bytes,int async_arg,bool never_deallocate) {
-  return gpufortrt_create(hostptr,num_bytes,never_deallocate);
-}
-
 void gpufortrt_delete(void* hostptr,size_t num_bytes) {
-  ::run_decrement_release_action(hostptr,num_bytes,gpufortrt_async_noval,true,false,false);
+  ::decrement_release_action(hostptr,num_bytes,gpufortrt_async_noval,true,false,false);
 }
 void gpufortrt_delete_finalize(void* hostptr,size_t num_bytes) {
-  ::run_decrement_release_action(hostptr,num_bytes,gpufortrt_async_noval,true,true,false);
+  ::decrement_release_action(hostptr,num_bytes,gpufortrt_async_noval,true,true,false);
 }
 void gpufortrt_delete_async(void* hostptr,size_t num_bytes,int async_arg) {
-  ::run_decrement_release_action(hostptr,num_bytes,async_arg,false,false,false);
+  ::decrement_release_action(hostptr,num_bytes,async_arg,false,false,false);
 }
 void gpufortrt_delete_finalize_async(void* hostptr,size_t num_bytes,int async_arg) {
-  ::run_decrement_release_action(hostptr,num_bytes,async_arg,false,true,false);
+  ::decrement_release_action(hostptr,num_bytes,async_arg,false,true,false);
 }
 
 void gpufortrt_copyout(void* hostptr,size_t num_bytes) {
-  ::run_decrement_release_action(hostptr,num_bytes,gpufortrt_async_noval,true,false,true);
+  ::decrement_release_action(hostptr,num_bytes,gpufortrt_async_noval,true,false,true);
 }
 void gpufortrt_copyout_finalize(void* hostptr,size_t num_bytes) {
-  ::run_decrement_release_action(hostptr,num_bytes,gpufortrt_async_noval,true,true,true);
+  ::decrement_release_action(hostptr,num_bytes,gpufortrt_async_noval,true,true,true);
 }
 void gpufortrt_copyout_async(void* hostptr,size_t num_bytes,int async_arg) {
-  ::run_decrement_release_action(hostptr,num_bytes,async_arg,false,false,true);
+  ::decrement_release_action(hostptr,num_bytes,async_arg,false,false,true);
 }
 void gpufortrt_copyout_finalize_async(void* hostptr,size_t num_bytes,int async_arg) {
-  ::run_decrement_release_action(hostptr,num_bytes,async_arg,false,true,true);
+  ::decrement_release_action(hostptr,num_bytes,async_arg,false,true,true);
 }
 
 void* gpufortrt_copyin(void* hostptr,size_t num_bytes,bool never_deallocate) {
-  return ::run_use_increment_action(
+  return ::create_increment_action(
     hostptr,
     num_bytes,
     gpufortrt_map_kind_copyin,
@@ -346,7 +363,7 @@ void* gpufortrt_copyin(void* hostptr,size_t num_bytes,bool never_deallocate) {
     gpufortrt_counter_dynamic);
 }
 void* gpufortrt_copyin_async(void* hostptr,size_t num_bytes,int async_arg,bool never_deallocate) {
-  return ::run_use_increment_action(
+  return ::create_increment_action(
     hostptr,
     num_bytes,
     gpufortrt_map_kind_copyin,
@@ -357,7 +374,7 @@ void* gpufortrt_copyin_async(void* hostptr,size_t num_bytes,int async_arg,bool n
 }
 
 void* gpufortrt_copy(void* hostptr,size_t num_bytes,bool never_deallocate) {
-  return ::run_use_increment_action(
+  return ::create_increment_action(
     hostptr,
     num_bytes,
     gpufortrt_map_kind_copy,
@@ -367,7 +384,7 @@ void* gpufortrt_copy(void* hostptr,size_t num_bytes,bool never_deallocate) {
     gpufortrt_counter_dynamic);
 }
 void* gpufortrt_copy_async(void* hostptr,size_t num_bytes,int async_arg,bool never_deallocate) {
-  return ::run_use_increment_action(
+  return ::create_increment_action(
     hostptr,
     num_bytes,
     gpufortrt_map_kind_copy,
@@ -534,25 +551,60 @@ void gpufortrt_wait_all_async(int* async_arg,int num_async,
 }
   
 void* gpufortrt_deviceptr(void* hostptr) {
-  auto* record = gpufortrt::internal::structured_region_stack.find_in_current_region(hostptr,1/*num_bytes*/);
-  if ( record == nullptr ) {
+  if ( hostptr == nullptr ) {
+    return nullptr;
+  } else {
+    bool use_hostptr = false;
+    auto* record = gpufortrt::internal::structured_region_stack.find_record(
+                      hostptr,1/*num_bytes*/,use_hostptr/*inout*/);
+    if ( record == nullptr && !use_hostptr ) {
+      bool success = false;
+      size_t loc = gpufortrt::internal::record_list.find_record(hostptr,1/*num_bytes*/,success/*inout*/); 
+          // success: hostptr in [record.hostptr,record.hostptrrecord.used_bytes)
+      if ( success ) {
+        record = &gpufortrt::internal::record_list.records[loc];
+      }
+    }
+    // above code may overwrite record
+    if ( record != nullptr ) {
+      size_t offset_bytes;
+      record->is_host_data_subset(hostptr,1/*num_bytes*/,offset_bytes/*inout*/);
+      void* result = static_cast<void*>(static_cast<char*>(record->deviceptr) + offset_bytes);
+      LOG_INFO(2,"deviceptr"
+               << "; resultptr:" << result 
+               << ", record_deviceptr:" << record->deviceptr
+               << ", offset_bytes:" << offset_bytes
+               << ", use_hostptr:0")
+      return result;
+    } else if ( use_hostptr ) {
+      LOG_INFO(2,"resultptr"
+               << "; resultptr:" << hostptr
+               << ", use_hostptr:1")
+      return hostptr;
+    } else {
+      LOG_ERROR("deviceptr: hostptr="<<hostptr<<" not mapped");
+      return nullptr;
+    } 
+  }
+}
+
+void* gpufortrt_use_device(void* hostptr,bool condition,bool if_present) {
+  if ( !gpufortrt::internal::initialized ) LOG_ERROR("gpufortrt_use_device: runtime not initialized")
+  void* resultptr = hostptr;
+  if ( hostptr == nullptr ) {
+     return nullptr;
+  } else if ( condition ) {
     bool success = false;
     size_t loc = gpufortrt::internal::record_list.find_record(hostptr,1/*num_bytes*/,success/*inout*/); 
         // success: hostptr in [record.hostptr,record.hostptrrecord.used_bytes)
     if ( success ) {
-      record = &gpufortrt::internal::record_list.records[loc];
+      auto& record = gpufortrt::internal::record_list.records[loc];
+      return ::offsetted_record_deviceptr(record,hostptr);
+    } else if ( if_present ) {
+      return hostptr;
+    } else {
+      LOG_ERROR("gpufortrt_use_device: did not find record for hostptr " << hostptr)
     }
   }
-  if ( record != nullptr ) {
-    size_t offset_bytes;
-    record->is_host_data_subset(hostptr,1/*num_bytes*/,offset_bytes/*inout*/);
-    void* result = static_cast<void*>(static_cast<char*>(record->deviceptr) + offset_bytes);
-    LOG_INFO(2,"deviceptr"
-             << "; deviceptr:" << result 
-             << ", record_deviceptr:" << record->deviceptr
-             << ", offset_bytes:" << offset_bytes)
-    return result;
-  } else {
-    return nullptr;
-  } 
+  return nullptr; 
 }

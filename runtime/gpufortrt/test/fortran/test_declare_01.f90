@@ -1,5 +1,6 @@
 program main
   use iso_c_binding
+  use iso_c_binding
   implicit none
   integer,parameter :: m=1,n=3
   logical(c_bool) :: x2(m,n)

@@ -23,6 +23,33 @@ module gpufortrt_api_core
       type(c_ptr) :: stream
     end function
   end interface
+   
+  ! present / no_create
+  interface gpufortrt_present
+    function gpufortrt_present_b(hostptr,num_bytes) &
+        bind(c,name="gpufortrt_present") result(deviceptr)
+      use iso_c_binding
+      use gpufortrt_types, only: gpufortrt_counter_none
+      implicit none
+      type(c_ptr),value,intent(in) :: hostptr
+      integer(c_size_t),value,intent(in) :: num_bytes
+      !
+      type(c_ptr) :: deviceptr
+    end function
+  end interface
+  
+  interface gpufortrt_no_create
+    function gpufortrt_no_create_b(hostptr,num_bytes) &
+        bind(c,name="gpufortrt_no_create") result(deviceptr)
+      use iso_c_binding
+      use gpufortrt_types, only: gpufortrt_counter_none
+      implicit none
+      type(c_ptr),value,intent(in) :: hostptr
+      integer(c_size_t),value,intent(in) :: num_bytes
+      !
+      type(c_ptr) :: deviceptr
+    end function
+  end interface
 
 contains
   
@@ -267,28 +294,4 @@ contains
     resultptr = gpufortrt_use_device_c_impl(hostptr,opt_condition,opt_if_present)
   end function
 
-  function gpufortrt_present_b(hostptr,num_bytes) result(deviceptr)
-    use iso_c_binding
-    use gpufortrt_types, only: gpufortrt_counter_none
-    implicit none
-    type(c_ptr),intent(in) :: hostptr
-    integer(c_size_t),intent(in) :: num_bytes
-    !
-    type(c_ptr) :: deviceptr
-    !
-    interface
-      function gpufortrt_present_c_impl(hostptr,num_bytes) &
-          bind(c,name="gpufortrt_present") result(deviceptr)
-        use iso_c_binding
-        use gpufortrt_types, only: gpufortrt_counter_none
-        implicit none
-        type(c_ptr),value,intent(in) :: hostptr
-        integer(c_size_t),value,intent(in) :: num_bytes
-        !
-        type(c_ptr) :: deviceptr
-      end function
-    end interface
-    !
-    deviceptr = gpufortrt_present_c_impl(hostptr,num_bytes)
-  end function
 end module

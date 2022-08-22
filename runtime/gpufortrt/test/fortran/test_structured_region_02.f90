@@ -1,4 +1,5 @@
 program main
+  use iso_c_binding
   integer,parameter :: n = 10
   logical(c_bool) :: x(n),y(2*n)
   !$acc init

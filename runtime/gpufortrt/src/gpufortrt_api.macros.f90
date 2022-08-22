@@ -1,10 +1,12 @@
 {# SPDX-License-Identifier: MIT #}
 {# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved. #}
 {#######################################################################################}
-{% macro render_interface(routine,datatypes,max_rank) %}
+{% macro render_interface(routine,datatypes,max_rank,include_b_variant=True) %}
 {#######################################################################################}
 interface {{routine}}
+{% if include_b_variant %}
   module procedure :: {{routine}}_b
+{% endif %}
 {% for triple in datatypes %}
   module procedure :: {{routine}}0_{{triple[0]}}
 {%   for rank in range(1,max_rank+1) %}
@@ -17,7 +19,7 @@ end interface
 {%- macro render_map_routines(datatypes,max_rank) -%}
 {# NOTE: type(*) is a Fortran 2018 feature.
 {########################################################################################}
-{% for clause in ["present","create","copyin","copy","copyout","delete"] -%}
+{% for clause in ["present","no_create","create","copyin","copy","copyout","delete"] -%}
 {%   set routine = "gpufortrt_map_" + clause %}
 function {{routine}}_b(hostptr,num_bytes,never_deallocate) result(retval)
   use iso_c_binding
@@ -316,10 +318,11 @@ end function
 {% endfor %}{# datatypes #}
 {% endmacro %}
 {#######################################################################################}
-{% macro render_specialized_present_routines(datatypes,max_rank) %}
+{% macro render_specialized_present_no_create_routines(datatypes,max_rank) %}
 {#######################################################################################}
-{% for triple in datatypes -%}
-function gpufortrt_present0_{{triple[0]}}(hostptr) result(deviceptr)
+{% for clause in ["present","no_create"] %}
+{%   for triple in datatypes -%}
+function gpufortrt_{{clause}}0_{{triple[0]}}(hostptr) result(deviceptr)
   use iso_c_binding
   use gpufortrt_types
   implicit none
@@ -327,11 +330,11 @@ function gpufortrt_present0_{{triple[0]}}(hostptr) result(deviceptr)
   !
   type(c_ptr) :: deviceptr
   !
-  deviceptr = gpufortrt_present_b(c_loc(hostptr),int({{triple[1]}},kind=c_size_t))
+  deviceptr = gpufortrt_{{clause}}_b(c_loc(hostptr),int({{triple[1]}},kind=c_size_t))
 end function
 
-{%   for rank in range(1,max_rank+1) %}
-function gpufortrt_present{{rank}}_{{triple[0]}}(hostptr) result(deviceptr)
+{%     for rank in range(1,max_rank+1) %}
+function gpufortrt_{{clause}}{{rank}}_{{triple[0]}}(hostptr) result(deviceptr)
   use iso_c_binding
   use gpufortrt_types
   implicit none
@@ -339,24 +342,30 @@ function gpufortrt_present{{rank}}_{{triple[0]}}(hostptr) result(deviceptr)
   !
   type(c_ptr) :: deviceptr
   !
-  deviceptr = gpufortrt_present_b(c_loc(hostptr),int({{triple[1]}},kind=c_size_t)*size(hostptr))
+  deviceptr = gpufortrt_{{clause}}_b(c_loc(hostptr),int({{triple[1]}},kind=c_size_t)*size(hostptr))
 end function
 
-{%   endfor %}{# rank #}
-{% endfor %}{# datatypes #}
+{%     endfor %}{# rank #}
+{%   endfor %}{# datatypes #}
+{% endfor %}{# clause #}
 {% endmacro %}
 {#######################################################################################}
 {% macro render_map_interfaces(datatypes,max_rank) %}
 {#######################################################################################}
-{% for clause in ["present","create","copyin","copy","copyout","delete"] %}
+{% for clause in ["present","no_create","create","copyin","copy","copyout","delete"] %}
 {{ render_interface("gpufortrt_map_"+clause,datatypes,max_rank) }}
 {% endfor %}
 {% endmacro %}
 {#######################################################################################}
 {% macro render_copy_interfaces(datatypes,max_rank) %}
 {#######################################################################################}
-{% for clause in ["present","create","copyin","copy"] %}
+{% for clause in ["present","no_create"] %}
+{{ render_interface("gpufortrt_"+clause,datatypes,max_rank,False) }}
+
+{% endfor %}
+{% for clause in ["create","copyin","copy"] %}
 {{ render_interface("gpufortrt_"+clause,datatypes,max_rank) }}
+
 {% endfor %}
 {% endmacro %}
 {#######################################################################################}

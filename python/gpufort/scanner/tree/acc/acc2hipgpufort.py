@@ -43,8 +43,7 @@ _ACC_MAP_COPYOUT = "gpufortrt_map_copyout({args})"
 _DATA_CLAUSE_2_TEMPLATE_MAP = {
   "present": _ACC_MAP_PRESENT,
   "create": _ACC_MAP_CREATE,
-  #"no_create": _ACC_MAP_NO_CREATE,
-  "no_create": _ACC_MAP_CREATE,
+  "no_create": _ACC_MAP_NO_CREATE,
   "delete": _ACC_MAP_DELETE,
   "copyin": _ACC_MAP_COPYIN,
   "copyout": _ACC_MAP_COPYOUT,

@@ -72,10 +72,6 @@ extern "C" {
   void* gpufortrt_present(
           void* hostptr,
           size_t num_bytes);
-   
-  void* gpufortrt_no_create(
-          void* hostptr,
-          size_t num_bytes);
   
   void* gpufortrt_create(
           void* hostptr,

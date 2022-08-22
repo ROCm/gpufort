@@ -101,8 +101,8 @@ namespace {
     if ( ! gpufortrt::internal::initialized ) gpufortrt_init();
     LOG_INFO(2, map_kind
              << ((!blocking) ? " async" : "")
-             << ", ctr_to_update:" << ctr_to_update
-             << "; hostptr:" << hostptr 
+             << "; ctr_to_update:" << ctr_to_update
+             << ", hostptr:" << hostptr 
              << ", num_bytes:" << num_bytes 
              << ", never_deallocate:" << never_deallocate 
              << ((!blocking) ? ", async_arg:" : "")
@@ -303,10 +303,6 @@ void* gpufortrt_present(void* hostptr,size_t num_bytes) {
     false,/*never_deallocate*/
     true/*blocking*/,
     gpufortrt_async_noval);
-}
-
-void* gpufortrt_no_create(void* hostptr,size_t num_bytes) {
-  return ::no_create_action(gpufortrt_counter_dynamic,hostptr,num_bytes);
 }
 
 void* gpufortrt_create(void* hostptr,size_t num_bytes,bool never_deallocate) {

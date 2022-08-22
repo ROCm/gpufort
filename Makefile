@@ -1,13 +1,13 @@
-.PHONY: clean_all gpufort_headers gpufort_sources gpufort_templates share/gpufort_sources lib/$(LIBGPUFORT) lib/$(LIBGPUFORT_ACC)
+.PHONY: clean_all gpufort_headers gpufort_sources gpufort_templates share/gpufort_sources lib/$(LIBGPUFORT) lib/$(LIBGPUFORTRT)
 
-SUFFIX         = $(if $(HIP_PLATFORM),$(HIP_PLATFORM),amd)
-LIBGPUFORT     = libgpufort_$(SUFFIX).a
-LIBGPUFORT_ACC = libgpufort_acc_$(SUFFIX).a
+SUFFIX       = $(if $(HIP_PLATFORM),$(HIP_PLATFORM),amd)
+LIBGPUFORT   = libgpufort_$(SUFFIX).a
+LIBGPUFORTRT = libgpufortrt_$(SUFFIX).a
 
 GPUFORT_DIR     = .
-GPUFORT_ACC_DIR = $(GPUFORT_DIR)/runtime/gpufort_acc_runtime
+GPUFORTRT_DIR = $(GPUFORT_DIR)/runtime/gpufortrt
 
-all: | gpufort_templates lib/$(LIBGPUFORT) lib/$(LIBGPUFORT_ACC) make_directories
+all: | gpufort_templates lib/$(LIBGPUFORT) lib/$(LIBGPUFORTRT) make_directories
 
 gpufort_templates:
 	make -C $(GPUFORT_DIR)/python/gpufort/fort2x/templates all
@@ -33,15 +33,15 @@ lib/$(LIBGPUFORT): | gpufort_templates gpufort_headers gpufort_sources make_dire
 	mv $(GPUFORT_DIR)/src/*.mod $(GPUFORT_DIR)/include/$(SUFFIX)/
 	make -C $(GPUFORT_DIR)/src clean
 
-lib/$(LIBGPUFORT_ACC): | gpufort_templates make_directories
-	make -C $(GPUFORT_ACC_DIR)/ lib/$(LIBGPUFORT_ACC)
-	mv $(GPUFORT_ACC_DIR)/lib/$(LIBGPUFORT_ACC)\
+lib/$(LIBGPUFORTRT): | gpufort_templates make_directories
+	make -C $(GPUFORTRT_DIR)/ clean_all build clean
+	mv $(GPUFORTRT_DIR)/lib/$(LIBGPUFORTRT)\
 	    $(GPUFORT_DIR)/lib/
-	mv $(GPUFORT_ACC_DIR)/include/*.mod\
+	mv $(GPUFORTRT_DIR)/include/*.mod\
 	    $(GPUFORT_DIR)/include/$(SUFFIX)/
-	#-mv $(GPUFORT_ACC_DIR)/include/*.h\
+	#-mv $(GPUFORTRT_DIR)/include/*.h\
 	#   $(GPUFORT_DIR)/include/$(SUFFIX)
-	make -C $(GPUFORT_ACC_DIR)/ clean
+	make -C $(GPUFORTRT_DIR)/ clean
 
 make_directories:
 	mkdir -p $(GPUFORT_DIR)/lib
@@ -52,4 +52,4 @@ clean_all:
 	make -C $(GPUFORT_DIR)/src     clean_all
 	make -C $(GPUFORT_DIR)/python/gpufort/fort2x/templates clean_all
 	make -C $(GPUFORT_DIR)/python/gpufort/fort2x/hip/templates clean_all
-	rm -f lib/$(LIBGPUFORT) lib/$(LIBGPUFORT_ACC)
+	rm -f lib/$(LIBGPUFORT) lib/$(LIBGPUFORTRT)

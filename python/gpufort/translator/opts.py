@@ -117,7 +117,7 @@ fortran_2_c_type_map = {
         "c_ptrdiff_t": "ptrdiff_t",
     },
     "logical": {
-        "": "bool",
+        "": "int",
         "c_bool": "bool",
     },
     "type": {
@@ -189,7 +189,7 @@ fortran_type_2_bytes_map = { # x86_64
         "c_ptrdiff_t": "8"
     },
     "logical": {
-        "": "1",
+        "": "4",
         "c_bool": "1"
     }
 }

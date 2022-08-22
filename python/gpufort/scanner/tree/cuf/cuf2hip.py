@@ -271,7 +271,7 @@ def handle_declaration_cuf(stdeclaration, joined_statements, index=[]):
                     malloc_tokens.insert(-1,",")
                     malloc_tokens.insert(-1,flags)
                 stdeclaration.parent.append_to_decl_list(["".join(malloc_tokens)])
-                stdeclaration.parent.prepend_to_return_or_end_statements(["".join(free_tokens)])
+                stdeclaration.parent.prepend_to_procedure_exit_statements(["".join(free_tokens)])
             # modified variable declaration
             tokens = [original_datatype]
             if len(new_qualifiers):

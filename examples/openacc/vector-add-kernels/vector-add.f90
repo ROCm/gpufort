@@ -25,7 +25,7 @@ program main
   do i = 1, n
     y(i) = y(i) - 1
   end do
-  !$acc end kernels  
+  !$acc end kernels
   
   do i = 1, N
     if ( y_exact(i) .ne.&

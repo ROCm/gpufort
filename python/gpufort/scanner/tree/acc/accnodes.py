@@ -7,7 +7,13 @@ from ... import opts
 from .. import nodes
 
 class STAccDirective(nodes.STDirective):
-    """Class for modeling/handling ACC directives."""
+    r""" Class for modeling/handling ACC directives.
+
+    :param parent_directive: The parent directive of this directive
+                             or compute construct.
+    :type parent_directive: nodes.STAccDirective or None
+    :note: Multiple code generation backends can be registered via the `register_backend` class method.
+    """
 
     _backends = []
 
@@ -15,11 +21,11 @@ class STAccDirective(nodes.STDirective):
     def register_backend(cls, dest_dialects, singleton):
         cls._backends.append((dest_dialects, singleton))
 
-    def __init__(self, first_linemap, first_linemap_first_statement, top_level_directive=None):
+    def __init__(self, parent_directive, first_linemap, first_linemap_first_statement):
         """
-        :param str top_level_directive: Overwrites the top level directive. If set to None, routine obtains
-                              the top-level main directive as first statement from the first
-                              linemap.
+        :param parent_directive: The parent `acc data` or `acc kernels` directive of this directive
+                                 or compute construct. Might be None if no preceding `acc data` or `acc kernels` exists.
+        :type parent_directive: nodes.STAccDirective or None
         """
         nodes.STDirective.__init__(self,
                                    first_linemap,
@@ -27,25 +33,12 @@ class STAccDirective(nodes.STDirective):
                                    sentinel="!$acc")
         self.dest_dialect = opts.destination_dialect
         #
-        self.top_level_directive = top_level_directive
-        directive_expr = top_level_directive if self.top_level_directive != None else self.first_statement()
-        _, self.directive_kind, self.directive_args, unprocessed_clauses = util.parsing.parse_acc_directive(directive_expr.lower())
+        self.parent_directive = parent_directive
+        _, self.directive_kind, self.directive_args, unprocessed_clauses = util.parsing.parse_acc_directive(
+                self.first_statement().lower())
         self.clauses = util.parsing.parse_acc_clauses(unprocessed_clauses)
-        self.data_region_clauses = []
-   
-    # overwrite 
-    def first_statement(self):
-        if self.top_level_directive != None:
-            return self.top_level_directive
-        else:
-            return nodes.STDirective.first_statement(self)
-
-    # overwrite 
-    def statements(self, include_none_entries=False):
-        if self.top_level_directive != None:
-            return self.top_level_directive
-        else:
-            return nodes.STDirective.statements(self, include_none_entries)
+        util.parsing.check_acc_clauses(self.directive_kind,self.clauses)
+        # TODO add members documentation
 
     def is_directive(self,kind=[]):
         """:return if this is a directive of the given kind,
@@ -54,23 +47,12 @@ class STAccDirective(nodes.STDirective):
         """
         return self.directive_kind == kind 
     
-    def get_matching_clauses(self,clause_kinds,
-                             search_own_clauses=True,
-                             search_data_region_clauses=False):
+    def get_matching_clauses(self,clause_kinds):
         """:return: List of clauses whose kind is part of `clause_kinds`.
         :param list clause_kinds: List of clause kinds in lower case.
-        :param bool search_own_clauses: Search the clauses of this directive.
-        :param bool search_data_region_clauses: Search the clauses of preceding data regions. 
-                                                Will be searched first if search_own_clauses is specified too.
         """
-        result = []
-        if search_data_region_clauses:
-            result += [clause for clause in self.data_region_clauses
-                      if clause[0].lower() in clause_kinds] 
-        if search_own_clauses:
-            result += [clause for clause in self.clauses
-                      if clause[0].lower() in clause_kinds] 
-        return result
+        return [clause for clause in self.clauses 
+               if clause[0].lower() in clause_kinds] 
 
     def is_purely_declarative(self):
         return (self.is_directive(["acc","declare"])
@@ -79,6 +61,9 @@ class STAccDirective(nodes.STDirective):
     def get_async_clause_queue(self):
         """:return: Tuple of the argument of the async clause or None
                     and a bool if the clause is present.
+        :param bool search_own_clauses: Search the clauses of this directive.
+        :param bool search_kernels_region_clauses: Search the clauses of a kernels region
+                                                   that embeds this directive.
         :raise util.error.SyntaxError: If the async clause appears more than once or if
                                        it has more than one argument.
         """
@@ -134,24 +119,16 @@ class STAccDirective(nodes.STDirective):
         :rtype: str
         :note: Assumes number of if clauses of acc data directives has been checked before.
         """
-        data_region_if_clauses = self.get_matching_clauses(["if"],False,True) 
-        condition = []
-        for _,args in data_region_if_clauses:
-            condition.append(args[0])
-        #
-        if_clauses = self.get_matching_clauses(["if"],True,False) 
+        if_clauses = self.get_matching_clauses(["if"]) 
         if len(if_clauses) == 1:
             _, args = if_clauses[0]
             if len(args) == 1:
-                condition.append(args[0])
+                return args[0], True
             else:
                 raise util.error.SyntaxError("'if' clause must have single argument")
         elif len(if_clauses) > 1:
             raise util.error.SyntaxError("'if' clause may only appear once")
-        if len(condition):
-            return "".join(["(",") .and. (".join(condition),")"]), True
-        else:
-            return "", False 
+        return "", False 
 
     def transform(self,*args,**kwargs):
         if self.is_purely_declarative():
@@ -165,32 +142,28 @@ class STAccDirective(nodes.STDirective):
 
 
 class STAccComputeConstruct(STAccDirective, nodes.STComputeConstruct):
+    r""" This scanner tree node is encapsulates data and functionality required for
+    modelling an offloadable code regions in a Fortran program.
+
+    The scanner component's parser creates a `STAccComputeConstruct` node if a `acc parallel`,
+    `acc serial`, `acc parallel loop`, or `acc kernels loop` directive
+    is encountered. It is further created if a (potentially) offloadable code
+    region was found within an `acc kernels` region.
+
+    :note: Multiple code generation backends can be registered via the `register_backend` class method.
+    """
     _backends = []
 
     @classmethod
     def register_backend(cls, dest_dialects, singleton):
         cls._backends.append((dest_dialects, singleton))
 
-    def __init__(self, first_linemap, first_linemap_first_statement, top_level_directive = None):
-        STAccDirective.__init__(self, first_linemap,
-                                first_linemap_first_statement, top_level_directive)
+    def __init__(self, parent_directive, first_linemap, first_linemap_first_statement):
+        STAccDirective.__init__(self, parent_directive, 
+                                first_linemap, first_linemap_first_statement)
         nodes.STComputeConstruct.__init__(self, first_linemap,
                                   first_linemap_first_statement)
         self.dest_dialect = opts.destination_dialect
-    
-    # overwrite 
-    def first_statement(self):
-        if self.top_level_directive != None:
-            return self.top_level_directive
-        else:
-            return nodes.STDirective.first_statement(self)
-
-    # overwrite 
-    def statements(self, include_none_entries=False):
-        result = nodes.STDirective.statements(self, include_none_entries)
-        if self.top_level_directive != None:
-            result.insert(0,self.top_level_directive)
-        return result
 
     def get_vars_present_per_default(self):
         """:return: If unmapped variables are present by default.
@@ -219,3 +192,36 @@ class STAccComputeConstruct(STAccDirective, nodes.STComputeConstruct):
                 singleton.configure(self)
                 return singleton.transform(*args,**kwargs)
         return "", False
+
+    def get_acc_kernels_ancestor(self):
+        """:return: the parent directive if it is an
+        `acc kernels` directive or None. """
+        if (self.parent_directive != None
+           and self.parent_directive.is_directive(["acc","kernels"])):
+            return self.parent_directive
+        else:
+            return None
+
+    def get_acc_data_ancestors(self):
+        """:return: all `acc data` ancestors in top-down order."""
+        acc_data_directives = []
+        current_dir = self
+        while current_dir.parent_directive != None:
+            current_dir = current_dir.parent_directive    
+            if current_dir.is_directive(["acc","data"]):
+                acc_data_directives.insert(0,current_dir)
+        return acc_data_directives
+    
+    # overwrite 
+    def first_statement(self):
+        if self.get_acc_kernels_ancestor() != None:
+            return self.parent_directive.first_statement()
+        else:
+            return STAccDirective.first_statement(self)
+
+    # overwrite 
+    def statements(self, include_none_entries=False):
+        result = STAccDirective.statements(self, include_none_entries)
+        if self.get_acc_kernels_ancestor() != None:
+            result.insert(0,self.parent_directive.first_statement())
+        return result

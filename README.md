@@ -33,10 +33,14 @@ offloading runtime for AMD and/or NVIDIA devices.
 Assuming HIPFORT is installed, you can compile them via:
 
 ```bash
-HIP_PLATFORM=amd FC=hipfc make all # use HIP_PLATFORM=nvidia for NVIDIA devices
+HIP_PLATFORM=amd FC=hipfc make clean_all all # use HIP_PLATFORM=nvidia for NVIDIA devices
+
+# or without hipfc:
+
+FC="gfortran" HIPFORT_INC="/home/wrf/Builds/hipfort/install/include/hipfort/amdgcn" HIP_PLATFORM="amd" make clean_all all
 ```
 
-If the compilation is successful, take a look at the 
+After compiling successfully, take a look at the 
 CUDA Fortran and OpenACC examples in the `examples/` subdirectory,
 which all come with a Makefile for generating code and building
 the examples.

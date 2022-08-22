@@ -545,7 +545,7 @@ def get_basic_ldflags(with_runtime):
     hip_platform = os.environ.get("HIP_PLATFORM", "amd")
     ldflags.append("".join(["-L",os.path.join(__GPUFORT_ROOT_DIR, "lib")]))
     if with_runtime:
-        ldflags.append("".join(["-lgpufort_acc_",hip_platform]))
+        ldflags.append("".join(["-lgpufortrt_",hip_platform]))
     ldflags.append("".join(["-lgpufort_",hip_platform]))
     return ldflags
 

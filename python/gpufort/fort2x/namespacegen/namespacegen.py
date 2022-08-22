@@ -196,8 +196,8 @@ class NamespaceGenerator():
                 is_third_party_module = ("intrinsic" in used_module["attributes"]
                                          or used_module["name"] in indexer.scope.opts.module_ignore_list)
                 if not is_third_party_module:
-                    imodule_used = indexer.scope.search_index_for_top_level_entry(
-                                    self.index,used_module["name"],"module")
+                    imodule_used = indexer.search_index_for_top_level_entry(
+                                    self.index,used_module["name"],["module"])
                     new = create_fortran_construct_context_(imodule_used)
                     handle_use_statements_(new) # recursion
                     if new["name"] not in module_names:

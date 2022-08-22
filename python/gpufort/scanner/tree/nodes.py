@@ -401,9 +401,17 @@ class STContainerBase(STNode):
             return self
         return result
 
-    def return_or_end_statements(self):
-        return self.find_all(
-            filter=lambda stnode: isinstance(stnode, STEndOrReturn))
+    def procedure_exit_statements(self):
+        streturns = self.find_all(
+            filter=lambda stnode: isinstance(stnode, STReturn))
+        stcontains =  self.find_first(
+            filter=lambda stnode: isinstance(stnode, STContains))
+        if stcontains != None:
+            return [stcontains]+streturns
+        else:
+            stend = self.find_first(
+                filter=lambda stnode: isinstance(stnode, STEnd))
+            return [stend]+streturns
 
     def end_statement(self):
         """:return: The child of type STEnd."""
@@ -424,7 +432,7 @@ class STContainerBase(STNode):
         if last_decl_list_node is None:
             last_decl_list_node = self
         for line in lines:
-            last_decl_list_node.add_to_epilog("".join([indent, line]), prepend)
+            last_decl_list_node.add_to_epilog(textwrap.indent(line,indent), prepend)
 
     def append_vars_to_decl_list(self, varnames, vartype="type(c_ptr)"):
         """Create and add declaration expression from `varnames` and `vartype` to declaration list 
@@ -433,16 +441,16 @@ class STContainerBase(STNode):
             self.append_to_decl_list(\
               [" :: ".join([vartype,name]) for name in varnames],prepend=True)
 
-    def prepend_to_return_or_end_statements(self, lines):
+    def prepend_to_procedure_exit_statements(self, lines):
         """
         Prepend lines to the last statement in the declaration list.
         :param list lines: The lines to append.
         :param bool prepend: Prepend new lines to previously append lines.
         """
-        for return_or_end_node in self.return_or_end_statements():
-            indent = return_or_end_node.first_line_indent()
+        for procedure_exit_node in self.procedure_exit_statements():
+            indent = procedure_exit_node.first_line_indent()
             for line in lines:
-                return_or_end_node.add_to_prolog(indent + line)
+                procedure_exit_node.add_to_prolog(textwrap.indent(line,indent))
 
     def tag(self):
         """Construct a tag that can be used to search the index."""
@@ -480,7 +488,7 @@ class STContainerBase(STNode):
         return local_var_names, dummy_arg_names
 
 
-class STEndOrReturn(STNode):
+class STProcedureExitBase(STNode):
 
     def transform_statements(self, index=[]):
         prolog = self._linemaps[0]["prolog"]
@@ -495,11 +503,11 @@ class STEndOrReturn(STNode):
         self._linemaps[0]["prolog"].clear()
 
 
-class STEnd(STEndOrReturn):
+class STEnd(STProcedureExitBase):
     pass
 
 
-class STReturn(STEndOrReturn):
+class STReturn(STProcedureExitBase):
     pass
 
 
@@ -527,7 +535,7 @@ class STProgram(STContainerBase):
         self.name = name.lower()
         self.kind = "program"
 
-class STContains(STNode):
+class STContains(STProcedureExitBase):
     pass
 
 class STPlaceHolder(STNode, IDeclListEntry):
@@ -676,6 +684,7 @@ class STComputeConstruct(STNode):
 
     def complete_init(self, index=[]):
         self.code = self.statements()
+        #print(self.statements())
         self.__hash = self.__hash_kernel()
         parent_tag = self.parent.tag()
         scope = indexer.scope.create_scope(index, parent_tag)

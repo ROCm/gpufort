@@ -24,6 +24,7 @@ program main
   do i = 1, N
     y(i) = x(i) + y(i)
   end do
+
   !$acc end data
   
   do i = 1, N

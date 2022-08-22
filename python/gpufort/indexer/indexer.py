@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-#!/usr/bin/env python3
 import os, sys, subprocess
 import copy
 import re
@@ -64,9 +63,10 @@ class Node():
 
     __repr__ = __str__
 
-def create_index_records_from_declaration(statement,file_path,lineno):
+def create_index_records_from_declaration(module_name,statement,file_path,lineno):
     """:raise util.errorSyntaxError: If the syntax of the declaration statement is not
                                      as expected.
+    :param str module_name: Name of the parent module, or None if the parent is not a module.
     """
     f_type, f_len, kind, params, qualifiers, dimension_bounds, variables, f_type_full, _ = util.parsing.parse_declaration(statement.lower())
     # TODO inconsistent, len overwrites character len but bounds do not overwrite dimension_bounds
@@ -77,7 +77,17 @@ def create_index_records_from_declaration(statement,file_path,lineno):
            and (rhs == None or not len(rhs))):
             raise util.error.SyntaxError("parameter must have right-hand side expression")
         bounds_to_pass = bounds if len(bounds) else dimension_bounds 
-        ivar = types.create_index_var(f_type, f_len, kind, params, name, qualifiers, bounds_to_pass, rhs, file_path, lineno)
+        ivar = types.create_index_var(f_type,
+                                      f_len,
+                                      kind,
+                                      params,
+                                      name,
+                                      qualifiers,
+                                      bounds_to_pass,
+                                      rhs,
+                                      module_name, 
+                                      file_path,
+                                      lineno)
         context.append(ivar)
     return context
 
@@ -389,7 +399,8 @@ def _parse_statements(linemaps, file_path,**kwargs):
                 if result_type_kind != None:
                     result_var_decl += "(" + result_type_kind + ")"
                 result_var_decl += " "+result_name
-                function["variables"] += create_index_records_from_declaration(result_var_decl,
+                function["variables"] += create_index_records_from_declaration(None,
+                                                                               result_var_decl,
                                                                                current_linemap["file"],
                                                                                current_linemap["lineno"])
             if current_node._kind == "root":
@@ -466,7 +477,8 @@ def _parse_statements(linemaps, file_path,**kwargs):
             msg = "begin to parse declaration '{}'".format(
                 current_statement)
             log_begin_task(current_node, msg)
-            variables = create_index_records_from_declaration(current_statement,
+            variables = create_index_records_from_declaration(current_node._data["name"] if current_node._data["kind"] == "module" else None,                
+                                                              current_statement,
                                                               current_linemap["file"],
                                                               current_linemap["lineno"])
             current_node._data["variables"] += variables
@@ -501,12 +513,21 @@ def _parse_statements(linemaps, file_path,**kwargs):
                             raise util.error.SyntaxError("variable '{}' is already initialized".format(var_name))
                         ivar["rhs"] = rhs
                 if not found_decl:
-                    #print(get_current_implicit_rules_())
+                    module_name = current_node._data["name"] if current_node._data["kind"] == "module" else None
                     for f_type,f_len,kind,letters in get_current_implicit_rules_():
                         if var_name[0] in letters:
                             found_decl = True
-                            ivar = types.create_index_var(f_type, f_len, kind, [], var_name, ["parameter"], [], rhs, 
-                              current_linemap["file"], current_linemap["lineno"])
+                            ivar = types.create_index_var(f_type,
+                                                          f_len,
+                                                          kind,
+                                                          [],
+                                                          var_name,
+                                                          ["parameter"],
+                                                          [],
+                                                          rhs,
+                                                          module_name,
+                                                          current_linemap["file"],
+                                                          current_linemap["lineno"])
                             current_node._data["variables"].append(ivar)
                             break
                 if not found_decl:
@@ -791,3 +812,37 @@ def load_gpufort_module_files(input_dirs, index):
                     mod_index = _read_json_file(
                         os.path.join(input_dir, child))
                     index.append(mod_index)
+
+def search_index_for_top_level_entry(index, name, kinds=[]):
+    """Search the index for module, program, subroutine,
+    or function entity that do not have a parent themselves.
+    :param str name: lower case name/tag of the searched entry.
+    :param list(str) kinds: Kinds of the searched entry or [] if any kinds is accepted.
+                            If 'procedure' is specified, subroutine and functions are accepted."""
+    irecord = next((ientry for ientry in index if ientry["name"] == name),None)
+    if irecord != None:
+        if (len(kinds)
+           or irecord["kinds"] in kinds
+           or ("procedure" in kinds 
+              and irecord["kinds"] in ["function","subroutine"])):
+            return irecord
+        else:
+          raise util.error.LookupError(
+            "no {} index record found with name '{}'".format(kinds,name))
+    else:
+        raise util.error.LookupError(
+          "no index record found with name '{}'".format(name))
+
+def search_index_for_procedure_or_program(index, tag):
+    """Search the index for program, subroutine, or function entity.
+    :param str tag: lower case tag of the searched entry."""
+    tag_tokens = tag.split(":")
+    try:
+        irecord = search_index_for_top_level_entry(index, tag_tokens.pop(0), [])
+        while len(tag_tokens):
+            irecord = search_index_for_top_level_entry(irecord["procedure"], tag_tokens.pop(0), ["procedure"])
+        if irecord["kind"] in "module":
+            raise util.error.LookupError("")
+    except util.error.LookupError as e:
+        raise util.error.LookupError(
+          "no index record found with tag '{}'".format(tag)) from e

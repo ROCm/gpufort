@@ -15,65 +15,86 @@ from . import accbackends
 from . import accnodes
 
 # update
-_ACC_UPDATE = "call gpufort_acc_update_{kind}({var}{options})\n"
+_ACC_UPDATE = "call gpufortrt_update_{kind}({args})\n"
 # wait
-_ACC_WAIT = "call gpufort_acc_wait({queue}{options})\n"
+#_ACC_WAIT = "call gpufortrt_wait({queue}{{args})\n"
+_ACC_WAIT = "call gpufortrt_wait({args})\n"
 # init shutdown
-_ACC_INIT = "call gpufort_acc_init()\n"
-_ACC_SHUTDOWN = "call gpufort_acc_shutdown()\n"
+_ACC_INIT     = "call gpufortrt_init()\n"
+_ACC_SHUTDOWN = "call gpufortrt_shutdown()\n"
+
 # regions
-_ACC_ENTER_REGION = "call gpufort_acc_enter_region({options})\n"
-_ACC_EXIT_REGION = "call gpufort_acc_exit_region({options})\n"
+_ACC_DATA_START      = "call gpufortrt_data_start({args})\n"
+_ACC_DATA_END        = "call gpufortrt_data_end({args})\n"
+_ACC_ENTER_EXIT_DATA = "call gpufortrt_enter_exit_data({args})\n"
 
 # clauses
-_ACC_CREATE = "call gpufort_acc_ignore(gpufort_acc_create({var}))\n"
-_ACC_NO_CREATE = "call gpufort_acc_ignore(gpufort_acc_no_create({var}))\n"
-_ACC_PRESENT = "call gpufort_acc_ignore(gpufort_acc_present({var}{options}))\n"
-_ACC_DELETE = "call gpufort_acc_delete({var}{options})\n"
-_ACC_COPY = "call gpufort_acc_ignore(gpufort_acc_copy({var}{options}))\n"
-_ACC_COPYIN = "call gpufort_acc_ignore(gpufort_acc_copyin({var}{options}))\n"
-_ACC_COPYOUT = "call gpufort_acc_ignore(gpufort_acc_copyout({var}{options}))\n"
-_ACC_PRESENT_OR_CREATE = "call gpufort_acc_ignore(gpufort_acc_present_or_create({var}{options}))\n"
-_ACC_PRESENT_OR_COPYIN = "call gpufort_acc_ignore(gpufort_acc_present_or_copyin({var}{options}))\n"
-_ACC_PRESENT_OR_COPYOUT = "call gpufort_acc_ignore(gpufort_acc_present_or_copyout({var}{options}))\n"
-_ACC_PRESENT_OR_COPY = "call gpufort_acc_ignore(gpufort_acc_present_or_copy({var}{options}))\n"
-_ACC_USE_DEVICE = "gpufort_acc_use_device({var},lbound({var}){options})\n"
+#_ACC_USE_DEVICE = "gpufortrt_use_device({args},lbound({args}){options})\n"
+_ACC_USE_DEVICE = "gpufortrt_use_device{{rank}}({args})\n"
+
+_ACC_MAP_CREATE = "gpufortrt_map_create({args})"
+_ACC_MAP_NO_CREATE = "gpufortrt_map_no_create({args})"
+_ACC_MAP_PRESENT = "gpufortrt_map_present({args})"
+_ACC_MAP_DELETE = "gpufortrt_map_delete({args})"
+_ACC_MAP_COPY = "gpufortrt_map_copy({args})"
+_ACC_MAP_COPYIN = "gpufortrt_map_copyin({args})"
+_ACC_MAP_COPYOUT = "gpufortrt_map_copyout({args})"
 
 _DATA_CLAUSE_2_TEMPLATE_MAP = {
-  "create": _ACC_CREATE,
-  "no_create": _ACC_NO_CREATE,
-  "delete": _ACC_DELETE,
-  "copyin": _ACC_COPYIN,
-  "copyout": _ACC_COPYOUT,
-  "copy": _ACC_COPY,
-  "present": _ACC_PRESENT,
-  "present_or_create": _ACC_PRESENT_OR_CREATE,
-  "present_or_copyin": _ACC_PRESENT_OR_COPYIN,
-  "present_or_copyout": _ACC_PRESENT_OR_COPYOUT,
-  "present_or_copy": _ACC_PRESENT_OR_COPY,
+  "present": _ACC_MAP_PRESENT,
+  "create": _ACC_MAP_CREATE,
+  "no_create": _ACC_MAP_NO_CREATE,
+  "delete": _ACC_MAP_DELETE,
+  "copyin": _ACC_MAP_COPYIN,
+  "copyout": _ACC_MAP_COPYOUT,
+  "copy": _ACC_MAP_COPY,
+  "present_or_create": _ACC_MAP_CREATE,
+  "present_or_copyin": _ACC_MAP_COPYIN,
+  "present_or_copyout": _ACC_MAP_COPYOUT,
+  "present_or_copy": _ACC_MAP_COPY,
+  "pcreate": _ACC_MAP_CREATE,
+  "pcopyin": _ACC_MAP_COPYIN,
+  "pcopyout": _ACC_MAP_COPYOUT,
+  "pcopy": _ACC_MAP_COPY,
 }
         
 _DATA_CLAUSES_WITH_ASYNC = [
-    "present",
-    "copyin","copy","copyout",
-    "present_or_copyin","present_or_copy","present_or_copyout",
-  ]
-_DATA_CLAUSES_WITH_FINALIZE = ["delete"] 
+  "present",
+  "copyin","copy","copyout",
+  "present_or_copyin","present_or_copy","present_or_copyout",
+  "pcopyin","pcopy","pcopyout",
+]
 
 _CLAUSES_OMP2ACC = {
   "alloc": "create",
   "to": "copyin",
   "tofrom": "copy"
 }
+        
+def _create_args_str(args,indent,sep=",&\n"):
+    """Join and indent non-blank args"""
+    while(args.count("")):
+      args.remove("")
+    if len(args):
+        return textwrap.indent(sep.join(args),indent)
+    return ""
 
-def _create_options_str(options,prefix=""):
-    while(options.count("")):
-      options.remove("")
-    if len(options):
-        return "".join([",",",".join(options)])
-    else:
-        return ""
+def _create_mappings_str(mappings,options,indent):
+    result = ""
+    mappings_str = _create_args_str(mappings,indent) 
+    options_str  = _create_args_str(options,indent)
+    if len(mappings_str):
+        result += "".join(["[&\n",mappings_str,"]"])
+        if len(options_str):
+            result += ",&\n"
+    result += options_str
+    return result
 
+def _make_map_args(var_expr,ivar,fixed_size_module_var=True):
+    args=[var_expr]
+    #if ivar["rank"] > 0:
+    #    args.append("size({})".format(var_expr))
+    return args
 
 class Acc2HipGpufortRT(accbackends.AccBackendBase):
     
@@ -84,13 +105,16 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             finalize_expr = "finalize=True"
         return finalize_expr
     
-    def _get_async_clause_expr(self):
-        async_queue, async_present = self.stnode.get_async_clause_queue()
+    def _get_async_clause_expr(self,staccdir):
+        """
+        :param STAccDirective staccdir: OpenACC directive scanner node
+        """
+        async_queue, async_present = staccdir.get_async_clause_queue()
         async_expr = ""
         if async_present and async_queue!=None:
-            async_expr = "async={}".format(async_queue)
+            async_expr = "async_arg={}".format(async_queue)
         elif async_present and async_queue==None:
-            async_expr = "async=0"
+            async_expr = "async_arg=gpufortrt_async_noval"
         return async_expr
 
     def _handle_wait_clause(self):
@@ -102,35 +126,33 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         elif wait_present and len(wait_queues):
             result.append(_ACC_WAIT.format(queue="["+",".join(wait_queues)+"]",options=""))
         return result
- 
-    def _handle_data_clauses(self,index,async_expr,finalize_expr):
+
+    # TODO clean up
+    def _handle_data_clauses(self,staccdir,index):
+        """Handle all data clauses of the current directive and/or of the preceding data clauses.
+        """
         result = [] 
         #
-        for kind, args in self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP.keys(),True,False):
-            options = []
-            if kind in _DATA_CLAUSES_WITH_ASYNC:
-                options.append(async_expr)
-            if kind in _DATA_CLAUSES_WITH_FINALIZE:
-                options.append(finalize_expr)
-            for var_expr in args:
+        for kind, var_exprs in staccdir.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP.keys()):
+            for var_expr in var_exprs:
                 template = _DATA_CLAUSE_2_TEMPLATE_MAP[kind.lower()]
-                options_str =_create_options_str(options)
-                result.append(template.format(var=var_expr,options=options_str))
+                ivar = indexer.scope.search_index_for_var(index,staccdir.parent.tag(),var_expr)
+                result.append(template.format(args=",".join(_make_map_args(var_expr,ivar))))
+                # TODO hack, removes derived types from list
                 if not opts.acc_map_derived_types: 
-                    ivar = indexer.scope.search_index_for_var(index,self.stnode.parent.tag(),var_expr)
                     if ivar["f_type"] == "type":
                         result.pop(-1)
         return result
 
-    def _handle_if_clause(self,result):
-        condition, found_if = self.stnode.get_if_clause_condition()
+    def _handle_if_clause(self,staccdir,result):
+        condition, found_if = staccdir.get_if_clause_condition()
         if found_if:
             result2 = [textwrap.indent(l," "*2) for l in result]
             result.clear()
             result.append("if ( {} ) then\n".format(condition))
             result += result2
             result.append("else\n".format(condition))
-            original_snippet = textwrap.indent(textwrap.dedent("\n".join([l.rstrip("\n") for l in self.stnode.lines()]))," "*2)
+            original_snippet = textwrap.indent(textwrap.dedent("\n".join([l.rstrip("\n") for l in staccdir.lines()]))," "*2)
             result += original_snippet + "\n"
             result.append("endif\n".format(condition))
     
@@ -139,21 +161,20 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         """
         #if self.stnode.is_directive(["acc","update"]):
         result = []
-        options = [ async_expr ]
-        for kind, args in self.stnode.get_matching_clauses(["if","if_present"]):
+        options   = [ async_expr ]
+        for kind, options in self.stnode.get_matching_clauses(["if","if_present"]):
             if kind == "if":
-                options.append("=".join(["condition",args[0]]))
+                options.append("=".join(["condition",options[0]]))
             elif kind == "if_present":
                 options.append("if_present=.true.")
-        for kind, args in self.stnode.get_matching_clauses(["self", "host", "device"]):
-            for var_expr in args:
+        for kind, clause_args in self.stnode.get_matching_clauses(["self", "host", "device"]):
+            for var_expr in clause_args:
+                tag = indexer.scope.create_index_search_tag_for_var(var_expr)
+                ivar = indexer.scope.search_index_for_var(index,self.stnode.parent.tag(),tag)
                 result.append(_ACC_UPDATE.format(
-                    var=var_expr,
-                    options=_create_options_str(options),
-                    kind=kind.lower()))
+                    args=_create_args_str(_make_map_args(var_expr,ivar)+options,indent="",sep=","),
+                    kind=kind.lower().replace("host","self")))
                 if not opts.acc_map_derived_types: 
-                    tag = indexer.scope.create_index_search_tag_for_var(var_expr)
-                    ivar = indexer.scope.search_index_for_var(index,self.stnode.parent.tag(),tag)
                     if ("%" in tag and ivar["rank"] == 0
                        or ivar["f_type"] == "type"):
                             result.pop(-1)
@@ -163,6 +184,11 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         """Emits an associate statement with a mapping
         of each host variable to the mapped device array.
         """
+        # TODO legacy, work with macros instead as a workaround
+        # somehow get C pointer to `dimension(*)` variables
+        # have use_device_pointer_arr and use_device_pointer variants
+        # that can deal with type(*)[,dimension(*)] inputs and
+        # simply obtain the c_loc of the argument
         mappings = []
         options = []
         for kind, args in self.stnode.get_matching_clauses(["if","if_present"]):
@@ -174,8 +200,9 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             for var_expr in args:
                 mappings.append(" => ".join([
                   var_expr,
-                  _ACC_USE_DEVICE.format(var=var_expr,
-                    options=_create_options_str(options)).rstrip(),
+                  _ACC_USE_DEVICE.format(
+                    args=_create_args_str([var_expr]+options,indent="",sep=","),
+                    ).rstrip(),
                   ]))
         result = []
         if len(mappings):
@@ -187,9 +214,6 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         return result
     
     def _end_host_data_directive(self,async_expr):
-        """Emits a acc_clause_update command for every variable in the list
-        """
-        #if self.stnode.is_directive(["acc","update"]):
         result = [""]
         return result
 
@@ -207,9 +231,9 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         if len(queues):
             queue = "[{}]".format(",".join(queues))
         if len(asyncr_list):
-            asyncr = ",[{}]".format(",".join(asyncr_list))
-        result.append(_ACC_WAIT.format(queue=queue,
-                                       options=asyncr))
+            asyncr = "[{}]".format(",".join(asyncr_list))
+        result.append(_ACC_WAIT.format(
+            args=_create_args_str([queue,asyncr],indent="",sep=",")))
         return result
 
     def transform(self,
@@ -226,87 +250,70 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         result = []
 
         stnode = self.stnode
+        indent = stnode.first_line_indent()
         if stnode.is_directive(["acc","init"]):
             result.append(_ACC_INIT)
         elif stnode.is_directive(["acc","shutdown"]):
             result.append(_ACC_SHUTDOWN)
         elif stnode.is_directive(["acc","update"]):
             result += self._handle_wait_clause()
-            async_expr = self._get_async_clause_expr()
+            async_expr = self._get_async_clause_expr(stnode)
             result += self._update_directive(index,async_expr)
         elif stnode.is_directive(["acc","wait"]):
             result += self._wait_directive()
         elif stnode.is_directive(["acc","host_data"]):
             result += self._host_data_directive()
         elif stnode.is_directive(["acc","end","host_data"]):
+            # TODO legacy
             result.append("end associate")
-        elif (stnode.is_directive(["acc","end","parallel"])
-             or stnode.is_directive(["acc","serial"])
-             or stnode.is_directive(["acc","end","parallel","loop"])
-             or stnode.is_directive(["acc","end","kernels","loop"])):
-            pass
-        elif (stnode.is_directive(["acc","parallel"])
-             or stnode.is_directive(["acc","serial"])
-             or stnode.is_directive(["acc","parallel","loop"])
-             or stnode.is_directive(["acc","kernels","loop"])):
-            assert False, "should not be called for serial, parallel (loop) and kernels loop directive"
-        elif (stnode.is_directive(["acc","end","kernels"])
-             or stnode.is_directive(["acc","end","data"])):
-            result.append(_ACC_EXIT_REGION.format(
-                options=""))
-        # data regions
         elif stnode.is_directive(["acc","enter","data"]):
-            result += self._handle_wait_clause()  
-            result.append(_ACC_ENTER_REGION.format(
-                options="unstructured=.true."))
+            result += self._handle_wait_clause()
+            mappings = self._handle_data_clauses(stnode,index)
+            options = [ self._get_async_clause_expr(stnode) ]
+            result.append(_ACC_ENTER_EXIT_DATA.format(
+                args=_create_mappings_str(mappings,options,indent)))
+            # emit gpufortrt_enter_exit_data
+        elif stnode.is_directive(["acc","exit","data"]):
+            result += self._handle_wait_clause()
+            mappings = self._handle_data_clauses(stnode,index)
+            options = [ self._get_async_clause_expr(stnode),
+                        self._get_finalize_clause_expr() ]
+            result.append(_ACC_ENTER_EXIT_DATA.format(
+                args=_create_mappings_str(mappings,options,indent)))
         elif stnode.is_directive(["acc","data"]):
-            result.append(_ACC_ENTER_REGION.format(
-                options=""))
+            result += self._handle_wait_clause()
+            mappings = self._handle_data_clauses(stnode,index)
+            result.append(_ACC_DATA_START.format(
+                args=_create_mappings_str(mappings,[],indent)))
+        elif stnode.is_directive(["acc","end","data"]):
+            stparentdir = stnode.parent_directive
+            result.append(_ACC_DATA_END.format(
+                args=_create_mappings_str([],[],indent)))
         elif stnode.is_directive(["acc","kernels"]):
-            result += self._handle_wait_clause()  
-            result.append(_ACC_ENTER_REGION.format(
-                options=""))
-
-        ## mapping clauses on data and kernels directives
-        if (stnode.is_directive(["acc","enter","data"])
-           or stnode.is_directive(["acc","exit","data"])
-           or stnode.is_directive(["acc","data"])
-           or stnode.is_directive(["acc","kernels"])):
-            async_expr = self._get_async_clause_expr()
-            finalize_expr = self._get_finalize_clause_expr();
-            if len(finalize_expr) and not stnode.is_directive(["acc","exit","data"]):
-                raise util.error.SyntaxError("finalize clause may only appear on 'exit data' directive.")
-            result += self._handle_data_clauses(index,async_expr,finalize_expr)
-
-        ## Exit region commands must come last
-        if stnode.is_directive(["acc","exit","data"]):
-            result.append(_ACC_EXIT_REGION.format(
-                options="unstructured=.true."))
+            result += self._handle_wait_clause()
+            mappings = self._handle_data_clauses(stnode,index)
+            options = [ self._get_async_clause_expr(stnode) ]
+            result.append(_ACC_DATA_START.format(
+                args=_create_mappings_str(mappings,options,indent)))
+        elif stnode.is_directive(["acc","end","kernels"]):
+            stparentdir = stnode.parent_directive
+            options = [ self._get_async_clause_expr(stparentdir) ]
+            result.append(_ACC_DATA_END.format(
+                args=_create_mappings_str([],options,indent)))
         # _handle if
-        self._handle_if_clause(result)
+        self._handle_if_clause(stnode,result)
 
         indent = stnode.first_line_indent()
         return textwrap.indent("".join(result),indent), len(result)
 
 class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
 
-    def _map_array(clause_kind1,var_expr,tavar,**kwargs):
+    def _map_array1(clause_kind,var_expr,tavar,**kwargs):
         asyncr,_   = util.kwargs.get_value("asyncr","",**kwargs)
-        finalize,_ = util.kwargs.get_value("finalize","",**kwargs)
-        prepend_present,_ = util.kwargs.get_value("prepend_present",False,**kwargs)       
 
-        if prepend_present and clause_kind1.startswith("copy"):
-            clause_kind = "".join(["present_or_",clause_kind1])
-        else:
-            clause_kind = clause_kind1
         if clause_kind in _DATA_CLAUSE_2_TEMPLATE_MAP:
-            runtime_call_tokens = ["gpufort_acc_",clause_kind,"("]
-            runtime_call_tokens.append(var_expr)
-            if len(asyncr) and clause_kind in _DATA_CLAUSES_WITH_ASYNC:
-                runtime_call_tokens += [",",asyncr]
-            if len(finalize) and clause_kind in _DATA_CLAUSES_WITH_FINALIZE:
-                runtime_call_tokens += [",",finalize]
-            runtime_call_tokens.append(")") 
+            #runtime_call_tokens = ["gpufortrt_",clause_kind,"("]
+            runtime_call_tokens = ["gpufortrt_deviceptr(", var_expr,")"]
             tokens = [
               "gpufort_array",str(tavar["c_rank"]),"_wrap_device_cptr(&\n",
               " "*4,"".join(runtime_call_tokens),
@@ -315,36 +322,63 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
             return "".join(tokens)
         else:
             raise util.error.SyntaxError("clause not supported") 
+   
+    def _map_array2(clause_kind,var_expr,tavar,**kwargs):
+        asyncr,_   = util.kwargs.get_value("asyncr","",**kwargs)
+
+        if clause_kind in _DATA_CLAUSE_2_TEMPLATE_MAP:
+            tokens = ["gpufortrt_map_",clause_kind,"(",var_expr]
+            if len(asyncr) and clause_kind in _DATA_CLAUSES_WITH_ASYNC:
+                tokens += [",",asyncr]
+            tokens.append(")") 
+            return "".join(tokens)
+        else:
+            raise util.error.SyntaxError("clause not supported") 
+    
+    def _map_array(*args,**kwargs):
+        return (AccComputeConstruct2HipGpufortRT._map_array1(*args,**kwargs),
+                AccComputeConstruct2HipGpufortRT._map_array2(*args,**kwargs))
     
     def derive_kernel_call_arguments(self):
-        """:return a list of arguments given the directives.
         """
-        result = []
+        :return a list of arguments given the directives.
+        :note: Add all variables listed in the data region clauses as present
+               Put them before this directive's own clauses.
+               translator.analysis routine processes them in reversed order.
+        """
         acc_clauses = []
-        # Add all variables listed in the data region clauses as present
-        # Put them before current clauses. translator.analysis routine
-        # processes them in reversed order.
-        data_region_acc_clauses = self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP,False,True)
-        for _,args in data_region_acc_clauses:
-            acc_clauses.append(("present",args))
-        # TODO also consider acc declare
-        acc_clauses += self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP,True,False)
+        data_and_kernels_ancestors  = self.stnode.get_acc_data_ancestors()
+        kernels_ancestor = self.stnode.get_acc_kernels_ancestor()
+        if kernels_ancestor != None:
+            data_and_kernels_ancestors.append(kernels_ancestor)
+        for staccdir in data_and_kernels_ancestors:
+            for _,args in staccdir.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP):
+                acc_clauses.append(("present",args))
+        # TODO also consider acc declare'd variables here
+       
+        if not self.stnode.is_directive(["acc","kernels"]): # note: parent `acc kernels` directive lines are copied to each embedded compute construct
+            acc_clauses += self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP)
         
         kwargs = {
-          "finalize":self._get_finalize_clause_expr(),
-          "asyncr":self._get_async_clause_expr(),
+          "asyncr":self._get_async_clause_expr(self.stnode),
         }
-        if self.stnode.is_directive(["acc","kernels"]):
-            kwargs["prepend_present"] = True
-        mappings = translator.analysis.kernel_args_to_acc_mappings_no_types(
-                       acc_clauses,
-                       self.stnode.kernel_args_tavars,
-                       self.stnode.get_vars_present_per_default(),
-                       AccComputeConstruct2HipGpufortRT._map_array,
-                       **kwargs)
-        for var_expr, argument in mappings:
-            result.append(argument)
-        return result
+        
+        mapping_tuples = translator.analysis.kernel_args_to_acc_mappings_no_types(
+                                 acc_clauses,
+                                 self.stnode.kernel_args_tavars,
+                                 self.stnode.get_vars_present_per_default(),
+                                 AccComputeConstruct2HipGpufortRT._map_array,
+                                 **kwargs)
+        mappings  = []
+        arguments = []
+        for var_expr, inner in mapping_tuples:
+            if isinstance(inner,tuple):
+                arguments.append(inner[0])
+                mappings.append(inner[1])
+            else:
+                arguments.append(inner)
+                pass # scalars
+        return mappings, arguments
         
     def transform(self,
                   joined_lines,
@@ -352,48 +386,34 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
                   statements_fully_cover_lines,
                   index=[]):
         result = []
-        stloopnest = self.stnode
-        ttloopnest = stloopnest.parse_result
+        stcomputeconstruct = self.stnode
+        indent = stcomputeconstruct.first_line_indent()
+        ttcomputeconstruct = stcomputeconstruct.parse_result
         
-        # if kernels loop / parallel / parallel loop -> enter_region
-        # if kernels -> do not emit enter_region
-        emit_enter_exit_region = \
-           (stloopnest.is_directive(["acc","serial"])
-           or stloopnest.is_directive(["acc","parallel"])
-           or stloopnest.is_directive(["acc","parallel","loop"])
-           or stloopnest.is_directive(["acc","kernels","loop"]))
-        
-        if emit_enter_exit_region:
-            result += self._handle_wait_clause()  
-            result.append(_ACC_ENTER_REGION.format(
-                options=""))
-        
-        queue, found_async = stloopnest.get_async_clause_queue()
-        if not found_async:
-            queue = "0"
-        stloopnest.stream_f_str = "gpufort_acc_get_stream({})".format(queue)
-        stloopnest.async_launch_f_str = ".{}.".format(str(found_async)).lower()
-       
-        stloopnest.kernel_args_names = self.derive_kernel_call_arguments()
-        result_loopnest, _ = nodes.STComputeConstruct.transform(
-                                 stloopnest, joined_lines, joined_statements,
+        mappings, arguments = self.derive_kernel_call_arguments()
+      
+        # enter structured region region
+        result += self._handle_wait_clause()
+        options = [ self._get_async_clause_expr(stcomputeconstruct) ]
+        result.append(_ACC_DATA_START.format(
+            args=_create_mappings_str(mappings,options,indent)))
+
+        # kernel launch 
+        stcomputeconstruct.kernel_args_names = arguments
+        result_computeconstruct, _ = nodes.STComputeConstruct.transform(
+                                 stcomputeconstruct, joined_lines, joined_statements,
                                  statements_fully_cover_lines, index)
-        result.append(textwrap.dedent(result_loopnest))
-        
-        if emit_enter_exit_region:
-            result.append(_ACC_EXIT_REGION.format(options=""))
-        
-        self._handle_if_clause(result)
+        result.append(textwrap.dedent(result_computeconstruct))
 
-        indent = stloopnest.first_line_indent()
+        # leave structured region
+        options = [ self._get_async_clause_expr(stcomputeconstruct) ]
+        result.append(_ACC_DATA_END.format(
+            args=_create_mappings_str([],options,indent)))
+        
+        self._handle_if_clause(stcomputeconstruct,result)
+
+        indent = stcomputeconstruct.first_line_indent()
         return textwrap.indent("".join(result),indent), len(result)
-
-@util.logging.log_entry_and_exit(opts.log_prefix)
-def _add_implicit_region(stcontainer):
-    stcontainer.append_to_decl_list([_ACC_ENTER_REGION.format(\
-        options="implicit_region=.true.")])
-    stcontainer.prepend_to_return_or_end_statements([_ACC_EXIT_REGION.format(\
-            options="implicit_region=.true.")])
 
 def AllocateHipGpufortRT(stallocate, joined_statements, index):
     stcontainer = stallocate.parent
@@ -403,32 +423,21 @@ def AllocateHipGpufortRT(stallocate, joined_statements, index):
     indent = stallocate.first_line_indent()
     local_var_names, dummy_arg_names = stcontainer.local_and_dummy_var_names(
         index)
-    acc_present_calls = []
-    implicit_region = False
+    enter_data_mappings = []
     for var in [a[0] for a in stallocate.allocations]:
         ivar = indexer.scope.search_index_for_var(index, parent_tag, var)
         if opts.acc_map_derived_types or ivar["f_type"] != "type":
             var_expr = ivar["name"]
-            is_local_var = var_expr in local_var_names
-            is_arg = var_expr in dummy_arg_names
-            is_used_module_var = not is_local_var and not is_arg
-            is_allocatable_or_pointer = "allocatable" in ivar["attributes"] or\
-                                 "pointer" in ivar["attributes"]
-            assert is_allocatable_or_pointer # TODO emit error
-            module_var = ",module_var=.true." if is_used_module_var else ""
-            if not is_used_module_var:
-                implicit_region = True
-            declare = ivar["declare_on_target"]
-            if declare in _CLAUSES_OMP2ACC.keys():
-                map_kind = "".join(["present_or_",_CLAUSES_OMP2ACC[declare]])
-                acc_present_template =  _DATA_CLAUSE_2_TEMPLATE_MAP[map_kind]
-                acc_present_calls.append(acc_present_template.format(
-                    var=var_expr,options=module_var))
-    if len(acc_present_calls):
-        if implicit_region:
-            _add_implicit_region(stcontainer)
-        for line in acc_present_calls:
-            stallocate.add_to_epilog(textwrap.indent(line,indent))
+            if not indexer.props.has_any_attribute(ivar,["allocatable","pointer"]):
+                raise error.SyntaxError("variable '{}' that is subject to `allocate` intrinsic must have 'allocatable' or 'pointer' qualifier".
+                        format(var_expr))
+            if ivar["declare_on_target"] in ["alloc"]:
+                enter_data_mappings.append(_ACC_MAP_CREATE.format(
+                  args=_create_args_str(_make_map_args(var_expr,ivar),"",sep=",")))
+    if len(enter_data_mappings):
+        enter_data_str = _ACC_ENTER_EXIT_DATA.format(
+            args=_create_mappings_str(enter_data_mappings,[]," "*2))
+        stallocate.add_to_epilog(textwrap.indent(enter_data_str,indent))
     return joined_statements, False
 
 
@@ -440,73 +449,71 @@ def DeallocateHipGpufortRT(stdeallocate, joined_statements, index):
     indent = stdeallocate.first_line_indent()
     local_var_names, dummy_arg_names = stcontainer.local_and_dummy_var_names(
         index)
-    acc_delete_calls = []
+    exit_data_mappings = []
     for var in stdeallocate.variable_names:
         ivar = indexer.scope.search_index_for_var(index, parent_tag, var)
         if opts.acc_map_derived_types or ivar["f_type"] != "type":
             var_expr = ivar["name"]
-            is_local_var = var_expr in local_var_names
-            is_arg = var_expr in dummy_arg_names
-            is_used_module_var = not is_local_var and not is_arg
-            is_allocatable_or_pointer = "allocatable" in ivar["attributes"] or\
-                                 "pointer" in ivar["attributes"]
-            assert is_allocatable_or_pointer
-            module_var = ",module_var=.true." if is_used_module_var else ""
-            if ivar["declare_on_target"] in ["alloc", "to", "tofrom"]:
-                acc_delete_calls.append(_ACC_DELETE.format(\
-                  var=var_expr,options=module_var))
-    for line in acc_delete_calls:
-        stdeallocate.add_to_prolog(textwrap.indent(line,indent))
+            if not indexer.props.has_any_attribute(ivar,["allocatable","pointer"]):
+                raise error.SyntaxError("variable '{}' that is subject to `deallocate` intrinsic must have 'allocatable' or 'pointer' qualifier".
+                        format(var_expr))
+            if ivar["declare_on_target"] in ["alloc"]:
+                exit_data_mappings.append(_ACC_MAP_DELETE.format(
+                  args=_create_args_str(_make_map_args(var_expr,ivar),"",sep=",")))
+    if len(exit_data_mappings):
+        exit_data_str = _ACC_ENTER_EXIT_DATA.format(
+            args=_create_mappings_str(exit_data_mappings,[]," "*2))
+        stdeallocate.add_to_prolog(textwrap.indent(exit_data_str,indent))
     return joined_statements, False
 
+@util.logging.log_entry_and_exit(opts.log_prefix)
+def _add_structured_data_region(stcontainer,data_start_mappings,data_end_mappings):
+    data_start_str = _ACC_DATA_START.format(
+        args=_create_mappings_str(data_start_mappings,[]," "*2))
+    data_end_str = _ACC_DATA_END.format(
+        args=_create_mappings_str(data_end_mappings,[]," "*2))
+    stcontainer.append_to_decl_list([data_start_str])
+    stcontainer.prepend_to_procedure_exit_statements([data_end_str])
 
 def Acc2HipGpufortRTPostprocess(stree, index):
     """:param stree: the full scanner tree
        :param staccdirectives: All acc directive tree accnodes."""
-    accbackends.add_runtime_module_use_statements(stree,"gpufort_acc_runtime")
+    accbackends.add_runtime_module_use_statements(stree,"gpufortrt_api")
 
     # TODO check if there is any acc used in the
-    # construct at all
+    # construct at all, also check if there is a allocate/deallocate statement
     # TODO handle directly via directives; only variables occuring
     # in directives need to be available on device
     containers = stree.find_all(\
       lambda node: type(node) in [nodes.STProgram,nodes.STProcedure],
       recursively=True)
     for stcontainer in containers:
-        last_decl_list_node = stcontainer.last_entry_in_decl_list()
-        indent = last_decl_list_node.first_line_indent()
         scope = indexer.scope.create_scope(index, stcontainer.tag())
         scope_vars = scope["variables"]
         local_var_names, dummy_arg_names = stcontainer.local_and_dummy_var_names(
             index)
         # TODO also process type members
-        acc_present_calls = []
-        implicit_region = False
+        data_start_mappings = []
+        data_end_mappings   = []
         for ivar in scope_vars:
             var_expr = ivar["name"]
-            if opts.acc_map_derived_types or ivar["f_type"] != "type":
-                is_local_var = var_expr in local_var_names
-                is_arg = var_expr in dummy_arg_names
-                is_used_module_var = not is_local_var and not is_arg
-                is_allocatable = "allocatable" in ivar["attributes"]
-                is_pointer = "pointer" in ivar["attributes"]
-                if not is_allocatable:
-                    if not is_used_module_var:
-                        implicit_region = True
-                    module_var = ",module_var=.true." if is_used_module_var else ""
-                    # find return and end, emit 1 new implicit region for all
+            if (var_expr in local_var_names
+               or var_expr in dummy_arg_names
+               or indexer.props.index_var_is_module_var(ivar)):
+                if opts.acc_map_derived_types or ivar["f_type"] != "type":
+                    # find return and end/contains, emit 1 new implicit region for all
                     declare = ivar["declare_on_target"]
                     if declare in _CLAUSES_OMP2ACC.keys():
-                        map_kind = "".join(["present_or_",_CLAUSES_OMP2ACC[declare]])
-                        acc_present_template =  _DATA_CLAUSE_2_TEMPLATE_MAP[map_kind]
-                        if is_pointer:
-                            acc_present_template = "".join(["if (associated({var})) ",acc_present_template])
-                        acc_present_calls.append(acc_present_template.format(
-                            var=var_expr,options=module_var))
-        if len(acc_present_calls):
-            if implicit_region:
-                _add_implicit_region(stcontainer)
-            last_decl_list_node.add_to_epilog(textwrap.indent("".join(acc_present_calls),indent))
+                        map_kind     = _CLAUSES_OMP2ACC[declare]
+                        map_template = _DATA_CLAUSE_2_TEMPLATE_MAP[map_kind]
+                        args=_make_map_args(var_expr,ivar)
+                        if (indexer.props.index_var_is_module_var(ivar)
+                           and not indexer.props.has_any_attribute(ivar,["allocatable","pointer"])):
+                            args.append("never_deallocate=.true.") 
+                        data_start_mappings.append(map_template.format(
+                            args=_create_args_str(args,"",sep=",")))
+        if len(data_start_mappings):
+            _add_structured_data_region(stcontainer,data_start_mappings,data_end_mappings)
 
 dest_dialects = ["hipgpufort"]
 accnodes.STAccDirective.register_backend(dest_dialects,Acc2HipGpufortRT()) # instance

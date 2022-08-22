@@ -171,34 +171,34 @@ size_t gpufortrt::internal::record_list_t::create_increment_record(
     loc = this->find_available_record(num_bytes,reuse_existing/*inout*/);
     assert(loc >= 0);
     if ( loc == this->records.size() ) {
-      gpufortrt::internal::record_t record;
-      record.setup(
-        gpufortrt::internal::num_records++, // increment global not thread-safe
-        hostptr,
-        num_bytes,
-        allocate_device_buffer,
-        copy_to_device,
-        blocking,
-        queue,
-        reuse_existing/*in*/);
-      // Initialize fixed-size Fortran module variables with 
-      // structured references counter set to '1'.
-      if ( ctr_to_update == gpufortrt_counter_structured
-           && never_deallocate ) {
-         record.struct_refs = 1; 
-      }
-      // Update consumed memory statistics only if
-      // no record was reused, i.e. a new one was created
-      if ( !reuse_existing ) {
-        this->total_memory_bytes += record.reserved_bytes;
-        LOG_INFO(3,"create record: " << record)
-      } else {
-        LOG_INFO(3,"reuse record: " << record)
-      }
-      record.inc_refs(ctr_to_update);
-      this->records.push_back(record);
+      this->records.emplace_back();
     }
-    assert(loc <= this->records.size());
+    auto& record = this->records[loc];
+    record.setup(
+      gpufortrt::internal::num_records++, // increment global not thread-safe
+      hostptr,
+      num_bytes,
+      allocate_device_buffer,
+      copy_to_device,
+      blocking,
+      queue,
+      reuse_existing/*in*/); // TODO reuse_existing could negate allocate_device_buffer
+
+    // Initialize fixed-size Fortran module variables with 
+    // structured references counter set to '1'.
+    if ( ctr_to_update == gpufortrt_counter_structured
+         && never_deallocate ) {
+       record.struct_refs = 1; 
+    }
+    // Update consumed memory statistics only if
+    // no record was reused, i.e. a new one was created
+    if ( !reuse_existing ) {
+      this->total_memory_bytes += record.reserved_bytes;
+      LOG_INFO(3,"create record: " << record)
+    } else {
+      LOG_INFO(3,"reuse record: " << record)
+    }
+    record.inc_refs(ctr_to_update);
   }
   return loc;
 }

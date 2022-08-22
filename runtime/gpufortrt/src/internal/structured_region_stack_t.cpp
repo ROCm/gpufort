@@ -62,7 +62,7 @@ gpufortrt::internal::record_t* gpufortrt::internal::structured_region_stack_t::f
     if ( ::is_no_create_entry_without_present_record(entry) ) {
       no_create_without_present_record = true;
     } else {
-      size_t offset_bytes;
+      std::ptrdiff_t offset_bytes;
       if ( entry.record->is_host_data_subset(hostptr,num_bytes,offset_bytes/*inout*/) ) {
         return entry.record;
       }

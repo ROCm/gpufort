@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <vector>
+#include <cstddef>
 
 #include "../gpufortrt_types.h"
 
@@ -78,7 +79,7 @@ namespace gpufortrt {
        *               record's `hostptr` member.
        */
       bool is_host_data_subset(
-        void* hostptr, size_t num_bytes, size_t& offset_bytes) const;
+        void* hostptr, size_t num_bytes, std::ptrdiff_t& offset_bytes) const;
       
       /* Setup this record. Constructor. */
       void setup(

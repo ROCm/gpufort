@@ -64,7 +64,7 @@ size_t gpufortrt::internal::record_list_t::find_record(void* hostptr,size_t num_
     throw std::invalid_argument("find_record: argument 'hostptr' is null");
   } else {
     for ( size_t i = 0; i < this->records.size(); i++ ) {
-      size_t offset_bytes = 0;
+      std::ptrdiff_t offset_bytes = 0;
       if ( this->records[i].is_host_data_subset(hostptr,num_bytes,offset_bytes/*inout*/) ) {
         loc = i;
         success = true;
@@ -121,13 +121,14 @@ namespace {
      void* hostptr,
      size_t num_bytes,
      bool check_restrictions = true) {
-    size_t offset_bytes;
+    std::ptrdiff_t offset_bytes;
     if ( record.is_host_data_subset(hostptr,num_bytes,offset_bytes/*inout*/) ) {
       return true;
     } else if ( check_restrictions ) {
       std::stringstream ss;
       ss << "host data to map (" << hostptr << " x " << num_bytes << " B) is no subset of already existing record's host data ("
-         << record.hostptr << " x " << record.used_bytes << " B)";
+         << record.hostptr << " x " << record.used_bytes << " B); "
+         << "(hostptr - record.hostptr) = " << offset_bytes << " B";
       throw std::invalid_argument(ss.str());
     }
     return false;

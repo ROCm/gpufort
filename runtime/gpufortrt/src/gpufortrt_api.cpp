@@ -611,7 +611,7 @@ void* gpufortrt_deviceptr(void* hostptr) {
     }
     // above code may overwrite record
     if ( record != nullptr ) {
-      size_t offset_bytes;
+      std::ptrdiff_t offset_bytes;
       record->is_host_data_subset(hostptr,1/*num_bytes*/,offset_bytes/*inout*/);
       void* result = static_cast<void*>(static_cast<char*>(record->deviceptr) + offset_bytes);
       LOG_INFO(2,"deviceptr"

@@ -45,7 +45,7 @@ bool gpufortrt::internal::implies_copy_to_host(const gpufortrt_map_kind_t map_ki
 }
 
 void* gpufortrt::internal::offsetted_record_deviceptr(const gpufortrt::internal::record_t& record,void* hostptr) {
-  size_t offset_bytes = 0;
+  std::ptrdiff_t offset_bytes = 0;
   record.is_host_data_subset(hostptr,1/*num_bytes*/,offset_bytes/*inout*/); // get offset_bytes
   return static_cast<void*>(static_cast<char*>(record.deviceptr) + offset_bytes);
 }

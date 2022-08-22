@@ -105,7 +105,7 @@ extern "C" {
 
   // other runtime calls
 
-  void gpufortrt_update_host(
+  void gpufortrt_update_self(
          void* hostptr,
          bool condition,
          bool if_present);

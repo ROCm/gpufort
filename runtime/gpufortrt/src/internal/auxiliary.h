@@ -10,7 +10,7 @@
 #define WS_LINE 4
 
 #define LOG_INFO(level,msg) \
-    if ( level <= gpufortrt::internal::LOG_LEVEL ) {\
+    if ( level <= gpufortrt::internal::LOG_LEVEL ) { \
         std::stringstream ss_prefix; \
         std::string file(__FILE__); \
         file.replace(0,6,""); \
@@ -21,7 +21,7 @@
         ss_msg << msg; \
         gpufortrt::internal::log_info(level,ss_prefix.str(),ss_msg.str()); }
 
-#define LOG_ERROR(msg) {\
+#define LOG_ERROR(msg) { \
         std::stringstream ss_prefix; \
         std::string file(__FILE__); \
         file.replace(0,6,""); \
@@ -31,6 +31,13 @@
         std::stringstream ss_msg; \
         ss_msg << msg; \
         gpufortrt::internal::log_error(ss_prefix.str(),ss_msg.str()); }
+
+#define HIP_CHECK(error) \
+  { \
+    if(error != 0){ \
+        LOG_ERROR("HIP runtime call returned error status: " << error) \
+    } \
+  }
 
 namespace gpufortrt {
   namespace internal {

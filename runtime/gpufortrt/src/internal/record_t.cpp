@@ -92,7 +92,8 @@ void gpufortrt::internal::record_t::setup(
     int id,
     void* hostptr,
     size_t num_bytes,
-    gpufortrt_map_kind_t map_kind,
+    bool allocate_device_buffer,
+    bool copy_to_device,
     bool blocking,
     gpufortrt_queue_t queue,
     bool reuse_existing) {
@@ -100,7 +101,8 @@ void gpufortrt::internal::record_t::setup(
            << "; hostptr:" << hostptr
            << ", num_bytes:" << num_bytes
            << ", blocking:" << blocking
-           << ", map_kind:" << map_kind
+           << ", allocate_device_buffer:" << allocate_device_buffer
+           << ", copy_to_device:" << copy_to_device
            << ", queue:" << queue
            << ", reuse:" << reuse_existing)
   this->hostptr = hostptr;
@@ -110,24 +112,12 @@ void gpufortrt::internal::record_t::setup(
   if ( !reuse_existing ) {
     this->id = id; // TODO not thread-safe
     this->reserved_bytes = ::blocked_size(num_bytes,gpufortrt::internal::BLOCK_SIZE);
+    if ( allocate_device_buffer ) {
+        HIP_CHECK(hipMalloc(&this->deviceptr,this->reserved_bytes)) // TODO backend-specific, externalize
+    }
   }
-  switch (map_kind) {
-    case gpufortrt_map_kind_create:
-    case gpufortrt_map_kind_copyout:
-      if ( !reuse_existing ) {
-        HIP_CHECK(hipMalloc(&this->deviceptr,this->reserved_bytes)) // TODO backend-specific, externalize
-      }
-      break;
-    case gpufortrt_map_kind_copyin:
-    case gpufortrt_map_kind_copy:
-      if ( !reuse_existing ) {
-        HIP_CHECK(hipMalloc(&this->deviceptr,this->reserved_bytes)) // TODO backend-specific, externalize
-      }
-      this->copy_to_device(blocking,queue);
-      break;
-    default:
-      // ignore
-      break;
+  if ( copy_to_device ) {
+    this->copy_to_device(blocking,queue);
   }
 }
 
@@ -283,26 +273,19 @@ void gpufortrt::internal::record_t::copy_section_to_host(
   #endif
 }
 
-void gpufortrt::internal::record_t::structured_decrement_release(
-    gpufortrt_map_kind_t map_kind, 
-    bool blocking, gpufortrt_queue_t queue) {
-  this->dec_refs(gpufortrt_counter_structured);
-  if ( this->can_be_destroyed(0) ) {
-    // if both structured and dynamic reference counters are zero, 
-    // a copyout action is performed
-    if (  map_kind == gpufortrt_map_kind_copyout
-       || map_kind == gpufortrt_map_kind_copy ) {
-      this->copy_to_host(blocking,queue);
-    }
-    this->release();
+void gpufortrt::internal::record_t::decrement_release(
+    gpufortrt_counter_t ctr_to_update, 
+    bool copyout,
+    bool finalize,
+    bool blocking,
+    gpufortrt_queue_t queue) {
+  this->dec_refs(ctr_to_update);
+  if ( finalize && ctr_to_update == gpufortrt_counter_dynamic ) {
+    this->dyn_refs = 0;
+  } else if ( finalize ) {
+    throw std::invalid_argument("decrement_release: `finalize` can only be set to `true` if `ctr_to_update` is set to `gpufortrt_counter_dynamic`");
   }
-}
-
-void gpufortrt::internal::record_t::unstructured_decrement_release(
-        bool copyout, bool finalize,
-        bool blocking, gpufortrt_queue_t queue) {
-  this->dec_refs(gpufortrt_counter_dynamic);
-  if ( this->can_be_destroyed(0) || finalize ) {
+  if ( this->can_be_destroyed(0) ) {
     // if both structured and dynamic reference counters are zero, 
     // a copyout action is performed
     if (  copyout ) {

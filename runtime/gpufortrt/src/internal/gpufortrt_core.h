@@ -8,14 +8,7 @@
 
 #include "../gpufortrt_types.h"
 
-#define HIP_CHECK(condition)         \
-  {                                  \
-    hipError_t error = condition;    \
-    if(error != hipSuccess){         \
-        std::cout << "HIP error: " << error << " line: " << __LINE__ << std::endl; \
-        exit(error); \
-    } \
-  }
+#include "auxiliary.h"
 
 namespace gpufortrt {
   namespace internal {
@@ -92,7 +85,8 @@ namespace gpufortrt {
         const int id,
         void* hostptr,
         const size_t num_bytes,
-        const gpufortrt_map_kind_t map_kind,
+        const bool allocate_device_buffer,
+        const bool copy_to_device,
         const bool blocking,
         gpufortrt_queue_t queue,
         const bool reuse_existing);
@@ -104,19 +98,14 @@ namespace gpufortrt {
       /* Destroy this record. */
       void destroy();
 
-      /** Decrement the structured reference counter,
-       *  release the record if all counters are zero.
-       *  Perform a copy out operation if map kind requires this.
-       */
-      void structured_decrement_release(
-        const gpufortrt_map_kind_t map_kind, 
-        const bool blocking, gpufortrt_queue_t queue);
-
-      /** Decrement the unstructured reference counter,
+      /** Decrement the specified reference counter,
        *  release the record if all counters are zero.
        *  Perform a copy out operation if specified.
+       *  \param[in] finalize sets the dynamic reference counter to zero.
+       *             An exception is thrown if the any other counter is specified.
        */
-      void unstructured_decrement_release(
+      void decrement_release(
+        const gpufortrt_counter_t ctr_to_update,
         const bool copyout, const bool finalize,
         const bool blocking, gpufortrt_queue_t queue);
     };
@@ -181,9 +170,9 @@ namespace gpufortrt {
         * \note Not thread safe.
         */
        size_t increment_record_if_present(
+         const gpufortrt_counter_t ctr_to_update,
          void* hostptr,
          const size_t num_bytes,
-         const gpufortrt_counter_t ctr_to_update,
          const bool check_restrictions,
          bool& success);
      
@@ -191,19 +180,19 @@ namespace gpufortrt {
         * Creates a record (inclusive the host-to-device memcpy where required) or increments a record's
         * reference counter.
         *
-        * \note Non-alloctable and non-pointer module variables are initialized
-        * with structured reference counter value "1".
+        * \param[in] never_deallocate Initializes records with structured reference counter value "1".
         * \note Not thread safe.
         * \throw std::invalid_argument if the data clause restrictions are violated.
         */
        size_t create_increment_record(
+         const gpufortrt_counter_t ctr_to_update,
          void* hostptr,
          const size_t num_bytes,
-         const gpufortrt_map_kind_t map_kind,
-         const gpufortrt_counter_t ctr_to_update,
+         const bool never_deallocate,
+         const bool allocate_device_buffer,
+         const bool copy_to_device,
          const bool blocking,
-         gpufortrt_queue_t queue,
-         const bool never_deallocate);
+         gpufortrt_queue_t queue);
 
       /**
        * Decrements a record's reference counter and destroys the record if
@@ -213,13 +202,8 @@ namespace gpufortrt {
        * \note Not thread safe.
        * \throw std::invalid_argument if the data clause restrictions are violated.
        */
-       void structured_decrement_release_record(
-         void* hostptr,
-         const size_t num_bytes,
-         const gpufortrt_map_kind_t map_kind,
-         const bool blocking,
-         gpufortrt_queue_t queue);
-       void unstructured_decrement_release_record(
+       void decrement_release_record(
+         const gpufortrt_counter_t ctr_to_update,
          void* hostptr,
          const size_t num_bytes,
          const bool copyout,
@@ -336,7 +320,22 @@ namespace gpufortrt {
     extern size_t num_records;
     extern record_list_t record_list;
     extern queue_record_list_t queue_record_list; 
-    extern structured_region_stack_t structured_region_stack; 
+    extern structured_region_stack_t structured_region_stack;
+
+    /** If the map_kind implies that a device buffer must be allocated. */
+    bool implies_allocate_device_buffer(
+            const gpufortrt_map_kind_t map_kind,
+            const gpufortrt_counter_t ctr);
+    /** If the map_kind implies that the host data must be copied to the device. */
+    bool implies_copy_to_device(const gpufortrt_map_kind_t map_kind);
+    /** If the map_kind implies that the device data must be copied to the host
+     *  at destruction. */
+    bool implies_copy_to_host(const gpufortrt_map_kind_t map_kind);
+
+    /** Offset a record's `deviceptr` by the different of argument `hostptr`
+     * to the record's `hostptr`.*/
+    void* offsetted_record_deviceptr(const record_t& record,void* hostptr);
+
   } // namespace internal
 } // namespace gpufortrt
 

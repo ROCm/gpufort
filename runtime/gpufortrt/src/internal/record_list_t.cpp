@@ -136,9 +136,9 @@ namespace {
 
 // implements the data clause restriction
 size_t gpufortrt::internal::record_list_t::increment_record_if_present(
+   gpufortrt_counter_t ctr_to_update,
    void* hostptr,
    size_t num_bytes,
-   gpufortrt_counter_t ctr_to_update,
    bool check_restrictions,
    bool& success) {
   success = false;
@@ -155,15 +155,17 @@ size_t gpufortrt::internal::record_list_t::increment_record_if_present(
 }
 
 size_t gpufortrt::internal::record_list_t::create_increment_record(
+   gpufortrt_counter_t ctr_to_update,
    void* hostptr,
    size_t num_bytes,
-   gpufortrt_map_kind_t map_kind,
-   gpufortrt_counter_t ctr_to_update,
+   bool never_deallocate,
+   bool allocate_device_buffer,
+   bool copy_to_device,
    bool blocking,
-   gpufortrt_queue_t queue,
-   bool never_deallocate) {
+   gpufortrt_queue_t queue) {
   bool found = false;
-  size_t loc = this->increment_record_if_present(hostptr,num_bytes,ctr_to_update,true/*check ...*/,found/*inout*/);
+  size_t loc = this->increment_record_if_present(
+          ctr_to_update,hostptr,num_bytes,true/*check ...*/,found/*inout*/);
   if ( !found ) { 
     bool reuse_existing = false;
     loc = this->find_available_record(num_bytes,reuse_existing/*inout*/);
@@ -174,7 +176,8 @@ size_t gpufortrt::internal::record_list_t::create_increment_record(
         gpufortrt::internal::num_records++, // increment global not thread-safe
         hostptr,
         num_bytes,
-        map_kind,
+        allocate_device_buffer,
+        copy_to_device,
         blocking,
         queue,
         reuse_existing/*in*/);
@@ -200,32 +203,14 @@ size_t gpufortrt::internal::record_list_t::create_increment_record(
   return loc;
 }
 
-void gpufortrt::internal::record_list_t::structured_decrement_release_record(
-    void* hostptr,
-    size_t num_bytes,
-    gpufortrt_map_kind_t map_kind,
-    bool blocking,
-    gpufortrt_queue_t queue) {
-  bool host_data_contains_hostptr = false;
-  size_t loc = this->find_record(hostptr,1,host_data_contains_hostptr/*inout*/);
-  if ( host_data_contains_hostptr ) {
-    assert(loc >= 0);
-    assert(loc <= this->records.size());
-    gpufortrt::internal::record_t& record = this->records[loc];
-    if ( ::verify_is_proper_section_of_host_data(record,hostptr,num_bytes) ) { 
-      record.structured_decrement_release(
-        map_kind,blocking,queue);
-    }
-  }
-}
-
-void gpufortrt::internal::record_list_t::unstructured_decrement_release_record(
-    void* hostptr,
-    size_t num_bytes,
-    bool copyout,
-    bool finalize,
-    bool blocking,
-    gpufortrt_queue_t queue) {
+void gpufortrt::internal::record_list_t::decrement_release_record(
+  gpufortrt_counter_t ctr_to_update,
+  void* hostptr,
+  size_t num_bytes,
+  bool copyout,
+  bool finalize,
+  bool blocking,
+  gpufortrt_queue_t queue) {
   bool host_data_contains_hostptr;
   size_t loc = this->find_record(hostptr,1,host_data_contains_hostptr/*inout*/);
   if ( host_data_contains_hostptr ) {
@@ -233,7 +218,8 @@ void gpufortrt::internal::record_list_t::unstructured_decrement_release_record(
     assert(loc <= this->records.size());
     gpufortrt::internal::record_t& record = this->records[loc];
     if ( ::verify_is_proper_section_of_host_data(record,hostptr,num_bytes) ) { 
-      record.unstructured_decrement_release(
+      record.decrement_release(
+        ctr_to_update,
         copyout,finalize,
         blocking,queue);
     }

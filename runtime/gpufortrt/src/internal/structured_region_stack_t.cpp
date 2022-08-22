@@ -5,6 +5,12 @@
 #include "auxiliary.h"
 
 // structured_region_stack_entry_t
+namespace {
+  bool is_no_create_entry_without_present_record(const gpufortrt::internal::structured_region_stack_entry_t& entry) {
+    return    entry.map_kind  == gpufortrt_map_kind_no_create
+           && entry.record == nullptr;
+  }
+}
 
 void gpufortrt::internal::structured_region_stack_entry_t::to_string(std::ostream& os) const {
   os << "region:"      << this->region_id        
@@ -46,13 +52,6 @@ void gpufortrt::internal::structured_region_stack_t::push_back(
   LOG_INFO(6,"  record: "<<*entry.record)
   this->entries.push_back(entry); 
 }
-     
-namespace {
-  bool is_no_create_entry_without_present_record(const gpufortrt::internal::structured_region_stack_entry_t& entry) {
-    return    entry.map_kind  == gpufortrt_map_kind_no_create
-           && entry.record == nullptr;
-  }
-}
 
 gpufortrt::internal::record_t* gpufortrt::internal::structured_region_stack_t::find_record(
         void* hostptr,size_t num_bytes,
@@ -79,8 +78,11 @@ void gpufortrt::internal::structured_region_stack_t::leave_structured_region(boo
     if ( entry.region_id == this->current_region ) {
       LOG_INFO(5,"leave structured region: remove stack entry "<<i<<"; "<<entry)
       if ( !::is_no_create_entry_without_present_record(entry) ) {
-        entry.record->structured_decrement_release(
-                entry.map_kind,blocking,queue);
+        entry.record->decrement_release(
+                gpufortrt_counter_structured,
+                gpufortrt::internal::implies_copy_to_host(entry.map_kind),
+                false/*finalize*/,
+                blocking,queue);
       }
       this->entries.pop_back();
     } else {

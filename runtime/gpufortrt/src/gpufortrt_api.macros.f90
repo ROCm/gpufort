@@ -382,7 +382,7 @@ subroutine gpufortrt_update_{{update_kind}}_b(hostptr,num_bytes,condition,if_pre
   !
   interface
     subroutine gpufortrt_update_{{update_kind}}_c_impl(hostptr,condition,if_present) &
-            bind(c,name="gpufortrt_update_host")
+            bind(c,name="gpufortrt_update_{{update_kind}}")
       use iso_c_binding
       implicit none
       type(c_ptr),value,intent(in) :: hostptr

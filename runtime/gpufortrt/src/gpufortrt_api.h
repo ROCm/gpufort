@@ -128,7 +128,6 @@ extern "C" {
 
   void gpufortrt_update_device(
          void* hostptr,
-         size_t num_bytes,
          bool condition,
          bool if_present);
   void gpufortrt_update_device_async(

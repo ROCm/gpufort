@@ -18,7 +18,7 @@ module gpufortrt_api
 
 {{ gam.render_use_device_interface(datatypes,max_rank) | indent(2,True) }}
 
-{{ gam.render_deviceptr_interfaces(datatypes,max_rank) | indent(2,True) }}
+{{ gam.render_interface("gpufortrt_deviceptr",datatypes,max_rank,False) | indent(2,True) }}
 
 contains
 

@@ -267,27 +267,6 @@ end function
 {% endfor %}{# clause #}
 {% endmacro %}
 {#######################################################################################}
-{% macro render_deviceptr_interfaces(datatypes,max_rank) %}
-{#######################################################################################}
-interface gpufortrt_deviceptr
-  function gpufortrt_deviceptr_b(hostptr) & 
-      bind(c,name="gpufortrt_deviceptr") &
-        result(deviceptr)
-    use iso_c_binding, only: c_ptr
-    implicit none
-    type(c_ptr),value,intent(in) :: hostptr
-    !
-    type(c_ptr) :: deviceptr
-  end function
-{% for triple in datatypes %}
-  module procedure :: gpufortrt_deviceptr0_{{triple[0]}}
-{%   for rank in range(1,max_rank+1) %}
-  module procedure :: gpufortrt_deviceptr{{rank}}_{{triple[0]}}
-{%   endfor %}{# rank #}
-{% endfor %}{# datatypes #}
-end interface
-{% endmacro %}
-{#######################################################################################}
 {% macro render_specialized_deviceptr_routines(datatypes,max_rank) %}
 {#######################################################################################}
 {% for triple in datatypes -%}
@@ -376,37 +355,21 @@ subroutine gpufortrt_update_{{update_kind}}_b(hostptr,num_bytes,condition,if_pre
   use gpufortrt_types
   implicit none
   type(c_ptr),intent(in) :: hostptr
-  integer(c_size_t),intent(in),optional :: num_bytes
+  integer(c_size_t),intent(in) :: num_bytes
   logical,intent(in),optional :: condition, if_present
   integer(gpufortrt_handle_kind),intent(in),optional :: async_arg
   !
   interface
-    subroutine gpufortrt_update_{{update_kind}}_c_impl(hostptr,condition,if_present) &
+    subroutine gpufortrt_update_{{update_kind}}_c_impl(hostptr,num_bytes,condition,if_present) &
             bind(c,name="gpufortrt_update_{{update_kind}}")
-      use iso_c_binding
-      implicit none
-      type(c_ptr),value,intent(in) :: hostptr
-      logical(c_bool),value,intent(in) :: condition, if_present
-    end subroutine
-    subroutine gpufortrt_update_{{update_kind}}_section_c_impl(hostptr,num_bytes,condition,if_present) &
-            bind(c,name="gpufortrt_update_{{update_kind}}_section")
       use iso_c_binding
       implicit none
       type(c_ptr),value,intent(in) :: hostptr
       integer(c_size_t),value,intent(in) :: num_bytes
       logical(c_bool),value,intent(in) :: condition, if_present
     end subroutine
-    subroutine gpufortrt_update_{{update_kind}}_async_c_impl(hostptr,condition,if_present,async_arg) &
+    subroutine gpufortrt_update_{{update_kind}}_async_c_impl(hostptr,num_bytes,condition,if_present,async_arg) &
             bind(c,name="gpufortrt_update_{{update_kind}}_async")
-      use iso_c_binding
-      use gpufortrt_types
-      implicit none
-      type(c_ptr),value,intent(in) :: hostptr
-      logical(c_bool),value,intent(in) :: condition, if_present
-      integer(gpufortrt_handle_kind),value,intent(in) :: async_arg
-    end subroutine
-    subroutine gpufortrt_update_{{update_kind}}_section_async_c_impl(hostptr,num_bytes,condition,if_present,async_arg) &
-            bind(c,name="gpufortrt_update_{{update_kind}}_section_async")
       use iso_c_binding
       use gpufortrt_types
       implicit none
@@ -423,30 +386,17 @@ subroutine gpufortrt_update_{{update_kind}}_b(hostptr,num_bytes,condition,if_pre
   if ( present(condition) ) opt_condition = condition
   if ( present(if_present) ) opt_if_present = if_present
   !
-  if ( present(num_bytes) ) then
-    if ( present(async_arg) ) then
-      call gpufortrt_update_{{update_kind}}_section_async_c_impl(hostptr,&
-                                                      num_bytes,&
-                                                      logical(opt_condition,c_bool),&
-                                                      logical(opt_if_present,c_bool),&
-                                                      async_arg)
-    else
-      call gpufortrt_update_{{update_kind}}_section_c_impl(hostptr,&
-                                                num_bytes,&
-                                                logical(opt_condition,c_bool),&
-                                                logical(opt_if_present,c_bool))
-    endif
+  if ( present(async_arg) ) then
+    call gpufortrt_update_{{update_kind}}_async_c_impl(hostptr,&
+                                                       num_bytes,&
+                                                       logical(opt_condition,c_bool),&
+                                                       logical(opt_if_present,c_bool),&
+                                                       async_arg)
   else
-    if ( present(async_arg) ) then
-      call gpufortrt_update_{{update_kind}}_async_c_impl(hostptr,&
-                                              logical(opt_condition,c_bool),&
-                                              logical(opt_if_present,c_bool),&
-                                              async_arg)
-    else
-      call gpufortrt_update_{{update_kind}}_c_impl(hostptr,&
-                                        logical(opt_condition,c_bool),&
-                                        logical(opt_if_present,c_bool))
-    endif
+    call gpufortrt_update_{{update_kind}}_c_impl(hostptr,&
+                                                 num_bytes,&
+                                                 logical(opt_condition,c_bool),&
+                                                 logical(opt_if_present,c_bool))
   endif
 end subroutine
 {% endmacro %}

@@ -35,7 +35,7 @@ extern "C" {
 
   struct gpufortrt_mapping_t {
     void* hostptr                 = nullptr;
-    size_t num_bytes              = 0;
+    std::size_t num_bytes              = 0;
     gpufortrt_map_kind_t map_kind = gpufortrt_map_kind_undefined;
     bool never_deallocate         = false;
   };
@@ -43,7 +43,7 @@ extern "C" {
   void gpufortrt_mapping_init(
     gpufortrt_mapping_t* mapping,
     void* hostptr,
-    size_t num_bytes,
+    std::size_t num_bytes,
     gpufortrt_map_kind_t map_kind,
     bool never_deallocate);
     

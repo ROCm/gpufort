@@ -43,7 +43,7 @@ namespace gpufortrt {
   namespace internal {
     /** Set `variable` from environment variable with identifier `env_var`.*/
     void set_from_environment(int& variable,const char* env_var); 
-    void set_from_environment(size_t& variable,const char* env_var);
+    void set_from_environment(std::size_t& variable,const char* env_var);
     void set_from_environment(double& variable,const char* env_var);
 
     extern int LOG_LEVEL; //< The global log level, defaults to 0.

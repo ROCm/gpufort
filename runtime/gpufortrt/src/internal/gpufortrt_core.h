@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <vector>
+#include <tuple>
 #include <cstddef>
 
 #include "../gpufortrt_types.h"
@@ -17,13 +18,13 @@ namespace gpufortrt {
      * \note: Data layout must match that of Fortran `record_t` type!
      */
     struct record_t {
-      int id                = -1;
-      void* hostptr         = nullptr;
-      void* deviceptr       = nullptr;
-      size_t used_bytes     = 0;
-      size_t reserved_bytes = 0;
-      int struct_refs       = 0;
-      int dyn_refs          = 0;
+      int id = -1;
+      void* hostptr = nullptr; //> Typically points to an address in host memory.
+      void* deviceptr = nullptr; //> typically points to an address in device memory.
+      std::size_t num_bytes = 0;   //> Number of mapped bytes.
+      std::size_t reserved_bytes = 0; //> Device buffer size, might be larger than `num_bytes`.
+      int struct_refs = 0; //> Structured references counter.
+      int dyn_refs = 0;    //> Dynamic references counter.
 
     public:
       /** Write string representation of 
@@ -57,7 +58,7 @@ namespace gpufortrt {
         gpufortrt_queue_t queue);
       void copy_section_to_device(
         void* hostptr,
-        const size_t num_bytes,
+        const std::size_t num_bytes,
         const bool blocking,
         gpufortrt_queue_t queue);
       /** Copy device data to host. */
@@ -66,26 +67,35 @@ namespace gpufortrt {
         gpufortrt_queue_t queue);
       void copy_section_to_host(
         void* hostptr,
-        const size_t num_bytes,
+        const std::size_t num_bytes,
         const bool blocking,
         gpufortrt_queue_t queue);
 
       /**
-       * \return If the host data section described by `hostptr` and num_bytes
-       * fits into the host data region associated with this record.
+       * \return Tuple: If the host data byte address `hostptr`
+       *         fits into the host data region associated with this record (entry 0),
+       *         and the offset in bytes between `hostptr` and the record's `hostptr` member.
+       * \note If the record's host data uses 0 bytes, the `hostptr` must point
+       *       to the record's `hostptr`. Otherwise, `false` is returned.
+       */
+      std::tuple<bool,std::ptrdiff_t> is_host_data_element(void* hostptr) const;
+
+      /**
+       * \return Tuple: If the host data byte address `hostptr`
+       *         fits into the host data region associated with this record (entry 0),
+       *         and the offset in bytes between `hostptr` and the record's `hostptr` member.
+       * \note If the record's host data uses 0 bytes, the `hostptr` must point
+       *       to the record's hostptr and `num_bytes` must be 0. Otherwise, `false` is returned.
        * \param[in] num_bytes Number of bytes of the searched region,
        *            must be at least 1. Otherwise, an exception is thrown.
-       * \param[inout] offset_bytes Offset of `hostptr`in bytes with respect to this
-       *               record's `hostptr` member.
        */
-      bool is_host_data_subset(
-        void* hostptr, size_t num_bytes, std::ptrdiff_t& offset_bytes) const;
+      std::tuple<bool,std::ptrdiff_t> is_host_data_subset(void* hostptr,std::size_t num_bytes) const;
       
       /* Setup this record. Constructor. */
       void setup(
         const int id,
         void* hostptr,
-        const size_t num_bytes,
+        const std::size_t num_bytes,
         const bool allocate_device_buffer,
         const bool copy_to_device,
         const bool blocking,
@@ -114,11 +124,21 @@ namespace gpufortrt {
     struct record_list_t {
       std::vector<record_t> records;
       int last_record_index = 0;
-      size_t total_memory_bytes = 0;
+      std::size_t total_memory_bytes = 0;
     public:
+       /**
+        * \note Not thread safe
+        */
        record_t& operator[](const int i);
+       
+       /**
+        * \note Not thread safe
+        */
        const record_t& operator[](const int i) const;
 
+       /**
+        * \note Not thread safe
+        */
        void reserve(const int capacity);
        
        /** 
@@ -127,25 +147,35 @@ namespace gpufortrt {
         */
        void to_string(std::ostream& os) const;
        
+       /**
+        * \note Not thread safe
+        */
        void destroy();
     
        /**
         * Finds a record that carries the given hostptr and returns the location.
         *
         * \note Not thread safe
+        * \return Tuple: If the host address `hostptr` could be associated with a record (entry 0),
+        *         the location in the list (entry 1)
+        *         and the offset in bytes between `hostptr` and the record's `hostptr` member (entry 2).
+        * 
+        * \note Not thread safe
         */
-       size_t find_record(void* hostptr,bool& success) const;
+       std::tuple<bool,std::size_t,std::ptrdiff_t> find_record(void* hostptr) const;
        
        /**
         * Finds a record whose associated host data fits the data
         * section described by `hostptr` and `num_bytes`.
         *
-        * \param[in] num_bytes Number of bytes of the searched region,
-        *            must be at least 1. Otherwise, an exception is thrown.
-        *
+        * \param[in] num_bytes Number of bytes of the searched region.
+        * \return Tuple: If the host address `hostptr` could be associated with a record (entry 0),
+        *         the location in the list (entry 1)
+        *         and the offset in bytes between `hostptr` and the record's `hostptr` member (entry 2).
+        * 
         * \note Not thread safe
         */
-       size_t find_record(void* hostptr,const size_t num_bytes,bool& success) const;
+       std::tuple<bool,std::size_t,std::ptrdiff_t> find_record(void* hostptr,std::size_t num_bytes) const;
 
        /**
         * Searches first available record from the begin of the record search space.
@@ -159,23 +189,24 @@ namespace gpufortrt {
         *
         * \note Not thread safe.
         *
-        * \param[inout] reuse_existing Is set to true if an existing record and its device buffer were reused.
+        * \return Tuple: Location of the record (entry 0) and if 
+        *         an existing record and its device buffer can be reused (entry 1).
         */
-       size_t find_available_record(const size_t num_bytes,bool& reuse_existing);
+       std::tuple<std::size_t,bool> find_available_record(const std::size_t num_bytes);
 
        /**
         * Increments a record's reference counter.
         * \param[in] check_restrictions check the data clause restrictions
-        * \param[inout] success Indicates that a mapping of `hostptr` could be found.
+        * \return Tuple: If a record associated with `hostptr` could be found (entry 0),
+        *         and location of the record in the list (entry 1).
         * \throw std::invalid_argument if the data clause restrictions are violated, if not specified otherwise.
         * \note Not thread safe.
         */
-       size_t increment_record_if_present(
+       std::tuple<bool,std::size_t> increment_record_if_present(
          const gpufortrt_counter_t ctr_to_update,
          void* hostptr,
-         const size_t num_bytes,
-         const bool check_restrictions,
-         bool& success);
+         const std::size_t num_bytes,
+         const bool check_restrictions);
      
        /**
         * Creates a record (inclusive the host-to-device memcpy where required) or increments a record's
@@ -185,10 +216,10 @@ namespace gpufortrt {
         * \note Not thread safe.
         * \throw std::invalid_argument if the data clause restrictions are violated.
         */
-       size_t create_increment_record(
+       std::size_t create_increment_record(
          const gpufortrt_counter_t ctr_to_update,
          void* hostptr,
-         const size_t num_bytes,
+         const std::size_t num_bytes,
          const bool never_deallocate,
          const bool allocate_device_buffer,
          const bool copy_to_device,
@@ -206,7 +237,7 @@ namespace gpufortrt {
        void decrement_release_record(
          const gpufortrt_counter_t ctr_to_update,
          void* hostptr,
-         const size_t num_bytes,
+         const std::size_t num_bytes,
          const bool copyout,
          const bool finalize,
          const bool blocking,
@@ -214,10 +245,16 @@ namespace gpufortrt {
     };
 
     struct structured_region_stack_entry_t {
-      int region_id = -1;
-      gpufortrt_map_kind_t map_kind = gpufortrt_map_kind_undefined;
-      record_t* record = nullptr;
+      int region_id = -1; //> Identifier of a structured region.
+      gpufortrt_map_kind_t map_kind = gpufortrt_map_kind_undefined; //> Kind of mapping.
+      void* hostptr = nullptr; //> Typically points to an address in host memory.
+      std::size_t num_bytes = 0;   //> Number of mapped bytes.
+      record_t* record = nullptr; //> Points to a record in the record list, or is nullptr.
     public:
+      structured_region_stack_entry_t(const int region_id,
+                                      const gpufortrt_map_kind_t map_kind,
+                                      void* hostptr,
+                                      const std::size_t num_bytes);
       structured_region_stack_entry_t(const int region_id,
                                       const gpufortrt_map_kind_t map_kind,
                                       record_t* record);
@@ -239,6 +276,14 @@ namespace gpufortrt {
       void enter_structured_region();
       
       /**
+       * Push a new stack entry without associated record to stack
+       * and associate it with the current region.
+       */
+      void push_back(const gpufortrt_map_kind_t map_kind,
+                     void* hostptr,
+                     const std::size_t num_bytes);
+      
+      /**
        * Push a new record on the stack 
        * and associate it with the current region.
        */
@@ -247,16 +292,18 @@ namespace gpufortrt {
       
       /**
        * Find an entry in the stack that is associated with `hostptr`.
-       * \return a pointer to a record that contains the data that the `hostptr`
-       *         points too, or nullptr.
-       * \param[in] num_bytes Number of bytes of the searched region,
-       *            must be at least 1. Otherwise, an exception is thrown.
-       * \param[inout] no_create_without_present_record Indicates that a `no_create`
-       *               mapping was applied to `hostptr` but no record exists for `hostptr`.
+       * \return Tuple: Flag indicating success (entry 0). A pointer to a record that contains the data that the `hostptr`
+       *         points to, or `nullptr` (entry 1).
+       *         Offset with respect to the found record's host data (entry 2).
+       *         Flag indicating that a `no_create` mapping was applied to `hostptr` but 
+       *         no record exists for `hostptr` (entry 3).
        */
-      record_t* find_record(void* hostptr,
-                            const size_t num_bytes,
-                            bool& no_create_without_present_record) const;
+      std::tuple<
+        bool,
+        gpufortrt::internal::record_t*,
+        std::ptrdiff_t,
+        bool> 
+            find_record(void* hostptr) const;
 
       /** 
        * Decrement the structured reference counter of 
@@ -288,7 +335,7 @@ namespace gpufortrt {
       /** Find queue record with the given `id`.
        * \param[inout] success The returned index is only valid if success indicates 'true'.
        */
-      size_t find_record(const int id,bool& success) const;
+      std::tuple<bool,std::size_t> find_record(const int id) const;
     public:
       queue_record_t& operator[](const int i);
       const queue_record_t& operator[](const int i) const;
@@ -308,9 +355,9 @@ namespace gpufortrt {
     };
 
     // global parameters, influenced by environment variables
-    extern size_t INITIAL_QUEUE_RECORDS_CAPACITY;//= 128
-    extern size_t INITIAL_RECORDS_CAPACITY;//= 4096
-    extern size_t INITIAL_STRUCTURED_REGION_STACK_CAPACITY;//= 128
+    extern std::size_t INITIAL_QUEUE_RECORDS_CAPACITY;//= 128
+    extern std::size_t INITIAL_RECORDS_CAPACITY;//= 4096
+    extern std::size_t INITIAL_STRUCTURED_REGION_STACK_CAPACITY;//= 128
     // reuse/fragmentation controls
     extern int BLOCK_SIZE;            // = 32
     extern double REUSE_THRESHOLD;    // = 0.9 //> only reuse record if mem_new>=factor*mem_old
@@ -318,7 +365,7 @@ namespace gpufortrt {
 
     // global variables
     extern bool initialized;
-    extern size_t num_records;
+    extern std::size_t num_records;
     extern record_list_t record_list;
     extern queue_record_list_t queue_record_list; 
     extern structured_region_stack_t structured_region_stack;
@@ -332,10 +379,45 @@ namespace gpufortrt {
     /** If the map_kind implies that the device data must be copied to the host
      *  at destruction. */
     bool implies_copy_to_host(const gpufortrt_map_kind_t map_kind);
+   
+    template<typename T>
+    std::tuple<bool,std::ptrdiff_t> is_host_data_element(const T& t,void* hostptr) {
+      bool result = false;
+      std::ptrdiff_t offset = static_cast<char*>(hostptr) - static_cast<char*>(t.hostptr);
+      if ( t.num_bytes > 0 ) {
+        result = offset >= 0 && offset < t.num_bytes;    
+      } else { // If this record maps a zero-size memory block
+        result = offset == 0;
+      }
+      return std::make_tuple(result, offset);
+    }
+    
+    template<typename T>
+    std::tuple<bool,std::ptrdiff_t> is_host_data_subset(const T& t,void* hostptr, std::size_t num_bytes) {
+      bool result = false;
+      std::ptrdiff_t offset = static_cast<char*>(hostptr) - static_cast<char*>(t.hostptr);
+      if ( t.num_bytes > 0 ) {
+        result = offset >= 0 && (offset + num_bytes <= t.num_bytes);    
+      } else { // If this record maps a zero-size memory block, the input must be a zero-size memory block with the same address.
+        result = offset == 0 && num_bytes == 0;
+      }
+      return std::make_tuple(result, offset);
+    }
+    
+    /** Offset a record's `deviceptr` by `offset`.*/
+    template<typename T>
+    void* offsetted_record_deviceptr(const T& t,std::ptrdiff_t offset) {
+      return static_cast<void*>(static_cast<char*>(t.deviceptr) + offset);
+    }
 
     /** Offset a record's `deviceptr` by the different of argument `hostptr`
      * to the record's `hostptr`.*/
-    void* offsetted_record_deviceptr(const record_t& record,void* hostptr);
+    template<typename T>
+    void* offsetted_record_deviceptr(const T& t,void* hostptr) {
+      auto element_tuple/*is_element,offset*/ = gpufortrt::internal::is_host_data_element(t,hostptr);
+      return offsetted_record_deviceptr(t,std::get<1>(element_tuple));
+    }
+
 
   } // namespace internal
 } // namespace gpufortrt

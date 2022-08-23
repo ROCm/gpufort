@@ -39,67 +39,67 @@ extern "C" {
   
   void gpufortrt_delete(
           void* hostptr,
-          size_t num_bytes);
+          std::size_t num_bytes);
   void gpufortrt_delete_finalize(
           void* hostptr,
-          size_t num_bytes);
+          std::size_t num_bytes);
   void gpufortrt_delete_async(
           void* hostptr,
-          size_t num_bytes,
+          std::size_t num_bytes,
           int async_arg);
   void gpufortrt_delete_finalize_async(
           void* hostptr,
-          size_t num_bytes,
+          std::size_t num_bytes,
           int async_arg);
   
   void gpufortrt_copyout(
          void* hostptr,
-         size_t num_bytes);
+         std::size_t num_bytes);
   void gpufortrt_copyout_async(
          void* hostptr,
-         size_t num_bytes,
+         std::size_t num_bytes,
          int async_arg);
   void gpufortrt_copyout_finalize(
          void* hostptr,
-         size_t num_bytes);
+         std::size_t num_bytes);
   void gpufortrt_copyout_finalize_async(
          void* hostptr,
-         size_t num_bytes,
+         std::size_t num_bytes,
          int async_arg);
   
   // increment dynamic reference counter
   
   void* gpufortrt_present(
           void* hostptr,
-          size_t num_bytes);
+          std::size_t num_bytes);
   
   void* gpufortrt_create(
           void* hostptr,
-          size_t num_bytes,
+          std::size_t num_bytes,
           bool never_deallocate);
   void* gpufortrt_create_async(
           void* hostptr,
-          size_t num_bytes,
+          std::size_t num_bytes,
           int async_arg,
           bool never_deallocate);
   
   void* gpufortrt_copyin(
           void* hostptr,
-          size_t num_bytes,
+          std::size_t num_bytes,
           bool never_deallocate);
   void* gpufortrt_copyin_async(
           void* hostptr,
-          size_t num_bytes,
+          std::size_t num_bytes,
           int async_arg,
           bool never_deallocate);
   
   void* gpufortrt_copy(
          void* hostptr,
-         size_t num_bytes,
+         std::size_t num_bytes,
          bool never_deallocate);
   void* gpufortrt_copy_async(
          void* hostptr,
-         size_t num_bytes,
+         std::size_t num_bytes,
          int async_arg,
          bool never_deallocate);
 
@@ -107,42 +107,24 @@ extern "C" {
 
   void gpufortrt_update_self(
          void* hostptr,
+         std::size_t num_bytes,
          bool condition,
          bool if_present);
   void gpufortrt_update_self_async(
          void* hostptr,
-         bool condition,
-         bool if_present,
-         int async_arg);
-  void gpufortrt_update_self_section(
-         void* hostptr,
-         size_t num_bytes,
-         bool condition,
-         bool if_present);
-  void gpufortrt_update_self_section_async(
-         void* hostptr,
-         size_t num_bytes,
+         std::size_t num_bytes,
          bool condition,
          bool if_present,
          int async_arg);
 
   void gpufortrt_update_device(
          void* hostptr,
+         std::size_t num_bytes,
          bool condition,
          bool if_present);
   void gpufortrt_update_device_async(
          void* hostptr,
-         bool condition,
-         bool if_present,
-         int async_arg);
-  void gpufortrt_update_device_section(
-         void* hostptr,
-         size_t num_bytes,
-         bool condition,
-         bool if_present);
-  void gpufortrt_update_device_section_async(
-         void* hostptr,
-         size_t num_bytes,
+         std::size_t num_bytes,
          bool condition,
          bool if_present,
          int async_arg);

@@ -23,7 +23,7 @@ void gpufortrt::internal::queue_record_list_t::reserve(int capacity) {
 }
 
 void gpufortrt::internal::queue_record_list_t::destroy() {
-  for (size_t i = 0; i < records.size(); i++) {
+  for (std::size_t i = 0; i < records.size(); i++) {
     if ( this->records[i].is_initialized() ) {
       this->records[i].destroy();
     }
@@ -31,10 +31,10 @@ void gpufortrt::internal::queue_record_list_t::destroy() {
   this->records.clear();
 }
 
-size_t gpufortrt::internal::queue_record_list_t::find_record(int id,bool& success) const {
-  success = false;
-  size_t loc = 0; // typically size_t is unsigned
-  for (size_t i = 0; i < this->records.size(); i++) {
+std::tuple<bool,std::size_t> gpufortrt::internal::queue_record_list_t::find_record(int id) const {
+  bool success = false;
+  std::size_t loc = 0; // typically std::size_t is unsigned
+  for (std::size_t i = 0; i < this->records.size(); i++) {
     auto& record = this->records[i];
     if ( record.id == id ) {
       loc = i;
@@ -42,13 +42,14 @@ size_t gpufortrt::internal::queue_record_list_t::find_record(int id,bool& succes
       break;
     }
   }
-  return loc;
+  return std::make_tuple(success,loc);
 }
 
 gpufortrt_queue_t gpufortrt::internal::queue_record_list_t::use_create_queue(int id) {
   if ( id > 0 ) { 
-    bool success = false;
-    size_t loc = this->find_record(id,success/*inout*/); 
+    auto queues_tuple/*success,loc*/ = this->find_record(id);
+    const bool& success = std::get<0>(queues_tuple);
+    const std::size_t& loc = std::get<1>(queues_tuple);
     if ( success ) {
       LOG_INFO(3,"use existing queue; " << this->records[loc])
       return this->records[loc].queue; 

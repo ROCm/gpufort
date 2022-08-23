@@ -15,7 +15,7 @@ void gpufortrt::internal::record_t::to_string(std::ostream& os) const {
      << ", initialized:"      << this->is_initialized() 
      << ", used:"             << this->is_used() 
      << ", released:"         << this->is_released() 
-     << ", used_bytes:"       << this->used_bytes 
+     << ", used_bytes:"       << this->num_bytes 
      << ", reserved_bytes:"   << this->reserved_bytes
      << ", struct_refs:"      << this->struct_refs  
      << ", dyn_refs:"         << this->dyn_refs;
@@ -83,7 +83,7 @@ void gpufortrt::internal::record_t::release() {
 }
 
 namespace {
-  size_t blocked_size(size_t num_bytes,size_t block_size) {
+  std::size_t blocked_size(std::size_t num_bytes,std::size_t block_size) {
     return (((num_bytes)+block_size-1)/block_size) * block_size;
   }
 }
@@ -91,7 +91,7 @@ namespace {
 void gpufortrt::internal::record_t::setup(
     int id,
     void* hostptr,
-    size_t num_bytes,
+    std::size_t num_bytes,
     bool allocate_device_buffer,
     bool copy_to_device,
     bool blocking,
@@ -108,7 +108,7 @@ void gpufortrt::internal::record_t::setup(
   this->hostptr = hostptr;
   this->struct_refs = 0;
   this->dyn_refs = 0;
-  this->used_bytes = num_bytes;
+  this->num_bytes = num_bytes;
   if ( !reuse_existing ) {
     this->id = id; // TODO not thread-safe
     this->reserved_bytes = ::blocked_size(num_bytes,gpufortrt::internal::BLOCK_SIZE);
@@ -127,7 +127,7 @@ void gpufortrt::internal::record_t::destroy() {
   if ( this->deviceptr != nullptr ) {
     HIP_CHECK(hipFree(this->deviceptr)) // TODO backend-specific, externalize
     this->deviceptr = nullptr;
-    this->used_bytes = 0;
+    this->num_bytes = 0;
     this->reserved_bytes = 0;
   }
   this->hostptr     = nullptr;
@@ -140,18 +140,18 @@ void gpufortrt::internal::record_t::copy_to_device(
   LOG_INFO(3,"copy to device" 
            << "; record_hostptr:" << this->hostptr
            << ", record_deviceptr:" << this->deviceptr
-           << ", record_used_bytes:" << this->used_bytes
+           << ", record_used_bytes:" << this->num_bytes
            << ", blocking:" << blocking
            << ", queue:" << queue)
   #ifndef BLOCKING_COPIES
   if ( !blocking ) {
     // TODO backend-specific, externalize
     HIP_CHECK(hipMemcpyAsync(this->deviceptr,this->hostptr,
-      this->used_bytes,hipMemcpyHostToDevice,queue))
+      this->num_bytes,hipMemcpyHostToDevice,queue))
 } else {
   #endif
     // TODO backend-specific, externalize
-    HIP_CHECK(hipMemcpy(this->deviceptr,this->hostptr,this->used_bytes,hipMemcpyHostToDevice))
+    HIP_CHECK(hipMemcpy(this->deviceptr,this->hostptr,this->num_bytes,hipMemcpyHostToDevice))
   #ifndef BLOCKING_COPIES
   }
   #endif
@@ -163,51 +163,45 @@ void gpufortrt::internal::record_t::copy_to_host(
   LOG_INFO(3,"copy to host" 
            << "; record_hostptr:" << this->hostptr
            << ", record_deviceptr:" << this->deviceptr
-           << ", record_used_bytes:" << this->used_bytes
+           << ", record_used_bytes:" << this->num_bytes
            << ", blocking:" << blocking
            << ", queue:" << queue)
   #ifndef BLOCKING_COPIES
   if ( !blocking ) {
     // TODO backend-specific, externalize
     HIP_CHECK(hipMemcpyAsync(this->hostptr,this->deviceptr,
-      this->used_bytes,hipMemcpyDeviceToHost,queue))
+      this->num_bytes,hipMemcpyDeviceToHost,queue))
 } else {
   #endif
     // TODO backend-specific, externalize
-    HIP_CHECK(hipMemcpy(this->hostptr,this->deviceptr,this->used_bytes,hipMemcpyDeviceToHost))
+    HIP_CHECK(hipMemcpy(this->hostptr,this->deviceptr,this->num_bytes,hipMemcpyDeviceToHost))
   #ifndef BLOCKING_COPIES
   }
   #endif
 }
 
-bool gpufortrt::internal::record_t::is_host_data_subset(
-    void* hostptr, size_t num_bytes, std::ptrdiff_t& offset_bytes) const {
-  if ( num_bytes < 1 ) {
-    throw std::invalid_argument("is_host_data_subset: argument `num_bytes` must be greater than or equal to 1");
-  }
-  offset_bytes = static_cast<char*>(hostptr) - static_cast<char*>(this->hostptr);
-  return (offset_bytes >= 0) && ((offset_bytes+num_bytes) <= this->used_bytes);    
-}
-
 void gpufortrt::internal::record_t::copy_section_to_device(
-  void* hostptr,
-  size_t num_bytes,
-  bool blocking,
-  gpufortrt_queue_t queue) {
-  std::ptrdiff_t offset_bytes;
-  if ( !this->is_host_data_subset(hostptr,num_bytes,offset_bytes/*inout*/) ) {
-    throw std::invalid_argument("copy_section_to_device: data section is no subset of record data");
+    void* hostptr,
+    std::size_t num_bytes,
+    bool blocking,
+    gpufortrt_queue_t queue) {
+  auto subset_tuple/*is_subset,offset*/ = gpufortrt::internal::is_host_data_subset(*this,hostptr,num_bytes);
+  const bool& is_subset = std::get<0>(subset_tuple);
+  const std::ptrdiff_t& offset = std::get<1>(subset_tuple);
+  //
+  if ( !is_subset ) {
+    LOG_ERROR("copy_section_to_device: data section is no subset of record data")
   }
   void* deviceptr_section_begin = static_cast<void*>(
-      static_cast<char*>(this->deviceptr) + offset_bytes);
+      static_cast<char*>(this->deviceptr) + offset);
   LOG_INFO(3,"copy section to device" 
            << "; hostptr:" << hostptr
            << ", deviceptr:" << deviceptr_section_begin
            << ", num_bytes:" << num_bytes
-           << ", offset_bytes:" << offset_bytes
+           << ", offset:" << offset
            << ", record_hostptr:" << this->hostptr
            << ", record_deviceptr:" << this->deviceptr
-           << ", record_used_bytes:" << this->used_bytes
+           << ", record_used_bytes:" << this->num_bytes
            << ", blocking:" << blocking
            << ", queue:" << queue)
   #ifndef BLOCKING_COPIES
@@ -233,23 +227,26 @@ void gpufortrt::internal::record_t::copy_section_to_device(
 
 void gpufortrt::internal::record_t::copy_section_to_host(
   void* hostptr,
-  size_t num_bytes,
+  std::size_t num_bytes,
   bool blocking,
   gpufortrt_queue_t queue) {
-  std::ptrdiff_t offset_bytes;
-  if ( !this->is_host_data_subset(hostptr,num_bytes,offset_bytes/*inout*/) ) {
-    throw std::invalid_argument("copy section to host: data section is no subset of record data");
+  auto subset_tuple/*is_subset,offset*/ = gpufortrt::internal::is_host_data_subset(*this,hostptr,num_bytes);
+  const bool& is_subset = std::get<0>(subset_tuple);
+  const std::ptrdiff_t& offset = std::get<1>(subset_tuple);
+  //
+  if ( !is_subset ) {
+    LOG_ERROR("copy_section_to_host: data section is no subset of record data")
   }
   void* deviceptr_section_begin = static_cast<void*>(
-      static_cast<char*>(this->deviceptr) + offset_bytes);
+      static_cast<char*>(this->deviceptr) + offset);
   LOG_INFO(3,"copy_section_to_host" 
            << "; hostptr:" << hostptr
            << ", deviceptr:" << deviceptr_section_begin
            << ", num_bytes:" << num_bytes
-           << ", offset_bytes:" << offset_bytes
+           << ", offset:" << offset
            << ", record_hostptr:" << this->hostptr
            << ", record_deviceptr:" << this->deviceptr
-           << ", record_used_bytes:" << this->used_bytes
+           << ", record_used_bytes:" << this->num_bytes
            << ", blocking:" << blocking
            << ", queue:" << queue)
   #ifndef BLOCKING_COPIES

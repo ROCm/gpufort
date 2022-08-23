@@ -27,11 +27,23 @@ module gpufortrt_api_core
   interface gpufortrt_present
     function gpufortrt_present_b(hostptr,num_bytes) &
         bind(c,name="gpufortrt_present") result(deviceptr)
-      use iso_c_binding
+      use iso_c_binding, only: c_ptr, c_size_t
       use gpufortrt_types, only: gpufortrt_counter_none
       implicit none
       type(c_ptr),value,intent(in) :: hostptr
       integer(c_size_t),value,intent(in) :: num_bytes
+      !
+      type(c_ptr) :: deviceptr
+    end function
+  end interface
+
+  interface gpufortrt_deviceptr
+    function gpufortrt_deviceptr_b(hostptr) & 
+        bind(c,name="gpufortrt_deviceptr") &
+          result(deviceptr)
+      use iso_c_binding, only: c_ptr, c_size_t
+      implicit none
+      type(c_ptr),value,intent(in) :: hostptr
       !
       type(c_ptr) :: deviceptr
     end function

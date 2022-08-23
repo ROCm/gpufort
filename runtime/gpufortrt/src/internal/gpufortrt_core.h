@@ -18,7 +18,7 @@ namespace gpufortrt {
      * \note: Data layout must match that of Fortran `record_t` type!
      */
     struct record_t {
-      int id = -1;
+      int id = -1; //> Id of this record. Negative id means that the record is not initialized.
       void* hostptr = nullptr; //> Typically points to an address in host memory.
       void* deviceptr = nullptr; //> typically points to an address in device memory.
       std::size_t num_bytes = 0;   //> Number of mapped bytes.
@@ -30,8 +30,14 @@ namespace gpufortrt {
       /** Write string representation of 
        * this record to the ostream. */
       void to_string(std::ostream& os) const;
-      /** If data is allocated for this record. If a 
-       * record is initialized it can be used or released. */
+      /** 
+       * If this record is initalized. 
+       * If a record is initialized it can be used or released.
+       * \note If the record is initialized, this does not necessary mean that
+       *       device data has been allocated for it.
+       *       This is for example not the case if a zero-length array has been
+       *       mapped onto the device.
+       * */
       bool is_initialized() const;
       /** If the records' device data is used, i.e. if 
        * any of the counter is positive. */

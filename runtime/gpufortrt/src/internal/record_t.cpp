@@ -12,7 +12,6 @@ void gpufortrt::internal::record_t::to_string(std::ostream& os) const {
   os << "id:"                 << this->id        
      << ", hostptr:"          << this->hostptr  
      << ", deviceptr:"        << this->deviceptr
-     << ", initialized:"      << this->is_initialized() 
      << ", used:"             << this->is_used() 
      << ", released:"         << this->is_released() 
      << ", used_bytes:"       << this->num_bytes 
@@ -27,7 +26,7 @@ std::ostream& operator<<(std::ostream& os,const gpufortrt::internal::record_t& r
 }
 
 bool gpufortrt::internal::record_t::is_initialized() const {
-  return this->deviceptr != nullptr;
+  return this->id >= 0;
 }
 bool gpufortrt::internal::record_t::is_used() const {
   return this->is_initialized() &&
@@ -130,7 +129,8 @@ void gpufortrt::internal::record_t::destroy() {
     this->num_bytes = 0;
     this->reserved_bytes = 0;
   }
-  this->hostptr     = nullptr;
+  this->id = -1;
+  this->hostptr = nullptr;
   this->struct_refs = 0;
 }
 

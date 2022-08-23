@@ -68,7 +68,7 @@ namespace {
     LOG_INFO(2, "no_create;")
     if ( !gpufortrt::internal::initialized ) LOG_ERROR("no_create_action: runtime not initialized")
     if ( hostptr != nullptr ) { // nullptr means no-op
-      auto inc_tuple/*loc*/ = gpufortrt::internal::record_list.increment_record_if_present(
+      auto inc_tuple/*present,loc*/ = gpufortrt::internal::record_list.increment_record_if_present(
               ctr_to_update,hostptr,num_bytes,false/*check ...*/);
       const bool& success = std::get<0>(inc_tuple);
       const std::size_t& loc = std::get<1>(inc_tuple); 

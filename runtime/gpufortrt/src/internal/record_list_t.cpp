@@ -41,7 +41,7 @@ std::tuple<bool,std::size_t,std::ptrdiff_t> gpufortrt::internal::record_list_t::
   } else {
     for ( std::size_t i = 0; i < this->records.size(); i++ ) {
       auto& record = this->records[i];
-      if ( record.is_initialized() ) {
+      if ( record.is_initialized() ) { // TODO this makes the issue
         auto tup/*is_element,offset*/ = gpufortrt::internal::is_host_data_element(record,hostptr);
         if ( std::get<0>(tup) ) {
           success = true;
@@ -100,15 +100,18 @@ std::tuple<std::size_t,bool> gpufortrt::internal::record_list_t::find_available_
   bool reuse_existing = false;
   for ( std::size_t i = 0; i < this->records.size(); i++ ) {
     auto& record = this->records[i];
-    if ( !record.is_initialized() ) {
-      loc = i;
-      break; // break outer loop
-    } else if ( record.is_released() ) {
-      loc = i;
+    if ( record.is_released() ) { // note: since this method deallocates & directly reuses released records,
+                                  // we do not need to consider uninitalized records here.
       // deallocate memory blocks of regions that have not been reused
       // multiple times in a row
-      if ( record.reserved_bytes < num_bytes
-           || num_bytes < record.reserved_bytes * REUSE_THRESHOLD ) {
+      const bool device_buffer_too_small = record.reserved_bytes < num_bytes;            // note: reserved_bytes = blocked_size(num_bytes,BLOCK_SIZE)
+      const bool device_buffer_too_big = num_bytes < record.num_bytes * REUSE_THRESHOLD; // note: do not consider blocked_size here as ratio
+                                                                                         // reserved_bytes/num_bytes is large for small arrays
+                                                                                         // but goes toward 1 for large arrays
+      if ( device_buffer_too_small || device_buffer_too_big ) {
+        LOG_INFO(5,"find_available_record: do not reuse record as device buffer is "
+                << " too_small: " << device_buffer_too_small
+                << ", too_big:" << device_buffer_too_big)
         record.dec_refs(gpufortrt_counter_structured); // decrement structured references
         if ( record.can_be_destroyed(gpufortrt::internal::NUM_REFS_TO_DEALLOCATE) ) {
           record.destroy();
@@ -118,6 +121,7 @@ std::tuple<std::size_t,bool> gpufortrt::internal::record_list_t::find_available_
         }
         // continue search
       } else { // existing buffer is appropriately sized
+        LOG_INFO(5,"find_available_record: reuse record")
         loc = i;
         reuse_existing = true;
         break; // break outer loop
@@ -134,7 +138,10 @@ namespace {
      std::size_t num_bytes,
      bool check_restrictions = true) {
     auto tup/*is_subset,offset*/ = gpufortrt::internal::is_host_data_subset(record,hostptr,num_bytes);
-    if ( std::get<0>(tup) ) {
+    const bool& is_subset = std::get<0>(tup);
+    const std::ptrdiff_t& offset = std::get<1>(tup);
+    //
+    if ( is_subset ) {
       return true;
     } else if ( check_restrictions ) {
       std::stringstream ss;
@@ -155,7 +162,7 @@ std::tuple<bool,std::size_t> gpufortrt::internal::record_list_t::increment_recor
    bool check_restrictions) {
   auto list_tuple/*success,loc,offset*/ = this->find_record(hostptr);
   const bool& found_candidate = std::get<0>(list_tuple);
-  const size_t& loc = std::get<1>(list_tuple);
+  const std::size_t& loc = std::get<1>(list_tuple);
   //
   bool record_present = false;
   if ( found_candidate ) {
@@ -180,8 +187,11 @@ std::size_t gpufortrt::internal::record_list_t::create_increment_record(
   auto inc_tuple/*present,loc*/ = this->increment_record_if_present(
           ctr_to_update,hostptr,num_bytes,true/*check ...*/);
   const bool& present = std::get<0>(inc_tuple);
-  const std::size_t& loc = std::get<1>(inc_tuple);
-  if ( !present ) { 
+  //
+  if ( present ) { 
+    const std::size_t& loc = std::get<1>(inc_tuple);
+    return loc;
+  } else {
     auto avail_tuple/*loc,reuse*/ = this->find_available_record(num_bytes);
     const std::size_t& loc = std::get<0>(avail_tuple);
     const bool& reuse_existing = std::get<1>(avail_tuple);
@@ -189,7 +199,7 @@ std::size_t gpufortrt::internal::record_list_t::create_increment_record(
     if ( loc == this->records.size() ) {
       this->records.emplace_back();
     }
-    auto& record = this->records[std::get<0>(avail_tuple)];
+    auto& record = this->records[loc];
     record.setup(
       gpufortrt::internal::num_records++, // increment global not thread-safe
       hostptr,
@@ -215,8 +225,8 @@ std::size_t gpufortrt::internal::record_list_t::create_increment_record(
       LOG_INFO(3,"reuse record: " << record)
     }
     record.inc_refs(ctr_to_update);
+    return loc;
   }
-  return loc;
 }
 
 void gpufortrt::internal::record_list_t::decrement_release_record(

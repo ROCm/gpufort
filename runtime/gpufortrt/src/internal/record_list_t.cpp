@@ -126,10 +126,10 @@ namespace {
       return true;
     } else if ( check_restrictions ) {
       std::stringstream ss;
-      ss << "host data to map (" << hostptr << " x " << num_bytes << " B) is no subset of already existing record's host data ("
+      ss << "host data to map (" << hostptr << " x " << num_bytes << " B) overlaps with but is no subset of already existing record's host data ("
          << record.hostptr << " x " << record.used_bytes << " B); "
          << "(hostptr - record.hostptr) = " << offset_bytes << " B";
-      throw std::invalid_argument(ss.str());
+      LOG_ERROR(ss.str())
     }
     return false;
   }

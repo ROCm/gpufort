@@ -416,7 +416,6 @@ def _parse_file(linemaps, index, **kwargs):
                 raise util.error.SyntaxError("'acc end kernels' directive without preceding 'acc kernels' directive")
             append_if_not_recording_(new)
             current_acc_data_or_kernels_directive = current_acc_data_or_kernels_directive.parent_directive
-            print(current_acc_data_or_kernels_directive)
             util.logging.log_debug(opts.log_prefix,"_parse_file","leave acc kernels region")
         elif new.is_directive(["acc","end","data"]):
             if not current_acc_data_or_kernels_directive.is_directive(["acc","data"]):

@@ -71,4 +71,3 @@ pretty_print_index_file = False # Pretty print index before writing it to disk.
 gpufort_module_file_suffix = ".gpufort_mod"
 
 scopes = [] # Can be used to preload scopes
-remove_outdated_scopes = False # Set to false if you want to preload scopes via your config file

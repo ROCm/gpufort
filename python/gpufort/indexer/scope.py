@@ -329,16 +329,6 @@ def create_scope(index, tag):
         if tag_tokens[0:len_existing_tag_tokens] == existing_tag_tokens[0:len_existing_tag_tokens]:
             existing_scope = s
             nesting_level = len_existing_tag_tokens - 1
-        else:
-            scopes_to_delete.append(s)
-    # clean up scopes that are not used anymore
-    if opts.remove_outdated_scopes and len(scopes_to_delete):
-        util.logging.log_debug(opts.log_prefix,"create_scope",\
-          "delete outdated scopes with tags '{}'".format(\
-            ", ".join([s["tag"] for s in scopes_to_delete])))
-        for s in scopes_to_delete:
-            opts.scopes.remove(s)
-
     # return existing existing_scope or create it
     if len(tag_tokens) - 1 == nesting_level:
         util.logging.log_debug(opts.log_prefix,"create_scope",\
@@ -366,6 +356,8 @@ def create_scope(index, tag):
         else:
             util.logging.log_debug(opts.log_prefix,"create_scope",\
               "create scope for tag '{}'".format(tag))
+            # store a reference to the index
+            new_scope["index"] = index
             current_record_list = index
             # add top-level procedures to scope of top-level entry
             new_scope["procedures"] += [index_entry for index_entry in index\
@@ -443,15 +435,11 @@ def search_scope_for_var(scope,
     #print([v["name"] for v in scope["variables"]])
 
     result = None
-    # reverse access such that entries from the inner-most scope come first
-    scope_types = list(reversed(scope["types"]))
-
+    
     variable_tag = create_index_search_tag_for_var(var_expr)
     list_of_var_names = variable_tag.split("%")
-    
-    def lookup_from_left_to_right_(scope_vars, pos=0):
+    def lookup_from_left_to_right_(scope_types,scope_vars, pos=0):
         """:note: recursive"""
-        nonlocal scope_types
         nonlocal list_of_var_names
 
         var_name = list_of_var_names[pos]
@@ -462,23 +450,34 @@ def search_scope_for_var(scope,
             if result == None:
                 raise util.error.LookupError("no index record found for variable tag '{}' in scope".format(variable_tag))
         else:
+            # first find derived type var in current scope
             matching_type_var = next((
                 var for var in scope_vars if var["name"] == var_name),
                                      None)
             if matching_type_var == None:
                 raise util.error.LookupError("no index record found for variable tag '{}' in scope".format(variable_tag))
-            # TODO check where type is defined and change scope
+            # then look up type in current scope
             matching_type = next(
                 (typ for typ in scope_types
                  if typ["name"] == matching_type_var["kind"]), None)
             if matching_type == None:
                 raise util.error.LookupError("no index record found for derived type '{}' in scope".format(matching_type_var["kind"]))
+            # check where type is defined and change scope if it is defined in a module/parent procedure/parent program,
+            # as private accessibility/hiding might prevent that an inner type is visible in the current scope
+            if matching_type["parent_tag"] != scope["tag"]:
+                module_scope = create_scope(scope["index"],matching_type["parent_tag"])
+                scope_types = list(reversed(module_scope["types"]))
+            # recursive call
             result = lookup_from_left_to_right_(
+                scope_types,
                 reversed(matching_type["variables"]), pos + 1)
         return result
 
     try:
-        result = lookup_from_left_to_right_(reversed(scope["variables"]))
+        # reverse access such that entries from the inner-most scope come first
+        result = lookup_from_left_to_right_(
+                list(reversed(scope["types"])),
+                reversed(scope["variables"]))
     except util.error.LookupError as e:
         #index_record = _lookup_index_record_hierarchy(scope["tag"])[-1]
         #implicit_spec = index_record["implicit"]

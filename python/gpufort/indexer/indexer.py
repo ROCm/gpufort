@@ -431,18 +431,15 @@ def _parse_statements(linemaps, file_path,**kwargs):
         ]:
             name,attributes,params = util.parsing.parse_type_statement(
                     current_statement)
-            derived_type = {}
+            derived_type = copy.deepcopy(types.EMPTY_TYPE)
             derived_type["name"] = name
             derived_type["kind"] = "type"
             derived_type["attributes"] = attributes
             derived_type["accessibility"] = opts.default_type_accessibility
-            derived_type["public"] = []
-            derived_type["private"] = []
             derived_type["params"] = params
-            derived_type["variables"] = []
-            derived_type["types"] = []
+            derived_type["module"] = current_node._data["name"] if current_node._data["kind"] == "module" else None
             derived_type["file"] = current_linemap["file"]
-            derived_type["lineno"] = current_linemap["lineno"]  
+            derived_type["lineno"] = current_linemap["lineno"]
             current_node._data["types"].append(derived_type)
             current_node = Node("type",
                                 name,

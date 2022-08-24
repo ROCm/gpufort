@@ -3,26 +3,38 @@
 import copy
 
 EMPTY_TYPE = {
-    "name": None, 
-    "variables": [],
-    "file" : None,
-    "lineno" : -1,
+   "name": None,
+   "kind": None,
+   "attributes": [],
+   "accessibility": None,
+   "public": [], 
+   "private": [], 
+   "params": [],
+   "variables": [],
+   # meta information
+   "file": None,
+   "lineno": None,
+   # dummy entries that never carry data,
+   # they make the type look like a module to certain routines
+   # TODO should use dict.get(key,default) instead.
+   "types": [],
 }
 
 EMPTY_PROCEDURE = {
-    "kind": None,
     "name": None,
+    "kind": None,
     "result_name": None,
     "attributes": [],
     "dummy_args": [],
     "variables": [],
     "procedures": [],
     "used_modules": [],
+    # meta information
     "file" : None,
     "lineno" : -1,
 }
 
-EMPTY_SCOPE = {"tag": "", "types": [], "variables": [], "procedures": []}
+EMPTY_SCOPE = {"tag": "", "types": [], "variables": [], "procedures": [], "index": []}
 SCOPE_ENTRY_TYPES = ["types", "variables", "procedures"]
 
 EMPTY_VAR = {
@@ -43,7 +55,7 @@ EMPTY_VAR = {
         # parse rhs if necessary
         "rhs" : None,
         # meta information
-        "module": None,
+        "module": None, # TODO Compare vs parent_tag in scope variables
         "file" : None,
         "lineno" : -1,
 }

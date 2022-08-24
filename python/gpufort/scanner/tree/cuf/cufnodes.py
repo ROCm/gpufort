@@ -42,6 +42,8 @@ class STCufLoopNest(STCufDirective, nodes.STComputeConstruct):
         self.dest_dialect = opts.destination_dialect
 
     def transform(self,joined_lines,joined_statements,*args,**kwargs):
+        if not opts.translate_compute_constructs:
+            return (None, False)
         result = joined_statements
         transformed = False
         for dest_dialects, func in self.__class__._backends:

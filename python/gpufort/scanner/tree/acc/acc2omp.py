@@ -21,7 +21,8 @@ class Acc2Omp(accbackends.AccBackendBase):
                   joined_statements,
                   statements_fully_cover_lines,
                   index=[]):
-
+        if not opts.translate_other_directives:
+            return (None,False)
         snippet = joined_statements
         try:
 
@@ -44,6 +45,8 @@ class AccComputeConstruct2Omp(accbackends.AccBackendBase):
                   joined_statements,
                   statements_fully_cover_lines,
                   index=[]):
+        if not opts.translate_compute_constructs:
+            return (None,False)
         parent_tag = self.stnode.parent.tag()
         scope      = indexer.scope.create_scope(index, parent_tag)
         ttcomputeconstruct = self.stnode.parse_result 

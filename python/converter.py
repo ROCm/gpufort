@@ -19,7 +19,6 @@ from gpufort import linemapper
 from gpufort import translator
 from gpufort import fort2x
 
-
 import opts
 
 __GPUFORT_PYTHON_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -312,6 +311,18 @@ def populate_cl_arg_parser(parser,for_converter=True):
         action="store_false",
         help="Do not translate OpenACC statements.",
     )
+    group_frontends.add_argument(
+        "--no-translate-compute-constructs",
+        dest="translate_compute_constructs",
+        action="store_false",
+        help="Do not translate CUDA Fortran/OpenACC/... compute constructs.",
+    )
+    group_frontends.add_argument(
+        "--no-translate-other-directives",
+        dest="translate_other_directives",
+        action="store_false",
+        help="Do not translate CUDA Fortran/OpenACC/... directives that are not compute constructs."
+    )
     # config options: shadow arguments that are actually taken care of by raw argument parsing
     group_config = parser.add_argument_group("Config file")
     group_config.add_argument(
@@ -500,6 +511,8 @@ This step is skipped if no GPUFORT module files are created.
         modern_fortran=True,
         cuda=True,
         openacc=True,
+        translate_compute_constructs=True,
+        translate_other_directives=True,
         cublasV2=False,
         only_emit_kernels_and_launchers=False,
         only_emit_kernels=False,
@@ -649,6 +662,9 @@ def map_args_to_opts(args,include_dirs,defines,fortran_and_cpp_compiler_options,
     indexer.opts.modern_fortran = args.modern_fortran
     scanner.opts.modern_fortran = args.modern_fortran
     translator.opts.modern_fortran = args.modern_fortran
+    #
+    scanner.opts.translate_compute_constructs = args.translate_compute_constructs
+    scanner.opts.translate_other_directives = args.translate_other_directives
     #
     linemapper.opts.cuda_fortran = args.cuda
     indexer.opts.cuda_fortran = args.cuda

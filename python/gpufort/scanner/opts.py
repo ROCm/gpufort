@@ -22,6 +22,9 @@ loop_kernel_name_template = "{parent}_{lineno}" # parent: name of parent module,
 
 loop_kernel_default_launcher = "hip_ps" # "hip" "hip_ps" or "cpu"
 
+translate_compute_constructs = True # Translate compute constructs (True) or leave them untouched (False).
+translate_other_directives = True # Translate directives (True) or leave the untouched (False).
+
 hip_module_name = "hipfort"
 hip_math_module_prefix = hip_module_name + "_"
 

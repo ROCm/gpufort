@@ -2,6 +2,7 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import sys
 
+from gpufort import indexer
 from gpufort import translator
 from gpufort import util
 
@@ -16,7 +17,7 @@ from . import cuf2hip
 dest_dialects = ["omp"]
 backends.supported_destination_dialects.add("omp")
 
-def CufLoopNest2Omp(stloopnest,
+def CufLoopNest2Omp(stcomputeconstruct,
                     joined_lines,
                     joined_statements,
                     statements_fully_cover_lines,
@@ -24,15 +25,17 @@ def CufLoopNest2Omp(stloopnest,
     """Analyze based on statements but modify original lines if these are
     fully covered by the statements.
     """
-    parent_tag = stloopnest.parent.tag()
+    if not opts.translate_compute_constructs:
+        return (None,False)
+    parent_tag = stcomputeconstruct.parent.tag()
     scope      = indexer.scope.create_scope(index, parent_tag)
-    ttloopnest = stloopkernel.parse_result 
+    ttcomputeconstruct = stcomputeconstruct.parse_result 
     
-    arrays       = translator.analysis.arrays_in_subtree(ttloopnest, scope)
-    inout_arrays = translator.analysis.inout_arrays_in_subtree(ttloopnest, scope)
+    arrays       = translator.analysis.arrays_in_subtree(ttcomputeconstruct, scope)
+    inout_arrays = translator.analysis.inout_arrays_in_subtree(ttcomputeconstruct, scope)
 
     snippet = joined_lines if statements_fully_cover_lines else joined_statements
-    return translator.codegen.translate_loopnest_to_omp(snippet, ttloopnest, inout_arrays_in_body, arrays_in_body), True
+    return translator.codegen.translate_loopnest_to_omp(snippet, ttcomputeconstruct, inout_arrays, arrays), True
 
 cufnodes.STCufLoopNest.register_backend(dest_dialects,CufLoopNest2Omp)
 

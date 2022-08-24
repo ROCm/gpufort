@@ -247,8 +247,9 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         :return: If the text was changed at all
         :rtype: bool
         """
+        if not opts.translate_other_directives:
+            return (None, False)
         result = []
-
         stnode = self.stnode
         indent = stnode.first_line_indent()
         if stnode.is_directive(["acc","init"]):
@@ -385,6 +386,8 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
                   joined_statements,
                   statements_fully_cover_lines,
                   index=[]):
+        if not opts.translate_compute_constructs:
+            return (None, False)
         result = []
         stcomputeconstruct = self.stnode
         indent = stcomputeconstruct.first_line_indent()

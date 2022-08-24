@@ -23,7 +23,7 @@ def preprocess_fortran_statement(statement):
                  or (tk.lower() not in ["e","d"]
                  and tk.isidentifier()))
         if add_ws:
-            result += "".join([" ",tk," "])
+            result += " " + tk + " "
         else:
             result += tk
     if "**" in result:

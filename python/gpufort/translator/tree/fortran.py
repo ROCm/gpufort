@@ -302,13 +302,13 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
               "exp",
               "log",
               ]:
-                if raw_name == "".join([name,"1"]):
+                if raw_name == name + "1":
                     result = raw_name[:-1]
                     break
-                elif raw_name == "".join(["a",name]):
+                elif raw_name == "a" + name:
                     result = raw_name[1:]
                     break
-                elif raw_name == "".join(["a",name,"1"]):
+                elif raw_name == "a" + name + "1":
                     result = raw_name[1:-1]
                     break
             return result
@@ -813,7 +813,7 @@ class TTAssignment(base.TTNode):
         self._lhs, self._rhs = tokens
 
     def c_str(self):
-        return "".join([self._lhs.c_str(),"=",flatten_arithmetic_expression(self._rhs),";\n"])
+        return self._lhs.c_str() + "=" + flatten_arithmetic_expression(self._rhs) + ";\n"
 
     def child_nodes(self):
         return [self._lhs, self._rhs]

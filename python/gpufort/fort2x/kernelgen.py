@@ -5,8 +5,6 @@ import copy
 from gpufort import util
 from gpufort import indexer
 
-LOG_PREFIX = "fort2x.hip.kernelgen.KernelGeneratorBase"
-
 class KernelGeneratorBase:
     
     def _create_kernel_base_context(self,

@@ -107,7 +107,7 @@ def render_datatype(ivar):
             arg1.append(")")
         args.append("".join(arg1))
     if len(args):
-        return "".join([datatype,"(",",".join(args),")"])
+        return datatype + "(" + ",".join(args) + ")"
     else:
         return datatype
     

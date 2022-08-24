@@ -32,8 +32,8 @@ extern "C" {
   
   void* gpufortrt_use_device(
           void* hostptr,
-          bool condition,
-          bool if_present);
+          bool if_arg,
+          bool if_present_arg);
 
   // decrement dynamic reference counter
   
@@ -108,36 +108,36 @@ extern "C" {
   void gpufortrt_update_self(
          void* hostptr,
          std::size_t num_bytes,
-         bool condition,
-         bool if_present);
+         bool if_arg,
+         bool if_present_arg);
   void gpufortrt_update_self_async(
          void* hostptr,
          std::size_t num_bytes,
-         bool condition,
-         bool if_present,
+         bool if_arg,
+         bool if_present_arg,
          int async_arg);
 
   void gpufortrt_update_device(
          void* hostptr,
          std::size_t num_bytes,
-         bool condition,
-         bool if_present);
+         bool if_arg,
+         bool if_present_arg);
   void gpufortrt_update_device_async(
          void* hostptr,
          std::size_t num_bytes,
-         bool condition,
-         bool if_present,
+         bool if_arg,
+         bool if_present_arg,
          int async_arg);
 
-  void gpufortrt_wait_all(bool condition);
+  void gpufortrt_wait_all(bool if_arg);
   void gpufortrt_wait(int* wait_arg,
                       int num_wait,
-                      bool condition);
+                      bool if_arg);
   void gpufortrt_wait_async(int* wait_arg,int num_wait,
                             int* async_arg,int num_async,
-                            bool condition);
+                            bool if_arg);
   void gpufortrt_wait_all_async(int* async_arg,int num_async,
-                                bool condition);
+                                bool if_arg);
 
   gpufortrt_queue_t gpufortrt_get_stream(int async_arg);
  

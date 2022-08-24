@@ -198,7 +198,7 @@ def parse_fortran_code(statements,result_name=None):
             begin, end, stride = None, None, None
             try:
                 begin = tree.grammar.assignment.parseString(
-                        "".join([var,"=",lbound_str]))[0]
+                        var + "=" + lbound_str)[0]
             except pyparsing.ParseException as e:
                 error_("do loop: begin", e)
             try:

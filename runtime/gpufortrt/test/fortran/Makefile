@@ -25,7 +25,8 @@ TEST_SRC      = \
 				./test_zero_size_array_00.f90 \
 				./test_update_00.f90 \
 				./test_update_01.f90 \
-				./test_reuse_record_00.f90
+				./test_reuse_record_00.f90 \
+				./test_host_data_00.f90
 TEST_NAME     = $(TEST_SRC:.f90=)
 TEST_CONV_SRC = $(TEST_SRC:.f90=.f90-gpufort.f08)
 

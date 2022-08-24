@@ -20,17 +20,17 @@ _ACC_UPDATE = "call gpufortrt_update_{kind}({args})\n"
 #_ACC_WAIT = "call gpufortrt_wait({queue}{{args})\n"
 _ACC_WAIT = "call gpufortrt_wait({args})\n"
 # init shutdown
-_ACC_INIT     = "call gpufortrt_init()\n"
+_ACC_INIT = "call gpufortrt_init()\n"
 _ACC_SHUTDOWN = "call gpufortrt_shutdown()\n"
 
 # regions
-_ACC_DATA_START      = "call gpufortrt_data_start({args})\n"
-_ACC_DATA_END        = "call gpufortrt_data_end({args})\n"
+_ACC_DATA_START = "call gpufortrt_data_start({args})\n"
+_ACC_DATA_END = "call gpufortrt_data_end({args})\n"
 _ACC_ENTER_EXIT_DATA = "call gpufortrt_enter_exit_data({args})\n"
 
 # clauses
 #_ACC_USE_DEVICE = "gpufortrt_use_device({args},lbound({args}){options})\n"
-_ACC_USE_DEVICE = "gpufortrt_use_device{{rank}}({args})\n"
+_ACC_USE_DEVICE = "gpufortrt_use_device{rank}({args})\n"
 
 _ACC_MAP_CREATE = "gpufortrt_map_create({args})"
 _ACC_MAP_NO_CREATE = "gpufortrt_map_no_create({args})"
@@ -129,8 +129,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
 
     # TODO clean up
     def _handle_data_clauses(self,staccdir,index):
-        """Handle all data clauses of the current directive and/or of the preceding data clauses.
-        """
+        """Handle all data clauses of the current directive and/or of the preceding data clauses."""
         result = [] 
         #
         for kind, var_exprs in staccdir.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP.keys()):
@@ -164,9 +163,9 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         options   = [ async_expr ]
         for kind, options in self.stnode.get_matching_clauses(["if","if_present"]):
             if kind == "if":
-                options.append("=".join(["condition",options[0]]))
+                options.append("if_arg="+options[0])
             elif kind == "if_present":
-                options.append("if_present=.true.")
+                options.append("if_present_arg=.true.")
         for kind, clause_args in self.stnode.get_matching_clauses(["self", "host", "device"]):
             for var_expr in clause_args:
                 tag = indexer.scope.create_index_search_tag_for_var(var_expr)
@@ -179,8 +178,17 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
                        or ivar["f_type"] == "type"):
                             result.pop(-1)
         return result
-    
-    def _host_data_directive(self):
+
+    def _get_host_data_region_num(self):
+        host_data_region_num = 0
+        stcurrentdir = self.stnode
+        while (isinstance(stcurrentdir,accnodes.STAccDirective)
+               and stcurrentdir.is_directive(["acc","host_data"])):
+            host_data_region_num +=1
+            stcurrentdir = stcurrentdir.parent_directive
+        return host_data_region_num
+
+    def _host_data_directive(self,index):
         """Emits an associate statement with a mapping
         of each host variable to the mapped device array.
         """
@@ -189,32 +197,66 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         # have use_device_pointer_arr and use_device_pointer variants
         # that can deal with type(*)[,dimension(*)] inputs and
         # simply obtain the c_loc of the argument
-        mappings = []
+        indent = self.stnode.first_line_indent()
+        result = [indent + "block\n"]
         options = []
         for kind, args in self.stnode.get_matching_clauses(["if","if_present"]):
             if kind == "if":
-                options.append("=".join(["condition",args[0]]))
+                options.append("if_arg="+args[0])
             elif kind == "if_present":
-                options.append("if_present=.true.")
+                options.append("if_present_arg=.true.")
+        
+        host_data_region_num = self._get_host_data_region_num()
+        mapping_num = 1
+        pointer_maps = []
+        associations = []
         for kind, args in self.stnode.get_matching_clauses(["use_device"]):
             for var_expr in args:
-                mappings.append(" => ".join([
-                  var_expr,
-                  _ACC_USE_DEVICE.format(
-                    args=_create_args_str([var_expr]+options,indent="",sep=","),
-                    ).rstrip(),
-                  ]))
-        result = []
-        if len(mappings):
-            result.append("associate (&\n")
-            for mapping in mappings[:-1]:
-                result.append("".join(["  ",mapping,",","&\n"]))
-            result.append("".join(["  ",mappings[-1],"&\n"]))
-            result.append(")\n")
+                if not var_expr.isidentifier():
+                    raise util.error.LimitationError("host_data use_device: argument must be plain identifiers, is: "+var_expr)
+                ivar = indexer.scope.search_index_for_var(
+                        index, self.stnode.parent.tag(), var_expr)
+                if ivar["f_type"]=="type":
+                    raise util.error.LimitationError("host_data use_device: argument '"+var_expr+"' must have basic datatype")
+                rank = ivar["rank"]
+                datatype = indexer.types.render_datatype(ivar) 
+                pointer_name = "_".join(["gpufortrt_use_device_tmpvar",str(host_data_region_num),str(mapping_num)])
+                pointer_decl = indent + datatype+",pointer :: " + pointer_name
+                args = [pointer_name,var_expr]
+                if rank > 0:
+                    pointer_decl += "(" + ":,"*(rank-1) + ":" + ")\n"
+                    if indexer.props.index_var_is_assumed_size_array(ivar):
+                        if rank > 1:
+                            colons=":,"*(rank-2)+":"
+                            args.append(
+                                "[shape({var}({colons},lbound({var},{rank}))),1]".format(
+                                  var=var_expr,colons=colons,rank=rank))
+                        else:
+                            args.append("[1]")
+                    else:
+                        args.append("shape(" + var_expr + ")")
+                    args.append("lbound(" + var_expr + ")")
+                result.append(pointer_decl)
+                pointer_maps.append(indent + "call " 
+                              + _ACC_USE_DEVICE.format(args=_create_args_str(args+options,indent="",sep=","),
+                                  rank=ivar["rank"]))
+                associations.append(var_expr+" => "+pointer_name)
+                mapping_num += 1
+        result += pointer_maps
+        result.append(indent + "associate (&\n")
+        for assoc in associations[:-1]:
+            result.append(indent + " " + assoc + ",&\n")
+        result.append(indent + " " + associations[-1] + ")\n")
         return result
     
-    def _end_host_data_directive(self,async_expr):
-        result = [""]
+    def _end_host_data_directive(self):
+        result = []
+        #for kind, args in self.stnode.parent_directive.get_matching_clauses(["use_device"]):
+        #    for var_expr in args:
+        #        result.append("#undef " + var_expr + "\n")
+        indent = self.stnode.first_line_indent()
+        result.append(indent + "end associate\n")
+        result.append(indent + "end block\n")
         return result
 
     def _wait_directive(self):
@@ -252,6 +294,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         result = []
         stnode = self.stnode
         indent = stnode.first_line_indent()
+        handle_if = True
         if stnode.is_directive(["acc","init"]):
             result.append(_ACC_INIT)
         elif stnode.is_directive(["acc","shutdown"]):
@@ -263,10 +306,12 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         elif stnode.is_directive(["acc","wait"]):
             result += self._wait_directive()
         elif stnode.is_directive(["acc","host_data"]):
-            result += self._host_data_directive()
+            indent = ""
+            handle_if = False
+            result += self._host_data_directive(index)
         elif stnode.is_directive(["acc","end","host_data"]):
-            # TODO legacy
-            result.append("end associate")
+            indent = ""
+            result += self._end_host_data_directive()
         elif stnode.is_directive(["acc","enter","data"]):
             result += self._handle_wait_clause()
             mappings = self._handle_data_clauses(stnode,index)
@@ -301,10 +346,8 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             options = [ self._get_async_clause_expr(stparentdir) ]
             result.append(_ACC_DATA_END.format(
                 args=_create_mappings_str([],options,indent)))
-        # _handle if
-        self._handle_if_clause(stnode,result)
-
-        indent = stnode.first_line_indent()
+        if handle_if:
+            self._handle_if_clause(stnode,result)
         return textwrap.indent("".join(result),indent), len(result)
 
 class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):

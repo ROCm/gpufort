@@ -90,7 +90,7 @@ def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
             TOKENS_KEEP.append(r"^[c\*][@\$]?")
         # IMPORTANT: Use non-capturing groups (?:<expr>) to ensure that an inner group in TOKENS_KEEP
         # is not captured.
-        keep_pattern = "".join(["(","|".join(TOKENS_KEEP),")"])
+        keep_pattern = "(" + "|".join(TOKENS_KEEP) + ")"
         
         tokens = re.split(keep_pattern, statement, 0, re.IGNORECASE)
         result = []
@@ -281,8 +281,8 @@ def relocate_inline_comments(lines,modern_fortran=True):
             in_multiline_statement = True
         if in_multiline_statement and len(comment):
             if len(stmt_or_dir):
-                result.append("".join([indent, stmt_or_dir, trailing_ws]))
-            comment_buffer.append("".join([indent, comment, trailing_ws]))
+                result.append(indent + stmt_or_dir + trailing_ws)
+            comment_buffer.append(indent + comment + trailing_ws)
         elif len(line.strip()): # only append non-empty lines
             result.append(line)
         if len(stmt_or_dir_tokens) and stmt_or_dir_tokens[-1] != "&":

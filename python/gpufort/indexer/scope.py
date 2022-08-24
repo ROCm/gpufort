@@ -42,7 +42,7 @@ def _lookup_implicitly_declared_var(var_expr,implicit_none,type_map={}):
     """
     f_type, kind = _implicit_type(var_expr,implicit_none,type_map)
     if kind != None:
-        f_type_full = "".join([f_type,"(",kind,")"])
+        f_type_full = f_type + "(" + kind + ")"
     else:
         f_type_full = f_type
     # TODO len might not be None if a character is specified

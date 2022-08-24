@@ -190,7 +190,7 @@ def _loop_range_c_str(ttdo,counter):
         result.append("_step{} = {}".format(counter,ttdo.step_c_str()))
     else:
         result.append("_step{} = 1".format(counter))
-    return "".join(["const int ",", ".join(result),";\n"])
+    return "const int " + ",".join(result) + ";\n"
 
 def _collapsed_loop_index_c_str(ttdo,counter):
     idx = ttdo.loop_var()

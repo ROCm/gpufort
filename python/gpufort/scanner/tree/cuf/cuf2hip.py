@@ -77,7 +77,7 @@ def _render_allocation_f_str(name,bounds):
     args = []
     for alloc_range in bounds:
         args.append(":".join([el for el in alloc_range if el != None]))
-    return "".join([name,"(",",".join(args),")"])
+    return name + "(" + ",".join(args) + ")"
 
 def _render_allocation_hipfort_f_str(api,name,bounds,stat):
     counts  = []
@@ -107,12 +107,12 @@ def _render_allocation_hipfort_f_str(api,name,bounds,stat):
         args.append("".join(["[",",".join(counts),"]"]))
         args.append("".join(["lbounds=[",",".join(lbounds),"]"]))
     if stat != None:
-        prefix = "".join([stat,"="])
+        prefix = stat + "="
         suffix = ""
     else:
         prefix = "call hipCheck("
         suffix = ")"
-    return "".join([prefix,api,"(",name,",",",".join(args),")",suffix])
+    return prefix + api + "(" + name + "," + ",".join(args) + ")" + suffix
 
 def handle_allocate_cuf(stallocate, joined_statements, index):
     indent = stallocate.first_line_indent()
@@ -131,19 +131,19 @@ def handle_allocate_cuf(stallocate, joined_statements, index):
     result = []
     if len(unchanged_allocation_args):
         if stat != None:
-            unchanged_allocation_args.append("".join(["stat=",stat]))
-        result.append("".join(["allocate","(",",".join(unchanged_allocation_args),")"]))
+            unchanged_allocation_args.append("stat=" + stat)
+        result.append("allocate(" + ",".join(unchanged_allocation_args) + ")")
     result += hipfort_allocations
     return (textwrap.indent("\n".join(result),indent), len(hipfort_allocations))
 
 def _render_deallocation_hipfort_f_str(api,name,stat):
     if stat != None:
-        prefix = "".join([stat,"="])
+        prefix = stat + "="
         suffix = ""
     else:
         prefix = "call hipCheck("
         suffix = ")"
-    return "".join([prefix,api,"(",name,")",suffix])
+    return prefix + api + "(" + name + ")" + suffix
 
 def handle_deallocate_cuf(stdeallocate, joined_statements, index):
     indent = stdeallocate.first_line_indent()
@@ -162,8 +162,8 @@ def handle_deallocate_cuf(stdeallocate, joined_statements, index):
     result = []
     if len(unchanged_deallocation_args):
         if stat != None:
-            unchanged_deallocation_args.append("".join(["stat=",stat]))
-        result.append("".join(["deallocate","(",",".join(unchanged_deallocation_args),")"]))
+            unchanged_deallocation_args.append("stat=" + stat)
+        result.append("deallocate" + "(" + ",".join(unchanged_deallocation_args) + ")")
     result += hipfort_deallocations
     return (textwrap.indent("\n".join(result),indent), len(hipfort_deallocations))
 

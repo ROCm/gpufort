@@ -101,29 +101,29 @@ contains
       end subroutine
     end interface
     !
-    logical(c_bool) :: opt_condition
+    logical(c_bool) :: opt_if_arg
     !
-    opt_condition = .true._c_bool
-    if ( present(condition) ) opt_condition = logical(condition,kind=c_bool)
+    opt_if_arg = .true._c_bool
+    if ( present(condition) ) opt_if_arg = logical(condition,kind=c_bool)
     !
     if ( present(wait_arg) ) then
       if ( present(async_arg) ) then
         call gpufortrt_wait_async_c_impl(&
              c_loc(wait_arg),size(wait_arg,kind=c_int),&
              c_loc(async_arg),size(async_arg,kind=c_int),&
-             opt_condition)
+             opt_if_arg)
       else
         call gpufortrt_wait_c_impl(&
              c_loc(wait_arg),size(wait_arg,kind=c_int),&
-             opt_condition)
+             opt_if_arg)
       endif
     else
       if ( present(async_arg) ) then
         call gpufortrt_wait_all_async_c_impl(&
              c_loc(async_arg),size(async_arg,kind=c_int),&
-             opt_condition)
+             opt_if_arg)
       else
-        call gpufortrt_wait_all_c_impl(opt_condition)
+        call gpufortrt_wait_all_c_impl(opt_if_arg)
       endif
     endif
   end subroutine
@@ -282,14 +282,14 @@ contains
       end function
     end interface
     !
-    logical(c_bool) :: opt_condition, opt_if_present
+    logical(c_bool) :: opt_if_arg, opt_if_present_arg
     !
-    opt_condition = .true._c_bool
-    opt_if_present = .false._c_bool
-    if ( present(condition) ) opt_condition = logical(condition,kind=c_bool)
-    if ( present(if_present) ) opt_if_present = logical(if_present,kind=c_bool)
+    opt_if_arg = .true._c_bool
+    opt_if_present_arg = .false._c_bool
+    if ( present(condition) ) opt_if_arg = logical(condition,kind=c_bool)
+    if ( present(if_present) ) opt_if_present_arg = logical(if_present,kind=c_bool)
     !
-    resultptr = gpufortrt_use_device_c_impl(hostptr,opt_condition,opt_if_present)
+    resultptr = gpufortrt_use_device_c_impl(hostptr,opt_if_arg,opt_if_present_arg)
   end function
 
 end module

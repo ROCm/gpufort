@@ -236,9 +236,9 @@ class CodeGenerator():
                     self._render_derived_types(itypes, cpp_filegen,
                                                fortran_modulegen)
                 elif len(itypes):
-                    util.logging.log_warning(LOG_PREFIX,\
-                                              "traverse_scanner_tree",\
-                                              "won't create interoperable type for derived types declared in procedure '{}'.".format(stnode_name))
+                    util.logging.log_warning(opts.log_prefix,\
+                                             "traverse_scanner_tree",\
+                                             "won't create interoperable type for derived types declared in procedure '{}'.".format(stnode_name))
 
                 # traverse children
                 for stchildnode in stnode.children:

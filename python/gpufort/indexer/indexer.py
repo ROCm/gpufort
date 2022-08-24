@@ -716,7 +716,7 @@ def _write_json_file(index, file_path):
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def _read_json_file(file_path):
-    util.logging.log_debug2(opts.log_prefix,"_read_json_file","".join(["reading file:",file_path]))
+    util.logging.log_debug2(opts.log_prefix,"_read_json_file","reading file:" + file_path)
     #print(file_path,file=sys.stderr)
     with open(file_path, "r") as infile:
         return json.load(infile)

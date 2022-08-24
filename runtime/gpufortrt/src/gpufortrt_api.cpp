@@ -442,24 +442,24 @@ namespace {
   void update(
       void* hostptr,
       int num_bytes,
-      bool condition,
-      bool if_present,
+      bool if_arg,
+      bool if_present_arg,
       int async_arg) {
     LOG_INFO(1,((update_host) ? "update host" : "update device")
             << ((!blocking) ? " async" : "")
             << "; hostptr:"<<hostptr 
             << ", num_bytes:"<<num_bytes 
-            << ", condition:"<<condition 
-            << ", if_present:"<<if_present
+            << ", if_arg:"<<if_arg 
+            << ", if_present_arg:"<<if_present_arg
             << ((!blocking) ? ", async_arg:" : "")
             << ((!blocking) ? std::to_string(async_arg).c_str() : ""))
-    if ( condition ) {
+    if ( if_arg ) {
       if ( !gpufortrt::internal::initialized ) LOG_ERROR("update: runtime not initialized")
       if ( hostptr != nullptr ) { // nullptr means no-op
         auto list_tuple/*success,loc,offset*/ = gpufortrt::internal::record_list.find_record(hostptr,num_bytes);
         const bool& success = std::get<0>(list_tuple);
         const std::size_t& loc = std::get<1>(list_tuple);
-        if ( !success && !if_present ) { 
+        if ( !success && !if_present_arg ) { 
           LOG_ERROR("update: no record found for hostptr="<<hostptr)
         } else if ( success ) {
           auto& record = gpufortrt::internal::record_list.records[loc];
@@ -481,45 +481,45 @@ namespace {
 void gpufortrt_update_self(
     void* hostptr,
     std::size_t num_bytes,
-    bool condition,
-    bool if_present) {
+    bool if_arg,
+    bool if_present_arg) {
   // update_host,blocking
-  ::update<true,true>(hostptr,num_bytes,condition,if_present,-1); 
+  ::update<true,true>(hostptr,num_bytes,if_arg,if_present_arg,-1); 
 }
 void gpufortrt_update_self_async(
     void* hostptr,
     std::size_t num_bytes,
-    bool condition,
-    bool if_present,
+    bool if_arg,
+    bool if_present_arg,
     int async_arg) {
-  ::update<true,false>(hostptr,num_bytes,condition,if_present,async_arg); 
+  ::update<true,false>(hostptr,num_bytes,if_arg,if_present_arg,async_arg); 
 }
 
 void gpufortrt_update_device(
     void* hostptr,
     std::size_t num_bytes,
-    bool condition,
-    bool if_present) {
-  ::update<false,true>(hostptr,num_bytes,condition,if_present,-1); 
+    bool if_arg,
+    bool if_present_arg) {
+  ::update<false,true>(hostptr,num_bytes,if_arg,if_present_arg,-1); 
 }
 void gpufortrt_update_device_async(
     void* hostptr,
     std::size_t num_bytes,
-    bool condition,
-    bool if_present,
+    bool if_arg,
+    bool if_present_arg,
     int async_arg) {
-  ::update<false,false>(hostptr,num_bytes,condition,if_present,async_arg); 
+  ::update<false,false>(hostptr,num_bytes,if_arg,if_present_arg,async_arg); 
 }
 
-void gpufortrt_wait_all(bool condition) {
-  if ( condition ) {
+void gpufortrt_wait_all(bool if_arg) {
+  if ( if_arg ) {
     HIP_CHECK(hipDeviceSynchronize()) // TODO backend specific, externalize
   }
 }
 void gpufortrt_wait(int* wait_arg,
                     int num_wait,
-                    bool condition) {
-  if ( condition ) {
+                    bool if_arg) {
+  if ( if_arg ) {
     for (int i = 0; i < num_wait; i++) {
       auto queue = gpufortrt::internal::queue_record_list.use_create_queue(wait_arg[i]);
       HIP_CHECK(hipStreamSynchronize(queue)) // TODO backend specific, externalize
@@ -528,8 +528,8 @@ void gpufortrt_wait(int* wait_arg,
 }
 void gpufortrt_wait_async(int* wait_arg,int num_wait,
                           int* async_arg,int num_async,
-                          bool condition) {
-  if ( condition ) {
+                          bool if_arg) {
+  if ( if_arg ) {
     for (int i = 0; i < num_wait; i++) {
       hipEvent_t event;// TODO backend specific, externalize
       HIP_CHECK(hipEventCreateWithFlags(&event,hipEventDisableTiming))// TODO backend specific, externalize
@@ -543,8 +543,8 @@ void gpufortrt_wait_async(int* wait_arg,int num_wait,
   }
 }
 void gpufortrt_wait_all_async(int* async_arg,int num_async,
-                              bool condition) {
-  if ( condition ) {
+                              bool if_arg) {
+  if ( if_arg ) {
     hipEvent_t event;// TODO backend specific, externalize
     HIP_CHECK(hipEventCreateWithFlags(&event,hipEventDisableTiming))// TODO backend specific, externalize
     HIP_CHECK(hipEventRecord(event,gpufortrt_default_queue))// TODO backend specific, externalize
@@ -556,6 +556,8 @@ void gpufortrt_wait_all_async(int* async_arg,int num_async,
 }
   
 void* gpufortrt_deviceptr(void* hostptr) {
+  LOG_INFO(1,"deviceptr; "
+          << "; hostptr: "<<hostptr )
   if ( hostptr == nullptr ) {
     return nullptr;
   } else {
@@ -579,29 +581,33 @@ void* gpufortrt_deviceptr(void* hostptr) {
     if ( success ) {
       void* result = static_cast<void*>(static_cast<char*>(record->deviceptr) + offset);
       LOG_INFO(2,"deviceptr"
-               << "; resultptr:" << result 
-               << ", record_deviceptr:" << record->deviceptr
+               << "; return deviceptr=" << result 
+               << "; record_deviceptr:" << record->deviceptr
                << ", offset:" << offset
                << ", use_hostptr:0")
       return result;
     } else if ( use_hostptr ) {
-      LOG_INFO(2,"resultptr"
-               << "; resultptr:" << hostptr
-               << ", use_hostptr:1")
+      LOG_INFO(2,"deviceptr"
+               << "; return hostptr=" << hostptr
+               << "; use_hostptr:1")
       return hostptr;
     } else {
       LOG_ERROR("deviceptr: hostptr="<<hostptr<<" not mapped");
-      return nullptr;
+      return nullptr; /* terminates beforehand */
     } 
   }
 }
 
-void* gpufortrt_use_device(void* hostptr,bool condition,bool if_present) {
+void* gpufortrt_use_device(void* hostptr,bool if_arg,bool if_present_arg) {
   if ( !gpufortrt::internal::initialized ) LOG_ERROR("gpufortrt_use_device: runtime not initialized")
-  void* resultptr = hostptr;
+  LOG_INFO(1,"use_device"
+          << "; hostptr: "<<hostptr 
+          << ", if_arg: "<<if_arg 
+          << ", if_present_arg: "<<if_present_arg)
   if ( hostptr == nullptr ) {
+     LOG_INFO(2,"use_device; return nullptr; hostptr=nullptr")
      return nullptr;
-  } else if ( condition ) {
+  } else if ( if_arg ) {
     auto list_tuple/*success,loc,offset*/ = gpufortrt::internal::record_list.find_record(hostptr); 
     const bool& success = std::get<0>(list_tuple);
     const std::size_t& loc = std::get<1>(list_tuple);
@@ -609,12 +615,18 @@ void* gpufortrt_use_device(void* hostptr,bool condition,bool if_present) {
     //
     if ( success ) {
       auto& record = gpufortrt::internal::record_list.records[loc];
+      LOG_INFO(2,"use_device; return deviceptr="<<hostptr<<" for hostptr="<<hostptr
+               <<" (record_hostptr: "<<record.hostptr<<", offset: "<<offset<<" B)")
       return gpufortrt::internal::offsetted_record_deviceptr(record,offset);
-    } else if ( if_present ) {
+    } else if ( if_present_arg ) {
+      LOG_INFO(2,"use_device; return hostptr="<<hostptr<<"; no record present, if_present_arg: 0")
       return hostptr;
     } else {
-      LOG_ERROR("gpufortrt_use_device: did not find record for hostptr " << hostptr)
+      LOG_ERROR("gpufortrt_use_device: no record found for hostptr=" << hostptr << ", if_present_arg: 0")
+      return nullptr; /* terminates beforehand */
     }
+  } else {
+    LOG_INFO(2,"use_device; return hostptr="<<hostptr<<"; if_arg: 0")
+    return hostptr;
   }
-  return nullptr; 
 }

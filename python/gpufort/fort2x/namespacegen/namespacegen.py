@@ -296,7 +296,7 @@ class NamespaceGenerator():
             temp_module_dir   = tempfile.TemporaryDirectory(
                 prefix="gpufort-namespacegen") # TODO set to True
             # TODO -J,-o assumes gfortran
-            cmd_compile = [self.fortran_compiler,"".join(["-J",temp_module_dir.name])] + self.fortran_compiler_flags + [temp_infile.name,"-o",temp_outfile_path]
+            cmd_compile = [self.fortran_compiler,"-J" + temp_module_dir.name] + self.fortran_compiler_flags + [temp_infile.name,"-o",temp_outfile_path]
             #print(cmd_compile)
             status,_,err_out = util.subprocess.run_subprocess(cmd_compile,True)
             if status != 0:

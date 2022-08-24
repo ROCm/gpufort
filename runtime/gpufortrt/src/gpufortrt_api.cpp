@@ -41,13 +41,13 @@ void gpufortrt_init() {
     gpufortrt::internal::initialized = true;
     //
     LOG_INFO(1,"init;")
-    LOG_INFO(1,"  GPUFORTRT_LOG_LEVEL=" << gpufortrt::internal::LOG_LEVEL)
-    LOG_INFO(1,"  GPUFORTRT_INITIAL_RECORDS_CAPACITY=" << gpufortrt::internal::INITIAL_RECORDS_CAPACITY)
-    LOG_INFO(1,"  GPUFORTRT_INITIAL_QUEUE_RECORDS_CAPACITY=" << gpufortrt::internal::INITIAL_QUEUE_RECORDS_CAPACITY)
-    LOG_INFO(1,"  GPUFORTRT_INITIAL_STRUCTURED_REGION_STACK_CAPACITY=" << gpufortrt::internal::INITIAL_STRUCTURED_REGION_STACK_CAPACITY)
-    LOG_INFO(1,"  GPUFORTRT_BLOCK_SIZE=" << gpufortrt::internal::BLOCK_SIZE)
-    LOG_INFO(1,"  GPUFORTRT_REUSE_THRESHOLD=" << gpufortrt::internal::REUSE_THRESHOLD)
-    LOG_INFO(1,"  GPUFORTRT_NUM_REFS_TO_DEALLOCATE=" << gpufortrt::internal::NUM_REFS_TO_DEALLOCATE)
+    LOG_INFO(1,".GPUFORTRT_LOG_LEVEL=" << gpufortrt::internal::LOG_LEVEL)
+    LOG_INFO(1,".GPUFORTRT_INITIAL_RECORDS_CAPACITY=" << gpufortrt::internal::INITIAL_RECORDS_CAPACITY)
+    LOG_INFO(1,".GPUFORTRT_INITIAL_QUEUE_RECORDS_CAPACITY=" << gpufortrt::internal::INITIAL_QUEUE_RECORDS_CAPACITY)
+    LOG_INFO(1,".GPUFORTRT_INITIAL_STRUCTURED_REGION_STACK_CAPACITY=" << gpufortrt::internal::INITIAL_STRUCTURED_REGION_STACK_CAPACITY)
+    LOG_INFO(1,".GPUFORTRT_BLOCK_SIZE=" << gpufortrt::internal::BLOCK_SIZE)
+    LOG_INFO(1,".GPUFORTRT_REUSE_THRESHOLD=" << gpufortrt::internal::REUSE_THRESHOLD)
+    LOG_INFO(1,".GPUFORTRT_NUM_REFS_TO_DEALLOCATE=" << gpufortrt::internal::NUM_REFS_TO_DEALLOCATE)
   }
 }
 
@@ -65,7 +65,7 @@ namespace {
   void* no_create_action(const gpufortrt_counter_t ctr_to_update,
                          void* hostptr,
                          std::size_t num_bytes) {
-    LOG_INFO(2, "no_create;")
+    LOG_INFO(1, "no_create;")
     if ( !gpufortrt::internal::initialized ) LOG_ERROR("no_create_action: runtime not initialized")
     if ( hostptr != nullptr ) { // nullptr means no-op
       auto inc_tuple/*present,loc*/ = gpufortrt::internal::record_list.increment_record_if_present(
@@ -100,7 +100,7 @@ namespace {
       const bool blocking,
       const int async_arg) {
     if ( ! gpufortrt::internal::initialized ) gpufortrt_init();
-    LOG_INFO(2, map_kind
+    LOG_INFO(1, map_kind
              << ((!blocking) ? " async" : "")
              << "; ctr_to_update:" << ctr_to_update
              << ", hostptr:" << hostptr 
@@ -141,7 +141,7 @@ namespace {
                                 const bool blocking,
                                 const int async_arg) {
     bool copyout = gpufortrt::internal::implies_copy_to_host(map_kind);
-    LOG_INFO(2, ((copyout) ? "copyout" : "delete")
+    LOG_INFO(1, ((copyout) ? "copyout" : "delete")
             << ((finalize) ? " finalize" : "")
             << ((!blocking) ? " async" : "")
             << "; hostptr:"<<hostptr 
@@ -580,19 +580,19 @@ void* gpufortrt_deviceptr(void* hostptr) {
     // above code may overwrite record
     if ( success ) {
       void* result = static_cast<void*>(static_cast<char*>(record->deviceptr) + offset);
-      LOG_INFO(2,"deviceptr"
+      LOG_INFO(2,"<deviceptr"
                << "; return deviceptr=" << result 
                << "; record_deviceptr:" << record->deviceptr
                << ", offset:" << offset
                << ", use_hostptr:0")
       return result;
     } else if ( use_hostptr ) {
-      LOG_INFO(2,"deviceptr"
+      LOG_INFO(2,"<deviceptr"
                << "; return hostptr=" << hostptr
                << "; use_hostptr:1")
       return hostptr;
     } else {
-      LOG_ERROR("deviceptr: hostptr="<<hostptr<<" not mapped");
+      LOG_ERROR("<deviceptr: hostptr="<<hostptr<<" not mapped");
       return nullptr; /* terminates beforehand */
     } 
   }
@@ -605,7 +605,7 @@ void* gpufortrt_use_device(void* hostptr,bool if_arg,bool if_present_arg) {
           << ", if_arg: "<<if_arg 
           << ", if_present_arg: "<<if_present_arg)
   if ( hostptr == nullptr ) {
-     LOG_INFO(2,"use_device; return nullptr; hostptr=nullptr")
+     LOG_INFO(2,"<use_device; return nullptr; hostptr=nullptr")
      return nullptr;
   } else if ( if_arg ) {
     auto list_tuple/*success,loc,offset*/ = gpufortrt::internal::record_list.find_record(hostptr); 
@@ -615,18 +615,18 @@ void* gpufortrt_use_device(void* hostptr,bool if_arg,bool if_present_arg) {
     //
     if ( success ) {
       auto& record = gpufortrt::internal::record_list.records[loc];
-      LOG_INFO(2,"use_device; return deviceptr="<<hostptr<<" for hostptr="<<hostptr
+      LOG_INFO(2,"<use_device; return deviceptr="<<hostptr<<" for hostptr="<<hostptr
                <<" (record_hostptr: "<<record.hostptr<<", offset: "<<offset<<" B)")
       return gpufortrt::internal::offsetted_record_deviceptr(record,offset);
     } else if ( if_present_arg ) {
-      LOG_INFO(2,"use_device; return hostptr="<<hostptr<<"; no record present, if_present_arg: 0")
+      LOG_INFO(2,"<use_device; return hostptr="<<hostptr<<"; no record present, if_present_arg: 0")
       return hostptr;
     } else {
       LOG_ERROR("gpufortrt_use_device: no record found for hostptr=" << hostptr << ", if_present_arg: 0")
       return nullptr; /* terminates beforehand */
     }
   } else {
-    LOG_INFO(2,"use_device; return hostptr="<<hostptr<<"; if_arg: 0")
+    LOG_INFO(2,"<use_device; return hostptr="<<hostptr<<"; if_arg: 0")
     return hostptr;
   }
 }

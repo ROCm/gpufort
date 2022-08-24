@@ -30,7 +30,7 @@ _ACC_ENTER_EXIT_DATA = "call gpufortrt_enter_exit_data({args})\n"
 
 # clauses
 #_ACC_USE_DEVICE = "gpufortrt_use_device({args},lbound({args}){options})\n"
-_ACC_USE_DEVICE = "gpufortrt_use_device{rank}({args})\n"
+_ACC_USE_DEVICE = "gpufortrt_use_device({args})\n"
 
 _ACC_MAP_CREATE = "gpufortrt_map_create({args})"
 _ACC_MAP_NO_CREATE = "gpufortrt_map_no_create({args})"
@@ -238,8 +238,8 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
                     args.append("lbound(" + var_expr + ")")
                 result.append(pointer_decl)
                 pointer_maps.append(indent + "call " 
-                              + _ACC_USE_DEVICE.format(args=_create_args_str(args+options,indent="",sep=","),
-                                  rank=ivar["rank"]))
+                              + _ACC_USE_DEVICE.format(args=_create_args_str(
+                                  args+options,"",sep=",")))
                 associations.append(var_expr+" => "+pointer_name)
                 mapping_num += 1
         result += pointer_maps

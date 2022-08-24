@@ -485,12 +485,12 @@ end subroutine
 {#######################################################################################}
 {% macro render_use_device_interface(datatypes,max_rank) %}
 {#######################################################################################}
+interface gpufortrt_use_device
 {% for rank in range(0,max_rank+1) %}
-interface gpufortrt_use_device{{rank}}
 {%   for triple in datatypes %}
   module procedure :: gpufortrt_use_device{{rank}}_{{triple[0]}}
 {%   endfor %}{# datatypes #}
-end interface
 {% endfor %}{# rank #}
+end interface
 {% endmacro %}
 {#######################################################################################}

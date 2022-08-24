@@ -28,7 +28,7 @@ void gpufortrt::internal::set_from_environment(double& variable,const char* env_
 }
     
 void gpufortrt::internal::log_info(const int level,const std::string& prefix,const std::string& msg) {
-  std::string indent(2*((level>3)? 3 : level),' ');
+  std::string indent(2*((level>2)? 2 : level),' ');
   std::cerr << ":gpufortrt:" << level << ":" << prefix << indent << msg << std::endl;
 }
 

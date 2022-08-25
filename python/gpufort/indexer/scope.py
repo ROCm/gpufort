@@ -140,7 +140,7 @@ def _resolve_dependencies(scope,
                 indent,
                 icurrent["name"]))
 
-        current_scope = copy.deepcopy(types.EMPTY_SCOPE)
+        current_scope = types.new_scope()
         for used_module in combine_use_statements(icurrent["used_modules"]):
             #print(used_module)
             # include definitions from other modules
@@ -152,7 +152,7 @@ def _resolve_dependencies(scope,
                 used_module_found = iother != None
             if used_module_found:
                 # depth first search
-                other_scope_copy = copy.deepcopy(create_scope(index, iother["name"])) # recursive, deepcopy to not modify cached scopes
+                other_scope_copy = types.copy_scope(create_scope(index, iother["name"])) # recursive, deepcopy to not modify cached scopes
                 include_all_entries = not len(used_module["only"])
                 if include_all_entries: # simple include
                     util.logging.log_debug2(
@@ -219,7 +219,7 @@ def _resolve_dependencies(scope,
                 raise util.error.LookupError(msg)
         if icurrent["kind"] == "module" and depth > 0:
             # Apply the accessibility of the current module
-            filtered_scope = copy.deepcopy(types.EMPTY_SCOPE)
+            filtered_scope = types.new_scope()
             for entry_type in types.SCOPE_ENTRY_TYPES:
                 filtered_scope[entry_type] += [irecord for irecord in current_scope[entry_type] 
                                               if _get_accessibility(irecord,icurrent) == "public"]
@@ -318,9 +318,8 @@ def create_scope(index, tag):
 
     # check if already a scope exists for the tag or if
     # it can be derived from a higher-level scope
-    existing_scope = copy.deepcopy(types.EMPTY_SCOPE)
+    existing_scope = types.new_scope()
     nesting_level  = -1 # -1 implies that nothing has been found
-    scopes_to_delete = []
     tag_tokens = tag.split(":")
     for s in opts.scopes:
         existing_tag = s["tag"]
@@ -329,6 +328,7 @@ def create_scope(index, tag):
         if tag_tokens[0:len_existing_tag_tokens] == existing_tag_tokens[0:len_existing_tag_tokens]:
             existing_scope = s
             nesting_level = len_existing_tag_tokens - 1
+
     # return existing existing_scope or create it
     if len(tag_tokens) - 1 == nesting_level:
         util.logging.log_debug(opts.log_prefix,"create_scope",\
@@ -337,8 +337,7 @@ def create_scope(index, tag):
           "variables in scope: {}".format(", ".join([var["name"] for var in existing_scope["variables"]])))
         return existing_scope
     else:
-        new_scope = copy.deepcopy(existing_scope)
-        new_scope["tag"] = tag
+        new_scope = types.copy_scope(existing_scope,index,tag)
 
         # we already have a scope for this record
         if nesting_level >= 0:
@@ -356,8 +355,6 @@ def create_scope(index, tag):
         else:
             util.logging.log_debug(opts.log_prefix,"create_scope",\
               "create scope for tag '{}'".format(tag))
-            # store a reference to the index
-            new_scope["index"] = index
             current_record_list = index
             # add top-level procedures to scope of top-level entry
             new_scope["procedures"] += [index_entry for index_entry in index\
@@ -367,12 +364,11 @@ def create_scope(index, tag):
               "add {} top-level procedures to scope".format(len(new_scope["procedures"])))
         begin = nesting_level + 1 #
 
-    
         for d in range(begin, len(tag_tokens)):
             searched_name = tag_tokens[d]
             for current_record in current_record_list:
                 if current_record["name"] == searched_name:
-                    scope_additions = copy.deepcopy(types.EMPTY_SCOPE)
+                    scope_additions = types.new_scope()
                     # 1. first include definitions from used records
                     # TODO ambiguous definitions still possible
                     _resolve_dependencies(scope_additions, current_record,
@@ -435,11 +431,16 @@ def search_scope_for_var(scope,
     #print([v["name"] for v in scope["variables"]])
 
     result = None
-    
+    # reverse access such that entries from the inner-most scope come first
+    #scope_types = list(reversed(scope["types"]))
+    scope_types = reversed(scope["types"])
+
     variable_tag = create_index_search_tag_for_var(var_expr)
     list_of_var_names = variable_tag.split("%")
-    def lookup_from_left_to_right_(scope_types,scope_vars, pos=0):
+    
+    def lookup_from_left_to_right_(scope_vars, pos=0):
         """:note: recursive"""
+        nonlocal scope_types
         nonlocal list_of_var_names
 
         var_name = list_of_var_names[pos]
@@ -450,34 +451,25 @@ def search_scope_for_var(scope,
             if result == None:
                 raise util.error.LookupError("no index record found for variable tag '{}' in scope".format(variable_tag))
         else:
-            # first find derived type var in current scope
             matching_type_var = next((
                 var for var in scope_vars if var["name"] == var_name),
                                      None)
             if matching_type_var == None:
                 raise util.error.LookupError("no index record found for variable tag '{}' in scope".format(variable_tag))
-            # then look up type in current scope
             matching_type = next(
                 (typ for typ in scope_types
                  if typ["name"] == matching_type_var["kind"]), None)
             if matching_type == None:
                 raise util.error.LookupError("no index record found for derived type '{}' in scope".format(matching_type_var["kind"]))
-            # check where type is defined and change scope if it is defined in a module/parent procedure/parent program,
-            # as private accessibility/hiding might prevent that an inner type is visible in the current scope
             if matching_type["parent_tag"] != scope["tag"]:
                 module_scope = create_scope(scope["index"],matching_type["parent_tag"])
-                scope_types = list(reversed(module_scope["types"]))
-            # recursive call
+                scope_types = reversed(module_scope["types"])
             result = lookup_from_left_to_right_(
-                scope_types,
                 reversed(matching_type["variables"]), pos + 1)
         return result
 
     try:
-        # reverse access such that entries from the inner-most scope come first
-        result = lookup_from_left_to_right_(
-                list(reversed(scope["types"])),
-                reversed(scope["variables"]))
+        result = lookup_from_left_to_right_(reversed(scope["variables"]))
     except util.error.LookupError as e:
         #index_record = _lookup_index_record_hierarchy(scope["tag"])[-1]
         #implicit_spec = index_record["implicit"]

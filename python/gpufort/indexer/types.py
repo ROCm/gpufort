@@ -60,6 +60,28 @@ EMPTY_VAR = {
         "lineno" : -1,
 }
 
+def new_scope():
+    return copy.deepcopy(EMPTY_SCOPE)
+
+def copy_scope(existing_scope,index=None,tag=None):
+    """
+    :note: `index` is typically a huge object, we do not want to 
+           create a deep copy of it.
+    """
+    shallow_copy = copy.copy(existing_scope)
+    shallow_copy["index"] = None
+    new_scope = copy.deepcopy(shallow_copy)
+    new_scope["index"] = index
+    if tag == None:
+        new_scope["tag" ] = existing_scope["tag"]
+    else:
+        new_scope["tag" ] = tag
+    if index == None:
+        new_scope["index" ] = existing_scope["index"]
+    else:
+        new_scope["index" ] = index
+    return new_scope
+
 def create_index_var(f_type,
                      f_len,
                      kind,

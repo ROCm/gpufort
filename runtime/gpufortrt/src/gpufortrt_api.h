@@ -154,5 +154,6 @@ extern "C" {
    *        list of records, which also stores unstructured mappings.
    */
   void* gpufortrt_deviceptr(void* hostptr);
-
+#ifdef __cplusplus
 } // extern "C"
+#endif

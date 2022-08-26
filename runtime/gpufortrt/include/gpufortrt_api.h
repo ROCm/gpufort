@@ -5,10 +5,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  extern int gpufortrt_async_noval;
-
   void gpufortrt_init();
   void gpufortrt_shutdown();
+
+  int gpufortrt_get_default_async(void);
+  void gpufortrt_set_default_async(int async_arg);
   
   void gpufortrt_data_start(
           gpufortrt_mapping_t* mappings,
@@ -77,7 +78,7 @@ extern "C" {
           void* hostptr,
           std::size_t num_bytes,
           bool never_deallocate);
-  void* gpufortrt_create_async(
+  void gpufortrt_create_async(
           void* hostptr,
           std::size_t num_bytes,
           int async_arg,
@@ -87,21 +88,11 @@ extern "C" {
           void* hostptr,
           std::size_t num_bytes,
           bool never_deallocate);
-  void* gpufortrt_copyin_async(
+  void gpufortrt_copyin_async(
           void* hostptr,
           std::size_t num_bytes,
           int async_arg,
           bool never_deallocate);
-  
-  void* gpufortrt_copy(
-         void* hostptr,
-         std::size_t num_bytes,
-         bool never_deallocate);
-  void* gpufortrt_copy_async(
-         void* hostptr,
-         std::size_t num_bytes,
-         int async_arg,
-         bool never_deallocate);
 
   // other runtime calls
 

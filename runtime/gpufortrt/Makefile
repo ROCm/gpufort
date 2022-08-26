@@ -2,7 +2,7 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 include rules.mk
 
-CXXFLAGS += -I./src -I./src/internal
+CXXFLAGS += -I./src -I./src/internal -I./include
 
 VPATH = ./src:./src/internal
 
@@ -36,7 +36,7 @@ codegen:
 
 clean_all:
 	rm -f *.o *.mod *.a
-	rm -rf include/ lib/
+	rm -rf include/*.mod lib/
 
 clean:
 	rm -f *.o *.mod *.a

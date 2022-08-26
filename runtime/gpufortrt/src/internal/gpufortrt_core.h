@@ -8,7 +8,7 @@
 #include <tuple>
 #include <cstddef>
 
-#include "../gpufortrt_types.h"
+#include "gpufortrt_types.h"
 
 #include "auxiliary.h"
 
@@ -371,6 +371,7 @@ namespace gpufortrt {
 
     // global variables
     extern bool initialized;
+    extern int default_async_arg;
     extern std::size_t num_records;
     extern record_list_t record_list;
     extern queue_record_list_t queue_record_list; 

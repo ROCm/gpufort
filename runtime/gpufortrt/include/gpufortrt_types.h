@@ -8,6 +8,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+  extern int gpufortrt_async_noval;
+  extern int gpufortrt_async_sync;
+  extern int gpufortrt_async_default;
+
   /**
    * \note: Enum values must match those of Fortran enumeration!
    * \note: Upper case first letter used because `delete` is C++ keyword.

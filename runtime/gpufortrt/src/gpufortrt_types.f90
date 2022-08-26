@@ -8,23 +8,25 @@ module gpufortrt_types
   integer, parameter :: gpufortrt_handle_kind = c_int
 
   integer(gpufortrt_handle_kind), parameter :: gpufortrt_async_noval = -1 
+  integer(gpufortrt_handle_kind), parameter :: gpufortrt_async_sync = -2 
+  integer(gpufortrt_handle_kind), parameter :: gpufortrt_async_default = -3 
   
   !> Mapping kinds.
   enum, bind(c)
-    enumerator :: gpufortrt_map_kind_undefined       = 0
-    enumerator :: gpufortrt_map_kind_present         = 1
-    enumerator :: gpufortrt_map_kind_delete          = 2
-    enumerator :: gpufortrt_map_kind_create          = 3
-    enumerator :: gpufortrt_map_kind_no_create       = 4
-    enumerator :: gpufortrt_map_kind_copyin          = 5
-    enumerator :: gpufortrt_map_kind_copyout         = 6
-    enumerator :: gpufortrt_map_kind_copy            = 7
+    enumerator :: gpufortrt_map_kind_undefined = 0
+    enumerator :: gpufortrt_map_kind_present
+    enumerator :: gpufortrt_map_kind_delete
+    enumerator :: gpufortrt_map_kind_create
+    enumerator :: gpufortrt_map_kind_no_create
+    enumerator :: gpufortrt_map_kind_copyin
+    enumerator :: gpufortrt_map_kind_copyout
+    enumerator :: gpufortrt_map_kind_copy
   end enum
   
   enum, bind(c)
-    enumerator :: gpufortrt_counter_none       = 0
-    enumerator :: gpufortrt_counter_structured = 1
-    enumerator :: gpufortrt_counter_dynamic    = 2
+    enumerator :: gpufortrt_counter_none = 0
+    enumerator :: gpufortrt_counter_structured
+    enumerator :: gpufortrt_counter_dynamic
   end enum
   
   type, bind(c) :: gpufortrt_mapping_t

@@ -3,10 +3,12 @@
 #include <vector>
 #include <algorithm>
 
-// This test fails at the linking stage
+// This test does not compile
 
 __global__ void mykernel(int N) {
-  __device__ int mydevicefunc(int a);
+  __device__ int mydevicefunc(int a)  {
+    return 2*a; 
+  }
   int i = threadIdx.x + blockIdx.x * blockDim.x;
   if ( i < N ) {
     printf("%d\n",mydevicefunc(i));

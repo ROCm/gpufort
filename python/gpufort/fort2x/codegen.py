@@ -161,6 +161,27 @@ class CodeGenerator():
         cpp_filegen = self.cpp_filegen # for top-level device procedures
         fortran_modulegen = None
 
+        def make_new_filegens_(stnode):
+            nonlocal cpp_filegen
+            nonlocal fortran_modulegen
+            
+            stnode_name = stnode.name.lower()
+            inode = next((irecord for irecord in self.index
+                          if irecord["name"] == stnode_name), None)
+            cpp_file_name = "{}{}".format(
+                CodeGenerator._fort2x_node_name(stnode),
+                self.cpp_file_ext)
+            cpp_filegen = filegen.CppFileGenerator(
+                guard=CodeGenerator._create_cpp_guard(cpp_file_name),
+                prolog=self.cpp_file_preamble,
+                default_includes=self.default_includes)
+            fortran_modulegen = filegen.FortranModuleGenerator(
+                name=inode["name"] + opts.fortran_module_suffix,
+                default_modules=self._make_module_dicts(
+                    self.default_modules))
+            return cpp_file_name, inode
+
+
         def traverse_node_(stnode):
             """Traverse and modify scanner tree, create C/C++ file generators.
             :param stnode: A scanner tree node
@@ -168,18 +189,28 @@ class CodeGenerator():
             """
             nonlocal cpp_filegen
             nonlocal fortran_modulegen
+            
+            cpp_file_name = None
+
+            is_top_level_device_procedure = (
+                isinstance(stnode.parent, scanner.tree.STRoot)
+                and isinstance(stnode, scanner.tree.STProcedure)
+                and self._device_procedure_filter(stnode)
+                and not stnode.is_kernel_subroutine())
+            
             # main
             if isinstance(stnode, scanner.tree.STRoot):
                 for stchildnode in stnode.children:
                     traverse_node_(stchildnode)
             elif self._loop_kernel_filter(stnode):
                 self._render_loop_nest(stnode, fortran_modulegen)
-            elif self._device_procedure_filter(
-                    stnode
-            ): # handle before STProcedure (without attributes) is handled
+            elif self._device_procedure_filter(stnode):
+                # handle before STProcedure (without attributes) is handled
                 if stnode.is_kernel_subroutine():
                     cpp_filegen_to_pass = self.cpp_filegen
                 else:
+                    if is_top_level_device_procedure:
+                        cpp_file_name, _ = make_new_filegens_(stnode)
                     cpp_filegen_to_pass = cpp_filegen
                 self._render_scope(stnode, cpp_filegen_to_pass)
                 self._render_device_procedure(stnode, cpp_filegen_to_pass, fortran_modulegen)
@@ -188,21 +219,8 @@ class CodeGenerator():
             elif isinstance(stnode,
                             (scanner.tree.STProgram, scanner.tree.STModule,
                              scanner.tree.STProcedure)):
-                stnode_name = stnode.name.lower()
                 if isinstance(stnode.parent, scanner.tree.STRoot):
-                    inode = next((irecord for irecord in self.index
-                                  if irecord["name"] == stnode_name), None)
-                    cpp_file_name = "{}{}".format(
-                        CodeGenerator._fort2x_node_name(stnode),
-                        self.cpp_file_ext)
-                    cpp_filegen = filegen.CppFileGenerator(
-                        guard=CodeGenerator._create_cpp_guard(cpp_file_name),
-                        prolog=self.cpp_file_preamble,
-                        default_includes=self.default_includes)
-                    fortran_modulegen = filegen.FortranModuleGenerator(
-                        name=inode["name"] + opts.fortran_module_suffix,
-                        default_modules=self._make_module_dicts(
-                            self.default_modules))
+                    cpp_file_name, inode = make_new_filegens_(stnode)
                 else:
                     assert isinstance(stnode, scanner.tree.STProcedure)
                     inode = stnode.index_record
@@ -212,7 +230,7 @@ class CodeGenerator():
                             default_modules=self._make_module_dicts(
                                 self.default_modules))
                 if inode == None:
-                    raise util.error.LookupError("could not find self.index record for scanner tree node '{}'.".format(stnode_name))
+                    raise util.error.LookupError("could not find self.index record for scanner tree node '{}'.".format(stnode.name))
                 if (isinstance(stnode,scanner.tree.STProgram)
                    or (isinstance(stnode,scanner.tree.STProcedure)
                       and not stnode.is_interface())):
@@ -244,25 +262,30 @@ class CodeGenerator():
                 for stchildnode in stnode.children:
                     traverse_node_(stchildnode)
 
-                # finalize
-                # Fortran code
-                if isinstance(stnode.parent,(scanner.tree.STRoot,scanner.tree.STModule)) and\
-                   fortran_modulegen.stores_any_code():
-                    # Directly modify Fortran tree with new definitions.
-                    self._modify_stcontainer(stnode, fortran_modulegen)
-                if isinstance(stnode.parent, scanner.tree.STRoot) and\
-                   fortran_modulegen.stores_any_code():
-                     # module generator can be used to generate standalone module (files).
-                     self.fortran_modulegens.append(fortran_modulegen)
-                # C++ code
-                if isinstance(stnode, scanner.tree.STModule): #
-                    self.cpp_filegen.includes.append(cpp_file_name)
-                    self.cpp_filegens_per_module.append((
-                        cpp_file_name,
-                        cpp_filegen,
-                    ))
-                elif isinstance(stnode.parent, scanner.tree.STRoot):
-                    self.cpp_filegen.merge(cpp_filegen)
+            # finalize
+            # Fortran code
+            if isinstance(stnode.parent,(scanner.tree.STRoot,scanner.tree.STModule)) and\
+               fortran_modulegen.stores_any_code():
+                # Directly modify Fortran tree with new definitions.
+                self._modify_stcontainer(stnode, fortran_modulegen)
+            if isinstance(stnode.parent, scanner.tree.STRoot) and\
+               fortran_modulegen.stores_any_code():
+                 # module generator can be used to generate standalone module (files).
+                 self.fortran_modulegens.append(fortran_modulegen)
+            # C++ code
+            if (isinstance(stnode, (scanner.tree.STModule))
+               or is_top_level_device_procedure):
+                self.cpp_filegen.includes.append(cpp_file_name)
+                self.cpp_filegens_per_module.append((
+                    cpp_file_name,
+                    cpp_filegen,
+                ))
+                # reset current filegen to root filegen
+                cpp_filegen = self.cpp_filegen
+            elif isinstance(stnode.parent, scanner.tree.STRoot):
+                self.cpp_filegen.merge(cpp_filegen)
+                # reset current filegen to root filegen
+                cpp_filegen = self.cpp_filegen
 
         traverse_node_(self.stree)
         self._traversed = True

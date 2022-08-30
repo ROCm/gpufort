@@ -1716,7 +1716,7 @@ def parse_assignment(statement,parse_rhs=False):
 def parse_lvalue(statement):
     tokens = tokenize(statement)
     parts,_ = get_top_level_operands(tokens,separators=["%"],
-                    join_operand_tokens=False)
+                                     join_operand_tokens=False)
     result = []
     for part_tokens in parts:
         ident = part_tokens.pop(0)
@@ -1850,7 +1850,8 @@ def is_assignment(tokens):
     #assert not is_declaration_(tokens)
     #assert not is_do_(tokens)
     if "=" in tokens:
-        operands,_ = get_top_level_operands(tokens,separators=["="])
+        operands,_ = get_top_level_operands(tokens,separators=["="],
+                                            join_operand_tokens=False)
         if len(operands) == 2:
             lhs = operands[0]
             try:

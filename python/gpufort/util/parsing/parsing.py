@@ -81,7 +81,7 @@ def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
             r"\*\*?",
             r"\/",
             r"\&",
-            r"\.\w+\.",
+            r"\.(?:eq|ne|gt|lt|ge|le|and|or|not|eqv|neqv)\.",
             r"[\s\t\r\n]+",
         ]
         if modern_fortran:
@@ -91,7 +91,7 @@ def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
         # IMPORTANT: Use non-capturing groups (?:<expr>) to ensure that an inner group in TOKENS_KEEP
         # is not captured.
         keep_pattern = "(" + "|".join(TOKENS_KEEP) + ")"
-        
+       
         tokens = re.split(keep_pattern, statement, 0, re.IGNORECASE)
         result = []
         for tk in tokens:
@@ -454,7 +454,7 @@ def parse_function_statement(statement):
     while criterion:
         if tokens[0].lower() in type_begin:
             result_type, f_len, result_type_kind, params, num_consumed_tokens =\
-                    _parse_datatype(tokens)
+                    parse_fortran_datatype(tokens)
             tokens=tokens[num_consumed_tokens:]
         else:
             tk = tokens.pop(0)
@@ -664,7 +664,7 @@ def parse_attributes_statement(statement):
                 raise error.SyntaxError("expected ','")
     return attributes, variables    
 
-#def _parse_datatype_v1(tokens):
+#def parse_fortran_datatype_v1(tokens):
 #    # TODO treat len of CHARACTER explicitly
 #    # handle datatype
 #    tokens = pad_to_size(tokens,6)
@@ -774,7 +774,7 @@ def parse_type_statement(statement):
             raise error.SyntaxError("expected at least 1 parameter")
     return name, attributes, params
 
-def _parse_fortran_argument(statement):
+def parse_fortran_argument(statement):
     tokens = tokenize(statement)
     parts,num_consumed_tokens = get_top_level_operands(tokens,separators="=")
     if len(parts) == 2:
@@ -784,7 +784,7 @@ def _parse_fortran_argument(statement):
     else:
         raise error.SyntaxError("expected single expression or named argument expression")
 
-def _map_fortran_args_to_positional_args(fortran_args,
+def map_fortran_args_to_positional_args(fortran_args,
                                          positional_args=None,
                                          defaults=None,
                                          allow_named_args=True):
@@ -814,7 +814,7 @@ def _map_fortran_args_to_positional_args(fortran_args,
     else:
         raise ValueError("type of 'fortran_args' must be either str, list of str, or list of 2-tuples with str or None elements")
     if args1 != None:
-        fortran_arg_list = [_parse_fortran_argument(expr) for expr in args1]
+        fortran_arg_list = [parse_fortran_argument(expr) for expr in args1]
     #
     values = None
     if positional_args != None:
@@ -870,7 +870,7 @@ def _parse_f77_character_type(statement,parse_all=False):
         total_num_consumed_tokens += 1
         check_if_all_tokens_are_blank(tokens[total_num_consumed_tokens:],parse_all)
         if len(args) == 1:
-            char_len = _map_fortran_args_to_positional_args(args,
+            char_len = map_fortran_args_to_positional_args(args,
                                                             positional_args=["len"],
                                                             defaults=["1"],allow_named_args=False)[0]
             return (char_type, char_len, None, [], total_num_consumed_tokens)
@@ -891,7 +891,7 @@ def _parse_f77_character_type(statement,parse_all=False):
     else:
         raise error.SyntaxError("expected 'character'") 
             
-def _parse_character_type(statement,parse_all=False):
+def parse_fortran_character_type(statement,parse_all=False):
     tokens = tokenize(statement,padded_size=2)
     if compare_ignore_case(tokens[0:2],["character","("]):
         total_num_consumed_tokens = 2 
@@ -902,7 +902,7 @@ def _parse_character_type(statement,parse_all=False):
         total_num_consumed_tokens += 1
         check_if_all_tokens_are_blank(tokens[total_num_consumed_tokens:],parse_all)
         if len(args) in [1,2]:
-            values = _map_fortran_args_to_positional_args(args,["len","kind"],defaults=["1",None])
+            values = map_fortran_args_to_positional_args(args,["len","kind"],defaults=["1",None])
             char_len, char_kind = values
             return (tokens[0], char_len, char_kind, [], total_num_consumed_tokens)
         else:
@@ -931,7 +931,7 @@ def _parse_f77_basic_type(statement,parse_all=False):
             total_num_consumed_tokens += 1
             check_if_all_tokens_are_blank(tokens[total_num_consumed_tokens:],parse_all)
             if len(args) == 1:
-                basic_kind = _map_fortran_args_to_positional_args(args,
+                basic_kind = map_fortran_args_to_positional_args(args,
                                                                   positional_args=["kind"],
                                                                   defaults=[None],allow_named_args=False)[0]
                 return (basic_type, None, basic_kind, [], total_num_consumed_tokens)
@@ -952,7 +952,7 @@ def _parse_f77_basic_type(statement,parse_all=False):
     else:
             raise error.SyntaxError("expected 'character'") 
 
-def _parse_basic_type(statement,parse_all=False):
+def parse_fortran_basic_type(statement,parse_all=False):
     """:note: character is handleded in a dedicated function."""
     tokens = tokenize(statement,padded_size=2)
     if (tokens[0].lower() in __basic_types
@@ -965,14 +965,14 @@ def _parse_basic_type(statement,parse_all=False):
         total_num_consumed_tokens += 1
         check_if_all_tokens_are_blank(tokens[total_num_consumed_tokens:],parse_all)
         if len(args) == 1:
-            basic_kind = _map_fortran_args_to_positional_args(args,["kind"],defaults=[None])[0]
+            basic_kind = map_fortran_args_to_positional_args(args,["kind"],defaults=[None])[0]
             return (tokens[0],None,basic_kind,[],total_num_consumed_tokens)
         else:
             raise error.SyntaxError("expected a single kind expressions")
     else:
         return _parse_f77_basic_type(tokens,parse_all)
 
-def _parse_derived_type(statement,type_or_class="type",parse_all=True):
+def parse_fortran_derived_type(statement,type_or_class="type",parse_all=True):
     tokens = tokenize(statement,padded_size=2)
     if compare_ignore_case(tokens[0:2],[type_or_class,"("]):
         total_num_consumed_tokens = 2
@@ -999,16 +999,16 @@ def _parse_derived_type(statement,type_or_class="type",parse_all=True):
     else:
         raise error.SyntaxError("expected 'type ('")
 
-def _parse_datatype(statement,parse_all=False):
+def parse_fortran_datatype(statement,parse_all=False):
     tokens = tokenize(statement,padded_size=1)
     if compare_ignore_case(tokens[0],"type"):
-        return _parse_derived_type(tokens,"type",parse_all)
+        return parse_fortran_derived_type(tokens,"type",parse_all)
     elif compare_ignore_case(tokens[0],"class"):
-        return _parse_derived_type(tokens,"class",parse_all)
+        return parse_fortran_derived_type(tokens,"class",parse_all)
     elif compare_ignore_case(tokens[0],"character"):
-        return _parse_character_type(tokens,parse_all)
+        return parse_fortran_character_type(tokens,parse_all)
     else:
-        return _parse_basic_type(tokens,parse_all)
+        return parse_fortran_basic_type(tokens,parse_all)
         
 
 def parse_declaration(statement):
@@ -1028,7 +1028,7 @@ def parse_declaration(statement):
     is_f77_character_declaration = compare_ignore_case(tokens[0:2],["character","*"])
 
     # handle datatype
-    datatype, length, kind, params, num_consumed_tokens = _parse_datatype(tokens)
+    datatype, length, kind, params, num_consumed_tokens = parse_fortran_datatype(tokens)
     
     datatype_raw = "".join(tokens[:num_consumed_tokens])
    
@@ -1306,7 +1306,7 @@ def parse_implicit_statement(statement):
             else:
                 # example: implicit integer(mykind) (j,k,m,n)       
                 first_letter_tokens = rule_tokens[len(datatype_tokens):]
-            f_type, f_len, f_kind, params, num_consumed_tokens = _parse_datatype(datatype_tokens)
+            f_type, f_len, f_kind, params, num_consumed_tokens = parse_fortran_datatype(datatype_tokens)
             assigned_first_letters = []
             check_if_all_tokens_are_blank(datatype_tokens[num_consumed_tokens:])
             #rule_tokens = rule_tokens[num_consumed_tokens:]

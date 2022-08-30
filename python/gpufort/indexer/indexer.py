@@ -131,10 +131,6 @@ def _parse_statements(linemaps, file_path,**kwargs):
     cuda_fortran  ,_ = util.kwargs.get_value("cuda_fortran",opts.cuda_fortran,**kwargs)
     openacc       ,_ = util.kwargs.get_value("openacc",opts.openacc,**kwargs)
     
-    default_implicit_spec =\
-      util.parsing.parse_implicit_statement(
-        "IMPLICIT integer (i-n), real (a-h,o-z)")
-    
     index = []
     root = Node("root", "root", data=index, parent=None)
     current_node = root
@@ -176,7 +172,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
 
     def get_current_implicit_rules_():
         if not len(implicit_spec_stack[-1]):
-            return default_implicit_spec
+            return types.DEFAULT_IMPLICIT_SPEC
         else:
             return implicit_spec_stack[-1]
 

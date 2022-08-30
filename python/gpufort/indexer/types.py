@@ -2,6 +2,12 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import copy
 
+from gpufort import util    
+
+DEFAULT_IMPLICIT_SPEC =\
+  util.parsing.parse_implicit_statement(
+    "IMPLICIT integer (i-n), real (a-h,o-z)")
+
 EMPTY_TYPE = {
    "name": None,
    "kind": None,
@@ -34,7 +40,7 @@ EMPTY_PROCEDURE = {
     "lineno" : -1,
 }
 
-EMPTY_SCOPE = {"tag": "", "types": [], "variables": [], "procedures": [], "index": []}
+EMPTY_SCOPE = {"tag": "", "types": [], "variables": [], "procedures": [], "index": [], "implicit": None}
 SCOPE_ENTRY_TYPES = ["types", "variables", "procedures"]
 
 EMPTY_VAR = {
@@ -70,6 +76,7 @@ def copy_scope(existing_scope,index=None,tag=None):
     """
     shallow_copy = copy.copy(existing_scope)
     shallow_copy["index"] = None
+    shallow_copy["implicit"] = None
     new_scope = copy.deepcopy(shallow_copy)
     new_scope["index"] = index
     if tag == None:

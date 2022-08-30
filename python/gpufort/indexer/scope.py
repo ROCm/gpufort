@@ -10,44 +10,31 @@ from . import opts
 from . import indexer
 from . import types
 
-def _default_implicit_type(var_expr):
-    if var_expr[0] in "ijklmn":
-        return "integer", None
-    else:
-        return "real", None
-
-def _implicit_type(var_expr,implicit_none,type_map):
+def _lookup_implicitly_declared_var(var_expr,implicit_specs):
     """
     :param dict type_map: contains a tuple of Fortran type and kind
                           for certain letters.
     :param bool implicit_none: 
     """
     if var_expr.isidentifier(): 
-        if len(type_map) and var_expr[0] in type_map:
-            return type_map[var_expr[0]]
-        elif var_expr[0:2] == "_i":
-            return "integer", None
-        elif not implicit_none:
-            return _default_implicit_type(var_expr)
-        else:
-            raise util.error.LookupError("no index record found for variable '{}' in scope".format(var_expr))
+        # TODO support arrays
+        if var_expr[0:2] == "_i":
+            f_type,f_len,kind = "integer", None, None
+            return types.create_index_var(f_type,
+                                          f_len,
+                                          kind,
+                                          [],
+                                          var_expr)
+        for spec in implicit_specs:
+            if var_expr[0] in spec["letters"]:
+                return types.create_index_var(spec["f_type"],
+                                              spec["len"],
+                                              spec["kind"],
+                                              [],
+                                              var_expr)
+        raise util.error.LookupError("no index record found for variable '{}' in scope".format(var_expr))
     else:
         raise util.error.LookupError("no index record found for variable '{}' in scope".format(var_expr))
-
-def _lookup_implicitly_declared_var(var_expr,implicit_none,type_map={}):
-    """
-    :param dict type_map: contains a tuple of Fortran type and kind
-                          for certain letters.
-    :param bool implicit_none: 
-    """
-    f_type, kind = _implicit_type(var_expr,implicit_none,type_map)
-    if kind != None:
-        f_type_full = f_type + "(" + kind + ")"
-    else:
-        f_type_full = f_type
-    # TODO len might not be None if a character is specified
-    # TODO params might not be [] if a type with parameters is specified
-    return types.create_index_var(f_type,None,kind,[],var_expr)
 
 def combine_use_statements(iused_modules):
     """Group used modules with same name.
@@ -393,6 +380,8 @@ def create_scope(index, tag):
                     #print("{}:{}".format(":".join(tag_tokens),[p["name"] for p in new_scope["procedures"]]))
                     current_record_list = current_record["procedures"]
                     break
+        # (shallow) copy implicit spec from scope-associated index record
+        new_scope["implicit"] = current_record["implicit"]
         opts.scopes.append(new_scope)
         util.logging.log_leave_function(opts.log_prefix, "create_scope")
         return new_scope
@@ -471,10 +460,8 @@ def search_scope_for_var(scope,
     try:
         result = lookup_from_left_to_right_(reversed(scope["variables"]))
     except util.error.LookupError as e:
-        #index_record = _lookup_index_record_hierarchy(scope["tag"])[-1]
-        #implicit_spec = index_record["implicit"]
         try:
-            result = _lookup_implicitly_declared_var(var_expr,implicit_none=True,type_map={})
+            result = _lookup_implicitly_declared_var(var_expr,scope["implicit"])
         except util.error.LookupError:
             raise e
 

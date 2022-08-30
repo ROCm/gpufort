@@ -51,7 +51,7 @@ def pad_to_size(tokens,padded_size):
     if padded_size > 0 and len(tokens) < padded_size:
         return tokens + [""] * (padded_size - len(tokens))
     else:
-        return tokens
+        return list(tokens)
 
 def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
     """Splits string at whitespaces and substrings such as
@@ -1107,6 +1107,9 @@ def parse_declaration(statement):
         variables.append((var_name,var_bounds,var_rhs))
     return (datatype, length, kind, params, qualifiers, dimension_bounds, variables, datatype_raw, qualifiers_raw) 
 
+def parse_dimension_statement(statement):
+    pass
+
 def parse_derived_type_statement(statement):
     """Parse the first statement of derived type declaration.
     :return: A triple consisting of the type name, its attributes, and
@@ -1881,6 +1884,19 @@ def is_select_case(tokens):
 def is_case(tokens):
     return compare_ignore_case(tokens[0:2],["case", "("])
 
+def parse_case(statement):
+    tokens = tokenize(statement)
+    if not compare_ignore_case(tokens[0:2],["case", "("]):
+        return error.SyntaxError("expected 'case' + '('")
+    num_consumed = 2
+    values,num_consumed1 = get_top_level_operands(tokens[num_consumed:-1],
+                                                           terminators=[")"])
+    num_consumed += num_consumed1
+    if not compare_ignore_case(tokens[-1],")"):
+        return error.SyntaxError("expected ')'")
+    num_consumed += 1
+    check_if_all_tokens_are_blank(tokens[num_consumed:])
+    return values
 
 def is_case_default(tokens):
     return compare_ignore_case(tokens[0:2],["case", "default"])

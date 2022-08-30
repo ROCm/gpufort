@@ -902,6 +902,20 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_interface_statement(expr))
             self.assertEqual(util.parsing.parse_interface_statement(expr),results[i])
+    def test_37_parse_case(self):
+        expressions = [
+          "case (0)",
+          "case (0,1,2)",
+          "case (0,-1,2,A,B,C,D)",
+        ]
+        results = [
+          ['0'],
+          ['0', '1', '2'],
+          ['0', '-1', '2', 'A', 'B', 'C', 'D'],
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing.parse_case(expr))
+            self.assertEqual(util.parsing.parse_case(expr),results[i])
     
 if __name__ == '__main__':
     unittest.main() 

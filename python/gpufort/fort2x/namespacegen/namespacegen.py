@@ -296,9 +296,9 @@ class NamespaceGenerator():
             temp_module_dir   = tempfile.TemporaryDirectory(
                 prefix="gpufort-namespacegen") # TODO set to True
             # TODO -J,-o assumes gfortran
-            cmd_compile = [self.fortran_compiler,"-J" + temp_module_dir.name] + self.fortran_compiler_flags + [temp_infile.name,"-o",temp_outfile_path]
+            cmd_compile = [self.fortran_compiler,"-J" + temp_module_dir.name] + [self.fortran_compiler_flags] + [temp_infile.name,"-o",temp_outfile_path]
             #print(cmd_compile)
-            status,_,err_out = util.subprocess.run_subprocess(cmd_compile,True)
+            status,_,err_out = util.subprocess.run_subprocess(" ".join(cmd_compile),True)
             if status != 0:
                 raise util.error.LookupError("failed resolving parameters in scope '{}' as compilation with compiler '{}' and flags '{}' failed for the following reason: {}".format(
                     self.scope["tag"],self.fortran_compiler," ".join(self.fortran_compiler_flags),err_out))
@@ -306,7 +306,7 @@ class NamespaceGenerator():
             shutil.rmtree(temp_module_dir.name,ignore_errors=False)
             if os.path.exists(temp_infile.name):
                 os.remove(temp_infile.name)
-            cmd_run     = [temp_outfile_path]
+            cmd_run     = temp_outfile_path
             _,std_out,_ = util.subprocess.run_subprocess(cmd_run,True)
             cpp_parameter_expressions = self.__parse_fortran_output(std_out)
             if os.path.exists(temp_outfile_path):

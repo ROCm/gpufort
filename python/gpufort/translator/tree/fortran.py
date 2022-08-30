@@ -1016,14 +1016,18 @@ class TTSelectCase(base.TTContainer):
 class TTCase(base.TTContainer):
 
     def _assign_fields(self, tokens):
-        self.case, self.body = tokens
+        self.cases, self.body = tokens
 
     def child_nodes(self):
-        return [self.case, self.body]
+        return [self.cases, self.body]
 
     def c_str(self):
         body_content = base.TTContainer.c_str(self)
-        return "case {}:\n{}\n  break;".format(base.make_c_str(self.case),body_content)
+        result = ""
+        for case in self.cases:
+            result += "case ("+base.make_c_str(case)+"):\n"
+        result += body_content + "\n  break;"
+        return result
 
 class TTCaseDefault(base.TTContainer):
 

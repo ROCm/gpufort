@@ -35,5 +35,5 @@ all_used_modules_have_been_compiled = False
         # only contains that single module and no other module, program or top-level procedure.
 fortran_compiler = os.environ.get("GPUFORT_FC","gfortran")
         # Compiler to use for resolving parameters via (Fortran) compiler.
-fortran_compiler_flags = os.environ.get("GPUFORT_FCFLAGS"," -ffree-line-length-none ")
-        # Compiler flags to use for resolving parameters via (Fortran) compiler.
+fortran_compiler_flags = os.environ.get("GPUFORT_FCFLAGS","-ffree-form -ffree-line-length-none")
+        # Compiler flags to use for resolving parameters via (Fortran) compiler, must be a list

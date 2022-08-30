@@ -260,4 +260,7 @@ namespace {
 {{ binop(op,n) }}
 {% endfor %}
 {% endfor %}
+
+#define min0 min
+#define max0 max
 #endif // _GPUFORT_H_

@@ -53,7 +53,7 @@ do j = 1, -(max(M,n)), min(m,n,2)
       select case (i)
         case (1)
           k = 1*i
-        case (2)
+        case (2,3,-4)
           k = 2*i
         case default
           k = i

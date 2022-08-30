@@ -135,6 +135,8 @@ int
 logical
 max
 min
+max0
+min0
 mod
 modulo
 nint
@@ -225,6 +227,8 @@ FORTRAN_INTRINSICS += [
     "atan1",
     "aexp",
     "alog",
+    "alog10",
+    "dlog10",
 ]
 
 # Host modules

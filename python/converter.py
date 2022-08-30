@@ -10,6 +10,7 @@ import hashlib
 import cProfile
 import pstats
 import textwrap
+import shlex
 
 # local imports
 from gpufort import util
@@ -551,7 +552,7 @@ def get_hipcc_cflags():
     return get_basic_cflags() + ["-fPIC","-std=c++14"]
 
 def get_gfortran_cflags():
-    return ["-cpp","-std=f2008","-ffree-line-length-none"]
+    return ["-cpp","-ffree-line-length-none"]
 
 def get_basic_ldflags(with_runtime):
     ldflags = []
@@ -702,7 +703,8 @@ def map_args_to_opts(args,include_dirs,defines,fortran_and_cpp_compiler_options,
     arg_cflags  = "-cflags"
     fcflags = fortran_and_cpp_compiler_options[arg_fcflags]
     if args.use_default_flags:
-        fcflags = ["-I{}".format(inc) for inc in include_dirs] + defines + fcflags
+        fcflags = shlex.split(fort2x.namespacegen.opts.fortran_compiler_flags) + fcflags
+        fcflags  = ["-I{}".format(inc) for inc in include_dirs] + defines + fcflags
         fortran_and_cpp_compiler_options[arg_fcflags] = fcflags
     cflags = fortran_and_cpp_compiler_options[arg_cflags]
     if args.use_default_flags:
@@ -715,7 +717,7 @@ def map_args_to_opts(args,include_dirs,defines,fortran_and_cpp_compiler_options,
     if len(fortran_and_cpp_compiler_options[arg_cc]):
         fort2x.namespacegen.opts.fortran_compiler=" ".join(fortran_and_cpp_compiler_options[arg_cc])
     if len(fortran_and_cpp_compiler_options[arg_fcflags]) or args.use_default_flags:
-        fort2x.namespacegen.opts.fortran_compiler_flags = fcflags # pass as list of string
+        fort2x.namespacegen.opts.fortran_compiler_flags = " ".join(fcflags)
     if args.resolve_parameters_via_fc:
         fort2x.namespacegen.opts.resolve_all_parameters_via_compiler = True
     if args.assume_used_mod_files_exist:

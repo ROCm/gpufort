@@ -238,6 +238,14 @@ namespace {
     const double diff = a-b;
     return (diff>0.) ? diff : 0.;
   }
+  
+  __device__ __forceinline__ float alog10(const float x) {
+    return log10f(x);
+  }
+  
+  __device__ __forceinline__ double dlog10(const double x) {
+    return log10(x);
+  }
 
   template <typename T>
   __device__ __forceinline__ T mod(const T a, const T b) {

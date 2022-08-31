@@ -79,6 +79,11 @@ class HipCodeGenerator(codegen.CodeGenerator):
                 mykernelgen.render_begin_kernel_comment_cpp()
                 + mykernelgen.render_gpu_kernel_cpp()
                 + mykernelgen.render_end_kernel_comment_cpp())
+        if not is_kernel_subroutine:
+            cpp_filegen.rendered_types += (
+                mykernelgen.render_begin_kernel_comment_cpp()
+                + mykernelgen.render_gpu_kernel_prototype_cpp()
+                + mykernelgen.render_end_kernel_comment_cpp())
         rendered_launchers_cpp = []
         rendered_interfaces_f03 = []
  

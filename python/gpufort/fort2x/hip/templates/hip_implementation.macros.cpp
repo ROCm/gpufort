@@ -85,6 +85,14 @@ constexpr int {{prefix_var}}_halo_layers = 0;
 */
 {%- endmacro -%}
 {########################################################################################}
+{%- macro render_hip_device_routine_prototype(routine) -%}
+{{routine.attribute}} {{routine.return_type}} {{routine.launch_bounds}} {{routine.name}}(
+{{ cm.render_all_global_param_decls(routine.global_vars+routine.shared_and_local_array_vars,
+                                    routine.global_reduced_vars,
+                                    True,routine.attribute=="__global__") | indent(4,True) }}
+);
+{%- endmacro -%}
+{########################################################################################}
 {%- macro render_hip_device_routine(routine) -%}
 {{routine.attribute}} {{routine.return_type}} {{routine.launch_bounds}} {{routine.name}}(
 {{ cm.render_all_global_param_decls(routine.global_vars+routine.shared_and_local_array_vars,

@@ -95,7 +95,7 @@ class CodeGenerator():
                     stkernel.kernel_name() in self.kernels_to_convert
             return condition1 and condition2
 
-    def _loop_kernel_filter(self, child):
+    def _compute_construct_filter(self, child):
         return isinstance(
             child, scanner.tree.STComputeConstruct) and self._consider_kernel(child)
 
@@ -202,7 +202,7 @@ class CodeGenerator():
             if isinstance(stnode, scanner.tree.STRoot):
                 for stchildnode in stnode.children:
                     traverse_node_(stchildnode)
-            elif self._loop_kernel_filter(stnode):
+            elif self._compute_construct_filter(stnode):
                 self._render_loop_nest(stnode, fortran_modulegen)
             elif self._device_procedure_filter(stnode):
                 # handle before STProcedure (without attributes) is handled
@@ -231,11 +231,6 @@ class CodeGenerator():
                                 self.default_modules))
                 if inode == None:
                     raise util.error.LookupError("could not find self.index record for scanner tree node '{}'.".format(stnode.name))
-                if (isinstance(stnode,scanner.tree.STProgram)
-                   or (isinstance(stnode,scanner.tree.STProcedure)
-                      and not stnode.is_interface())):
-                    self._render_scope(stnode, self.cpp_filegen) # must be in main C++ file
-
                 cpp_filegen.includes += self._create_includes_from_used_modules(
                     inode)
 
@@ -259,8 +254,17 @@ class CodeGenerator():
                                              "won't create interoperable type for derived types declared in procedure '{}'.".format(stnode_name))
 
                 # traverse children
+                have_compute_construct = False
                 for stchildnode in stnode.children:
+                    have_compute_construct = have_compute_construct or self._compute_construct_filter(stchildnode)
                     traverse_node_(stchildnode)
+                
+                # Generate scope namespace if necessary
+                if (have_compute_construct 
+                   and (isinstance(stnode,scanner.tree.STProgram)
+                       or (isinstance(stnode,scanner.tree.STProcedure)
+                          and not stnode.is_interface()))):
+                    self._render_scope(stnode, self.cpp_filegen) # must be in main C++ file
 
             # finalize
             # Fortran code

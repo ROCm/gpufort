@@ -51,7 +51,7 @@ fortran_subroutine_call = CALL + func_call
 # assignments
 l_arith_operator_1 = Regex(r"[+-]")
 l_arith_operator_2 = Regex(r"[+\-*/]")
-condition_op_1 = Regex(r".not.",re.IGNORECASE)
+condition_op_1 = Regex(r"\.not\.",re.IGNORECASE)
 condition_op_2 = Regex(r"[<>=/]=|[<>]|\.(eqv|neqv|eq|ne|lt|gt|le|ge|and|or|xor)\.",re.IGNORECASE)
 arithmetic_expression <<= infixNotation(rvalue,
     [

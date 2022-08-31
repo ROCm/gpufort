@@ -930,6 +930,22 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_dimension_statement(expr))
             self.assertEqual(util.parsing.parse_dimension_statement(expr),results[i])
+    def test_38_parse_external_statement(self):
+        expressions = [
+          "EXTERNAL a",
+          "external :: a",
+          "external a, b, c",
+          "EXTERNAL :: a, b, c",
+        ]
+        results = [
+          ['a'],
+          ['a'],
+          ['a', 'b', 'c'],
+          ['a', 'b', 'c'],
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing.parse_external_statement(expr))
+            self.assertEqual(util.parsing.parse_external_statement(expr),results[i])
     
 if __name__ == '__main__':
     unittest.main() 

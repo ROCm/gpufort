@@ -1231,6 +1231,25 @@ def parse_dimension_statement(statement):
         raise error.SyntaxError("expected 'dimension' or 'dim'")
     return __parse_array_spec(tokens)
 
+def parse_external_statement(statement):
+    """:return: List of identifiers of procedures.
+    :param statement: A string expression or a list of tokens."""
+    tokens = TokenStream(tokenize(statement,padded_size=3))
+    if tokens.pop_front().lower() not in ["external"]:
+        raise error.SyntaxError("expected 'external'")
+    next_token = tokens[0]
+    if next_token == "::":
+        tokens.pop_front()
+    elif not next_token.isidentifier():
+        raise error.SyntaxError("expected '::' or identifier")
+        
+    procedure_names, num_consumed = get_top_level_operands(tokens)
+    if len([p for p in procedure_names if not p.isidentifier()]):
+        raise error.SyntaxError("expected list of identifiers")
+    tokens.pop_front_n(num_consumed)
+    tokens.check_if_remaining_tokens_are_blank()
+    return procedure_names
+
 def parse_derived_type_statement(statement):
     """Parse the first statement of derived type declaration.
     :return: A triple consisting of the type name, its attributes, and

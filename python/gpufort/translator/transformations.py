@@ -313,17 +313,21 @@ def flag_tensors(ttvalues, scope):
     for value in ttvalues:
         ident = value.identifier_part()
         if isinstance(value._value, tree.TTFunctionCallOrTensorAccess):
-           try:
-              _ = indexer.scope.search_scope_for_var(scope, ident, 
-                      consider_implicit = False) # just check if the var exists
-              value._value._is_tensor_access = tree.True3
-           except util.error.LookupError:
-              try:
-                  _ = indexer.scope.search_scope_for_procedure(scope, ident) # just check if the procedure exists
-                  value._value._is_tensor_access = tree.False3
-              except util.error.LookupError:
-                  if indexer.scope.is_intrinsic(ident):
-                     value._value._is_tensor_access = tree.False3
-                  else:
-                      # TODO check EXTERNAL procedures too 
-                      raise util.error.LookupError("expression "+ident+" could not be associated with any variable, procedure, or intrinsic")
+            if ident.startswith("_"):
+                # function introduced by GPUFORT, Fortran identifiers never start with '_'
+                value._value._is_tensor_access = tree.False3
+            else:
+                try:
+                   _ = indexer.scope.search_scope_for_var(scope, ident, 
+                           consider_implicit = False) # just check if the var exists
+                   value._value._is_tensor_access = tree.True3
+                except util.error.LookupError:
+                   try:
+                       _ = indexer.scope.search_scope_for_procedure(scope, ident) # just check if the procedure exists
+                       value._value._is_tensor_access = tree.False3
+                   except util.error.LookupError:
+                       if indexer.scope.is_intrinsic(ident):
+                          value._value._is_tensor_access = tree.False3
+                       else:
+                           # TODO check EXTERNAL procedures too 
+                           raise util.error.LookupError("expression "+ident+" could not be associated with any variable, procedure, or intrinsic")

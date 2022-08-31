@@ -187,16 +187,15 @@ def lookup_index_entries_for_vars_in_procedure_body(scope,ttprocedurebody,iproce
         for ivar in iprocedure["variables"]
         if "shared" in ivar["attributes"]
     ]
-    local_vars = [
-        ivar["name"]
-        for ivar in iprocedure["variables"]
-        if ivar["name"] not in iprocedure["dummy_args"]
-    ]
     all_var_exprs = vars_in_subtree(ttprocedurebody, scope) # in the body, there might be variables present from used modules
-    all_vars = iprocedure["dummy_args"] + [
-        v for v in all_var_exprs if (v not in iprocedure["dummy_args"] and
-                                     v not in tree.grammar.DEVICE_PREDEFINED_VARIABLES)
+    local_vars = [
+        v for v in all_var_exprs
+        if (v not in iprocedure["dummy_args"]
+           and v not in shared_vars
+           and v not in tree.grammar.DEVICE_PREDEFINED_VARIABLES) # TODO only with
+                                                                             # CUDA Fortran
     ]
+    all_vars = iprocedure["dummy_args"] + shared_vars + local_vars
     global_reductions = {}
     loop_vars = []
 

@@ -193,7 +193,8 @@ class HipCodeGenerator(codegen.CodeGenerator):
             stprocedure.kernel_args_tavars = mykernelgen.get_kernel_args()
         except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:
             msg = "{}:[{}-{}]:{}".format(
-                    stloopnest._linemaps[0]["file"],stloopnest.min_lineno(),stloopnest.max_lineno(),e.args[0])
+                    stprocedure._linemaps[0]["file"],stprocedure.min_lineno(),stprocedure.max_lineno(),e.args[0])
+            print(stprocedure.statements())
             e.args = (msg,)
             raise
     

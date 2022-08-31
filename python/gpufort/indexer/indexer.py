@@ -37,6 +37,7 @@ ignored_constructs = [
   #"interface",
 ]
 
+
 class Node():
 
     def __init__(self, kind, name, data, parent=None):

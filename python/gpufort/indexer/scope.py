@@ -9,6 +9,7 @@ from gpufort import util
 from . import opts
 from . import indexer
 from . import types
+from . import intrinsics
 
 def _lookup_implicitly_declared_var(var_expr,implicit_specs):
     """
@@ -16,22 +17,23 @@ def _lookup_implicitly_declared_var(var_expr,implicit_specs):
                           for certain letters.
     :param bool implicit_none: 
     """
-    if var_expr.isidentifier(): 
+    var_expr_lower = var_expr.lower()
+    if var_expr_lower.isidentifier(): 
         # TODO support arrays
-        if var_expr[0:2] == "_i":
+        if var_expr_lower[0:2] == "_i":
             f_type,f_len,kind = "integer", None, None
             return types.create_index_var(f_type,
                                           f_len,
                                           kind,
                                           [],
-                                          var_expr)
+                                          var_expr_lower)
         for spec in implicit_specs:
-            if var_expr[0] in spec["letters"]:
+            if var_expr_lower[0] in spec["letters"]:
                 return types.create_index_var(spec["f_type"],
                                               spec["len"],
                                               spec["kind"],
                                               [],
-                                              var_expr)
+                                              var_expr_lower)
         raise util.error.LookupError("no index record found for variable '{}' in scope".format(var_expr))
     else:
         raise util.error.LookupError("no index record found for variable '{}' in scope".format(var_expr))
@@ -409,7 +411,8 @@ def _lookup_index_record_hierarchy(scope_tag):
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def search_scope_for_var(scope,
-                         var_expr):
+                         var_expr,
+                         consider_implicit=True):
     """
     %param str variable_tag% a simple identifier such as 'a' or 'A_d' or a more complicated tag representing a derived-type member, e.g. 'a%b%c' or 'a%b(i,j)%c(a%i5)'.
     """
@@ -460,10 +463,13 @@ def search_scope_for_var(scope,
     try:
         result = lookup_from_left_to_right_(reversed(scope["variables"]))
     except util.error.LookupError as e:
-        try:
-            result = _lookup_implicitly_declared_var(var_expr,scope["implicit"])
-        except util.error.LookupError:
+        if not consider_implicit:
             raise e
+        else:
+            try:
+                result = _lookup_implicitly_declared_var(var_expr,scope["implicit"])
+            except util.error.LookupError:
+                raise e
 
     util.logging.log_debug2(opts.log_prefix,"search_scope_for_var",\
       "entry found for variable tag '{}'".format(variable_tag))
@@ -471,6 +477,12 @@ def search_scope_for_var(scope,
                                     "search_scope_for_var")
     return result
 
+def search_scope_for_implicitly_declared_var(scope,var_expr):
+    return _lookup_implicitly_declared_var(var_expr,scope["implicit"])
+    
+
+def is_intrinsic(name):
+    return name.lower() in intrinsics.intrinsics
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def search_scope_for_type(scope, type_name):

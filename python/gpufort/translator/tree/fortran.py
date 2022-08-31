@@ -221,6 +221,10 @@ class TTNumber(base.TTNode):
 
     def f_str(self):
         return self._value
+    
+    def __str__(self):
+        return "TTNumber(val:"+str(self._value)+")"
+    __repr__ = __str__
 
 
 class TTIdentifier(base.TTNode):
@@ -233,6 +237,10 @@ class TTIdentifier(base.TTNode):
 
     def c_str(self):
         return self.f_str()
+
+    def __str__(self):    
+        return "TTIdentifier(name:"+str(self._name)+")"
+    __repr__ = __str__
 
 
 class TTFunctionCallOrTensorAccess(base.TTNode):
@@ -284,34 +292,52 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
 
     def name_c_str(self):
         raw_name = base.make_c_str(self._name).lower()
-        num_args = len(self._args)
-        if raw_name == "sign":
-            return "copysign"
-        elif raw_name in ["max", "amax1"]:
-            return "max" + str(num_args)
-        elif raw_name in ["min", "amin1"]:
-            return "min" + str(num_args)
+        if self.is_tensor():
+            return raw_name
         else:
-            result = raw_name
-            for name in [
-              "abs",
-              "sqrt",
-              "sin",
-              "cos",
-              "tan",
-              "exp",
-              "log",
+            if raw_name == "sign":
+                return "copysign"
+            elif raw_name in [
+              "amax0",
+              "amax1",
+              "dmax1",
+              "max",
+              "max0",
+              "max1",
               ]:
-                if raw_name == name + "1":
-                    result = raw_name[:-1]
-                    break
-                elif raw_name == "a" + name:
-                    result = raw_name[1:]
-                    break
-                elif raw_name == "a" + name + "1":
-                    result = raw_name[1:-1]
-                    break
-            return result
+                num_args = len(self._args)
+                return "max" + str(num_args)
+            elif raw_name in [
+              "amin0",
+              "amin1",
+              "dmin1",
+              "min",
+              "min0",
+              "min1",
+              ]:
+                num_args = len(self._args)
+                return "min" + str(num_args)
+            else:
+                result = raw_name
+                for name in [
+                  "abs",
+                  "sqrt",
+                  "sin",
+                  "cos",
+                  "tan",
+                  "exp",
+                  "log",
+                  ]:
+                    if raw_name == name + "1":
+                        result = raw_name[:-1]
+                        break
+                    elif raw_name == "a" + name:
+                        result = raw_name[1:]
+                        break
+                    elif raw_name == "a" + name + "1":
+                        result = raw_name[1:-1]
+                        break
+                return result
 
     def c_str(self):
         name = self.name_c_str()
@@ -327,6 +353,10 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
             name,
             self._args.f_str()
             ])
+    
+    def __str__(self):
+        return "TTFunctionCallOrTensorAccess(name:"+str(self._name)+",is_tensor:"+str(self.is_tensor())+")"
+    __repr__ = __str__
 
 class TTValue(base.TTNode):
     
@@ -352,6 +382,20 @@ class TTValue(base.TTNode):
             return self._value.identifier_part(converter)
         else:
             return converter(self._value)
+    
+    def is_function_call(self):
+        """
+        :note: TTFunctionCallOrTensorAccess instances must be flagged as tensor beforehand.
+        """
+        #TODO check if detect all arrays in indexer/scope
+        # so that we do not need to know function names anymore.
+        if type(self._value) is TTFunctionCallOrTensorAccess:
+            return not self._value.is_tensor()
+        elif type(self._value) is TTDerivedTypeMember:
+            # TODO support type bounds routines
+            return False
+        else:
+            return False
 
     def get_value(self):
         return self._value 
@@ -414,10 +458,14 @@ class TTValue(base.TTNode):
         return result.lower()
 
 class TTLValue(TTValue):
-    pass
+    def __str__(self):
+        return "TTLValue(val:"+str(self._value)+")"
+    __repr__ = __str__
 
 class TTRValue(TTValue):
-    pass
+    def __str__(self):
+        return "TTRValue(val:"+str(self._value)+")"
+    __repr__ = __str__
 
 def _inquiry_str(prefix,ref,dim,kind=""):
     result = prefix + "(" + ref
@@ -715,6 +763,10 @@ class TTDerivedTypeMember(base.TTNode):
     def f_str(self):
         return base.make_f_str(self._type) + "%" + base.make_f_str(
             self._element)
+    
+    def __str__(self):
+        return "TTDerivedTypeMember(name:"+str(self._type)+"member:"+str(self._element)+")"
+    __repr__ = __str__
 
 
 class TTSubroutineCall(base.TTNode):

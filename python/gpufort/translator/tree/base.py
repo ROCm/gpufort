@@ -79,15 +79,6 @@ def f_keyword(keyword):
     else:
         return keyword
 
-
-ADDITIONS = "cuf kernel kind amax1 amin1" # TODO
-KEYWORDS = " ".join([
-    grammar.CUDA_FORTRAN_KEYWORDS_STR, grammar.FORTRAN_INTRINSICS_STR,
-    grammar.F08_KEYWORDS_STR, ADDITIONS
-])
-KEYWORDS = KEYWORDS.lower().split(" ")
-
-
 def find_all_matching(obj, filter_expr=lambda x: True, N=-1):
     """
     Find all nodes in tree of type 'searched_type'.

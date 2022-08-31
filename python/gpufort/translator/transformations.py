@@ -307,15 +307,23 @@ def map_scalar_derived_type_members_to_flat_scalars(ttvalues,loop_vars,scope):
     return substitutions
 
 def flag_tensors(ttvalues, scope):
-    """Clarify types of function calls / tensor access that are not members of a struct."""
+    """Clarify types of function calls / tensor access that are not members of a struct.
+    Lookup order: Explicitly types variables -> Functions -> Intrinsics -> Implicitly typed variables
+    """
     for value in ttvalues:
+        ident = value.identifier_part()
         if isinstance(value._value, tree.TTFunctionCallOrTensorAccess):
            try:
-              _ = indexer.scope.search_scope_for_var(scope, value.identifier_part()) # just check if the var exists
+              _ = indexer.scope.search_scope_for_var(scope, ident, 
+                      consider_implicit = False) # just check if the var exists
               value._value._is_tensor_access = tree.True3
            except util.error.LookupError:
               try:
-                  _ = indexer.scope.search_scope_for_procedure(scope, value.identifier_part()) # just check if the procedure exists
+                  _ = indexer.scope.search_scope_for_procedure(scope, ident) # just check if the procedure exists
                   value._value._is_tensor_access = tree.False3
               except util.error.LookupError:
-                  pass
+                  if indexer.scope.is_intrinsic(ident):
+                     value._value._is_tensor_access = tree.False3
+                  else:
+                      # TODO check EXTERNAL procedures too 
+                      raise util.error.LookupError("expression "+ident+" could not be associated with any variable, procedure, or intrinsic")

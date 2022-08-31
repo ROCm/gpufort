@@ -571,19 +571,16 @@ class STProcedure(STContainerBase):
 
         try:
             if self.is_function():
-                result_name = iprocedure["result_name"]
-                ivar_result = next((
-                    var for var in iprocedure["variables"]
-                    if var["name"] == iprocedure["result_name"]
-                ), None)
-                if ivar_result != None:
+                try:
+                    ivar_result = indexer.scope.search_scope_for_var(
+                      scope, iprocedure["result_name"])
                     ivar = copy.deepcopy(ivar_result)
                     translator.analysis.append_c_type(ivar)
                     self.c_result_type = ivar["c_type"]
                     self.parse_result  = translator.parse_procedure_body(
                         self.code, scope, ivar["name"])
-                else:
-                    raise util.error.LookupError("could not identify return value for function ''")
+                except util.error.LookupError as e:
+                    raise util.error.LookupError("could not identify return value for function ''") from e
             else:
                 self.c_result_type = "void"
                 self.parse_result = translator.parse_procedure_body(

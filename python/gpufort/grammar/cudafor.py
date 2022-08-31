@@ -225,9 +225,9 @@ FORTRAN_INTRINSICS += [
     "acos1",
     "atan",
     "atan1",
-    "aexp",
     "alog",
     "alog10",
+    "dexp",
     "dlog10",
 ]
 

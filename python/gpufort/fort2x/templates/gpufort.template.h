@@ -246,6 +246,10 @@ namespace {
   __device__ __forceinline__ double dlog10(const double x) {
     return log10(x);
   }
+  
+  __device__ __forceinline__ double dexp(const double x) {
+    return exp(x);
+  }
 
   template <typename T>
   __device__ __forceinline__ T mod(const T a, const T b) {

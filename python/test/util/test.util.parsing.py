@@ -902,7 +902,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_interface_statement(expr))
             self.assertEqual(util.parsing.parse_interface_statement(expr),results[i])
-    def test_37_parse_case(self):
+    def test_37_parse_case_statement(self):
         expressions = [
           "case (0)",
           "case (0,1,2)",
@@ -914,8 +914,22 @@ class TestParsingUtils(unittest.TestCase):
           ['0', '-1', '2', 'A', 'B', 'C', 'D'],
         ]
         for i,expr in enumerate(expressions):
-            #print(util.parsing.parse_case(expr))
-            self.assertEqual(util.parsing.parse_case(expr),results[i])
+            #print(util.parsing.parse_case_statement(expr))
+            self.assertEqual(util.parsing.parse_case_statement(expr),results[i])
+    def test_38_parse_dimension_statement(self):
+        expressions = [
+          "dim a(1)",
+          "DIMENSION a(2,3)",
+          "DIMENSION a(2,3), b(c,d,e:h)",
+        ]
+        results = [
+          [('a', ['1'])],
+          [('a', ['2', '3'])],
+          [('a', ['2', '3']), ('b', ['c', 'd', 'e:h'])],
+        ]
+        for i,expr in enumerate(expressions):
+            #print(util.parsing.parse_dimension_statement(expr))
+            self.assertEqual(util.parsing.parse_dimension_statement(expr),results[i])
     
 if __name__ == '__main__':
     unittest.main() 

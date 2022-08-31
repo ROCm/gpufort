@@ -255,7 +255,7 @@ def parse_fortran_code(statements,result_name=None):
             if type(curr) is tree.TTCase:
                 ascend_("case")
             try:
-                values = util.parsing.parse_case(tokens)
+                values = util.parsing.parse_case_statement(tokens)
                 descend_(
                     tree.TTCase(stmt, 0,
                                 [values, []]), "case")

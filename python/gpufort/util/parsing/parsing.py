@@ -109,6 +109,94 @@ def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
     else:
         raise Exception("input must be either a str or a list of strings")
 
+class TokenStream():
+    def __init__(self,tokens,ignore_whitespace=True):
+        self.setup(tokens,ignore_whitespace)
+
+    def setup(self,tokens,ignore_whitespace=True):
+        if isinstance(tokens,TokenStream):
+            self.tokens = tokens.tokens
+            self.current_front = tokens.current_front
+        else:
+            self.tokens = tokens
+            self.current_front = 0
+        self.__iter_idx = 0
+        self.ignore_whitespace = ignore_whitespace
+
+    def __getitem__(self, idx):
+        return self.tokens[self.current_front+idx]
+    def __len__(self):
+        if self.ignore_whitespace:
+            return len([tk for tk in self.tokens[self.current_front:] if len(tk.strip())])
+        else:
+            return len(self.tokens[self.current_front:])
+    def __str__(self):
+        return str(self.tokens[self.current_front:])
+    __repr__ = __str__
+
+    def __next_front(self,start_index):
+        """:return: Next token in the stream (search includes token at start_index)."""
+        if self.ignore_whitespace:
+            index = start_index
+            while (index < len(self.tokens)
+                  and not len(self.tokens[index].strip())):
+                index += 1
+            return index
+        else:
+            return start_index
+
+    def pop_front(self=True):
+        """:return: Next token in the stream.
+        :note: Increments self.current_front.
+        :throw: util.error.SyntaxError if end of token stream is reached.
+        """
+        if self.current_front >= len(self.tokens):
+            raise error.SyntaxError("reached end of token stream")
+        result = self.tokens[self.current_front]
+        self.current_front = self.__next_front(self.current_front+1)
+        return result
+    
+    def pop_front_n(self,num_tokens=True):
+        """:return: Next n tokens in the stream.
+        :note: Increments self.current_front.
+        :throw: util.error.SyntaxError if end of token stream is reached.
+        """
+        result = []
+        for i in range(0,num_tokens):
+            result.append(self.pop_front())
+        return result
+    
+    def pop_front_equals(self,other=True):
+        """:return: Next token in the stream equals 'other'.
+        :note: Increments self.current_front.
+        :throw: util.error.SyntaxError if end of token stream is reached.
+        """
+        return self.pop_front() == other
+    
+    def pop_front_equals_ignore_case(self,other=True):
+        """Case-insensitive 'pop_front_equals'.
+        :throw: util.error.SyntaxError if end of token stream is reached.
+        """
+        return self.pop_front().lower() == other
+    
+    def pop_front_n_equal(self,other=True):
+        """:return: Next n tokens in the stream equal the tokens in 'other'
+                    element per element.
+        :note: Increments self.current_front.
+        :throw: util.error.SyntaxError if end of token stream is reached.
+        """
+        return self.pop_front_n() == other
+    
+    def pop_front_n_equal_ignore_case(self,other=True):
+        """:return: Case-insensitive 'pop_front_n_equals'.
+        :throw: util.error.SyntaxError if end of token stream is reached.
+        """
+        return compare_ignore_case(self.pop_front_n(),other)
+
+    def check_if_remaining_tokens_are_blank(self):
+        check_if_all_tokens_are_blank(self.tokens[self.current_front:])
+
+
 def remove_whitespace(statement):
     """Remove whitespace.
     :param statement: String or list of strings.
@@ -351,7 +439,7 @@ def get_top_level_operands(tokens,
     current_operand = []
     criterion = len(tokens)
     open_brackets = 0
-    num_consumed_tokens = 0
+    num_consumed = 0
     while criterion:
         tk = tokens[idx]
         tk_lower = tk.lower()
@@ -363,7 +451,7 @@ def get_top_level_operands(tokens,
         elif tk == brackets[1]:
             open_brackets -= 1
         #
-        num_consumed_tokens += 1
+        num_consumed += 1
         if tk_lower in separators and open_brackets == 0:
             if len(current_operand):
                 if join_operand_tokens:
@@ -375,7 +463,7 @@ def get_top_level_operands(tokens,
             current_operand = []
         elif tk_lower in terminators or open_brackets < 0:
             criterion = False
-            num_consumed_tokens -= 1
+            num_consumed -= 1
         else: 
             current_operand.append(tk)
     if len(current_operand):
@@ -383,7 +471,7 @@ def get_top_level_operands(tokens,
             result.append(_join_tokens(current_operand,no_ws))
         else:
             result.append(current_operand)
-    return result, num_consumed_tokens
+    return result, num_consumed
 
 def extract_function_calls(text, func_name):
     """Extract all calls of the function `func_name` from the input text.
@@ -453,9 +541,9 @@ def parse_function_statement(statement):
     # prefix
     while criterion:
         if tokens[0].lower() in type_begin:
-            result_type, f_len, result_type_kind, params, num_consumed_tokens =\
+            result_type, f_len, result_type_kind, params, num_consumed =\
                     parse_fortran_datatype(tokens)
-            tokens=tokens[num_consumed_tokens:]
+            tokens=tokens[num_consumed:]
         else:
             tk = tokens.pop(0)
             criterion = len(tokens)
@@ -464,10 +552,10 @@ def parse_function_statement(statement):
             elif tk.lower() == "attributes":
                 if not tokens.pop(0) == "(":
                     raise error.SyntaxError("expected '(' after 'attributes'")
-                attributes, num_consumed_tokens =  get_top_level_operands(tokens)
+                attributes, num_consumed =  get_top_level_operands(tokens)
                 if not len(attributes):
                     raise error.SyntaxError("expected at least one attribute in the 'attributes' list")
-                tokens = tokens[num_consumed_tokens:]
+                tokens = tokens[num_consumed:]
                 if not tokens.pop(0) == ")":
                     raise error.SyntaxError("expected ')' after 'attributes' list")
                 criterion = len(tokens)
@@ -486,8 +574,8 @@ def parse_function_statement(statement):
         raise error.SyntaxError("expected identifier after '{}'".format(kind))
     if len(tokens):
         if tokens.pop(0) == "(":
-            dummy_args, num_consumed_tokens = get_top_level_operands(tokens)  
-            tokens = tokens[num_consumed_tokens:]
+            dummy_args, num_consumed = get_top_level_operands(tokens)  
+            tokens = tokens[num_consumed:]
             if not tokens.pop(0) == ")":
                 raise error.SyntaxError("expected ')' after dummy argument list")
     # result and bind
@@ -499,7 +587,7 @@ def parse_function_statement(statement):
         if suffix_kind in ["bind","result"]:
             if not tokens.pop(0) == "(":
                 raise error.SyntaxError("expected '(' after '{}'".format(suffix_kind))
-            operands, num_consumed_tokens =  get_top_level_operands(tokens)
+            operands, num_consumed =  get_top_level_operands(tokens)
             if suffix_kind == "bind":
                 if len(operands) in [1,2]:
                     bind_c = True
@@ -522,7 +610,7 @@ def parse_function_statement(statement):
                 if not operands[0].isidentifier():
                     raise error.SyntaxError("'result' argument must be identifier")
                 result_name = operands[0]
-            tokens = tokens[num_consumed_tokens:]
+            tokens = tokens[num_consumed:]
             if not tokens.pop(0) == ")":
                 raise error.SyntaxError("expected ')' after 'attributes' list")
         elif len(tk.strip()):
@@ -569,8 +657,8 @@ def parse_use_statement(statement):
     if tk.isidentifier():
         module_name = tk
     elif tk == ",":
-        qualifiers,num_consumed_tokens = get_top_level_operands(tokens)
-        tokens = tokens[num_consumed_tokens:]
+        qualifiers,num_consumed = get_top_level_operands(tokens)
+        tokens = tokens[num_consumed:]
         if tokens.pop(0) != "::":
             raise error.SyntaxError("expected '::' after qualifier list")
         tk = tokens.pop(0)
@@ -590,8 +678,8 @@ def parse_use_statement(statement):
         tokens.pop(0)
         have_renamings = True
     if have_only or have_renamings:
-        entries,num_consumed_tokens = get_top_level_operands(tokens,join_operand_tokens=False)
-        tokens = tokens[num_consumed_tokens:]
+        entries,num_consumed = get_top_level_operands(tokens,join_operand_tokens=False)
+        tokens = tokens[num_consumed:]
         for entry in entries:
             parts,_ = get_top_level_operands(entry,separators=["=>"])
             if len(parts) == 1 and have_only:
@@ -738,13 +826,13 @@ def _parse_raw_qualifiers_and_rhs(tokens):
         else:
             raise error.SyntaxError("could not parse qualifiers and right-hand side")
         # handle variables list
-        num_consumed_tokens = idx_last_consumed_token+1
-        tokens = tokens[num_consumed_tokens:]
-        variables_raw, num_consumed_tokens2  = get_top_level_operands(tokens)
-        num_consumed_tokens += num_consumed_tokens2
+        num_consumed = idx_last_consumed_token+1
+        tokens = tokens[num_consumed:]
+        variables_raw, num_consumed2  = get_top_level_operands(tokens)
+        num_consumed += num_consumed2
         if not len(variables_raw):
             raise error.SyntaxError("expected at least one entry in right-hand side")
-        return qualifiers_raw, variables_raw, num_consumed_tokens
+        return qualifiers_raw, variables_raw, num_consumed
     except IndexError:
         raise error.SyntaxError("could not parse qualifiers and right-hand side")
 
@@ -755,8 +843,8 @@ def parse_type_statement(statement):
     tokens = tokenize(statement,10)
     if tokens.pop(0).lower() != "type":
         raise error.SyntaxError("expected 'type'")
-    attributes, rhs, num_consumed_tokens = _parse_raw_qualifiers_and_rhs(tokens)
-    tokens = tokens[num_consumed_tokens:] # remove qualifier list tokens
+    attributes, rhs, num_consumed = _parse_raw_qualifiers_and_rhs(tokens)
+    tokens = tokens[num_consumed:] # remove qualifier list tokens
     check_if_all_tokens_are_blank(tokens)
     if len(rhs) != 1:
         raise error.SyntaxError("expected 1 identifier with optional parameter list")
@@ -766,8 +854,8 @@ def parse_type_statement(statement):
         raise error.SyntaxError("expected identifier")
     params = []
     if len(rhs_tokens) and rhs_tokens.pop(0)=="(":
-        params,num_consumed_tokens2 = get_top_level_operands(rhs_tokens)  
-        rhs_tokens = rhs_tokens[num_consumed_tokens2:]
+        params,num_consumed2 = get_top_level_operands(rhs_tokens)  
+        rhs_tokens = rhs_tokens[num_consumed2:]
         if not rhs_tokens.pop(0) == ")":
             raise error.SyntaxError("expected ')'")
         if not len(params):
@@ -776,7 +864,7 @@ def parse_type_statement(statement):
 
 def parse_fortran_argument(statement):
     tokens = tokenize(statement)
-    parts,num_consumed_tokens = get_top_level_operands(tokens,separators="=")
+    parts,num_consumed = get_top_level_operands(tokens,separators="=")
     if len(parts) == 2:
         return (parts[0],parts[1])
     elif len(parts) == 1:
@@ -862,18 +950,18 @@ def _parse_f77_character_type(statement,parse_all=False):
     char_kind = None 
     char_len  = "1"
     if compare_ignore_case(tokens[0:3],["character","*","("]):
-        total_num_consumed_tokens = 3
-        args, num_consumed_tokens = get_top_level_operands(tokens[3:])
-        total_num_consumed_tokens += num_consumed_tokens
-        if tokens[total_num_consumed_tokens:total_num_consumed_tokens+1] != [")"]:
+        total_num_consumed = 3
+        args, num_consumed = get_top_level_operands(tokens[3:])
+        total_num_consumed += num_consumed
+        if tokens[total_num_consumed:total_num_consumed+1] != [")"]:
             raise error.SyntaxError("missing ')'")
-        total_num_consumed_tokens += 1
-        check_if_all_tokens_are_blank(tokens[total_num_consumed_tokens:],parse_all)
+        total_num_consumed += 1
+        check_if_all_tokens_are_blank(tokens[total_num_consumed:],parse_all)
         if len(args) == 1:
             char_len = map_fortran_args_to_positional_args(args,
                                                             positional_args=["len"],
                                                             defaults=["1"],allow_named_args=False)[0]
-            return (char_type, char_len, None, [], total_num_consumed_tokens)
+            return (char_type, char_len, None, [], total_num_consumed)
         else:
             raise error.SyntaxError("expected a single unnamed 'len' expression")        
     elif compare_ignore_case(tokens[0:2],["character","*"]):
@@ -894,17 +982,17 @@ def _parse_f77_character_type(statement,parse_all=False):
 def parse_fortran_character_type(statement,parse_all=False):
     tokens = tokenize(statement,padded_size=2)
     if compare_ignore_case(tokens[0:2],["character","("]):
-        total_num_consumed_tokens = 2 
-        args, num_consumed_tokens = get_top_level_operands(tokens[total_num_consumed_tokens:])
-        total_num_consumed_tokens += num_consumed_tokens
-        if tokens[total_num_consumed_tokens:total_num_consumed_tokens+1] != [")"]:
+        total_num_consumed = 2 
+        args, num_consumed = get_top_level_operands(tokens[total_num_consumed:])
+        total_num_consumed += num_consumed
+        if tokens[total_num_consumed:total_num_consumed+1] != [")"]:
             raise error.SyntaxError("missing ')'")
-        total_num_consumed_tokens += 1
-        check_if_all_tokens_are_blank(tokens[total_num_consumed_tokens:],parse_all)
+        total_num_consumed += 1
+        check_if_all_tokens_are_blank(tokens[total_num_consumed:],parse_all)
         if len(args) in [1,2]:
             values = map_fortran_args_to_positional_args(args,["len","kind"],defaults=["1",None])
             char_len, char_kind = values
-            return (tokens[0], char_len, char_kind, [], total_num_consumed_tokens)
+            return (tokens[0], char_len, char_kind, [], total_num_consumed)
         else:
             raise error.SyntaxError("expected 1 or 2 comma-separated character length and kind expressions")
     else:
@@ -923,18 +1011,18 @@ def _parse_f77_basic_type(statement,parse_all=False):
     elif tokens[0].lower() in __basic_types:
         basic_type = tokens[0]
         if compare_ignore_case(tokens[1:3],["*","("]):
-            total_num_consumed_tokens = 3
-            args, num_consumed_tokens = get_top_level_operands(tokens[3:])
-            total_num_consumed_tokens += num_consumed_tokens
-            if tokens[total_num_consumed_tokens:total_num_consumed_tokens+1] != [")"]:
+            total_num_consumed = 3
+            args, num_consumed = get_top_level_operands(tokens[3:])
+            total_num_consumed += num_consumed
+            if tokens[total_num_consumed:total_num_consumed+1] != [")"]:
                 raise error.SyntaxError("missing ')'")
-            total_num_consumed_tokens += 1
-            check_if_all_tokens_are_blank(tokens[total_num_consumed_tokens:],parse_all)
+            total_num_consumed += 1
+            check_if_all_tokens_are_blank(tokens[total_num_consumed:],parse_all)
             if len(args) == 1:
                 basic_kind = map_fortran_args_to_positional_args(args,
                                                                   positional_args=["kind"],
                                                                   defaults=[None],allow_named_args=False)[0]
-                return (basic_type, None, basic_kind, [], total_num_consumed_tokens)
+                return (basic_type, None, basic_kind, [], total_num_consumed)
             else:
                 raise error.SyntaxError("expected a single unnamed 'kind' expression")        
         elif compare_ignore_case(tokens[1:2],["*"]):
@@ -957,16 +1045,16 @@ def parse_fortran_basic_type(statement,parse_all=False):
     tokens = tokenize(statement,padded_size=2)
     if (tokens[0].lower() in __basic_types
        and compare_ignore_case(tokens[1:2],["("])):
-        total_num_consumed_tokens = 2 
-        args, num_consumed_tokens = get_top_level_operands(tokens[total_num_consumed_tokens:])
-        total_num_consumed_tokens += num_consumed_tokens
-        if tokens[total_num_consumed_tokens:total_num_consumed_tokens+1] != [")"]:
+        total_num_consumed = 2 
+        args, num_consumed = get_top_level_operands(tokens[total_num_consumed:])
+        total_num_consumed += num_consumed
+        if tokens[total_num_consumed:total_num_consumed+1] != [")"]:
             raise error.SyntaxError("missing ')'")
-        total_num_consumed_tokens += 1
-        check_if_all_tokens_are_blank(tokens[total_num_consumed_tokens:],parse_all)
+        total_num_consumed += 1
+        check_if_all_tokens_are_blank(tokens[total_num_consumed:],parse_all)
         if len(args) == 1:
             basic_kind = map_fortran_args_to_positional_args(args,["kind"],defaults=[None])[0]
-            return (tokens[0],None,basic_kind,[],total_num_consumed_tokens)
+            return (tokens[0],None,basic_kind,[],total_num_consumed)
         else:
             raise error.SyntaxError("expected a single kind expressions")
     else:
@@ -975,23 +1063,23 @@ def parse_fortran_basic_type(statement,parse_all=False):
 def parse_fortran_derived_type(statement,type_or_class="type",parse_all=True):
     tokens = tokenize(statement,padded_size=2)
     if compare_ignore_case(tokens[0:2],[type_or_class,"("]):
-        total_num_consumed_tokens = 2
-        types,num_consumed_tokens = get_top_level_operands(tokens[total_num_consumed_tokens:],join_operand_tokens=False)
-        total_num_consumed_tokens += num_consumed_tokens
-        if tokens[total_num_consumed_tokens:total_num_consumed_tokens+1] != [")"]:
+        total_num_consumed = 2
+        types,num_consumed = get_top_level_operands(tokens[total_num_consumed:],join_operand_tokens=False)
+        total_num_consumed += num_consumed
+        if tokens[total_num_consumed:total_num_consumed+1] != [")"]:
             raise error.SyntaxError("missing ')'")
-        total_num_consumed_tokens += 1
-        check_if_all_tokens_are_blank(tokens[total_num_consumed_tokens:],parse_all)
+        total_num_consumed += 1
+        check_if_all_tokens_are_blank(tokens[total_num_consumed:],parse_all)
         if len(types) == 1:
             first_entry = types[0]
             if len(first_entry) == 1 and first_entry[0].isidentifier():
-                return (tokens[0],None,first_entry[0],[],total_num_consumed_tokens)
+                return (tokens[0],None,first_entry[0],[],total_num_consumed)
             elif len(first_entry) >= 2 and first_entry[0].isidentifier() and first_entry[1] == "(":
                 params,num_params_tokens = get_top_level_operands(first_entry[2:])
                 if first_entry[2+num_params_tokens:] != [")"]:
                     raise error.SyntaxError("missing ')'")
                 check_if_all_tokens_are_blank(first_entry[2+num_params_tokens+1:],parse_all)
-                return (tokens[0],None,first_entry[0],params,total_num_consumed_tokens)
+                return (tokens[0],None,first_entry[0],params,total_num_consumed)
             else:
                 raise error.SyntaxError("expected identifier or identifier plus parameter list")
         else:
@@ -1028,20 +1116,20 @@ def parse_declaration(statement):
     is_f77_character_declaration = compare_ignore_case(tokens[0:2],["character","*"])
 
     # handle datatype
-    datatype, length, kind, params, num_consumed_tokens = parse_fortran_datatype(tokens)
+    datatype, length, kind, params, num_consumed = parse_fortran_datatype(tokens)
     
-    datatype_raw = "".join(tokens[:num_consumed_tokens])
+    datatype_raw = "".join(tokens[:num_consumed])
    
     # parse raw qualifiers and variables
-    tokens = tokens[num_consumed_tokens:] # remove type part tokens
+    tokens = tokens[num_consumed:] # remove type part tokens
     try:
-        qualifiers_raw, variables_raw, num_consumed_tokens = _parse_raw_qualifiers_and_rhs(tokens)
-        tokens = tokens[num_consumed_tokens:] # remove qualifier list tokens
+        qualifiers_raw, variables_raw, num_consumed = _parse_raw_qualifiers_and_rhs(tokens)
+        tokens = tokens[num_consumed:] # remove qualifier list tokens
     except error.SyntaxError: # superfluous comma allowed between character*<expr> and first identifier
         if is_f77_character_declaration and tokens[0] == ",":
             tokens = tokens[1:]
-            qualifiers_raw, variables_raw, num_consumed_tokens = _parse_raw_qualifiers_and_rhs(tokens)
-            tokens = tokens[num_consumed_tokens:] # remove qualifier list tokens
+            qualifiers_raw, variables_raw, num_consumed = _parse_raw_qualifiers_and_rhs(tokens)
+            tokens = tokens[num_consumed:] # remove qualifier list tokens
         else:
             raise
     check_if_all_tokens_are_blank(tokens)
@@ -1095,10 +1183,10 @@ def parse_declaration(statement):
             raise error.SyntaxError("expected identifier")
         if (len(var_lhs_tokens) > 2
            and var_lhs_tokens[1] == "("):
-            var_bounds, num_consumed_tokens = get_top_level_operands(var_lhs_tokens[2:])
+            var_bounds, num_consumed = get_top_level_operands(var_lhs_tokens[2:])
             if not len(var_bounds):
                 raise error.SyntaxError("expected at least one argument for variable '{}'".format(var_name))
-            if var_lhs_tokens[2+num_consumed_tokens:] != [")"]:
+            if var_lhs_tokens[2+num_consumed:] != [")"]:
                 raise error.SyntaxError("missing ')'")
         elif len(var_lhs_tokens) > 1:
             raise error.SyntaxError("unexpected tokens after '{}': '{}'".format(var_name,"','".join(var_lhs_tokens[1:])))
@@ -1107,8 +1195,41 @@ def parse_declaration(statement):
         variables.append((var_name,var_bounds,var_rhs))
     return (datatype, length, kind, params, qualifiers, dimension_bounds, variables, datatype_raw, qualifiers_raw) 
 
+def __parse_array_spec(tokens):
+    array_specs = []
+    array_spec_exprs, num_consumed = get_top_level_operands(tokens,
+                                                            join_operand_tokens=False)
+    tokens.pop_front_n(num_consumed)
+    if not len(array_spec_exprs):
+        raise error.SyntaxError("expected at least one array specification")    
+    array_spec_tokens = TokenStream([])
+    for array_spec_tokens1 in array_spec_exprs:
+        array_spec_tokens.setup(array_spec_tokens1)
+        var_name = array_spec_tokens.pop_front()
+        if not var_name.isidentifier():
+            raise error.SyntaxError("expected identifier")
+        if not array_spec_tokens.pop_front_equals("("):
+            raise error.SyntaxError("expected '('")
+        var_bounds, num_consumed = get_top_level_operands(array_spec_tokens)
+        array_spec_tokens.pop_front_n(num_consumed)
+        if not len(var_bounds):
+            raise error.SyntaxError("expected at least one argument for variable '{}'".format(var_name))
+        if not array_spec_tokens.pop_front_equals(")"):
+            raise error.SyntaxError("missing ')'")
+        array_spec_tokens.check_if_remaining_tokens_are_blank()
+        array_specs.append((var_name,var_bounds))
+    tokens.check_if_remaining_tokens_are_blank()
+    return array_specs
+
 def parse_dimension_statement(statement):
-    pass
+    """:return: Array specifications: List of tuples containing variable name and a
+                list of lower and upper bounds per dimension (in that order).
+    :param statement: A string expression or a list of tokens.
+    """
+    tokens = TokenStream(tokenize(statement,padded_size=5))
+    if tokens.pop_front().lower() not in ["dimension","dim"]:
+        raise error.SyntaxError("expected 'dimension' or 'dim'")
+    return __parse_array_spec(tokens)
 
 def parse_derived_type_statement(statement):
     """Parse the first statement of derived type declaration.
@@ -1207,7 +1328,7 @@ def parse_public_or_private_statement(statement,kind):
     if len(tokens) > 1 and tokens[0] == "::":
         tokens.pop(0)
     if len(tokens) and tokens[0].isidentifier():
-        operands, num_consumed_tokens = get_top_level_operands(tokens,join_operand_tokens=False)
+        operands, num_consumed = get_top_level_operands(tokens,join_operand_tokens=False)
         for expr in operands:
             if len(expr) == 1 and expr[0].isidentifier():
                 identifiers.append(expr[0])
@@ -1223,7 +1344,7 @@ def parse_public_or_private_statement(statement,kind):
                 identifiers.append("".join(expr))
             else:
                 raise error.SyntaxError("expected identifier or 'operator' + '(' + operator expression + ')'")
-        tokens = tokens[num_consumed_tokens:] 
+        tokens = tokens[num_consumed:] 
     check_if_all_tokens_are_blank(tokens)
     return kind_expr, identifiers
 
@@ -1280,8 +1401,8 @@ def parse_implicit_statement(statement):
     implicit_specs = []
     if tokens.pop(0).lower() != "implicit":
         raise error.SyntaxError("expected 'implicit'")
-    rules,num_consumed_tokens = get_top_level_operands(tokens)
-    tokens = tokens[num_consumed_tokens:]
+    rules,num_consumed = get_top_level_operands(tokens)
+    tokens = tokens[num_consumed:]
     check_if_all_tokens_are_blank(tokens)
     if len(rules)==1 and rules[0].lower() == "none":
         implicit_specs.append((None,None,None,[]))
@@ -1309,15 +1430,15 @@ def parse_implicit_statement(statement):
             else:
                 # example: implicit integer(mykind) (j,k,m,n)       
                 first_letter_tokens = rule_tokens[len(datatype_tokens):]
-            f_type, f_len, f_kind, params, num_consumed_tokens = parse_fortran_datatype(datatype_tokens)
+            f_type, f_len, f_kind, params, num_consumed = parse_fortran_datatype(datatype_tokens)
             assigned_first_letters = []
-            check_if_all_tokens_are_blank(datatype_tokens[num_consumed_tokens:])
-            #rule_tokens = rule_tokens[num_consumed_tokens:]
+            check_if_all_tokens_are_blank(datatype_tokens[num_consumed:])
+            #rule_tokens = rule_tokens[num_consumed:]
             #letters = []
             if (len(first_letter_tokens) and first_letter_tokens[0] == "("
                and first_letter_tokens[-1] == ")"):
-                letter_range_expressions,num_consumed_tokens = get_top_level_operands(first_letter_tokens[1:-1])
-                check_if_all_tokens_are_blank(first_letter_tokens[num_consumed_tokens+2:])
+                letter_range_expressions,num_consumed = get_top_level_operands(first_letter_tokens[1:-1])
+                check_if_all_tokens_are_blank(first_letter_tokens[num_consumed+2:])
                 
                 for expr in letter_range_expressions:
                     letter_range = expand_letter_range(expr)
@@ -1773,13 +1894,13 @@ def parse_parameter_statement(statement):
     if tokens[0] == "(":
         # modern variant
         tokens.pop(0)
-        variables_raw, num_consumed_tokens  = get_top_level_operands(tokens)
-        tokens = tokens[num_consumed_tokens:]
+        variables_raw, num_consumed  = get_top_level_operands(tokens)
+        tokens = tokens[num_consumed:]
         if tokens.pop(0) != ")":
             raise error.SyntaxError("expected ')'")
     elif tokens[0].isidentifier():
-        variables_raw, num_consumed_tokens  = get_top_level_operands(tokens)
-        tokens = tokens[num_consumed_tokens:]
+        variables_raw, num_consumed  = get_top_level_operands(tokens)
+        tokens = tokens[num_consumed:]
     else:
         raise error.SyntaxError("expected '(' or identifier")
     check_if_all_tokens_are_blank(tokens)
@@ -1884,15 +2005,15 @@ def is_select_case(tokens):
 def is_case(tokens):
     return compare_ignore_case(tokens[0:2],["case", "("])
 
-def parse_case(statement):
-    tokens = tokenize(statement)
+def parse_case_statement(statement):
+    tokens = tokenize(statement,padded_size=4)
     if not compare_ignore_case(tokens[0:2],["case", "("]):
         return error.SyntaxError("expected 'case' + '('")
     num_consumed = 2
     values,num_consumed1 = get_top_level_operands(tokens[num_consumed:-1],
                                                            terminators=[")"])
     num_consumed += num_consumed1
-    if not compare_ignore_case(tokens[-1],")"):
+    if not compare_ignore_case(tokens[num_consumed],")"):
         return error.SyntaxError("expected ')'")
     num_consumed += 1
     check_if_all_tokens_are_blank(tokens[num_consumed:])

@@ -68,6 +68,13 @@ class TTLabel(base.TTNode):
         return "_{}:".format(self._label)
 
 class TTContinue(base.TTNode):
+    def c_str(self):
+        return "return;"
+
+    def f_str(self):
+        return "continue"
+
+class TTCycle(base.TTNode):
 
     def _assign_fields(self, tokens):
         self._result_name = ""
@@ -83,7 +90,7 @@ class TTContinue(base.TTNode):
 
     def f_str(self):
         if self._in_loop:
-            return "continue;"
+            return "cycle"
         else:
             return "return"
 

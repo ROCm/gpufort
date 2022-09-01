@@ -160,10 +160,10 @@ def _apply_c_ranks(tavars,c_ranks):
         if var_expr in c_ranks:
             tavar["c_rank"] = c_ranks[var_expr]
 
-def lookup_index_entries_for_vars_in_loopnest(scope,ttloopnest,loop_vars,c_names={},c_ranks={}):
-    all_vars       = vars_in_subtree(ttloopnest, scope)
-    local_scalars_ = local_scalars(ttloopnest,scope)
-    local_vars     = [v for v in (local_scalars_+ttloopnest.gang_team_private_vars())
+def lookup_index_entries_for_vars_in_compute_construct(scope,ttcomputeconstruct,loop_vars,c_names={},c_ranks={}):
+    all_vars       = vars_in_subtree(ttcomputeconstruct, scope)
+    local_scalars_ = local_scalars(ttcomputeconstruct,scope)
+    local_vars     = [v for v in (local_scalars_+ttcomputeconstruct.gang_team_private_vars())
                      if v not in loop_vars]
     local_vars    += [v for v in all_vars 
                      if (v[0]=="_" 
@@ -172,8 +172,8 @@ def lookup_index_entries_for_vars_in_loopnest(scope,ttloopnest,loop_vars,c_names
     # TODO improve
     result = lookup_index_entries_for_vars_in_kernel_body(scope,
                                                           all_vars,
-                                                          ttloopnest.gang_team_reductions(),
-                                                          ttloopnest.gang_team_shared_vars(),
+                                                          ttcomputeconstruct.gang_team_reductions(),
+                                                          ttcomputeconstruct.gang_team_shared_vars(),
                                                           local_vars,
                                                           loop_vars)
     for i in range(0,4):
@@ -294,21 +294,21 @@ def inout_arrays_in_subtree(ttnode, scope):
 
     return search_value_exprs_in_subtree(ttnode, search_filter, scope, 1)
 
-#def all_unmapped_arrays(ttloopnest, scope):
+#def all_unmapped_arrays(ttcomputeconstruct, scope):
 #    """:return: Name of all unmapped array variables"""
-#    mapped_vars = ttloopnest.all_mapped_vars()
-#    if ttloopnest.all_arrays_are_on_device():
+#    mapped_vars = ttcomputeconstruct.all_mapped_vars()
+#    if ttcomputeconstruct.all_arrays_are_on_device():
 #        return []
 #    else:
 #        return [var for var in arrays_in_body if not var in mapped_vars]
 #
-#def deviceptrs(ttloopnest):
-#    if ttloopnest.all_arrays_are_on_device():
-#        return arrays_in_subtree(ttloopnest, scope)
+#def deviceptrs(ttcomputeconstruct):
+#    if ttcomputeconstruct.all_arrays_are_on_device():
+#        return arrays_in_subtree(ttcomputeconstruct, scope)
 #    else:
-#        return ttloopnest.deviceptrs()
+#        return ttcomputeconstruct.deviceptrs()
     
-def local_scalars_and_reduction_candidates(ttloopnest, scope):
+def local_scalars_and_reduction_candidates(ttcomputeconstruct, scope):
     """
     local variable      - scalar variable that is not read before the assignment (and is no derived type member)
     reduction_candidates - scalar variable that is written but not read anymore 
@@ -324,7 +324,7 @@ def local_scalars_and_reduction_candidates(ttloopnest, scope):
     # depth first search
     
     assignments = find_all_matching_exclude_directives(
-        ttloopnest.body[0], lambda node: isinstance(node,(
+        ttcomputeconstruct.body[0], lambda node: isinstance(node,(
             tree.TTAssignment, tree.TTComplexAssignment, tree.
             TTMatrixAssignment
         )))
@@ -361,21 +361,21 @@ def local_scalars_and_reduction_candidates(ttloopnest, scope):
     ] # contains loop variables
     return local_scalars, reduction_candidates
 
-def local_scalars(ttloopnest, scope):
-    local_scalars, _ = local_scalars_and_reduction_candidates(ttloopnest, scope)
+def local_scalars(ttcomputeconstruct, scope):
+    local_scalars, _ = local_scalars_and_reduction_candidates(ttcomputeconstruct, scope)
     return local_scalars
 
-def reduction_candidates(ttloopnest, scope):
-    _, reduction_candidates = local_scalars_and_reduction_candidates(ttloopnest, scope)
+def reduction_candidates(ttcomputeconstruct, scope):
+    _, reduction_candidates = local_scalars_and_reduction_candidates(ttcomputeconstruct, scope)
     return reduction_candidates
 
-def loop_vars_in_loopnest(ttdos):
+def loop_vars_in_compute_construct(ttdos):
     identifier_names = []
     for ttdo in ttdos:
         identifier_names.append(ttdo.loop_var(tree.make_f_str))
     return identifier_names
 
-def _perfectly_nested_outer_do_loops(ttloopnest):
+def _perfectly_nested_outer_do_loops(ttcomputeconstruct):
     """:return: Perfectly nested do loops, comments are ignored. 
     """
     ttdos = []
@@ -385,19 +385,19 @@ def _perfectly_nested_outer_do_loops(ttloopnest):
             if isinstance(child,tree.TTDo):
                 ttdos.append(child)
                 descend_(child,depth+1)
-            elif not isinstance(child,(tree.TTCommentedOut,tree.TTContinue,tree.TTLabel)):
+            elif not isinstance(child,(tree.TTCommentedOut,tree.TTCycle,tree.TTLabel)):
                 # if there are other statements on the same level
                 # and a do loop was added, remove it and its
                 # inner loops. Then break the loop.
                 while len(ttdos) >= depth:
                     ttdos.pop(-1)
                 break
-    descend_(ttloopnest)
+    descend_(ttcomputeconstruct)
     return ttdos
 
-def perfectly_nested_do_loops_to_map(ttloopnest):
-    num_loops_to_map = int(ttloopnest.parent_directive().num_collapse())
-    ttdos = _perfectly_nested_outer_do_loops(ttloopnest)
+def perfectly_nested_do_loops_to_map(ttcomputeconstruct):
+    num_loops_to_map = int(ttcomputeconstruct.parent_directive().num_collapse())
+    ttdos = _perfectly_nested_outer_do_loops(ttcomputeconstruct)
     if (num_loops_to_map <= 0
        or num_loops_to_map > len(ttdos)):
         return ttdos

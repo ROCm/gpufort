@@ -52,6 +52,57 @@ class TTCufKernelCall(base.TTNode):
         return base.make_f_str(self._sharedmem)
 
 
+class CufDeviceSpec(directives.IDeviceSpec):
+    def __init__(self,tokens):
+        self._num_outer_loops_to_map = int(tokens[0])
+        self._grid = tokens[1][0]
+        self._block = tokens[1][1]
+    
+    def applies_to(self,device_type):
+        return True
+
+    def parallelism(self):
+        return Parallelism.GANG_WORKER
+
+    def order_of_iterates(self):
+        return IterateOrder.INDEPENDENT
+
+    def num_collapse(self):
+        return self._num_outer_loops_to_map
+
+    def num_gangs_teams_blocks(self, converter=base.make_f_str):
+        if self._grid == "*":
+            return [grammar.CLAUSE_NOT_FOUND] * self._num_outer_loops_to_map
+        elif isinstance(self._block, fortran.TTValue):
+            # TODO Check if TTValue is actually a dim3 or not
+            result = []
+            for i in range(0, self._num_outer_loops_to_map):
+                result.append(converter(self._grid) + "%" + chr(ord('x') + i))
+            return result
+        else:
+            return [converter(gridDim) for gridDim in self._grid]
+
+    def num_threads_in_block(self, converter=base.make_f_str):
+        if self._block == "*":
+            return [grammar.CLAUSE_NOT_FOUND] * self._num_outer_loops_to_map
+        elif isinstance(self._block, fortran.TTValue):
+            # TODO Check if TTValue is actually a dim3 or not
+            result = []
+            for i in range(0, self._num_outer_loops_to_map):
+                result.append(converter(self._block) + "%" + chr(ord('x') + i))
+            return result
+        else:
+            return [converter(blockDim) for blockDim in self._block]
+        
+    def grid_expr_f_str(self):
+        """ only CUF """
+        return base.make_f_str(self._grid)
+
+    def block_expr_f_str(self):
+        """ only CUF """
+        return base.make_f_str(self._block)
+     
+
 class TTCufKernelDo(base.TTNode, directives.IComputeConstruct,
                     directives.ILoopAnnotation):
 
@@ -62,6 +113,7 @@ class TTCufKernelDo(base.TTNode, directives.IComputeConstruct,
         self._block = tokens[1][1]
         self._sharedmem = tokens[1][2]
         self._stream = tokens[1][3]
+        self._device_spec = CufDeviceSpec(tokens)
 
     def discover_reduction_candidates(self):
         return True
@@ -87,50 +139,15 @@ class TTCufKernelDo(base.TTNode, directives.IComputeConstruct,
         This might differ from the number of nested loops.
         """
         if opts.loop_collapse_strategy == "grid":
-            return int(self._num_outer_loops_to_map)
+            return int(self._device_spec._num_outer_loops_to_map)
         else:
             return 1
 
     def present_by_default(self):
         return True
 
-    def data_independent_iterations(self):
-        return True
-
-    def num_collapse(self):
-        return self._num_outer_loops_to_map
-
-    def grid_expr_f_str(self):
-        """ only CUF """
-        return base.make_f_str(self._grid)
-
-    def block_expr_f_str(self):
-        """ only CUF """
-        return base.make_f_str(self._block)
-
-    def num_gangs_teams_blocks(self, converter=base.make_f_str):
-        if self._grid == "*":
-            return [grammar.CLAUSE_NOT_FOUND] * self._num_outer_loops_to_map
-        elif isinstance(self._block, fortran.TTValue):
-            # TODO Check if TTValue is actually a dim3 or not
-            result = []
-            for i in range(0, self._num_outer_loops_to_map):
-                result.append(converter(self._grid) + "%" + chr(ord('x') + i))
-            return result
-        else:
-            return [converter(gridDim) for gridDim in self._grid]
-
-    def num_threads_in_block(self, converter=base.make_f_str):
-        if self._block == "*":
-            return [grammar.CLAUSE_NOT_FOUND] * self._num_outer_loops_to_map
-        elif isinstance(self._block, fortran.TTValue):
-            # TODO Check if TTValue is actually a dim3 or not
-            result = []
-            for i in range(0, self._num_outer_loops_to_map):
-                result.append(converter(self._block) + "%" + chr(ord('x') + i))
-            return result
-        else:
-            return [converter(blockDim) for blockDim in self._block]
+    def get_device_specs(self):
+        return [self._device_spec]
 
     def c_str(self):
         result = "// NOTE: The following information was given in the orignal CUDA Fortran kernel pragma:\n"
@@ -152,8 +169,8 @@ class TTCufKernelDo(base.TTNode, directives.IComputeConstruct,
                   depend={},
                   loop_type="do"):
         result = "!$omp target teams distribute parallel " + loop_type
-        grid = self.num_gangs_teams_blocks()
-        block = self.num_threads_in_block()
+        grid = self._device_spec.num_gangs_teams_blocks()
+        block = self._device_spec.num_threads_in_block()
         num_teams = ""
         thread_limit = ""
         first = True

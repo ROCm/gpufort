@@ -2,6 +2,8 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import textwrap
 
+import enum
+
 import pyparsing
 
 from gpufort import indexer
@@ -13,8 +15,53 @@ from .. import opts
 from . import base
 from . import fortran
 from . import grammar
+    
+class Parallelism(enum.Enum):
+    AUTO = -1
+    SEQ=0
+    GANG=1
+    WORKER=2
+    VECTOR=3
+    GANG_WORKER=4
+    WORKER_VECTOR=5
+    GANG_VECTOR=6
+
+class IterateOrder(enum.Enum):
+    AUTO = -1 # requires static analyis
+    SEQ = 0
+    INDEPENDENT = 1
 
 class ILoopAnnotation():
+
+    def private_vars(self, converter=base.make_f_str):
+        """ CUF,ACC: all scalars are private by default """
+        return []
+
+    def lastprivate_vars(self, converter=base.make_f_str):
+        """ only OMP """
+        return []
+
+    def discover_reduction_candidates(self):
+        return False
+
+    def reductions(self, converter=base.make_f_str):
+        """ CUF: Scalar lvalues are reduced by default """
+        return {}
+
+    def shared_vars(self, converter=base.make_f_str):
+        """ only OMP """
+        return []
+
+    def all_arrays_are_on_device(self):
+        """ only True for CUF kernel do directive """
+        return False
+    
+    def get_device_specs(self):
+        return []
+
+class IDeviceSpec():
+    def applies_to(self,device_type):
+        return True
 
     def num_collapse(self):
         return grammar.CLAUSE_NOT_FOUND
@@ -43,49 +90,11 @@ class ILoopAnnotation():
     def simdlen_vector_length(self):
         return grammar.CLAUSE_NOT_FOUND
 
-    def data_independent_iterations(self):
-        return True
+    def parallelism(self):
+        return Parallelism.AUTO
 
-    def private_vars(self, converter=base.make_f_str):
-        """ CUF,ACC: all scalars are private by default """
-        return []
-
-    def lastprivate_vars(self, converter=base.make_f_str):
-        """ only OMP """
-        return []
-
-    def discover_reduction_candidates(self):
-        return False
-
-    def reductions(self, converter=base.make_f_str):
-        """ CUF: Scalar lvalues are reduced by default """
-        return {}
-
-    def shared_vars(self, converter=base.make_f_str):
-        """ only OMP """
-        return []
-
-    #def map_to_blocks(self):
-    #    """If the (collapsed) outer loop should be mapped to blocks.
-    #    :note: Only one or none of the map_outer_loop_(blocks|wavefronts|threads)
-    #          routines may return True."""
-    #    return False
-    #
-    #def map_to_wavefronts(self):
-    #    """If the (collapsed) outer loop should be mapped to warps/wavefronts.
-    #    :note: Only one or none of the map_outer_loop_(blocks|wavefronts|threads)
-    #          routines may return True."""
-    #    return False
-
-    #def map_to_threads(self):
-    #    """If the (collapsed) outer loop should be mapped to threads.
-    #    :note: Only one or none of the map_outer_loop_(blocks|wavefronts|threads)
-    #          routines may return True."""
-    #    return True
-
-    def all_arrays_are_on_device(self):
-        """ only True for CUF kernel do directive """
-        return False
+    def order_of_iterates(self):
+        return IterateOrder.AUTO 
 
 
 class TTDo(base.TTContainer):
@@ -205,36 +214,14 @@ class TTDo(base.TTContainer):
 
 class IComputeConstruct():
 
-    def num_collapse(self):
-        return grammar.CLAUSE_NOT_FOUND
-
     def num_dimensions(self):
         return 1
 
     def discover_reduction_candidates(self):
         return False
 
-    def grid_expr_f_str(self):
-        """ only CUF """
-        return None
-
-    def block_expr_f_str(self):
-        """ only CUF """
-        return None
-    
-    def num_gangs_teams_blocks_specified(self):
-        return next((el for el in self.num_gangs_teams_blocks()
-                    if el != grammar.CLAUSE_NOT_FOUND),None) != None
-    
-    def num_threads_in_block_specified(self):
-        return next((el for el in self.num_gangs_teams_blocks() 
-                    if el != grammar.CLAUSE_NOT_FOUND),None) != None
-
-    def num_gangs_teams_blocks(self):
-        return [grammar.CLAUSE_NOT_FOUND]
-
-    def num_threads_in_block(self):
-        return [grammar.CLAUSE_NOT_FOUND]
+    def get_device_specs(self):
+        return []
 
     def gang_team_private_vars(self, converter=base.make_f_str):
         """ CUF,ACC: all scalars are private by default """
@@ -272,9 +259,6 @@ class IComputeConstruct():
         """ only OMP """
         #return { "in":[], "out":[], "inout":[], "inout":[], "mutexinoutset":[], "depobj":[] }
         return {}
-
-    def device_types(self):
-        return "*"
 
     def if_condition(self):
         """ OMP,ACC: accelerate only if condition is satisfied. Empty string means condition is satisfied. """
@@ -349,6 +333,7 @@ class TTComputeConstruct(base.TTContainer, IComputeConstruct):
     def _assign_fields(self, tokens):
         self._parent_directive, self.body = tokens
         self.scope = indexer.types.EMPTY_SCOPE
+        self.device_specs = [] # from analysis
 
     def child_nodes(self):
         return [self._parent_directive, self.body]
@@ -365,15 +350,15 @@ class TTComputeConstruct(base.TTContainer, IComputeConstruct):
         else:
             return self._parent_directive
 
+    def get_device_specs(self):
+        return self.device_specs
+
     def async_nowait():
         """value != grammar.CLAUSE_NOT_FOUND means True"""
         return self.parent_directive().async_nowait()
 
     def depend(self):
         return self.parent_directive().depend()
-
-    def device_types(self):
-        return self.parent_directive().device_types()
 
     def if_condition(self):
         return self.parent_directive().if_condition()
@@ -425,14 +410,6 @@ class TTComputeConstruct(base.TTContainer, IComputeConstruct):
 
     #def map_outer_loop_to_threads(self):
     #    return self.parent_directive().map_outer_loop_to_threads()
-
-    def grid_expr_f_str(self):
-        """ only CUF """
-        return self.parent_directive().grid_expr_f_str()
-
-    def block_expr_f_str(self):
-        """ only CUF """
-        return self.parent_directive().block_expr_f_str()
 
     def gang_team_private_vars(self, converter=base.make_f_str):
         result = self.parent_directive().gang_team_private_vars(converter)

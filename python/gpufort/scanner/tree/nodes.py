@@ -686,7 +686,7 @@ class STComputeConstruct(STNode):
         parent_tag = self.parent.tag()
         scope = indexer.scope.create_scope(index, parent_tag)
         try:
-            self.parse_result = translator.parse_loopnest(self.code, scope)
+            self.parse_result = translator.parse_compute_construct(self.code, scope)
         except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:
             msg = "{}:[{}-{}]:{}".format(
                     self._linemaps[0]["file"],self.min_lineno(),self.max_lineno(),e.args[0])
@@ -719,39 +719,53 @@ class STComputeConstruct(STNode):
             # determine grid or problem size
             launcher_name = self.kernel_launcher_name()
             launcher_name_suffix = "_hip"
-            grid_or_ps_f_str  = self.parse_result.grid_expr_f_str()
-            if grid_or_ps_f_str == None and self.parse_result.num_gangs_teams_blocks_specified():
-                grid = self.parse_result.num_gangs_teams_blocks()
-                grid_or_ps_f_str = "dim3({})".format(",".join(grid)) # TODO remove
-            elif grid_or_ps_f_str == None:
-                launcher_name_suffix = "_hip_ps"
-                grid_or_ps_f_str = "dim3({})".format(",".join(self.problem_size))
-            launcher_name += (launcher_name_suffix if not opts.loop_kernel_default_launcher=="cpu" else "_cpu_")
-            ## determine block size
-            block_f_str = self.parse_result.block_expr_f_str()
-            if block_f_str == None and self.parse_result.num_threads_in_block_specified():
-                block = self.parse_result.num_threads_in_block()
-                block_f_str = "dim3({})".format(",".join(block)) # TODO remove
-            elif block_f_str == None and len(self.block_size):
-                block_f_str = "dim3({})".format(",".join(self.block_size))
-            elif block_f_str == None:
-                block_f_str = "dim3(128)" # use config values 
-            kernel_args.append(grid_or_ps_f_str)
-            kernel_args.append(block_f_str)
-            kernel_args.append(self.sharedmem_f_str)
-            # stream
-            try:
-                stream_as_int = int(self.stream_f_str)
-                stream = "c_null_ptr"
-            except:
-                stream = self.stream_f_str
-            kernel_args.append(stream)
-            kernel_args.append(self.async_launch_f_str)
-            kernel_args += self.kernel_args_names
-            #
+
+            # loop over device types
             result = []
-            result.append("! extracted to HIP C++ file\n")
-            result.append("call {0}(&\n  {1})\n".format(launcher_name,",&\n  ".join(kernel_args)))
+            num_specs = len(self.parse_result.get_device_specs)
+            for i,device_spec in enumerate(self.parse_result.get_device_specs()):
+                # emit one launcher per specification
+                grid_or_ps_f_str  = self.parse_result.grid_expr_f_str()
+                if grid_or_ps_f_str == None and self.parse_result.num_gangs_teams_blocks_specified():
+                    grid = self.parse_result.num_gangs_teams_blocks()
+                    grid_or_ps_f_str = "dim3({})".format(",".join(grid)) # TODO remove
+                elif grid_or_ps_f_str == None:
+                    launcher_name_suffix = "_hip_ps"
+                    grid_or_ps_f_str = "dim3({})".format(",".join(self.problem_size))
+                launcher_name += (launcher_name_suffix if not opts.loop_kernel_default_launcher=="cpu" else "_cpu_")
+                ## determine block size
+                block_f_str = self.parse_result.block_expr_f_str()
+                if block_f_str == None and self.parse_result.num_threads_in_block_specified():
+                    block = self.parse_result.num_threads_in_block()
+                    block_f_str = "dim3({})".format(",".join(block)) # TODO remove
+                elif block_f_str == None and len(self.block_size):
+                    block_f_str = "dim3({})".format(",".join(self.block_size))
+                elif block_f_str == None:
+                    block_f_str = "dim3(128)" # use config values 
+                kernel_args.append(grid_or_ps_f_str)
+                kernel_args.append(block_f_str)
+                kernel_args.append(self.sharedmem_f_str)
+                # stream
+                try:
+                    stream_as_int = int(self.stream_f_str)
+                    stream = "c_null_ptr"
+                except:
+                    stream = self.stream_f_str
+                kernel_args.append(stream)
+                kernel_args.append(self.async_launch_f_str)
+                kernel_args += self.kernel_args_names
+                #
+                block_indent = ""
+                if num_specs > 1:
+                    block_indent = " "*2 
+                    if i == 0:
+                        result.append("if ("+device_spec.get_activate_condition_f_str()+") then\n")
+                    else:
+                        result.append("else if ("+device_spec.get_activate_condition_f_str()+") then\n")
+                result.append(block_indent+"! extracted to HIP C++ file\n")
+                result.append(block_indent+"call {0}(&\n  {1})\n".format(launcher_name,",&\n  ".join(kernel_args)))
+                if num_specs > 1 and i == num_specs - 1 
+                    result.append("endif")
             indent = self.first_line_indent()
             return textwrap.indent("".join(result),indent), True
         else:

@@ -9,32 +9,30 @@ from . import grammar
 from . import base
 from . import directives
 
-class TTAccClauseGang(base.TTNode):
-
+class TAccClauseGangBase(base.TTNode):
     def _assign_fields(self, tokens):
         self.value = tokens[0]
 
 
-class TTAccClauseWorker(base.TTNode):
-
+class TTAccClauseWorkerBase(base.TTNode):
     def _assign_fields(self, tokens):
         self.value = tokens[0]
 
-class TTAccClauseVector(base.TTNode):
-
+class TTAccClauseVectorBase(base.TTNode):
     def _assign_fields(self, tokens):
         self.value = tokens[0]
 
-
-class TTAccClauseNumGangs(TTAccClauseGang):
+class TTAccClauseGang(TTAccClauseGangBase):
     pass
-
-
-class TTAccClauseNumWorkers(TTAccClauseWorker):
+class TTAccClauseWorker(TTAccClauseWorkerBase):
     pass
-
-
-class TTAccClauseVectorLength(TTAccClauseVector):
+class TTAccClauseVector(TTAccClauseVectorBase):
+    pass
+class TTAccClauseNumGangs(TTAccClauseGangBase):
+    pass
+class TTAccClauseNumWorkers(TTAccClauseWorkerBase):
+    pass
+class TTAccClauseVectorLength(TTAccClauseVectorBase):
     pass
 
 
@@ -473,6 +471,76 @@ class TTAccWait(TTAccDirectiveBase):
                 result += " depend(" + opts.depend_todo + ")"
         return self._format(result)
 
+class AccDeviceSpec(directives.device_typeeviceSpec):
+    def __init__(self,device_type):
+        self.device_type = device_type.lower()
+        self.clauses = []
+    def append_clause(self,clause,silently_handle_duplicates=False):
+        """:param bool silently_handle_duplicates: Do not throw exception if the clause
+                                                exists already, simply do not add it.
+        """
+        for clause in list(self.clauses):
+            if type(new_clause) == type(clause):
+                if not silently_handle_duplicates:
+                    clause_name = str(type(new_clause).__name__).lower().replace("ttaccclause")
+                    raise error.util.SyntaxError("clause '{}' specified more than once '{}' for device type '{}'".format(
+                        clause_name,self.device_type))
+            else:
+                self.clauses.append(clause)
+
+    def applies_to(self,device_type):
+        """:return: This device spec applies to the given device_type."""
+        if device_type == "*":
+            return True
+        else:
+            return self.device_type == device_type.lower()
+
+    def num_gangs_teams_blocks(self):
+        """:note: gang and num_gangs(<arg>) might be specified both on acc parallel/kernels loop construct.
+        """
+        clause = base.find_first_matching(reversed(self.clauses),lambda x: isinstance(x,TTAccClauseGangBase))
+        return grammar.CLAUSE_NOT_FOUND if clause is None else c.value
+
+    def num_workers(self):
+        """:note: worker and num_workers(<arg>) might be specified both on acc parallel/kernels loop construct.
+        """
+        clause = base.find_first_matching(reversed(self.clauses),lambda x: isinstance(x,TTAccClauseWorkerBase))
+        return grammar.CLAUSE_NOT_FOUND if clause is None else c.value
+
+    def simdlen_vector_length(self):
+        """:note: vector and vector_length(<arg>) might be specified both on acc parallel/kernels loop construct.
+        """
+        clause = base.find_first_matching(reversed(self.clauses),lambda x: isinstance(x,TTAccClauseVectorBase))
+        return grammar.CLAUSE_NOT_FOUND if clause is None else c.value
+
+    def parallelism(self):
+        """:return: The parallelism level of this loop.
+        :note: Does not include num_{gangs,workers} or vector_length clauses to determine
+               parallelism level.
+        """
+        has_gang = base.find_first(self.clauses,lambda x: type(x) == TTAccClausGang)
+        has_worker = base.find_first(self.clauses,lambda x: type(x) == TTAccClausWorker)
+        has_vector = base.find_first(self.clauses,lambda x: type(x) == TTAccClausVector)
+        if has_gang and has_worker
+
+    def num_threads_in_block(self):
+        workers = self.num_workers()
+        vector_len = self.len_simd_vector()
+        if workers[0] < 1 or vector_len[0] < 1:
+            return [grammar.CLAUSE_NOT_FOUND]
+        else:
+            return [workers[0] * vector_len[0]]
+
+    def order_of_iterates(self):
+        """ Always assume data independent if no seq clause is used """
+        seq_clause = base.find_first_matching(self.clauses, lambda x: x == "seq")
+        independent_clause = base.find_first_matching(self.clauses, lambda x: x == "independent")
+        if seq_clause != None:
+            return directives.IterateOrder.SEQ
+        elif independent_clause != None:
+            return directives.IterateOrder.INDEPENDENT
+        else:
+            return directives.IterateOrder.AUTO
 
 class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
     """
@@ -489,10 +557,44 @@ class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
       private( var-list )
       reduction( operator:var-list )
     """
-
     def _assign_fields(self, tokens):
         TTAccDirectiveBase._assign_fields(self, tokens)
         self.loop_handles_mutual_clauses = True # can be unset by TTAccParallelLoop or TTAccKernelsLoop
+        #
+        self.device_specs = []
+        self._derive_device_specs()
+
+    def _derive_device_specs(self):
+        """:note:Inserts the '* identifier as last entry into
+        the list of device specs to ensure that it is found last
+        when comparing device ids.
+        """
+        default_spec = AccDeviceSpec(None)
+        other_types_spec = AccDeviceSpec("*")
+        current_spec = default_spec
+        for clause in list(self.clauses):
+            if isinstance(clause,
+                (TTAccClauseCollapse,
+                 TTAccClauseGangBase,
+                 TTAccClauseWorkerBase,
+                 TTAccClauseVectorBase,
+                 TTAccClauseSeq,
+                 TTAccClauseIndependent,
+                 TTAccClauseAuto,
+                 TTAccClauseTile)):
+                self.clauses.remove(clause)
+                current_spec.append_clause(clause)
+            elif type(clause) == TTAccClauseDeviceType:
+                for device_type in clause.device_types:
+                    for existing_spec in self.device_specs():
+                        if existing_spec.id == device_type:
+
+                    current_spec = AccDeviceSpec(device_type)
+                    self.device_specs.append(current_spec)
+            elif current_spec != default_spec:
+                raise util.error.SyntaxError("only 'collapse', 'gang', 'worker', 'vector',"
+                        +" 'seq', 'independent', 'auto', and 'tile' clauses may follow a 'device_type' clause")
+        for 
 
     def num_collapse(self):
         clause = base.find_first(self.clauses, TTAccClauseCollapse)
@@ -501,40 +603,12 @@ class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
         else:
             return clause.value()
 
+    def get_device_specs(self):
+        return self.device_specs
+
     def tile_sizes(self):
         assert False, "Not implemented!"
         return [1]
-
-    def num_gangs_teams_blocks(self):
-        clauses = base.find_all_matching(
-            self.clauses, lambda x: isinstance(x, TTAccClauseGang), 2)
-        return [grammar.CLAUSE_NOT_FOUND
-               ] if clause is None else [max([c.value for c in clauses])]
-
-    def num_workers(self):
-        clauses = base.find_all_matching(
-            self.clauses, lambda x: isinstance(x, TTAccClauseWorker), 2)
-        return grammar.CLAUSE_NOT_FOUND if clause is None else max(
-            [c.value for c in clauses])
-
-    def simdlen_vector_length(self):
-        clauses = base.find_all_matching(
-            self.clauses, lambda x: isinstance(x, TTAccClauseVector), 2)
-        return grammar.CLAUSE_NOT_FOUND if clause is None else max(
-            [c.value for c in clauses])
-
-    def num_threads_in_block(self):
-        workers = self.num_workers()
-        vector_len = self.len_simd_vector()
-        if workers[0] < 1 or vector_len[0] < 1:
-            return [grammar.CLAUSE_NOT_FOUND]
-        else:
-            return [workers[0] * vector_len[0]]
-
-    def data_independent_iterations(self):
-        """ Always assume data independent if no seq clause is used """
-        clause = base.find_first_matching(self.clauses, lambda x: x == "seq")
-        return True if clause is None else False
 
     def reductions(self, converter=base.make_f_str):
         result = {}

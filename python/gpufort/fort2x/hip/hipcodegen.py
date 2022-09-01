@@ -72,7 +72,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
                         mykernelgen,
                         cpp_filegen,
                         fortran_filegen,
-                        is_loopnest=False,
+                        is_compute_construct=False,
                         is_kernel_subroutine=False):
         if self.emit_gpu_kernel:
             cpp_filegen.rendered_kernels += (
@@ -87,7 +87,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
         rendered_launchers_cpp = []
         rendered_interfaces_f03 = []
  
-        if is_loopnest or is_kernel_subroutine: 
+        if is_compute_construct or is_kernel_subroutine: 
             if self.emit_grid_launcher:
                 grid_launcher = mykernelgen.create_launcher_context(
                     "hip", self.emit_debug_code, fortran_filegen.used_modules)
@@ -102,7 +102,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
                 rendered_interfaces_f03 += mykernelgen.render_launcher_interface_f03(
                     problem_size_launcher)
 
-        if is_loopnest and self.emit_cpu_launcher:
+        if is_compute_construct and self.emit_cpu_launcher:
             cpu_launcher = mykernelgen.create_launcher_context(
                 "cpu", self.emit_debug_code, fortran_filegen.used_modules)
             rendered_launchers_cpp += mykernelgen.render_cpu_launcher_cpp(
@@ -127,10 +127,10 @@ class HipCodeGenerator(codegen.CodeGenerator):
                 + mykernelgen.render_end_kernel_comment_f03())
 
     @util.logging.log_entry_and_exit(opts.log_prefix+".HipCodeGenerator")
-    def _render_loop_nest(self, stloopnest, fortran_filegen):
-        """:note: Writes back to stloopnest argument.
+    def _render_loop_nest(self, stcomputeconstruct, fortran_filegen):
+        """:note: Writes back to stcomputeconstruct argument.
         """
-        scope = indexer.scope.create_scope(self.index, stloopnest.parent.tag())
+        scope = indexer.scope.create_scope(self.index, stcomputeconstruct.parent.tag())
 
         # TODO 
         # clause analysis needed to derive kernel arguments
@@ -140,23 +140,23 @@ class HipCodeGenerator(codegen.CodeGenerator):
 
         try:
             mykernelgen = hipkernelgen.HipKernelGenerator4LoopNest(
-                stloopnest.parse_result, scope,
-                kernel_name = stloopnest.kernel_name(),
-                kernel_hash = stloopnest.kernel_hash(),
-                fortran_snippet = "".join(stloopnest.lines()))
+                stcomputeconstruct.parse_result, scope,
+                kernel_name = stcomputeconstruct.kernel_name(),
+                kernel_hash = stcomputeconstruct.kernel_hash(),
+                fortran_snippet = "".join(stcomputeconstruct.lines()))
         
             self.__render_kernel(mykernelgen,
                                  self.cpp_filegen,
                                  fortran_filegen,
-                                 is_loopnest=True)
+                                 is_compute_construct=True)
             # feed back arguments; TODO see above
-            stloopnest.kernel_args_tavars = mykernelgen.get_kernel_args()
+            stcomputeconstruct.kernel_args_tavars = mykernelgen.get_kernel_args()
 
-            stloopnest.problem_size = mykernelgen.problem_size
-            stloopnest.block_size = mykernelgen.block_size
+            stcomputeconstruct.problem_size = mykernelgen.problem_size
+            stcomputeconstruct.block_size = mykernelgen.block_size
         except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:
             msg = "{}:[{}-{}]:{}".format(
-                    stloopnest._linemaps[0]["file"],stloopnest.min_lineno(),stloopnest.max_lineno(),e.args[0])
+                    stcomputeconstruct._linemaps[0]["file"],stcomputeconstruct.min_lineno(),stcomputeconstruct.max_lineno(),e.args[0])
             e.args = (msg,)
             raise
 

@@ -24,7 +24,7 @@ acc_clause_num_gangs     = NUM_GANGS + LPAR + integer + RPAR
 acc_clause_num_workers   = NUM_WORKERS + LPAR + integer + RPAR 
 acc_clause_vector_length = VECTOR_LENGTH + LPAR + integer + RPAR
 
-acc_clause_device_type   = DEVICE_TYPE + LPAR + Group(delimitedList(identifier | Literal("*"))) + RPAR
+acc_clause_device_type   = Regex(r"\b(dtype|device_type)\b",re.IGNORECASE).suppress() + LPAR + Group(delimitedList(identifier) | Literal("*")) + RPAR
 acc_clause_if            = IF + LPAR + arithmetic_logical_expression + RPAR
 
 # copy, copyin, copyout, create, no_create, present, deviceptr, attach, detach, use_device, delete, private, first_private, host, device_resident, link

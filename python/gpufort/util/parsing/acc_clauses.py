@@ -9,6 +9,7 @@ acc_clauses = {
     "num_workers",
     "vector_length",
     "device_type",
+    "dtype",
     "if",
     "self",
     "reduction",
@@ -68,6 +69,7 @@ acc_clauses = {
     "auto",
     "tile",
     "device_type",
+    "dtype",
     "private",
     "reduction",
   ],
@@ -97,15 +99,18 @@ acc_clauses = {
     "bind",
     "bind",
     "device_type",
+    "dtype",
     "nohost",
   ],
   "init": [
     "device_type",
+    "dtype",
     "device_num",
     "if",
   ],
   "set": [
     "device_type",
+    "dtype",
     "device_num",
     "if",
   ],
@@ -113,6 +118,7 @@ acc_clauses = {
     "async",
     "wait",
     "device_type",
+    "dtype",
     "if",
     "if_present",
     "self",
@@ -135,9 +141,9 @@ acc_clauses["kernels"].remove("reduction")
 acc_clauses["kernels"].remove("private")
 acc_clauses["kernels"].remove("firstprivate")
 
-acc_clauses["parallel loop"] = acc_clauses["parallel"] + acc_clauses["loop"]
-acc_clauses["serial loop"] = acc_clauses["serial"] + acc_clauses["loop"]
-acc_clauses["kernels loop"] = acc_clauses["kernels"] + acc_clauses["loop"]
+acc_clauses["parallel loop"] = list(set(acc_clauses["parallel"] + acc_clauses["loop"]))
+acc_clauses["serial loop"] = list(set(acc_clauses["serial"] + acc_clauses["loop"]))
+acc_clauses["kernels loop"] = list(set(acc_clauses["kernels"] + acc_clauses["loop"]))
 
 acc_clauses["shutdown"] = list(acc_clauses["init"])
 

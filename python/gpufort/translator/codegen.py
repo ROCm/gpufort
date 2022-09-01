@@ -44,14 +44,14 @@ def translate_procedure_body_to_hip_kernel_body(ttprocedurebody, scope, **kwargs
         c_body += "\nreturn " + ttprocedurebody.result_name + ";"
     return prepostprocess.postprocess_c_snippet(c_body)
 
-def _handle_reductions(ttloopnest,ttvalues,grid_dim):
+def _handle_reductions(ttcomputeconstruct,ttvalues,grid_dim):
     tidx = "__gidx{dim}".format(dim=grid_dim)
     # 2. Identify reduced variables
     for ttvalue in ttvalues:
         if type(ttvalue._value) in [
                 tree.TTDerivedTypeMember, tree.TTIdentifier
         ]:
-            for op, reduced_vars in ttloopnest.gang_team_reductions(
+            for op, reduced_vars in ttcomputeconstruct.gang_team_reductions(
             ).items():
                 if ttvalue.name().lower() in [
                         el.lower() for el in reduced_vars
@@ -61,7 +61,7 @@ def _handle_reductions(ttloopnest,ttvalues,grid_dim):
     # identify reduction op
     reduction_preamble = ""
     # 2.1. Add init preamble for reduced variables
-    for kind, reduced_vars in ttloopnest.gang_team_reductions(
+    for kind, reduced_vars in ttcomputeconstruct.gang_team_reductions(
             tree.make_c_str).items():
         for var in reduced_vars:
             if opts.fortran_style_tensor_access:
@@ -72,7 +72,7 @@ def _handle_reductions(ttloopnest,ttvalues,grid_dim):
                     kind=kind, var=var, tidx=tidx)
     return reduction_preamble
 
-def translate_loopnest_to_hip_kernel_body(ttcomputeconstruct, scope, **kwargs):
+def translate_compute_construct_to_hip_kernel_body(ttcomputeconstruct, scope, **kwargs):
     r"""This routine generates an HIP/C kernel body.
     :param ttcomputeconstruct: A translator tree node describing a loopnest
     :param scope: A scope; see gpufort.indexer.scope
@@ -105,7 +105,7 @@ def translate_loopnest_to_hip_kernel_body(ttcomputeconstruct, scope, **kwargs):
         ttdos = analysis.perfectly_nested_do_loops_to_map(ttcomputeconstruct) 
         problem_size = analysis.problem_size(ttdos,**kwargs)
         block_size = [] # TODO
-        loop_vars = analysis.loop_vars_in_loopnest(ttdos)
+        loop_vars = analysis.loop_vars_in_compute_construct(ttdos)
 
     c_names = {}
     if map_to_flat_arrays:
@@ -134,7 +134,7 @@ def translate_loopnest_to_hip_kernel_body(ttcomputeconstruct, scope, **kwargs):
               and num_loops_to_map <= 3)):
             if len(reduction_preamble):
                 reduction_preamble += "\n"
-            indices, conditions = transformations.map_loopnest_to_grid(ttdos)
+            indices, conditions = transformations.map_compute_construct_to_grid(ttdos)
             c_snippet = "{0}\n{2}if ({1}) {{\n{3}\n}}".format(\
               "".join(indices),"&&".join(conditions),reduction_preamble,tree.make_c_str(ttcomputeconstruct))
         else: # collapse strategy or num_loops_to_map > 3
@@ -150,7 +150,7 @@ def translate_loopnest_to_hip_kernel_body(ttcomputeconstruct, scope, **kwargs):
 
     return prepostprocess.postprocess_c_snippet(c_snippet), problem_size, block_size, loop_vars, c_names, c_ranks
 
-def translate_loopnest_to_omp(fortran_snippet, ttloopnest, inout_arrays_in_body, arrays_in_body):
+def translate_compute_construct_to_omp(fortran_snippet, ttcomputeconstruct, inout_arrays_in_body, arrays_in_body):
     """
     :note: The string used for parsing was preprocessed. Hence
            we pass the original Fortran snippet here.
@@ -167,9 +167,9 @@ def translate_loopnest_to_omp(fortran_snippet, ttloopnest, inout_arrays_in_body,
     # TODO find out relevant directives
     # TODO transform string
     # TODO preprocess Fortran colon expressions
-    reduction = ttloopnest.gang_team_reductions()
-    depend = ttloopnest.depend()
-    if isinstance(ttloopnest.parent_directive(), tree.TTCufKernelDo):
+    reduction = ttcomputeconstruct.gang_team_reductions()
+    depend = ttcomputeconstruct.depend()
+    if isinstance(ttcomputeconstruct.parent_directive(), tree.TTCufKernelDo):
 
         def cuf_kernel_do_repl(parse_result):
             nonlocal arrays_in_body

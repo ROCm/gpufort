@@ -429,6 +429,7 @@ def _parse_file(linemaps, index, **kwargs):
             append_if_not_recording_(new)
         elif (new.is_directive(["acc","end","serial"])
              or new.is_directive(["acc","end","parallel"])):
+            # TODO check parent statement
             assert keep_recording
             current_node.complete_init(index)
             ascend_()
@@ -523,7 +524,7 @@ def _parse_file(linemaps, index, **kwargs):
                     for entry in statement_function_stack[-1]:
                         if entry[0] == name: # existing record found
                             # TODO currently does not make sense as the statement variables are only 
-                            # TODOc applied on the LHS of a statement; should only be applied to RHS
+                            # applied on the LHS of a statement; should only be applied to RHS
                             # of assignments
                             raise util.error.SyntaxError("redefinition of statement function")
                     statement_function_stack[-1].append((name,args,rhs_expr))

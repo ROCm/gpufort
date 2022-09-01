@@ -35,7 +35,7 @@ def CufLoopNest2Omp(stcomputeconstruct,
     inout_arrays = translator.analysis.inout_arrays_in_subtree(ttcomputeconstruct, scope)
 
     snippet = joined_lines if statements_fully_cover_lines else joined_statements
-    return translator.codegen.translate_loopnest_to_omp(snippet, ttcomputeconstruct, inout_arrays, arrays), True
+    return translator.codegen.translate_compute_construct_to_omp(snippet, ttcomputeconstruct, inout_arrays, arrays), True
 
 cufnodes.STCufLoopNest.register_backend(dest_dialects,CufLoopNest2Omp)
 

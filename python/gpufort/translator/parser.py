@@ -150,6 +150,7 @@ def parse_fortran_code(statements,result_name=None):
                     ignore_("directive")
                 elif util.parsing.is_fortran_offload_region_plus_loop_directive(
                         tokens): # most complex first
+                    # split directive
                     parse_result = tree.grammar.loop_annotation.parseString(
                         stmt, parseAll=True)
                     curr_offload_region = parse_result[0]
@@ -197,12 +198,13 @@ def parse_fortran_code(statements,result_name=None):
             do_loop_labels.append(label)
             begin, end, stride = None, None, None
             try:
-                begin = tree.grammar.assignment.parseString(
-                        var + "=" + lbound_str)[0]
+                if var != None and lbound_str != None:
+                    begin = tree.grammar.assignment.parseString(var + "=" + lbound_str)[0]
             except pyparsing.ParseException as e:
                 error_("do loop: begin", e)
             try:
-                end = tree.grammar.arithmetic_expression.parseString(ubound_str)[0]
+                if ubound_str != None:
+                    end = tree.grammar.arithmetic_expression.parseString(ubound_str)[0]
             except pyparsing.ParseException as e:
                 error_("do loop: end", e)
             if stride_str != None and len(stride_str):
@@ -278,7 +280,7 @@ def parse_fortran_code(statements,result_name=None):
                     do_loop_labels.pop(-1)
                     ascend_(tokens[1])
         elif tokens[0] == "cycle":
-            ttcontinue = tree.TTContinue(stmt, 0, [[]])
+            ttcontinue = tree.TTCycle(stmt, 0, [[]])
             append_(ttcontinue,"cycle statement")
         elif tokens[0] == "exit":
             ttexit = tree.TTExit(stmt, 0, [[]])
@@ -332,14 +334,14 @@ def parse_attributes(ttattributes):
 # while they are specified with ACC,OMP.
 
 
-def parse_loopnest(fortran_statements, scope=None):
+def parse_compute_construct(fortran_statements, scope=None):
     """:return: C snippet equivalent to original Fortran code.
     """
-    ttloopnest = parse_fortran_code(fortran_statements).body[0]
+    ttcomputeconstruct = parse_fortran_code(fortran_statements).body[0]
     curr_offload_region = None
 
-    ttloopnest.scope = scope
-    return ttloopnest
+    ttcomputeconstruct.scope = scope
+    return ttcomputeconstruct
 
 
 def parse_procedure_body(fortran_statements, scope=None, result_name=None):

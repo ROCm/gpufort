@@ -134,19 +134,19 @@ class HipKernelGeneratorBase(kernelgen.KernelGeneratorBase):
 # derived classes
 class HipKernelGenerator4LoopNest(HipKernelGeneratorBase):
 
-    def __init__(self, ttloopnest, scope, **kwargs):
+    def __init__(self, ttcomputeconstruct, scope, **kwargs):
         HipKernelGeneratorBase.__init__(self, scope, **kwargs)
         # TODO tensors must be flagged before before lookup index entries
-        # translate_loopnest_to_hip_kernel_body does this (side effect)
+        # translate_compute_construct_to_hip_kernel_body does this (side effect)
         self.c_body, self.problem_size, self.block_size, loop_vars, c_names, c_ranks = \
-            translator.codegen.translate_loopnest_to_hip_kernel_body(ttloopnest,scope,**kwargs)
+            translator.codegen.translate_compute_construct_to_hip_kernel_body(ttcomputeconstruct,scope,**kwargs)
         self.kernel = self._create_kernel_context()
        
         self.kernel["global_vars"],\
         self.kernel["global_reduced_vars"],\
         self.kernel["shared_vars"],\
-        self.kernel["local_vars"] = translator.analysis.lookup_index_entries_for_vars_in_loopnest(self.scope,
-                                                                                       ttloopnest,
+        self.kernel["local_vars"] = translator.analysis.lookup_index_entries_for_vars_in_compute_construct(self.scope,
+                                                                                       ttcomputeconstruct,
                                                                                        loop_vars,
                                                                                        c_names,
                                                                                        c_ranks)

@@ -446,10 +446,10 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
 
         # kernel launch 
         stcomputeconstruct.kernel_args_names = arguments
-        result_computeconstruct, _ = nodes.STComputeConstruct.transform(
+        result_compute_construct, _ = nodes.STComputeConstruct.transform(
                                  stcomputeconstruct, joined_lines, joined_statements,
                                  statements_fully_cover_lines, index)
-        result.append(textwrap.dedent(result_computeconstruct))
+        result.append(textwrap.dedent(result_compute_construct))
 
         # leave structured region
         options = [ self._get_async_clause_expr(stcomputeconstruct) ]

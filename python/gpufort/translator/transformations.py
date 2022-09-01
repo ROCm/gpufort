@@ -176,7 +176,7 @@ def adjust_explicitly_mapped_arrays_in_rank(ttvalues,explicitly_mapped_vars):
                     c_ranks[value_tag] = ttvalue.args().max_rank
     return c_ranks
 
-def move_statements_into_loopnest_body(ttloopnest):
+def move_statements_into_compute_construct_body(ttcomputeconstruct):
     # TODO
     # subsequent loop ranges must not depend on LHS of assignment
     # or inout, out arguments of function call
@@ -204,9 +204,56 @@ def _collapsed_loop_index_c_str(ttdo,counter):
     return "int {idx} = outermost_index_w_len({args});\n".format(\
            idx=idx,args=",".join(args))
 
+class Parallelism(enum.Enum):
+    GANG=0
+    WORKER=1
+    VECTOR=2
+    GANG_WORKER=3
+    GANG_VECTOR=4
+    WORKER_VECTOR=5
+
+class ParallelismMode(enum.Enum):
+    REDUNDANT=0
+    SINGLE=1
+    PARTITIONED=2
+
+
+def __identify_device_types(ttcomputeconstruct):
+    device_types = set()
+    
+
+    def traverse_(ttnode):
+        
+        pass
+
+
+def transform(ttcomputeconstruct):
+    results = [] # one per device spec
+    parallelism_level = [Parallelism.GANG]
+    parallelism_mode = [ParallelismMode.REDUNDANT]
+
+    def traverse_(ttnode):
+        nonlocal parallelism_level
+        nonlocal parallelism_mode
+        if isinstance(ttnode,TTDo):
+            parallelism_level[-1] 
+    traverse
+
+    #preamble1 = []
+    #preamble2 = []
+    #indices = []
+    #problem_sizes = []
+    #indices.append("int _rem = __gidx1;\n") # linear index
+    #indices.append("int _denom = _problem_size;\n")
+    # 
+
+
+    #preamble2.append("const int _problem_size = {};\n".format("*".join(problem_sizes)))
+    #return preamble1+preamble2, indices, [ "__gidx1 < _problem_size" ]
+
 # TODO make use of parallelism-level here
 def collapse_loopnest(ttdos):
-    # TODO Traverse the whole tree and modify all TTContinue and Exit statements 
+    # TODO Traverse the whole tree and modify all TTCycle and Exit statements 
     preamble1 = []
     preamble2 = []
     indices = []
@@ -219,7 +266,7 @@ def collapse_loopnest(ttdos):
         preamble2.append("const int _len{0} = loop_len(_begin{0},_end{0},_step{0});\n".format(i))
         problem_sizes.append("_len{}".format(i))
         for child in ttdo:
-            if isinstance(child,tree.TTContinue):
+            if isinstance(child,tree.TTCycle):
                 child._in_loop = False
             if isinstance(child,tree.TTExit):
                 child._in_loop = False
@@ -228,7 +275,7 @@ def collapse_loopnest(ttdos):
     preamble2.append("const int _problem_size = {};\n".format("*".join(problem_sizes)))
     return preamble1+preamble2, indices, [ "__gidx1 < _problem_size" ]
 
-def map_loopnest_to_grid(ttdos):
+def map_compute_construct_to_grid(ttdos):
     thread_indices = ["x", "y", "z"]
     while len(thread_indices) > len(ttdos):
         thread_indices.pop()

@@ -1599,6 +1599,35 @@ def parse_acc_clauses(clauses):
             raise error.SyntaxError("could not parse expression: '{}'".format(expr))
     return result
 
+def split_clauses_of_combined_acc_construct(directive_kind,combined_clauses):
+    compute_construct_clauses = []
+    loop_clauses = []
+    compute_construct_key = directive_kind[1].lower()
+    for clause in combined_clauses:
+        name_lower = tokenize(clause)[0].lower()
+        if name_lower in acc_clauses.acc_clauses[compute_construct_key]:
+            compute_construct_clauses.append(clause)
+        # clauses like device type may belong to both of the two
+        if name_lower in acc_clauses.acc_clauses["loop"]:
+            loop_clauses.append(clause)
+    # remove instances of device_type(<list>) device_type(<list>)
+    def remove_empty_device_specs_(clause_list):
+        if len(clause_list):
+            prev = clause_list[0]
+            prev_name_is_device_type = tokenize(prev)[0].lower() in ["dtype","device_type"]
+            for curr in list(clause_list[1:]):
+                curr_name_is_device_type = tokenize(curr)[0].lower() in ["dtype","device_type"]
+                if prev_name_is_device_type and curr_name_is_device_type:
+                    clause_list.remove(prev)
+                prev = curr
+                prev_name_is_device_type = curr_name_is_device_type
+            if prev_name_is_device_type: # remove device spec at end of list
+                clause_list.remove(prev)
+        return clause_list
+
+    return (remove_empty_device_specs_(compute_construct_clauses),
+           remove_empty_device_specs_(loop_clauses))
+
 def check_acc_clauses(directive_kind,clauses):
     """Check if the used acc clauses are legal for the given directive.
     :param list directive_kind: List of directive tokens as produced by parse_acc_directive.

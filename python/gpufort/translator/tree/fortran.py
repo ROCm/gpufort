@@ -8,8 +8,12 @@ from gpufort import util
 
 from .. import opts
 from .. import conv
+from .. import prepostprocess
+
 from . import base
 from . import grammar
+
+import enum
 
 def flatten_arithmetic_expression(expr, converter=base.make_c_str):
 
@@ -244,11 +248,16 @@ class TTIdentifier(base.TTNode):
 
 
 class TTFunctionCallOrTensorAccess(base.TTNode):
+    class Type(enum.Enum):
+        UNKNOWN = 0
+        ARRAY_ACCESS = 0
+        INTRINSIC_CALL = 1
+        FUNCTION_CALL = 2
 
     def _assign_fields(self, tokens):
         self._name = tokens[0]
         self._args = tokens[1]
-        self._is_tensor_access = base.Unknown3
+        self._type = TTFunctionCallOrTensorAccess.Type.UNKNOWN
 
     def range_args(self):
         """Returns all range args in the order of their appeareance.
@@ -275,6 +284,7 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
         Tries to determine if the whole expression
         is function or not if no other hints are given
         """
+        #  TODO hacky old solution, evaluate if still needed
         name = base.make_c_str(self._name).lower()
         return len(self._args) == 0 or\
           name in opts.gpufort_cpp_symbols or\
@@ -282,62 +292,30 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
           name in grammar.ALL_DEVICE_ROUTINES
 
     def is_tensor(self):
-        if self._is_tensor_access == base.True3:
+        if self._type == TTFunctionCallOrTensorAccess.Type.ARRAY_ACCESS:
             return True
-        elif self._is_tensor_access == base.False3:
-            return False
-        else:
+        elif self._type == TTFunctionCallOrTensorAccess.Type.UNKNOWN:
             return self.has_range_args() or\
                    not self.__guess_it_is_function()
+        else:
+            return False
 
     def name_c_str(self):
-        raw_name = base.make_c_str(self._name).lower()
+        name = base.make_c_str(self._name).lower()
         if self.is_tensor():
-            return raw_name
-        else:
-            if raw_name == "sign":
-                return "copysign"
-            elif raw_name in [
-              "amax0",
-              "amax1",
-              "dmax1",
+            return name
+        elif self._type == TTFunctionCallOrTensorAccess.Type.INTRINSIC_CALL:
+            name = prepostprocess.modernize_fortran_function_name(name)
+            if name in [
               "max",
-              "max0",
-              "max1",
+              "min",
               ]:
                 num_args = len(self._args)
                 return "max" + str(num_args)
-            elif raw_name in [
-              "amin0",
-              "amin1",
-              "dmin1",
-              "min",
-              "min0",
-              "min1",
-              ]:
-                num_args = len(self._args)
-                return "min" + str(num_args)
             else:
-                result = raw_name
-                for name in [
-                  "abs",
-                  "sqrt",
-                  "sin",
-                  "cos",
-                  "tan",
-                  "exp",
-                  "log",
-                  ]:
-                    if raw_name == name + "1":
-                        result = raw_name[:-1]
-                        break
-                    elif raw_name == "a" + name:
-                        result = raw_name[1:]
-                        break
-                    elif raw_name == "a" + name + "1":
-                        result = raw_name[1:-1]
-                        break
-                return result
+                return name
+        else:
+            return name
 
     def c_str(self):
         name = self.name_c_str()

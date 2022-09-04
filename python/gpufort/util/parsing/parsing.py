@@ -1508,7 +1508,7 @@ def parse_directive(directive,tokens_to_omit_at_begin=0):
             raise error.SyntaxError("unexpected clause or identifier token: {}".format(tk))
     return result[tokens_to_omit_at_begin:]
 
-def parse_acc_directive(directive):
+def parse_acc_directive(statement):
     """Parses an OpenACC directive, returns a 4-tuple of its sentinel, its kind (as list of tokens),
     its arguments and its clauses (as list of tokens). 
 
@@ -1519,7 +1519,7 @@ def parse_acc_directive(directive):
     this routine returns
       ('!$',['acc','enter','data'],['copyin(a,b)','async'])
     """
-    directive_parts = parse_directive(directive)
+    directive_parts = parse_directive(statement)
     directive_kinds = [ # order is important
       ["acc","init"],
       ["acc","shutdown"],
@@ -1611,22 +1611,23 @@ def split_clauses_of_combined_acc_construct(directive_kind,combined_clauses):
         if name_lower in acc_clauses.acc_clauses["loop"]:
             loop_clauses.append(clause)
     # remove instances of device_type(<list>) device_type(<list>)
-    def remove_empty_device_specs_(clause_list):
-        if len(clause_list):
-            prev = clause_list[0]
-            prev_name_is_device_type = tokenize(prev)[0].lower() in ["dtype","device_type"]
-            for curr in list(clause_list[1:]):
-                curr_name_is_device_type = tokenize(curr)[0].lower() in ["dtype","device_type"]
-                if prev_name_is_device_type and curr_name_is_device_type:
-                    clause_list.remove(prev)
-                prev = curr
-                prev_name_is_device_type = curr_name_is_device_type
-            if prev_name_is_device_type: # remove device spec at end of list
-                clause_list.remove(prev)
-        return clause_list
+    #def remove_empty_device_specs_(clause_list):
+    #    if len(clause_list):
+    #        prev = clause_list[0]
+    #        prev_name_is_device_type = tokenize(prev)[0].lower() in ["dtype","device_type"]
+    #        for curr in list(clause_list[1:]):
+    #            curr_name_is_device_type = tokenize(curr)[0].lower() in ["dtype","device_type"]
+    #            if prev_name_is_device_type and curr_name_is_device_type:
+    #                clause_list.remove(prev)
+    #            prev = curr
+    #            prev_name_is_device_type = curr_name_is_device_type
+    #        if prev_name_is_device_type: # remove device spec at end of list
+    #            clause_list.remove(prev)
+    #    return clause_list
 
-    return (remove_empty_device_specs_(compute_construct_clauses),
-           remove_empty_device_specs_(loop_clauses))
+    #return (remove_empty_device_specs_(compute_construct_clauses),
+    #       remove_empty_device_specs_(loop_clauses))
+    return (compute_construct_clauses,loop_clauses)
 
 def check_acc_clauses(directive_kind,clauses):
     """Check if the used acc clauses are legal for the given directive.

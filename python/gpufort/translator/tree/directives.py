@@ -333,25 +333,15 @@ class TTComputeConstruct(base.TTContainer, IComputeConstruct):
     def _assign_fields(self, tokens):
         self._parent_directive, self.body = tokens
         self.scope = indexer.types.EMPTY_SCOPE
-        self.device_specs = [] # from analysis
 
     def child_nodes(self):
         return [self._parent_directive, self.body]
 
-    def __first_loop_annotation(self):
-        if isinstance(self.body[0],TTDo):
-            return self.body[0].annotation
-        else:
-            return None
-
     def parent_directive(self):
-        if self._parent_directive == None:
-            return self._first_loop_annotation()
-        else:
-            return self._parent_directive
+        return self._parent_directive
 
     def get_device_specs(self):
-        return self.device_specs
+        return self._parent_directive.get_device_specs()
 
     def async_nowait():
         """value != grammar.CLAUSE_NOT_FOUND means True"""

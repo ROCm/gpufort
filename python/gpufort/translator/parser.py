@@ -151,10 +151,23 @@ def parse_fortran_code(statements,result_name=None):
                 elif util.parsing.is_fortran_offload_region_plus_loop_directive(
                         tokens): # most complex first
                     # split directive
-                    parse_result = tree.grammar.loop_annotation.parseString(
-                        stmt, parseAll=True)
-                    curr_offload_region = parse_result[0]
-                    curr_offload_loop = parse_result[0]
+                    if tokens[1] == "acc":
+                        sentinel, directive_kind, _, combined_clauses =\
+                                util.parsing.parse_acc_directive(tokens)
+                        (region_directive, loop_directive) =\
+                                util.parsing.split_clauses_of_combined_acc_construct(
+                                        directive_kind,combined_clauses)
+                        region_directive = sentinel+" ".join(directive_kind[0:2]+region_clauses])
+                        loop_directive = sentinel+" ".join(["acc","loop"]+loop_clauses])
+                        parse_result_region = tree.grammar.offload_region_start.parseString(
+                            stmt, parseAll=True)
+                        parse_result_loop = tree.grammar.loop_annotation.parseString(
+                            stmt, parseAll=True)
+                        curr_offload_region = parse_result_region[0]
+                        curr_offload_loop = parse_result_loop[0]
+                    else:  # CUF
+                        curr_offload_region = parse_result[0]
+                        curr_offload_loop = parse_result[0]
                     descend_(tree.TTComputeConstruct(stmt,"", [curr_offload_region, []]),\
                             "compute construct plus loop directive")
                 elif util.parsing.is_fortran_offload_region_directive(tokens):

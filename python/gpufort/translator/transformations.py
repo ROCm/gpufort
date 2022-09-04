@@ -220,10 +220,10 @@ class ParallelismMode(enum.Enum):
 
 def __identify_device_types(ttcomputeconstruct):
     device_types = set()
-    
-
+    directives = []
     def traverse_(ttnode):
-        
+        if isinstance(ttnode,TTComputeConstruct):
+
         pass
 
 

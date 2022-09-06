@@ -204,40 +204,147 @@ def _collapsed_loop_index_c_str(ttdo,counter):
     return "int {idx} = outermost_index_w_len({args});\n".format(\
            idx=idx,args=",".join(args))
 
-class Parallelism(enum.Enum):
-    GANG=0
-    WORKER=1
-    VECTOR=2
-    GANG_WORKER=3
-    GANG_VECTOR=4
-    WORKER_VECTOR=5
-
+def __identify_device_types(ttnode):
+    device_types = set()
+    directives = []
+    def traverse_(ttnode):
+        nonlocal device_types
+        if isinstance(ttnode,(IComputeConstruct,ILoopAnnotation)):
+            for device_spec in ttnode.get_device_specs():
+                device_types.add(device_spec.device_type)
+            for ttchild in ttnode:
+                traverse_(ttchild)
+    traverse_(ttnode)
+    if not len(device_types):
+        device_types.append("*")
+    return device_types
+    
 class ParallelismMode(enum.Enum):
+    UNKNOWN=-1
     REDUNDANT=0
     SINGLE=1
     PARTITIONED=2
 
-
-def __identify_device_types(ttcomputeconstruct):
-    device_types = set()
-    directives = []
-    def traverse_(ttnode):
-        if isinstance(ttnode,TTComputeConstruct):
-
-        pass
-
-
 def transform(ttcomputeconstruct):
-    results = [] # one per device spec
-    parallelism_level = [Parallelism.GANG]
-    parallelism_mode = [ParallelismMode.REDUNDANT]
 
-    def traverse_(ttnode):
-        nonlocal parallelism_level
-        nonlocal parallelism_mode
-        if isinstance(ttnode,TTDo):
-            parallelism_level[-1] 
-    traverse
+    results = [] # one per device spec
+    device_types = __identify_device_types(ttcomputeconstruct)
+    
+    # determine problem size and finest granularity of parallelism
+    # in case of worker/gang_worker parallelism, we need to launch a full warp
+    # of threads and mask out all threads except warp thread 0
+    # in case of gang parallelism, we need to launch a full thread block
+    # of threads and mask out all threads except thread 0
+    # Problems:
+    # - size of the outer loop thread groups depends on the size of the inner loops
+    #   - only have this information on the way up
+    # - inner loop might be greater than outer loop, so need to be blocked 
+    # - need to know default vector length, make available
+    # Considerations:
+    #   No warp/worker synchronization needed as vector lanes in warp run in lockstep
+    #   No intergang synchronization needed as gangs run independently from each other
+    #   Need to distinguish between loops and other statements to put if ( thread id == 0 ) regions
+    # Identify workshare such as min,max,etc.
+    for device_type in device_types:
+        in_loop = False
+        
+        parallelism_level = [directives.Parallelism.GANG]
+        parallelism_mode  = [ParallelismMode.REDUNDANT]
+        num_collapse = 0
+        num_tile_dims = 0
+        # for the whole compute construct
+        max_num_gangs = None
+        max_num_workers = None
+        max_vector_length = None
+        # per loop nest in the compute construct
+        num_gangs     = []
+        num_workers   = []
+        vector_length = []
+        def traverse_(ttnode,num_collapse,mapped_loops,device_type):
+            if isinstance(ttnode,IComputeConstruct):
+                device_specs = ttnode.get_device_specs()
+                device_spec = next((d for d in device_specs if d.applies(device_type)),None)
+                assert device_spec != None
+                cc_num_gangs   = ttnode.num_gangs_teams_blocks() # list
+                cc_num_workers = ttnode.num_workers() # no list
+                if cc_num_gangs[0] != tree.grammar.CLAUSE_NOT_FOUND:
+                    max_num_gangs = "*".join(["("+str(g)+")" for g in cc_num_gangs]) 
+                if cc_num_workers != tree.grammar.CLAUSE_NOT_FOUND:
+                    max_num_workers = str(cc_num_workers)
+            elif isinstance(ttnode,TTDo):
+                if num_collapse > 0:
+                    # TODO check iif we can move statement into inner loop, should be possible if 
+                    # a loop statement is not relying on the lvalue or inout arg from a previous statement (difficult to analyze)
+                    # alternative interpretation of collapse user information -> we can reorder statements without error
+                    # Problem size should be 
+                elif num_tile_dims > 0:
+                    # gang parallism level
+                    # append to grid size
+                    # append to block size 
+                elif ttnode.annotation != None:
+                    # get device spec for type
+                    device_specs = ttnode.annotation.get_device_specs()
+                    device_spec = next((d for d in device_specs if d.applies(device_type)),None)
+                    assert device_spec != None
+                    if parallelism_level[-1] == directives.Parallelism.GANG:
+                        if ttnode.annotation.parallelism() == directives.Parallelism.GANG:
+                            parallelism_mode[-1] = Parallelism.PARTITIONED
+                            #ttnode.partition_among_gangs()
+                            pass
+                        elif ttnode.annotation.parallelism() == directives.Parallelism.WORKER:
+                            parallelism_level.append(Parallelism.WORKER)
+                            parallelism_mode.append(Parallelism.PARTITIONED)
+                            #ttnode.partition_among_gang_workers()
+                            pass
+                            #descend
+                        elif ttnode.annotation.parallelism() == directives.Parallelism.VECTOR:
+                            parallelism_level.append(Parallelism.VECTOR)
+                            parallelism_mode.append(Parallelism.PARTITIONED)
+                            #ttnode.partition_among_gang_workers()
+                            pass
+                            #descend
+                        elif ttnode.annotation.parallelism() == directives.Parallelism.GANG_WORKER:
+                            parallelism_level[-1] = Parallelism.GANG_WORKER
+                            parallelism_mode[-1] = Parallelism.PARTITIONED
+                            #ttnode.partition_among_all_workers()
+                            pass
+                            #descend
+                        elif ttnode.annotation.parallelism() == directives.Parallelism.GANG_VECTOR:
+                            parallelism_level[-1] = Parallelism.GANG_VECTOR
+                            parallelism_mode[-1] = Parallelism.PARTITIONED
+                            #ttnode.partition_among_all_threads()
+                            pass
+                            #descend
+                        else:
+                            parallelism_level.append(Parallelism.SEQ)
+                            parallelism_mode.append(ParallelismMode.UNKNOWN)
+                            #descend
+                    elif parallelism_level[-1] == directives.Parallelism.WORKER:
+                        if ttnode.annotation.parallelism() in [ directives.Parallelism.GANG,
+                                                                directives.Parallelism.GANG_WORKER,
+                                                                directives.Parallelism.GANG_VECTOR ]:
+                            raise util.error.SyntaxError("no gang parallelism possible in worker parallelism section")
+                        elif ttnode.annotation.parallelism() == directives.Parallelism.WORKER:
+                            parallelism_mode[-1] == Parallelism.PARTITIONED)
+                            #ttnode.partition_among_gang_workers()
+                            pass
+                        elif ttnode.annotation.parallelism() == directives.Parallelism.VECTOR:
+                            parallelism_level.append(Parallelism.VECTOR)
+                            parallelism_mode.append(Parallelism.PARTITIONED)
+                            #ttnode.partition_among_gang_workers()
+                            pass
+                    elif parallelism_level[-1] == directives.Parallelism.WORKER:
+                        if ttnode.annotation.parallelism() in [ directives.Parallelism.GANG,
+                                                                directives.Parallelism.GANG_WORKER,
+                                                                directives.Parallelism.GANG_VECTOR,
+                                                                directives.Parallelism.WORKER,
+                                                                directives.Parallelism.WORKER_VECTOR ]:
+                            raise util.error.SyntaxError("no worker or gang parallelism possible in vector parallelism section")
+                        elif ttnode.annotation.parallelism() == directives.Parallelism.VECTOR:
+                            parallelism_level.append(Parallelism.VECTOR)
+                            parallelism_mode.append(Parallelism.PARTITIONED)
+                            #ttnode.partition_among_vector_lanes()
+                            pass
 
     #preamble1 = []
     #preamble2 = []

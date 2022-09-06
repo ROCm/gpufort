@@ -53,6 +53,8 @@ def parse_fortran_code(statements,result_name=None):
     - consider comments
     - every call returns a subtree
     """
+    # TODO identifieir labels are case senstivive -> Catch labels via the linemapper
+    # Make parser use linemaps
     modern_fortran = opts.modern_fortran 
 
     # tree creation ops

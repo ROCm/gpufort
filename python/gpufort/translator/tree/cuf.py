@@ -62,7 +62,7 @@ class CufDeviceSpec(directives.IDeviceSpec):
         return True
 
     def parallelism(self):
-        return Parallelism.GANG_WORKER
+        return Parallelism.GANG_VECTOR
 
     def order_of_iterates(self):
         return IterateOrder.INDEPENDENT

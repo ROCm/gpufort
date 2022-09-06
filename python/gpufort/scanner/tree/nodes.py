@@ -685,6 +685,7 @@ class STComputeConstruct(STNode):
         self.__hash = self.__hash_kernel()
         parent_tag = self.parent.tag()
         scope = indexer.scope.create_scope(index, parent_tag)
+        # TODO pass linemaps to the translator, will improve error messages too
         try:
             self.parse_result = translator.parse_compute_construct(self.code, scope)
         except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:

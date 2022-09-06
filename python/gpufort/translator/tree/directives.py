@@ -17,6 +17,7 @@ from . import fortran
 from . import grammar
     
 class Parallelism(enum.Enum):
+    UNSPECIFIED = -2
     AUTO = -1
     SEQ=0
     GANG=1
@@ -27,6 +28,7 @@ class Parallelism(enum.Enum):
     GANG_VECTOR=6
 
 class IterateOrder(enum.Enum):
+    UNSPECIFIED = -2
     AUTO = -1 # requires static analyis
     SEQ = 0
     INDEPENDENT = 1
@@ -328,7 +330,7 @@ class IComputeConstruct():
         return ""
 
 
-class TTComputeConstruct(base.TTContainer, IComputeConstruct):
+class TTComputeConstruct(base.TTContainer):
 
     def _assign_fields(self, tokens):
         self._parent_directive, self.body = tokens
@@ -391,15 +393,6 @@ class TTComputeConstruct(base.TTContainer, IComputeConstruct):
 
     def is_serial_construct(self):
         return self.parent_directive().is_serial_construct()
-    # TODO move to analysis
-    #def map_outer_loop_to_blocks(self):
-    #    return self.parent_directive().map_outer_loop_to_blocks()
-    #
-    #def map_outer_loop_to_wavefronts(self):
-    #    return self.parent_directive().map_outer_loop_to_wavefronts()
-
-    #def map_outer_loop_to_threads(self):
-    #    return self.parent_directive().map_outer_loop_to_threads()
 
     def gang_team_private_vars(self, converter=base.make_f_str):
         result = self.parent_directive().gang_team_private_vars(converter)
@@ -408,17 +401,17 @@ class TTComputeConstruct(base.TTContainer, IComputeConstruct):
     def gang_team_firstprivate_vars(self, converter=base.make_f_str):
         return self.parent_directive().gang_team_firstprivate_vars(converter)
 
-    # TODO move into analysis
-    def gang_team_reductions(self, converter=base.make_f_str):
-        if self.__first_loop_annotation() != None:
-            if self.__first_loop_annotation().discover_reduction_candidates():
-                return {
-                    "UNKNOWN": self.reduction_candidates()
-                } # TODO default reduction type should be configurable
-            else:
-                return self.__first_loop_annotation().reductions(converter)
-        else:
-            return {}
+#    # TODO move into analysis
+#    def gang_team_reductions(self, converter=base.make_f_str):
+#        if self.__first_loop_annotation() != None:
+#            if self.__first_loop_annotation().discover_reduction_candidates():
+#                return {
+#                    "UNKNOWN": self.reduction_candidates()
+#                } # TODO default reduction type should be configurable
+#            else:
+#                return self.__first_loop_annotation().reductions(converter)
+#        else:
+#            return {}
         
 
     def stream(self, converter=base.make_f_str):

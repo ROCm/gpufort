@@ -1,3 +1,7 @@
+---
+geometry: margin=2cm
+---
+
 # Translator
 
 This document highlights some of the implementation decisions
@@ -79,6 +83,27 @@ to represent the different OpenACC compute constructs (`acc kernels`, `acc kerne
 and the CUDA Fortran construct `!$cuf kernel do` in a unified way.
 
 ## HIP C++ code geneneration from OpenACC compute constructs
+
+In this section, we investigate how we can map OpenACC
+compute constructs to equivalent HIP C++ expressions.
+
+### Preliminaries
+
+* A HIP C++ "kernel" is written from the viewpoint of a SIMD lane in a AMD GCN/CDNA compute
+unit (CU) or the SIMT thread of a NVIDIA CUDA streaming multi-processor (SMP). Let us
+call both entities vector lanes from now on.
+
+* While 64 of such lanes are "running" in lockstep per CU, there are 32 per SMP
+  on current-gen hardware. Such a group is called wavefront or warp.
+  In HIP C++, multiple of such wavefronts are grouped into a
+  threadblock. A threadblock is always processed on the same CU/SMP.
+
+* Flow control constructs like if constructs may mask out individual vector lanes
+  in a wavefront. In this case, the masked out lanes will perform as many no-operations as the masked in
+  lanes perform meaningful computations. This happens per branch of an if or switch-case construct
+  that results in masking out certain vector lanes of a wavefront.
+  In other words, it is pointless to try to spare certain lanes from computations.
+  However, it makes sense to try to reduce the number of whole wavefronts/warps or full threadblocks.
 
 ### OpenACC parallelism levels
 
@@ -215,12 +240,12 @@ __global__ void mykernel(float* x, int m) {
   int max_num_gangs = gridDim.x;
   int gang_id = blockIdx.x;
   int gang_tid  = threadIdx.x;
-  // loop specific
-  int num_gangs = max_num_gangs; 
-  // int num_gangs = 4; // if gang(4) is specified
-  int gang_tile_size = div_round_up(m,num_gangs);
   if ( gang_tid == 0 ) { // masks out additional workers 
                          // and vector lanes if available
+    // loop specific
+    int num_gangs = max_num_gangs; 
+    // int num_gangs = 4; // if gang(4) is specified
+    int gang_tile_size = div_round_up(m,num_gangs);
     for ( int i = 1+gang_id*gang_tile_size; 
               i <= (gang_id+1)*gang_tile_size; i++) {
       // total number of i iterates across all active gangs: 
@@ -363,15 +388,11 @@ int main(int argc, char** argv) {
   hipLaunchKernelGGL((mykernel),dim3(4),dim(NUM_THREADS),x,m,n);
 }
 ```
+Remarks:
 
-The `warpSize` variable in the HIP C++ snippet is another HIP built-in.
-Its value depends on the target architecture.
-
-> TODO below must be adjusted so that local `num_gangs` != `max_num_gangs` 
-
-> TODO below must be adjusted so that local `num_workers` != `max_num_workers` 
-
-> TODO below must be adjusted so that local `vector_length` != `max_vector_length` 
+* The `warpSize` variable in the HIP C++ snippet is another HIP built-in. Its value depends on the target architecture.
+* The array variable `x` might have a completely different memory layout that is not related
+  to the loop range in any way.
 
 ### Vector-partitioned mode
 
@@ -426,7 +447,7 @@ __global__ void mykernel(float* x, int m, int n, int k) {
   int max_vector_length = warpSize;
   int vector_lane_id = threadIdx.x % warpSize; // renamed from 'worker_tid'
   //
-  {
+  if ( true ) { // enabled for all vector lanes
     // loop specific
     // int num_gangs = max_num_gangs; // if gang is specified
     // int num_workers = max_num_workers; // if worker is specified
@@ -439,16 +460,17 @@ __global__ void mykernel(float* x, int m, int n, int k) {
     int worker_tile_size = div_round_up(n,num_workers);
     int vector_tile_size = div_round_up(m,vector_length);
     //
-    if ( vector_lane_id < vector_length ) { // masks out all other threads/lanes
-                                        // of a worker
       for ( int k = 1+gang_id*gang_tile_size;
                 k <= (gang_id+1)*gang_tile_size; k++) {
         if ( k <= p ) { 
           for ( int j = 1+worker_id*worker_tile_size;
                     j <= (worker_id+1)*worker_tile_size; j++ ) {
             if ( j <= n) {
-              for ( int i = vector_lane_id; i <= m; i+=vector_tile_size ) {
-                x[i+m*j+m*n*k] = 1; 
+              if ( vector_lane_id < vector_length ) { // masks out all other threads/lanes
+                                                      // of a worker
+                for ( int i = vector_lane_id; i <= m; i+=vector_tile_size ) {
+                  x[i+m*j+m*n*k] = 1; 
+                }
               }
             }
           }
@@ -467,12 +489,17 @@ int main(int argc, char** argv) {
 }
 ```
 
+Remarks:
+
+* The array variable `x` might have a completely different memory layout that is not related
+  to the loop range in any way.
+
 A HIP or CUDA kernel expresses the work that a single HIP SIMD lane or CUDA thread performs.
 The memory controller of the compute units of AMD and NVIDIA GPUs can group the memory loads and writes 
 of multiple such entities into larger requests if their collective data access pattern allows so. 
 Therefore, we have used the `vector_tile_size` as increment in the above loop and not `1`
 as for the gangs and workers.
-This ensures thiat `vector_lane_id` `l < vector_length` writes to datum `x[l+...]` while `vector_lane_id`
+This ensures that `vector_lane_id` `l < vector_length` writes to datum `x[l+...]` while `vector_lane_id`
 `l+1 < vector_length)` writes to datum `x[(l+1)+...]`, i.e. we have contiguous memory access
 across the SIMD lanes of a worker. 
 
@@ -581,7 +608,7 @@ In this section, we discuss scenarios where a gang clause appears together with 
 In this case, the compiler switches to gang-partitioned, worker-single, vector-partitioned mode, i.e.
 the loop is partitioned across all available gangs and all available vector lanes of a single worker.
 
-**Example  11** (Gang-vector parallelism):
+**Example 9** (Gang-vector parallelism):
 
 ```Fortran
 !$acc parallel
@@ -639,7 +666,6 @@ int main(int argc, char** argv) {
   hipLaunchKernelGGL((mykernel),dim3(m/NUM_WORKERS),dim(NUM_THREADS),x,m);
 }
 ```
-```
 
 ### Mixed gang-worker-vector parallelism
 
@@ -648,7 +674,7 @@ appear together on a loop directive.
 In this case, the compiler switches to gang-partitioned, worker-partitioned, vector-partitioned mode, i.e.
 the loop is partitioned across all available gangs, workers, and vector lanes.
 
-**Example  11** (Gang-worker-vector parallelism):
+**Example 10** (Gang-worker-vector parallelism):
 
 ```Fortran
 !$acc parallel
@@ -712,24 +738,229 @@ int main(int argc, char** argv) {
   hipLaunchKernelGGL((mykernel),dim3(m/NUM_WORKERS),dim(NUM_THREADS),x,m);
 }
 ```
-```
 
 From the equivalent HIP C++ implementation, we observe that gang-vector loop parallelism is a special case
 of gang-worker-vector loop parallelism. However, this is is not the case for the gang-worker loop.
 
-### Collapsing loops
+### Collapsing loopnests
 
-TBA
+A number of nested loops is collapsed by transforming them into a single loop where
+the number of iterates is the number of elements of the Cartesian product
+of the original loop ranges. 
+If needed, e.g. in order to access a multi-dimensional array,
+the original loop indices can always be recovered from the 
+index of a collapsed loopnest and the ranges of the original loops.
 
-## Tiling loops
+Before we take a look at different OpenACC examples, 
+we introduce two helper routines. 
+One allows us to compute the length of Fortran do-loop
+iteration range with arbitrary lower and upper bounds
+and step size. The other, repeatedly applied, allows
+us to recover the original loop indices
+from the index of a collapsed loopnest.
+
+```C++
+/**
+ * Number of iterations of a loop that runs from 'first' to 'last' (both inclusive)
+ * with step size 'step'. Note that 'step' might be negative and 'first' > 'last'.
+ * If 'step' lets the loop run into a different direction than 'first' to 'last', this function 
+ * returns 0.
+ *
+ * \param[in] first first index of the loop iteration range
+ * \param[in] last last index of the loop iteration range
+ * \param[in] step step size of the loop iteration range
+ */
+__host__ __device__ __forceinline__ int loop_len(int first,int last,int step=1) {
+  const int len_minus_1 = (last-first) / step;
+  return ( len_minus_1 >= 0 ) ? (1+len_minus_1) : 0; 
+}
+
+/**
+ * Variant of outermost_index that takes the length of the loop
+ * as additional argument.
+ *
+ * \param[in] first first index of the outermost loop iteration range
+ * \param[in] len the loop length.
+ * \param[in] step step size of the outermost loop iteration range
+ */
+__host__ __device__ __forceinline__ int outermost_index_w_len(
+  int& collapsed_idx,
+  int& collapsed_len,
+  const int first, const int len, const int step = 1
+) {
+  collapsed_len /= len;
+  const int idx = collapsed_idx / collapsed_len; // rounds down
+  collapsed_idx -= idx*collapsed_len;
+  return (first + step*idx);
+}
+```
+
+#### Collapsing gang-partitioned loopnests
+
+```Fortran
+!$acc parallel
+!!$acc loop gang collapse(2)
+!!$acc loop gang(4) collapse(2)
+do j = 1,n
+  do i = 1,m
+    x(i,j) = 1;
+  end do
+end do
+!$acc end parallel
+```
+
+Using the above introduced helper routines, an equivalent HIP C++ implementation could look as follows:
+
+```C++
+// includes and definitions
+// ...
+
+__global__ void mykernel(float* x, int m, int n) {
+  // generic preamble
+  int max_num_gangs = gridDim.x;
+  int gang_id = blockIdx.x;
+  int gang_tid = threadIdx.x;
+  //
+  int max_vector_length = warpSize;
+  int max_num_workers = div_round_up(blockDim.x / max_vector_length);
+  int worker_id = threadIdx.x / max_vector_length;
+  int vector_lane_id = threadIdx.x % max_vector_length;
+  //
+  if ( gang_tid == 0 ) { // masks out additional workers 
+                         // and vector lanes if available
+    // loop specific
+    int num_gangs = max_num_gangs; 
+    // int num_gangs = 4; // if gang(4) is specified
+    int loop_len_j = loop_len(1,n);
+    int loop_len_i = loop_len(1,m);
+    int problem_size = 
+          loop_len_j *
+          loop_len_i;
+    int gang_tile_size = div_round_up(problem_size,num_gangs);
+    for ( int ij = gang_id*gang_tile_size; // loop bounds not included here 
+              ij < (gang_id+1)*gang_tile_size; ij++) {
+      if ( ij < problem_size ) {
+        int rem = ij;
+        int denom = problem_size;
+        int j = outermost_index_w_len(rem,denom,1,loop_len_j);
+        int i = outermost_index_w_len(rem,denom,1,loop_len_i);
+        //
+        x[i+j*m] = 1;
+      }
+    }
+  }
+}
+
+int main(int argc, char** argv) {
+  // initialization of x, m, n, NUM_GANGS, NUM_WORKERS,
+  // and MAX_VECTOR_LENGTH (32 or 64 depending on arch)
+  // ... 
+  int NUM_THREADS = NUM_WORKERS*MAX_VECTOR_LENGTH;
+  hipLaunchKernelGGL((mykernel),dim3(NUM_GANGS),dim(NUM_THREADS),x,m,n);
+}
+
+```
+
+Remarks:
+
+* The number of gangs, workers, and vector lanes is irrelevant in the above example. Of course, they should be positive.
+* The `gang_tile_size` is computed with respect of the product of the sizes of the original loop ranges.
+* The loop lower bounds do not appear anymore in the gang-partitioned loop but as argument
+  of the `outermost_index_w_len` function that recovers the original indices from the collapsed loop index.
+* The array variable `x` might have a completely different memory layout that is not related
+  to the loop range in any way.
+
+#### Collapsing worker-partitioned loopnests
+
+Collapsing worker-partitioned loopnests and gang-worker-partitioned
+loopnests is conceptually very similar to collapsing 
+gang-partitioned loopnests. Therefore, it is not
+discussed here explicitly.
+
+#### Collapsing vector-partitioned loopnests
+
+Vector-partitioned loopnests require a more in-depth investigation
+as the string is performed differently.
+
+**Example XYZ** (Collapsing vector-partitioned loopnests):
+
+```Fortran
+!$acc parallel
+!!$acc loop vector collapse(2)
+!!$acc loop vector(4) collapse(2)
+do j = 1,n
+  do i = 1,m
+    x(i,j) = 1;
+  end do
+end do
+!$acc end parallel
+```
+
+An equivalent HIP C++ implementation could look as follows:
+
+```C++
+// includes and definitions
+// ...
+
+__global__ void mykernel(float* x, int m, int n) {
+  // generic preamble
+  int max_num_gangs = gridDim.x;
+  int gang_id = blockIdx.x;
+  int gang_tid = threadIdx.x;
+  //
+  int max_vector_length = warpSize;
+  int max_num_workers = div_round_up(blockDim.x / max_vector_length);
+  int worker_id = threadIdx.x / max_vector_length;
+  int vector_lane_id = threadIdx.x % max_vector_length;
+  //
+  if ( true ) { // all vector lanes are active 
+    // loop specific
+    int vector_length = max_vector_length;
+    //int vector_length = 8; // if vector(8) is specified
+
+    int loop_len_j = loop_len(1,n);
+    int loop_len_i = loop_len(1,m);
+    int problem_size = 
+          loop_len_j *
+          loop_len_i;
+    int vector_tile_size = div_round_up(problem_size,vector_length);
+    if ( vector_lane_id < vector_length ) { // masks out all other threads/lanes
+                                            // of a worker
+      for ( int ij = vector_lane_id; ij <= problem_size; ij+=vector_tile_size ) {
+        int rem = ij;
+        int denom = problem_size;
+        int j = outermost_index_w_len(rem,denom,1,loop_len_j);
+        int i = outermost_index_w_len(rem,denom,1,loop_len_i);
+        //
+        x[i+m*j] = 1;
+      }
+    }
+  }
+}
+
+int main(int argc, char** argv) {
+  // initialization of x, m, n, NUM_GANGS, NUM_WORKERS,
+  // and MAX_VECTOR_LENGTH (32 or 64 depending on arch)
+  // ... 
+  int NUM_THREADS = NUM_WORKERS*MAX_VECTOR_LENGTH;
+  hipLaunchKernelGGL((mykernel),dim3(NUM_GANGS),dim(NUM_THREADS),x,m,n);
+}
+
+Remarks:
+
+* The array variable `x` might have a completely different memory layout that is not related
+  to the loop range in any way.
+* 
+
+
+### Tiling loopnests
 
 TBA
 
 ### Determining a statement's parallelism level
 
-In this section, how we can assign parallelism levels to
-statements in the code. The main challenge 
-is that the parallelism level of loops and program flow statements 
+This section investigates how we can assign parallelism levels to statements in the code.
+The main challenge is that the parallelism level of loops and program flow statements 
 depends on the parallelism-level of the statements
 in their body.
 
@@ -783,9 +1014,9 @@ out when executing a statement:
 
 | Parallelism level | Activation mask | Remark | 
 |----------|---------------|-------------------|
-| GR-WS-VS | `linearize(hipThreadIdx,blockDim) == 0` | 
-| GP-WS-VS | `linearize(hipThreadIdx,blockDim) == 0` | Extraneous gangs masked out via loop tiling |
-| G[RP]-WP-VS | `linearize(hipThreadIdx,blockDim) % warpSize == 0` | Extraneous gangs & workers masked out via loop tiling or if statements. |
+| GR-WS-VS | `linearize(hipThreadIdx,` `  blockDim)` `== 0` | |  
+| GP-WS-VS | `linearize(hipThreadIdx,` `  blockDim)` `== 0` | Extraneous gangs masked out via loop tiling. |
+| G[RP]-WP-VS | `linearize(hipThreadIdx,` `  blockDim) %` `warpSize == 0` | Extraneous gangs & workers masked out via loop tiling or if statements. |
 | G[RP]-W[RP]-VP | `true` | Extraneous gangs, workers, and vector lanes masked out via loop tiling or if statements. |
 
 In the above table, the function `linearize` computes a linear index

@@ -220,10 +220,55 @@ def __identify_device_types(ttnode):
     return device_types
     
 class ParallelismMode(enum.Enum):
-    UNKNOWN=-1
-    REDUNDANT=0
-    SINGLE=1
-    PARTITIONED=2
+    GANG_REDUNDANT_WORKER_SINGLE_VECTOR_SINGLE = 0b000
+    GANG_REDUNDANT_WORKER_SINGLE_VECTOR_PARTITIONED = 0b001
+    GANG_REDUNDANT_WORKER_PARTITIONED_VECTOR_SINGLE = 0b010
+    GANG_REDUNDANT_WORKER_PARTITIONED_VECTOR_PARTITIONED = 0b011
+    GANG_PARTITIONED_WORKER_SINGLE_VECTOR_SINGLE = 0b100
+    GANG_PARTITIONED_WORKER_SINGLE_VECTOR_PARTITIONED = 0b101
+    GANG_PARTITIONED_WORKER_PARTITIONED_VECTOR_SINGLE = 0b110
+    GANG_PARTITIONED_WORKER_PARTITIONED_VECTOR_PARTITIONED = 0b111
+
+    def in_gang_partitioned_mode(self):
+        return self.value >> 2
+    def in_worker_partitioned_mode(self):
+        return (0b010 & self.value) >> 1
+    def in_vector_partitioned_mode(self):
+        return 0b001 & self.value
+    
+    def change_to_gang_redundant_mode(self):
+        return ParallelismMode(0b011 & self.value)
+    def change_to_gang_partitioned_mode(self):
+        return ParallelismMode(0b100 | self.value)
+    
+    def change_to_worker_redundant_mode(self):
+        return ParallelismMode(0b101 & self.value)
+    def change_to_worker_partitioned_mode(self):
+        return ParallelismMode(0b010 | self.value)
+    
+    def change_to_vector_redundant_mode(self):
+        return ParallelismMode(0b110 & self.value)
+    def change_to_vector_partitioned_mode(self):
+        return ParallelismMode(0b001 | self.value)
+    
+    def __str__(self):
+        result = "GANG"
+        if self.in_gang_partitioned_mode():
+            result += "_PARTITIONED"
+        else:
+            result += "_REDUNDANT"
+        result += "_WORKER"
+        if self.in_worker_partitioned_mode():
+            result += "_PARTITIONED"
+        else:
+            result += "_SINGLE"
+        result += "_VECTOR"
+        if self.in_vector_partitioned_mode():
+            result += "_PARTITIONED"
+        else:
+            result += "_SINGLE"
+        return result
+    __repr__ = __str__
 
 def transform(ttcomputeconstruct):
 
@@ -247,20 +292,21 @@ def transform(ttcomputeconstruct):
     # Identify workshare such as min,max,etc.
     for device_type in device_types:
         in_loop = False
-        
-        parallelism_level = [directives.Parallelism.GANG]
-        parallelism_mode  = [ParallelismMode.REDUNDANT]
+        parallelism_mode = ParallelismMode.GANG_REDUNDANT_WORKER_SINGLE_VECTOR_SINGLE
         num_collapse = 0
         num_tile_dims = 0
         # for the whole compute construct
         max_num_gangs = None
         max_num_workers = None
         max_vector_length = None
-        # per loop nest in the compute construct
+        # per loopnest in the compute construct
         num_gangs     = []
         num_workers   = []
         vector_length = []
         def traverse_(ttnode,num_collapse,mapped_loops,device_type):
+            nonlocal parallelism_mode
+            prev_parallelism_mode = parallelism_mode
+
             if isinstance(ttnode,IComputeConstruct):
                 device_specs = ttnode.get_device_specs()
                 device_spec = next((d for d in device_specs if d.applies(device_type)),None)
@@ -273,10 +319,9 @@ def transform(ttcomputeconstruct):
                     max_num_workers = str(cc_num_workers)
             elif isinstance(ttnode,TTDo):
                 if num_collapse > 0:
-                    # TODO check iif we can move statement into inner loop, should be possible if 
+                    # TODO check if we can move statement into inner loop, should be possible if 
                     # a loop statement is not relying on the lvalue or inout arg from a previous statement (difficult to analyze)
                     # alternative interpretation of collapse user information -> we can reorder statements without error
-                    # Problem size should be 
                 elif num_tile_dims > 0:
                     # gang parallism level
                     # append to grid size
@@ -286,65 +331,35 @@ def transform(ttcomputeconstruct):
                     device_specs = ttnode.annotation.get_device_specs()
                     device_spec = next((d for d in device_specs if d.applies(device_type)),None)
                     assert device_spec != None
-                    if parallelism_level[-1] == directives.Parallelism.GANG:
-                        if ttnode.annotation.parallelism() == directives.Parallelism.GANG:
-                            parallelism_mode[-1] = Parallelism.PARTITIONED
-                            #ttnode.partition_among_gangs()
-                            pass
-                        elif ttnode.annotation.parallelism() == directives.Parallelism.WORKER:
-                            parallelism_level.append(Parallelism.WORKER)
-                            parallelism_mode.append(Parallelism.PARTITIONED)
-                            #ttnode.partition_among_gang_workers()
-                            pass
-                            #descend
-                        elif ttnode.annotation.parallelism() == directives.Parallelism.VECTOR:
-                            parallelism_level.append(Parallelism.VECTOR)
-                            parallelism_mode.append(Parallelism.PARTITIONED)
-                            #ttnode.partition_among_gang_workers()
-                            pass
-                            #descend
-                        elif ttnode.annotation.parallelism() == directives.Parallelism.GANG_WORKER:
-                            parallelism_level[-1] = Parallelism.GANG_WORKER
-                            parallelism_mode[-1] = Parallelism.PARTITIONED
-                            #ttnode.partition_among_all_workers()
-                            pass
-                            #descend
-                        elif ttnode.annotation.parallelism() == directives.Parallelism.GANG_VECTOR:
-                            parallelism_level[-1] = Parallelism.GANG_VECTOR
-                            parallelism_mode[-1] = Parallelism.PARTITIONED
-                            #ttnode.partition_among_all_threads()
-                            pass
-                            #descend
-                        else:
-                            parallelism_level.append(Parallelism.SEQ)
-                            parallelism_mode.append(ParallelismMode.UNKNOWN)
-                            #descend
-                    elif parallelism_level[-1] == directives.Parallelism.WORKER:
-                        if ttnode.annotation.parallelism() in [ directives.Parallelism.GANG,
-                                                                directives.Parallelism.GANG_WORKER,
-                                                                directives.Parallelism.GANG_VECTOR ]:
-                            raise util.error.SyntaxError("no gang parallelism possible in worker parallelism section")
-                        elif ttnode.annotation.parallelism() == directives.Parallelism.WORKER:
-                            parallelism_mode[-1] == Parallelism.PARTITIONED)
-                            #ttnode.partition_among_gang_workers()
-                            pass
-                        elif ttnode.annotation.parallelism() == directives.Parallelism.VECTOR:
-                            parallelism_level.append(Parallelism.VECTOR)
-                            parallelism_mode.append(Parallelism.PARTITIONED)
-                            #ttnode.partition_among_gang_workers()
-                            pass
-                    elif parallelism_level[-1] == directives.Parallelism.WORKER:
-                        if ttnode.annotation.parallelism() in [ directives.Parallelism.GANG,
-                                                                directives.Parallelism.GANG_WORKER,
-                                                                directives.Parallelism.GANG_VECTOR,
-                                                                directives.Parallelism.WORKER,
-                                                                directives.Parallelism.WORKER_VECTOR ]:
-                            raise util.error.SyntaxError("no worker or gang parallelism possible in vector parallelism section")
-                        elif ttnode.annotation.parallelism() == directives.Parallelism.VECTOR:
-                            parallelism_level.append(Parallelism.VECTOR)
-                            parallelism_mode.append(Parallelism.PARTITIONED)
-                            #ttnode.partition_among_vector_lanes()
-                            pass
+                    if ttnode.annotation.parallelism.gang_parallelism():
+                        if parallelism_mode.in_gang_partitioned_mode():
+                            raise util.eror.SyntaxError("already in gang-partitioned region")
+                        elif parallelism_mode.in_worker_partitioned_mode():
+                            raise util.eror.SyntaxError("no gang partitioning possible in worker-partitioned region")
+                        elif parallelism_mode.in_vector_partitioned_mode():
+                            raise util.eror.SyntaxError("no gang partitioning possible in vector-partitioned region")
+                        parallelism_mode = parallelism_mode.change_to_gang_partitioned_mode()
+                        # TODO get num gangs
+                    if ttnode.annotation.parallelism().worker_parallelism():
+                        if parallelism_mode.in_worker_partitioned_mode():
+                            raise util.eror.SyntaxError("already in worker-partitioned region")
+                        elif parallelism_mode.in_vector_partitioned_mode():
+                            raise util.eror.SyntaxError("no worker partitioning possible in vector-partitioned region")
+                        parallelism_mode = parallelism_mode.change_to_worker_partitioned_mode()
+                        # TODO get num workers
+                    if ttnode.annotation.parallelism().vector_parallelism():
+                        if parallelism_mode.in_vector_partitioned_mode():
+                            raise util.eror.SyntaxError("already in vector-partitioned region")
+                        parallelism_mode = parallelism_mode.change_to_vector_partitioned_mode()
+                        # TODO get vector length and 
+                    # TODO transform according to parallelism_mode 
+                    # consider that parallelism mode might not apply to finer-grain parallel-loops and further not 
+                    # to conditional code around these loops
+                    # need to check if a loop is parallelized
+                    # get a statements parallelism level from a bottom-up search
+                    # not all statements might be affected 
+                else: # any other statement
+                    pass
 
     #preamble1 = []
     #preamble2 = []

@@ -26,6 +26,22 @@ class Parallelism(enum.Enum):
     GANG_WORKER=4
     WORKER_VECTOR=5
     GANG_VECTOR=6
+    GANG_WORKER_VECTOR=7
+
+    def gang_parallelism(self):
+        return self in [Parallelism.GANG,
+                        Parallelism.GANG_WORKER,
+                        Parallelism.GANG_WORKER_VECTOR]
+    
+    def worker_parallelism(self):
+        return self in [Parallelism.WORKER,
+                        Parallelism.GANG_WORKER,
+                        Parallelism.GANG_WORKER_VECTOR]
+    
+    def vector_parallelism(self):
+        return self in [Parallelism.VECTOR,
+                        Parallelism.GANG_VECTOR,
+                        Parallelism.GANG_WORKER_VECTOR]
 
 class IterateOrder(enum.Enum):
     UNSPECIFIED = -2

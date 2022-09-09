@@ -945,6 +945,7 @@ int main(int argc, char** argv) {
   int NUM_THREADS = NUM_WORKERS*MAX_VECTOR_LENGTH;
   hipLaunchKernelGGL((mykernel),dim3(NUM_GANGS),dim(NUM_THREADS),x,m,n);
 }
+```
 
 Remarks:
 

@@ -1102,15 +1102,19 @@ Remarks:
 
 ### Collapsing gang-worker-vector partitioned loopnests
 
-Vector-partitioned loopnests require a more in-depth investigation
-as the striding is done differently.
+In this section, we investigate gang-worker and gang-worker-vector-partitioned
+loopnests. We treat the former as a special case of the latter.
 
 **Example 12** (Collapsing gang-worker-vector-partitioned loopnests):
 
 ```Fortran
 !$acc parallel
 !!$acc loop gang worker vector collapse(2)
-!!$acc loop gang worker vector(4) collapse(2)
+! some other variants:
+!!$acc loop gang worker vector(8) collapse(2)
+!!$acc loop gang worker(2) vector collapse(2)
+!!$acc loop gang(4) worker vector collapse(2)
+! ...
 do j = 1,n
   do i = 1,m
     x(i,j) = 1;
@@ -1179,17 +1183,59 @@ int main(int argc, char** argv) {
 }
 ```
 
-> TODO unfinished section
-
-> TODO pack `(num_gangs,num_workers,vector_length)` and `(gang_id,worker_id,vector_lane_id)` into `dim3` struct, so that `linearize(threadIdx,blockDim)` can be reused.
-
-> TODO introduce `smallerThan(dim3,dim3)` operation for `dim3`. 
-
 ### Tiling loopnests
 
-TBA
+This section investigates the necessary code transformations
+to implement an equivalent HIP C++ implementation
+for loopnests where the first loop is annotated with the `tile` clause.
+For a description of loop tiling, we refer directly to the description of the
+tile clause in the [OpenACC standard](https://www.openacc.org/sites/default/files/inline-images/Specification/OpenACC-3.1-final.pdf): 
+
+> The tile clause specifies that the implementation should split each loop in the loop nest into two
+> loops, with an outer set of tile loops and an inner set of element loops. The argument to the tile
+> clause is a list of one or more tile sizes, where each tile size is a constant positive integer expression
+> or an asterisk. If there are n tile sizes in the list, the loop construct must be immediately followed
+> by n tightly-nested loops. The first argument in the size-expr-list corresponds to the innermost loop
+> of the n associated loops, and the last element corresponds to the outermost associated loop. If the
+> tile size is an asterisk, the implementation will choose an appropriate value. Each loop in the nest
+> will be split or strip-mined into two loops, an outer tile loop and an inner element loop. The trip
+> count of the element loop will be limited to the corresponding tile size from the size-expr-list. The
+> tile loops will be reordered to be outside all the element loops, and the element loops will all be
+> inside the tile loops.
+>
+> If the vector clause appears on the loop construct, the vector clause is applied to the element
+> loops. If the gang clause appears on the loop construct, the gang clause is applied to the tile
+> loops. If the worker clause appears on the loop construct, the worker clause is applied to the
+> element loops if no vector clause appears, and to the tile loops otherwise.
+
+| Clause | Applies to tile loop | Applies to element loop | 
+|--------|----------------------|-------------------------|
+| gang   | always               | never                   |
+| worker | vector clause appears | no vector clause       |
+| vector | never                 | always                 |
+
 
 ### Interim conclusions XYZ
+
+* It would be beneficial to introduce 3-dimensional helper structs for storing the OpenACC coordinate triple
+  consisting of `gang_id`, `worker_id`, and `vector_lane_id` and another 3-dimensional helper struct for storing the 
+  kernel and loop-local resource triple consisting of the per kernel and loop available maximum number of gangs, workers,
+  and vector lanes, respectively. Overloading the "<" operator would allow to check
+  if an OpenACC coordinate is in the loop-local or kernel resource bounds.
+
+* Collapsing and tiling requires to "aggregate" a number of loops before
+  performing transformations. 
+
+> TODO pack `(num_gangs,num_workers,vector_length)` and `(gang_id,worker_id,vector_lane_id)` into `dim3`-like struct, so that `linearize(threadIdx,blockDim)` can be reused.
+
+> TODO introduce `smaller_than(dim3-like,dim3-like)` operation for `dim3`. 
+
+* Tiling must be performed before any gang-, worker-, and/or vector-partitioning
+  is applied as these transformations may either be applied
+  to the tile or element loops.
+
+> TODO unfinished section
+
 
 ### Determining a statement's parallelism level
 
@@ -1252,15 +1298,15 @@ If the routine contains a worker-partitioned loop with a call to a routine
 with vector parallelism, then the former routine must have vector parallelism too.
 
 Moreover, the programmer has to ensure that a routine with a certain low-level parallelism clause does not call procedures with higher-level parallelism clause.
-To give another example: A routine with `worker` parallelism guarantees
+For example, a routine with `worker` parallelism guarantees
 the OpenACC compiler that there will be no lower level parallelism 
 such as `vector`, or `seq` or any higher-level `gang` parallelism employed under
 any condition in this routine.
 
-Given a certain loop parallelism level, only routines with certain parallelism mode
+Given a certain loop parallelism level, only routines with certain parallelism level
 can be called. This is summarized in the table below:
 
-| Current loop parallelism | Callable routines | 
+| Loop parallelism mode | Callable routines | 
 |---------------------|---------------------|
 | GR-WS-VS        | `gang`, `worker`, `vector`, `seq`|
 | GP-WS-VS        | `worker`, `vector`, `seq` | 
@@ -1276,10 +1322,10 @@ During the backtracing, i.e. the bottom-up sweep, the parallelism level
 of the program flow control and loop statements is determined
 by determining the maximum parallelism level of the statements in the body.
 
-Depending on the parallelism level, more or less resources are masked
-out when executing a statement:
+Depending on a statement's parallelism level, more or less resources are masked
+out when executing that statement:
 
-| Parallelism | Activation mask | Remark | 
+| Loop parallelism mode | Activation mask | Remark | 
 |----------|---------------|-------------------|
 | GR-WS-VS | `linearize(threadIdx,` `  blockDim)` `== 0` | |  
 | GP-WS-VS | `linearize(threadIdx,` `  blockDim)` `== 0` | Extraneous gangs masked out via loop tiling. |

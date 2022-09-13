@@ -54,6 +54,9 @@ i{{rank}}
 #include <utility>
 #include <algorithm>
 #include <vector>
+
+#include "gpufort_triple.h"
+
 #define HIP_CHECK(condition)         \
   {                                  \
     hipError_t error = condition;    \
@@ -159,7 +162,7 @@ namespace {
    * as additional argument.
    *
    * \param[in] first first index of the outermost loop iteration range
-   * \param[in] len the loop length, i.e. `(1+abs(last-first))/abs(step)`.
+   * \param[in] len the loop length.
    * \param[in] step step size of the outermost loop iteration range
    */
   __host__ __device__ __forceinline__ int outermost_index_w_len(

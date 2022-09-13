@@ -1,7 +1,19 @@
 import copy
+import textwrap
 
 from . import tree
    
+single_level_indent = " "*2
+
+def reset():
+  _counters.clear()
+
+hip_kernel_prolog =\
+""""\
+gpufort::acc_triple _res(gridDim.x,div_round_up(blockDim.x/warpSize),{max_vector_length});
+gpufort::acc_triple _coords(gang_id,worker_id,vector_lane_id);
+"""
+
 _counters = {}
  
 def _unique_label(label: str):
@@ -15,13 +27,34 @@ def _unique_label(label: str):
     _counters[label] += 1
     return "_"+label+str(result)
 
-def reset():
-  _counters.clear()
-
 def _render_affine_transform(a,b,c):
     """:return: String expression '{a} + ({b})*({c})'."""
     return "{a} + ({b})*({c})".format(
         a=a,b=b,c=c)
+
+def _render_for_loop_open(index,incl_lbound,excl_ubound,step=None):
+  if step == None:
+      template = """\
+for (int {0} = {1}; 
+         {0} < {2}; {0}++) {
+"""
+  else:
+      template = """\
+for (int {0} = {1};
+         {0} < {2}; {0} += {3}) {
+"""
+  return template.format(index,incl_lbound,excl_ubound,step)
+
+
+_hip_loop_prolog =\
+"""
+gpufort::acc_triple {local_res}({num_gangs},{num_workers},{vector_length});
+if ( _coords < {local_res} ) {
+"""
+
+_hip_loop_epilog = """"\
+} // {local_res}
+"""
 
 class Loop:
     
@@ -30,13 +63,14 @@ class Loop:
           first = None,
           last = None,
           length = None,
+          excl_ubound = None,
           step = None,
           gang_partitioned = False,
           worker_partitioned = False,
           vector_partitioned = False,
-          num_workers = 1,
-          num_gangs = 1,
-          vector_length = 1,
+          num_gangs = "1",
+          num_workers = "1",
+          vector_length = "1",
           prolog = None,
           body_prolog = None):
         self.index = index
@@ -52,58 +86,98 @@ class Loop:
         self.vector_length = vector_length
         self.prolog = prolog
         self.body_prolog = body_prolog
-    
+        self.body_indent_levels = 1
+
+    def last(self):
+        assert (self._length != None 
+               or self._last != None
+               or self._excl_ubound != None)
+        if self._last != None:
+            return self._last
+        elif self._excl_ubound != None:
+            return "({} - 1)".format(self._excl_ubound)
+        else self._length != None:
+            return "({} + {} - 1)".format(self.first,self._length)
+        
+    def excl_ubound(self):
+        assert (self._length != None 
+               or self._last != None
+               or self._excl_ubound != None)
+        if self._excl_ubound != None:
+            return self._excl_ubound
+        elif self._last != None:
+            return "({} + 1)".format(self._last)
+        elif self._length != None:
+            return "({} + {})".format(self.first,self._length)
+
     def length(self):
-        assert self.length != None or self.last != None
+        assert (self._length != None 
+               or self._last != None
+               or self._excl_ubound != None)
         if self.length != None:
             return self.length
         else:
-            gpufort_func = "gpufort::loop_len"
+            gpufort_fun = "gpufort::loop_len"
             if self._step == None:
                 return "{}({},{})".format(
-                  gpufort_func,
-                  self._first,self._last)
+                  gpufort_fun,
+                  self._first,self.last())
             else:
                 return "{}({},{},{})".format(
-                  gpufort_func,
-                  self._first,self._last,self._step)
+                  gpufort_fun,
+                  self._first,self.last(),self._step)
     
     def tile(self,tile_size: str):
-        gpufort_func = "gpufort::divide_round_up"
+        gpufort_fun = "gpufort::divide_round_up"
         # tile loop
-        num_tiles = "{}({},{})".format(gpufort_func,
-                                       self.length(),tile_size)
-        
-        tile_index = _unique_label("tile")
+        orig_len_var = _unique_label("len")
+        tile_loop_prolog = "const int {orig_len} = {rhs};".format(
+            orig_len = orig_len_var,
+            rhs=self.length()
+        )
+        num_tiles = "{}({},{})".format(gpufort_fun,
+                                       orig_len_var,tile_loop_size)
+        tile_loop_index = _unique_label("tile")
         tile_loop = Loop(
-            index = tile_index;
+            index = tile_loop_index;
             first = "0"
             length = num_tiles
+            excl_ubound = num_tiles
             step = None
             gang_partitioned = self.gang_partitioned
             worker_partitioned = not self.vector_partitioned and self.worker_partitioned,
             vector_partitioned = self.vector_partitioned,
             num_gangs = "1",
             num_workers = self.num_workers if not self.vector_partitioned else,
-            vector_length = "1")
+            vector_length = "1",
+            prolog=tile_loop_prolog)
         # element_loop
-        element_index = _unique_label("elem")
-        normalized_index = _unique_label("idx")
-        element_prolog = ""
-        element_body_prolog += "const int {} = {};\n".format(
-            normalized_index,_render_affine_transform(
-              element_index,tile_size,tile_index))
+        element_loop_index = _unique_label("elem")
+        normalized_index_var = _unique_label("idx")
+        element_loop_body_prolog += "const int {normalized_index} = {rhs};\n".format(
+            normalized_index=normalized_index_var,
+            rhs=_render_affine_transform(
+              element_loop_index,tile_loop_size,tile_loop_index)
+        )
         if self._step != None:
             loop_index_recovery = _render_affine_transform(
               self.first,self.step,normalized_index)
         else:
             loop_index_recovery = self.first 
-        element_body_prolog += "const int {} = {};\n".format(
-            self.index,loop_index_recovery)
+        element_loop_body_prolog += "if ( {normalized_index} < {orig_len} ) {\n".format(
+          normalized_index=normalized_index_var,
+          orig_len=orig_len_var
+        )
+        element_loop_body_prolog += single_level_indent
+        element_loop_body_prolog +"const int {original_index} = {rhs};\n".format(
+          original_index=self.index,
+          rhs=loop_index_recovery
+        )
         element_loop = Loop(
             index = element_loop_index
             first = "0"
-            length = tile_size
+            length = tile_loop_size
+            excl_ubound = tile_loop_size,
             step = self._step
             gang_partitioned = self.gang_partitioned
             worker_partitioned = not self.vector_partitioned and self.worker_partitioned,
@@ -111,34 +185,88 @@ class Loop:
             num_gangs = "1",
             num_workers = self.num_workers if not self.vector_partitioned else,
             vector_length = self.vector_length,
-            body_prolog = element_body_prolog)
+            body_prolog = element_loop_body_prolog)
+        element_loop.body_indent_levels = 2
         return (tile_loop,element_loop)
 
-    def map_to_hip_cpp(self,index_override=None):
+    def map_to_hip_cpp(self):
+        """
+        :return: HIP C++ device code.
+        """
         resources = []
-        if self.gang_partitioned:
-            resources.append("("+self.num_gangs+")")
-        if self.worker_partitioned:
-            resources.append("("+self.num_workers+")")
-        if self.vector_partitioned:
-            resources.append("("+self.vector_length+")")
-        if len(resources):
-            tile_size = "*".join(resources) 
-            tile_loop, element_loop = self.tile(tile_size)
+        
+        indent = ""
+        loop_open = self.prolog
+        partitioned = (
+          self.gang_partitioned
+          or self.worker_partitioned
+          or self.vector_partitioned
+        )
+  
+        if partitioned: 
+            local_res_var = _unique_label("local_res")
+            loop_open += _hip_loop_prolog.format(
+              local_res=local_res_var
+              num_gangs=self.num_gangs,
+              num_workers=self.num_workers,
+              vector_length=self.vector_length
+            )
+            tile_size_var = _unique_label("tile_size")
+            num_tiles = "{}.product()".format(local_res_var)
+            gpufort_fun = "gpufort::div_round_up"
+            loop_open += "const int {tile_size} = {fun}({len},{tiles});\n".format(
+                tile_size_var,fun=gpufort_fun,
+                n=self.length(),num_tiles)
+            # deep copy this loop and modify 
+            local_id_var = _unique_label("local_id")
+            loop_open += \
+              "const int {local_id} = _coords.linearize({local_res});\n".format(
+                local_id=local_id_var,
+                local_res=local_res_var
+              )
+            loop_open += self.prolog
+            loop = copy.deepcopy(self)
+            #
+            if self.vector_partitioned: # vector, worker-vector, gang-worker-vector
+                incl_lbound = "{} + {}".format(self.first,local_id_var)
+                step = tile_size_var
+                loop_open +=_render_for_loop_open(\
+                  self.index,first,self.excl_ubound,step) 
+                loop_open  += self.body_prolog.format(idx=local_id_var)
+            else: # gang, gang-worker
+                incl_lbound = "{} + {}*{}".format(self.first,local_id_var,tile_size_var)
+                excl_ubound = "{} + {}*({}+1)"
+                loop_open  += self.body_prolog.format(idx=local_id_var)
+              
+                # take element_loop
+                pass                   
+            loop_close += _hip_loop_epilog.format(local_res_var)
         else:
-            # normal for-loop
-            pass
+            loop_open += _render_for_loop_open(\
+              self.index,self.first,self.excl_ubound(),self.step),
+            loop_close = "}\n"
+        # add the body prolog, outcome of previous loop transformations
+        indent += single_level_indent
+        loop_open += textwrap.indent(self.body_prolog.format(idx=self.index,indent)
+        return (loop_open,loop_close)
 
 class Loopnest:
+    """ Transforms tightly-nested loopnests where only the first loop
+    stores information about loop transformations and mapping the loop to a HIP
+    device. Possible transformations are collapsing and tiling of the loopnest.
+    In the latter case, the loopnest must contain as many loops as tiles.
+    Mapping to a HIP device is performed based on the
+    offload information stored in the first loop of the loopnest.
+    """
     def __init__(self):
         self._loops = []
-        self._is_collapsed = False        
+        self._original_loops = []
         self._is_tiled = False
     def append_loop(self,loop):
         self._loops.append(loop) 
-
+        self._original_loops.append(loop)
     def collapse(self):
-        assert !self._tiled, "won't collapse tiled loopnest"
+        assert !self._is_tiled, "won't collapse tiled loopnest"
         assert len(self._loops)
         loop_lengths_vars = []
         first_loop = self._loops[0]
@@ -157,25 +285,25 @@ class Loopnest:
         remainder_var = _unique_label("rem");
         denominator_var= _unique_label("denom")
         # template, idx remains as placeholder because of double brackets
-        body_prolog += "int {} = {{idx}};\n".format(
-          remainder_var,collapsed_index_var
+        body_prolog += "int {rem} = {{idx}};\n".format(
+          rem=remainder_var,collapsed_index_var
         )
-        body_prolog += "int {} = {};\n".format(
-          denominator_var,total_len_var
+        body_prolog += "int {denom} = {total_len};\n".format(
+          denom=denominator_var,total_len=total_len_var
         )
         # index recovery
         for i,loop in enumerate(self._original_loops):
-            gpufort_func = "gpufort::outermost_index_w_len"
+            gpufort_fun = "gpufort::outermost_index_w_len"
             if loop.step != None:
                 body_prolog += ("const int {} = "
-                  + gpufort_func
+                  + gpufort_fun
                   + "({}/*inout*/,{}/*inout*/,{},{},{});\n").format(
                     remainder_var,denominator_var,
                     loop.first,loop_lengths_vars[i],loop.step
                   )
             else:
                 body_prolog += ("const int {} = "
-                  + gpufort_func
+                  + gpufort_fun
                   + "({}/*inout*/,{}/*inout*/,{},{});\n").format(
                     remainder_var,denominator_var,
                     loop.first,loop_lengths_vars[i]
@@ -185,6 +313,7 @@ class Loopnest:
           index = collapsed_index_var,
           first = "0",
           length = total_len_var,
+          excl_ubound = total_len_var,
           step = None,
           gang_partitioned = first_loop.gang_partitioned,
           worker_partitioned = first_loop.worker_partitioned,
@@ -193,10 +322,9 @@ class Loopnest:
           num_workers = first_loop.num_workers,
           vector_length = first_loop.vector_length,
           prolog = prolog, 
-          body_prolog = self.body_prolog(collapsed_index_var,))
+          body_prolog = body_prolog)
         self._loops.clear()
         self._loops.append(collapsed_loop)
-        self._is_collapsed = True
 
     def tile(self,tile_sizes):
         if isinstance(tile_sizes,str):
@@ -211,9 +339,19 @@ class Loopnest:
         self._loops.clear()
         self._loops += tile_loops
         self._loops += element_loops
+        self._is_tiled = True
 
     def map_to_hip_cpp(self):
-        pass 
+        # TODO analyze and return required resources (gangs,workers,vector_lanes)
+        # but perform it outside as we deal with C++ expressions here.
+        # * Alternatively, move the derivation of launch parameters into C++ code?
+        #   * Problem size depends on other parameters that need to be passed
+        #     to the C++ layer anyway ...
+        # Think outside of the box:
+        # * Gang synchronization might require us to launch multiple kernels
+        #   and put wait events inbetween
+        # * What about reductions?
+        pass
          
 
 # TODO implement

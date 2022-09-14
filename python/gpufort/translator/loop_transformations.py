@@ -10,8 +10,8 @@ def reset():
 
 hip_kernel_prolog =\
 """"\
-gpufort::acc_triple _res(gridDim.x,div_round_up(blockDim.x/warpSize),{max_vector_length});
-gpufort::acc_triple _coords(gang_id,worker_id,vector_lane_id);
+gpufort::acc_grid _res(gridDim.x,div_round_up(blockDim.x/warpSize),{max_vector_length});
+gpufort::acc_coords _coords(gang_id,worker_id,vector_lane_id);
 """
 
 _counters = {}
@@ -29,31 +29,43 @@ def _unique_label(label: str):
 
 def _render_affine_transform(a,b,c):
     """:return: String expression '{a} + ({b})*({c})'."""
-    return "{a} + ({b})*({c})".format(
-        a=a,b=b,c=c)
+    return "{} + ({})*({})".format(a,b,c)
+        
+def _render_const_int_decl(lhs,rhs):
+    return "const int {} = {};\n".format(lhs,rhs)
+
+def _render_tile_size_var_decl(tile_size_var,loop_len,num_tiles):
+    """:return: C++ expression (str) that introduces a tile size var based
+    on a loop length and a number of tiles.
+    """
+    rhs = "{fun}({loop_len},{num_tiles})".format(
+              fun="gpufort::div_round_up",
+              loop_len=loop_len
+              num_tiles=num_tiles)
+    return _render_const_int_decl(tile_size_var,rhs)
 
 def _render_for_loop_open(index,incl_lbound,excl_ubound,step=None):
   if step == None:
       template = """\
-for (int {0} = {1}; 
-         {0} < {2}; {0}++) {
+for ({0} = {1}; 
+     {0} < {2}; {0}++) {
 """
   else:
       template = """\
-for (int {0} = {1};
-         {0} < {2}; {0} += {3}) {
+for ({0} = {1};
+     {0} < {2}; {0} += {3}) {
 """
   return template.format(index,incl_lbound,excl_ubound,step)
 
 
 _hip_loop_prolog =\
 """
-gpufort::acc_triple {local_res}({num_gangs},{num_workers},{vector_length});
-if ( _coords < {local_res} ) {
+gpufort::acc_grid {local_res}({num_gangs},{num_workers},{vector_length});
+if ( {permissive_condition} ) {
 """
 
 _hip_loop_epilog = """"\
-} // {local_res}
+} // {comment}
 """
 
 class Loop:
@@ -68,9 +80,9 @@ class Loop:
           gang_partitioned = False,
           worker_partitioned = False,
           vector_partitioned = False,
-          num_gangs = "1",
-          num_workers = "1",
-          vector_length = "1",
+          num_gangs = None,
+          num_workers = None,
+          vector_length = None,
           prolog = None,
           body_prolog = None):
         self.index = index
@@ -127,37 +139,48 @@ class Loop:
                   gpufort_fun,
                   self._first,self.last(),self._step)
     
-    def tile(self,tile_size: str):
-        gpufort_fun = "gpufort::divide_round_up"
+    def tile(self,tile_size,tile_loop_index=None):
+        """
+        :param tile_loop_index: Index to use for the loop over the tiles,
+                                chosen automatically if None is passed.
+        """
         # tile loop
         orig_len_var = _unique_label("len")
-        tile_loop_prolog = "const int {orig_len} = {rhs};".format(
-            orig_len = orig_len_var,
-            rhs=self.length()
+        tile_loop_prolog = _render_const_int_decl( 
+            orig_len_var,
+            self.length()
         )
-        num_tiles = "{}({},{})".format(gpufort_fun,
-                                       orig_len_var,tile_loop_size)
-        tile_loop_index = _unique_label("tile")
+        num_tiles = "gpufort::divide_round_up({len},{tile_size})".format(
+                        len=orig_len_var,
+                        tile_size=tile_size
+                    )
+        num_tiles_var = _unique_label("num_tiles")
+        tile_loop_prolog += _render_const_int_decl( 
+            num_tiles_var,
+            num_tiles
+        )
+        if tile_loop_index == None:
+            tile_loop_index = _unique_label("tile")
         tile_loop = Loop(
             index = tile_loop_index;
             first = "0"
-            length = num_tiles
-            excl_ubound = num_tiles
+            length = num_tiles_var
+            excl_ubound = num_tiles_var
             step = None
             gang_partitioned = self.gang_partitioned
             worker_partitioned = not self.vector_partitioned and self.worker_partitioned,
             vector_partitioned = self.vector_partitioned,
-            num_gangs = "1",
-            num_workers = self.num_workers if not self.vector_partitioned else,
-            vector_length = "1",
+            num_gangs = self.num_gangs,
+            num_workers = self.num_workers if self.vector_partitioned else None,
+            vector_length = self.vector_length,
             prolog=tile_loop_prolog)
         # element_loop
         element_loop_index = _unique_label("elem")
         normalized_index_var = _unique_label("idx")
-        element_loop_body_prolog += "const int {normalized_index} = {rhs};\n".format(
-            normalized_index=normalized_index_var,
-            rhs=_render_affine_transform(
-              element_loop_index,tile_loop_size,tile_loop_index)
+        element_loop_body_prolog += _render_const_int_decl( 
+            normalized_index_var,
+            _render_affine_transform(
+              element_loop_index,tile_size,tile_loop_index)
         )
         if self._step != None:
             loop_index_recovery = _render_affine_transform(
@@ -169,32 +192,70 @@ class Loop:
           orig_len=orig_len_var
         )
         element_loop_body_prolog += single_level_indent
-        element_loop_body_prolog +"const int {original_index} = {rhs};\n".format(
-          original_index=self.index,
-          rhs=loop_index_recovery
+        element_loop_body_prolog +=_render_const_int_decl( 
+          self.index,
+          loop_index_recovery
         )
         element_loop = Loop(
             index = element_loop_index
             first = "0"
-            length = tile_loop_size
-            excl_ubound = tile_loop_size,
+            length = tile_size
+            excl_ubound = tile_size,
             step = self._step
-            gang_partitioned = self.gang_partitioned
+            gang_partitioned = False
             worker_partitioned = not self.vector_partitioned and self.worker_partitioned,
             vector_partitioned = self.vector_partitioned,
-            num_gangs = "1",
-            num_workers = self.num_workers if not self.vector_partitioned else,
+            num_gangs = self.num_gangs,
+            num_workers = self.num_workers if not self.vector_partitioned else None,
             vector_length = self.vector_length,
             body_prolog = element_loop_body_prolog)
         element_loop.body_indent_levels = 2
         return (tile_loop,element_loop)
 
+
+    def _render_loop_prolog_and_epilog(self,local_res_var):
+        conditions = []
+        if self.gang_partitioned:
+            if self.num_gangs == None:
+                num_gangs = "_res.gangs"  
+            else:
+                num_gangs = local_res_var+".gangs"
+            conditions.append("_coords.gangs < {num_gangs}".format(
+                num_gangs=num_gangs)
+        if self.worker_partitioned:
+            if self.num_workers == None:
+                num_workers = "_res.workers"  
+            else:
+                num_workers = local_res_var+".workers"
+            conditions.append("_coords.workers < {num_workers}".format(
+                num_workers=num_workers)
+        else:
+            num_workers = "1"
+        if self.vector_partitioned:
+            if self.vector_length == None:
+                vector_length = "_res.vector_lanes"  
+            else:
+                vector_length = local_res_var+".vector_lanes"
+            conditions.append("_coords.vector_lanes < {vector_length}".format(
+        else:
+            num_workers = "1"
+        permissive_condition = " && ".join(conditions)
+        loop_open = _hip_loop_prolog.format(
+          local_res=local_res_var
+          num_gangs=num_gangs,
+          num_workers=num_workers,
+          vector_length=vector_length,
+          permissive_condition=permissive_condition
+        )
+        loop_close = _hip_loop_epilog.format(
+          comment=local_res_var
+        )
+        return (loop_open,loop_close)
+
     def map_to_hip_cpp(self):
         """
         :return: HIP C++ device code.
         """
-        resources = []
-        
         indent = ""
         loop_open = self.prolog
         partitioned = (
@@ -205,41 +266,70 @@ class Loop:
   
         if partitioned: 
             local_res_var = _unique_label("local_res")
-            loop_open += _hip_loop_prolog.format(
-              local_res=local_res_var
-              num_gangs=self.num_gangs,
-              num_workers=self.num_workers,
-              vector_length=self.vector_length
-            )
-            tile_size_var = _unique_label("tile_size")
-            num_tiles = "{}.product()".format(local_res_var)
-            gpufort_fun = "gpufort::div_round_up"
-            loop_open += "const int {tile_size} = {fun}({len},{tiles});\n".format(
-                tile_size_var,fun=gpufort_fun,
-                n=self.length(),num_tiles)
+            loop_open, loop_close = self._render_loop_prolog_and_epilog(
+              local_res_var) 
+            #loop_open += "if ( {condition} ) {""""
+            orig_len_var = _unique_label("len")
+            loop_open += _render_const_int_decl(
+              orig_len_var,
+              self.length
+            ) 
+            worker_tile_size_var = _unique_label("worker_tile_size")
+            num_worker_tiles = "{}.total_num_workers()".format(local_res_var)
+            loop_open += _render_tile_size_var_decl(
+                worker_tile_size_var,
+                orig_len_var,
+                num_worker_tiles)
             # deep copy this loop and modify 
-            local_id_var = _unique_label("local_id")
+            worker_id_var = _unique_label("worker_id")
             loop_open += \
-              "const int {local_id} = _coords.linearize({local_res});\n".format(
-                local_id=local_id_var,
+              "const int {worker_id} = _coords.worker_id({local_res});\n".format(
+                worker_id=worker_id_var,
                 local_res=local_res_var
               )
             loop_open += self.prolog
-            loop = copy.deepcopy(self)
-            #
             if self.vector_partitioned: # vector, worker-vector, gang-worker-vector
-                incl_lbound = "{} + {}".format(self.first,local_id_var)
-                step = tile_size_var
-                loop_open +=_render_for_loop_open(\
-                  self.index,first,self.excl_ubound,step) 
-                loop_open  += self.body_prolog.format(idx=local_id_var)
-            else: # gang, gang-worker
-                incl_lbound = "{} + {}*{}".format(self.first,local_id_var,tile_size_var)
-                excl_ubound = "{} + {}*({}+1)"
-                loop_open  += self.body_prolog.format(idx=local_id_var)
-              
-                # take element_loop
-                pass                   
+                normalized_loop = (self.first == "0" 
+                                   and self.step != None)
+                if normalized_loop:
+                    index_var = self.index
+                else:
+                    index_var = _unique_label("idx")
+                first = "{}*{}".format(worker_id_var,worker_tile_size_var)
+                excl_ubound = "min({},({}+1)*{})".format(
+                  orig_len_var,
+                  worker_id_var,
+                  worker_tile_size_var)
+                step = "{}.vector_lanes"
+                loop_open += _render_for_loop_open(\
+                  index_var,first,excl_ubound,step),
+                # recover the original index
+                if not normalized_loop:
+                    loop_open += single_level_indent
+                    if self.step != None:
+                       loop_open += "{} = {} + ({})*{};\n".format(
+                            self.index,
+                            self.first
+                            self.step,
+                            index_var
+                          )
+                    else:
+                       loop_open += "{} = {} + {};\n".format(
+                            self.index,
+                            self.first
+                            index_var
+                          )
+            else:
+                # first loop over the workers
+                # take the inner loop, outer loop is mapped to resource
+                _, element_loop = self.tile(
+                    worker_tile_size_var,
+                    tile_loop_index=worker_id_var
+                )
+                loop_open += self.body_prolog.format(idx=worker_id_var)
+                loop_open += _render_for_loop_open(\
+                  element_loop.index,first,excl_ubound,element_loop.step),
+                loop_open += element_loop.body_prolog
             loop_close += _hip_loop_epilog.format(local_res_var)
         else:
             loop_open += _render_for_loop_open(\
@@ -247,8 +337,9 @@ class Loop:
             loop_close = "}\n"
         # add the body prolog, outcome of previous loop transformations
         indent += single_level_indent
-        loop_open += textwrap.indent(self.body_prolog.format(idx=self.index,indent)
-        return (loop_open,loop_close)
+        loop_open += textwrap.indent(self.body_prolog.format(idx=self.index),indent)
+        strict_condition = "{} < _res".format(local_res_var)
+        return (loop_open,loop_close,statement_activation_condition)
 
 class Loopnest:
     """ Transforms tightly-nested loopnests where only the first loop

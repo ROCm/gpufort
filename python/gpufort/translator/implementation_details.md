@@ -244,7 +244,7 @@ __global__ void mykernel(float* x, int m) {
     // int num_gangs = 4; // if gang(4) is specified
     int gang_tile_size = div_round_up(m,num_gangs);
     for ( int i = 1+gang_id*gang_tile_size; 
-              i <= (gang_id+1)*gang_tile_size; i++) {
+              i < 1+(gang_id+1)*gang_tile_size; i++) {
       // total number of i iterates across all active gangs: 
       // num_gangs*gang_tile_size >= m, due to rounding up
       if ( i <= m) {
@@ -274,7 +274,7 @@ that can be called only from within a GPU kernel or other device subroutines.
 
 ```C++
 for ( int i = 1+gang_id*gang_tile_size; 
-          i <= (gang_id+1)*gang_tile_size; i++) {
+          i < 1+(gang_id+1)*gang_tile_size; i++) {
   // total number of i iterates across all active gangs: 
   // num_gangs*gang_tile_size >= m, due to rounding up
   if ( i <= m) {
@@ -359,12 +359,12 @@ __global__ void mykernel(float* x, int m, int n) {
     int worker_tile_size = div_round_up(m,num_workers);
     //
     for ( int j = 1+gang_id*gang_tile_size; 
-              j <= (gang_id+1)*gang_tile_size; j++) {
+              j < 1+(gang_id+1)*gang_tile_size; j++) {
       // total number of j iterates across all gangs:
       // num_gangs*gang_tile_size >= n, due to rounding up
       if ( j <= n ) { 
         for ( int i = 1+worker_id*worker_tile_size;
-                  i <= (worker_id+1)*worker_tile_size; i++ ) {
+                  i < 1+(worker_id+1)*worker_tile_size; i++ ) {
           // total number of i iterates across all workers: 
           // num_workers*worker_tile_size >= m, due to rounding up
           if ( i <= m) {
@@ -457,10 +457,10 @@ __global__ void mykernel(float* x, int m, int n, int k) {
     int vector_tile_size = div_round_up(m,vector_length);
     //
       for ( int k = 1+gang_id*gang_tile_size;
-                k <= (gang_id+1)*gang_tile_size; k++) {
+                k < 1+(gang_id+1)*gang_tile_size; k++) {
         if ( k <= p ) { 
           for ( int j = 1+worker_id*worker_tile_size;
-                    j <= (worker_id+1)*worker_tile_size; j++ ) {
+                    j < 1+(worker_id+1)*worker_tile_size; j++ ) {
             if ( j <= n) {
               if ( vector_lane_id < vector_length ) { // masks out all other threads/lanes
                                                       // of a worker
@@ -580,7 +580,7 @@ __global__ void mykernel(float* x, int m) {
       int gang_worker_id = gang_id*num_workers + worker_id;
       int gang_worker_tile_size = div_round_up(m,num_gangs*num_workers);
       for ( int i = 1+gang_worker_id*gang_worker_tile_size;
-                i <= (gang_worker_id+1)*gang_worker_tile_size; i++ ) {
+                i < 1+(gang_worker_id+1)*gang_worker_tile_size; i++ ) {
         if ( i <= m) {
           x[i] = 1; 
         }

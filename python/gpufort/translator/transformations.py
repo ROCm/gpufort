@@ -9,6 +9,8 @@ from . import parser
 from . import opts
 from . import prepostprocess
 
+from . import loop_transformations
+
 def _collect_ranges(function_call_args,include_none_values=False):
     ttranges = []
     for i,ttnode in enumerate(function_call_args):

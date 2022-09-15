@@ -239,7 +239,7 @@ class TestLoopnestTransformations(unittest.TestCase):
             result = prolog
             #result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
             result += epilog
-            print(result)
+            #print(result)
     def test_06_tile_loopnest_collapse_tile_collapse_element_worker_max(self):
         for i,loops in enumerate(testdata_loopnest_worker_max):
             tile_sizes = ["32","8","LEN"]
@@ -248,9 +248,18 @@ class TestLoopnestTransformations(unittest.TestCase):
             result = prolog
             #result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
             result += epilog
-            print(result)
+            #print(result)
     def test_07_tile_loopnest_collapse_tile_collapse_element_vector_max(self):
         for i,loops in enumerate(testdata_loopnest_vector_max):
+            tile_sizes = ["32","8","LEN"]
+            loopnest = loop_transformations.Loopnest(loops).tile(tile_sizes,True,True)
+            prolog,epilog,statement_activation_cond,indent = loopnest.map_to_hip_cpp() 
+            result = prolog
+            #result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
+            result += epilog
+            #print(result)
+    def test_08_tile_loopnest_collapse_tile_collapse_element_gang_max_worker_max_vector_max(self):
+        for i,loops in enumerate(testdata_loopnest_gang_max_worker_max_vector_max):
             tile_sizes = ["32","8","LEN"]
             loopnest = loop_transformations.Loopnest(loops).tile(tile_sizes,True,True)
             prolog,epilog,statement_activation_cond,indent = loopnest.map_to_hip_cpp() 

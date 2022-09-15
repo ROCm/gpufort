@@ -101,24 +101,28 @@ class TestLoopTransformations(unittest.TestCase):
         results = [
         ]
         for loop in testdata_vector_max:
-            result = loop.map_to_hip_cpp() 
-            #print(str(result[0]))
-            #print(str(result[1]))
+            prolog,epilog,statement_activation_cond,indent = loop.map_to_hip_cpp() 
+            result = prolog
+            result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
+            result += epilog
+            #print(result)
     def test_04_map_worker_max_loop_to_hip_cpp(self):
         results = [
         ]
         for loop in testdata_worker_max:
-            result = loop.map_to_hip_cpp() 
-            #print(str(result[0]))
-            #print(str(result[1]))
+            prolog,epilog,statement_activation_cond,indent = loop.map_to_hip_cpp() 
+            result = prolog
+            result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
+            result += epilog
+            #print(result)
     def test_05_map_gang_max_loop_to_hip_cpp(self):
         results = [
         ]
         for loop in testdata_gang_max:
             prolog,epilog,statement_activation_cond,indent = loop.map_to_hip_cpp() 
-            #result = prolog
-            #result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
-            #result += epilog
+            result = prolog
+            result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
+            result += epilog
             #print(result)
     def test_06_map_gang_max_worker_max_loop_to_hip_cpp(self):
         results = [
@@ -128,17 +132,91 @@ class TestLoopTransformations(unittest.TestCase):
             result = prolog
             result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
             result += epilog
-            print(result)
+            #print(result)
     def test_07_map_gang_max_worker_max_vector_max_loop_to_hip_cpp(self):
         results = [
         ]
         for loop in testdata_gang_max_worker_max_vector_max:
             prolog,epilog,statement_activation_cond,indent = loop.map_to_hip_cpp() 
-            #result = prolog
-            #result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
-            #result += epilog
+            result = prolog
+            result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
+            result += epilog
             #print(result)
-      
+
+testdata_collapse_seq = [
+  [  
+    loop_transformations.Loop("i","i_first",last="i_last",step="i_step"),
+    loop_transformations.Loop("j","j_first",last="j_last",step="j_step"),
+    loop_transformations.Loop("k","k_first",last="k_last",step="k_step"),
+  ],
+]
+
+# 1 level (max)
+testdata_collapse_vector_max = copy.deepcopy(testdata_collapse_seq)
+for loops in testdata_collapse_vector_max:
+    for loop in loops:
+        loop.vector_partitioned = True
+testdata_collapse_worker_max = copy.deepcopy(testdata_collapse_seq)
+for loops in testdata_collapse_worker_max:
+    for loop in loops:
+        loop.worker_partitioned = True
+testdata_collapse_gang_max = copy.deepcopy(testdata_collapse_seq)
+for loops in testdata_collapse_gang_max:
+    for loop in loops:
+        loop.gang_partitioned = True
+ 
+class TestLoopnestTransformations(unittest.TestCase):
+    def clean(self,text):
+        if text!=None:
+            return text.replace(" ","").replace("\t","").replace("\n","").replace("\r","")
+        else:
+            return None
+    def setUp(self):
+        global index
+        self.started_at = time.time()
+        loop_transformations.reset()
+    def tearDown(self):
+        elapsed = time.time() - self.started_at
+        print('{} ({}s)'.format(self.id(), round(elapsed, 9)))
+    def test_00_do_nothing(self):
+        pass
+    def test_01_collapse_loopnest_seq(self):
+        for i,loops in enumerate(testdata_collapse_seq):
+            loopnest = loop_transformations.Loopnest(loops)
+            collapsed_loop = loopnest.collapse()
+            prolog,epilog,statement_activation_cond,indent = collapsed_loop.map_to_hip_cpp() 
+            result = prolog
+            #result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
+            result += epilog
+            #print(result)
+    def test_02_collapse_loopnest_vector_max(self):
+        for i,loops in enumerate(testdata_collapse_vector_max):
+            loopnest = loop_transformations.Loopnest(loops)
+            collapsed_loop = loopnest.collapse()
+            prolog,epilog,statement_activation_cond,indent = collapsed_loop.map_to_hip_cpp() 
+            result = prolog
+            #result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
+            result += epilog
+            print(result)
+    def test_03_collapse_loopnest_worker_max(self):
+        for i,loops in enumerate(testdata_collapse_worker_max):
+            loopnest = loop_transformations.Loopnest(loops)
+            collapsed_loop = loopnest.collapse()
+            prolog,epilog,statement_activation_cond,indent = collapsed_loop.map_to_hip_cpp() 
+            result = prolog
+            #result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
+            result += epilog
+            print(result)
+    def test_04_collapse_loopnest_gang_max(self):
+        for i,loops in enumerate(testdata_collapse_gang_max):
+            loopnest = loop_transformations.Loopnest(loops)
+            collapsed_loop = loopnest.collapse()
+            prolog,epilog,statement_activation_cond,indent = collapsed_loop.map_to_hip_cpp() 
+            result = prolog
+            #result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
+            result += epilog
+            print(result)
+                 
 
 if __name__ == '__main__':
     unittest.main() 

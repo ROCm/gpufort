@@ -73,7 +73,9 @@ class Loop:
           num_workers = None,
           vector_length = None,
           prolog = None,
-          body_prolog = None):
+          body_prolog = None,
+          body_epilog = None,
+          body_extra_indent = ""):
         self.index = index.strip()
         self.first = first.strip()
         self._last = last
@@ -88,7 +90,8 @@ class Loop:
         self.vector_length = vector_length
         self.prolog = prolog
         self.body_prolog = body_prolog
-        self.body_indent_levels = 1
+        self.body_epilog = body_epilog
+        self.body_extra_indent = body_extra_indent
 
     def last(self):
         assert (self._length != None 
@@ -171,6 +174,7 @@ class Loop:
                                 chosen automatically if None is passed.
         """
         # tile loop
+        indent = ""
         orig_len_var = _unique_label("len")
         tile_loop_prolog = _render_const_int_decl( 
             orig_len_var,
@@ -196,7 +200,7 @@ class Loop:
             step = None,
             gang_partitioned = self.gang_partitioned,
             worker_partitioned = not self.vector_partitioned and self.worker_partitioned,
-            vector_partitioned = self.vector_partitioned,
+            vector_partitioned = False,
             num_gangs = self.num_gangs,
             num_workers = self.num_workers if self.vector_partitioned else None,
             vector_length = self.vector_length,
@@ -219,7 +223,9 @@ class Loop:
           normalized_index=normalized_index_var,
           orig_len=orig_len_var
         )
-        element_loop_body_prolog += single_level_indent
+        element_loop_body_epilog = "}\n"
+        indent += single_level_indent
+        element_loop_body_prolog += indent
         # recover original index
         element_loop_body_prolog += "{} = {};\n".format( 
           self.index,
@@ -228,22 +234,22 @@ class Loop:
           )
         )
         element_loop = Loop(
-            index = element_loop_index_var,
-            first = "0",
-            length = tile_size,
-            excl_ubound = tile_size,
-            step = self.step,
-            gang_partitioned = False,
-            worker_partitioned = not self.vector_partitioned and self.worker_partitioned,
-            vector_partitioned = self.vector_partitioned,
-            num_gangs = self.num_gangs,
-            num_workers = self.num_workers if not self.vector_partitioned else None,
-            vector_length = self.vector_length,
-            prolog = element_loop_prolog,
-            body_prolog = element_loop_body_prolog)
-        element_loop.body_indent_levels = 2
+          index = element_loop_index_var,
+          first = "0",
+          length = tile_size,
+          excl_ubound = tile_size,
+          step = self.step,
+          gang_partitioned = False,
+          worker_partitioned = not self.vector_partitioned and self.worker_partitioned,
+          vector_partitioned = self.vector_partitioned,
+          num_gangs = self.num_gangs,
+          num_workers = self.num_workers if not self.vector_partitioned else None,
+          vector_length = self.vector_length,
+          prolog = element_loop_prolog,
+          body_prolog = element_loop_body_prolog,
+          body_epilog = element_loop_body_epilog,
+          body_extra_indent = single_level_indent)
         return (tile_loop,element_loop)
-
 
     def _render_hip_prolog_and_epilog(self,local_res_var):
         hip_loop_prolog =\
@@ -299,7 +305,7 @@ if ( {permissive_condition} ) {{
         """
         :return: HIP C++ device code.
         """
-        indent = ""
+        indent = "" 
         loop_open = ""
         loop_close = ""
         statement_activation_condition = None
@@ -411,11 +417,14 @@ if ( {permissive_condition} ) {{
                   element_loop.body_prolog.replace("$idx$",worker_id_var),
                   indent
                 )
-                loop_close = indent+"}\n" + loop_close
+                loop_close = textwrap.indent(
+                  element_loop.body_epilog.replace("$idx$",worker_id_var),
+                  indent
+                ) + loop_close
                 indent += single_level_indent
             loop_close += hip_epilog
             statement_activation_condition = "{} < _res".format(local_res_var)
-        else:
+        else: # unpartitioned loop
             # prepend the original prolog
             if self.prolog != None:
                 loop_open += self.prolog
@@ -425,15 +434,23 @@ if ( {permissive_condition} ) {{
               self.excl_ubound(),
               self.step
             )
-            loop_close = "}\n"
+            loop_close = "}} // {}\n".format(
+              self.index
+            )
             indent += single_level_indent
-        # add the body prolog, outcome of previous loop transformations
+
+        # add the body prolog & epilog of this loop, outcome of previous loop transformations
         if self.body_prolog != None:
             loop_open += textwrap.indent(
               self.body_prolog.replace("$idx$",self.index),
               indent
             )
-        return (loop_open,loop_close,statement_activation_condition,indent)
+        if self.body_epilog != None:
+          loop_close = textwrap.indent(
+            self.body_epilog.replace("$idx$",self.index),
+            indent
+          ) + loop_close
+        return (loop_open,loop_close,statement_activation_condition,indent+self.body_extra_indent)
 
 class Loopnest:
     """ Transforms tightly-nested loopnests where only the first loop
@@ -444,13 +461,18 @@ class Loopnest:
     offload information stored in the first loop of the loopnest.
     """
     def __init__(self,loops=[]):
-        self._loops = loops
-        self._original_loops = loops
+        self._loops = []
+        self._original_loops = []
+        for loop in loops:
+            self.append(loop)
         self._is_tiled = False
     def __len__(self):
         return len(self.loops)
     def __getitem__(self, key):
         return self._loops[key]
+    """Deepcopies the loop and adds it to this loopnest's
+    list of loops.
+    """
     def append(self,loop):
         self._loops.append(loop) 
         self._original_loops.append(loop)
@@ -462,6 +484,8 @@ class Loopnest:
         # Preamble before loop
         prolog = ""
         for i,loop in enumerate(self._loops):
+            if loop.prolog != None:
+                prolog += loop.prolog
             loop_lengths_vars.append(_unique_label("len"))
             prolog += _render_const_int_decl(
               loop_lengths_vars[-1],
@@ -489,24 +513,35 @@ class Loopnest:
         # index recovery
         for i,loop in enumerate(self._original_loops):
             if loop.step != None:
-                body_prolog += ("const int {} = gpufort::outermost_index_w_len"
-                  + "({}/*inout*/,{}/*inout*/,{},{},{});\n").format(
-                    loop.index,
+                body_prolog += "{} = {};\n".format(
+                  loop.index,
+                  "gpufort::outermost_index_w_len({}/*inout*/,{}/*inout*/,{},{},{})".format(
                     remainder_var,
                     denominator_var,
                     loop.first,
                     loop_lengths_vars[i],
                     loop.step
                   )
+                )
             else:
-                body_prolog += ("const int {} = gpufort::outermost_index_w_len"
-                  + "({}/*inout*/,{}/*inout*/,{},{});\n").format(
-                    loop.index,
+                body_prolog += "{} = {};\n".format(
+                  loop.index,
+                  "gpufort::outermost_index_w_len({}/*inout*/,{}/*inout*/,{},{})".format(
                     remainder_var,
                     denominator_var,
                     loop.first,
                     loop_lengths_vars[i]
                   )
+                )
+        # add body prolog & epilog of individual loops
+        body_epilog = ""
+        indent = ""
+        for loop in self._loops:
+            if loop.body_prolog != None:
+                body_prolog += textwrap.indent(loop.body_prolog,indent)
+            if loop.body_epilog != None:
+                body_epilog = textwrap.indent(loop.body_epilog,indent) + body_epilog
+            indent += loop.body_extra_indent
         collapsed_loop = Loop(
           index = collapsed_index_var,
           first = "0",
@@ -520,9 +555,9 @@ class Loopnest:
           num_workers = first_loop.num_workers,
           vector_length = first_loop.vector_length,
           prolog = prolog, 
-          body_prolog = body_prolog)
-        self._loops.clear()
-        self._loops.append(collapsed_loop)
+          body_prolog = body_prolog,
+          body_epilog = body_epilog,
+          body_extra_indent = indent)
         return collapsed_loop
 
     def tile(self,tile_sizes,
@@ -538,18 +573,17 @@ class Loopnest:
             tile_loops.append(tile_loop)
             element_loops.append(element_loop)
         # Only first tile loop and element loop is partitioned
-        for loop in tile_loops[1:]+element_loops[:-1]:
+        for loop in tile_loops[1:]+element_loops[1:]:
             loop.gang_partitioned = False
             loop.worker_partitioned = False
             loop.vector_partitioned = False
-        self._loops.clear()
         if collapse_tile_loops:
-            tile_loops.collapse()
+            tile_loops = [tile_loops.collapse()]
         if collapse_element_loops:
-            element_loops.collapse()
-        self._loops += tile_loops._loops
-        self._loops += element_loops._loops
-        self._is_tiled = True
+            element_loops = [element_loops.collapse()]
+        result = Loopnest(tile_loops[:] + element_loops[:])
+        result._is_tiled = True
+        return result
 
     def map_to_hip_cpp(self):
         loopnest_open  = ""
@@ -560,8 +594,14 @@ class Loopnest:
             # TODO Merge activation conditions somehow,
             # need to have one per gang,worker,vector per loop in order to mix and match
             loop_open,loop_close,activation_condition,max_indent = loop.map_to_hip_cpp()
-            loopnest_open += indent+loop_open
-            loopnest_close = indent+loop_close+loopnest_close
+            loopnest_open += textwrap.indent(
+              loop_open,
+              indent
+            )
+            loopnest_close = textwrap.indent(
+              loop_close,
+              indent
+            ) + loopnest_close
             indent += max_indent
             activation_conditions.append(activation_condition)
             # TODO use activation_conditions

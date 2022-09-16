@@ -1,8 +1,12 @@
 import copy
 import re
 import textwrap
-   
+
 single_level_indent = " "*2
+
+_counters = {}
+
+_unique_label_template = "_{label}{num}"
 
 def reset():
   """Resets the counters for labelling the helper variables.
@@ -32,7 +36,7 @@ def remove_unnecessary_helper_variables(code_to_modify,other_code_to_read=[]):
     while condition:
         condition = False
         joined_statements = ";".join(statements)
-        # Remove declaration of unused (never read) and unnecessary constants (const int _aXYZ = _bIJK;)
+        # 1. Remove declaration of unused (never read) and unnecessary constants (const int _aXYZ = _bIJK;)
         replacements = {}
         for label,num_labels in _counters.items():
             for num in range(0,num_labels):
@@ -40,27 +44,29 @@ def remove_unnecessary_helper_variables(code_to_modify,other_code_to_read=[]):
                   label=label,
                   num=num
                 )
+                p_const_int_decl = re.compile(r"^\s*const\s*int\s*\b"+varname+r"\b\s*=\s*(?P<rhs>\w+)\s*($|[\/])")
                 count = joined_statements.count(varname)
                 for code in other_code_to_read:
                     if code != None:
                         other_count = code.count(varname)
-                # a = b; assignments
                 for statement in list(statements):
                     if varname in statement:
                         if count == 1 and other_count == 0: # unused variable
                             statements.remove(statement)
                             condition = True
                         elif other_count == 0: # name not used in other files
-                            match = re.search(r"^\s*const\s*int\s*\b"+varname+r"\b\s*=\s*(?P<rhs>\w+)\s*($|[\/])",statement)
+                            match = p_const_int_decl.search(statement)
                             if match:
                                 statements.remove(statement)
                                 replacements[varname] = match.group("rhs")
                                 condition = True
-        # Replace occurrence of unnecessary helper variables by their RHS value
+                                  
+        # 2. Replace occurrence of helper variables that have been deemed unnecessary by their RHS value
         for i,statement in enumerate(statements):
             modified_statement = statement
             for pattern,subst in replacements.items():
-                modified_statement = re.sub(r"\b"+pattern+r"\b",subst,modified_statement)
+                if pattern in modified_statement:
+                    modified_statement = re.sub(r"\b"+pattern+r"\b",subst,modified_statement)
             if modified_statement != statement:
                 statements[i] = modified_statement
                 condition = True
@@ -71,10 +77,6 @@ hip_kernel_prolog =\
 gpufort::acc_grid _res(gridDim.x,div_round_up(blockDim.x/warpSize),{max_vector_length});
 gpufort::acc_coords _coords(gang_id,worker_id,vector_lane_id);
 """
-
-_counters = {}
-
-_unique_label_template = "_{label}{num}"
  
 def _unique_label(label):
     """Returns a unique label for a loop variable that describes
@@ -122,6 +124,95 @@ for ({0} = {1};
      {0} < {2}; {0} += {3}) {{
 """
   return template.format(index,incl_lbound,excl_ubound,step)
+
+class ResourceFilter:
+    def __init__(self,num_gangs=[],
+                      num_workers=[],
+                      vector_length=[],
+                      resource_triple_name="_coords"):
+        # note: the mutable (default) arguments cannot simply
+        # be assigned, as all instances might modify
+        # the same (default) instance.
+        self.num_gangs     = list(num_gangs)
+        self.num_workers   = list(num_workers)
+        self.vector_length = list(vector_length)
+        self.resource_triple_name = resource_triple_name
+    def set_from(self,other):
+        self.__init__(
+            other.num_gangs,
+            other.num_workers,
+            other.vector_length,
+            other.resource_triple_name)
+    def __add__(self,other):
+        return ResourceFilter(
+          self.num_gangs + other.num_gangs,
+          self.num_workers + other.num_workers,
+          self.vector_length + other.vector_length
+        )
+    def __iadd__(self,other):
+        new = self.__add__(other)
+        self.set_from(new)
+        return self
+    def __sub__(self,other):
+        return ResourceFilter(
+          [e for e in self.num_gangs 
+             if e not in other.num_gangs],
+          [e for e in self.num_workers 
+             if e not in other.num_workers],
+          [e for e in self.vector_length 
+             if e not in other.vector_length]
+        )
+    def __isub__(self,other):
+        new = self.__sub__(other)
+        self.set_from(new)
+        return self
+    def __eq__(self,other):
+        return ( self.num_gangs == other.num_gangs
+                 and self.num_workers == other.num_workers
+                 and self.vector_length == other.vector_length )
+    def __len__(self):
+        return (len(self.num_gangs) 
+                + len(self.num_workers)
+                + len(self.vector_length))
+    def hip_cpp_resource_filter(self):
+        """:return a filter condition for masking
+        in statements only for the certain resources.
+        """
+        print(self.num_gangs)
+        #print(self.num_workers)
+        #print(self.vector_length)
+        assert (not len(self.num_gangs) 
+                or len(self.num_gangs) == 1)
+        assert (not len(self.num_workers)
+                or len(self.num_workers) == 1)
+        assert (not len(self.vector_length)
+                or len(self.vector_length) == 1)
+        conditions = []
+        if len(self.num_gangs):
+            conditions.append(
+              "{}.gang < {}".format(
+                self.resource_triple_name,
+                self.num_gangs[0]
+              )
+            )
+        if len(self.num_workers):
+            conditions.append(
+              "{}.worker < {}".format(
+                self.resource_triple_name,
+                self.num_workers[0]
+              )
+            )
+        if len(self.vector_length):
+            conditions.append(
+              "{}.vector_lane < {}".format(
+                self.resource_triple_name,
+                self.vector_length[0]
+              )
+            )
+        return " && ".join(conditions)
+    def __str__(self):
+        return self.hip_cpp_resource_filter()
+    __repr__ = __str__ 
 
 class Loop:
     
@@ -327,14 +418,15 @@ if ( {permissive_condition} ) {{
         hip_loop_epilog = """\
 }} // {comment}
 """
-        conditions = []
+        resource_filter = ResourceFilter()
         if self.vector_partitioned:
             if self.vector_length == None:
                 vector_length = "_res.vector_lanes"  
             else:
                 vector_length = self.vector_length
-            conditions.append("_coords.vector_lane < {vector_length}".format(
-                vector_length=local_res_var+".vector_lanes"))
+            resource_filter.vector_length.append(
+              local_res_var+".vector_lanes"
+            )
         else:
             vector_length = "1"
         if self.worker_partitioned:
@@ -342,30 +434,29 @@ if ( {permissive_condition} ) {{
                 num_workers = "_res.workers"  
             else:
                 num_workers = self.num_workers
-            conditions.append("_coords.worker < {num_workers}".format(
-                num_workers=local_res_var+".workers"))
+            resource_filter.num_workers.append(
+              local_res_var+".workers"
+            )
         else:
             num_workers = "1"
         num_gangs = "_res.gangs"  
         if self.gang_partitioned:
             if self.num_gangs != None:
                 num_gangs = self.num_gangs
-            conditions.append("_coords.gang < {num_gangs}".format(
-                num_gangs=local_res_var+".gangs"))
-        elif not len(conditions):
-            conditions.append("true")
-        permissive_condition = " && ".join(conditions)
+            resource_filter.num_gangs.append(
+              local_res_var+".gangs"
+            )
         loop_open = hip_loop_prolog.format(
           local_res=local_res_var,
           num_gangs=num_gangs,
           num_workers=num_workers,
           vector_length=vector_length,
-          permissive_condition=permissive_condition
+          permissive_condition=resource_filter.hip_cpp_resource_filter()
         )
         loop_close = hip_loop_epilog.format(
           comment=local_res_var
         )
-        return (loop_open,loop_close)
+        return (loop_open,loop_close,resource_filter)
 
     def map_to_hip_cpp(self,remove_unnecessary=True):
         """:return: HIP C++ device code.
@@ -373,7 +464,7 @@ if ( {permissive_condition} ) {{
         indent = "" 
         loop_open = ""
         loop_close = ""
-        statement_activation_condition = None
+        resource_filter = ResourceFilter()
         partitioned = (
           self.gang_partitioned
           or self.worker_partitioned
@@ -381,8 +472,8 @@ if ( {permissive_condition} ) {{
         )
         if partitioned: 
             local_res_var = _unique_label("local_res")
-            hip_prolog, hip_epilog = self._render_hip_prolog_and_epilog(
-              local_res_var) 
+            hip_prolog, hip_epilog, resource_filter =\
+              self._render_hip_prolog_and_epilog(local_res_var) 
             loop_open += hip_prolog
             indent += single_level_indent
             # prepend the original prolog
@@ -488,7 +579,6 @@ if ( {permissive_condition} ) {{
                 ) + loop_close
                 indent += single_level_indent
             loop_close += hip_epilog
-            statement_activation_condition = "{} < _res".format(local_res_var)
         else: # unpartitioned loop
             # prepend the original prolog
             if self.prolog != None:
@@ -516,8 +606,13 @@ if ( {permissive_condition} ) {{
             indent
           ) + loop_close
         if remove_unnecessary:
-            loop_open = remove_unnecessary_helper_variables(loop_open,[loop_close,statement_activation_condition])
-        return (loop_open,loop_close,statement_activation_condition,indent+self.body_extra_indent)
+            loop_open = remove_unnecessary_helper_variables(
+              loop_open,[loop_close]
+            )
+        return (loop_open,
+                loop_close,
+                resource_filter,
+                indent+self.body_extra_indent)
 
 class Loopnest:
     """ Transforms tightly-nested loopnests where only the first loop
@@ -649,13 +744,14 @@ class Loopnest:
         loopnest_open  = ""
         loopnest_close  = ""
         indent = ""
-        activation_conditions = []
+        resource_filter = ResourceFilter()
         for loop in self._loops:
             # TODO Merge activation conditions somehow,
             # need to have one per gang,worker,vector per loop in order to mix and match
-            loop_open,loop_close,activation_condition,max_indent = loop.map_to_hip_cpp(
-              remove_unnecessary = False
-            )
+            loop_open,loop_close,loop_resource_filter,max_indent =\
+                loop.map_to_hip_cpp(
+                  remove_unnecessary = False
+                )
             loopnest_open += textwrap.indent(
               loop_open,
               indent
@@ -664,10 +760,9 @@ class Loopnest:
               loop_close,
               indent
             ) + loopnest_close
+            print(type(loop_resource_filter))
+            resource_filter += loop_resource_filter
             indent += max_indent
-            activation_conditions.append(activation_condition)
-            # TODO use activation_conditions
-                  
         # TODO analyze and return required resources (gangs,workers,vector_lanes)
         # but perform it outside as we deal with C++ expressions here.
         # * Alternatively, move the derivation of launch parameters into C++ code?
@@ -678,8 +773,13 @@ class Loopnest:
         #   and put wait events inbetween
         # * What about reductions?
         if remove_unnecessary:
-            loopnest_open = remove_unnecessary_helper_variables(loopnest_open,[loopnest_close]+activation_conditions)
-        return (loopnest_open,loopnest_close,activation_condition,indent)
+            loopnest_open = remove_unnecessary_helper_variables(
+              loopnest_open,[loopnest_close]
+            )
+        return (loopnest_open,
+               loopnest_close,
+               resource_filter,
+               indent)
 
 # TODO implement
 # TODO workaround, for now expand all simple workshares

@@ -69,6 +69,16 @@ class TestLoopTransformations(unittest.TestCase):
         print('{} ({}s)'.format(self.id(), round(elapsed, 9)))
     def test_00_do_nothing(self):
         pass
+    def test_01_resource_filter(self):
+        filter_gang = loop_transformations.ResourceFilter(
+          num_gangs=["NUM_GANGS"])
+        filter_worker = loop_transformations.ResourceFilter(
+          num_workers=["NUM_WORKERS"])
+        filter_vector = loop_transformations.ResourceFilter(
+          vector_length=["VECTOR_LENGTH"])
+        filter_gang_vector = filter_gang + filter_vector
+        filter_gang_worker = filter_gang + filter_worker
+        filter_gang_worker_vector = filter_gang_worker + filter_vector
     def test_01_map_seq_loop_to_hip_cpp(self):
         results = [
           ('for (i = 0; \n     i < N; i++) {\n', '}\n', None),

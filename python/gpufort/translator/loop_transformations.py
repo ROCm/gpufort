@@ -174,13 +174,10 @@ class ResourceFilter:
         return (len(self.num_gangs) 
                 + len(self.num_workers)
                 + len(self.vector_length))
-    def hip_cpp_resource_filter(self):
+    def loop_entry_condition(self):
         """:return a filter condition for masking
         in statements only for the certain resources.
         """
-        print(self.num_gangs)
-        #print(self.num_workers)
-        #print(self.vector_length)
         assert (not len(self.num_gangs) 
                 or len(self.num_gangs) == 1)
         assert (not len(self.num_workers)
@@ -210,8 +207,41 @@ class ResourceFilter:
               )
             )
         return " && ".join(conditions)
+    def statement_selection_condition(self):
+        assert (not len(self.num_gangs) 
+                or len(self.num_gangs) == 1)
+        assert (not len(self.num_workers)
+                or len(self.num_workers) == 1)
+        assert (not len(self.vector_length)
+                or len(self.vector_length) == 1)
+        conditions = []
+        if not len(self.num_workers):
+            conditions.append(
+              "{}.worker == {}".format(
+                self.resource_triple_name,
+                "0" 
+              )
+            )
+        if not len(self.vector_length):
+            conditions.append(
+              "{}.vector_lane == {}".format(
+                self.resource_triple_name,
+                "0" 
+              )
+            )
+        return " && ".join(conditions)
+    def have_gang_parallelism(self):
+        return len(self.num_gangs)
+    def have_worker_parallelism(self):
+        return len(self.num_workers)
+    def have_vector_parallelism(self):
+        return len(self.vector_length)
+    def have_all_parallelism(self):
+        return (self.have_gang_parallelism()
+                and self.have_worker_parallelism()
+                and self.have_vector_parallelism())
     def __str__(self):
-        return self.hip_cpp_resource_filter()
+        return self.loop_entry_condition()
     __repr__ = __str__ 
 
 class Loop:
@@ -412,7 +442,7 @@ class Loop:
         hip_loop_prolog =\
 """
 gpufort::acc_grid {local_res}({num_gangs},{num_workers},{vector_length});
-if ( {permissive_condition} ) {{
+if ( {loop_entry_condition} ) {{
 """
 
         hip_loop_epilog = """\
@@ -451,7 +481,7 @@ if ( {permissive_condition} ) {{
           num_gangs=num_gangs,
           num_workers=num_workers,
           vector_length=vector_length,
-          permissive_condition=resource_filter.hip_cpp_resource_filter()
+          loop_entry_condition=resource_filter.loop_entry_condition()
         )
         loop_close = hip_loop_epilog.format(
           comment=local_res_var
@@ -760,7 +790,6 @@ class Loopnest:
               loop_close,
               indent
             ) + loopnest_close
-            print(type(loop_resource_filter))
             resource_filter += loop_resource_filter
             indent += max_indent
         # TODO analyze and return required resources (gangs,workers,vector_lanes)

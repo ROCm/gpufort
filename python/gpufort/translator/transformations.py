@@ -318,7 +318,7 @@ def transform(ttcomputeconstruct):
                     device_specs = ttnode.annotation.get_device_specs()
                     device_spec = next((d for d in device_specs if d.applies(device_type)),None)
                     assert device_spec != None
-                    if ttnode.annotation.parallelism.gang_parallelism():
+                    if ttnode.annotation.parallelism.gang_partitioned_mode():
                         if parallelism_mode.in_gang_partitioned_mode():
                             raise util.eror.SyntaxError("already in gang-partitioned region")
                         elif parallelism_mode.in_worker_partitioned_mode():
@@ -327,14 +327,14 @@ def transform(ttcomputeconstruct):
                             raise util.eror.SyntaxError("no gang partitioning possible in vector-partitioned region")
                         parallelism_mode = parallelism_mode.change_to_gang_partitioned_mode()
                         # TODO get num gangs
-                    if ttnode.annotation.parallelism().worker_parallelism():
+                    if ttnode.annotation.parallelism().worker_partitioned_mode():
                         if parallelism_mode.in_worker_partitioned_mode():
                             raise util.eror.SyntaxError("already in worker-partitioned region")
                         elif parallelism_mode.in_vector_partitioned_mode():
                             raise util.eror.SyntaxError("no worker partitioning possible in vector-partitioned region")
                         parallelism_mode = parallelism_mode.change_to_worker_partitioned_mode()
                         # TODO get num workers
-                    if ttnode.annotation.parallelism().vector_parallelism():
+                    if ttnode.annotation.parallelism().vector_partitioned_mode():
                         if parallelism_mode.in_vector_partitioned_mode():
                             raise util.eror.SyntaxError("already in vector-partitioned region")
                         parallelism_mode = parallelism_mode.change_to_vector_partitioned_mode()

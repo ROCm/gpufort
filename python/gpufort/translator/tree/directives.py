@@ -28,17 +28,17 @@ class Parallelism(enum.Enum):
     GANG_VECTOR=6
     GANG_WORKER_VECTOR=7
 
-    def gang_parallelism(self):
+    def gang_partitioned_mode(self):
         return self in [Parallelism.GANG,
                         Parallelism.GANG_WORKER,
                         Parallelism.GANG_WORKER_VECTOR]
     
-    def worker_parallelism(self):
+    def worker_partitioned_mode(self):
         return self in [Parallelism.WORKER,
                         Parallelism.GANG_WORKER,
                         Parallelism.GANG_WORKER_VECTOR]
     
-    def vector_parallelism(self):
+    def vector_partitioned_mode(self):
         return self in [Parallelism.VECTOR,
                         Parallelism.GANG_VECTOR,
                         Parallelism.GANG_WORKER_VECTOR]

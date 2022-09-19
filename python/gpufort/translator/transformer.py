@@ -20,7 +20,7 @@ def _get_specified_resources(device_specs,device_type):
     num_threads_per_gang = [] # list
     num_workers = None
     vector_length = None
-    tile_sizes = None
+    tile_sizes = []
     num_collapse = None   
  
     device_spec = next((d for d in device_specs if d.applies(device_type)),None)
@@ -28,24 +28,35 @@ def _get_specified_resources(device_specs,device_type):
     spec_num_workers = device_spec.num_workers() # no list
     spec_vector_length = device_spec.vector_length() # no list
     spec_num_threads_per_gang = device_spec.num_threads_in_block()
-    if spec_num_gangs[0] not in [tree.grammar.CLAUSE_NOT_FOUND,
-                                 tree.grammar.CLAUSE_VALUE_NOT_SPECIFIED]:
-        num_gangs += [str(c) for c in spec_num_gangs]
-    if spec_num_workers not in [tree.grammar.CLAUSE_NOT_FOUND,
-                                tree.grammar.CLAUSE_VALUE_NOT_SPECIFIED]:
+    spec_num_collapse = device_spec.num_collapse()
+    spec_tile_sizes = device_spec.tile_sizes()
+    
+    def is_specified_(arg):
+        return arg not in [tree.grammar.CLAUSE_NOT_FOUND,
+                           tree.grammar.CLAUSE_VALUE_NOT_SPECIFIED]
+
+    if is_specified(spec_num_gangs[0]):
+        num_gangs = [str(c) for c in spec_num_gangs]
+    if is_specified_(spec_num_workers):
         num_workers = spec_num_workers
-    if spec_vector_length not in [tree.grammar.CLAUSE_NOT_FOUND,
-                                  tree.grammar.CLAUSE_VALUE_NOT_SPECIFIED]:
+    if is_specified_(spec_vector_length):
         vector_length = spec_vector_length
-    if spec_num_threads_per_gang[0] not in [tree.grammar.CLAUSE_NOT_FOUND,
-                                            tree.grammar.CLAUSE_VALUE_NOT_SPECIFIED]:
+    if is_specified_(spec_num_threads_per_gang[0]):
         num_threads_per_gang = spec_num_threads_per_gang
         # TODO implies:
         # vector_length = "warpSize"
         # num_workers = "*".join(num_threads_per_gang)/warpSize
         # num_gangs   = 
-
-    return (num_gangs, num_workers, vector_length, num_threads_per_gang)
+    if is_specified_(spec_num_collapse):
+        num_collapse = spec_num_collapse
+    if is_specified_(spec_tile_sizes[0]):
+        tile_sizes = spec_tile_sizes
+    return (num_gangs,
+            num_workers,
+            vector_length,
+            num_threads_per_gang,
+            num_collapse,
+            tile_sizes)
 
 def transform(ttcomputeconstruct):
     results = [] # one per device spec
@@ -67,6 +78,7 @@ def transform(ttcomputeconstruct):
     #   Need to distinguish between loops and other statements to put if ( thread id == 0 ) regions
     # Identify workshare such as min,max,etc.
     for device_type in device_types:
+        generated_code = ""
         indent = ""
         resource_filter = loop_transformations.ResourceFilter()
         loopnest = None
@@ -85,7 +97,24 @@ def transform(ttcomputeconstruct):
         all_num_gangs = []
         all_num_workers = []
         all_vector_length = []
+
+        def handle_children_(ttcontainer):
+            nonlocal generated_code
+            nonlocal indent
+            nonlocal resource_filter
+
+            statement_selector_is_open = False
+            for child in ttcontainer.children:
+                if isinstance(child,tree.TTContainer):
+                    if statement_selector_is_open:
+                        generated_code += indent+"}\n"
+                        traverse_(child)
+                else:
+                    if not statement_selector_is_open:
+                        generated_code += 
+
         def traverse_(ttnode):
+            nonlocal generated_code
             nonlocal resource_filter
             nonlocal loopnest
             nonlocal in_loop
@@ -110,6 +139,7 @@ def transform(ttcomputeconstruct):
                 loopnest_open  = ""
                 loopnest_close = ""
                 if num_collapse > 0:
+                    assert loopnest != none
                     loopnest.append(
                       loop_transformations.Loop(
                         index = ttnode.loop_var(),
@@ -132,6 +162,7 @@ def transform(ttcomputeconstruct):
                     # a loop statement is not relying on the lvalue or inout arg from a previous statement (difficult to analyze)
                     # alternative interpretation of collapse user information -> we can reorder statements without error
                 elif len(tile_sizes) > 0:
+                    assert loopnest != None
                     loopnest.append(
                       loop_transformations.Loop(
                         index = ttnode.loop_var(),
@@ -156,21 +187,21 @@ def transform(ttcomputeconstruct):
                     device_spec = next((d for d in device_specs if d.applies(device_type)),None)
                     assert device_spec != None
                     loop_annotation = ttnode.annotation
-                    if loop_annotation.parallelism.gang_parallelism():
-                        if resource_filter.have_gang_parallelism():
+                    if loop_annotation.parallelism.gang_partitioned_mode():
+                        if resource_filter.gang_partitioned_mode():
                             raise util.eror.SyntaxError("already in gang-partitioned region")
-                        elif resource_filter.have_worker_parallelism():
+                        elif resource_filter.worker_partitioned_mode():
                             raise util.eror.SyntaxError("no gang partitioning possible in worker-partitioned region")
-                        elif resource_filter.have_vector_parallelism():
+                        elif resource_filter.vector_partitioned_mode():
                             raise util.eror.SyntaxError("no gang partitioning possible in vector-partitioned region")
                         # TODO get num gangs
-                    if loop_annotation.parallelism().worker_parallelism():
-                        if resource_filter.have_worker_parallelism():
+                    if loop_annotation.parallelism().worker_partitioned_mode():
+                        if resource_filter.worker_partitioned_mode():
                             raise util.eror.SyntaxError("already in worker-partitioned region")
-                        elif resource_filter.have_vector_parallelism():
+                        elif resource_filter.vector_partitioned_mode():
                             raise util.eror.SyntaxError("no worker partitioning possible in vector-partitioned region")
-                    if loop_annotation.parallelism().vector_parallelism():
-                        if resource_filter.have_vector_parallelism():
+                    if loop_annotation.parallelism().vector_partitioned_mode():
+                        if resource_filter.vector_partitioned_mode():
                             raise util.eror.SyntaxError("already in vector-partitioned region")
                     loop_num_gangs,loop_num_workers,\
                     loop_vector_length,loop_num_threads_per_gang,\
@@ -185,9 +216,9 @@ def transform(ttcomputeconstruct):
                         num_gangs = loop_num_gangs,
                         num_workers = loop_num_workers,
                         vector_length = loop_vector_length,
-                        gang_partitioned = loop_annotation.gang_parallelism(),
-                        worker_partitioned = loop_annotation.worker_parallelism(),
-                        vector_partitioned = loop_annotation.vector_parallelism()
+                        gang_partitioned = loop_annotation.gang_partitioned_mode(),
+                        worker_partitioned = loop_annotation.worker_partitioned_mode(),
+                        vector_partitioned = loop_annotation.vector_partitioned_mode()
                       )
                     ])
                     if ( num_collapse == 0
@@ -212,10 +243,11 @@ def transform(ttcomputeconstruct):
                 # traverse all elements in body
                 pass
             else: # any other statement
-                if ( resource_filter != prev_resource_filter ) {
-                  any_resources_masked_out      = resource_filter. 
-                  statement_selection_condition = resource_filter.statement_selection_condition()
-                }
+                if resource_filter != prev_resource_filter:
+                    if not prev_resource_filter.worker_and_vector_partitioned_mode():
+                        generated_code += indent + "}\n" 
+                    any_resources_masked_out      = not resource_filter.worker_and_vector_partitioned_mode()
+                    statement_selection_condition = resource_filter.statement_selection_condition()
                 pass
 
     #preamble1 = []

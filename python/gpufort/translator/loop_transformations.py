@@ -240,16 +240,15 @@ class ResourceFilter:
               )
             )
         return " && ".join(conditions)
-    def have_gang_parallelism(self):
+    def gang_partitioned_mode(self):
         return len(self.num_gangs)
-    def have_worker_parallelism(self):
+    def worker_partitioned_mode(self):
         return len(self.num_workers)
-    def have_vector_parallelism(self):
+    def vector_partitioned_mode(self):
         return len(self.vector_length)
-    def have_all_parallelism(self):
-        return (self.have_gang_parallelism()
-                and self.have_worker_parallelism()
-                and self.have_vector_parallelism())
+    def worker_and_vector_partitioned_mode(self):
+        return (self.worker_partitioned_mode()
+                and self.vector_partitioned_mode())
     def __str__(self):
         return self.loop_entry_condition()
     __repr__ = __str__ 

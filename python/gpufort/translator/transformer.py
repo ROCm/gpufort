@@ -58,7 +58,10 @@ def _get_specified_resources(device_specs,device_type):
             num_collapse,
             tile_sizes)
 
-def transform(ttcomputeconstruct):
+def transform(ttcomputeconstruct,
+              gang_partitioned = False,
+              worker_partitioned = False,
+              vector_partitioned = False):
     results = [] # one per device spec
     device_types = _identify_device_types(ttcomputeconstruct)
     
@@ -98,20 +101,28 @@ def transform(ttcomputeconstruct):
         all_num_workers = []
         all_vector_length = []
 
-        def handle_children_(ttcontainer):
+        def traverse_container_body_(ttcontainer):
             nonlocal generated_code
             nonlocal indent
             nonlocal resource_filter
 
             statement_selector_is_open = False
-            for child in ttcontainer.children:
+            num_children = len(ttcontainer)
+            for i,child in enumerate(ttcontainer):
                 if isinstance(child,tree.TTContainer):
                     if statement_selector_is_open:
                         generated_code += indent+"}\n"
                         traverse_(child)
                 else:
-                    if not statement_selector_is_open:
-                        generated_code += 
+                    if ( not statement_selector_is_open
+                         and not resource_filter.worker_and_vector_partitioned_mode()
+                         and not i == num_children-1 ):
+                        generated_code += "{}if ({}) {{".format(
+                          indent,
+                          resource_filter.statement_selection_condition()
+                        )
+                        statement_selector_is_open = True
+                        traverse_(child)
 
         def traverse_(ttnode):
             nonlocal generated_code
@@ -127,7 +138,6 @@ def transform(ttcomputeconstruct):
             nonlocal all_num_gangs
             nonlocal all_num_workers
             nonlocal all_vector_length
-            prev_resource_filter = resource_filter
 
             if isinstance(ttnode,IComputeConstruct):
                 device_specs = ttnode.get_device_specs()
@@ -138,6 +148,8 @@ def transform(ttcomputeconstruct):
             elif isinstance(ttnode,TTDo):
                 loopnest_open  = ""
                 loopnest_close = ""
+                loopnest_resource_filter = loop_transformations.ResourceFilter()
+                loopnest_indent = ""
                 if num_collapse > 0:
                     assert loopnest != none
                     loopnest.append(
@@ -154,8 +166,8 @@ def transform(ttcomputeconstruct):
                         loopnest_resource_filter,\
                         loopnest_indent = \
                             loopnest.collapse().map_to_hip_cpp()
-                        resource_filter += loopnest_resource_filter
-                        indent += loopnest_indent
+                        #resource_filter += loopnest_resource_filter
+                        #indent += loopnest_indent
                         loopnest = None
                         num_collapse = 0   
                     # TODO check if we can move statement into inner loop, should be possible if 
@@ -177,10 +189,11 @@ def transform(ttcomputeconstruct):
                         loopnest_resource_filter,\
                         loopnest_indent = \
                             loopnest.tile(tile_sizes).map_to_hip_cpp()
-                        resource_filter += loopnest_resource_filter
-                        indent += loopnest_indent
+                        #resource_filter += loopnest_resource_filter
+                        #indent += loopnest_indent
                         loopnest = None
                         tile_sizes = []
+                    traverse_container_body_(ttnode)
                 elif ttnode.annotation != None:
                     # get device spec for type
                     device_specs = ttnode.annotation.get_device_specs()
@@ -228,8 +241,8 @@ def transform(ttcomputeconstruct):
                         loopnest_resource_filter,\
                         loopnest_indent = \
                             loopnest.map_to_hip_cpp()
-                        resource_filter += loopnest_resource_filter
-                        indent += loopnest_indent
+                        #resource_filter += loopnest_resource_filter
+                        #indent += loopnest_indent
                         loopnest = None
                     # TODO transform according to parallelism_mode 
                     # consider that parallelism mode might not apply to finer-grain parallel-loops and further not 
@@ -239,16 +252,18 @@ def transform(ttcomputeconstruct):
                     # not all statements might be affected
                 else:
                     pass   
-            elif isinstance(ttnode,TTContainer):
-                # traverse all elements in body
-                pass
-            else: # any other statement
-                if resource_filter != prev_resource_filter:
-                    if not prev_resource_filter.worker_and_vector_partitioned_mode():
-                        generated_code += indent + "}\n" 
-                    any_resources_masked_out      = not resource_filter.worker_and_vector_partitioned_mode()
-                    statement_selection_condition = resource_filter.statement_selection_condition()
-                pass
+                resource_filter += loopnest_resource_filter
+                previous_indent = indent
+                indent += loopnest_indent
+                traverse_container_body_(ttnode)
+                resource_filter -= loopnest_resource_filter
+                indent = previous_indent
+            elif isinstance(ttnode,TTContainer): 
+                generated_code += 
+                traverse_container_body_(ttnode)
+                
+            else: # other statements
+                
 
     #preamble1 = []
     #preamble2 = []

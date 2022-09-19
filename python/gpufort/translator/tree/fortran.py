@@ -1017,6 +1017,10 @@ class TTArgumentList(base.TTNode):
 class TTIfElseBlock(base.TTContainer):
     def _assign_fields(self, tokens):
         self.indent = "" # container of if/elseif/else branches, so no indent
+    def header_c_str(self):
+        return ""
+    def footer_c_str(self):
+        return "" 
 
 class TTIfElseIf(base.TTContainer):
 
@@ -1025,6 +1029,11 @@ class TTIfElseIf(base.TTContainer):
 
     def child_nodes(self):
         return [self._condition, self.body]
+    
+    def header_c_str(self):
+        return ""
+    def footer_c_str(self):
+        return "" 
 
     def c_str(self):
         body_content = base.TTContainer.c_str(self)

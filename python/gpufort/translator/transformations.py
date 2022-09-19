@@ -206,21 +206,6 @@ def _collapsed_loop_index_c_str(ttdo,counter):
     return "int {idx} = outermost_index_w_len({args});\n".format(\
            idx=idx,args=",".join(args))
 
-def __identify_device_types(ttnode):
-    device_types = set()
-    directives = []
-    def traverse_(ttnode):
-        nonlocal device_types
-        if isinstance(ttnode,(IComputeConstruct,ILoopAnnotation)):
-            for device_spec in ttnode.get_device_specs():
-                device_types.add(device_spec.device_type)
-            for ttchild in ttnode:
-                traverse_(ttchild)
-    traverse_(ttnode)
-    if not len(device_types):
-        device_types.append("*")
-    return device_types
-    
 class ParallelismMode(enum.Enum):
     GANG_REDUNDANT_WORKER_SINGLE_VECTOR_SINGLE = 0b000
     GANG_REDUNDANT_WORKER_SINGLE_VECTOR_PARTITIONED = 0b001

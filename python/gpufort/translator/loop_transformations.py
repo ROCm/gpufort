@@ -178,6 +178,8 @@ class ResourceFilter:
         return ( self.num_gangs == other.num_gangs
                  and self.num_workers == other.num_workers
                  and self.vector_length == other.vector_length )
+    def __ne__(self,other):
+        return not self.__eq__(other)
     def __len__(self):
         return (len(self.num_gangs) 
                 + len(self.num_workers)
@@ -676,6 +678,7 @@ class Loopnest:
     def append(self,loop):
         self._loops.append(loop) 
     def collapse(self):
+        """Collapse all loops in the loopnest."""
         assert len(self._loops)
         loop_lengths_vars = []
         first_loop = self._loops[0]
@@ -794,8 +797,6 @@ class Loopnest:
         indent = ""
         resource_filter = ResourceFilter()
         for loop in self._loops:
-            # TODO Merge activation conditions somehow,
-            # need to have one per gang,worker,vector per loop in order to mix and match
             loop_open,loop_close,loop_resource_filter,max_indent =\
                 loop.map_to_hip_cpp(
                   remove_unnecessary = False

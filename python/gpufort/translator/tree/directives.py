@@ -166,13 +166,13 @@ class TTDo(base.TTContainer):
         return "int {idx} = outermost_index({args});\n".format(\
                idx=idx,args=", ".join(args))
 
-    def problem_size(self, converter=base.make_f_str):
+    def problem_size(self):
         if self._step == None:
             step = "1"
         else:
-            step = converter(self._step)
+            step = base.make_f_str(self._step)
         return "gpufort_loop_len(int({begin},c_int),int({end},c_int),int({step},c_int))".format(\
-            begin=converter(self._begin._rhs),end=converter(self._end),step=step)
+            begin=base.make_f_str(self._begin._rhs),end=base.make_f_str(self._end),step=step)
     
     def problem_size_c_str(self):
         converter = base.make_c_str

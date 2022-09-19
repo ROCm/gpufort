@@ -72,11 +72,19 @@ def remove_unnecessary_helper_variables(code_to_modify,other_code_to_read=[]):
                 condition = True
     return joined_statements
 
-hip_kernel_prolog =\
+hip_includes = \
+"""
+#include "gpufort_loops.h"
+"""
+
+_hip_kernel_prolog =\
 """"\
-gpufort::acc_grid _res(gridDim.x,div_round_up(blockDim.x/warpSize),{max_vector_length});
+gpufort::acc_grid _res(gridDim.x,div_round_up(blockDim.x/warpSize),{vector_length});
 gpufort::acc_coords _coords(gang_id,worker_id,vector_lane_id);
 """
+
+def render_hip_kernel_prolog(vector_length="warpSize"):
+    return _hip_kernel_prolog.format(vector_length)
  
 def _unique_label(label):
     """Returns a unique label for a loop variable that describes
@@ -355,7 +363,8 @@ class Loop:
             result += normalized_index
         return result
     
-    def tile(self,tile_size,tile_loop_index_var=None):
+    def tile(self,tile_size,
+                  tile_loop_index_var=None):
         """
         :param tile_loop_index_var: Index to use for the loop over the tiles,
                                 chosen automatically if None is passed.
@@ -412,9 +421,9 @@ class Loop:
         )
         element_loop_body_epilog = "}\n"
         indent += single_level_indent
-        element_loop_body_prolog += indent
         # recover original index
-        element_loop_body_prolog += "{} = {};\n".format( 
+        element_loop_body_prolog += "{}{} = {};\n".format( 
+          indent,
           self.index,
           self._render_index_recovery(
             self.first,self.step,normalized_index_var
@@ -538,7 +547,10 @@ if ( {loop_entry_condition} ) {{
                     index_var = self.index
                 else:
                     index_var = _unique_label("idx")
-                first = "{}*{}".format(worker_id_var,worker_tile_size_var)
+                first = "_coords.vector_lane + {}*{}".format(
+                  worker_id_var,
+                  worker_tile_size_var
+                )
                 excl_ubound_var = _unique_label("excl_ubound")
                 loop_open += textwrap.indent(
                    _render_const_int_decl( 
@@ -607,7 +619,7 @@ if ( {loop_entry_condition} ) {{
                   element_loop.body_epilog.replace("$idx$",worker_id_var),
                   indent
                 ) + loop_close
-                indent += single_level_indent
+                indent += element_loop.body_extra_indent
             loop_close += hip_epilog
         else: # unpartitioned loop
             # prepend the original prolog
@@ -701,7 +713,7 @@ class Loopnest:
             if loop.step != None:
                 body_prolog += "{} = {};\n".format(
                   loop.index,
-                  "gpufort::outermost_index_w_len({}/*inout*/,{}/*inout*/,{},{},{})".format(
+                  "gpufort::outermost_index({}/*inout*/,{}/*inout*/,{},{},{})".format(
                     remainder_var,
                     denominator_var,
                     loop.first,
@@ -712,7 +724,7 @@ class Loopnest:
             else:
                 body_prolog += "{} = {};\n".format(
                   loop.index,
-                  "gpufort::outermost_index_w_len({}/*inout*/,{}/*inout*/,{},{})".format(
+                  "gpufort::outermost_index({}/*inout*/,{}/*inout*/,{},{})".format(
                     remainder_var,
                     denominator_var,
                     loop.first,
@@ -749,6 +761,11 @@ class Loopnest:
     def tile(self,tile_sizes,
              collapse_tile_loops=True,
              collapse_element_loops=True):
+        """Tile the loops in the loopnest with respect to the `tile_sizes` argument.
+      
+        :param bool collapse_tile_loops:
+        :param bool collapse_elements_loops:
+        """
         if isinstance(tile_sizes,str):
             tile_sizes = [tile_sizes]
         assert len(tile_sizes) == len(self._loops)
@@ -758,7 +775,8 @@ class Loopnest:
             tile_loop, element_loop = loop.tile(tile_sizes[i])
             tile_loops.append(tile_loop)
             element_loops.append(element_loop)
-        # Only first tile loop and element loop is partitioned
+        # Only first tile loop and element loop inherit 
+        # partitioning attributes
         for loop in tile_loops[1:]+element_loops[1:]:
             loop.gang_partitioned = False
             loop.worker_partitioned = False

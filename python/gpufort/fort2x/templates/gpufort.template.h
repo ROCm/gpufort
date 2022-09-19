@@ -55,7 +55,7 @@ i{{rank}}
 #include <algorithm>
 #include <vector>
 
-#include "gpufort_triple.h"
+#include "gpufort_loop.h"
 
 #define HIP_CHECK(condition)         \
   {                                  \
@@ -127,85 +127,6 @@ namespace {
       out << prefix << label << ":" << "l2="  << std::sqrt(l2) << "\n";
     }
   }{{"\n" if not loop.last}}{% endfor %}
-  
-  /**
-   * Checks if `idx` is less or equal to the last index of the loop iteration
-   * range.
-   *
-   * \note Takes only the sign of `step` into account, not its value.
-   *
-   * \param[in] idx loop index
-   * \param[in] last last index of the loop iteration range
-   * \param[in] step step size of the loop iteration range
-   */
-  __host__ __device__ __forceinline__ bool loop_cond(int idx,int last,int step=1) {
-    return (step>0) ? ( idx <= last ) : ( idx >= last ); 
-  }
-  
-  /**
-   * Number of iterations of a loop that runs from 'first' to 'last' (both inclusive)
-   * with step size 'step'. Note that 'step' might be negative and 'first' > 'last'.
-   * If 'step' lets the loop run into a different direction than 'first' to 'last', this function 
-   * returns 0.
-   *
-   * \param[in] first first index of the loop iteration range
-   * \param[in] last last index of the loop iteration range
-   * \param[in] step step size of the loop iteration range
-   */
-  __host__ __device__ __forceinline__ int loop_len(int first,int last,int step=1) {
-    const int len_minus_1 = (last-first) / step;
-    return ( len_minus_1 >= 0 ) ? (1+len_minus_1) : 0; 
-  }
-  
-  /**
-   * Variant of outermost_index that takes the length of the loop
-   * as additional argument.
-   *
-   * \param[in] first first index of the outermost loop iteration range
-   * \param[in] len the loop length.
-   * \param[in] step step size of the outermost loop iteration range
-   */
-  __host__ __device__ __forceinline__ int outermost_index_w_len(
-    int& collapsed_idx,
-    int& collapsed_len,
-    const int first, const int len, const int step = 1
-  ) {
-    collapsed_len /= len;
-    const int idx = collapsed_idx / collapsed_len; // rounds down
-    collapsed_idx -= idx*collapsed_len;
-    return (first + step*idx);
-  }
- 
-  
-  /**
-   * Given the index for iterating a collapsed loop nest
-   * and the number of iterations of that collapsed loop nest,
-   * this function returns the collapsed_idx of the outermost loop
-   * of the original (uncollapsed) loop nest.
-   *
-   * \return collapsed_idx for iterating the original outermost loop.
-   *
-   * \note Side effects: Argument `collapsed_idx`
-   *       is decremented according to the number of iterations
-   *       of the outermost loop. It can then be used to retrieve
-   *       the collapsed_idx of the next inner loop, and so on.
-   *       Argument `collapsed_len` is divided by the number of iterations of the outermost loop.
-   *       It can then also be passed directly to the next call of `outermost_index`.
-   * \param[inout] collapsed_idx index for iterating collapsed loop nest.
-   * \param[inout] collapsed_len Denominator for retrieving outermost index. Must be chosen
-   *                           equal to the total number of iterations of the collapsed loop nest 
-   *                           before the first call of `outermost_index`.
-   * \param[in] first first index of the outermost loop iteration range
-   * \param[in] last last index of the outermost loop iteration range
-   * \param[in] step step size of the outermost loop iteration range
-   */
-  __host__ __device__ __forceinline__ int outermost_index(
-    int& collapsed_idx,
-    int& collapsed_len,
-    const int first, const int last, const int step=1
-  ) {
-    return outermost_index_w_len(collapsed_idx,collapsed_len,first,loop_len(first,last,step),step);
-  }
 
   // type conversions (complex make routines already defined via "hip/hip_complex.h")
 {% for float_type in ["float", "double"] %}  // make {{float_type}}

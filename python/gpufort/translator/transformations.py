@@ -298,7 +298,7 @@ def transform(ttcomputeconstruct):
                 device_specs = ttnode.get_device_specs()
                 device_spec = next((d for d in device_specs if d.applies(device_type)),None)
                 assert device_spec != None
-                cc_num_gangs   = ttnode.num_gangs_teams_blocks() # list
+                cc_num_gangs   = ttnode.num_gangs() # list
                 cc_num_workers = ttnode.num_workers() # no list
                 if cc_num_gangs[0] != tree.grammar.CLAUSE_NOT_FOUND:
                     max_num_gangs = "*".join(["("+str(g)+")" for g in cc_num_gangs]) 

@@ -46,7 +46,7 @@ class TTContainer(TTNode):
         self._location = loc
         self.parent = None
         self.body   = []
-        self.indent = opts.indent 
+        self.indent = opts.single_level_indent
         self._assign_fields(tokens)
    
     def __len__(self):
@@ -61,9 +61,22 @@ class TTContainer(TTNode):
     def child_nodes(self):
         return self.body
 
-    def c_str(self):
+    def header_c_str(self):
+        return ""
+    
+    def footer_c_str(self):
+        return ""
+
+    def body_c_str(self):
         result = [make_c_str(child).rstrip() for child in self.body]
         return textwrap.indent("\n".join(result),self.indent)
+
+    def c_str(self):
+        body_content = self.c_str(self)
+        return "{}{}\n{}".format(\
+            self.header_c_str(),
+            body_content,
+            self.footer_c_str())
 
 class TTRoot(TTContainer):
     pass

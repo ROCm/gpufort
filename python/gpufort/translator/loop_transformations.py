@@ -6,7 +6,7 @@ single_level_indent = " "*2
 
 _counters = {}
 
-_unique_label_template = "_{label}{num}"
+unique_label_template = "_{label}{num}"
 
 def reset():
   """Resets the counters for labelling the helper variables.
@@ -40,7 +40,7 @@ def remove_unnecessary_helper_variables(code_to_modify,other_code_to_read=[]):
         replacements = {}
         for label,num_labels in _counters.items():
             for num in range(0,num_labels):
-                varname = _unique_label_template.format(
+                varname = unique_label_template.format(
                   label=label,
                   num=num
                 )
@@ -86,7 +86,7 @@ gpufort::acc_coords _coords(gang_id,worker_id,vector_lane_id);
 def render_hip_kernel_prolog(vector_length="warpSize"):
     return _hip_kernel_prolog.format(vector_length)
  
-def _unique_label(label):
+def unique_label(label):
     """Returns a unique label for a loop variable that describes
     a loop entity. The result is prefixed with "_" to
     prevent collisions with Fortran variables.
@@ -96,7 +96,7 @@ def _unique_label(label):
     num = _counters[label]
     _counters[label] += 1
     return "_"+label+str(num)
-    return _unique_label_template.format(
+    return unique_label_template.format(
       label=label,
       num=num
     )
@@ -372,7 +372,7 @@ class Loop:
         """
         # tile loop
         indent = ""
-        orig_len_var = _unique_label("len")
+        orig_len_var = unique_label("len")
         tile_loop_prolog = _render_const_int_decl( 
             orig_len_var,
             self.length()
@@ -381,13 +381,13 @@ class Loop:
           loop_len=orig_len_var,
           tile_size=tile_size
         )
-        num_tiles_var = _unique_label("num_tiles")
+        num_tiles_var = unique_label("num_tiles")
         tile_loop_prolog += _render_const_int_decl( 
             num_tiles_var,
             num_tiles
         )
         if tile_loop_index_var == None:
-            tile_loop_index_var = _unique_label("tile")
+            tile_loop_index_var = unique_label("tile")
             tile_loop_prolog += _render_int_decl(tile_loop_index_var)
         tile_loop = Loop(
             index = tile_loop_index_var,
@@ -403,11 +403,11 @@ class Loop:
             vector_length = self.vector_length,
             prolog=tile_loop_prolog)
         # element_loop
-        element_loop_index_var = _unique_label("elem")
+        element_loop_index_var = unique_label("elem")
         # element loop prolog
         element_loop_prolog = _render_int_decl(element_loop_index_var)
         # element loop body prolog
-        normalized_index_var = _unique_label("idx")
+        normalized_index_var = unique_label("idx")
         element_loop_body_prolog = _render_const_int_decl( 
           normalized_index_var,
           "{} + ({})*{}".format(
@@ -511,7 +511,7 @@ if ( {loop_entry_condition} ) {{
           or self.vector_partitioned
         )
         if partitioned: 
-            local_res_var = _unique_label("local_res")
+            local_res_var = unique_label("local_res")
             hip_prolog, hip_epilog, resource_filter =\
               self._render_hip_prolog_and_epilog(local_res_var) 
             loop_open += hip_prolog
@@ -520,10 +520,10 @@ if ( {loop_entry_condition} ) {{
             if self.prolog != None:
                 loop_open += textwrap.indent(self.prolog,indent)
             #
-            orig_len_var = _unique_label("len")
-            worker_tile_size_var = _unique_label("worker_tile_size")
+            orig_len_var = unique_label("len")
+            worker_tile_size_var = unique_label("worker_tile_size")
             num_worker_tiles = "{}.total_num_workers()".format(local_res_var)
-            worker_id_var = _unique_label("worker_id")
+            worker_id_var = unique_label("worker_id")
             #
             loop_open += textwrap.indent(
               _render_const_int_decl(
@@ -547,12 +547,12 @@ if ( {loop_entry_condition} ) {{
                 if self._is_normalized_loop():
                     index_var = self.index
                 else:
-                    index_var = _unique_label("idx")
+                    index_var = unique_label("idx")
                 first = "_coords.vector_lane + {}*{}".format(
                   worker_id_var,
                   worker_tile_size_var
                 )
-                excl_ubound_var = _unique_label("excl_ubound")
+                excl_ubound_var = unique_label("excl_ubound")
                 loop_open += textwrap.indent(
                    _render_const_int_decl( 
                     excl_ubound_var,
@@ -686,22 +686,22 @@ class Loopnest:
         for i,loop in enumerate(self._loops):
             if loop.prolog != None:
                 prolog += loop.prolog
-            loop_lengths_vars.append(_unique_label("len"))
+            loop_lengths_vars.append(unique_label("len"))
             prolog += _render_const_int_decl(
               loop_lengths_vars[-1],
               loop.length()
             )
-        total_len_var = _unique_label("total_len")
+        total_len_var = unique_label("total_len")
         prolog += _render_const_int_decl(
           total_len_var,
           "*".join(loop_lengths_vars)
         )
-        collapsed_index_var = _unique_label("idx")
+        collapsed_index_var = unique_label("idx")
         prolog += "int {};\n".format(collapsed_index_var)
         # Preamble within loop body
         body_prolog = ""
-        remainder_var = _unique_label("rem");
-        denominator_var= _unique_label("denom")
+        remainder_var = unique_label("rem");
+        denominator_var= unique_label("denom")
         # template, idx remains as placeholder
         # we use $idx$ and simple str.replace as the
         # { and } of C/C++ scopes could cause issues

@@ -508,11 +508,11 @@ class AccDeviceSpec(directives.DeviceSpec):
         else:
             return self.device_type == device_type.lower()
 
-    def num_gangs_teams_blocks(self):
+    def num_gangs(self):
         """:note: gang and num_gangs(<arg>) might be specified both on acc parallel/kernels loop construct.
         """
         clause = next((c for c in self.clauses if c.kind in ["gang","num_gangs"]),None)
-        return grammar.CLAUSE_NOT_FOUND if clause is None else c.value
+        return [grammar.CLAUSE_NOT_FOUND if clause is None else c.value]
 
     def num_workers(self):
         """:note: worker and num_workers(<arg>) might be specified both on acc parallel/kernels loop construct.
@@ -520,11 +520,11 @@ class AccDeviceSpec(directives.DeviceSpec):
         clause = next((c for c in self.clauses if c.kind in ["worker","num_workers"]),None)
         return grammar.CLAUSE_NOT_FOUND if clause is None else c.value
 
-    def simdlen_vector_length(self):
+    def vector_length(self):
         """:note: vector and vector_length(<arg>) might be specified both on acc parallel/kernels loop construct.
         """
         clause = next((c for c in self.clauses if c.kind in ["vector","vector_length"]),None)
-        return grammar.CLAUSE_NOT_FOUND if clause is None else c.value
+        return [grammar.CLAUSE_NOT_FOUND if clause is None else c.value]
 
     # specific to loop
     def parallelism(self):
@@ -555,12 +555,7 @@ class AccDeviceSpec(directives.DeviceSpec):
             return directives.ParallelismLevel.AUTO # automatically determine parallelism level
 
     def num_threads_in_block(self):
-        workers = self.num_workers()
-        vector_len = self.len_simd_vector()
-        if workers[0] < 1 or vector_len[0] < 1:
-            return [grammar.CLAUSE_NOT_FOUND]
-        else:
-            return [workers[0] * vector_len[0]]
+        return [grammar.CLAUSE_NOT_FOUND]
 
     def order_of_iterates(self):
         """ Always assume data independent if no seq clause is used """
@@ -581,13 +576,16 @@ class AccDeviceSpec(directives.DeviceSpec):
     def num_collapse(self):
         clause = next((c for c in self.clauses if c.kind == "collapse"),None)
         if clause is None:
-            return 1
+            return grammar.CLAUSE_NOT_FOUND
         else:
             return clause.value()
 
     def tile_sizes(self):
-        assert False, "Not implemented!"
-        return [1]
+        clause = next((c for c in self.clauses if c.kind == "tile"),None)
+        if clause is None:
+            return [grammar.CLAUSE_NOT_FOUND]
+        else:
+            return clause.values()
     
 def __derive_device_specs(acc_clauses,device_specific_clause_kinds):
     """:note:Inserts the '* identifier as last entry into
@@ -676,6 +674,7 @@ class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
         return self.handle_mapping_clause(["private"], converter)
 
     def omp_f_str(self, loop_type="do", parallel_region="", prefix="!$omp"):
+        # TODO broken, as directive is split and some information (e.g. num_Collapse) must be obtained from device spec
         result = prefix
 
         if self.loop_handles_mutual_clauses:
@@ -688,7 +687,6 @@ class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
         result += " " + loop_type
         #worker_clause = next((c for c in self.clauses,c.kind in ["num_workers","worker"]),None)
         vector_clause = next((c for c in self.clauses,c.kind in ["vector_length","vector"]),None)
-        # TODO use argument
         if vector_clause != None:
              result += " simd"
              if clause.value > 0:

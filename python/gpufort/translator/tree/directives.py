@@ -95,7 +95,7 @@ class IDeviceSpec():
         """ only CUF """
         return None
 
-    def num_gangs_teams_blocks(self):
+    def num_gangs(self):
         return [grammar.CLAUSE_NOT_FOUND]
 
     def num_threads_in_block(self):
@@ -105,7 +105,7 @@ class IDeviceSpec():
         """ only ACC """
         return grammar.CLAUSE_NOT_FOUND
 
-    def simdlen_vector_length(self):
+    def vector_length(self):
         return grammar.CLAUSE_NOT_FOUND
 
     def parallelism(self):

@@ -70,7 +70,7 @@ class CufDeviceSpec(directives.IDeviceSpec):
     def num_collapse(self):
         return self._num_outer_loops_to_map
 
-    def num_gangs_teams_blocks(self, converter=base.make_f_str):
+    def num_gangs(self, converter=base.make_f_str):
         if self._grid == "*":
             return [grammar.CLAUSE_NOT_FOUND] * self._num_outer_loops_to_map
         elif isinstance(self._block, fortran.TTValue):
@@ -169,7 +169,7 @@ class TTCufKernelDo(base.TTNode, directives.IComputeConstruct,
                   depend={},
                   loop_type="do"):
         result = "!$omp target teams distribute parallel " + loop_type
-        grid = self._device_spec.num_gangs_teams_blocks()
+        grid = self._device_spec.num_gangs()
         block = self._device_spec.num_threads_in_block()
         num_teams = ""
         thread_limit = ""

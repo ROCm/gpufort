@@ -1017,10 +1017,6 @@ class TTArgumentList(base.TTNode):
 class TTIfElseBlock(base.TTContainer):
     def _assign_fields(self, tokens):
         self.indent = "" # container of if/elseif/else branches, so no indent
-    def header_c_str(self):
-        return ""
-    def footer_c_str(self):
-        return "" 
 
 class TTIfElseIf(base.TTContainer):
 
@@ -1031,33 +1027,34 @@ class TTIfElseIf(base.TTContainer):
         return [self._condition, self.body]
     
     def header_c_str(self):
-        return ""
-    def footer_c_str(self):
-        return "" 
-
-    def c_str(self):
-        body_content = base.TTContainer.c_str(self)
         prefix = self._else+" " if self._else.lower() == "else" else ""
-        return "{}if ({}) {{\n{}\n}}".format(\
-            prefix,base.make_c_str(self._condition),body_content)
+        return "{}if ({}) {{\n".format(prefix,base.make_c_str(self._condition))
+    def footer_c_str(self):
+        return "}\n" 
 
 
 class TTElse(base.TTContainer):
+    
+    def header_c_str(self):
+        return "else {\n"
+    def footer_c_str(self):
+        return "}\n" 
 
     def c_str(self):
         body_content = base.TTContainer.c_str(self)
-        return "else {{\n{}\n}}".format(\
-            body_content)
+        return "{}{}\n{}".format(
+            self.header_c_str(),
+            body_content,
+            self.footer_c_str())
 
 class TTSelectCase(base.TTContainer):
     def _assign_fields(self, tokens):
         self.selector = tokens[0]
         self.indent = "" # container of if/elseif/else branches, so no indent
-    
-    def c_str(self):
-        body_content = base.TTContainer.c_str(self)
-        return "switch ({}) {{\n{}\n}}".format(\
-            base.make_c_str(self.selector),body_content)
+    def header_c_str(self):
+        return "switch ({}) {{\n".format(self.selector)
+    def footer_c_str(self):
+        return "}\n" 
 
 class TTCase(base.TTContainer):
 
@@ -1066,14 +1063,14 @@ class TTCase(base.TTContainer):
 
     def child_nodes(self):
         return [self.cases, self.body]
-
-    def c_str(self):
-        body_content = base.TTContainer.c_str(self)
+    
+    def header_c_str(self):
         result = ""
         for case in self.cases:
             result += "case ("+base.make_c_str(case)+"):\n"
-        result += body_content + "\n  break;"
         return result
+    def footer_c_str(self):
+        return "  break;\n" 
 
 class TTCaseDefault(base.TTContainer):
 
@@ -1082,10 +1079,11 @@ class TTCaseDefault(base.TTContainer):
 
     def child_nodes(self):
         return [self.body]
-
-    def c_str(self):
-        body_content = base.TTContainer.c_str(self)
-        return "default:\n{}\n  break;".format(body_content)
+    
+    def header_c_str(self):
+        return "default:\n"
+    def footer_c_str(self):
+        return "  break;\n" 
 
 class TTDoWhile(base.TTContainer):
 
@@ -1094,13 +1092,13 @@ class TTDoWhile(base.TTContainer):
 
     def child_nodes(self):
         return [self._condition, self.body]
-
-    def c_str(self):
-        body_content = base.TTContainer.c_str(self)
-        condition_content = base.make_c_str(self._condition)
-        c_str = "while ({0}) {{\n{1}\n}}".format(\
-          condition_content,body_content)
-        return c_str
+    
+    def header_c_str(self):
+        return "while ({0}) {{\n".format(
+          base.make_c_str(self._condition)
+        )
+    def footer_c_str(self):
+        return "  break;\n" 
 
 
 ## Link actions

@@ -727,8 +727,8 @@ class STComputeConstruct(STNode):
             for i,device_spec in enumerate(self.parse_result.get_device_specs()):
                 # emit one launcher per specification
                 grid_or_ps_f_str  = self.parse_result.grid_expr_f_str()
-                if grid_or_ps_f_str == None and self.parse_result.num_gangs_teams_blocks_specified():
-                    grid = self.parse_result.num_gangs_teams_blocks()
+                if grid_or_ps_f_str == None and self.parse_result.num_gangs():
+                    grid = self.parse_result.num_gangs()
                     grid_or_ps_f_str = "dim3({})".format(",".join(grid)) # TODO remove
                 elif grid_or_ps_f_str == None:
                     launcher_name_suffix = "_hip_ps"

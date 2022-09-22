@@ -70,11 +70,11 @@ class TestLoopTransformations(unittest.TestCase):
     def test_00_do_nothing(self):
         pass
     def test_01_resource_filter(self):
-        filter_gang = loop_transformations.ResourceFilter(
+        filter_gang = loop_transformations.AccResourceFilter(
           num_gangs=["NUM_GANGS"])
-        filter_worker = loop_transformations.ResourceFilter(
+        filter_worker = loop_transformations.AccResourceFilter(
           num_workers=["NUM_WORKERS"])
-        filter_vector = loop_transformations.ResourceFilter(
+        filter_vector = loop_transformations.AccResourceFilter(
           vector_length=["VECTOR_LENGTH"])
         filter_gang_vector = filter_gang + filter_vector
         filter_gang_worker = filter_gang + filter_worker
@@ -276,8 +276,13 @@ class TestLoopnestTransformations(unittest.TestCase):
             result = prolog
             #result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
             result += epilog
-            print(result)
-                 
+            #print(result)
+    def test_08_map_loop_to_grid_dim_x(self):
+        loop = loop_transformations.Loop("i","0",length="N",grid_dim="x")
+        prolog,epilog,_,indent = loop.map_to_hip_cpp()
+        result = prolog
+        result += epilog
+        print(result)
 
 if __name__ == '__main__':
     unittest.main() 

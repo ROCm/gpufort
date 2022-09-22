@@ -77,14 +77,15 @@ hip_includes = \
 #include "gpufort_loops.h"
 """
 
-_hip_kernel_prolog =\
+_hip_kernel_prolog_acc =\
 """"\
-gpufort::acc_grid _res(gridDim.x,div_round_up(blockDim.x/warpSize),{vector_length});
-gpufort::acc_coords _coords(gang_id,worker_id,vector_lane_id);
+gpufort::acc_grid _res(gridDim.x,gpufort::div_round_up(blockDim.vx,warpSize),{vector_length});
+gpufort::acc_coords _coords(blockIdx.x,threadIdx.x/warpSize,threadIdx.x%warpSize);
 """
 
 def render_hip_kernel_prolog(vector_length="warpSize"):
-    return _hip_kernel_prolog.format(vector_length)
+    return _hip_kernel_prolog.format(
+        vector_length = vector_length)
  
 def unique_label(label):
     """Returns a unique label for a loop variable that describes
@@ -133,7 +134,7 @@ for ({0} = {1};
 """
   return template.format(index,incl_lbound,excl_ubound,step)
 
-class ResourceFilter:
+class AccResourceFilter:
     def __init__(self,num_gangs=[],
                       num_workers=[],
                       vector_length=[],
@@ -152,7 +153,7 @@ class ResourceFilter:
             other.vector_length,
             other.resource_triple_name)
     def __add__(self,other):
-        return ResourceFilter(
+        return AccResourceFilter(
           self.num_gangs + other.num_gangs,
           self.num_workers + other.num_workers,
           self.vector_length + other.vector_length
@@ -162,7 +163,7 @@ class ResourceFilter:
         self.set_from(new)
         return self
     def __sub__(self,other):
-        return ResourceFilter(
+        return AccResourceFilter(
           [e for e in self.num_gangs 
              if e not in other.num_gangs],
           [e for e in self.num_workers 
@@ -254,6 +255,17 @@ class ResourceFilter:
     __repr__ = __str__ 
 
 class Loop:
+
+    def assert_is_well_defined(self):
+        assert self.grid_dim == None or self.grid_dim in ["x","y","z"],\
+               "self.grid_dim must be chosen 'x','y', or 'z' or None"
+        assert self.grid_dim == None or ( 
+            not self.vector_partitioned
+            and not self.worker_partitioned
+            and not self.gang_partitioned) 
+        assert (self._length != None 
+               or self._last != None
+               or self._excl_ubound != None), "one of self._length, self._last, self._excl_ubound must not be None"
     
     def __init__(self,
           index,
@@ -268,6 +280,7 @@ class Loop:
           num_gangs = None,
           num_workers = None,
           vector_length = None,
+          grid_dim = None, # one of ["x","y","z",None]
           prolog = None,
           body_prolog = None,
           body_epilog = None,
@@ -281,6 +294,7 @@ class Loop:
         self.gang_partitioned = gang_partitioned
         self.worker_partitioned = worker_partitioned
         self.vector_partitioned = vector_partitioned
+        self.grid_dim = grid_dim
         self.num_workers = num_workers
         self.num_gangs = num_gangs
         self.vector_length = vector_length
@@ -288,11 +302,10 @@ class Loop:
         self.body_prolog = body_prolog
         self.body_epilog = body_epilog
         self.body_extra_indent = body_extra_indent
+        self.assert_is_well_defined()
 
     def last(self):
-        assert (self._length != None 
-               or self._last != None
-               or self._excl_ubound != None), "one of self._length, self._last, self._excl_ubound must not be None"
+        self.assert_is_well_defined()
         if self._last != None:
             return self._last
         elif self._excl_ubound != None:
@@ -301,9 +314,7 @@ class Loop:
             return "({} + {} - 1)".format(self.first,self._length)
         
     def excl_ubound(self):
-        assert (self._length != None 
-               or self._last != None
-               or self._excl_ubound != None), "one of self._length, self._last, self._excl_ubound must not be None"
+        self.assert_is_well_defined()
         if self._excl_ubound != None:
             return self._excl_ubound
         elif self._last != None:
@@ -319,9 +330,7 @@ class Loop:
                 return "({} + {}{})".format(self.first,step_str,self._length)
 
     def length(self):
-        assert (self._length != None 
-               or self._last != None
-               or self._excl_ubound != None), "one of self._length, self._last, self._excl_ubound must not be None"
+        self.assert_is_well_defined()
         if self._length != None:
             return self._length
         else:
@@ -448,7 +457,7 @@ class Loop:
           body_extra_indent = single_level_indent)
         return (tile_loop,element_loop)
 
-    def _render_hip_prolog_and_epilog(self,local_res_var):
+    def _render_hip_prolog_and_epilog_acc(self,local_res_var):
         hip_loop_prolog =\
 """
 gpufort::acc_grid {local_res}({num_gangs},{num_workers},{vector_length});
@@ -458,7 +467,7 @@ if ( {loop_entry_condition} ) {{
         hip_loop_epilog = """\
 }} // {comment}
 """
-        resource_filter = ResourceFilter()
+        resource_filter = AccResourceFilter()
         if self.vector_partitioned:
             if self.vector_length == None:
                 vector_length = "_res.vector_lanes"  
@@ -498,32 +507,45 @@ if ( {loop_entry_condition} ) {{
         )
         return (loop_open,loop_close,resource_filter)
 
-    def map_to_hip_cpp(self,remove_unnecessary=True):
+    def map_to_hip_cpp(self,
+          remove_unnecessary=True):
         """:return: HIP C++ device code.
+        :note: Maps to blocks and threads if self.grid_dim is chosen
+               as 'x','y','z'.
         """
+        self.assert_is_well_defined()
         indent = "" 
         loop_open = ""
         loop_close = ""
-        resource_filter = ResourceFilter()
-        partitioned = (
-          self.gang_partitioned
-          or self.worker_partitioned
+        resource_filter = AccResourceFilter()
+        vector_partitioned = (
+          self.grid_dim in ["x","y","z"]
           or self.vector_partitioned
         )
+        partitioned = (
+          vector_partitioned
+          or self.worker_partitioned
+          or self.gang_partitioned
+        )
         if partitioned: 
-            local_res_var = unique_label("local_res")
-            hip_prolog, hip_epilog, resource_filter =\
-              self._render_hip_prolog_and_epilog(local_res_var) 
-            loop_open += hip_prolog
-            indent += single_level_indent
+            if self.grid_dim == None: # only for acc
+                local_res_var = unique_label("local_res")
+                hip_prolog, hip_epilog, resource_filter =\
+                  self._render_hip_prolog_and_epilog_acc(local_res_var) 
+                loop_open += hip_prolog
+                indent += single_level_indent
             # prepend the original prolog
             if self.prolog != None:
                 loop_open += textwrap.indent(self.prolog,indent)
             #
             orig_len_var = unique_label("len")
             worker_tile_size_var = unique_label("worker_tile_size")
-            num_worker_tiles = "{}.total_num_workers()".format(local_res_var)
-            worker_id_var = unique_label("worker_id")
+            if self.grid_dim == None:
+                num_worker_tiles = "{}.total_num_workers()".format(local_res_var)
+                worker_id_var = unique_label("worker_id")
+            else:
+                num_worker_tiles = "gridDim.{0}".format(self.grid_dim)
+                worker_id_var = "blockIdx.{0}".format(self.grid_dim)
             #
             loop_open += textwrap.indent(
               _render_const_int_decl(
@@ -534,27 +556,39 @@ if ( {loop_entry_condition} ) {{
               _render_tile_size_var_decl(
                 worker_tile_size_var,
                 orig_len_var,
-                num_worker_tiles)
-              +
-              _render_const_int_decl(
-                worker_id_var,
-                "_coords.worker_id({})".format(local_res_var)
+                num_worker_tiles
               ),
               indent
             )
-            if self.vector_partitioned: # vector, worker-vector, gang-worker-vector
+            if self.grid_dim == None:
+                loop_open += textwrap.indent(
+                  _render_const_int_decl(
+                    worker_id_var,
+                    "_coords.worker_id({})".format(local_res_var)
+                  ),
+                  indent
+                )
+            if vector_partitioned: # vector, worker-vector, gang-worker-vector
                 # loop over vector lanes
                 if self._is_normalized_loop():
                     index_var = self.index
                 else:
                     index_var = unique_label("idx")
-                first = "_coords.vector_lane + {}*{}".format(
-                  worker_id_var,
-                  worker_tile_size_var
-                )
+                if self.grid_dim == None: # acc
+                    first = "_coords.vector_lane + {}*{}".format(
+                      worker_id_var,
+                      worker_tile_size_var
+                    )
+                    vector_tile_size = local_res_var+".vector_lanes"
+                else:
+                    first = "threadIdx.{0} + blockIdx.{0}*{1}".format(
+                      self.grid_dim,
+                      worker_tile_size_var
+                    )
+                    vector_tile_size = "blockDim.{0}".format(self.grid_dim)
                 excl_ubound_var = unique_label("excl_ubound")
                 loop_open += textwrap.indent(
-                   _render_const_int_decl( 
+                  _render_const_int_decl( 
                     excl_ubound_var,
                     "min({},({}+1)*{})".format(
                       orig_len_var,
@@ -567,7 +601,7 @@ if ( {loop_entry_condition} ) {{
                     index_var,
                     first,
                     excl_ubound_var,
-                    local_res_var+".vector_lanes"
+                    vector_tile_size
                   ),
                   indent
                 )
@@ -621,7 +655,8 @@ if ( {loop_entry_condition} ) {{
                   indent
                 ) + loop_close
                 indent += element_loop.body_extra_indent
-            loop_close += hip_epilog
+            if self.grid_dim == None: 
+                loop_close += hip_epilog
         else: # unpartitioned loop
             # prepend the original prolog
             if self.prolog != None:
@@ -794,7 +829,20 @@ class Loopnest:
         loopnest_open  = ""
         loopnest_close  = ""
         indent = ""
-        resource_filter = ResourceFilter()
+        resource_filter = AccResourceFilter()
+        map_to_hip_grid = False
+        map_to_acc_grid = False
+        for loop in self._loops:
+            loop.assert_is_well_defined()
+            if loop.grid_dim != None:
+                map_to_hip_grid = True
+            if ( loop.vector_partitioned
+                 or loop.worker_partitioned
+                 or loop.gang_partitioned ):
+                map_to_acc_grid = True
+        assert not map_to_hip_grid or not map_to_acc_grid,\
+            "cannot mix OpenACC gang/worker/vector partitioning with "+\
+            "HIP grid partitioning" 
         for loop in self._loops:
             loop_open,loop_close,loop_resource_filter,max_indent =\
                 loop.map_to_hip_cpp(

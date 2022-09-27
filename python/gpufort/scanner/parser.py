@@ -289,7 +289,7 @@ def _parse_file(linemaps, index, **kwargs):
         log_detection_("use statement")
         new = tree.STUseStatement(current_linemap, current_statement_no)
         new.ignore_in_s2s_translation = not translation_enabled
-        new.name = translator.tree.make_f_str(
+        new.name = translator.tree.make_fstr(
             current_tokens[1]) # just get the name, ignore specific includes
         append_if_not_recording_(new)
 
@@ -498,12 +498,12 @@ def _parse_file(linemaps, index, **kwargs):
                     translator.prepostprocess.preprocess_fortran_statement(current_statement_stripped)
             parse_result = translator.tree.grammar.assignment_begin.parseString(
                 current_statement_preprocessed)
-            lvalue = translator.tree.find_first(parse_result, translator.tree.TTLValue)
+            lvalue = translator.tree.find_first(parse_result, translator.tree.TTLvalue)
             # TODO
             
             if (in_acc_kernels_region_and_not_recording()
                and lhs_ivar["rank"] > 0 
-               and (lvalue.has_range_args() 
+               and (lvalue.has_slice_args() 
                    or not lvalue.has_args())):
                 new = tree.acc.STAccComputeConstruct(
                         current_acc_data_or_kernels_directive,

@@ -79,7 +79,7 @@ class TestLoopTransformations(unittest.TestCase):
         filter_gang_vector = filter_gang + filter_vector
         filter_gang_worker = filter_gang + filter_worker
         filter_gang_worker_vector = filter_gang_worker + filter_vector
-    def test_01_map_seq_loop_to_hip_cpp(self):
+    def test_02_map_seq_loop_to_hip_cpp(self):
         results = [
           ('for (i = 0; \n     i < N; i++) {\n', '}\n', None),
           ('for (i = 0; \n     i < (last + 1); i++) {\n', '}\n', None),
@@ -98,7 +98,7 @@ class TestLoopTransformations(unittest.TestCase):
             result = loop.map_to_hip_cpp() 
             self.assertEqual(self.clean(result[0]),self.clean(results[i][0]))
             #print(str(result)+",")
-    def test_02_tile_seq_loop_and_map_to_hip_cpp(self):
+    def test_03_tile_seq_loop_and_map_to_hip_cpp(self):
         results = [
         ]
         for loop in testdata_seq:
@@ -107,7 +107,7 @@ class TestLoopTransformations(unittest.TestCase):
             element_loop_result = element_loop.map_to_hip_cpp()[0] 
             #print(str(tile_loop_result[0]),end="")
             #print(str(element_loop_result[0])+",")
-    def test_03_map_vector_max_loop_to_hip_cpp(self):
+    def test_04_map_vector_max_loop_to_hip_cpp(self):
         results = [
         ]
         for loop in testdata_vector_max:
@@ -116,7 +116,7 @@ class TestLoopTransformations(unittest.TestCase):
             result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
             result += epilog
             #print(result)
-    def test_04_map_worker_max_loop_to_hip_cpp(self):
+    def test_05_map_worker_max_loop_to_hip_cpp(self):
         results = [
         ]
         for loop in testdata_worker_max:
@@ -125,7 +125,7 @@ class TestLoopTransformations(unittest.TestCase):
             result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
             result += epilog
             #print(result)
-    def test_05_map_gang_max_loop_to_hip_cpp(self):
+    def test_06_map_gang_max_loop_to_hip_cpp(self):
         results = [
         ]
         for loop in testdata_gang_max:
@@ -134,7 +134,7 @@ class TestLoopTransformations(unittest.TestCase):
             result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
             result += epilog
             #print(result)
-    def test_06_map_gang_max_worker_max_loop_to_hip_cpp(self):
+    def test_07_map_gang_max_worker_max_loop_to_hip_cpp(self):
         results = [
         ]
         for loop in testdata_gang_max_worker_max:
@@ -143,7 +143,7 @@ class TestLoopTransformations(unittest.TestCase):
             result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
             result += epilog
             #print(result)
-    def test_07_map_gang_max_worker_max_vector_max_loop_to_hip_cpp(self):
+    def test_00_map_gang_max_worker_max_vector_max_loop_to_hip_cpp(self):
         results = [
         ]
         for loop in testdata_gang_max_worker_max_vector_max:
@@ -203,9 +203,9 @@ class TestLoopnestTransformations(unittest.TestCase):
         loop_transformations.reset()
     def tearDown(self):
         elapsed = time.time() - self.started_at
-    def test_00_do_nothing(self):
+    def test_01_do_nothing(self):
         pass
-    def test_01_collapse_loopnest_seq(self):
+    def test_02_collapse_loopnest_seq(self):
         for i,loops in enumerate(testdata_loopnest_seq):
             loopnest = loop_transformations.Loopnest(loops)
             collapsed_loop = loopnest.collapse()
@@ -214,7 +214,7 @@ class TestLoopnestTransformations(unittest.TestCase):
             #result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
             result += epilog
             #print(result)
-    def test_02_collapse_loopnest_vector_max(self):
+    def test_03_collapse_loopnest_vector_max(self):
         for i,loops in enumerate(testdata_loopnest_vector_max):
             loopnest = loop_transformations.Loopnest(loops)
             collapsed_loop = loopnest.collapse()
@@ -223,7 +223,7 @@ class TestLoopnestTransformations(unittest.TestCase):
             #result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
             result += epilog
             #print(result)
-    def test_03_collapse_loopnest_worker_max(self):
+    def test_04_collapse_loopnest_worker_max(self):
         for i,loops in enumerate(testdata_loopnest_worker_max):
             loopnest = loop_transformations.Loopnest(loops)
             collapsed_loop = loopnest.collapse()
@@ -232,7 +232,7 @@ class TestLoopnestTransformations(unittest.TestCase):
             #result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
             result += epilog
             #print(result)
-    def test_04_collapse_loopnest_gang_max(self):
+    def test_05_collapse_loopnest_gang_max(self):
         for i,loops in enumerate(testdata_loopnest_gang_max):
             loopnest = loop_transformations.Loopnest(loops)
             collapsed_loop = loopnest.collapse()
@@ -241,7 +241,7 @@ class TestLoopnestTransformations(unittest.TestCase):
             #result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
             result += epilog
             #print(result)
-    def test_05_tile_loopnest_collapse_tile_collapse_element_gang_max(self):
+    def test_06_tile_loopnest_collapse_tile_collapse_element_gang_max(self):
         for i,loops in enumerate(testdata_loopnest_gang_max):
             tile_sizes = ["32","8","LEN"]
             loopnest = loop_transformations.Loopnest(loops).tile(tile_sizes)
@@ -250,7 +250,7 @@ class TestLoopnestTransformations(unittest.TestCase):
             #result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
             result += epilog
             #print(result)
-    def test_06_tile_loopnest_collapse_tile_collapse_element_worker_max(self):
+    def test_07_tile_loopnest_collapse_tile_collapse_element_worker_max(self):
         for i,loops in enumerate(testdata_loopnest_worker_max):
             tile_sizes = ["32","8","LEN"]
             loopnest = loop_transformations.Loopnest(loops).tile(tile_sizes)
@@ -259,7 +259,7 @@ class TestLoopnestTransformations(unittest.TestCase):
             #result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
             result += epilog
             #print(result)
-    def test_07_tile_loopnest_collapse_tile_collapse_element_vector_max(self):
+    def test_08_tile_loopnest_collapse_tile_collapse_element_vector_max(self):
         for i,loops in enumerate(testdata_loopnest_vector_max):
             tile_sizes = ["32","8","LEN"]
             loopnest = loop_transformations.Loopnest(loops).tile(tile_sizes,True,True)
@@ -268,7 +268,7 @@ class TestLoopnestTransformations(unittest.TestCase):
             #result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
             result += epilog
             #print(result)
-    def test_08_tile_loopnest_collapse_tile_collapse_element_gang_max_worker_max_vector_max(self):
+    def test_09_tile_loopnest_collapse_tile_collapse_element_gang_max_worker_max_vector_max(self):
         for i,loops in enumerate(testdata_loopnest_gang_max_worker_max_vector_max):
             tile_sizes = ["32","8","LEN"]
             loopnest = loop_transformations.Loopnest(loops).tile(tile_sizes,True,True)
@@ -277,12 +277,12 @@ class TestLoopnestTransformations(unittest.TestCase):
             #result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
             result += epilog
             #print(result)
-    def test_08_map_loop_to_grid_dim_x(self):
+    def test_10_map_loop_to_grid_dim_x(self):
         loop = loop_transformations.Loop("i","0",length="N",grid_dim="x")
         prolog,epilog,_,indent = loop.map_to_hip_cpp()
         result = prolog
         result += epilog
-        print(result)
+        #print(result)
 
 if __name__ == '__main__':
     unittest.main() 

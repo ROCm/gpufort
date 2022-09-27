@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 import copy
 import re
 import textwrap
@@ -188,6 +190,8 @@ class AccResourceFilter:
     def loop_entry_condition(self):
         """:return a filter condition for masking
         in statements only for the certain resources.
+        :note: If the entry in a list is None, no specific condition
+               is added. None serves a wildcard.
         """
         assert (not len(self.num_gangs) 
                 or len(self.num_gangs) == 1)
@@ -196,27 +200,26 @@ class AccResourceFilter:
         assert (not len(self.vector_length)
                 or len(self.vector_length) == 1)
         conditions = []
-        if len(self.num_gangs):
-            conditions.append(
-              "{}.gang < {}".format(
-                self.resource_triple_name,
-                self.num_gangs[0]
-              )
-            )
-        if len(self.num_workers):
-            conditions.append(
-              "{}.worker < {}".format(
-                self.resource_triple_name,
-                self.num_workers[0]
-              )
-            )
-        if len(self.vector_length):
-            conditions.append(
-              "{}.vector_lane < {}".format(
-                self.resource_triple_name,
-                self.vector_length[0]
-              )
-            )
+
+        def append_condition_if_not_none_(
+              resource_triple_member,
+              values):
+            nonlocal conditions
+            if len(values) and values[0] != None:
+                conditions.append("{}.{} < {}".format(
+                  self.resource_triple_name,
+                  resource_triple_member,
+                  values[0]
+                )
+        append_condition_if_not_none_(
+          "gang",self.num_gangs
+        )
+        append_condition_if_not_none_(
+          "worker",self.num_workers
+        )
+        append_condition_if_not_none_(
+          "vector_lane",self.vector_length
+        )
         return " && ".join(conditions)
     def statement_selection_condition(self):
         assert (not len(self.num_gangs) 
@@ -471,30 +474,32 @@ if ( {loop_entry_condition} ) {{
         if self.vector_partitioned:
             if self.vector_length == None:
                 vector_length = "_res.vector_lanes"  
+                resource_filter.vector_length.append(None)
             else:
                 vector_length = self.vector_length
-            resource_filter.vector_length.append(
-              local_res_var+".vector_lanes"
-            )
+                resource_filter.vector_length.append(
+                  local_res_var+".vector_lanes"
+                )
         else:
             vector_length = "1"
         if self.worker_partitioned:
             if self.num_workers == None:
                 num_workers = "_res.workers"  
+                resource_filter.num_workers.append(None)
             else:
                 num_workers = self.num_workers
-            resource_filter.num_workers.append(
-              local_res_var+".workers"
-            )
+                resource_filter.num_workers.append(
+                  local_res_var+".workers"
+                )
         else:
             num_workers = "1"
         num_gangs = "_res.gangs"  
+        resource_filter.num_gangs.append(None)
         if self.gang_partitioned:
             if self.num_gangs != None:
                 num_gangs = self.num_gangs
-            resource_filter.num_gangs.append(
-              local_res_var+".gangs"
-            )
+                resource_filter.num_gangs[0] = local_res_var+".gangs"
+            
         loop_open = hip_loop_prolog.format(
           local_res=local_res_var,
           num_gangs=num_gangs,
@@ -858,15 +863,6 @@ class Loopnest:
             ) + loopnest_close
             resource_filter += loop_resource_filter
             indent += max_indent
-        # TODO analyze and return required resources (gangs,workers,vector_lanes)
-        # but perform it outside as we deal with C++ expressions here.
-        # * Alternatively, move the derivation of launch parameters into C++ code?
-        #   * Problem size depends on other parameters that need to be passed
-        #     to the C++ layer anyway ...
-        # Think outside of the box:
-        # * Gang synchronization might require us to launch multiple kernels
-        #   and put wait events inbetween
-        # * What about reductions?
         if remove_unnecessary:
             loopnest_open = remove_unnecessary_helper_variables(
               loopnest_open,[loopnest_close]

@@ -33,7 +33,7 @@ def CufLoopNest2Hip(stcomputeconstruct,*args,**kwargs):
     return nodes.STComputeConstruct.transform(stcomputeconstruct,*args,**kwargs)
 
 # backends for standard nodes
-def hip_f_str(self,
+def hip_fstr(self,
               bytes_per_element,
               array_qualifiers,
               vars_are_c_ptrs=False):
@@ -50,10 +50,10 @@ def hip_f_str(self,
     for i, array in enumerate(self._vars):
         if vars_are_c_ptrs:
             size = array.size(bytes_per_element[i],
-                              base.make_f_str) # total size in bytes
+                              base.make_fstr) # total size in bytes
         else:
             size = ",".join(
-                array.counts_f_str()) # element counts per dimension
+                array.counts_fstr()) # element counts per dimension
         if array_qualifiers[i] == "device":
             line = "call hipCheck(hipMalloc({0}, {1}))".format(
                 array.var_name(), size)
@@ -63,7 +63,7 @@ def hip_f_str(self,
                 array.var_name(), size)
             result.append(line)
         else:
-            other_arrays.append(base.make_f_str(array))
+            other_arrays.append(base.make_fstr(array))
         if vars_are_c_ptrs and not array_qualifiers[i] in [
                 "pinned", "device"
         ]:
@@ -73,13 +73,13 @@ def hip_f_str(self,
         result.append(line)
     return "\n".join(result)
 
-def _render_allocation_f_str(name,bounds):
+def _render_allocation_fstr(name,bounds):
     args = []
     for alloc_range in bounds:
         args.append(":".join([el for el in alloc_range if el != None]))
     return name + "(" + ",".join(args) + ")"
 
-def _render_allocation_hipfort_f_str(api,name,bounds,stat):
+def _render_allocation_hipfort_fstr(api,name,bounds,stat):
     counts  = []
     lbounds = []
     for alloc_range in bounds:
@@ -123,11 +123,11 @@ def handle_allocate_cuf(stallocate, joined_statements, index):
         ivar  = indexer.scope.search_index_for_var(index,stallocate.parent.tag(),\
           name)
         if "pinned" in ivar["attributes"]:
-            hipfort_allocations.append(_render_allocation_hipfort_f_str("hipHostMalloc",name,bounds,stat))
+            hipfort_allocations.append(_render_allocation_hipfort_fstr("hipHostMalloc",name,bounds,stat))
         elif "device" in ivar["attributes"]:
-            hipfort_allocations.append(_render_allocation_hipfort_f_str("hipMalloc",name,bounds,stat))
+            hipfort_allocations.append(_render_allocation_hipfort_fstr("hipMalloc",name,bounds,stat))
         else:
-            unchanged_allocation_args.append(_render_allocation_f_str(name,bounds))
+            unchanged_allocation_args.append(_render_allocation_fstr(name,bounds))
     result = []
     if len(unchanged_allocation_args):
         if stat != None:
@@ -136,7 +136,7 @@ def handle_allocate_cuf(stallocate, joined_statements, index):
     result += hipfort_allocations
     return (textwrap.indent("\n".join(result),indent), len(hipfort_allocations))
 
-def _render_deallocation_hipfort_f_str(api,name,stat):
+def _render_deallocation_hipfort_fstr(api,name,stat):
     if stat != None:
         prefix = stat + "="
         suffix = ""
@@ -154,9 +154,9 @@ def handle_deallocate_cuf(stdeallocate, joined_statements, index):
         ivar  = indexer.scope.search_index_for_var(index,stdeallocate.parent.tag(),\
           name)
         if "pinned" in ivar["attributes"]:
-            hipfort_deallocations.append(_render_deallocation_hipfort_f_str("hipHostFree",name,stat))
+            hipfort_deallocations.append(_render_deallocation_hipfort_fstr("hipHostFree",name,stat))
         elif "device" in ivar["attributes"]:
-            hipfort_deallocations.append(_render_deallocation_hipfort_f_str("hipFree",name,stat))
+            hipfort_deallocations.append(_render_deallocation_hipfort_fstr("hipFree",name,stat))
         else:
             unchanged_deallocation_args.append(name)
     result = []

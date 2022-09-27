@@ -66,7 +66,7 @@ end do
 #endif
 """
 
-#print(ttloopnest.c_str())
+#print(ttloopnest.cstr())
 kernelgen = fort2x.hip.create_kernel_generator_from_loop_nest(
     declaration_list, annotated_loop_nest, kernel_name="mykernel")
 

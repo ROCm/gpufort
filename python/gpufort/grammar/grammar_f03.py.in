@@ -19,41 +19,37 @@ OPTSIGN    = Optional(Regex("[-+]|\.not\.",re.IGNORECASE),default="")
 
 # arithmetic logical expressions and assignments
 arithmetic_expression = Forward()
-func_rvalue = Forward()
+tensor_access_arg = Forward()
+tensor_access_args = Optional(Group(delimitedList(tensor_access_arg)),default=None) #  emits one token
+tensor_access = identifier + LPAR + tensor_access_args + RPAR # emits 3 tokens: *,
+
 func_kind = COMMA + ( KIND + EQ + arithmetic_expression ) # emits one token # TODO generalize to named args
-arglist   = Optional(Group(delimitedList(func_rvalue)),default=[]) #  emits one token
-func_call = identifier + LPAR + arglist + RPAR # emits 2 tokens: *,
 
 # derived_types
-simple_struct_rvalue = Forward()
-simple_derived_type_member   = identifier + ELEM + simple_struct_rvalue
-simple_struct_rvalue <<= simple_derived_type_member | identifier
-#
 derived_type_rvalue = Forward()
-derived_type_elem = (( func_call | identifier ) + ELEM + derived_type_rvalue )
-derived_type_rvalue <<= derived_type_elem | func_call | identifier
+derived_type_elem = (( tensor_access | identifier ) + ELEM + derived_type_rvalue )
+derived_type_rvalue <<= derived_type_elem | tensor_access | identifier
 
 complex_arithmetic_expression = Forward()
 conversion      = Forward()
 inquiry_function = Forward()
 
-#rvalue = OPTSIGN + (conversion | inquiry_function | complex_arithmetic_expression | derived_type_elem | func_call | identifier | logical | character | number)  # |: ordered OR, order is important
+#rvalue = OPTSIGN + (conversion | inquiry_function | complex_arithmetic_expression | derived_type_elem | tensor_access | identifier | logical | character | number)  # |: ordered OR, order is important
 
 # |: ordered OR, order is import
 # somehow adding the Group is import to prevent that the expression is inlined 
-rvalue = Group(conversion | inquiry_function | complex_arithmetic_expression | derived_type_elem | func_call | identifier | logical | character | number)  # |: ordered OR, order is import
+rvalue = Group(conversion | inquiry_function | derived_type_elem | tensor_access | identifier | logical | character | number)  # |: ordered OR, order is import
 # Add Group to have same structure as rvalue
-lvalue           = Group(derived_type_elem | func_call | identifier)
-lvalueList       = Group(delimitedList(lvalue))
+lvalue           = Group(derived_type_elem | tensor_access | identifier)
 
-fortran_subroutine_call = CALL + func_call
+fortran_subroutine_call = CALL + tensor_access
 
 # assignments
 l_arith_operator_1 = Regex(r"[+-]")
 l_arith_operator_2 = Regex(r"[+\-*/]")
 condition_op_1 = Regex(r"\.not\.",re.IGNORECASE)
 condition_op_2 = Regex(r"[<>=/]=|[<>]|\.(eqv|neqv|eq|ne|lt|gt|le|ge|and|or|xor)\.",re.IGNORECASE)
-arithmetic_expression <<= infixNotation(rvalue,
+arithmetic_expression <<= infixNotation(rvalue | complex_arithmetic_expression,
     [
       (l_arith_operator_1, 1, opAssoc.RIGHT),
       (l_arith_operator_2, 2, opAssoc.LEFT),
@@ -74,6 +70,7 @@ power        = power_value + Suppress("**") + power_value
 
 assignment_begin = lvalue + EQ
 assignment       = lvalue + EQ + arithmetic_logical_expression # ! emits 2 tokens: *,*
+keyword_argument = identifier + EQ + arithmetic_logical_expression
 
 MATLPAR = Regex(r"\(\/|\[").suppress()
 MATRPAR = Regex(r"\/\)|\]").suppress()
@@ -87,13 +84,14 @@ fortran_assignment = matrix_assignment | complex_assignment | assignment
 
 single_colon  = (Literal(":") + ~Literal(":")).suppress()
 stride        = single_colon + arithmetic_expression
-array_range0  = single_colon.copy().setParseAction(lambda tokens: [None,None])           
-array_range1a = (arithmetic_expression + single_colon).setParseAction(lambda tokens: [None,tokens[0]]) 
-array_range1b = (single_colon + arithmetic_expression).setParseAction(lambda tokens: [tokens[0],None])
-array_range2  = (arithmetic_expression + single_colon + arithmetic_expression)
-array_range   = (array_range2 | array_range1b | array_range1a | array_range0) + Optional(stride,default=None)
+tensor_slice0  = single_colon.copy().setParseAction(lambda tokens: [None,None])           
+tensor_slice1a = (arithmetic_expression + single_colon).setParseAction(lambda tokens: [None,tokens[0]]) 
+tensor_slice1b = (single_colon + arithmetic_expression).setParseAction(lambda tokens: [tokens[0],None])
+tensor_slice2  = (arithmetic_expression + single_colon + arithmetic_expression)
+tensor_slice   = (tensor_slice2 | tensor_slice1b | tensor_slice1a | tensor_slice0) + Optional(stride,default=None)
 # define forward declared tokens
-func_rvalue <<= array_range | arithmetic_logical_expression
+argument = tensor_slice | arithmetic_logical_expression
+tensor_access_arg <<= argument | keyword_argument
 
 # conversion functions
 # TODO check type of variable when translating

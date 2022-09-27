@@ -93,7 +93,7 @@ class NamespaceGenerator():
                     tokens.append("// ")
                 tokens += ["constexpr ",ivar["c_type"]]
                 rhs_expr = translator.tree.grammar.arithmetic_expression.parseString(
-                            ivar["rhs"],parseAll=True)[0].c_str()
+                            ivar["rhs"],parseAll=True)[0].cstr()
                 tokens += [" ",ivar["name"]," = ",rhs_expr,";"]
                 body.append("".join(tokens))
         return body

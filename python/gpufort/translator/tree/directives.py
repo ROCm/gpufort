@@ -13,6 +13,7 @@ from .. import prepostprocess
 from .. import opts
 
 from . import base
+from . import traversals
 from . import fortran
 from . import grammar
     
@@ -51,22 +52,19 @@ class IterateOrder(enum.Enum):
 
 class ILoopAnnotation():
 
-    def private_vars(self, converter=base.make_f_str):
+    def private_vars(self, converter=traversals.make_fstr):
         """ CUF,ACC: all scalars are private by default """
         return []
 
-    def lastprivate_vars(self, converter=base.make_f_str):
+    def lastprivate_vars(self, converter=traversals.make_fstr):
         """ only OMP """
         return []
 
-    def discover_reduction_candidates(self):
-        return False
-
-    def reductions(self, converter=base.make_f_str):
+    def reductions(self, converter=traversals.make_fstr):
         """ CUF: Scalar lvalues are reduced by default """
         return {}
 
-    def shared_vars(self, converter=base.make_f_str):
+    def shared_vars(self, converter=traversals.make_fstr):
         """ only OMP """
         return []
 
@@ -87,11 +85,11 @@ class IDeviceSpec():
     def tile_sizes(self):
         return [grammar.CLAUSE_NOT_FOUND]
 
-    def grid_expr_f_str(self):
+    def grid_expr_fstr(self):
         """ only CUF """
         return None
 
-    def block_expr_f_str(self):
+    def block_expr_fstr(self):
         """ only CUF """
         return None
 
@@ -127,40 +125,40 @@ class TTDo(base.TTContainer):
     def child_nodes(self):
         return [self.annotation, self.body, self._begin, self._end, self._step]
 
-    def begin_c_str(self):
-        return base.make_c_str(self._begin._rhs)
+    def begin_cstr(self):
+        return traversals.make_cstr(self._begin._rhs)
     
-    def end_c_str(self):
-        return base.make_c_str(self._end)
+    def end_cstr(self):
+        return traversals.make_cstr(self._end)
    
     def has_step(self):
         return self._step != None
 
-    def step_c_str(self):
-        return base.make_c_str(self._step)
+    def step_cstr(self):
+        return traversals.make_cstr(self._step)
 
     # TODO clean up
-    def hip_thread_index_c_str(self):
+    def hip_thread_index_cstr(self):
         idx = self.loop_var()
-        begin = base.make_c_str(
+        begin = traversals.make_cstr(
             self._begin._rhs) # array indexing is corrected in index macro
-        end = base.make_c_str(self._end)
+        end = traversals.make_cstr(self._end)
         if self._step != None:
-            step = base.make_c_str(self._step)
+            step = traversals.make_cstr(self._step)
         else:
             step = "1"
         return "int {idx} = {begin} + ({step})*(threadIdx.{tidx} + blockIdx.{tidx} * blockDim.{tidx});\n".format(\
                 idx=idx,begin=begin,tidx=self.thread_index,step=step)
 
-    def collapsed_loop_index_c_str(self):
+    def collapsed_loop_index_cstr(self):
         idx = self.loop_var()
         args = [
           self.thread_index,
-          base.make_c_str(self._begin._rhs),
-          base.make_c_str(self._end),
+          traversals.make_cstr(self._begin._rhs),
+          traversals.make_cstr(self._end),
         ]
         if self._step != None:
-            args.append(base.make_c_str(self._step))
+            args.append(traversals.make_cstr(self._step))
         else:
             args.append("1")
         return "int {idx} = outermost_index({args});\n".format(\
@@ -170,12 +168,12 @@ class TTDo(base.TTContainer):
         if self._step == None:
             step = "1"
         else:
-            step = base.make_f_str(self._step)
+            step = traversals.make_fstr(self._step)
         return "gpufort_loop_len(int({begin},c_int),int({end},c_int),int({step},c_int))".format(\
-            begin=base.make_f_str(self._begin._rhs),end=base.make_f_str(self._end),step=step)
+            begin=traversals.make_fstr(self._begin._rhs),end=traversals.make_fstr(self._end),step=step)
     
-    def problem_size_c_str(self):
-        converter = base.make_c_str
+    def problem_size_cstr(self):
+        converter = traversals.make_cstr
         if self._step == None:
             step = "1"
         else:
@@ -184,31 +182,31 @@ class TTDo(base.TTContainer):
             begin=converter(self._begin._rhs),end=converter(self._end),step=step)
 
     # TODO rename
-    def hip_thread_bound_c_str(self):
+    def hip_thread_bound_cstr(self):
         args = [
           self.loop_var(),
-          base.make_c_str(self._end),
+          traversals.make_cstr(self._end),
         ]
         if self._step != None:
-            args.append(base.make_c_str(self._step))
+            args.append(traversals.make_cstr(self._step))
         else:
             args.append("1")
         return "loop_cond({})".format(",".join(args))
 
-    def loop_var(self, converter=base.make_c_str):
+    def loop_var(self, converter=traversals.make_cstr):
         return converter(self._begin._lhs)
 
-    def c_str(self):
-        body = textwrap.dedent(base.TTContainer.c_str(self))
+    def cstr(self):
+        body = textwrap.dedent(base.TTContainer.cstr(self))
         if self.thread_index == None:
             idx = self.loop_var()
-            begin = base.make_c_str(
+            begin = traversals.make_cstr(
                 self._begin._rhs) # array indexing is corrected in index macro
-            end = base.make_c_str(self._end)
-            condition = self.hip_thread_bound_c_str()
+            end = traversals.make_cstr(self._end)
+            condition = self.hip_thread_bound_cstr()
             step = None
             if self._step != None:
-                step = base.make_c_str(self._step)
+                step = traversals.make_cstr(self._step)
                 try: # check if step is an integer number
                     ival = int(step)
                     step = str(ival)
@@ -241,17 +239,17 @@ class IComputeConstruct():
     def get_device_specs(self):
         return []
 
-    def gang_team_private_vars(self, converter=base.make_f_str):
+    def gang_private_vars(self, converter=traversals.make_fstr):
         """ CUF,ACC: all scalars are private by default """
         return []
 
-    def gang_team_firstprivate_vars(self, converter=base.make_f_str):
+    def gang_firstprivate_vars(self, converter=traversals.make_fstr):
         return []
 
-    def gang_team_reductions(self, converter=base.make_f_str):
+    def gang_reductions(self, converter=traversals.make_fstr):
         return {}
 
-    def gang_team_shared_vars(self, converter=base.make_f_str):
+    def gang_shared_vars(self, converter=traversals.make_fstr):
         return []
 
     def local_scalars(self):
@@ -264,10 +262,10 @@ class IComputeConstruct():
         """value != grammar.CLAUSE_NOT_FOUND means True"""
         return grammar.CLAUSE_NOT_FOUND
 
-    def stream(self, converter=base.make_f_str):
+    def stream(self, converter=traversals.make_fstr):
         return "c_null_ptr"
 
-    def sharedmem(self, converter=base.make_f_str):
+    def sharedmem(self, converter=traversals.make_fstr):
         return "0"
 
     def use_default_stream(self):
@@ -342,7 +340,7 @@ class IComputeConstruct():
     def is_serial_construct(self):
         return False 
 
-    def c_str(self):
+    def cstr(self):
         return ""
 
 
@@ -410,15 +408,15 @@ class TTComputeConstruct(base.TTContainer):
     def is_serial_construct(self):
         return self.parent_directive().is_serial_construct()
 
-    def gang_team_private_vars(self, converter=base.make_f_str):
-        result = self.parent_directive().gang_team_private_vars(converter)
+    def gang_private_vars(self, converter=traversals.make_fstr):
+        result = self.parent_directive().gang_private_vars(converter)
         return result
 
-    def gang_team_firstprivate_vars(self, converter=base.make_f_str):
-        return self.parent_directive().gang_team_firstprivate_vars(converter)
+    def gang_firstprivate_vars(self, converter=traversals.make_fstr):
+        return self.parent_directive().gang_firstprivate_vars(converter)
 
 #    # TODO move into analysis
-#    def gang_team_reductions(self, converter=base.make_f_str):
+#    def gang_reductions(self, converter=traversals.make_fstr):
 #        if self.__first_loop_annotation() != None:
 #            if self.__first_loop_annotation().discover_reduction_candidates():
 #                return {
@@ -430,10 +428,10 @@ class TTComputeConstruct(base.TTContainer):
 #            return {}
         
 
-    def stream(self, converter=base.make_f_str):
+    def stream(self, converter=traversals.make_fstr):
         return self.parent_directive().stream(converter)
 
-    def sharedmem(self, converter=base.make_f_str):
+    def sharedmem(self, converter=traversals.make_fstr):
         return self.parent_directive().sharedmem(converter)
 
 class TTProcedureBody(base.TTContainer):

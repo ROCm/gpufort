@@ -661,9 +661,9 @@ class STComputeConstruct(STNode):
         self.__hash = None
         #
         self.parse_result          = None
-        self.sharedmem_f_str       = "0" # set from extraction routine
-        self.stream_f_str          = "c_null_ptr" # set from extraction routine
-        self.async_launch_f_str = ".false."
+        self.sharedmem_fstr       = "0" # set from extraction routine
+        self.stream_fstr          = "c_null_ptr" # set from extraction routine
+        self.async_launch_fstr = ".false."
         #
         self.kernel_args_tavars = [] # set from extraction routine
         self.problem_size = [] # set from extraction routine
@@ -726,43 +726,43 @@ class STComputeConstruct(STNode):
             num_specs = len(self.parse_result.get_device_specs)
             for i,device_spec in enumerate(self.parse_result.get_device_specs()):
                 # emit one launcher per specification
-                grid_or_ps_f_str  = self.parse_result.grid_expr_f_str()
-                if grid_or_ps_f_str == None and self.parse_result.num_gangs():
+                grid_or_ps_fstr  = self.parse_result.grid_expr_fstr()
+                if grid_or_ps_fstr == None and self.parse_result.num_gangs():
                     grid = self.parse_result.num_gangs()
-                    grid_or_ps_f_str = "dim3({})".format(",".join(grid)) # TODO remove
-                elif grid_or_ps_f_str == None:
+                    grid_or_ps_fstr = "dim3({})".format(",".join(grid)) # TODO remove
+                elif grid_or_ps_fstr == None:
                     launcher_name_suffix = "_hip_ps"
-                    grid_or_ps_f_str = "dim3({})".format(",".join(self.problem_size))
+                    grid_or_ps_fstr = "dim3({})".format(",".join(self.problem_size))
                 launcher_name += (launcher_name_suffix if not opts.loop_kernel_default_launcher=="cpu" else "_cpu_")
                 ## determine block size
-                block_f_str = self.parse_result.block_expr_f_str()
-                if block_f_str == None and self.parse_result.num_threads_in_block_specified():
+                block_fstr = self.parse_result.block_expr_fstr()
+                if block_fstr == None and self.parse_result.num_threads_in_block_specified():
                     block = self.parse_result.num_threads_in_block()
-                    block_f_str = "dim3({})".format(",".join(block)) # TODO remove
-                elif block_f_str == None and len(self.block_size):
-                    block_f_str = "dim3({})".format(",".join(self.block_size))
-                elif block_f_str == None:
-                    block_f_str = "dim3(128)" # use config values 
-                kernel_args.append(grid_or_ps_f_str)
-                kernel_args.append(block_f_str)
-                kernel_args.append(self.sharedmem_f_str)
+                    block_fstr = "dim3({})".format(",".join(block)) # TODO remove
+                elif block_fstr == None and len(self.block_size):
+                    block_fstr = "dim3({})".format(",".join(self.block_size))
+                elif block_fstr == None:
+                    block_fstr = "dim3(128)" # use config values 
+                kernel_args.append(grid_or_ps_fstr)
+                kernel_args.append(block_fstr)
+                kernel_args.append(self.sharedmem_fstr)
                 # stream
                 try:
-                    stream_as_int = int(self.stream_f_str)
+                    stream_as_int = int(self.stream_fstr)
                     stream = "c_null_ptr"
                 except:
-                    stream = self.stream_f_str
+                    stream = self.stream_fstr
                 kernel_args.append(stream)
-                kernel_args.append(self.async_launch_f_str)
+                kernel_args.append(self.async_launch_fstr)
                 kernel_args += self.kernel_args_names
                 #
                 block_indent = ""
                 if num_specs > 1:
                     block_indent = " "*2 
                     if i == 0:
-                        result.append("if ("+device_spec.get_activate_condition_f_str()+") then\n")
+                        result.append("if ("+device_spec.get_activate_condition_fstr()+") then\n")
                     else:
-                        result.append("else if ("+device_spec.get_activate_condition_f_str()+") then\n")
+                        result.append("else if ("+device_spec.get_activate_condition_fstr()+") then\n")
                 result.append(block_indent+"! extracted to HIP C++ file\n")
                 result.append(block_indent+"call {0}(&\n  {1})\n".format(launcher_name,",&\n  ".join(kernel_args)))
                 if num_specs > 1 and i == num_specs - 1 
@@ -849,14 +849,14 @@ class STNonZeroCheck(STNode):
         for tokens, start, end in translator.tree.grammar.non_zero_check.scanString(
                 result):
             parse_result = tokens[0]
-            lhs_name = parse_result.lhs_f_str()
+            lhs_name = parse_result.lhs_fstr()
             try:
                 ivar  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
                   lhs_name)
                 on_device = index_var_is_on_device(ivar)
                 transformed |= on_device
                 if on_device:
-                    subst = parse_result.f_str() # TODO backend specific
+                    subst = parse_result.fstr() # TODO backend specific
                     result = result.replace(result[start:end], subst)
             except: # do not care if this is not a variable
                 pass
@@ -876,7 +876,7 @@ class STAllocated(STNode):
             ivar = indexer.scope.search_index_for_var(index,self.parent.tag(),\
               var_name)
             on_device = index_var_is_on_device(ivar)
-            return (parse_result.f_str(), on_device) # TODO backend specific
+            return (parse_result.fstr(), on_device) # TODO backend specific
 
         result, transformed = util.pyparsing.replace_all(
             joined_statements, translator.tree.grammar.allocated, repl)

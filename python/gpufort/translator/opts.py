@@ -193,8 +193,6 @@ fortran_type_2_bytes_map = { # x86_64
         "c_bool": "1"
     }
 }
-loop_collapse_strategy = "collapse"
-        # One of "collapse","collapse-always","grid"
 #loop_versioning = False
 #        # Emit different loop variants if the step size is not known
 map_to_flat_arrays = True

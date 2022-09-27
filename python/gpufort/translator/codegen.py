@@ -36,7 +36,7 @@ def translate_procedure_body_to_hip_kernel_body(ttprocedurebody, scope, **kwargs
             ttprocedurebody.body,(lambda ttnode: isinstance(ttnode,tree.TTValue) 
             and not ttnode.is_function_call()))
     
-    c_body = tree.make_c_str(ttprocedurebody.body)
+    c_body = tree.make_cstr(ttprocedurebody.body)
 
     # Append return statement if this is a function
     if (ttprocedurebody.result_name != None
@@ -51,7 +51,7 @@ def _handle_reductions(ttcomputeconstruct,ttvalues,grid_dim):
         if type(ttvalue._value) in [
                 tree.TTDerivedTypeMember, tree.TTIdentifier
         ]:
-            for op, reduced_vars in ttcomputeconstruct.gang_team_reductions(
+            for op, reduced_vars in ttcomputeconstruct.gang_reductions(
             ).items():
                 if ttvalue.name().lower() in [
                         el.lower() for el in reduced_vars
@@ -61,8 +61,8 @@ def _handle_reductions(ttcomputeconstruct,ttvalues,grid_dim):
     # identify reduction op
     reduction_preamble = ""
     # 2.1. Add init preamble for reduced variables
-    for kind, reduced_vars in ttcomputeconstruct.gang_team_reductions(
-            tree.make_c_str).items():
+    for kind, reduced_vars in ttcomputeconstruct.gang_reductions(
+            tree.make_cstr).items():
         for var in reduced_vars:
             if opts.fortran_style_tensor_access:
                 reduction_preamble += "reduce_op_{kind}::init({var}({tidx}));\n".format(
@@ -81,7 +81,6 @@ def translate_compute_construct_to_hip_kernel_body(ttcomputeconstruct, scope, **
     :return: A HIP C++ snippet and a list of c_names that have
              been performed to the variables found in the body.
     """
-    loop_collapse_strategy,_ = util.kwargs.get_value("loop_collapse_strategy",opts.loop_collapse_strategy,**kwargs)
     map_to_flat_arrays,_     = util.kwargs.get_value("map_to_flat_arrays",opts.map_to_flat_arrays,**kwargs)
     map_to_flat_scalars,_     = util.kwargs.get_value("map_to_flat_scalars",opts.map_to_flat_scalars,**kwargs)
     fortran_style_tensor_access,_ = util.kwargs.get_value("fortran_style_tensor_access",opts.fortran_style_tensor_access,**kwargs)
@@ -127,26 +126,19 @@ def translate_compute_construct_to_hip_kernel_body(ttcomputeconstruct, scope, **
     if ttcomputeconstruct.is_serial_construct(): 
         if len(reduction_preamble):
             reduction_preamble += "\n"
-        c_snippet = "{0}if ( threadIdx.x==0 ) {{\n{1}\n}}".format(reduction_preamble,tree.make_c_str(ttcomputeconstruct))
+        c_snippet = "{0}if ( threadIdx.x==0 ) {{\n{1}\n}}".format(reduction_preamble,tree.make_cstr(ttcomputeconstruct))
     else:
-        if (num_loops_to_map <= 1 
-           or (loop_collapse_strategy == "grid" 
-              and num_loops_to_map <= 3)):
-            if len(reduction_preamble):
-                reduction_preamble += "\n"
-            indices, conditions = transformations.map_compute_construct_to_grid(ttdos)
-            c_snippet = "{0}\n{2}if ({1}) {{\n{3}\n}}".format(\
-              "".join(indices),"&&".join(conditions),reduction_preamble,tree.make_c_str(ttcomputeconstruct))
-        else: # collapse strategy or num_loops_to_map > 3
-            if len(reduction_preamble):
-                reduction_preamble += "\n"
-            preamble, indices, conditions = transformations.collapse_loopnest(ttdos)
-            c_snippet = "{2}{4}{0}if ({1}) {{\n{3}\n}}".format(
-                "".join(indices),
-                "&&".join(conditions),
-                reduction_preamble,
-                tree.make_c_str(ttcomputeconstruct),
-                "".join(preamble))
+       # TODO work with transformation result
+       # TODO collapse CUDA Fortran loops by default
+       if len(reduction_preamble):
+           reduction_preamble += "\n"
+       preamble, indices, conditions = transformations.collapse_loopnest(ttdos)
+       c_snippet = "{2}{4}{0}if ({1}) {{\n{3}\n}}".format(
+           "".join(indices),
+           "&&".join(conditions),
+           reduction_preamble,
+           tree.make_cstr(ttcomputeconstruct),
+           "".join(preamble))
 
     return prepostprocess.postprocess_c_snippet(c_snippet), problem_size, block_size, loop_vars, c_names, c_ranks
 
@@ -167,7 +159,7 @@ def translate_compute_construct_to_omp(fortran_snippet, ttcomputeconstruct, inou
     # TODO find out relevant directives
     # TODO transform string
     # TODO preprocess Fortran colon expressions
-    reduction = ttcomputeconstruct.gang_team_reductions()
+    reduction = ttcomputeconstruct.gang_reductions()
     depend = ttcomputeconstruct.depend()
     if isinstance(ttcomputeconstruct.parent_directive(), tree.TTCufKernelDo):
 
@@ -175,7 +167,7 @@ def translate_compute_construct_to_omp(fortran_snippet, ttcomputeconstruct, inou
             nonlocal arrays_in_body
             nonlocal inout_arrays_in_body
             nonlocal reduction
-            return parse_result.omp_f_str(arrays_in_body,
+            return parse_result.omp_fstr(arrays_in_body,
                                           inout_arrays_in_body, reduction,
                                           depend), True
 
@@ -189,7 +181,7 @@ def translate_compute_construct_to_omp(fortran_snippet, ttcomputeconstruct, inou
             nonlocal arrays_in_body
             nonlocal inout_arrays_in_body
             nonlocal reduction
-            return parse_result.omp_f_str(arrays_in_body,
+            return parse_result.omp_fstr(arrays_in_body,
                                           inout_arrays_in_body,
                                           depend), True
 
@@ -200,7 +192,7 @@ def translate_compute_construct_to_omp(fortran_snippet, ttcomputeconstruct, inou
             nonlocal inout_arrays_in_body
             nonlocal reduction
             nonlocal parallel_region
-            result = parse_result.omp_f_str("do", parallel_region)
+            result = parse_result.omp_fstr("do", parallel_region)
             parallel_region = ""
             return result, True
 

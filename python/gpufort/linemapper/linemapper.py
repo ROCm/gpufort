@@ -311,9 +311,9 @@ def _group_modified_linemaps(linemaps, wrap_in_ifdef):
             result = result or has_epilog_(linemap)
         return result
 
-    def to_string_(list_of_strings):
+    def to_string_(list_ofstrings):
         return "\n".join([
-            el.rstrip("\n") for el in list_of_strings if el is not None
+            el.rstrip("\n") for el in list_ofstrings if el is not None
         ]) + "\n"
 
     def collect_subst_(linemap):

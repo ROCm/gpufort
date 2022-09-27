@@ -79,15 +79,15 @@ class STCufLibCall(nodes.STNode):
         if not opts.keep_cuda_lib_names:
 
             def repl_memcpy(parse_result):
-                dest_name = parse_result.dest_name_f_str()
-                src_name = parse_result.src_name_f_str()
+                dest_name = parse_result.dest_name_fstr()
+                src_name = parse_result.src_name_fstr()
                 dest_indexed_var = indexer.scope.search_index_for_var(index,self.parent.tag(),\
                   dest_name)
                 src_indexed_var  = indexer.scope.search_index_for_var(index,self.parent.tag(),\
                   src_name)
                 dest_on_device = index_var_is_on_device(dest_indexed_var)
                 src_on_device = index_var_is_on_device(src_indexed_var)
-                subst = parse_result.hip_f_str(dest_on_device, src_on_device)
+                subst = parse_result.hip_fstr(dest_on_device, src_on_device)
                 return (subst, True)
 
             snippet, _ = util.pyparsing.replace_all(
@@ -95,7 +95,7 @@ class STCufLibCall(nodes.STNode):
                 repl_memcpy)
 
         def repl_cublas(parse_result):
-            subst = parse_result.f_str(indent)
+            subst = parse_result.fstr(indent)
             return (subst, True)
 
         snippet, have_cublas = util.pyparsing.replace_all(
@@ -177,8 +177,8 @@ class STCufMemcpy(nodes.STNode):
         if "cuf" in opts.source_dialects and isinstance(self.parent, nodes.STContainerBase):
             indent = self.first_line_indent()
             def repl_memcpy_(parse_result):
-                dest_name = parse_result.dest_name_f_str()
-                src_name = parse_result.src_name_f_str()
+                dest_name = parse_result.dest_name_fstr()
+                src_name = parse_result.src_name_fstr()
                 try:
                     dest_indexed_var = indexer.scope.search_index_for_var(index,self.parent.tag(),\
                       dest_name)
@@ -190,7 +190,7 @@ class STCufMemcpy(nodes.STNode):
                     dest_on_device = False 
                     src_on_device  = False
                 if dest_on_device or src_on_device:
-                    subst = parse_result.hip_f_str(dest_on_device, src_on_device)
+                    subst = parse_result.hip_fstr(dest_on_device, src_on_device)
                     return (textwrap.indent(subst,indent), True)
                 else:
                     return ("", False) # no transformation; will not be considered

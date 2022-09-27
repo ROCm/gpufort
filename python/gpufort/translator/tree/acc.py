@@ -7,34 +7,35 @@ from .. import conv
 
 from . import grammar
 from . import base
+from . import traversals
 from . import directives
 
-class TTAccClauseGang(TTNode):
+class TTAccClauseGang(base.TTNode):
     def _assign_fields(self, tokens):
         self.kind = "gang"
         self.value = tokens[0]
 
-class TTAccClauseWorker(TTNode):
+class TTAccClauseWorker(base.TTNode):
     def _assign_fields(self, tokens):
         self.kind = "worker"
         self.value = tokens[0]
 
-class TTAccClauseVector(TTNode):
+class TTAccClauseVector(base.TTNode):
     def _assign_fields(self, tokens):
         self.kind = "vector"
         self.value = tokens[0]
 
-class TTAccClauseNumGangs(TTNode):
+class TTAccClauseNumGangs(base.TTNode):
     def _assign_fields(self, tokens):
         self.kind = "num_gangs"
         self.value = tokens[0]
 
-class TTAccClauseNumWorkers(TTNode):
+class TTAccClauseNumWorkers(base.TTNode):
     def _assign_fields(self, tokens):
         self.kind = "num_workers"
         self.value = tokens[0]
 
-class TTAccClauseVectorLength(TTNode):
+class TTAccClauseVectorLength(base.TTNode):
     def _assign_fields(self, tokens):
         self.kind = "vector_length"
         self.value = tokens[0]
@@ -56,7 +57,7 @@ class TTAccClauseIf(base.TTNode):
         self.condition = tokens[0]
 
     def condition(self):
-        return base.make_f_str(self.condition)
+        return traversals.make_fstr(self.condition)
 
 
 class TTAccClauseSelf(base.TTNode):
@@ -66,19 +67,19 @@ class TTAccClauseSelf(base.TTNode):
         self.condition = tokens[0]
 
     def condition(self):
-        return base.make_f_str(self.condition)
+        return traversals.make_fstr(self.condition)
 
 
 class TTAccMappingClause(base.TTNode):
 
     def _assign_fields(self, tokens):
         self.kind = tokens[0]
-        self.var_list = tokens[1].asList()
+        self.var_list = tokens[1]
 
-    def var_names(self, converter=base.make_f_str):
+    def var_names(self, converter=traversals.make_fstr):
         return [var.identifier_part(converter) for var in self.var_list]
 
-    def var_expressions(self, converter=base.make_f_str):
+    def var_expressions(self, converter=traversals.make_fstr):
         return [converter(var) for var in self.var_list]
 
 
@@ -86,8 +87,7 @@ class TTAccClauseDefault(base.TTNode):
 
     def _assign_fields(self, tokens):
         self.kind="default"
-        self.value = tokens
-
+        self.value = tokens[0]
 
 class TTAccClauseReduction(base.TTNode):
 
@@ -95,14 +95,14 @@ class TTAccClauseReduction(base.TTNode):
         self.kind="reduction"
         self.operator, self.vars = tokens
 
-    def reductions(self, converter=base.make_f_str):
+    def reductions(self, converter=traversals.make_fstr):
         result = {}
         op = converter(self.operator)
-        if converter == base.make_c_str:
+        if converter == traversals.make_cstr:
             # post-process
             op = conv.get_operator_name(op.lower())
             # "+" "*" "max" "min" "iand" "ior" "ieor" ".and." ".or." ".eqv." ".neqv."
-        result[op] = [base.make_f_str(var) for var in self.vars]
+        result[op] = [traversals.make_fstr(var) for var in self.vars]
         return result
 
 
@@ -110,8 +110,7 @@ class TTAccClauseBind(base.TTNode):
 
     def _assign_fields(self, tokens):
         self.kind="bind"
-        pass
-
+        self.ident = tokens[0]
 
 class TTAccClauseTile(base.TTNode):
 
@@ -147,7 +146,7 @@ class TTAccClauseWait(base.TTNode):
                     raise
 
     def expressions(self):
-        return [base.make_f_str(expr) for expr in self.expressions]
+        return [traversals.make_fstr(expr) for expr in self.expressions]
 
 
 class TTAccClauseAsync(base.TTNode):
@@ -155,6 +154,10 @@ class TTAccClauseAsync(base.TTNode):
     def _assign_fields(self, tokens):
         self.kind="async"
         self.expression = tokens[0]
+
+class TTAccNoArgumentClause(base.TTNode):
+    def _assign_fields(self, tokens):
+        self.kind=tokens[0]
 
 #
 # Directives
@@ -164,7 +167,7 @@ class TTAccDirectiveBase(base.TTNode):
     def _assign_fields(self, tokens):
         self.clauses = tokens[0]
 
-    def handle_mapping_clause(self, clause_kinds, converter=base.make_f_str):
+    def handle_mapping_clause(self, clause_kinds, converter=traversals.make_fstr):
         result = []
         for clause in self.clauses:
             if type(clause) == TTAccMappingClause and\
@@ -175,7 +178,7 @@ class TTAccDirectiveBase(base.TTNode):
     def _format(self, f_snippet):
         return directives.format_directive(f_snippet, 80)
 
-    def omp_f_str(self):
+    def omp_fstr(self):
         assert False, "Not implemented"
 
 
@@ -205,9 +208,9 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
     """
 
     def async_nowait(self):
-        clause = base.find_first(self.clauses, TTAccClauseAsync)
+        clause = traversals.find_first(self.clauses, TTAccClauseAsync)
         if not clause is None:
-            return base.make_f_str(clause.expression)
+            return traversals.make_fstr(clause.expression)
         else:
             return grammar.CLAUSE_NOT_FOUND
 
@@ -242,27 +245,27 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
         return self.handle_mapping_clause(["delete"])
 
     def if_condition(self):
-        clause = base.find_first(self.clauses, TTAccClauseIf)
+        clause = traversals.find_first(self.clauses, TTAccClauseIf)
         if not clause is None:
-            return [base.make_f_str(e) for e in clause.condition()]
+            return [traversals.make_fstr(e) for e in clause.condition()]
         else:
             return ""
 
     def self_condition(self):
-        clause = base.find_first(self.clauses, TTAccClauseSelf)
+        clause = traversals.find_first(self.clauses, TTAccClauseSelf)
         if not clause is None:
-            return [base.make_f_str(e) for e in clause.expression()]
+            return [traversals.make_fstr(e) for e in clause.expression()]
         else:
             return ""
 
     def present_by_default(self):
-        clause = base.find_first(self.clauses, TTAccClauseDefault)
+        clause = traversals.find_first(self.clauses, TTAccClauseDefault)
         if not clause is None:
             return clause.value == "present"
         else:
             return True
 
-    def omp_f_str(self,
+    def omp_fstr(self,
                   arrays_in_body=[],
                   inout_arrays_in_body=[],
                   depend={},
@@ -347,9 +350,9 @@ class TTAccData(TTAccDataManagementDirectiveBase):
       if( condition )
     """
 
-    def omp_f_str(self, arrays_in_body=[], inout_arrays_in_body=[], depend={}):
+    def omp_fstr(self, arrays_in_body=[], inout_arrays_in_body=[], depend={}):
         return self._format(
-            TTAccDataManagementDirectiveBase.omp_f_str(self, arrays_in_body,
+            TTAccDataManagementDirectiveBase.omp_fstr(self, arrays_in_body,
                                                        inout_arrays_in_body,
                                                        depend,
                                                        "!$omp target data"))
@@ -361,9 +364,9 @@ class TTAccEnterData(TTAccDataManagementDirectiveBase):
       clauses of TTAccData
     """
 
-    def omp_f_str(self, arrays_in_body=[], inout_arrays_in_body=[], depend={}):
+    def omp_fstr(self, arrays_in_body=[], inout_arrays_in_body=[], depend={}):
         return self._format(
-            TTAccDataManagementDirectiveBase.omp_f_str(
+            TTAccDataManagementDirectiveBase.omp_fstr(
                 self, arrays_in_body, inout_arrays_in_body, depend,
                 "!$omp target enter data"))
 
@@ -376,12 +379,11 @@ class TTAccExitData(TTAccDataManagementDirectiveBase):
       wait [( wait-argument )]
     """
 
-    def omp_f_str(self, arrays_in_body=[], inout_arrays_in_body=[], depend={}):
+    def omp_fstr(self, arrays_in_body=[], inout_arrays_in_body=[], depend={}):
         return self._format(
-            TTAccDataManagementDirectiveBase.omp_f_str(
+            TTAccDataManagementDirectiveBase.omp_fstr(
                 self, arrays_in_body, inout_arrays_in_body, depend,
                 "!$omp target exit data"))
-
 
 class TTAccDeclare(TTAccDirectiveBase):
     """ NOTE: In contrast to OMP, '!$acc declare' is only applied to global variables.
@@ -400,7 +402,7 @@ class TTAccDeclare(TTAccDirectiveBase):
     def map_tofrom_vars(self):
         return self.handle_mapping_clause(["copy"])
 
-    def omp_f_str(self):
+    def omp_fstr(self):
         to_list = self.handle_mapping_clause(\
           ["create","copy","copyin","attach","copyout","detach"])
 
@@ -428,16 +430,16 @@ class TTAccRoutine(TTAccDirectiveBase):
         else:
             return "seq"
 
-    def omp_f_str(self, additions=""):
+    def omp_fstr(self, additions=""):
         """ additions can be used to pass 'notinbranch' 'inbranch'"""
         result = "!$omp target declare"
-        #if base.find_first(self.clauses,TTAccClauseGang) != None:
+        #if traversals.find_first(self.clauses,TTAccClauseGang) != None:
         #    pass
-        #elif base.find_first(self.clauses,TTAccClauseWorker) != None:
+        #elif traversals.find_first(self.clauses,TTAccClauseWorker) != None:
         #    pass
-        if base.find_first(self.clauses, TTAccClauseVector) != None:
+        if traversals.find_first(self.clauses, TTAccClauseVector) != None:
             if self.id != None:
-                result += " simd(" + base.make_f_str(self.id) + ")"
+                result += " simd(" + traversals.make_fstr(self.id) + ")"
             else:
                 result += " simd "
         #if not "device_type" in additions:
@@ -449,10 +451,10 @@ class TTAccRoutine(TTAccDirectiveBase):
 
 class TTAccUpdate(TTAccDirectiveBase):
 
-    def omp_f_str(self):
+    def omp_fstr(self):
         result = "!$omp target update"
-        host_clause = base.find_first(self.clauses, TTAccClauseHost)
-        device_clause = base.find_first(self.clauses, TTAccClauseDevice)
+        host_clause = traversals.find_first(self.clauses, TTAccClauseHost)
+        device_clause = traversals.find_first(self.clauses, TTAccClauseDevice)
         if host_clause != None:
             result += " to(" + ",".join(host_clause.var_names()) + ")"
         if device_clause != None:
@@ -464,7 +466,7 @@ class TTAccWait(TTAccDirectiveBase):
 
     def wait_args(self):
         """ Can be used to deduce task dependencies """
-        clause = base.find_first(self.clauses, TTAccClauseWait)
+        clause = traversals.find_first(self.clauses, TTAccClauseWait)
         if clause is None:
             return None
         else:
@@ -473,7 +475,7 @@ class TTAccWait(TTAccDirectiveBase):
     def async_queue(self):
         assert False, "Not implemented!"
 
-    def omp_f_str(self, depend_str=""):
+    def omp_fstr(self, depend_str=""):
         """ :param depend_str: Append depend clauses """
         result = "!$omp taskwait"
         if len(depend_str):
@@ -483,148 +485,6 @@ class TTAccWait(TTAccDirectiveBase):
             if len(wait_args):
                 result += " depend(" + opts.depend_todo + ")"
         return self._format(result)
-
-class AccDeviceSpec(directives.DeviceSpec):
-    def __init__(self,device_type,clauses=[]):
-        self.device_type = device_type.lower()
-        self.clauses = clauses
-    def append_clause(self,clause,silently_handle_duplicates=False):
-        """:param bool silently_handle_duplicates: Do not throw exception if the clause
-                                                exists already, simply do not add it.
-        """
-        for clause in list(self.clauses):
-            if type(new_clause) == type(clause):
-                if not silently_handle_duplicates:
-                    clause_name = str(type(new_clause).__name__).lower().replace("ttaccclause")
-                    raise error.util.SyntaxError("clause '{}' specified more than once '{}' for device type '{}'".format(
-                        clause_name,self.device_type))
-            else:
-                self.clauses.append(clause)
-
-    def applies_to(self,device_type):
-        """:return: This device spec applies to the given device_type."""
-        if device_type == "*":
-            return True
-        else:
-            return self.device_type == device_type.lower()
-
-    def num_gangs(self):
-        """:note: gang and num_gangs(<arg>) might be specified both on acc parallel/kernels loop construct.
-        """
-        clause = next((c for c in self.clauses if c.kind in ["gang","num_gangs"]),None)
-        return [grammar.CLAUSE_NOT_FOUND if clause is None else c.value]
-
-    def num_workers(self):
-        """:note: worker and num_workers(<arg>) might be specified both on acc parallel/kernels loop construct.
-        """
-        clause = next((c for c in self.clauses if c.kind in ["worker","num_workers"]),None)
-        return grammar.CLAUSE_NOT_FOUND if clause is None else c.value
-
-    def vector_length(self):
-        """:note: vector and vector_length(<arg>) might be specified both on acc parallel/kernels loop construct.
-        """
-        clause = next((c for c in self.clauses if c.kind in ["vector","vector_length"]),None)
-        return [grammar.CLAUSE_NOT_FOUND if clause is None else c.value]
-
-    # specific to loop
-    def parallelism(self):
-        """:return: The parallelism level of this loop.
-        :note: Does only make sense for loop device specifications.
-        """
-        has_gang = next((c for c in self.clauses if c.kind == "gang"),None)
-        has_worker = next((c for c in self.clauses if c.kind == "worker"),None)
-        has_vector = next((c for c in self.clauses if c.kind == "vector"),None)
-        has_seq = next((c for c in self.clauses if c.kind == "seq"),None)
-        if has_seq:
-            if has_gang or has_worker or has_vector:
-                raise util.error.SyntaxError("'seq' clause may not appear with 'gang', 'worker', or 'vector' clause.")
-            return directives.ParallelismLevel.SEQ # Most fine-grain loop iterate (gang,worker,vector lane) does run this loop sequentially
-        elif has_gang and has_vector: # has_worker can be true or false
-            return directives.ParallelismLevel.GANG_VECTOR # loop is mapped to all threads (grids x blocks, all threads active)
-        elif has_gang and has_worker:
-            return directives.ParallelismLevel.GANG_WORKER # loop is mapped to all warps (1 thread per warp, other threads masked out)
-        elif has_worker and has_vector:
-            return directives.ParallelismLevel.WORKER_VECTOR # loop is mapped to thread block (all threads per block active)
-        elif has_gang:
-            return directives.ParallelismLevel.GANG # loop is mapped to grid (1 warp per block active, 1 thread per warp active)
-        elif has_worker:
-            return directives.ParallelismLevel.WORKER # loop is mapped to warps, number of blocks & warps up to preceding loop (1 thread per warp active) 
-        elif has_vector
-            return directives.ParallelismLevel.VECTOR # loop is mapped threads in warp, number of blocks & warps up to preceding loops
-        else:
-            return directives.ParallelismLevel.AUTO # automatically determine parallelism level
-
-    def num_threads_in_block(self):
-        return [grammar.CLAUSE_NOT_FOUND]
-
-    def order_of_iterates(self):
-        """ Always assume data independent if no seq clause is used """
-        seq_clause = next((c for c in self.clauses if c.kind == "seq"),None)
-        independent_clause = next(c for c in self.clauses if c.kind == "independent"),None)
-        auto_clause = next(c for c in self.clauses if c.kind == "auto"),None)
-        if seq_clause != None:
-            if auto_clause != None:
-                raise error.util.SyntaxError("'auto' clause may not appear together with 'seq' clause")
-            return directives.IterateOrder.SEQ
-        elif independent_clause != None:
-            if auto_clause != None:
-                raise error.util.SyntaxError("'auto' clause may not appear together with 'independent' clause")
-            return directives.IterateOrder.INDEPENDENT
-        else:
-            return directives.IterateOrder.AUTO
-    
-    def num_collapse(self):
-        clause = next((c for c in self.clauses if c.kind == "collapse"),None)
-        if clause is None:
-            return grammar.CLAUSE_NOT_FOUND
-        else:
-            return clause.value()
-
-    def tile_sizes(self):
-        clause = next((c for c in self.clauses if c.kind == "tile"),None)
-        if clause is None:
-            return [grammar.CLAUSE_NOT_FOUND]
-        else:
-            return clause.values()
-    
-def __derive_device_specs(acc_clauses,device_specific_clause_kinds):
-    """:note:Inserts the '* identifier as last entry into
-    the list of device specs to ensure that it is found last
-    when comparing device types.
-    """
-     
-    default_spec = AccDeviceSpec(None)
-    named_specs = []
-    consumed_acc_clauses = []
-
-    current_specs = [default_spec]
-    for clause in list(acc_clauses):
-        if clause.kind in device_specific_clause_kinds:
-            for spec in current_specs:
-                current_specs.append_clause(clause)
-        elif clause.kind == "device_type":
-            current_specs.clear()
-            for device_type in clause.device_types:
-                if device_type == "*" and len(clause.device_types) > 1:
-                    raise util.error.SyntaxError("device type specifier '*' may only appear alone in the argument list of the 'device_type' clause")
-                existing_spec = next((spec for spec in named_specs,
-                    existing_spec.device_type == device_type.lower()),None)
-                if existing_spec != None:
-                    raise util.error.SyntaxError("'device_type' clause for device type '{}' may only appear once")
-                else:
-                    new_spec = AccDeviceSpec(default_spec.clauses)
-                    current_specs.append(new_spec)
-                    named_specs.append(new_spec)
-        elif current_specs[0] != default_spec:
-            raise util.error.SyntaxError("only "+",".join(device_specific_clause_kinds)+" clauses may follow a 'device_type' clause")
-        consumed_acc_clauses.append(clause)
-    # Now single out the '*' spec or make the default spec the "*" spec
-    other_spec = AccDeviceSpec("*",default_spec.clauses)
-    for spec in list(named_specs):
-        if spec.device_type == "*":
-            named_specs.remove(spec)
-            other_spec = spec
-    return (named_specs, other_spec, consumed_acc_clauses)
 
 class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
     """
@@ -644,25 +504,10 @@ class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
     def _assign_fields(self, tokens):
         TTAccDirectiveBase._assign_fields(self, tokens)
         self.loop_handles_mutual_clauses = True # can be unset by TTAccParallelLoop or TTAccKernelsLoop
-        
 
-    def get_device_specs(self):
-        device_specific_clause_kinds = ("collapse",
-                                        "gang",
-                                        "worker",
-                                        "vector",
-                                        "seq",
-                                        "independent",
-                                        "auto",
-                                        "tile")
-        device_specs, other_spec, _ =\
-          __derive_device_specs(self.clauses,device_specific_clause_kinds)
-        # append '*' to (end of) deviec specs
-        return (device_specs, other_spec)
-
-    def reductions(self, converter=base.make_f_str):
+    def reductions(self, converter=traversals.make_fstr):
         result = {}
-        for clause in base.find_all(self.clauses, TTAccClauseReduction):
+        for clause in traversals.find_all(self.clauses, TTAccClauseReduction):
             contrib = clause.reductions(converter)
             for key, value in contrib.items():
                 if not key in result:
@@ -670,15 +515,15 @@ class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
                 result[key] += value
         return result
 
-    def private_vars(self, converter=base.make_f_str):
+    def private_vars(self, converter=traversals.make_fstr):
         return self.handle_mapping_clause(["private"], converter)
 
-    def omp_f_str(self, loop_type="do", parallel_region="", prefix="!$omp"):
+    def omp_fstr(self, loop_type="do", parallel_region="", prefix="!$omp"):
         # TODO broken, as directive is split and some information (e.g. num_Collapse) must be obtained from device spec
         result = prefix
 
         if self.loop_handles_mutual_clauses:
-            gang_clause = next((c for c in self.clauses,c.kind in ["num_gangs","gang"]),None)
+            gang_clause = next((c for c in self.clauses if c.kind in ["num_gangs","gang"]),None)
             # TODO use argument
             if gang != None:
                 result += " teams distribute"
@@ -686,7 +531,7 @@ class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
             result += " " + parallel_region
         result += " " + loop_type
         #worker_clause = next((c for c in self.clauses,c.kind in ["num_workers","worker"]),None)
-        vector_clause = next((c for c in self.clauses,c.kind in ["vector_length","vector"]),None)
+        vector_clause = next((c for c in self.clauses if c.kind in ["vector_length","vector"]),None)
         if vector_clause != None:
              result += " simd"
              if clause.value > 0:
@@ -695,7 +540,7 @@ class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
             private_vars = self.private_vars()
             if len(private_vars):
                 result += " private(" + ",".join(private_vars) + ")"
-        reductions = self.reductions(base.make_f_str)
+        reductions = self.reductions(traversals.make_fstr)
         if len(reductions):
             for op, values in reductions.items():
                 result += " reduction(" + op + ":" + ",".join(values) + ")"
@@ -734,28 +579,19 @@ class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase,directives.ICom
       default( none | present )
     """
     
-    def get_device_specs(self):
-        device_specific_clause_kinds = ("num_gangs",
-                                        "num_workers",
-                                        "vector_length")
-        device_specs, other_spec, _ =\
-          __derive_device_specs(self.clauses,device_specific_clause_kinds)
-        # append '*' to (end of) deviec specs
-        return (device_specs, other_spec)
-    
-    def gang_team_private_vars(self, converter=base.make_f_str):
+    def gang_private_vars(self, converter=traversals.make_fstr):
         return self.handle_mapping_clause(["private"], converter)
 
-    def gang_team_firstprivate_vars(self, converter=base.make_f_str):
+    def gang_firstprivate_vars(self, converter=traversals.make_fstr):
         return self.handle_mapping_clause(["firstprivate"], converter)
 
-    def omp_f_str(self,
+    def omp_fstr(self,
                   arrays_in_body=[],
                   inout_arrays_in_body=[],
                   depend={},
                   prefix="!$omp target"):
         result = prefix
-        data_part = " " + TTAccDataManagementDirectiveBase.omp_f_str(
+        data_part = " " + TTAccDataManagementDirectiveBase.omp_fstr(
             self, arrays_in_body, inout_arrays_in_body, depend, "")
         return result + data_part
 
@@ -767,7 +603,7 @@ class TTAccSerial(TTAccComputeConstructBase):
         """
         return True
 
-    def omp_f_str(self,
+    def omp_fstr(self,
                   arrays_in_body=[],
                   inout_arrays_in_body=[],
                   depend={},
@@ -777,27 +613,13 @@ class TTAccSerial(TTAccComputeConstructBase):
 
 class TTAccParallel(TTAccComputeConstructBase):
    
-    def get_device_specs(self):
-        device_specific_clause_kinds = ("collapse",
-                                        "gang",
-                                        "worker",
-                                        "vector",
-                                        "seq",
-                                        "independent",
-                                        "auto",
-                                        "tile")
-        device_specs, other_spec, _ =\
-          __derive_device_specs(self.clauses,device_specific_clause_kinds)
-        # append '*' to (end of) deviec specs
-        return (device_specs, other_spec)
-
-    def omp_f_str(self,
+    def omp_fstr(self,
                   arrays_in_body=[],
                   inout_arrays_in_body=[],
                   depend={},
                   prefix="!$omp target"):
         return self._format(
-            TTAccComputeConstructBase.omp_f_str(self, arrays_in_body,
+            TTAccComputeConstructBase.omp_fstr(self, arrays_in_body,
                                                 inout_arrays_in_body, depend,
                                                 prefix))
 
@@ -810,7 +632,7 @@ class TTAccParallelLoop(TTAccLoop,TTAccParallel):
 
 
 
-    def omp_f_str(self,
+    def omp_fstr(self,
                   arrays_in_body=[],
                   inout_arrays_in_body=[],
                   depend={},
@@ -821,10 +643,10 @@ class TTAccParallelLoop(TTAccLoop,TTAccParallel):
                with such a construct.
         """
         result = "!$omp target teams distribute"
-        parallel_part = TTAccParallel.omp_f_str(self, arrays_in_body,
+        parallel_part = TTAccParallel.omp_fstr(self, arrays_in_body,
                                                 inout_arrays_in_body, depend,
                                                 "")
-        loop_part = TTAccLoop.omp_f_str(self, loop_type, "parallel", "")
+        loop_part = TTAccLoop.omp_fstr(self, loop_type, "parallel", "")
         return self._format(result + " " + loop_part.lstrip() + " "
                             + parallel_part.strip())
 
@@ -843,7 +665,7 @@ class TTAccEndData(TTAccDirectiveBase):
     def _assign_fields(self, tokens):
         pass
 
-    def omp_f_str(self):
+    def omp_fstr(self):
         return self._format("!$omp end target data")
 
 
@@ -867,10 +689,11 @@ grammar.acc_clause_tile.setParseAction(TTAccClauseTile)
 grammar.acc_clause_wait.setParseAction(TTAccClauseWait)
 grammar.acc_clause_async.setParseAction(TTAccClauseAsync)
 grammar.acc_mapping_clause.setParseAction(TTAccMappingClause)
+grammar.acc_noarg_clause.setParseAction(TTAccNoArgumentClause)
 # directive action
 grammar.acc_update.setParseAction(TTAccUpdate)
 grammar.acc_wait.setParseAction(TTAccWait)
--#acc_host_data #TODO
+#acc_host_data #TODO
 grammar.acc_data.setParseAction(TTAccData)
 grammar.acc_enter_data.setParseAction(TTAccEnterData)
 grammar.acc_exit_data.setParseAction(TTAccExitData)

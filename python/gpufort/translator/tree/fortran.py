@@ -11,52 +11,52 @@ from .. import conv
 from .. import prepostprocess
 
 from . import base
+from . import traversals
 from . import grammar
 
 import enum
 
-def flatten_arithmetic_expression(expr, converter=base.make_c_str):
+def flatten_arithmetic_expression(expr, converter=traversals.make_cstr):
 
-    def descend_(current, depth=0):
+    def descend_(current, parent=None):
+        parent_is_arith_expr = isinstance(parent,TTArithExpr)
         if isinstance(current, (list,pyparsing.ParseResults)):
             result = ""
-            if (depth > 0): result += "("
+            if not parent_is_arith_expr: result += "("
             for element in current:
                 result += descend_(element, depth+1)
-            if (depth > 0): result += ")"
+            if not parent_is_arith_expr: result += ")"
             return result
-        elif isinstance(current,(TTArithmeticExpression)):
+        elif isinstance(current,(TTArithExpr)):
             return descend_(current._expr,depth) 
         else:
             return converter(current)
 
     return descend_(expr)
 
-
 class TTSimpleToken(base.TTNode):
 
     def _assign_fields(self, tokens):
         self._text = " ".join(tokens)
 
-    def c_str(self):
+    def cstr(self):
         return "{};".format(self._text.lower())
 
-    def f_str(self):
+    def fstr(self):
         return str(self._text)
-
 
 class TTReturn(base.TTNode):
 
     def _assign_fields(self, tokens):
         self._result_name = ""
 
-    def c_str(self):
+    def cstr(self):
         if self._result_name != None and len(self._result_name):
             return "return " + self._result_name + ";"
         else:
             return "return;"
 
-    def f_str(self):
+    def fstr(self):
         return "return"
 
 class TTLabel(base.TTNode):
@@ -64,14 +64,14 @@ class TTLabel(base.TTNode):
     def _assign_fields(self, tokens):
         self._label = tokens[0]
 
-    def c_str(self):
+    def cstr(self):
         return "_{}:".format(self._label)
 
 class TTContinue(base.TTNode):
-    def c_str(self):
+    def cstr(self):
         return "return;"
 
-    def f_str(self):
+    def fstr(self):
         return "continue"
 
 class TTCycle(base.TTNode):
@@ -80,7 +80,7 @@ class TTCycle(base.TTNode):
         self._result_name = ""
         self._in_loop = True
 
-    def c_str(self):
+    def cstr(self):
         if self._in_loop:
             return "continue;"
         elif self._result_name != None and len(self._result_name):
@@ -88,7 +88,7 @@ class TTCycle(base.TTNode):
         else:
             return "return;"
 
-    def f_str(self):
+    def fstr(self):
         if self._in_loop:
             return "cycle"
         else:
@@ -100,7 +100,7 @@ class TTExit(base.TTNode):
         self._result_name = ""
         self._in_loop = True
 
-    def c_str(self):
+    def cstr(self):
         if self._in_loop:
             return "break;"
         elif self._result_name != None and len(self._result_name):
@@ -108,7 +108,7 @@ class TTExit(base.TTNode):
         else:
             return "return;"
 
-    def f_str(self):
+    def fstr(self):
         if self._in_loop:
             return "break;"
         else:
@@ -119,7 +119,7 @@ class TTGoto(base.TTNode):
     def _assign_fields(self, tokens):
         self._label = tokens[0]
 
-    def c_str(self):
+    def cstr(self):
         return "goto _{};".format(self._label.rstrip("\n"))
 
 class TTCommentedOut(base.TTNode):
@@ -127,13 +127,13 @@ class TTCommentedOut(base.TTNode):
     def _assign_fields(self, tokens):
         self._text = " ".join(tokens)
 
-    def c_str(self):
+    def cstr(self):
         return "// {}".format(self._text)
 
 
 class TTIgnore(base.TTNode):
 
-    def c_str(self):
+    def cstr(self):
         return ""
 
 
@@ -142,10 +142,10 @@ class TTLogical(base.TTNode):
     def _assign_fields(self, tokens):
         self._value = tokens[0]
 
-    def c_str(self):
+    def cstr(self):
         return "true" if self._value.lower() == ".true." else "false"
 
-    def f_str(self):
+    def fstr(self):
         return self._value
 
 
@@ -220,7 +220,7 @@ class TTNumber(base.TTNode):
         else:
             return is_integer
 
-    def c_str(self):
+    def cstr(self):
         parts = self._value.split("_")
         value = parts[0].replace("d", "e")
         if self.is_real("4"):
@@ -230,7 +230,7 @@ class TTNumber(base.TTNode):
         else:
             return value
 
-    def f_str(self):
+    def fstr(self):
         return self._value
     
     def __str__(self):
@@ -243,18 +243,18 @@ class TTIdentifier(base.TTNode):
     def _assign_fields(self, tokens):
         self._name = tokens[0]
 
-    def f_str(self):
+    def fstr(self):
         return str(self._name)
 
-    def c_str(self):
-        return self.f_str()
+    def cstr(self):
+        return self.fstr()
 
     def __str__(self):    
         return "TTIdentifier(name:"+str(self._name)+")"
     __repr__ = __str__
 
 
-class TTFunctionCallOrTensorAccess(base.TTNode):
+class TTTensorAccess(base.TTNode):
     class Type(enum.Enum):
         UNKNOWN = 0
         ARRAY_ACCESS = 0
@@ -264,17 +264,19 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
     def _assign_fields(self, tokens):
         self._name = tokens[0]
         self._args = tokens[1]
-        self._type = TTFunctionCallOrTensorAccess.Type.UNKNOWN
+        if self._args == None:
+            self._args = base.TTNone
+        self._type = TTTensorAccess.Type.UNKNOWN
 
-    def range_args(self):
+    def tensor_slice_args(self):
         """Returns all range args in the order of their appeareance.
         """
-        return base.find_all(self._args, searched_type=TTRange)
+        return traversals.find_all(self._args, searched_type=TTSlice)
 
-    def has_range_args(self):
+    def has_slice_args(self):
         """If any range args are present in the argument list.
         """
-        return base.find_first(self._args,searched_type=TTRange) != None
+        return traversals.find_first(self._args,searched_type=TTSlice) != None
     
     def args(self):
         """Returns all args in the order of their appeareance.
@@ -292,26 +294,26 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
         is function or not if no other hints are given
         """
         #  TODO hacky old solution, evaluate if still needed
-        name = base.make_c_str(self._name).lower()
+        name = traversals.make_cstr(self._name).lower()
         return len(self._args) == 0 or\
           name in opts.gpufort_cpp_symbols or\
           name in grammar.ALL_HOST_ROUTINES or\
           name in grammar.ALL_DEVICE_ROUTINES
 
     def is_tensor(self):
-        if self._type == TTFunctionCallOrTensorAccess.Type.ARRAY_ACCESS:
+        if self._type == TTTensorAccess.Type.ARRAY_ACCESS:
             return True
-        elif self._type == TTFunctionCallOrTensorAccess.Type.UNKNOWN:
-            return self.has_range_args() or\
+        elif self._type == TTTensorAccess.Type.UNKNOWN:
+            return self.has_slice_args() or\
                    not self.__guess_it_is_function()
         else:
             return False
 
-    def name_c_str(self):
-        name = base.make_c_str(self._name).lower()
+    def name_cstr(self):
+        name = traversals.make_cstr(self._name).lower()
         if self.is_tensor():
             return name
-        elif self._type == TTFunctionCallOrTensorAccess.Type.INTRINSIC_CALL:
+        elif self._type == TTTensorAccess.Type.INTRINSIC_CALL:
             name = prepostprocess.modernize_fortran_function_name(name)
             if name in [
               "max",
@@ -324,23 +326,23 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
         else:
             return name
 
-    def c_str(self):
-        name = self.name_c_str()
+    def cstr(self):
+        name = self.name_cstr()
         return "".join([
             name,
-            self._args.c_str(name,
+            self._args.cstr(name,
                              self.is_tensor(),
                              opts.fortran_style_tensor_access)])
     
-    def f_str(self):
-        name = base.make_f_str(self._name)
+    def fstr(self):
+        name = traversals.make_fstr(self._name)
         return "".join([
             name,
-            self._args.f_str()
+            self._args.fstr()
             ])
     
     def __str__(self):
-        return "TTFunctionCallOrTensorAccess(name:"+str(self._name)+",is_tensor:"+str(self.is_tensor())+")"
+        return "TTTensorAccess(name:"+str(self._name)+",is_tensor:"+str(self.is_tensor())+")"
     __repr__ = __str__
 
 class TTValue(base.TTNode):
@@ -348,12 +350,12 @@ class TTValue(base.TTNode):
     def _assign_fields(self, tokens):
         self._value           = tokens[0][0]
         self._reduction_index = None
-        self._f_str           = None
+        self._fstr           = None
    
     def is_identifier(self):
         return isinstance(self._value, TTIdentifier)
 
-    def identifier_part(self,converter=base.make_f_str):
+    def identifier_part(self,converter=traversals.make_fstr):
         """
         :return: The identifier part of the expression. In case
                  of a function call/tensor access expression, 
@@ -361,7 +363,7 @@ class TTValue(base.TTNode):
                  In case of a derived type, excludes the argument
                  list of the innermost member.
         """
-        if type(self._value) is TTFunctionCallOrTensorAccess:
+        if type(self._value) is TTTensorAccess:
             return converter(self._value._name)
         elif type(self._value) is TTDerivedTypeMember:
             return self._value.identifier_part(converter)
@@ -370,11 +372,11 @@ class TTValue(base.TTNode):
     
     def is_function_call(self):
         """
-        :note: TTFunctionCallOrTensorAccess instances must be flagged as tensor beforehand.
+        :note: TTTensorAccess instances must be flagged as tensor beforehand.
         """
         #TODO check if detect all arrays in indexer/scope
         # so that we do not need to know function names anymore.
-        if type(self._value) is TTFunctionCallOrTensorAccess:
+        if type(self._value) is TTTensorAccess:
             return not self._value.is_tensor()
         elif type(self._value) is TTDerivedTypeMember:
             # TODO support type bounds routines
@@ -386,21 +388,21 @@ class TTValue(base.TTNode):
         return self._value 
 
     def name(self):
-        return self._value.f_str()
+        return self._value.fstr()
     
-    def has_range_args(self):
-        if type(self._value) is TTFunctionCallOrTensorAccess:
-            return self._value.has_range_args()
+    def has_slice_args(self):
+        if type(self._value) is TTTensorAccess:
+            return self._value.has_slice_args()
         elif type(self._value) is TTDerivedTypeMember:
-            return self._value.innermost_member_has_range_args()
+            return self._value.innermost_member_has_slice_args()
         else:
             return False
 
-    def range_args(self):
-        if type(self._value) is TTFunctionCallOrTensorAccess:
-            return self._value.range_args()
+    def tensor_slice_args(self):
+        if type(self._value) is TTTensorAccess:
+            return self._value.tensor_slice_args()
         elif type(self._value) is TTDerivedTypeMember:
-            return self._value.innermost_member_range_args()
+            return self._value.innermost_member_slice_args()
         else:
             return []
     
@@ -409,7 +411,7 @@ class TTValue(base.TTNode):
                    case of a derived type member, if the inner most derived
                    type member has an argument list.
         """
-        if type(self._value) is TTFunctionCallOrTensorAccess:
+        if type(self._value) is TTTensorAccess:
             return True
         elif type(self._value) is TTDerivedTypeMember:
             return self._value.innermost_member_has_args()
@@ -417,24 +419,24 @@ class TTValue(base.TTNode):
             return False
     
     def args(self):
-        if type(self._value) is TTFunctionCallOrTensorAccess:
+        if type(self._value) is TTTensorAccess:
             return self._value._args
         elif type(self._value) is TTDerivedTypeMember:
             return self._value.innermost_member_args()
         else:
             return []
     
-    def overwrite_f_str(self,f_str):
-        self._f_str = f_str
+    def overwrite_fstr(self,fstr):
+        self._fstr = fstr
     
-    def f_str(self):
-        if self._f_str != None:
-            return self._f_str
+    def fstr(self):
+        if self._fstr != None:
+            return self._fstr
         else:
-            return base.make_f_str(self._value)
+            return traversals.make_fstr(self._value)
 
-    def c_str(self):
-        result = base.make_c_str(self._value)
+    def cstr(self):
+        result = traversals.make_cstr(self._value)
         if self._reduction_index != None:
             if opts.fortran_style_tensor_access:
                 result += "({idx})".format(idx=self._reduction_index)
@@ -442,14 +444,14 @@ class TTValue(base.TTNode):
                 result += "[{idx}]".format(idx=self._reduction_index)
         return result.lower()
 
-class TTLValue(TTValue):
+class TTLvalue(TTValue):
     def __str__(self):
-        return "TTLValue(val:"+str(self._value)+")"
+        return "TTLvalue(val:"+str(self._value)+")"
     __repr__ = __str__
 
-class TTRValue(TTValue):
+class TTRvalue(TTValue):
     def __str__(self):
-        return "TTRValue(val:"+str(self._value)+")"
+        return "TTRvalue(val:"+str(self._value)+")"
     __repr__ = __str__
 
 def _inquiry_str(prefix,ref,dim,kind=""):
@@ -460,7 +462,7 @@ def _inquiry_str(prefix,ref,dim,kind=""):
         result += "," + kind
     return result + ")"
 
-def _inquiry_c_str(prefix,ref,dim,kind,f_type="integer",c_type_expected="int"):
+def _inquiry_cstr(prefix,ref,dim,kind,f_type="integer",c_type_expected="int"):
     """Tries to determine a C type before calling _inquiry_str.
     Wraps the result of the latter function into a typecast
     if the C type does not equal the expected type.
@@ -481,7 +483,7 @@ class TTSizeInquiry(base.TTNode):
     def _assign_fields(self, tokens):
         self._ref, self._dim, self._kind = tokens
 
-    def c_str(self):
+    def cstr(self):
         """
         :return: number of elements per array dimension, if the dimension
                  is specified as argument.
@@ -490,22 +492,22 @@ class TTSizeInquiry(base.TTNode):
         :note: only the case where <dim> is specified as integer literal is handled by this function.
         """
         if opts.fortran_style_tensor_access:
-            return _inquiry_c_str("size",
-                                  base.make_c_str(self._ref),
-                                  base.make_c_str(self._dim),
-                                  base.make_c_str(self._kind))
+            return _inquiry_cstr("size",
+                                  traversals.make_cstr(self._ref),
+                                  traversals.make_cstr(self._dim),
+                                  traversals.make_cstr(self._kind))
         else:
             if type(self._dim) is TTNumber:
-                return base.make_c_str(self._ref) + "_n" + base.make_c_str(
+                return traversals.make_cstr(self._ref) + "_n" + traversals.make_cstr(
                     self._dim)
             else:
                 prefix = "size"
-                return "/* " + prefix + "(" + base.make_f_str(self._ref) + ") */"
-    def f_str(self):
+                return "/* " + prefix + "(" + traversals.make_fstr(self._ref) + ") */"
+    def fstr(self):
         return _inquiry_str("size",
-                            base.make_f_str(self._ref),
-                            base.make_f_str(self._dim),
-                            base.make_f_str(self._kind))
+                            traversals.make_fstr(self._ref),
+                            traversals.make_fstr(self._dim),
+                            traversals.make_fstr(self._kind))
 
 
 class TTLboundInquiry(base.TTNode):
@@ -516,7 +518,7 @@ class TTLboundInquiry(base.TTNode):
     def _assign_fields(self, tokens):
         self._ref, self._dim, self._kind = tokens
 
-    def c_str(self):
+    def cstr(self):
         """
         :return: lower bound per array dimension, if the dimension argument is specified as integer literal.
                  Utilizes the <array>_n<dim> and <array>_lb<dim> arguments that
@@ -524,23 +526,23 @@ class TTLboundInquiry(base.TTNode):
         :note:   only the case where <dim> is specified as integer literal is handled by this function.
         """
         if opts.fortran_style_tensor_access:
-            return _inquiry_c_str("lbound",
-                                  base.make_c_str(self._ref),
-                                  base.make_c_str(self._dim),
-                                  base.make_c_str(self._kind))
+            return _inquiry_cstr("lbound",
+                                  traversals.make_cstr(self._ref),
+                                  traversals.make_cstr(self._dim),
+                                  traversals.make_cstr(self._kind))
         else:
             if type(self._dim) is TTNumber:
-                return base.make_c_str(self._ref) + "_lb" + base.make_c_str(
+                return traversals.make_cstr(self._ref) + "_lb" + traversals.make_cstr(
                     self._dim)
             else:
                 prefix = "lbound"
-                return "/* " + prefix + "(" + base.make_f_str(self._ref) + ") */"
+                return "/* " + prefix + "(" + traversals.make_fstr(self._ref) + ") */"
 
-    def f_str(self):
+    def fstr(self):
         return _inquiry_str("lbound",
-                            base.make_f_str(self._ref),
-                            base.make_f_str(self._dim),
-                            base.make_f_str(self._kind))
+                            traversals.make_fstr(self._ref),
+                            traversals.make_fstr(self._dim),
+                            traversals.make_fstr(self._kind))
 
 
 class TTUboundInquiry(base.TTNode):
@@ -551,7 +553,7 @@ class TTUboundInquiry(base.TTNode):
     def _assign_fields(self, tokens):
         self._ref, self._dim, self._kind = tokens
 
-    def c_str(self):
+    def cstr(self):
         """
         :return: upper bound per array dimension, if the dimension argument is specified as integer literal.
                  Utilizes the <array>_n<dim> and <array>_lb<dim> arguments that
@@ -559,22 +561,22 @@ class TTUboundInquiry(base.TTNode):
         :note:   only the case where <dim> is specified as integer literal is handled by this function.
         """
         if opts.fortran_style_tensor_access:
-            return _inquiry_c_str("ubound",
-                                  base.make_c_str(self._ref),
-                                  base.make_c_str(self._dim),
-                                  base.make_c_str(self._kind))
+            return _inquiry_cstr("ubound",
+                                  traversals.make_cstr(self._ref),
+                                  traversals.make_cstr(self._dim),
+                                  traversals.make_cstr(self._kind))
         else:
             if type(self._dim) is TTNumber:
                 return "({0}_lb{1} + {0}_n{1} - 1)".format(
-                    base.make_c_str(self._ref), base.make_c_str(self._dim))
+                    traversals.make_cstr(self._ref), traversals.make_cstr(self._dim))
             else:
                 prefix = "ubound"
-                return "/* " + prefix + "(" + base.make_f_str(self._ref) + ") */"
-    def f_str(self):
+                return "/* " + prefix + "(" + traversals.make_fstr(self._ref) + ") */"
+    def fstr(self):
         return _inquiry_str("ubound",
-                            base.make_f_str(self._ref),
-                            base.make_f_str(self._dim),
-                            base.make_f_str(self._kind))
+                            traversals.make_fstr(self._ref),
+                            traversals.make_fstr(self._dim),
+                            traversals.make_fstr(self._kind))
 
 
 class TTConvertToExtractReal(base.TTNode):
@@ -582,17 +584,17 @@ class TTConvertToExtractReal(base.TTNode):
     def _assign_fields(self, tokens):
         self._ref, self._kind = tokens
 
-    def c_str(self):
+    def cstr(self):
         c_type = conv.convert_to_c_type("real", self._kind).replace(
             " ", "_") # TODO check if his anything else than double or float
         return "make_{1}({0})".format(
-            base.make_c_str(self._ref),
+            traversals.make_cstr(self._ref),
             c_type) # rely on C++ compiler to make the correct type conversion
 
-    def f_str(self):
-        result = "REAL({0}".format(base.make_f_str(self._ref))
+    def fstr(self):
+        result = "REAL({0}".format(traversals.make_fstr(self._ref))
         if not self._kind is None:
-            result += ",kind={0}".format(base.make_f_str(self._kind))
+            result += ",kind={0}".format(traversals.make_fstr(self._kind))
         return result + ")"
 
 
@@ -601,14 +603,14 @@ class TTConvertToDouble(base.TTNode):
     def _assign_fields(self, tokens):
         self._ref, self._kind = tokens
 
-    def c_str(self):
+    def cstr(self):
         return "make_double({0})".format(
-            base.make_c_str(self._ref)
+            traversals.make_cstr(self._ref)
         ) # rely on C++ compiler to make the correct type conversion
 
-    def f_str(self):
+    def fstr(self):
         return "DBLE({0})".format(
-            base.make_f_str(self._ref)
+            traversals.make_fstr(self._ref)
         ) # rely on C++ compiler to make the correct type conversion
 
 
@@ -617,20 +619,20 @@ class TTConvertToComplex(base.TTNode):
     def _assign_fields(self, tokens):
         self._x, self._y, self._kind = tokens
 
-    def c_str(self):
+    def cstr(self):
         c_type = conv.convert_to_c_type("complex",
                                         self._kind,
                                         default=None,
                                         float_complex="hipFloatComplex",
                                         double_complex="hipDoubleComplex")
-        return "make_{2}({0}, {1})".format(base.make_c_str(self._x),
-                                           base.make_c_str(self._y), c_type)
+        return "make_{2}({0}, {1})".format(traversals.make_cstr(self._x),
+                                           traversals.make_cstr(self._y), c_type)
 
-    def f_str(self):
-        result = "CMPLX({0},{1}".format(base.make_f_str(self._x),
-                                        base.make_f_str(self._y))
+    def fstr(self):
+        result = "CMPLX({0},{1}".format(traversals.make_fstr(self._x),
+                                        traversals.make_fstr(self._y))
         if not self._kind is None:
-            result += ",kind={0}".format(base.make_f_str(self._kind))
+            result += ",kind={0}".format(traversals.make_fstr(self._kind))
         return result + ")"
 
 
@@ -639,14 +641,14 @@ class TTConvertToDoubleComplex(base.TTNode):
     def _assign_fields(self, tokens):
         self._x, self._y, self._kind = tokens
 
-    def c_str(self):
+    def cstr(self):
         c_type = "double_complex"
-        return "make_{2}({0}, {1})".format(base.make_c_str(self._x),
-                                           base.make_c_str(self._y), c_type)
+        return "make_{2}({0}, {1})".format(traversals.make_cstr(self._x),
+                                           traversals.make_cstr(self._y), c_type)
 
-    def f_str(self):
-        result = "DCMPLX({0},{1}".format(base.make_f_str(self._x),
-                                         base.make_f_str(self._y))
+    def fstr(self):
+        result = "DCMPLX({0},{1}".format(traversals.make_fstr(self._x),
+                                         traversals.make_fstr(self._y))
         return result + ")"
 
 
@@ -655,8 +657,8 @@ class TTExtractImag(base.TTNode):
     def _assign_fields(self, tokens):
         self._ref, self._kind = tokens
 
-    def c_str(self):
-        return "{0}._y".format(base.make_c_str(self._ref))
+    def cstr(self):
+        return "{0}._y".format(traversals.make_cstr(self._ref))
 
 
 class TTConjugate(base.TTNode):
@@ -664,8 +666,8 @@ class TTConjugate(base.TTNode):
     def _assign_fields(self, tokens):
         self._ref, self._kind = tokens
 
-    def c_str(self):
-        return "conj({0})".format(base.make_c_str(self._ref))
+    def cstr(self):
+        return "conj({0})".format(traversals.make_cstr(self._ref))
 
 
 class TTDerivedTypeMember(base.TTNode):
@@ -673,41 +675,41 @@ class TTDerivedTypeMember(base.TTNode):
     def _assign_fields(self, tokens):
         self._type, self._element = tokens
         #print(self._type)
-        self._c_str = None
+        self._cstr = None
 
-    def identifier_part(self,converter=base.make_f_str):
+    def identifier_part(self,converter=traversals.make_fstr):
         result = converter(self._type)
         current = self._element
         while isinstance(current,TTDerivedTypeMember):
             current = current._element
             result += "%"+converter(self._type)
-        if isinstance(current,TTFunctionCallOrTensorAccess):
+        if isinstance(current,TTTensorAccess):
             result += "%"+converter(current._name)
         else: # TTIdentifier
             result += "%"+converter(current)
         return result             
 
-    def innermost_member_range_args(self):
+    def innermost_member_slice_args(self):
         """Returns all range args in the order of their appeareance.
         """
         result = []
         current = self._element
         while isinstance(current,TTDerivedTypeMember):
             current = current._element
-        if type(current) is TTFunctionCallOrTensorAccess:
-            return current.range_args()
+        if type(current) is TTTensorAccess:
+            return current.tensor_slice_args()
         else:
             return []
 
-    def innermost_member_has_range_args(self):
+    def innermost_member_has_slice_args(self):
         """If any range args are present in the argument list.
         """
         result = []
         current = self._element
         while isinstance(current,TTDerivedTypeMember):
             current = current._element
-        if type(current) is TTFunctionCallOrTensorAccess:
-            return current.has_range_args()
+        if type(current) is TTTensorAccess:
+            return current.has_slice_args()
         else:
             return False
     
@@ -718,7 +720,7 @@ class TTDerivedTypeMember(base.TTNode):
         current = self._element
         while isinstance(current,TTDerivedTypeMember):
             current = current._element
-        if type(current) is TTFunctionCallOrTensorAccess:
+        if type(current) is TTTensorAccess:
             return current.has_args()
         else:
             return False
@@ -730,23 +732,23 @@ class TTDerivedTypeMember(base.TTNode):
         current = self._element
         while isinstance(current,TTDerivedTypeMember):
             current = current._element
-        if type(current) is TTFunctionCallOrTensorAccess:
+        if type(current) is TTTensorAccess:
             return current.args()
         else:
             return []
 
-    def overwrite_c_str(self,expr):
-        self._c_str = expr
+    def overwrite_cstr(self,expr):
+        self._cstr = expr
 
-    def c_str(self):
-        if self._c_str == None:
-            return base.make_c_str(self._type) + "." + base.make_c_str(
+    def cstr(self):
+        if self._cstr == None:
+            return traversals.make_cstr(self._type) + "." + traversals.make_cstr(
                 self._element)
         else:
-            return self._c_str
+            return self._cstr
 
-    def f_str(self):
-        return base.make_f_str(self._type) + "%" + base.make_f_str(
+    def fstr(self):
+        return traversals.make_fstr(self._type) + "%" + traversals.make_fstr(
             self._element)
     
     def __str__(self):
@@ -759,9 +761,9 @@ class TTSubroutineCall(base.TTNode):
     def _assign_fields(self, tokens):
         self._subroutine = tokens[0]
 
-    def c_str(self):
+    def cstr(self):
         self._subroutine._is_tensor_access = base.False3
-        return self._subroutine.c_str() + ";"
+        return self._subroutine.cstr() + ";"
 
 
 class TTOperator(base.TTNode):
@@ -769,7 +771,7 @@ class TTOperator(base.TTNode):
     def _assign_fields(self, tokens):
         self._name = tokens[0]
 
-    def c_str(self):
+    def cstr(self):
         f2c = {
             ".eq.": "==",
             "/=": "!=",
@@ -787,11 +789,11 @@ class TTOperator(base.TTNode):
         }
         return f2c.get(self._name.lower(), self._name)
 
-    def f_str(self):
+    def fstr(self):
         return str(self._name)
 
 
-class TTArithmeticExpression(base.TTNode):
+class TTArithExpr(base.TTNode):
 
     def _assign_fields(self, tokens):
         self._expr = tokens[0]
@@ -799,14 +801,14 @@ class TTArithmeticExpression(base.TTNode):
     def child_nodes(self):
         return [self._expr]
 
-    def c_str(self):
+    def cstr(self):
         return flatten_arithmetic_expression(self)
 
-    def f_str(self):
-        return flatten_arithmetic_expression(self, base.make_f_str)
+    def fstr(self):
+        return flatten_arithmetic_expression(self, traversals.make_fstr)
 
 
-class TTComplexArithmeticExpression(base.TTNode):
+class TTComplexArithExpr(base.TTNode):
 
     def _assign_fields(self, tokens):
         self._real, self._imag = tokens[0]
@@ -814,15 +816,15 @@ class TTComplexArithmeticExpression(base.TTNode):
     def child_nodes(self):
         return [self._real, self._imag]
 
-    def c_str(self):
+    def cstr(self):
         return "make_hip_complex({real},{imag})".format(\
-                real=flatten_arithmetic_expression(self._real,base.make_c_str),\
-                imag=flatten_arithmetic_expression(self._imag,base.make_c_str))
+                real=flatten_arithmetic_expression(self._real,traversals.make_cstr),\
+                imag=flatten_arithmetic_expression(self._imag,traversals.make_cstr))
 
-    def f_str(self):
+    def fstr(self):
         return "({real},{imag})".format(\
-                real=flatten_arithmetic_expression(self._real,base.make_f_str),\
-                imag=flatten_arithmetic_expression(self._imag,base.make_f_str))
+                real=flatten_arithmetic_expression(self._real,traversals.make_fstr),\
+                imag=flatten_arithmetic_expression(self._imag,traversals.make_fstr))
 
 
 class TTPower(base.TTNode):
@@ -833,31 +835,50 @@ class TTPower(base.TTNode):
     def child_nodes(self):
         return [self.base, self.exp]
 
-    def gpufort_f_str(self, scope=None):
-        return "__pow({base},{exp})".format(base=base.make_f_str(self.base),
-            exp=base.make_f_str(self.exp))
+    def gpufort_fstr(self, scope=None):
+        return "__pow({base},{exp})".format(base=traversals.make_fstr(self.base),
+            exp=traversals.make_fstr(self.exp))
 
     def __str__(self):
-        return self.gpufort_f_str()
+        return self.gpufort_fstr()
 
-    def f_str(self):
+    def fstr(self):
         return "({base})**({exp})".format(\
-            base=base.make_c_str(self.base),exp=base.make_c_str(self.exp))
+            base=traversals.make_cstr(self.base),exp=traversals.make_cstr(self.exp))
 
 class TTAssignment(base.TTNode):
 
     def _assign_fields(self, tokens):
         self._lhs, self._rhs = tokens
 
-    def c_str(self):
-        return self._lhs.c_str() + "=" + flatten_arithmetic_expression(self._rhs) + ";\n"
-
     def child_nodes(self):
         return [self._lhs, self._rhs]
 
-    def f_str(self):
-        return "".join([self._lhs.f_str(),"=",flatten_arithmetic_expression(
-            self._rhs, converter=base.make_f_str),"\n"])
+    def cstr(self):
+        return self._lhs.cstr() + "=" + self._rhs.cstr() + ";\n"
+
+    def fstr(self):
+        return self._lhs.fstr() + "=" + self._rhs.fstr() + ";\n"
+
+class TTArgument(base.TTNode):
+    def _assign_fields(self, tokens):
+        self.value = tokens[0]
+    def child_nodes(self):
+        return [self.value]
+    def cstr(self):
+        return self.value.cstr()
+    def fstr(self):
+        return self.value.fstr()
+     
+class TTKeywordArgument(base.TTNode):
+    def _assign_fields(self, tokens):
+        self.key, self.value = tokens
+    def child_nodes(self):
+        return [self.key, self.value]
+    def cstr(self):
+        return self._lhs.cstr() + "=" + self._rhs.cstr() + ";\n"
+    def fstr(self):
+        return self._lhs.fstr() + "=" + self._rhs.fstr() + ";\n"
 
 class TTComplexAssignment(base.TTNode):
 
@@ -867,15 +888,15 @@ class TTComplexAssignment(base.TTNode):
     def child_nodes(self):
         return [self._lhs, self._rhs]
 
-    def c_str(self):
+    def cstr(self):
         """
         Expand the complex assignment.
         """
         result = ""
-        result += "{}.x = {};\n".format(base.make_c_str(self._lhs),
-                                        base.make_c_str(self._rhs._real))
-        result += "{}.y = {};\n".format(base.make_c_str(self._lhs),
-                                        base.make_c_str(self._rhs._imag))
+        result += "{}.x = {};\n".format(traversals.make_cstr(self._lhs),
+                                        traversals.make_cstr(self._rhs._real))
+        result += "{}.y = {};\n".format(traversals.make_cstr(self._lhs),
+                                        traversals.make_cstr(self._rhs._imag))
         return result
 
 
@@ -887,31 +908,34 @@ class TTMatrixAssignment(base.TTNode):
     def child_nodes(self):
         return [self._lhs, self._rhs]
 
-    def c_str(self):
+    def cstr(self):
         """
         Expand the matrix assignment.
         User still has to fix the ranges manually. 
         """
         result = "// TODO: fix ranges"
         for expression in self._rhs:
-            result += base.make_c_str(
+            result += traversals.make_cstr(
                 self._lhs) + argument + "=" + flatten_arithmetic_expression(
                     expression) + ";\n"
         return result
 
-class TTRange(base.TTNode):
+class TTSlice(base.TTNode):
 
     def _assign_fields(self, tokens):
         self._lbound, self._ubound, self._stride = tokens
-        self._f_str = None
+        if self._lbound == None:
+            self._lbound = base.TTNone() 
+            self._ubound = base.TTNone() 
+        self._fstr = None
 
     def set_loop_var(self, name):
         self._loop_var = name
 
-    def l_bound(self, converter=base.make_c_str):
+    def l_bound(self, converter=traversals.make_cstr):
         return converter(self._lbound)
 
-    def u_bound(self, converter=base.make_c_str):
+    def u_bound(self, converter=traversals.make_cstr):
         return converter(self._ubound)
 
     def unspecified_l_bound(self):
@@ -920,10 +944,10 @@ class TTRange(base.TTNode):
     def unspecified_u_bound(self):
         return not len(self.u_bound())
 
-    def stride(self, converter=base.make_c_str):
+    def stride(self, converter=traversals.make_cstr):
         return converter(self._stride)
 
-    def size(self, converter=base.make_c_str):
+    def size(self, converter=traversals.make_cstr):
         result = "{1} - ({0}) + 1".format(converter(self._lbound),
                                           converter(self._ubound))
         try:
@@ -940,25 +964,25 @@ class TTRange(base.TTNode):
                 pass
         return result
 
-    def c_str(self):
-        #return self.size(base.make_c_str)
-        return "/*TODO fix this BEGIN*/{0}/*fix END*/".format(self.f_str())
+    def cstr(self):
+        #return self.size(traversals.make_cstr)
+        return "/*TODO fix this BEGIN*/{0}/*fix END*/".format(self.fstr())
 
-    def overwrite_f_str(self,f_str):
-        self._f_str = f_str
+    def overwrite_fstr(self,fstr):
+        self._fstr = fstr
     
-    def f_str(self):
-        if self._f_str != None:
-            return self._f_str
+    def fstr(self):
+        if self._fstr != None:
+            return self._fstr
         else:
             result = ""
             if not self._lbound is None:
-                result += base.make_f_str(self._lbound)
+                result += traversals.make_fstr(self._lbound)
             result += ":"
             if not self._ubound is None:
-                result += base.make_f_str(self._ubound)
+                result += traversals.make_fstr(self._ubound)
             if not self._stride is None:
-                result += ":" + base.make_f_str(self._stride)
+                result += ":" + traversals.make_fstr(self._stride)
             return result
 
 
@@ -981,9 +1005,9 @@ class TTArgumentList(base.TTNode):
     def __iter__(self):
         return iter(self.items)
 
-    def c_str(self):
+    def cstr(self):
         return "".join(
-            ["[{0}]".format(base.make_c_str(el)) for el in self.items])
+            ["[{0}]".format(traversals.make_cstr(el)) for el in self.items])
 
     def __max_rank_adjusted_items(self):
         if self.max_rank > 0:
@@ -993,24 +1017,24 @@ class TTArgumentList(base.TTNode):
             result = []
         return result
 
-    def c_str(self,name,is_tensor=False,fortran_style_tensor_access=True):
+    def cstr(self,name,is_tensor=False,fortran_style_tensor_access=True):
         args = self.__max_rank_adjusted_items()
         if len(args):
             if (not fortran_style_tensor_access and is_tensor):
                 return "[_idx_{0}({1})]".format(name, ",".join([
-                    base.make_c_str(s) for s in args
+                    traversals.make_cstr(s) for s in args
                 ])) # Fortran identifiers cannot start with "_"
             else:
                 return "({})".format(
-                    ",".join([base.make_c_str(s) for s in args]))
+                    ",".join([traversals.make_cstr(s) for s in args]))
         else:
             return ""
 
-    def f_str(self):
+    def fstr(self):
         args = self.__max_rank_adjusted_items()
         if len(args):
             return "({0})".format(",".join(
-                base.make_f_str(el) for el in args))
+                traversals.make_fstr(el) for el in args))
         else:
             return ""
 
@@ -1026,34 +1050,34 @@ class TTIfElseIf(base.TTContainer):
     def child_nodes(self):
         return [self._condition, self.body]
     
-    def header_c_str(self):
+    def header_cstr(self):
         prefix = self._else+" " if self._else.lower() == "else" else ""
-        return "{}if ({}) {{\n".format(prefix,base.make_c_str(self._condition))
-    def footer_c_str(self):
+        return "{}if ({}) {{\n".format(prefix,traversals.make_cstr(self._condition))
+    def footer_cstr(self):
         return "}\n" 
 
 
 class TTElse(base.TTContainer):
     
-    def header_c_str(self):
+    def header_cstr(self):
         return "else {\n"
-    def footer_c_str(self):
+    def footer_cstr(self):
         return "}\n" 
 
-    def c_str(self):
-        body_content = base.TTContainer.c_str(self)
+    def cstr(self):
+        body_content = base.TTContainer.cstr(self)
         return "{}{}\n{}".format(
-            self.header_c_str(),
+            self.header_cstr(),
             body_content,
-            self.footer_c_str())
+            self.footer_cstr())
 
 class TTSelectCase(base.TTContainer):
     def _assign_fields(self, tokens):
         self.selector = tokens[0]
         self.indent = "" # container of if/elseif/else branches, so no indent
-    def header_c_str(self):
+    def header_cstr(self):
         return "switch ({}) {{\n".format(self.selector)
-    def footer_c_str(self):
+    def footer_cstr(self):
         return "}\n" 
 
 class TTCase(base.TTContainer):
@@ -1064,12 +1088,12 @@ class TTCase(base.TTContainer):
     def child_nodes(self):
         return [self.cases, self.body]
     
-    def header_c_str(self):
+    def header_cstr(self):
         result = ""
         for case in self.cases:
-            result += "case ("+base.make_c_str(case)+"):\n"
+            result += "case ("+traversals.make_cstr(case)+"):\n"
         return result
-    def footer_c_str(self):
+    def footer_cstr(self):
         return "  break;\n" 
 
 class TTCaseDefault(base.TTContainer):
@@ -1080,9 +1104,9 @@ class TTCaseDefault(base.TTContainer):
     def child_nodes(self):
         return [self.body]
     
-    def header_c_str(self):
+    def header_cstr(self):
         return "default:\n"
-    def footer_c_str(self):
+    def footer_cstr(self):
         return "  break;\n" 
 
 class TTDoWhile(base.TTContainer):
@@ -1093,11 +1117,11 @@ class TTDoWhile(base.TTContainer):
     def child_nodes(self):
         return [self._condition, self.body]
     
-    def header_c_str(self):
+    def header_cstr(self):
         return "while ({0}) {{\n".format(
-          base.make_c_str(self._condition)
+          traversals.make_cstr(self._condition)
         )
-    def footer_c_str(self):
+    def footer_cstr(self):
         return "  break;\n" 
 
 
@@ -1113,11 +1137,10 @@ grammar.l_arith_operator_2.setParseAction(TTOperator)
 grammar.condition_op_1.setParseAction(TTOperator)
 grammar.condition_op_2.setParseAction(TTOperator)
 grammar.identifier.setParseAction(TTIdentifier)
-grammar.rvalue.setParseAction(TTRValue)
-grammar.lvalue.setParseAction(TTLValue)
-grammar.simple_derived_type_member.setParseAction(TTDerivedTypeMember)
+grammar.rvalue.setParseAction(TTRvalue)
+grammar.lvalue.setParseAction(TTLvalue)
 grammar.derived_type_elem.setParseAction(TTDerivedTypeMember)
-grammar.func_call.setParseAction(TTFunctionCallOrTensorAccess)
+grammar.tensor_access.setParseAction(TTTensorAccess)
 grammar.convert_to_extract_real.setParseAction(TTConvertToExtractReal)
 grammar.convert_to_double.setParseAction(TTConvertToDouble)
 grammar.convert_to_complex.setParseAction(TTConvertToComplex)
@@ -1128,14 +1151,15 @@ grammar.conjugate_double_complex.setParseAction(TTConjugate) # same action
 grammar.size_inquiry.setParseAction(TTSizeInquiry)
 grammar.lbound_inquiry.setParseAction(TTLboundInquiry)
 grammar.ubound_inquiry.setParseAction(TTUboundInquiry)
-grammar.array_range.setParseAction(TTRange)
-grammar.arglist.setParseAction(TTArgumentList)
-grammar.arithmetic_expression.setParseAction(TTArithmeticExpression)
-grammar.arithmetic_logical_expression.setParseAction(TTArithmeticExpression)
+grammar.tensor_slice.setParseAction(TTSlice)
+grammar.tensor_access_args.setParseAction(TTArgumentList)
+grammar.arithmetic_expression.setParseAction(TTArithExpr)
+grammar.arithmetic_logical_expression.setParseAction(TTArithExpr)
 grammar.complex_arithmetic_expression.setParseAction(
-    TTComplexArithmeticExpression)
-grammar.power_value1.setParseAction(TTRValue)
+    TTComplexArithExpr)
+grammar.power_value1.setParseAction(TTRvalue)
 grammar.power.setParseAction(TTPower)
+grammar.keyword_argument.setParseAction(TTKeywordArgument)
 grammar.assignment.setParseAction(TTAssignment)
 grammar.matrix_assignment.setParseAction(TTMatrixAssignment)
 grammar.complex_assignment.setParseAction(TTComplexAssignment)

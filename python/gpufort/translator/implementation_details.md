@@ -71,6 +71,21 @@ print(expr.parseString("-5"))
 print(expr.parseString("-( a + (b-1))"))
 ```
 
+#### Parse actions
+
+We can assign parse actions to pyparsing expressions via `<pyparsing_expr>.setParseAction(<action>)`,
+where action is either a function or lambda or a class (not an object!).
+In the former case, depending on the number of arguments, pyparsing will
+pass all tokens (and, optionally, some meta information) associated with an expression to the function.
+In the latter case, pyparsing will instantiate a new instance of the class
+and pass all tokens (and, optionally, the meta information) to the constructor
+of that object. It will then replace the consumed tokens with that object in the token stream.
+The modified token stream may then be passed to the next class action instantiating
+another object. This way a parse tree with custom classes can be generated.
+
+Note that expressions created via `pyparsing.infixNotation` introduce `pyparsing.ParseResults` objects
+for every group of opening and closing brackets. Parse actions that you apply to the expression,
+will not automatically be applied to the `pyparsing.ParseResults` objects.
 
 ### Loop and compute construct directives
 
@@ -83,6 +98,8 @@ to represent the different OpenACC compute constructs (`acc kernels`, `acc kerne
 and the CUDA Fortran construct `!$cuf kernel do` in a unified way.
 
 ## HIP C++ code generation from OpenACC compute constructs
+
+> NOTE: This section contains partially outdated information and needs to be revised.
 
 In this section, we investigate how we can map OpenACC
 compute constructs to equivalent HIP C++ expressions.

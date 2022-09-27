@@ -65,7 +65,7 @@ acc_clauses = {
     "worker",
     "vector",
     "seq",
-    "independen",
+    "independent",
     "auto",
     "tile",
     "device_type",

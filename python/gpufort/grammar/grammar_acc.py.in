@@ -1,9 +1,5 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-# We can base our work on this grammar if we want to ensure that clauses are legal in later versions of gpufort
-# Should probably be done on the translator level in
-# order to generate better error messages
-# https://pyccel.readthedocs.io/pyccelext/acc_specs.html
 
 #from grammar_acc import *
 
@@ -17,12 +13,12 @@ ACC_REDUCTION_OP   = oneOf("+ * max min iand ior ieor .and. .or. .eqv. .neqv.",c
 acc_var_list = LPAR + Group(delimitedList(rvalue)) + RPAR
 
 # clauses
-acc_clause_gang          = GANG + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
-acc_clause_worker        = WORKER + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
-acc_clause_vector        = VECTOR + Optional(LPAR + integer + RPAR,default = CLAUSE_VALUE_NOT_SPECIFIED)
-acc_clause_num_gangs     = NUM_GANGS + LPAR + integer + RPAR 
-acc_clause_num_workers   = NUM_WORKERS + LPAR + integer + RPAR 
-acc_clause_vector_length = VECTOR_LENGTH + LPAR + integer + RPAR
+acc_clause_gang          = GANG + Optional(LPAR + arithmetic_logical_expression + RPAR,default = None)
+acc_clause_worker        = WORKER + Optional(LPAR + arithmetic_logical_expression + RPAR,default = None)
+acc_clause_vector        = VECTOR + Optional(LPAR + arithmetic_logical_expression + RPAR,default = None)
+acc_clause_num_gangs     = NUM_GANGS + LPAR + arithmetic_logical_expression + RPAR 
+acc_clause_num_workers   = NUM_WORKERS + LPAR + arithmetic_logical_expression + RPAR 
+acc_clause_vector_length = VECTOR_LENGTH + LPAR + arithmetic_logical_expression + RPAR
 
 acc_clause_device_type   = Regex(r"\b(dtype|device_type)\b",re.IGNORECASE).suppress() + LPAR + Group(delimitedList(identifier) | Literal("*")) + RPAR
 acc_clause_if            = IF + LPAR + arithmetic_logical_expression + RPAR
@@ -39,16 +35,14 @@ acc_clause_tile      = TILE      + LPAR + Group(integer + Suppress(",") + intege
 acc_clause_wait      = WAIT      + Optional(Group(delimitedList(arithmetic_expression)), default=[])
 acc_clause_async     = ASYNC     + Optional(LPAR + rvalue + RPAR, default = CLAUSE_VALUE_NOT_SPECIFIED) 
 
-#acc_clause_seq,acc_clause_auto,acc_clause_independent,acc_clause_read,acc_clause_write,acc_clause_capture,acc_clause_nohost,acc_clause_finalize,acc_clause_if_present = makeCaselessLiteral("seq,auto,independent,read,write,capture,nohost,finalize,if_present",suppress=False)
-
-acc_ident_clause = Regex(r"\b(seq|auto|independent|read|write|capture|nohost|finalize|if_present)\b",re.IGNORECASE)
+acc_noarg_clause = Regex(r"\b(seq|auto|independent|read|write|capture|nohost|finalize|if_present)\b",re.IGNORECASE)
 
 # ACC LoopNest directive
 ACC_START = PRAGMA + ACC 
 ACC_END   = ACC_START.copy() + END
 
 acc_clause = acc_clause_if | acc_clause_self | acc_clause_async | acc_clause_wait | acc_clause_num_gangs | acc_clause_num_workers | acc_clause_vector_length | acc_clause_device_type |\
-    acc_clause_default | acc_clause_reduction | acc_clause_collapse | acc_clause_bind | acc_clause_tile | acc_clause_gang | acc_clause_worker | acc_clause_vector | acc_mapping_clause | acc_ident_clause
+    acc_clause_default | acc_clause_reduction | acc_clause_collapse | acc_clause_bind | acc_clause_tile | acc_clause_gang | acc_clause_worker | acc_clause_vector | acc_mapping_clause | acc_noarg_clause
 
 acc_clause_list = Group(Optional(OneOrMore(Optional(ACC_START + Literal("&")).suppress() + acc_clause), default=[]))
 

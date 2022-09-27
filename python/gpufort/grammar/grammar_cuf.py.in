@@ -5,34 +5,46 @@
 
 ## CUDA Fortran specific
 ## CUF LoopNest loop directive
-CUF,KERNEL,STREAM = makeCaselessLiteral("cuf,kernel,stream",suppress=True)
+cuf_kernel_do_auto = Literal("*")
+cuf_kernel_do_dim3 = LPAR + delimitedList(arithmetic_logical_expression) + RPAR
 
-dim3        = LPAR + delimitedList(arithmetic_expression) + RPAR
-grid        = Literal("*") | dim3 | rvalue
-thread_block = grid
-stream_type  = ( derived_type_elem | func_call | identifier | number )
-stream_arg   = Optional(STREAM + EQ) + Optional(stream_type,default=CLAUSE_NOT_FOUND)
-kernel_launch_args = Group(Suppress("<<<") + \
-  Optional(grid,default="*")  + COMMA + \
-  Optional(thread_block,default="*") + OPTCOMMA + \
-  Optional(pyparsing_common.integer,default=0) + OPTCOMMA + \
-  stream_arg + OPTCOMMA +\
-  Suppress(">>>")) # grid,thread_block,shmem,stream
-num_loops_to_map_arg = Optional(LPAR + pyparsing_common.integer + RPAR,default=1)
+cuf_kernel_do_arg_grid  = cuf_kernel_do_auto | cuf_kernel_do_dim3 | rvalue
+cuf_kernel_do_arg_block = grid.copy()
+cuf_kernel_do_arg_sharedmem = Optional(arithmetic_logical_expression,default=None) 
+cuf_kernel_do_arg_stream  = Optional(
+   Regex(r"(stream\s*=)?",re.IGNORECASE).suppress() 
+   + arithmetic_logical_expression
+   ,default=None
+)
+
+cuf_kernel_do_launch_params = (
+  Group(Suppress("<<<") + 
+  Optional(grid,default="*")  + COMMA 
+  + Optional(thread_block,default="*") + OPTCOMMA 
+  + Optional(pyparsing_common.integer,default=0) + OPTCOMMA 
+  + stream_arg + OPTCOMMA
+  + Suppress(">>>")
+) # grid,thread_block,shmem,stream
+
+cuf_kernel_do_arg_num_loops = Optional(LPAR + arithmetic_logical_expression + RPAR,default=None)
 
 # directives
-cuf_kernel_do = PRAGMA + CUF + KERNEL + DO + num_loops_to_map_arg + Optional(kernel_launch_args,default=["*","*",0,"0"])
+cuf_kernel_do =(
+  PRAGMA + Regex(r"cuf\s*kernel\s*do*",re.IGNORECASE) 
+  + cuf_kernel_do_arg_num_loops 
+  + Optional(cuf_kernel_do_launch_params,default=None)
+)
 
 # scanner/analysis
-ALLOCATE   = Regex(r"\b[aA][lL][lL][oO][cC][aA][tT][eE]\b").suppress()
-ALLOCATED  = Regex(r"\b[aA][lL][lL][oO][cC][aA][tT][eE][dD]\b").suppress()
-DEALLOCATE = Regex(r"\b[dD][eE][aA][lL][lL][oO][cC][aA][tT][eE]\b").suppress()
+ALLOCATE   = Regex(r"\ballocate\b",re.IGNORECASE).suppress()
+ALLOCATED  = Regex(r"\ballocatedb",re.IGNORECASE).suppress()
+DEALLOCATE = Regex(r"\bdeallocate\b",re.IGNORECASE).suppress()
 
-allocated                        = ALLOCATED  + LPAR + rvalue     + RPAR
-memcpy                           = rvalue + EQ + rvalue + ( Suppress(";") | LineEnd() )
-NOT                              = CASELESS_LITERAL(".NOT.").suppress() 
-non_zero_check                   = rvalue + oneOf("/= .ne.",caseless=CASELESS).suppress() + Suppress("0")
-pointer_assignment               = rvalue + PEQ + rvalue
+allocated = ALLOCATED  + LPAR + rvalue     + RPAR
+memcpy = rvalue + EQ + rvalue + ( Suppress(";") | LineEnd() )
+NOT = CASELESS_LITERAL(".NOT.").suppress() 
+non_zero_check = rvalue + oneOf("/ = .ne.",caseless = CASELESS).suppress() + Suppress("0")
+pointer_assignment = rvalue + PEQ + rvalue
 
 # kernelextractor/analysis
 CUDAMALLOC,CUDAMEMCPY,CUDAMEMCPYASYNC,CUDAMEMCPY2D,CUDAMEMCPY2DASYNC,CUDAMEMCPY3D,CUDAMEMCPY3DASYNC = makeCaselessLiteral(\
@@ -54,7 +66,7 @@ cuf_cudamemcpy_variant = cuf_cudamemcpy | cuf_cudamemcpy2D | cuf_cudamemcpy3D
 # cublas/analysis
 cublas_operation_type = Regex("'[NTCntc]'")#.setParseAction(lambda tokens: "hipblas_op_"+tokens[0].strip("'").upper())
 #cublas_arglist       = Group(delimitedList(cublas_operation_type | rvalue))
-# TODO: Explicitly scan for ttrvalues in cublas_arglist's arithmetic_logical_expressions when transforming host code
+# TODO: Explicitly scan for ttrvalues in cublas_arglist's arithmetic_logical_expression when transforming host code
 cublas_arglist   = Group(delimitedList(cublas_operation_type | arithmetic_logical_expression)) 
 cuf_cublas_call  = CASELESS_LITERAL("cublas").suppress() + identifier + LPAR + cublas_arglist + RPAR  # emits 2 tokens
 
@@ -62,6 +74,4 @@ cuf_cublas_call  = CASELESS_LITERAL("cublas").suppress() + identifier + LPAR + c
 cudaAPI        = Regex(r"\b").suppress() + Combine(oneOf("cublas cufft cusparse cuda cusolver",caseless=CASELESS) + identifier)
 # cuda_lib_call is used to detect any CUDA library calls;
 # they are then analysed and transformed using more specific constructs
-cuda_lib_call = ((identifier + EQ) | CALL).suppress() + cudaAPI + LPAR + Optional(arglist,default=[]) + RPAR # emits 3 tokens -> *,
-#Example: call ylmr2_gpu_kernel<<<grid,tBlock>>>(lmax, lmax2, ng, g_d, gg_d, ylm_d)
-cuf_kernel_call = CALL + identifier + kernel_launch_args + LPAR + Optional(arglist,default=[]) + RPAR # emits 4 tokens -> *,[*],[*],False/True
+cuda_lib_call = ((identifier + EQ) | CALL).suppress() + cudaAPI + LPAR + Optional(tensor_access_args,default=None) + RPAR # emits 3 tokens -> *,

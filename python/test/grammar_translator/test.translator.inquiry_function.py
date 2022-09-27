@@ -27,7 +27,7 @@ testdata.append("size(a%y,dim=1)")
 testdata.append("size(a(i,j)%z,dim=1,kind=4)")
 
 for entry in testdata:
-    print(translator.tree.grammar.inquiry_function.parseString(entry)[0].c_str())
+    print(translator.tree.grammar.inquiry_function.parseString(entry)[0].cstr())
 
 test.run(
    expression     = translator.tree.grammar.inquiry_function,

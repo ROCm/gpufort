@@ -27,7 +27,7 @@ class Acc2Omp(accbackends.AccBackendBase):
         try:
 
             def repl(parse_result):
-                return parse_result.omp_f_str(), True
+                return parse_result.omp_fstr(), True
             result,_ = util.pyparsing.replace_first(snippet,\
                      translator.tree.grammar.acc_simple_directive,\
                      repl)

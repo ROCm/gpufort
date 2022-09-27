@@ -27,7 +27,7 @@ def append_c_type(tavar):
         tavar["c_type"] = conv.convert_to_c_type(f_type, kind, "TODO unknown")
     tavar["bytes_per_element"] = conv.num_bytes(f_type, kind, default=None)
 
-def _create_analysis_var(scope, var_expr):
+def create_analysis_var(scope, var_expr):
     ivar = indexer.scope.search_scope_for_var(
         scope, var_expr)
     tavar = copy.deepcopy(ivar)
@@ -85,7 +85,7 @@ def _lookup_index_vars(scope, var_exprs, consumed_var_exprs=[]):
        var expression from all_vars2 list."""
     tavars = []
     for var_expr in var_exprs:
-        tavar = _create_analysis_var(scope,var_expr)
+        tavar = create_analysis_var(scope,var_expr)
         if not "parameter" in tavar["attributes"] or tavar["rank"] > 0:
             tavars.append(tavar)
         consumed_var_exprs.append(var_expr)
@@ -129,7 +129,7 @@ def lookup_index_entries_for_vars_in_kernel_body(scope,
             if "%" in var_expr:
                 raise util.error.LimitationError("reduction of derived type members not supported")
             else:
-                tavar1 = _create_analysis_var(scope,var_expr)
+                tavar1 = create_analysis_var(scope,var_expr)
                 if tavar1["rank"] > 0:
                     raise util.error.LimitationError("reduction of arrays or array members not supported")
                 elif "parameter" in tavar1["attributes"]:
@@ -143,7 +143,7 @@ def lookup_index_entries_for_vars_in_kernel_body(scope,
                 pass # TODO error
 
     for var_expr in all_vars2:
-        tavar = _create_analysis_var(scope, var_expr)
+        tavar = create_analysis_var(scope, var_expr)
         if not "parameter" in tavar["attributes"] or tavar["rank"] > 0:
             taglobal_vars.append(tavar)
     return taglobal_vars, taglobal_reduced_vars, tashared_vars, talocal_vars
@@ -163,7 +163,7 @@ def _apply_c_ranks(tavars,c_ranks):
 def lookup_index_entries_for_vars_in_compute_construct(scope,ttcomputeconstruct,loop_vars,c_names={},c_ranks={}):
     all_vars       = vars_in_subtree(ttcomputeconstruct, scope)
     local_scalars_ = local_scalars(ttcomputeconstruct,scope)
-    local_vars     = [v for v in (local_scalars_+ttcomputeconstruct.gang_team_private_vars())
+    local_vars     = [v for v in (local_scalars_+ttcomputeconstruct.gang_private_vars())
                      if v not in loop_vars]
     local_vars    += [v for v in all_vars 
                      if (v[0]=="_" 
@@ -172,8 +172,8 @@ def lookup_index_entries_for_vars_in_compute_construct(scope,ttcomputeconstruct,
     # TODO improve
     result = lookup_index_entries_for_vars_in_kernel_body(scope,
                                                           all_vars,
-                                                          ttcomputeconstruct.gang_team_reductions(),
-                                                          ttcomputeconstruct.gang_team_shared_vars(),
+                                                          ttcomputeconstruct.gang_reductions(),
+                                                          ttcomputeconstruct.gang_shared_vars(),
                                                           local_vars,
                                                           loop_vars)
     for i in range(0,4):
@@ -247,7 +247,7 @@ def search_value_exprs_in_subtree(ttnode, search_filter, scope, min_rank=-1):
             search_filter): # includes the identifiers of the function calls 
         # TODO Search tag creation strips array brackets
         # TODO provide clean interface to value
-        tag = indexer.scope.create_index_search_tag_for_var(ttvalue._value.f_str()) # TODO 
+        tag = indexer.scope.create_index_search_tag_for_var(ttvalue._value.fstr()) # TODO 
         if tag not in tree.grammar.DEVICE_PREDEFINED_VARIABLES:
             ivar = indexer.scope.search_scope_for_var(scope, tag)
             if ivar["rank"] >= min_rank and\
@@ -261,8 +261,8 @@ def vars_in_subtree(ttnode, scope):
 
     def search_filter(node):
         cond1 = (isinstance(node,tree.TTValue)
-                and isinstance(node._value, (tree.TTDerivedTypeMember,tree.TTIdentifier,tree.TTFunctionCallOrTensorAccess)))
-        if cond1 and isinstance(node._value, tree.TTFunctionCallOrTensorAccess):
+                and isinstance(node._value, (tree.TTDerivedTypeMember,tree.TTIdentifier,tree.TTTensorAccess)))
+        if cond1 and isinstance(node._value, tree.TTTensorAccess):
             return node._value.is_tensor()
         else:
             return cond1 
@@ -273,8 +273,8 @@ def arrays_in_subtree(ttnode, scope):
 
     def search_filter(node):
         cond1 = (isinstance(node,tree.TTValue) 
-                and isinstance(node._value, tree.TTFunctionCallOrTensorAccess))
-        if cond1 and isinstance(node._value, tree.TTFunctionCallOrTensorAccess):
+                and isinstance(node._value, tree.TTTensorAccess))
+        if cond1 and isinstance(node._value, tree.TTTensorAccess):
             return node._value.is_tensor()
         else:
             return cond1 
@@ -285,9 +285,9 @@ def arrays_in_subtree(ttnode, scope):
 def inout_arrays_in_subtree(ttnode, scope):
 
     def search_filter(node):
-        cond1 = (isinstance(node,tree.TTLValue) 
-                and isinstance(node._value, tree.TTFunctionCallOrTensorAccess))
-        if cond1 and isinstance(node._value, tree.TTFunctionCallOrTensorAccess):
+        cond1 = (isinstance(node,tree.TTLvalue) 
+                and isinstance(node._value, tree.TTTensorAccess))
+        if cond1 and isinstance(node._value, tree.TTTensorAccess):
             return node._value.is_tensor()
         else:
             return cond1 
@@ -331,7 +331,7 @@ def local_scalars_and_reduction_candidates(ttcomputeconstruct, scope):
     for assignment in assignments:
         # lhs scalars
         lvalue = assignment._lhs
-        lvalue_name = lvalue._value.f_str().lower()
+        lvalue_name = lvalue._value.fstr().lower()
         if isinstance(lvalue, tree.TTIdentifier): # could still be a matrix
             ivar = indexer.scope.search_scope_for_var(
                 scope, lvalue_name)
@@ -340,10 +340,10 @@ def local_scalars_and_reduction_candidates(ttcomputeconstruct, scope):
                 initialized_scalars.append(
                     lvalue_name) # read and initialized in
         # rhs scalars
-        ttrvalues = tree.find_all(assignment._rhs,tree.TTRValue)
+        ttrvalues = tree.find_all(assignment._rhs,tree.TTRvalue)
         for ttrvalue in ttrvalues:
             if isinstance(ttrvalue._value,tree.TTIdentifier):
-                rvalue_name = ttrvalue._value.f_str().lower()
+                rvalue_name = ttrvalue._value.fstr().lower()
                 ivar = indexer.scope.search_scope_for_var(
                     scope, rvalue_name)
                 if ivar["rank"] == 0 and\
@@ -372,7 +372,7 @@ def reduction_candidates(ttcomputeconstruct, scope):
 def loop_vars_in_compute_construct(ttdos):
     identifier_names = []
     for ttdo in ttdos:
-        identifier_names.append(ttdo.loop_var(tree.make_f_str))
+        identifier_names.append(ttdo.loop_var(tree.make_fstr))
     return identifier_names
 
 def _perfectly_nested_outer_do_loops(ttcomputeconstruct):

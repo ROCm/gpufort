@@ -85,6 +85,18 @@ class AccLoopInfo:
         self.collapse = optvals.OptionalSingleValue()
         self.private_vars = optvals.OptionalListValue()
         self.reduction = optvals.OptionalDictValue()
+    def gang_parallelism():
+        return ( self.gang.specified
+               and not self.worker.specified
+               and not self.vector.specified )
+    def gang_parallelism():
+        return ( self.gang.specified
+               and not self.worker.specified
+               and not self.vector.specified )
+    def gang_parallelism():
+        return ( self.gang.specified
+               and not self.worker.specified
+               and not self.vector.specified )
 
 class _TraverseDirectiveContext:
     def __init__(self):

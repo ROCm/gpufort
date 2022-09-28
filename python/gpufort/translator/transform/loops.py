@@ -1,5 +1,11 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+"""
+:note: This module has intentionally no
+       dependencies on other GPUFORT modules
+       and packages.
+"""
+
 import copy
 import re
 import textwrap
@@ -81,7 +87,7 @@ hip_includes = \
 
 _hip_kernel_prolog_acc =\
 """"\
-gpufort::acc_grid _res(gridDim.x,gpufort::div_round_up(blockDim.vx,warpSize),{vector_length});
+gpufort::acc_grid _res(gridDim.x,gpufort::div_round_up(blockDim.x,warpSize),{vector_length});
 gpufort::acc_coords _coords(blockIdx.x,threadIdx.x/warpSize,threadIdx.x%warpSize);
 """
 
@@ -104,13 +110,13 @@ def unique_label(label):
       num=num
     )
 
-def _render_int_decl(lhs,rhs=None):
+def render_int_decl(lhs,rhs=None):
     if rhs == None or rhs == "":
         return "int {};\n".format(lhs,rhs)
     else:
         return "int {} = {};\n".format(lhs,rhs)
 
-def _render_const_int_decl(lhs,rhs):
+def render_const_int_decl(lhs,rhs):
     return "const int {} = {};\n".format(lhs,rhs)
 
 def _render_tile_size_var_decl(tile_size_var,loop_len,num_tiles):
@@ -121,7 +127,7 @@ def _render_tile_size_var_decl(tile_size_var,loop_len,num_tiles):
               fun="gpufort::div_round_up",
               loop_len=loop_len,
               num_tiles=num_tiles)
-    return _render_const_int_decl(tile_size_var,rhs)
+    return render_const_int_decl(tile_size_var,rhs)
 
 def _render_for_loop_open(index,incl_lbound,excl_ubound,step=None):
   if step == None:
@@ -144,16 +150,17 @@ class AccResourceFilter:
         # note: the mutable (default) arguments cannot simply
         # be assigned, as all instances might modify
         # the same (default) instance.
-        self.num_gangs     = list(num_gangs)
-        self.num_workers   = list(num_workers)
+        self.num_gangs = list(num_gangs)
+        self.num_workers = list(num_workers)
         self.vector_length = list(vector_length)
         self.resource_triple_name = resource_triple_name
     def set_from(self,other):
         self.__init__(
-            other.num_gangs,
-            other.num_workers,
-            other.vector_length,
-            other.resource_triple_name)
+          other.num_gangs,
+          other.num_workers,
+          other.vector_length,
+          other.resource_triple_name
+        )
     def __add__(self,other):
         return AccResourceFilter(
           self.num_gangs + other.num_gangs,
@@ -187,18 +194,20 @@ class AccResourceFilter:
         return (len(self.num_gangs) 
                 + len(self.num_workers)
                 + len(self.vector_length))
-    def loop_entry_condition(self):
-        """:return a filter condition for masking
-        in statements only for the certain resources.
-        :note: If the entry in a list is None, no specific condition
-               is added. None serves a wildcard.
-        """
+    def assert_is_well_defined(self):
         assert (not len(self.num_gangs) 
                 or len(self.num_gangs) == 1)
         assert (not len(self.num_workers)
                 or len(self.num_workers) == 1)
         assert (not len(self.vector_length)
                 or len(self.vector_length) == 1)
+    def loop_entry_condition(self):
+        """:return a filter condition for masking
+        in statements only for the certain resources.
+        :note: If the entry in a list is None, no specific condition
+               is added. None serves a wildcard.
+        """
+        self.assert_is_well_defined()
         conditions = []
 
         def append_condition_if_not_none_(
@@ -222,12 +231,7 @@ class AccResourceFilter:
         )
         return " && ".join(conditions)
     def statement_selection_condition(self):
-        assert (not len(self.num_gangs) 
-                or len(self.num_gangs) == 1)
-        assert (not len(self.num_workers)
-                or len(self.num_workers) == 1)
-        assert (not len(self.vector_length)
-                or len(self.vector_length) == 1)
+        self.assert_is_well_defined()
         conditions = []
         if not len(self.num_workers):
             conditions.append(
@@ -244,6 +248,10 @@ class AccResourceFilter:
               )
             )
         return " && ".join(conditions)
+    def index(self):
+        return "_coords.get_vector_lane_id({res})".format(
+          res=self.resource_triple_name       
+        )
     def gang_partitioned_mode(self):
         return len(self.num_gangs)
     def worker_partitioned_mode(self):
@@ -385,7 +393,7 @@ class Loop:
         # tile loop
         indent = ""
         orig_len_var = unique_label("len")
-        tile_loop_prolog = _render_const_int_decl( 
+        tile_loop_prolog = render_const_int_decl( 
             orig_len_var,
             self.length()
         )
@@ -394,13 +402,13 @@ class Loop:
           tile_size=tile_size
         )
         num_tiles_var = unique_label("num_tiles")
-        tile_loop_prolog += _render_const_int_decl( 
+        tile_loop_prolog += render_const_int_decl( 
             num_tiles_var,
             num_tiles
         )
         if tile_loop_index_var == None:
             tile_loop_index_var = unique_label("tile")
-            tile_loop_prolog += _render_int_decl(tile_loop_index_var)
+            tile_loop_prolog += render_int_decl(tile_loop_index_var)
         tile_loop = Loop(
             index = tile_loop_index_var,
             first = "0",
@@ -417,10 +425,10 @@ class Loop:
         # element_loop
         element_loop_index_var = unique_label("elem")
         # element loop prolog
-        element_loop_prolog = _render_int_decl(element_loop_index_var)
+        element_loop_prolog = render_int_decl(element_loop_index_var)
         # element loop body prolog
         normalized_index_var = unique_label("idx")
-        element_loop_body_prolog = _render_const_int_decl( 
+        element_loop_body_prolog = render_const_int_decl( 
           normalized_index_var,
           "{} + ({})*{}".format(
             element_loop_index_var,
@@ -553,7 +561,7 @@ if ( {loop_entry_condition} ) {{
                 worker_id_var = "blockIdx.{0}".format(self.grid_dim)
             #
             loop_open += textwrap.indent(
-              _render_const_int_decl(
+              render_const_int_decl(
                 orig_len_var,
                 self.length()
               ) 
@@ -567,7 +575,7 @@ if ( {loop_entry_condition} ) {{
             )
             if self.grid_dim == None:
                 loop_open += textwrap.indent(
-                  _render_const_int_decl(
+                  render_const_int_decl(
                     worker_id_var,
                     "_coords.worker_id({})".format(local_res_var)
                   ),
@@ -593,7 +601,7 @@ if ( {loop_entry_condition} ) {{
                     vector_tile_size = "blockDim.{0}".format(self.grid_dim)
                 excl_ubound_var = unique_label("excl_ubound")
                 loop_open += textwrap.indent(
-                  _render_const_int_decl( 
+                  render_const_int_decl( 
                     excl_ubound_var,
                     "min({},({}+1)*{})".format(
                       orig_len_var,
@@ -727,12 +735,12 @@ class Loopnest:
             if loop.prolog != None:
                 prolog += loop.prolog
             loop_lengths_vars.append(unique_label("len"))
-            prolog += _render_const_int_decl(
+            prolog += render_const_int_decl(
               loop_lengths_vars[-1],
               loop.length()
             )
         total_len_var = unique_label("total_len")
-        prolog += _render_const_int_decl(
+        prolog += render_const_int_decl(
           total_len_var,
           "*".join(loop_lengths_vars)
         )

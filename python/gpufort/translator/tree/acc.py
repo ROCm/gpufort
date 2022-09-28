@@ -644,7 +644,7 @@ class TTAccParallelLoop(TTAccLoop,TTAccParallel):
         """
         result = "!$omp target teams distribute"
         parallel_part = TTAccParallel.omp_fstr(self, arrays_in_body,
-                                                inout_arrays_in_body, depend,
+                                               inout_arrays_in_body, depend,
                                                 "")
         loop_part = TTAccLoop.omp_fstr(self, loop_type, "parallel", "")
         return self._format(result + " " + loop_part.lstrip() + " "

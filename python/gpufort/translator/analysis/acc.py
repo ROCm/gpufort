@@ -98,6 +98,15 @@ class AccLoopInfo:
                and not self.worker.specified
                and not self.vector.specified )
 
+class AccCombinedConstructInfo(AccConstructInfo,AccLoopInfo):
+    def __init__(self,device_type,
+                 is_parallel,
+                 is_kernels):
+        AccConstructInfo.__init__(device_type,
+                                  is_parallel,
+                                  is_kernels)
+        AccLoopInfo.__init__(device_type)
+
 class _TraverseDirectiveContext:
     def __init__(self):
         current_device_types = [] 
@@ -189,10 +198,18 @@ def analyze_directive(ttaccdirective,
         result = AccRoutineInfo(device_type)
         if ttaccdirective.id != None:
             result.name.value = ttaccdirective.id
-    elif isinstance(ttaccdirective,tree.TTAccComputeConstructBase):
+    elif isinstance(ttaccdirective,(tree.TTAccSerial,
+                                    tree.TTAccParallel,
+                                    tree.TTAccKernels)):
         result = AccConstructInfo(
                    device_type,
                    is_serial = isinstance(ttaccdirective,TTAccSerial),
+                   is_parallel = isinstance(ttaccdirective,TTAccParallel),
+                   is_kernels = isinstance(ttaccdirective,TTAccKernels))
+    elif isinstance(ttaccdirective,(tree.TTAccParallelLoop,
+                                    tree.TTAccKernelsLoop)):
+        result = AccCombinedConstructInfo(
+                   device_type,
                    is_parallel = isinstance(ttaccdirective,TTAccParallel),
                    is_kernels = isinstance(ttaccdirective,TTAccKernels))
     else:

@@ -3,7 +3,10 @@
 from .. import tree
 from .. import optvals
 
-class LoopInfo(self):
+from . import loops
+from . import render
+
+class LoopManager(self):
     def __init__(self):
         self.index = None
         self.first = None 
@@ -44,46 +47,118 @@ class LoopInfo(self):
               step=converter(self.step)
             )
 
-class LoopnestInfo:
+class LoopnestManager:
     def __init__(self):
-        self.loopnest = None
-        self.loop_info_list = [] 
+        self.loopnest = loops.Loopnest()
+        self.loop_mgr_list = [] 
         self.num_collapse = 0
         self.tile_sizes = []
         self.loop_vars = []
         self.private_vars = []
         self.reductions = []
         self.problem_sizes = []
-    def reset(self):
-        self.__init__()
+    def _create_loop(self,ttdo,acc_loop_mgr=None):
+        if acc_loop_mgr == None:
+            return loops.Loop(
+              index = ttdo.index.cstr(),
+              first = ttdo.first.cstr(),
+              last = ttdo.last.cstr(),
+              step = ttdo.step.cstr() if ttdo.has_step() else None,
+            )
+        else:
+            return loops.Loop(
+              index = ttdo.index.cstr(),
+              first = ttdo.first.cstr(),
+              last = ttdo.last.cstr(),
+              step = ttdo.step.cstr() if ttdo.has_step() else None,
+              num_gangs = acc_loop_mgr.gang.value,
+              num_workers = acc_loop_mgr.worker.value,
+              vector_length = acc_loop_mgr.vector.value,
+              gang_partitioned = acc_loop_mgr.gang.specified,
+              worker_partitioned = acc_loop_mgr.worker.specified,
+              vector_partitioned = acc_loop_mgr.vector.specified
+            )
+          
+    def _create_loop_manager(self,ttdo,acc_loop_mgr=None):
+        loop_mgr = LoopManager()
+        loop_mgr.index = ttdo.index
+        loop_mgr.first = ttdo.first
+        loop_mgr.last = ttdo.last
+        loop_mgr.step = ttdo.step if ttdo.has_step() else None
+        if acc_loop_mgr != None:
+            loop_mgr.gang.value = acc_loop_mgr.gang.value 
+            loop_mgr.worker.value = acc_loop_mgr.worker.value 
+            loop_mgr.vector.value = acc_loop_mgr.vector.value 
+        return loop_mgr
+    
+    def append_do_loop(self,ttdo,acc_loop_mgr=None):
+        self.loopnest.append(
+          self._create_loop(ttdo,acc_loop_mgr)
+        )
+        self.loopnest_mgr_list.append(
+          self._create_loop(ttdo,acc_loop_mgr)
+        )
+
+    def _render_loopnest(self,loopnest,
+                         num_collapse, # type: int
+                         tile_sizes): # type: list[Union[TTNode,str,int]]
+        assert num_collapse <= 1 or len(tile_sizes) == 0,\
+         "cannot be specified both"
+        assert num_collapse <= 1 or num_collapse == len(loopnest)
+        assert len(tile_sizes) == 0 or len(tile_sizes) == len(loopnest)
+        if len(loopnest) == num_collapse:
+            return loopnest.collapse().map_to_hip_cpp()
+        elif len(loopnest) == len(tile_sizes):
+            return loopnest.tile(tile_sizes).map_to_hip_cpp()
+        else:
+            return loopnest.map_to_hip_cpp()
+
+    def render_loopnest(self):
+        loopnest_open,\
+        loopnest_close,\
+        loopnest_resource_filter,\
+        loopnest_indent =\
+          render.render_loopnest(
+            self.loopnest,
+            self.num_collapse,
+            self.tile_sizes
+          )
+        if len(private_vars):
+            loopnest_open += textwrap.indent(
+              render_private_variables_decl_list(private_vars,
+              loopnest_indent
+            )
+            # TODO render reduction variables
+            # 1. create unique index var with value = loopnest.index()
+            # 2. 
+        return (loopnest_open,
+                loopnest_close,
+                loopnest_resource_filter,
+                loopnest_indent)
 
 class TransformationResult:
     def __init__(self):
+        self.grid = None
+        self.block = None
+        self.stream = None
+        self.shared_mem = None
         self.max_num_gangs = None
         self.max_num_workers = None
         self.max_vector_length = None
-        self.loopnest_info_list = []
+        self.async = None
+        self.loopnest_mgr_list = []
         self.private_variables = []
         self.firstprivate_variables = []
         self.mappings = []
         self.lvalues = []
         self.rvalues = []
         self.generated_code = ""
-    #self.all_num_gangs = []
-    #self.all_num_workers = []
-    #self.all_vector_length = []
-    #self.all_gang_problem_sizes = []
-    #self.all_worker_problem_sizes = []
-    #self.all_vector_problem_sizes = []
-    #self.all_num_workers = []
-    #self.all_vector_length = []
-    #self.loop_variables = []
     @property
     def loop_variables(self):
         result = []
-        for nest_info in self.loopnest_info_list:
-              for loop_info in nest_info.loop_info_list:
-                  result.append(loop_info.loop_var)
+        for nest_info in self.loopnest_mgr_list:
+              for loop_mgr in nest_info.loop_mgr_list:
+                  result.append(loop_mgr.loop_var)
         return result
 
     def _render_grid_size_expr(self,
@@ -142,86 +217,95 @@ class TransformationResult:
         #
         grid_specs = []
         block_specs = []
-        for nest_info in self.loopnest_info_list:
-            for loop_info in nest_info.loop_info_list:
-                loop_len = loop_info.render_loop_len(
+        for nest_info in self.loopnest_mgr_list:
+            for loop_mgr in nest_info.loop_mgr_list:
+                loop_len = loop_mgr.render_loop_len(
                   operator_loop_len,
                   converter
                 )
-                if ( loop_info.gang.specified
-                     and not loop_info.worker.specified
-                     and not loop_info.vector.specified ):
+                if ( loop_mgr.gang.specified
+                     and not loop_mgr.worker.specified
+                     and not loop_mgr.vector.specified ):
                     # gang
                     grid_specs.append(
                       _render_grid_size_expr(
-                        loop_len,loop_info.gang.value,
+                        loop_len,loop_mgr.gang.value,
                         None,default_num_workers,converter   
                       ))
-                elif ( loop_info.gang.specified
-                       and     loop_info.worker.specified
-                       and not loop_info.vector.specified ):
+                elif ( loop_mgr.gang.specified
+                       and     loop_mgr.worker.specified
+                       and not loop_mgr.vector.specified ):
                     # gang worker
                     grid_specs.append(
                       _render_grid_size_expr(
                         loop_len,
-                        loop_info.gang.value,
-                        loop_info.worker.value,
+                        loop_mgr.gang.value,
+                        loop_mgr.worker.value,
                         default_num_workers,
                         converter   
                       ))
                     block_specs.append(
                       _render_block_size_expr(
-                        loop_info.worker.value,
+                        loop_mgr.worker.value,
                         None,
                         default_num_workers
                         default_vector_length,
                         converter   
                       ))
-                elif ( loop_info.gang.specified
-                       and     loop_info.vector.specified ):
+                elif ( loop_mgr.gang.specified
+                       and     loop_mgr.vector.specified ):
                     # gang vector and gang worker vector
                     grid_specs.append(
                       _render_grid_size_expr(
                         loop_len,
-                        loop_info.gang.value,
-                        loop_info.worker.value,
+                        loop_mgr.gang.value,
+                        loop_mgr.worker.value,
                         default_num_workers,
                         converter   
                       ))
                     block_specs.append(
                       _render_block_size_expr(
-                        loop_info.worker.value,
-                        loop_info.vector.value,
+                        loop_mgr.worker.value,
+                        loop_mgr.vector.value,
                         default_num_workers
                         default_vector_length,
                         converter   
                       ))
-                elif ( loop_info.worker.specified 
-                       or loop_info.vector.specified ):
+                elif ( loop_mgr.worker.specified 
+                       or loop_mgr.vector.specified ):
                     # worker, vector, and worker vector
                     block_specs.append(
                       _render_block_size_expr(
-                        loop_info.worker.value,
-                        loop_info.vector.value,
+                        loop_mgr.worker.value,
+                        loop_mgr.vector.value,
                         default_num_workers
                         default_vector_length,
                         converter   
                       ))
-        if self.max_num_gangs != None:
+        if self.grid != None:
+            grid = converter(self.grid)
+        elif self.max_num_gangs != None:
             grid = converter(self.max_num_gangs)
         else:
             grid = "{op}({args})".format(
               op=operator_max, 
               args=",".join(grid_specs)
             ) 
-        if ( self.max_num_workers != None and
+        if self.block != None:
+            block = converter(self.block)
+        elif ( self.max_num_workers != None
              and self.max_vector_length != None ):
             block = self._render_block_size_expr(
               loop_len,
-              num_workers,
-              vector_length,
-              default_num_workers,
-              default_vector_length,
+              self.max_num_workers,
+              self.max_vector_length,
+              None,
+              None,
               converter
             )
+        else:
+            block = "{op}({args})".format(
+              op=operator_max, 
+              args=",".join(block_specs)
+            ) 
         return (grid, block)  

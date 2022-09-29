@@ -121,6 +121,18 @@ class TTDo(base.TTContainer):
         if self.annotation == None:
             self.annotation = ILoopAnnotation()
         self.thread_index = None # "z","y","x"
+    @property
+    def index(self):
+        return self._begin._lhs
+    @property
+    def first(self):
+        return self._begin._rhs
+    @property
+    def last(self):
+        return self._end
+    @property
+    def step(self):
+        return self._step
 
     def child_nodes(self):
         return [self.annotation, self.body, self._begin, self._end, self._step]

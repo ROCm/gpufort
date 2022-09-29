@@ -110,107 +110,123 @@ class Transformer:
     def _traverse_cuf_kernel_do_construct(self,ttnode):
         cuf_construct_info = analysis.cuf.analyze_directive(ttnode)  
         if cuf_construct_info.grid.specified:
-            self._result.max_grid = cuf_construct_info.grid
+            self._result.grid = cuf_construct_info.grid
         if cuf_construct_info.block.specified:
-            self._result.max_block = cuf_construct_info.block
+            self._result.block = cuf_construct_info.block
+        if cuf_construct_info.sharedmem.specified:
+            self._result.sharedmem = cuf_construct_info.sharedmem
+        if cuf_construct_info.stream.specified:
+            self._result.stream = cuf_construct_info.stream
         if cuf_construct_info.reductions.specified: 
-            self._result.firstprivate_variables = cuf_construct_info.firstprivate_variables
+            self._result.reductions = cuf_construct_info.reductions
 
-   def _render_loopnest_mgr_and_descend(self,ttnode):
-       loopnest_render_result = self._loopnest_mgr.render_loopnest()
-       self._result.append(self._loopnest_mgr)
-       self._loopnest_mgr = None
-       # 
-       loopnest_open,loopnest_close,\
-       loopnest_resource_filter,loopnest_indent =\
-         loopnest_render_result
-       self._result.generated_code += textwrap.indent(
-         ttnode.header_cstr(),
-         self._indent
-       )
-       self._resource_filter += loopnest_resource_filter
-       previous_indent = self._indent
-       self._indent += loopnest_indent
-       #
-       self._traverse_container_body(ttnode)
-       #
-       self._resource_filter -= loopnest_resource_filter
-       self._indent = previous_indent
-   
-   def _traverse_do_loop(self,ttnode):
-       # TODO when collapsing, check if we can move statement into inner loop, should be possible if 
-       # a loop statement is not relying on the lvalue or inout arg from a previous statement (difficult to analyze)
-       # alternative interpretation of collapse user information -> we can reorder statements without error
-       loopnest_render_result = None 
-       #
-       if ( self._loopnest_mgr != None 
-            and self._loopnest_mgr.num_collapse > 1 ):
-           self._loopnest_mgr.append_do_loop(ttnode)
-           if len(loopnest) == num_collapse:
-               loopnest_render_result = self._loopnest_mgr.render_loopnest()
-               self._result.append(self._loopnest_mgr)
-               self._loopnest_mgr = None
-           return
-       elif ( self._loopnest_mgr != None 
-              and len(tile_sizes) > 0 ):
-           self._loopnest_mgr.append_do_loop(ttnode)
-           if len(loopnest) == len(tile_sizes):
-               loopnest_render_result = self._loopnest_mgr.render_loopnest()
-               self._result.append(self._loopnest_mgr)
-               self._loopnest_mgr = None
-           _traverse_container_body(ttnode)
-       elif ttnode.annotation != None:
-           _check_loop_parallelism(
-             self._resource_filter,
-             acc_loop_info
-           )
-           acc_loop_info = analysis.analyze_directive(
-             ttnode.annotation,
-             device_type
-           ) 
-           if acc_loop_info.private_vars.specified:
-               self._loopnest_mgr.private_vars = acc_loop_info.private_vars.value
-           if acc_loop_info.reductions.specified:
-               pass # TODO loop-wise reductions
-           self._loopnest_mgr = loopmgr.LoopnestManager()
-           self._loopnest_mgr.append_do_loop(ttnode,acc_loop_info)
-           if ( num_collapse == 0
-                and not len(tile_sizes) ):
-               loopnest_render_result = self._loopnest_mgr.render_loopnest()
-               self._result.append(self._loopnest_mgr)
-               self._loopnest_mgr = None
-           # loop directives might contain self._result.lvalues, self._result.rvalues that need to be passed
-           analysis.acc.find_lvalues_and_rvalues_in_directive(
-             ttnode,
-             self._result.lvalues,
-             self._result.rvalues
-           )
-       else:
-           self._loopnest_mgr = loopmgr.LoopnestManager()
-           self._loopnest_mgr.append_do_loop(ttnode)
-           loopnest_render_result = self._loopnest_mgr.render_loopnest()
-       loopnest_open,loopnest_close,\
-       loopnest_resource_filter,loopnest_indent =\
-         loopnest_render_result
-       self._result.generated_code += textwrap.indent(
-         ttnode.header_cstr(),
-         self._indent
-       )
-       self._resource_filter += loopnest_resource_filter
-       previous_indent = self._indent
-       self._indent += loopnest_indent
-       #
-       self._traverse_container_body(ttnode)
-       #
-       self._resource_filter -= loopnest_resource_filter
-       self._indent = previous_indent
+    def _render_loopnest_mgr_and_descend(self,ttnode):
+        loopnest_render_result = self._loopnest_mgr.render_loopnest()
+        self._result.append(self._loopnest_mgr)
+        self._loopnest_mgr = None
+        # 
+        loopnest_open,loopnest_close,\
+        loopnest_resource_filter,loopnest_indent =\
+          loopnest_render_result
+        self._result.generated_code += textwrap.indent(
+          ttnode.header_cstr(),
+          self._indent
+        )
+        self._resource_filter += loopnest_resource_filter
+        previous_indent = self._indent
+        self._indent += loopnest_indent
+        #
+        self._traverse_container_body(ttnode)
+        #
+        self._resource_filter -= loopnest_resource_filter
+        self._indent = previous_indent
+  
+    def _traverse_acc_loop(self,ttdo):  
+        """
+        Create new LoopnestManager instance. Append it to the result's list.
+        Render it if no collapse or tile clause is specified.
+        Search certain clauses for rvalues and lvalues.
+        """
+        #todo: split annotation from loop, init LoopnestManager with acc_loop_info
+        _check_loop_parallelism(
+          self._resource_filter,
+          acc_loop_info
+        )
+        acc_loop_info = analysis.analyze_directive(
+          ttdo.annotation,
+          device_type
+        ) 
+        if acc_loop_info.private_vars.specified:
+            self._loopnest_mgr.private_vars = acc_loop_info.private_vars.value
+        if acc_loop_info.reductions.specified:
+            pass # todo: loop-wise reductions
+        self._loopnest_mgr = loopmgr.LoopnestManager()
+        self._loopnest_mgr.append_do_loop(ttdo,acc_loop_info)
+        if ( num_collapse == 0
+             and not len(tile_sizes) ):
+            loopnest_render_result = self._loopnest_mgr.render_loopnest()
+            self._result.append(self._loopnest_mgr)
+            self._loopnest_mgr = None
+        else:
+            loopnest_render_result = None
+        # loop directives might contain lvalues, rvalues that need to be passed
+        analysis.acc.find_lvalues_and_rvalues_in_directive(
+          ttdo.annotation,
+          self._result.lvalues,
+          self._result.rvalues
+        )
+        return loopnest_render_result
+ 
+    def _traverse_do_loop(self,ttnode):
+        # todo: when collapsing, check if we can move statement into inner loop, should be possible if 
+        # a loop statement is not relying on the lvalue or inout arg from a previous statement (difficult to analyze)
+        # alternative interpretation of collapse user information -> we can reorder statements without error
+        render_result = None 
+        if ( self._loopnest_mgr != None 
+             and self._loopnest_mgr.num_collapse > 1 ):
+            self._loopnest_mgr.append_do_loop(ttnode)
+            if len(loopnest) == num_collapse:
+                render_result = self._loopnest_mgr.render_loopnest()
+                self._result.append(self._loopnest_mgr)
+                self._loopnest_mgr = None
+            return
+        elif ( self._loopnest_mgr != None 
+               and len(tile_sizes) > 0 ):
+            self._loopnest_mgr.append_do_loop(ttnode)
+            if len(loopnest) == len(tile_sizes):
+                render_result = self._loopnest_mgr.render_loopnest()
+                self._result.append(self._loopnest_mgr)
+                self._loopnest_mgr = None
+            _traverse_container_body(ttnode)
+        elif isinstance(ttnode.annotation,tree.TTAccLoop):
+            render_result = self._traverse_acc_loop(ttnode)
+        else:
+            self._loopnest_mgr = loopmgr.LoopnestManager()
+            self._loopnest_mgr.append_do_loop(ttnode)
+            render_result = self._loopnest_mgr.render_loopnest()
+        loopnest_open,loopnest_close,\
+        loopnest_resource_filter,loopnest_indent =\
+          render_result
+        self._result.generated_code += textwrap.indent(
+          ttnode.header_cstr(),
+          self._indent
+        )
+        self._resource_filter += loopnest_resource_filter
+        previous_indent = self._indent
+        self._indent += loopnest_indent
+        #
+        self._traverse_container_body(ttnode)
+        #
+        self._resource_filter -= loopnest_resource_filter
+        self._indent = previous_indent
     
     def _traverse(self,ttnode):
         lvalues, rvalues = [], []
         if isinstance(ttnode,(
-            (TTAccParallel,TTAccKernels)
-        ):
-            self._traverse_compute_construct(ttnode)
+            tree.TTAccParallel,tree.TTAccKernels,
+            tree.TTAccParallelLoop,tree.TTAccKernelsLoop
+        )): #todo: detach loop annotation from do loop
+            self._traverse_acc_compute_construct(ttnode)
         elif isinstance(ttnode,TTDo):
             self._traverse_do_loop(ttnode)
         elif isinstance(ttnode,TTContainer):
@@ -219,7 +235,7 @@ class Transformer:
               lvalues,
               rvalues
             )
-            # TODO modify expressions
+            #todo: modify expressions
             self._result.generated_code += textwrap.indent(
               ttnode.header_cstr(),
               self._indent
@@ -239,31 +255,33 @@ class Transformer:
               lvalues,
               rvalues
             )
-            # TODO expand array assignment expressions
-            # TODO modify expressions
+            #todo: expand array assignment expressions
+            #todo: modify expressions
             self._result.generated_code += ttnode.cstr().rstrip("\n")+"\n"
 
-def transform_compute_construct(
-      ttcomputeconstruct,
-      scope,
-      device_type = None, 
-      initially_gang_partitioned = False,
-      initially_worker_partitioned = False,
-      initially_vector_partitioned = False):
-    """Transform an OpenACC compute construct or routine body to HIP C++.
-    :param scope: A scope object, see GPUFORT's indexer component.
-    :param str device_type: The device type (`acc_device_nvidia`, `acc_device_radeon`).
-    :param bool initially_gang_partitioned: Start in gang-partitioned mode.
-    :param bool initially_worker_partitioned: Start in worker-partitioned mode.
-    :param bool initially_vector_partitioned: Start in vector-partitioned mode.
-    """
-    loops.reset() # reset variable counters of loops package
-    self._result = TransformationResult()
-    self._resource_filter = _create_acc_resource_filter(
-      initially_gang_partitioned,
-      initially_worker_partitioned,
-      initially_vector_partitioned)
-    self._indent = ""
-    self._loopnest_mgr = None
-    self._traverse(ttcomputeconstruct)
-    return trafo_result
+    def transform_compute_construct(
+        self
+        ttcomputeconstruct,
+        scope,
+        device_type = None, 
+        initially_gang_partitioned = False,
+        initially_worker_partitioned = False,
+        initially_vector_partitioned = False
+      ):
+        """Transform an OpenACC compute construct or routine body to HIP C++.
+        :param scope: A scope object, see GPUFORT's indexer component.
+        :param str device_type: The device type (`acc_device_nvidia`, `acc_device_radeon` or None).
+        :param bool initially_gang_partitioned: Start in gang-partitioned mode.
+        :param bool initially_worker_partitioned: Start in worker-partitioned mode.
+        :param bool initially_vector_partitioned: Start in vector-partitioned mode.
+        """
+        loops.reset() # reset variable counters of loops package
+        self._result = TransformationResult()
+        self._resource_filter = _create_acc_resource_filter(
+          initially_gang_partitioned,
+          initially_worker_partitioned,
+          initially_vector_partitioned)
+        self._indent = ""
+        self._loopnest_mgr = None
+        self._traverse(ttcomputeconstruct)
+        return self._result

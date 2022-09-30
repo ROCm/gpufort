@@ -13,15 +13,15 @@ ACC_REDUCTION_OP   = oneOf("+ * max min iand ior ieor .and. .or. .eqv. .neqv.",c
 acc_var_list = LPAR + Group(delimitedList(rvalue)) + RPAR
 
 # clauses
-acc_clause_gang          = GANG + Optional(LPAR + arithmetic_logical_expression + RPAR,default = None)
-acc_clause_worker        = WORKER + Optional(LPAR + arithmetic_logical_expression + RPAR,default = None)
-acc_clause_vector        = VECTOR + Optional(LPAR + arithmetic_logical_expression + RPAR,default = None)
-acc_clause_num_gangs     = NUM_GANGS + LPAR + arithmetic_logical_expression + RPAR 
-acc_clause_num_workers   = NUM_WORKERS + LPAR + arithmetic_logical_expression + RPAR 
-acc_clause_vector_length = VECTOR_LENGTH + LPAR + arithmetic_logical_expression + RPAR
+acc_clause_gang          = GANG + Optional(LPAR + arith_logic_expr + RPAR,default = None)
+acc_clause_worker        = WORKER + Optional(LPAR + arith_logic_expr + RPAR,default = None)
+acc_clause_vector        = VECTOR + Optional(LPAR + arith_logic_expr + RPAR,default = None)
+acc_clause_num_gangs     = NUM_GANGS + LPAR + arith_logic_expr + RPAR 
+acc_clause_num_workers   = NUM_WORKERS + LPAR + arith_logic_expr + RPAR 
+acc_clause_vector_length = VECTOR_LENGTH + LPAR + arith_logic_expr + RPAR
 
 acc_clause_device_type   = Regex(r"\b(dtype|device_type)\b",re.IGNORECASE).suppress() + LPAR + Group(delimitedList(identifier) | Literal("*")) + RPAR
-acc_clause_if            = IF + LPAR + arithmetic_logical_expression + RPAR
+acc_clause_if            = IF + LPAR + arith_logic_expr + RPAR
 
 # copy, copyin, copyout, create, no_create, present, deviceptr, attach, detach, use_device, delete, private, first_private, host, device_resident, link
 acc_mapping_clause  = identifier.copy() + acc_var_list
@@ -29,10 +29,10 @@ acc_mapping_clause  = identifier.copy() + acc_var_list
 acc_clause_default   = DEFAULT   + LPAR + (CASELESS_LITERAL("none") | CASELESS_LITERAL("present")) + RPAR # do not suppress
 acc_clause_reduction = REDUCTION + LPAR + ACC_REDUCTION_OP + Suppress(":") + Group(delimitedList(rvalue)) + RPAR
 acc_clause_collapse  = COLLAPSE  + LPAR + integer + RPAR
-acc_clause_self      = SELF      + LPAR + arithmetic_logical_expression + RPAR # for compute constructs; not for update
+acc_clause_self      = SELF      + LPAR + arith_logic_expr + RPAR # for compute constructs; not for update
 acc_clause_bind      = BIND      + LPAR + identifier + RPAR
 acc_clause_tile      = TILE      + LPAR + Group(integer + Suppress(",") + integer) + RPAR
-acc_clause_wait      = WAIT      + Optional(Group(delimitedList(arithmetic_expression)), default=[])
+acc_clause_wait      = WAIT      + Optional(Group(delimitedList(arith_expr)), default=[])
 acc_clause_async     = ASYNC     + Optional(LPAR + rvalue + RPAR, default = CLAUSE_VALUE_NOT_SPECIFIED) 
 
 acc_noarg_clause = Regex(r"\b(seq|auto|independent|read|write|capture|nohost|finalize|if_present)\b",re.IGNORECASE)

@@ -18,23 +18,23 @@ character  = QuotedString('"', escQuote='\\') | QuotedString("'", escQuote="\\")
 OPTSIGN    = Optional(Regex("[-+]|\.not\.",re.IGNORECASE),default="")
 
 # arithmetic logical expressions and assignments
-arithmetic_expression = Forward()
+arith_expr = Forward()
 tensor_access_arg = Forward()
 tensor_access_args = Optional(Group(delimitedList(tensor_access_arg)),default=None) #  emits one token
 tensor_access = identifier + LPAR + tensor_access_args + RPAR # emits 3 tokens: *,
 
-func_kind = COMMA + ( KIND + EQ + arithmetic_expression ) # emits one token # todo: generalize to named args
+func_kind = COMMA + ( KIND + EQ + arith_expr ) # emits one token # todo: generalize to named args
 
 # derived_types
 derived_type_rvalue = Forward()
 derived_type_elem = (( tensor_access | identifier ) + ELEM + derived_type_rvalue )
 derived_type_rvalue <<= derived_type_elem | tensor_access | identifier
 
-complex_arithmetic_expression = Forward()
+complex_arith_expr = Forward()
 conversion      = Forward()
 inquiry_function = Forward()
 
-#rvalue = OPTSIGN + (conversion | inquiry_function | complex_arithmetic_expression | derived_type_elem | tensor_access | identifier | logical | character | number)  # |: ordered OR, order is important
+#rvalue = OPTSIGN + (conversion | inquiry_function | complex_arith_expr | derived_type_elem | tensor_access | identifier | logical | character | number)  # |: ordered OR, order is important
 
 # |: ordered OR, order is import
 # somehow adding the Group is import to prevent that the expression is inlined 
@@ -49,13 +49,13 @@ l_arith_operator_1 = Regex(r"[+-]")
 l_arith_operator_2 = Regex(r"[+\-*/]")
 condition_op_1 = Regex(r"\.not\.",re.IGNORECASE)
 condition_op_2 = Regex(r"[<>=/]=|[<>]|\.(eqv|neqv|eq|ne|lt|gt|le|ge|and|or|xor)\.",re.IGNORECASE)
-arithmetic_expression <<= infixNotation(rvalue | complex_arithmetic_expression,
+arith_expr <<= infixNotation(rvalue | complex_arith_expr,
     [
       (l_arith_operator_1, 1, opAssoc.RIGHT),
       (l_arith_operator_2, 2, opAssoc.LEFT),
     ],
 )
-arithmetic_logical_expression = infixNotation(arithmetic_expression, #NOTE: Slower because of the additional operators
+arith_logic_expr = infixNotation(arith_expr, #NOTE: Slower because of the additional operators
     [
       (condition_op_1, 1, opAssoc.RIGHT),
       (condition_op_2, 2, opAssoc.LEFT),
@@ -64,33 +64,33 @@ arithmetic_logical_expression = infixNotation(arithmetic_expression, #NOTE: Slow
 
 # use in preprocessing step
 power_value1 = rvalue
-power_value2 = LPAR + arithmetic_expression + RPAR
+power_value2 = LPAR + arith_expr + RPAR
 power_value  = power_value2 | rvalue
 power        = power_value + Suppress("**") + power_value
 
 assignment_begin = lvalue + EQ
-assignment       = lvalue + EQ + arithmetic_logical_expression # ! emits 2 tokens: *,*
-keyword_argument = identifier + EQ + arithmetic_logical_expression
+assignment       = lvalue + EQ + arith_logic_expr # ! emits 2 tokens: *,*
+keyword_argument = identifier + EQ + arith_logic_expr
 
 MATLPAR = Regex(r"\(\/|\[").suppress()
 MATRPAR = Regex(r"\/\)|\]").suppress()
-matrix_arithmetic_expression = MATLPAR + Group(delimitedList(arithmetic_logical_expression)) + MATRPAR
-matrix_assignment            = lvalue + EQ + matrix_arithmetic_expression
+matrix_arith_expr = MATLPAR + Group(delimitedList(arith_logic_expr)) + MATRPAR
+matrix_assignment            = lvalue + EQ + matrix_arith_expr
 
-complex_arithmetic_expression <<= LPAR + Group(arithmetic_expression + COMMA + arithmetic_expression) + RPAR 
-complex_assignment = lvalue + EQ + complex_arithmetic_expression
+complex_arith_expr <<= LPAR + Group(arith_expr + COMMA + arith_expr) + RPAR 
+complex_assignment = lvalue + EQ + complex_arith_expr
 
 fortran_assignment = matrix_assignment | complex_assignment | assignment
 
 single_colon  = (Literal(":") + ~Literal(":")).suppress()
-stride        = single_colon + arithmetic_expression
+stride        = single_colon + arith_expr
 tensor_slice0  = single_colon.copy().setParseAction(lambda tokens: [None,None])           
-tensor_slice1a = (arithmetic_expression + single_colon).setParseAction(lambda tokens: [None,tokens[0]]) 
-tensor_slice1b = (single_colon + arithmetic_expression).setParseAction(lambda tokens: [tokens[0],None])
-tensor_slice2  = (arithmetic_expression + single_colon + arithmetic_expression)
+tensor_slice1a = (arith_expr + single_colon).setParseAction(lambda tokens: [None,tokens[0]]) 
+tensor_slice1b = (single_colon + arith_expr).setParseAction(lambda tokens: [tokens[0],None])
+tensor_slice2  = (arith_expr + single_colon + arith_expr)
 tensor_slice   = (tensor_slice2 | tensor_slice1b | tensor_slice1a | tensor_slice0) + Optional(stride,default=None)
 # define forward declared tokens
-argument = tensor_slice | arithmetic_logical_expression
+argument = tensor_slice | arith_logic_expr
 tensor_access_arg <<= argument | keyword_argument
 
 # conversion functions
@@ -98,8 +98,8 @@ tensor_access_arg <<= argument | keyword_argument
 # see http://userweb.eng.gla.ac.uk/peter.smart/com/com/f77-conv.htm
 # for now, always assume conversion between complex and float types
 REAL,FLOAT,DBLE,CMPLX,DCMPLX,AIMAG,CONJG,DCONJG = makeCaselessLiteral("real,float,dble,cmplx,dcmplx,aimag,conjg,dconjg",suppress=True)
-single_arg_plus_kind = LPAR + (~func_kind+arithmetic_expression) + Optional(func_kind,default=None) + RPAR # emits 2 tokens: *,*,*
-double_arg_plus_kind = LPAR + (~func_kind+arithmetic_expression) + Optional(COMMA + (~func_kind+arithmetic_expression),default="0") +\
+single_arg_plus_kind = LPAR + (~func_kind+arith_expr) + Optional(func_kind,default=None) + RPAR # emits 2 tokens: *,*,*
+double_arg_plus_kind = LPAR + (~func_kind+arith_expr) + Optional(COMMA + (~func_kind+arith_expr),default="0") +\
                            Optional(func_kind,default=None) + RPAR # emits 2 tokens: *,*,*
 
 convert_to_extract_real   = ( REAL | FLOAT ) + single_arg_plus_kind # emits 2 tokens,
@@ -114,8 +114,8 @@ conversion <<= convert_to_extract_real | convert_to_double | convert_to_complex 
 
 # inquiry functions
 SIZE,LBOUND,UBOUND = makeCaselessLiteral("size,lbound,ubound",suppress=True)
-inquiry_dim_arg  = ( integer | arithmetic_expression ) 
-inquiry_kind_arg = ( integer | arithmetic_expression ) 
+inquiry_dim_arg  = ( integer | arith_expr ) 
+inquiry_kind_arg = ( integer | arith_expr ) 
 inquiry_function_arg = lvalue + Optional(COMMA + Optional(DIM + EQ) + inquiry_dim_arg,default=None) + Optional(COMMA + Optional(KIND + EQ) + inquiry_kind_arg,default=None)
 size_inquiry   = SIZE   + LPAR + inquiry_function_arg + RPAR  
 lbound_inquiry = LBOUND + LPAR + inquiry_function_arg + RPAR 
@@ -142,7 +142,7 @@ block = Forward() # forward declaration
 #  ELSE
 #     Grade = 'a'
 #  END IF
-fortran_if_else_if = Optional(CASELESS_LITERAL("else"),default="") + IF + LPAR + arithmetic_logical_expression + RPAR + THEN
+fortran_if_else_if = Optional(CASELESS_LITERAL("else"),default="") + IF + LPAR + arith_logic_expr + RPAR + THEN
 fortran_else       = ELSE
 
 #[name:] select case (expression)
@@ -155,15 +155,15 @@ fortran_else       = ELSE
 #   ! more statements
 #   ...
 #end select [name]
-fortran_select_case     = Regex(r"(\w+\s*:)?\s*select\s+case\s*\(",re.IGNORECASE).suppress() + arithmetic_logical_expression + RPAR
-fortran_case            = Regex(r"case\s*\(",re.IGNORECASE).suppress() + arithmetic_logical_expression + RPAR
+fortran_select_case     = Regex(r"(\w+\s*:)?\s*select\s+case\s*\(",re.IGNORECASE).suppress() + arith_logic_expr + RPAR
+fortran_case            = Regex(r"case\s*\(",re.IGNORECASE).suppress() + arith_logic_expr + RPAR
 fortran_case_default    = Regex(r"case\s+default",re.IGNORECASE).suppress() # todo: not sure if still needed
 fortran_end_select_case = Regex(r"end\s*select(\s+\w+)?",re.IGNORECASE).suppress() # todo: not sure if still needed
 
 ## Do/while Loop
 do_loop_start    = Regex(r"(\w+\s*:)?\s*do",re.IGNORECASE).suppress()
-fortran_do       = do_loop_start + assignment + COMMA + arithmetic_expression + Optional(COMMA + arithmetic_expression,default=None)
-fortran_do_while = do_loop_start + WHILE + LPAR + arithmetic_logical_expression + RPAR 
+fortran_do       = do_loop_start + assignment + COMMA + arith_expr + Optional(COMMA + arith_expr,default=None)
+fortran_do_while = do_loop_start + WHILE + LPAR + arith_logic_expr + RPAR 
 
 # attributes/qualifiers
 INTENT,IN,OUT,INOUT,DIMENSION = makeCaselessLiteral(\

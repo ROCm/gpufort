@@ -26,7 +26,7 @@ class TestGrammarArithmeticExpression(unittest.TestCase):
         ]
         for snippet in testdata:
             try:
-                grammar.arithmetic_expression.parseString(snippet,parseAll=True)
+                grammar.arith_expr.parseString(snippet,parseAll=True)
             except Exception as e:
                 self.assertTrue(False, "failed to parse '{}'".format(snippet)) 
 

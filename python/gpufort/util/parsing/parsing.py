@@ -1610,7 +1610,7 @@ def split_clauses_of_combined_acc_construct(directive_kind,combined_clauses):
         # most clauses like device type may belong to both of the two, while
         # private is only handed to the compute construct
         if ( name_lower in acc_clauses.acc_clauses["loop"]
-             and name_lower != "private" )
+             and name_lower != "private" ):
             loop_clauses.append(clause)
     return (compute_construct_clauses,loop_clauses)
 
@@ -1837,7 +1837,7 @@ def parse_allocate_statement(statement):
                 raise error.SyntaxError("expected end of allocate argument or '('")
     return result1, result2
 
-#def parse_arithmetic_expression(statement,logical_ops=False,max_recursions=0):
+#def parse_arith_expr(statement,logical_ops=False,max_recursions=0):
 #    separators = []
 #    R_ARITH_OPERATOR = ["**"]
 #    L_ARITH_OPERATOR = "+ - * /".split(" ")

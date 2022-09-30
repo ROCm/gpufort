@@ -92,7 +92,7 @@ class NamespaceGenerator():
                 if self.comment_body:
                     tokens.append("// ")
                 tokens += ["constexpr ",ivar["c_type"]]
-                rhs_expr = translator.tree.grammar.arithmetic_expression.parseString(
+                rhs_expr = translator.tree.grammar.arith_expr.parseString(
                             ivar["rhs"],parseAll=True)[0].cstr()
                 tokens += [" ",ivar["name"]," = ",rhs_expr,";"]
                 body.append("".join(tokens))

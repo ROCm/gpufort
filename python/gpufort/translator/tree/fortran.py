@@ -16,7 +16,7 @@ from . import grammar
 
 import enum
 
-def flatten_arithmetic_expression(expr, converter=traversals.make_cstr):
+def flatten_arith_expr(expr, converter=traversals.make_cstr):
 
     def descend_(current, parent=None):
         parent_is_arith_expr = isinstance(parent,TTArithExpr)
@@ -802,10 +802,10 @@ class TTArithExpr(base.TTNode):
         return [self._expr]
 
     def cstr(self):
-        return flatten_arithmetic_expression(self)
+        return flatten_arith_expr(self)
 
     def fstr(self):
-        return flatten_arithmetic_expression(self, traversals.make_fstr)
+        return flatten_arith_expr(self, traversals.make_fstr)
 
 
 class TTComplexArithExpr(base.TTNode):
@@ -818,13 +818,13 @@ class TTComplexArithExpr(base.TTNode):
 
     def cstr(self):
         return "make_hip_complex({real},{imag})".format(\
-                real=flatten_arithmetic_expression(self._real,traversals.make_cstr),\
-                imag=flatten_arithmetic_expression(self._imag,traversals.make_cstr))
+                real=flatten_arith_expr(self._real,traversals.make_cstr),\
+                imag=flatten_arith_expr(self._imag,traversals.make_cstr))
 
     def fstr(self):
         return "({real},{imag})".format(\
-                real=flatten_arithmetic_expression(self._real,traversals.make_fstr),\
-                imag=flatten_arithmetic_expression(self._imag,traversals.make_fstr))
+                real=flatten_arith_expr(self._real,traversals.make_fstr),\
+                imag=flatten_arith_expr(self._imag,traversals.make_fstr))
 
 
 class TTPower(base.TTNode):
@@ -916,7 +916,7 @@ class TTMatrixAssignment(base.TTNode):
         result = "// TODO: fix ranges"
         for expression in self._rhs:
             result += traversals.make_cstr(
-                self._lhs) + argument + "=" + flatten_arithmetic_expression(
+                self._lhs) + argument + "=" + flatten_arith_expr(
                     expression) + ";\n"
         return result
 
@@ -1153,9 +1153,9 @@ grammar.lbound_inquiry.setParseAction(TTLboundInquiry)
 grammar.ubound_inquiry.setParseAction(TTUboundInquiry)
 grammar.tensor_slice.setParseAction(TTSlice)
 grammar.tensor_access_args.setParseAction(TTArgumentList)
-grammar.arithmetic_expression.setParseAction(TTArithExpr)
-grammar.arithmetic_logical_expression.setParseAction(TTArithExpr)
-grammar.complex_arithmetic_expression.setParseAction(
+grammar.arith_expr.setParseAction(TTArithExpr)
+grammar.arith_logic_expr.setParseAction(TTArithExpr)
+grammar.complex_arith_expr.setParseAction(
     TTComplexArithExpr)
 grammar.power_value1.setParseAction(TTRvalue)
 grammar.power.setParseAction(TTPower)

@@ -219,12 +219,12 @@ def parse_fortran_code(statements,result_name=None):
                 error_("do loop: begin", e)
             try:
                 if ubound_str != None:
-                    end = tree.grammar.arithmetic_expression.parseString(ubound_str)[0]
+                    end = tree.grammar.arith_expr.parseString(ubound_str)[0]
             except pyparsing.ParseException as e:
                 error_("do loop: end", e)
             if stride_str != None and len(stride_str):
                 try:
-                    stride = tree.grammar.arithmetic_expression.parseString(stride_str)[0]
+                    stride = tree.grammar.arith_expr.parseString(stride_str)[0]
                 except pyparsing.ParseException as e:
                     error_("do loop: stride", e)
             do_loop = tree.TTDo([curr_offload_loop, begin, end, stride, []])
@@ -333,9 +333,9 @@ def parse_fortran_code(statements,result_name=None):
 
 
 # API
-def convert_arithmetic_expression(fortran_snippet):
-    return (matrix_arithmetic_expression | complex_arithmetic_expression
-            | arithmetic_expression).parseString(fortran_snippet)[0].cstr()
+def convert_arith_expr(fortran_snippet):
+    return (matrix_arith_expr | complex_arith_expr
+            | arith_expr).parseString(fortran_snippet)[0].cstr()
 
 
 def parse_attributes(ttattributes):

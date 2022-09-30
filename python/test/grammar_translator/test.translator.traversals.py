@@ -36,7 +36,7 @@ class TestTraverseArithmeticExpression(unittest.TestCase):
                 nonlocal num_rvalues
                 if isinstance(ttrvalue,translator.tree.TTRvalue):
                     num_rvalues += 1
-            arith_expr = translator.tree.grammar.arithmetic_expression.parseString(test)[0]
+            arith_expr = translator.tree.grammar.arith_expr.parseString(test)[0]
             translator.tree.traversals.traverse(
                 arith_expr,
                 visit_action_,

@@ -65,7 +65,7 @@ class NamespaceGenerator():
         self.fortran_compiler_flags,_ = util.kwargs.get_value("fortran_compiler_flags",opts.fortran_compiler_flags, **kwargs)
 
     def __consider_parameter(self,ivar,already_considered):
-        return (ivar["rank"] == 0 # TODO remove constraint later on
+        return (ivar["rank"] == 0 # todo: remove constraint later on
                and "parameter" in ivar["attributes"]
                and ivar["f_type"] in ["logical","integer","real"]
                and ivar["name"] not in already_considered # hiding, input must be reversed
@@ -84,10 +84,10 @@ class NamespaceGenerator():
                 already_considered.add(ivar1["name"])
                 ivar = copy.deepcopy(ivar1)
                 translator.analysis.append_c_type(ivar)
-                # TODO apply post-processing to rhs expression
+                # todo: apply post-processing to rhs expression
                 #  get rid of selected_real_kind statements and so on
-                # TODO consider parameter arrays and complex kinds
-                # TODO resolve kind
+                # todo: consider parameter arrays and complex kinds
+                # todo: resolve kind
                 tokens = [" "*2]
                 if self.comment_body:
                     tokens.append("// ")
@@ -100,7 +100,7 @@ class NamespaceGenerator():
 
     @util.logging.log_entry_and_exit(opts.log_prefix)
     def __resolve_dependencies(self,all_used_modules_have_been_compiled=False):
-        # TODO rewrite docu
+        # todo: rewrite docu
         """
         Algorithm:
         given: tag1:tag2:..., = program/procedure tag
@@ -123,7 +123,7 @@ class NamespaceGenerator():
             context["types"]        += [] # index_record["types"]
             context["variables"]    += [var for var in index_record["variables"] 
                                          if ("parameter" in var["attributes"]
-                                            and var["f_type"] != "type")] # TODO consider types too
+                                            and var["f_type"] != "type")] # todo: consider types too
             type_and_parameter_names = ([var["name"] for var in context["variables"]]
                                        +[typ["kind"] for typ in context["types"]])
             context["accessibility"] = index_record.get("accessibility","public")
@@ -149,7 +149,7 @@ class NamespaceGenerator():
                                     used_module[entry].append(pair)
                             except util.error.LookupError:
                                 pass
-                            # TODO also include types
+                            # todo: also include types
                     context["used_modules"].append(used_module)
                 else:
                     context["used_modules"].append(copy.deepcopy(used_module1))
@@ -167,7 +167,7 @@ class NamespaceGenerator():
                         context["declarations"].append(indexer.types.render_declaration(ivar))
                         iv += 1
                     else:
-                        # TODO render types too
+                        # todo: render types too
                         #itype = copy.deepcopy(context["variables"][it])
                         #if "device" in itype["attributes"]:
                         #end  
@@ -177,7 +177,7 @@ class NamespaceGenerator():
                     context["declarations"].append(indexer.types.render_declaration(ivar))
                     iv += 1
                 elif condt:
-                    # TODO render types too
+                    # todo: render types too
                     it += 1
                 condv = iv < len(context["variables"])
                 condt = it < len(context["types"])
@@ -294,15 +294,15 @@ class NamespaceGenerator():
             temp_infile.close()
             temp_outfile_path = temp_infile.name.replace(".f90",".x")
             temp_module_dir   = tempfile.TemporaryDirectory(
-                prefix="gpufort-namespacegen") # TODO set to True
-            # TODO -J,-o assumes gfortran
+                prefix="gpufort-namespacegen") # todo: set to True
+            # todo: -J,-o assumes gfortran
             cmd_compile = [self.fortran_compiler,"-J" + temp_module_dir.name] + [self.fortran_compiler_flags] + [temp_infile.name,"-o",temp_outfile_path]
             #print(cmd_compile)
             status,_,err_out = util.subprocess.run_subprocess(" ".join(cmd_compile),True)
             if status != 0:
                 raise util.error.LookupError("failed resolving parameters in scope '{}' as compilation with compiler '{}' and flags '{}' failed for the following reason: {}".format(
                     self.scope["tag"],self.fortran_compiler," ".join(self.fortran_compiler_flags),err_out))
-            # TODO should be cleaned up also in case of error
+            # todo: should be cleaned up also in case of error
             shutil.rmtree(temp_module_dir.name,ignore_errors=False)
             if os.path.exists(temp_infile.name):
                 os.remove(temp_infile.name)

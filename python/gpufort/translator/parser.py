@@ -53,7 +53,7 @@ def parse_fortran_code(statements,result_name=None):
     - consider comments
     - every call returns a subtree
     """
-    # TODO identifieir labels are case senstivive -> Catch labels via the linemapper
+    # todo: identifier labels are case senstivive -> Catch labels via the linemapper
     # Make parser use linemaps
     modern_fortran = opts.modern_fortran 
 
@@ -197,7 +197,7 @@ def parse_fortran_code(statements,result_name=None):
                 append_(tree.TTCommentedOut([comment]), "comment")
         # do/while
         elif util.parsing.is_do_while(tokens):
-            # TODO parse do while with statement number ('numeric label')
+            # todo: parse do while with statement number ('numeric label')
             try:
                 do_loop_labels.append(None)
                 parse_result = tree.grammar.fortran_do_while.parseString(
@@ -343,8 +343,7 @@ def parse_attributes(ttattributes):
     modified_vars = [tree.make_fstr(var).lower() for var in ttattributes._rhs]
     return attribute, modified_vars
 
-
-# TODO parsing and translation is similar but analysis differs between the different kernel
+# todo: parsing and translation is similar but analysis differs between the different kernel
 # types. For example for CUF, the reduction vars must be detected by the parser (lhs scalars)
 # while they are specified with ACC,OMP.
 

@@ -56,7 +56,7 @@ class TTCufKernelCall(base.TTNode):
     def sharedmem_fstr(self):
         return traversals.make_fstr(self._sharedmem)
 
-# TODO keep for reference, a while
+# todo: keep for reference, a while
 #class CufDeviceSpec(directives.IDeviceSpec):
 #    def __init__(self,tokens):
 #        self._num_outer_loops_to_map = int(tokens[0])
@@ -136,7 +136,7 @@ class TTCufKernelDo(base.TTNode, directives.IComputeConstruct,
 #        if self._grid == "*":
 #            return [grammar.CLAUSE_NOT_FOUND] * self._num_outer_loops_to_map
 #        elif isinstance(self._block, fortran.TTValue):
-#            # TODO Check if TTValue is actually a dim3 or not
+#            # todo: Check if TTValue is actually a dim3 or not
 #            result = []
 #            for i in range(0, self._num_outer_loops_to_map):
 #                result.append(converter(self._grid) + "%" + chr(ord('x') + i))
@@ -148,7 +148,7 @@ class TTCufKernelDo(base.TTNode, directives.IComputeConstruct,
 #        if self._block == "*":
 #            return [grammar.CLAUSE_NOT_FOUND] * self._num_outer_loops_to_map
 #        elif isinstance(self._block, fortran.TTValue):
-#            # TODO Check if TTValue is actually a dim3 or not
+#            # todo: Check if TTValue is actually a dim3 or not
 #            result = []
 #            for i in range(0, self._num_outer_loops_to_map):
 #                result.append(converter(self._block) + "%" + chr(ord('x') + i))
@@ -392,7 +392,7 @@ class TTCufMemcpyIntrinsic(base.TTNode, CufMemcpyBase):
     def hip_fstr(self,
                   dest_on_device,
                   src_on_device,
-                  bytes_per_element=1): # TODO backend specific
+                  bytes_per_element=1): # todo: backend specific
         api = "hipMemcpy"
         args = []
         args.append(self.dest_fstr(dest_on_device, bytes_per_element))

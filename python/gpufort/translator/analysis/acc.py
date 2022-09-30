@@ -74,7 +74,6 @@ class AccLoopInfo:
     def __init__(self,device_type):
         """Constructor.
         :param str device_type: Device type identifier such as `acc_device_nvidia`."""
-        :param str device_type: Device type identifier such as `acc_device_nvidia`.
         self.device_type = device_type
         self.gang = optvals.OptionalSingleValue()
         self.worker = optvals.OptionalSingleValue()

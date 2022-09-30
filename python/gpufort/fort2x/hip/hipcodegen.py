@@ -132,7 +132,7 @@ class HipCodeGenerator(codegen.CodeGenerator):
         """
         scope = indexer.scope.create_scope(self.index, stcomputeconstruct.parent.tag())
 
-        # TODO 
+        # todo: 
         # clause analysis needed to derive kernel arguments
         # if derived type access in kernel
         # Further tree modification required if no parent type is passed down

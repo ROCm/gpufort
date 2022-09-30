@@ -22,7 +22,7 @@ def append_c_type(tavar):
         tavar["c_type"] = tavar["kind"] 
     elif f_type == "character":
         tavar["c_type"] = "char"
-        # TODO more carefully check if len or kind is specified for characters
+        # todo: more carefully check if len or kind is specified for characters
     elif f_type != "character": 
         tavar["c_type"] = conv.convert_to_c_type(f_type, kind, "TODO unknown")
     tavar["bytes_per_element"] = conv.num_bytes(f_type, kind, default=None)
@@ -140,7 +140,7 @@ def lookup_index_entries_for_vars_in_kernel_body(scope,
             try:
                 all_vars2.remove(var_expr)
             except:
-                pass # TODO error
+                pass # todo: error
 
     for var_expr in all_vars2:
         tavar = create_analysis_var(scope, var_expr)
@@ -169,7 +169,7 @@ def lookup_index_entries_for_vars_in_compute_construct(scope,ttcomputeconstruct,
                      if (v[0]=="_" 
                         and v not in loop_vars 
                         and v not in local_vars)]
-    # TODO improve
+    # todo: improve
     result = lookup_index_entries_for_vars_in_kernel_body(scope,
                                                           all_vars,
                                                           ttcomputeconstruct.gang_reductions(),
@@ -192,7 +192,7 @@ def lookup_index_entries_for_vars_in_procedure_body(scope,ttprocedurebody,iproce
         v for v in all_var_exprs
         if (v not in iprocedure["dummy_args"]
            and v not in shared_vars
-           and v not in tree.grammar.DEVICE_PREDEFINED_VARIABLES) # TODO only with
+           and v not in tree.grammar.DEVICE_PREDEFINED_VARIABLES) # todo: only with
                                                                              # CUDA Fortran
     ]
     all_vars = iprocedure["dummy_args"] + shared_vars + local_vars
@@ -245,9 +245,9 @@ def search_value_exprs_in_subtree(ttnode, search_filter, scope, min_rank=-1):
     for ttvalue in find_all_matching_exclude_directives(
             ttnode.body,
             search_filter): # includes the identifiers of the function calls 
-        # TODO Search tag creation strips array brackets
-        # TODO provide clean interface to value
-        tag = indexer.scope.create_index_search_tag_for_var(ttvalue._value.fstr()) # TODO 
+        # todo: Search tag creation strips array brackets
+        # todo: provide clean interface to value
+        tag = indexer.scope.create_index_search_tag_for_var(ttvalue._value.fstr()) # todo: 
         if tag not in tree.grammar.DEVICE_PREDEFINED_VARIABLES:
             ivar = indexer.scope.search_scope_for_var(scope, tag)
             if ivar["rank"] >= min_rank and\
@@ -466,7 +466,7 @@ def kernel_args_to_acc_mappings_no_types(acc_clauses,tavars,present_by_default,c
                         break
                 if explicitly_mapped: break
             if not explicitly_mapped and present_by_default:
-                if tavar["f_type"]=="type": # TODO refine
+                if tavar["f_type"]=="type": # todo: refine
                     raise util.error.LimitationError("mapping of derived type scalars and arrays not supported (yet)")
                 else:
                     mappings.append((tavar["expr"], callback("copy",tavar["expr"],tavar,**kwargs)))

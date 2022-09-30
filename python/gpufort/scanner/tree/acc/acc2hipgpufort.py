@@ -127,7 +127,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
             result.append(_ACC_WAIT.format(queue="["+",".join(wait_queues)+"]",options=""))
         return result
 
-    # TODO clean up
+    # todo: clean up
     def _handle_data_clauses(self,staccdir,index):
         """Handle all data clauses of the current directive and/or of the preceding data clauses."""
         result = [] 
@@ -137,7 +137,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
                 template = _DATA_CLAUSE_2_TEMPLATE_MAP[kind.lower()]
                 ivar = indexer.scope.search_index_for_var(index,staccdir.parent.tag(),var_expr)
                 result.append(template.format(args=",".join(_make_map_args(var_expr,ivar))))
-                # TODO hack, removes derived types from list
+                # todo: hack, removes derived types from list
                 if not opts.acc_map_derived_types: 
                     if ivar["f_type"] == "type":
                         result.pop(-1)
@@ -192,7 +192,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
         """Emits an associate statement with a mapping
         of each host variable to the mapped device array.
         """
-        # TODO legacy, work with macros instead as a workaround
+        # todo: legacy, work with macros instead as a workaround
         # somehow get C pointer to `dimension(*)` variables
         # have use_device_pointer_arr and use_device_pointer variants
         # that can deal with type(*)[,dimension(*)] inputs and
@@ -398,7 +398,7 @@ class AccComputeConstruct2HipGpufortRT(Acc2HipGpufortRT):
         for staccdir in data_and_kernels_ancestors:
             for _,args in staccdir.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP):
                 acc_clauses.append(("present",args))
-        # TODO also consider acc declare'd variables here
+        # todo: also consider acc declare'd variables here
        
         if not self.stnode.is_directive(["acc","kernels"]): # note: parent `acc kernels` directive lines are copied to each embedded compute construct
             acc_clauses += self.stnode.get_matching_clauses(_DATA_CLAUSE_2_TEMPLATE_MAP)
@@ -526,9 +526,9 @@ def Acc2HipGpufortRTPostprocess(stree, index):
        :param staccdirectives: All acc directive tree accnodes."""
     accbackends.add_runtime_module_use_statements(stree,"gpufortrt_api")
 
-    # TODO check if there is any acc used in the
+    # todo: check if there is any acc used in the
     # construct at all, also check if there is a allocate/deallocate statement
-    # TODO handle directly via directives; only variables occuring
+    # todo: handle directly via directives; only variables occuring
     # in directives need to be available on device
     containers = stree.find_all(\
       lambda node: type(node) in [nodes.STProgram,nodes.STProcedure],
@@ -538,7 +538,7 @@ def Acc2HipGpufortRTPostprocess(stree, index):
         scope_vars = scope["variables"]
         local_var_names, dummy_arg_names = stcontainer.local_and_dummy_var_names(
             index)
-        # TODO also process type members
+        # todo: also process type members
         data_start_mappings = []
         data_end_mappings   = []
         for ivar in scope_vars:

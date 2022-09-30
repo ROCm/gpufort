@@ -216,11 +216,11 @@ class Acc2HipGccRT(accbackends.AccBackendBase):
             elif type(parse_result) is translator.tree.TTAccDeclare:
                 pass
             else:
-                print("failed: " + f_snippet) #TODO
+                print("failed: " + f_snippet) # todo:
                 return f_snippet, False
             return "call " + result + "\n", True
         except Exception as e:
-            print("failed: " + f_snippet) #TODO
+            print("failed: " + f_snippet) # todo:
             return f_snippet, False
 
 

@@ -115,7 +115,7 @@ class TestLoopTransformations(unittest.TestCase):
             result = prolog
             result += "{}if ( {} ) {{ /*...*/ }}\n".format(indent,statement_activation_cond)
             result += epilog
-            #print(result)
+            print(result)
     def test_05_map_worker_max_loop_to_hip_cpp(self):
         results = [
         ]

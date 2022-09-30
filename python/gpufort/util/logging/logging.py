@@ -49,7 +49,7 @@ def init_logging(logfile_basename="log.log",
         sys.exit(2)
     os.makedirs(log_dir, exist_ok=True)
 
-    # TODO check if log level exists
+    # todo: check if log level exists
 
     max_debug_level = 5
     supported_levels = ["ERROR", "WARNING", "INFO", "DEBUG"] + [

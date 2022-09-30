@@ -19,7 +19,7 @@ dest_dialects = ["hip","hipgcc","hipgpufort"]
 
 def CufLoopNest2Hip(stcomputeconstruct,*args,**kwargs):
     # map the parameters
-    # TODO check for derived types
+    # todo: check for derived types
     for tavar in stcomputeconstruct.kernel_args_tavars:
         if tavar["rank"] > 0:
             var_expr = tavar["expr"]
@@ -181,7 +181,7 @@ def handle_use_statement_cuf(stuse, joined_statements, index):
       "curand" : "hipblas",
     }
 
-    # TODO handle only part
+    # todo: handle only part
     cuf_module = mod in cuf_2_hipfort
     if cuf_module:
         assert isinstance(stuse.parent,nodes.STContainerBase)
@@ -209,7 +209,7 @@ def handle_declaration_cuf(stdeclaration, joined_statements, index=[]):
         variables = create_index_records_from_declaration(stmt.lower())
         index["variables"] += variables
 
-    # TODO original_datatype not fully correct if we have character rhs that overrides len via <var-expr>*<int-expr>
+    # todo: original_datatype not fully correct if we have character rhs that overrides len via <var-expr>*<int-expr>
     f_type, f_len, f_kind, params, qualifiers, dimension_bounds, variables,\
         original_datatype, original_qualifiers = util.parsing.parse_declaration(stmt)
 

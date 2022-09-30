@@ -80,7 +80,7 @@ class STNode:
 
     def remove_comments(self, lines):
         """Remove comments but keep directives."""
-        # TODO move somewhere else where modern_fortran user info is available
+        # todo: move somewhere else where modern_fortran user info is available
         for line in list(lines): # shallow copy
             if (util.parsing.is_fortran_directive(line,modern_fortran=True)
                or util.parsing.is_fortran_directive(line,modern_fortran=False)):
@@ -467,7 +467,7 @@ class STContainerBase(STNode):
 
     def local_and_dummy_var_names(self, index):
         """:return: names of local variables (1st retval) and dummy variables (2nd retval)."""
-        # TODO can also be realised by subclass
+        # todo: can also be realised by subclass
         scope = indexer.scope.create_scope(index, self.tag())
         scope_vars = scope["variables"]
         if type(self) == STProgram:
@@ -685,7 +685,7 @@ class STComputeConstruct(STNode):
         self.__hash = self.__hash_kernel()
         parent_tag = self.parent.tag()
         scope = indexer.scope.create_scope(index, parent_tag)
-        # TODO pass linemaps to the translator, will improve error messages too
+        # todo: pass linemaps to the translator, will improve error messages too
         try:
             self.parse_result = translator.parse_compute_construct(self.code, scope)
         except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:
@@ -729,7 +729,7 @@ class STComputeConstruct(STNode):
                 grid_or_ps_fstr  = self.parse_result.grid_expr_fstr()
                 if grid_or_ps_fstr == None and self.parse_result.num_gangs():
                     grid = self.parse_result.num_gangs()
-                    grid_or_ps_fstr = "dim3({})".format(",".join(grid)) # TODO remove
+                    grid_or_ps_fstr = "dim3({})".format(",".join(grid)) # todo: remove
                 elif grid_or_ps_fstr == None:
                     launcher_name_suffix = "_hip_ps"
                     grid_or_ps_fstr = "dim3({})".format(",".join(self.problem_size))
@@ -738,7 +738,7 @@ class STComputeConstruct(STNode):
                 block_fstr = self.parse_result.block_expr_fstr()
                 if block_fstr == None and self.parse_result.num_threads_in_block_specified():
                     block = self.parse_result.num_threads_in_block()
-                    block_fstr = "dim3({})".format(",".join(block)) # TODO remove
+                    block_fstr = "dim3({})".format(",".join(block)) # todo: remove
                 elif block_fstr == None and len(self.block_size):
                     block_fstr = "dim3({})".format(",".join(self.block_size))
                 elif block_fstr == None:
@@ -843,7 +843,7 @@ class STNonZeroCheck(STNode):
                   joined_lines,
                   joined_statements,
                   statements_fully_cover_lines,
-                  index=[]): # TODO
+                  index=[]): # todo:
         result = joined_statements
         transformed = False
         for tokens, start, end in translator.tree.grammar.non_zero_check.scanString(
@@ -856,7 +856,7 @@ class STNonZeroCheck(STNode):
                 on_device = index_var_is_on_device(ivar)
                 transformed |= on_device
                 if on_device:
-                    subst = parse_result.fstr() # TODO backend specific
+                    subst = parse_result.fstr() # todo: backend specific
                     result = result.replace(result[start:end], subst)
             except: # do not care if this is not a variable
                 pass
@@ -869,14 +869,14 @@ class STAllocated(STNode):
                   joined_lines,
                   joined_statements,
                   statements_fully_cover_lines,
-                  index=[]): # TODO
+                  index=[]): # todo:
 
         def repl(parse_result):
             var_name = parse_result.var_name()
             ivar = indexer.scope.search_index_for_var(index,self.parent.tag(),\
               var_name)
             on_device = index_var_is_on_device(ivar)
-            return (parse_result.fstr(), on_device) # TODO backend specific
+            return (parse_result.fstr(), on_device) # todo: backend specific
 
         result, transformed = util.pyparsing.replace_all(
             joined_statements, translator.tree.grammar.allocated, repl)

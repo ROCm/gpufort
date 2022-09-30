@@ -136,7 +136,7 @@ class HipKernelGenerator4LoopNest(HipKernelGeneratorBase):
 
     def __init__(self, ttcomputeconstruct, scope, **kwargs):
         HipKernelGeneratorBase.__init__(self, scope, **kwargs)
-        # TODO tensors must be flagged before before lookup index entries
+        # todo: tensors must be flagged before before lookup index entries
         # translate_compute_construct_to_hip_kernel_body does this (side effect)
         self.c_body, self.problem_size, self.block_size, loop_vars, c_names, c_ranks = \
             translator.codegen.translate_compute_construct_to_hip_kernel_body(ttcomputeconstruct,scope,**kwargs)

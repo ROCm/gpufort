@@ -169,7 +169,7 @@ def adjust_explicitly_mapped_arrays_in_rank(ttvalues,explicitly_mapped_vars):
         for var_expr in explicitly_mapped_vars:
             mapping_tag  = indexer.scope.create_index_search_tag_for_var(var_expr)
             if value_tag == mapping_tag:
-                var_ttvalue = tree.grammar.lvalue.parseString(var_expr,parseAll=True)[0] # TODO analyse usage and directly return as type?
+                var_ttvalue = tree.grammar.lvalue.parseString(var_expr,parseAll=True)[0] # todo: analyse usage and directly return as type?
                 if len(var_ttvalue.tensor_slice_args()) < len(var_ttvalue.args()): # implies there is a fixed dimension
                     assert ttvalue.has_args()
                     if len(var_ttvalue.args()) > len(ttvalue.args()):
@@ -200,198 +200,6 @@ def _collapsed_loop_index_cstr(ttdo,counter):
     return "int {idx} = outermost_index_w_len({args});\n".format(\
            idx=idx,args=",".join(args))
 
-class ParallelismMode(enum.Enum):
-    GANG_REDUNDANT_WORKER_SINGLE_VECTOR_SINGLE = 0b000
-    GANG_REDUNDANT_WORKER_SINGLE_VECTOR_PARTITIONED = 0b001
-    GANG_REDUNDANT_WORKER_PARTITIONED_VECTOR_SINGLE = 0b010
-    GANG_REDUNDANT_WORKER_PARTITIONED_VECTOR_PARTITIONED = 0b011
-    GANG_PARTITIONED_WORKER_SINGLE_VECTOR_SINGLE = 0b100
-    GANG_PARTITIONED_WORKER_SINGLE_VECTOR_PARTITIONED = 0b101
-    GANG_PARTITIONED_WORKER_PARTITIONED_VECTOR_SINGLE = 0b110
-    GANG_PARTITIONED_WORKER_PARTITIONED_VECTOR_PARTITIONED = 0b111
-
-    def in_gang_partitioned_mode(self):
-        return self.value >> 2
-    def in_worker_partitioned_mode(self):
-        return (0b010 & self.value) >> 1
-    def in_vector_partitioned_mode(self):
-        return 0b001 & self.value
-    
-    def change_to_gang_redundant_mode(self):
-        return ParallelismMode(0b011 & self.value)
-    def change_to_gang_partitioned_mode(self):
-        return ParallelismMode(0b100 | self.value)
-    
-    def change_to_worker_redundant_mode(self):
-        return ParallelismMode(0b101 & self.value)
-    def change_to_worker_partitioned_mode(self):
-        return ParallelismMode(0b010 | self.value)
-    
-    def change_to_vector_redundant_mode(self):
-        return ParallelismMode(0b110 & self.value)
-    def change_to_vector_partitioned_mode(self):
-        return ParallelismMode(0b001 | self.value)
-    
-    def __str__(self):
-        result = "GANG"
-        if self.in_gang_partitioned_mode():
-            result += "_PARTITIONED"
-        else:
-            result += "_REDUNDANT"
-        result += "_WORKER"
-        if self.in_worker_partitioned_mode():
-            result += "_PARTITIONED"
-        else:
-            result += "_SINGLE"
-        result += "_VECTOR"
-        if self.in_vector_partitioned_mode():
-            result += "_PARTITIONED"
-        else:
-            result += "_SINGLE"
-        return result
-    __repr__ = __str__
-
-def transform(ttcomputeconstruct):
-
-    results = [] # one per device spec
-    device_types = __identify_device_types(ttcomputeconstruct)
-    
-    # determine problem size and finest granularity of parallelism
-    # in case of worker/gang_worker parallelism, we need to launch a full warp
-    # of threads and mask out all threads except warp thread 0
-    # in case of gang parallelism, we need to launch a full thread block
-    # of threads and mask out all threads except thread 0
-    # Problems:
-    # - size of the outer loop thread groups depends on the size of the inner loops
-    #   - only have this information on the way up
-    # - inner loop might be greater than outer loop, so need to be blocked 
-    # - need to know default vector length, make available
-    # Considerations:
-    #   No warp/worker synchronization needed as vector lanes in warp run in lockstep
-    #   No intergang synchronization needed as gangs run independently from each other
-    #   Need to distinguish between loops and other statements to put if ( thread id == 0 ) regions
-    # Identify workshare such as min,max,etc.
-    for device_type in device_types:
-        in_loop = False
-        parallelism_mode = ParallelismMode.GANG_REDUNDANT_WORKER_SINGLE_VECTOR_SINGLE
-        num_collapse = 0
-        num_tile_dims = 0
-        # for the whole compute construct
-        max_num_gangs = None
-        max_num_workers = None
-        max_vector_length = None
-        # per loopnest in the compute construct
-        num_gangs     = []
-        num_workers   = []
-        vector_length = []
-        def traverse_(ttnode,num_collapse,mapped_loops,device_type):
-            nonlocal parallelism_mode
-            prev_parallelism_mode = parallelism_mode
-
-            if isinstance(ttnode,IComputeConstruct):
-                device_specs = ttnode.get_device_specs()
-                device_spec = next((d for d in device_specs if d.applies(device_type)),None)
-                assert device_spec != None
-                cc_num_gangs   = ttnode.num_gangs() # list
-                cc_num_workers = ttnode.num_workers() # no list
-                if cc_num_gangs[0] != tree.grammar.CLAUSE_NOT_FOUND:
-                    max_num_gangs = "*".join(["("+str(g)+")" for g in cc_num_gangs]) 
-                if cc_num_workers != tree.grammar.CLAUSE_NOT_FOUND:
-                    max_num_workers = str(cc_num_workers)
-            elif isinstance(ttnode,TTDo):
-                if num_collapse > 0:
-                    # TODO check if we can move statement into inner loop, should be possible if 
-                    # a loop statement is not relying on the lvalue or inout arg from a previous statement (difficult to analyze)
-                    # alternative interpretation of collapse user information -> we can reorder statements without error
-                elif num_tile_dims > 0:
-                    # gang parallism level
-                    # append to grid size
-                    # append to block size 
-                elif ttnode.annotation != None:
-                    # get device spec for type
-                    device_specs = ttnode.annotation.get_device_specs()
-                    device_spec = next((d for d in device_specs if d.applies(device_type)),None)
-                    assert device_spec != None
-                    if ttnode.annotation.parallelism.gang_partitioned_mode():
-                        if parallelism_mode.in_gang_partitioned_mode():
-                            raise util.eror.SyntaxError("already in gang-partitioned region")
-                        elif parallelism_mode.in_worker_partitioned_mode():
-                            raise util.eror.SyntaxError("no gang partitioning possible in worker-partitioned region")
-                        elif parallelism_mode.in_vector_partitioned_mode():
-                            raise util.eror.SyntaxError("no gang partitioning possible in vector-partitioned region")
-                        parallelism_mode = parallelism_mode.change_to_gang_partitioned_mode()
-                        # TODO get num gangs
-                    if ttnode.annotation.parallelism().worker_partitioned_mode():
-                        if parallelism_mode.in_worker_partitioned_mode():
-                            raise util.eror.SyntaxError("already in worker-partitioned region")
-                        elif parallelism_mode.in_vector_partitioned_mode():
-                            raise util.eror.SyntaxError("no worker partitioning possible in vector-partitioned region")
-                        parallelism_mode = parallelism_mode.change_to_worker_partitioned_mode()
-                        # TODO get num workers
-                    if ttnode.annotation.parallelism().vector_partitioned_mode():
-                        if parallelism_mode.in_vector_partitioned_mode():
-                            raise util.eror.SyntaxError("already in vector-partitioned region")
-                        parallelism_mode = parallelism_mode.change_to_vector_partitioned_mode()
-                        # TODO get vector length and 
-                    # TODO transform according to parallelism_mode 
-                    # consider that parallelism mode might not apply to finer-grain parallel-loops and further not 
-                    # to conditional code around these loops
-                    # need to check if a loop is parallelized
-                    # get a statements parallelism level from a bottom-up search
-                    # not all statements might be affected 
-                else: # any other statement
-                    pass
-
-    #preamble1 = []
-    #preamble2 = []
-    #indices = []
-    #problem_sizes = []
-    #indices.append("int _rem = __gidx1;\n") # linear index
-    #indices.append("int _denom = _problem_size;\n")
-    # 
-
-
-    #preamble2.append("const int _problem_size = {};\n".format("*".join(problem_sizes)))
-    #return preamble1+preamble2, indices, [ "__gidx1 < _problem_size" ]
-
-# TODO make use of parallelism-level here
-def collapse_loopnest(ttdos):
-    # TODO Traverse the whole tree and modify all TTCycle and Exit statements 
-    preamble1 = []
-    preamble2 = []
-    indices = []
-    problem_sizes = []
-    indices.append("int _rem = __gidx1;\n")
-    indices.append("int _denom = _problem_size;\n")
-    for i,ttdo in enumerate(ttdos,1):
-        ttdo.thread_index = "_rem,_denom" # side effects
-        preamble1.append(_loop_range_cstr(ttdo,i))
-        preamble2.append("const int _len{0} = loop_len(_begin{0},_end{0},_step{0});\n".format(i))
-        problem_sizes.append("_len{}".format(i))
-        for child in ttdo:
-            if isinstance(child,tree.TTCycle):
-                child._in_loop = False
-            if isinstance(child,tree.TTExit):
-                child._in_loop = False
-        indices.append(_collapsed_loop_index_cstr(ttdo,i))
-    # conditions = [ ttdos[0].hip_thread_bound_cstr() ]
-    preamble2.append("const int _problem_size = {};\n".format("*".join(problem_sizes)))
-    return preamble1+preamble2, indices, [ "__gidx1 < _problem_size" ]
-
-def map_compute_construct_to_grid(ttdos):
-    thread_indices = ["x", "y", "z"]
-    while len(thread_indices) > len(ttdos):
-        thread_indices.pop()
-    indices = []
-    conditions = []
-    for ttdo in ttdos:
-        ttdo.thread_index = thread_indices.pop()
-        indices.append(ttdo.hip_thread_index_cstr())
-        conditions.append(ttdo.hip_thread_bound_cstr())
-        if not len(thread_indices):
-            break
-    return indices, conditions
-
 def map_allocatable_pointer_derived_type_members_to_flat_arrays(ttvalues,loop_vars,scope):
     r"""Converts derived type expressions whose innermost element is an array of allocatable or pointer
     type to flat arrays in expectation that these will be provided
@@ -408,14 +216,14 @@ def map_allocatable_pointer_derived_type_members_to_flat_arrays(ttvalues,loop_va
             if (ivar["rank"] > 0
                 and ("allocatable" in ivar["attributes"]
                     or "pointer" in ivar["attributes"])):
-                # TODO 
+                # todo: 
                 # search through the subtree and ensure that only
                 # the last element is an array indexed by the loop
                 # variables 
                 # Deep copy required for expressions that do not match
                 # this criterion
                 if (":" in ident 
-                   or "(" in ident): # TODO hack
+                   or "(" in ident): # todo: hack
                     raise util.error.LimitationError("cannot map expression '{}'".format(ident))
                 var_expr = indexer.scope.create_index_search_tag_for_var(ident)
                 c_name = util.parsing.mangle_fortran_var_expr(var_expr) 
@@ -439,14 +247,14 @@ def map_scalar_derived_type_members_to_flat_scalars(ttvalues,loop_vars,scope):
             ivar = indexer.scope.search_scope_for_var(scope,ident)
             if (ivar["rank"] == 0
                and ivar["f_type"] != "type"):
-                # TODO 
+                # todo: 
                 # search through the subtree and ensure that only
                 # the last element is an array indexed by the loop
                 # variables 
                 # Deep copy required for expressions that do not match
                 # this criterion
                 if (":" in ident 
-                   or "(" in ident): # TODO hack
+                   or "(" in ident): # todo: hack
                     raise util.error.LimitationError("cannot map expression '{}'".format(ident))
                 var_expr = indexer.scope.create_index_search_tag_for_var(ident)
                 c_name = util.parsing.mangle_fortran_var_expr(var_expr) 
@@ -481,5 +289,5 @@ def flag_tensors(ttvalues, scope):
                        if indexer.scope.is_intrinsic(ident):
                           value._value._type = tree.TTTensorAccess.Type.INTRINSIC_CALL
                        else:
-                           # TODO check EXTERNAL procedures too 
+                           # todo: check EXTERNAL procedures too 
                            raise util.error.LookupError("expression '"+ident+"' could not be associated with any variable, procedure, or intrinsic")

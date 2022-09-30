@@ -22,7 +22,7 @@ EMPTY_TYPE = {
    "lineno": None,
    # dummy entries that never carry data,
    # they make the type look like a module to certain routines
-   # TODO should use dict.get(key,default) instead.
+   # todo: should use dict.get(key,default) instead.
    "types": [],
 }
 
@@ -49,7 +49,7 @@ EMPTY_VAR = {
         "len"    : None,
         "kind"   : None,
         "params" : [],
-        # TODO bytes per element can be computed on the fly
+        # todo: bytes per element can be computed on the fly
         "bytes_per_element" : None,
         "c_type" : None,
         "attributes" : [],
@@ -61,7 +61,7 @@ EMPTY_VAR = {
         # parse rhs if necessary
         "rhs" : None,
         # meta information
-        "module": None, # TODO Compare vs parent_tag in scope variables
+        "module": None, # todo: Compare vs parent_tag in scope variables
         "file" : None,
         "lineno" : -1,
 }
@@ -107,13 +107,13 @@ def create_index_var(f_type,
     ivar["kind"]        = kind
     ivar["len"]         = f_len
     ivar["params"]      = params
-    # TODO bytes per element can be computed on the fly
+    # todo: bytes per element can be computed on the fly
     ivar["attributes"] += attributes
     # arrays
     ivar["bounds"] += bounds
     ivar["rank"]   = len(bounds)
     # handle parameters
-    #ivar["value"] = None # TODO parse rhs if necessary
+    #ivar["value"] = None # todo: parse rhs if necessary
     ivar["rhs"] = rhs
     # meta information
     ivar["file"] = filepath

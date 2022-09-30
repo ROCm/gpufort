@@ -128,8 +128,8 @@ def handle_subprocess_output(triple):
     status, output, errors = triple
     sys.stdout.write(output)
     sys.stderr.write(errors)
-    # TODO detect errors and warnings line numbers
-    # TODO use single-line-block linemaps to trace back source of errors
+    # todo: detect errors and warnings line numbers
+    # todo: use single-line-block linemaps to trace back source of errors
     # in original file
 
 def hardcode_pure_converter_opts():

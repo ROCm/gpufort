@@ -12,7 +12,7 @@ def preprocess_fortran_statement(statement):
     - insert whitespaces between identifiers and operators
       with leading and trailing edge.
     - replace power (**) expression by func call expression
-    # TODO handle directly via arithmetic expression grammar
+    # todo: handle directly via arithmetic expression grammar
     """
     result = ""
     for tk in util.parsing.tokenize(statement):

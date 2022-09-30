@@ -182,7 +182,7 @@ class TTAccDirectiveBase(base.TTNode):
         assert False, "Not implemented"
 
 
-# TODO add host data
+# todo: add host data
 class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
     """
     Abstract class that handles the following clauses
@@ -270,7 +270,7 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
                   inout_arrays_in_body=[],
                   depend={},
                   prefix=""):
-        # TODO split in frontend and backend?
+        # todo: split in frontend and backend?
         """
         :param: arrays_in_body      all array lvalues and rvalues
         :param: inout_arrays_in_body all used in embedded regions whose elements appear as lvalues
@@ -291,7 +291,7 @@ class TTAccDataManagementDirectiveBase(TTAccDirectiveBase):
         from_list = self.copyout_map_from_vars() + self.detach_vars()
         tofrom_list = self.copy_map_to_from_vars()
         alloc_list = self.create_alloc_vars()
-        alloc_list += self.no_create_vars() # TODO not sure about this
+        alloc_list += self.no_create_vars() # todo: not sure about this
         release_list = self.delete_release_vars()
         deviceptr_list = self.deviceptrs()
         present_list = self.present_vars()
@@ -406,7 +406,7 @@ class TTAccDeclare(TTAccDirectiveBase):
         to_list = self.handle_mapping_clause(\
           ["create","copy","copyin","attach","copyout","detach"])
 
-        # TODO: not sure about this mapping
+        # todo:: not sure about this mapping
         to_list += self.handle_mapping_clause(["device_resident"])
         link_list = self.handle_mapping_clause(["link"])
 
@@ -519,12 +519,12 @@ class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
         return self.handle_mapping_clause(["private"], converter)
 
     def omp_fstr(self, loop_type="do", parallel_region="", prefix="!$omp"):
-        # TODO broken, as directive is split and some information (e.g. num_Collapse) must be obtained from device spec
+        # todo: broken, as directive is split and some information (e.g. num_Collapse) must be obtained from device spec
         result = prefix
 
         if self.loop_handles_mutual_clauses:
             gang_clause = next((c for c in self.clauses if c.kind in ["num_gangs","gang"]),None)
-            # TODO use argument
+            # todo: use argument
             if gang != None:
                 result += " teams distribute"
         if len(parallel_region):
@@ -693,17 +693,17 @@ grammar.acc_noarg_clause.setParseAction(TTAccNoArgumentClause)
 # directive action
 grammar.acc_update.setParseAction(TTAccUpdate)
 grammar.acc_wait.setParseAction(TTAccWait)
-#acc_host_data #TODO
+#acc_host_data # todo:
 grammar.acc_data.setParseAction(TTAccData)
 grammar.acc_enter_data.setParseAction(TTAccEnterData)
 grammar.acc_exit_data.setParseAction(TTAccExitData)
 grammar.acc_routine.setParseAction(TTAccRoutine)
 grammar.acc_declare.setParseAction(TTAccDeclare)
-#acc_atomic #TODO
-#acc_cache  #TODO
+#acc_atomic # todo:
+#acc_cache  # todo:
 grammar.acc_loop.setParseAction(TTAccLoop)
 # kernels / parallels
-#acc_serial #TODO
+#acc_serial # todo:
 grammar.acc_serial.setParseAction(TTAccSerial)
 grammar.acc_kernels.setParseAction(TTAccKernels)
 grammar.acc_parallel.setParseAction(TTAccParallel)

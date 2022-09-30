@@ -694,7 +694,7 @@ def map_args_to_opts(args,include_dirs,defines,fortran_and_cpp_compiler_options,
         opts.only_emit_kernels = True
     if args.only_modify_translation_source:
         opts.only_modify_translation_source = True
-    # TODO move to different location
+    # todo: move to different location
     # set default values, add main includes and preprocessor definitions
     # to fortran and cpp parser options.
     arg_fc      = "-fc"

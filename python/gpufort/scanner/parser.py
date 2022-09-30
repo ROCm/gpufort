@@ -131,7 +131,7 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal current_tokens
         nonlocal statement_function_stack 
         log_detection_("program")
-        # TODO workaround, this will only allow local statement functions
+        # todo: workaround, this will only allow local statement functions
         statement_function_stack.append([])
         new = tree.STProgram(current_tokens[1], current_linemap, current_statement_no)
         new.ignore_in_s2s_translation = not translation_enabled
@@ -161,7 +161,7 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal index
         nonlocal statement_function_stack 
         log_detection_("function")
-        # TODO workaround, this will only allow local statement functions but parent's can be inherited
+        # todo: workaround, this will only allow local statement functions but parent's can be inherited
         statement_function_stack.append([])
         parsed_kind, name, dummy_args, modifiers, attributes, result_triple, bind_tuple =\
             util.parsing.parse_function_statement(current_statement_stripped)
@@ -349,7 +349,7 @@ def _parse_file(linemaps, index, **kwargs):
         nonlocal current_linemap
         nonlocal current_statement_no
         log_detection_("deallocate statement")
-        # TODO filter variable, replace with hipFree
+        # todo: filter variable, replace with hipFree
         new = tree.STDeallocate(current_linemap, current_statement_no)
         new.ignore_in_s2s_translation = not translation_enabled
         append_if_not_recording_(new)
@@ -365,7 +365,7 @@ def _parse_file(linemaps, index, **kwargs):
         append_if_not_recording_(new)
 
     def CufLibCall(tokens):
-        #TODO scan for cudaCufMemcpy calls
+        # todo: scan for cudaCufMemcpy calls
         nonlocal translation_enabled
         nonlocal current_node
         nonlocal current_linemap
@@ -429,13 +429,13 @@ def _parse_file(linemaps, index, **kwargs):
             append_if_not_recording_(new)
         elif (new.is_directive(["acc","end","serial"])
              or new.is_directive(["acc","end","parallel"])):
-            # TODO check parent statement
+            # todo: check parent statement
             assert keep_recording
             current_node.complete_init(index)
             ascend_()
             set_keep_recording_(False)
         elif (new.is_directive(["acc","serial"]) 
-             or new.is_directive(["acc","parallel"]) # TODO this assumes that there will be always an acc loop afterwards
+             or new.is_directive(["acc","parallel"]) # todo: this assumes that there will be always an acc loop afterwards
              or new.is_directive(["acc","parallel","loop"])
              or new.is_directive(["acc","kernels","loop"])
              or (in_acc_kernels_region_and_not_recording()
@@ -499,7 +499,7 @@ def _parse_file(linemaps, index, **kwargs):
             parse_result = translator.tree.grammar.assignment_begin.parseString(
                 current_statement_preprocessed)
             lvalue = translator.tree.find_first(parse_result, translator.tree.TTLvalue)
-            # TODO
+            # todo:
             
             if (in_acc_kernels_region_and_not_recording()
                and lhs_ivar["rank"] > 0 
@@ -523,7 +523,7 @@ def _parse_file(linemaps, index, **kwargs):
                     name = name.lower()
                     for entry in statement_function_stack[-1]:
                         if entry[0] == name: # existing record found
-                            # TODO currently does not make sense as the statement variables are only 
+                            # todo: currently does not make sense as the statement variables are only 
                             # applied on the LHS of a statement; should only be applied to RHS
                             # of assignments
                             raise util.error.SyntaxError("redefinition of statement function")
@@ -542,7 +542,7 @@ def _parse_file(linemaps, index, **kwargs):
         elif "off" in current_statement["body"]:
             translation_enabled = False
 
-    # TODO completely remove / comment out !$acc end kernels
+    # todo: completely remove / comment out !$acc end kernels
     tree.grammar.ALLOCATED.setParseAction(Allocated)
     tree.grammar.non_zero_check.setParseAction(NonZeroCheck)
 
@@ -557,7 +557,7 @@ def _parse_file(linemaps, index, **kwargs):
         for statement_functions in reversed(statement_function_stack):
             if len(statement_functions):
                 stmt = statement["body"]
-                # TODO should affect text
+                # todo: should affect text
                 statement["body"] = util.macros.expand_macros(stmt,statement_functions,
                         ignore_case=True,wrap_in_brackets=True)
 
@@ -622,7 +622,7 @@ def _parse_file(linemaps, index, **kwargs):
     # parser loop
     for current_linemap in linemaps:
         condition1 = current_linemap["is_active"]
-        # TODO do we work with the included linemaps at all are inclusions handled???
+        # todo: do we work with the included linemaps at all are inclusions handled???
         condition2 = len(current_linemap["included_linemaps"]
                         ) or not current_linemap["is_preprocessor_directive"]
         if condition1 and condition2:
@@ -651,7 +651,7 @@ def _parse_file(linemaps, index, **kwargs):
                     elif not util.parsing.is_fortran_comment(original_statement_lower,modern_fortran):
                         if not keep_recording and util.parsing.is_assignment(current_tokens):
                             lhs_expr, rhs_expr = util.parsing.parse_assignment(current_statement_stripped)
-                            # TODO
+                            # todo:
                             lhs_ivar = indexer.scope.search_index_for_var(index,current_node.tag(),lhs_expr)
                             cuf_implicit_memcpy = "device" in lhs_ivar["attributes"]
                             if cuda_fortran:
@@ -666,7 +666,7 @@ def _parse_file(linemaps, index, **kwargs):
                                 CufMemcpy()
                             elif not cuf_implicit_memcpy:
                                 Assignment(lhs_ivar,lhs_expr)
-                                # TODO
+                                # todo:
                             if cuda_fortran and next((tk for tk in current_tokens if tk[0:2] in ["nv","cu"]),None) != None:
                                 scan_string_("cuda_lib_call",tree.grammar.cuda_lib_call)
                         else:
@@ -692,7 +692,7 @@ def _parse_file(linemaps, index, **kwargs):
                                 End()
                             # single-statements
                             elif not keep_recording:
-                                # TODO parse Fortran statements and apply these 
+                                # todo: parse Fortran statements and apply these 
                                 # constructs as cuda_fortran-specific postprocessing
                                 if cuda_fortran:
                                     if (current_tokens[0] == "attributes" 
@@ -703,7 +703,7 @@ def _parse_file(linemaps, index, **kwargs):
                                          and current_tokens[1].isidentifier()
                                          and current_tokens[2] == "<<<"):
                                         CufKernelCall()
-                                    # TODO if a cuda prefix has been found
+                                    # todo: if a cuda prefix has been found
                                     if next((tk for tk in current_tokens if tk[0:2] in ["nv","cu"]),None) != None:
                                         scan_string_("cuda_lib_call",
                                                 tree.grammar.cuda_lib_call)
@@ -737,7 +737,7 @@ def _parse_file(linemaps, index, **kwargs):
                                 elif current_tokens[0] == "return":
                                     Return()
                                 #
-                                # TODO build proper parser of function / subroutine
+                                # todo: build proper parser of function / subroutine
                                 # plus corresponding detection criterion
                                 elif (not "function" in current_tokens 
                                      and current_tokens[0] in [
@@ -752,7 +752,7 @@ def _parse_file(linemaps, index, **kwargs):
                                 elif current_tokens[0] == "type": # must come after declarations
                                     TypeStart()
                 
-                    # TODO check if we can move that outside and then extract only active linemaps when 
+                    # todo: check if we can move that outside and then extract only active linemaps when 
                     # translating
                 except (util.error.SyntaxError, util.error.LimitationError, util.error.LookupError) as e:
                     msg = "{}:{}:{}".format(

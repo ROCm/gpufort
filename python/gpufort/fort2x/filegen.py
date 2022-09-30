@@ -18,7 +18,7 @@ class FileGenerator():
 class CppFileGenerator(FileGenerator):
     PROLOG = ""
 
-    # TODO do not just write but read and replace certain
+    # todo: do not just write but read and replace certain
     # code sections; make aware of kernel names and their hash value
     def __init__(self, **kwargs):
         r"""Constructor.

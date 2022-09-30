@@ -87,8 +87,8 @@ hip_includes = \
 
 _hip_kernel_prolog_acc =\
 """"\
-gpufort::acc_grid _res(gridDim.x,gpufort::div_round_up(blockDim.x,warpSize),{vector_length});
-gpufort::acc_coords _coords(blockIdx.x,threadIdx.x/warpSize,threadIdx.x%warpSize);
+const gpufort::acc_grid _res(gridDim.x,gpufort::div_round_up(blockDim.x,warpSize),{vector_length});
+const gpufort::acc_coords _coords(blockIdx.x,threadIdx.x/warpSize,threadIdx.x%warpSize);
 """
 
 def render_hip_kernel_prolog(vector_length="warpSize"):
@@ -205,7 +205,7 @@ class AccResourceFilter:
         """:return a filter condition for masking
         in statements only for the certain resources.
         :note: If the entry in a list is None, no specific condition
-               is added. None serves a wildcard.
+               is added. None serves as a wildcard.
         """
         self.assert_is_well_defined()
         conditions = []
@@ -219,7 +219,7 @@ class AccResourceFilter:
                   self.resource_triple_name,
                   resource_triple_member,
                   values[0]
-                )
+                ))
         append_condition_if_not_none_(
           "gang",self.num_gangs
         )
@@ -229,7 +229,10 @@ class AccResourceFilter:
         append_condition_if_not_none_(
           "vector_lane",self.vector_length
         )
-        return " && ".join(conditions)
+        if len(conditions):
+            return " && ".join(conditions)
+        else:
+            return "true" 
     def statement_selection_condition(self):
         self.assert_is_well_defined()
         conditions = []
@@ -247,7 +250,10 @@ class AccResourceFilter:
                 "0" 
               )
             )
-        return " && ".join(conditions)
+        if len(conditions):
+            return " && ".join(conditions)
+        else:
+            return "true" 
     def index(self):
         return "_coords.get_vector_lane_id({res})".format(
           res=self.resource_triple_name       
@@ -471,7 +477,10 @@ class Loop:
     def _render_hip_prolog_and_epilog_acc(self,local_res_var):
         hip_loop_prolog =\
 """
-gpufort::acc_grid {local_res}({num_gangs},{num_workers},{vector_length});
+const gpufort::acc_grid {local_res}(
+  {num_gangs},
+  {num_workers},
+  {vector_length});
 if ( {loop_entry_condition} ) {{
 """
 
@@ -481,7 +490,7 @@ if ( {loop_entry_condition} ) {{
         resource_filter = AccResourceFilter()
         if self.vector_partitioned:
             if self.vector_length == None:
-                vector_length = "_res.vector_lanes"  
+                vector_length = "gpufort::acc_resource_all"  
                 resource_filter.vector_length.append(None)
             else:
                 vector_length = self.vector_length
@@ -492,7 +501,7 @@ if ( {loop_entry_condition} ) {{
             vector_length = "1"
         if self.worker_partitioned:
             if self.num_workers == None:
-                num_workers = "_res.workers"  
+                num_workers = "gpufort::acc_resource_all"  
                 resource_filter.num_workers.append(None)
             else:
                 num_workers = self.num_workers
@@ -501,7 +510,7 @@ if ( {loop_entry_condition} ) {{
                 )
         else:
             num_workers = "1"
-        num_gangs = "_res.gangs"  
+        num_gangs = "gpufort::acc_resource_all"
         resource_filter.num_gangs.append(None)
         if self.gang_partitioned:
             if self.num_gangs != None:
@@ -880,8 +889,8 @@ class Loopnest:
                resource_filter,
                indent)
 
-# TODO implement
-# TODO workaround, for now expand all simple workshares
+# todo: implement
+# todo: workaround, for now expand all simple workshares
 # Workshares are interesting because the loop
 # bounds might actually coincide with the array
 # dimensions of a variable

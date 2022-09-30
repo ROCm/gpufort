@@ -23,7 +23,7 @@ tensor_access_arg = Forward()
 tensor_access_args = Optional(Group(delimitedList(tensor_access_arg)),default=None) #  emits one token
 tensor_access = identifier + LPAR + tensor_access_args + RPAR # emits 3 tokens: *,
 
-func_kind = COMMA + ( KIND + EQ + arithmetic_expression ) # emits one token # TODO generalize to named args
+func_kind = COMMA + ( KIND + EQ + arithmetic_expression ) # emits one token # todo: generalize to named args
 
 # derived_types
 derived_type_rvalue = Forward()
@@ -94,7 +94,7 @@ argument = tensor_slice | arithmetic_logical_expression
 tensor_access_arg <<= argument | keyword_argument
 
 # conversion functions
-# TODO check type of variable when translating
+# todo: check type of variable when translating
 # see http://userweb.eng.gla.ac.uk/peter.smart/com/com/f77-conv.htm
 # for now, always assume conversion between complex and float types
 REAL,FLOAT,DBLE,CMPLX,DCMPLX,AIMAG,CONJG,DCONJG = makeCaselessLiteral("real,float,dble,cmplx,dcmplx,aimag,conjg,dconjg",suppress=True)
@@ -157,8 +157,8 @@ fortran_else       = ELSE
 #end select [name]
 fortran_select_case     = Regex(r"(\w+\s*:)?\s*select\s+case\s*\(",re.IGNORECASE).suppress() + arithmetic_logical_expression + RPAR
 fortran_case            = Regex(r"case\s*\(",re.IGNORECASE).suppress() + arithmetic_logical_expression + RPAR
-fortran_case_default    = Regex(r"case\s+default",re.IGNORECASE).suppress() # TODO not sure if still needed
-fortran_end_select_case = Regex(r"end\s*select(\s+\w+)?",re.IGNORECASE).suppress() # TODO not sure if still needed
+fortran_case_default    = Regex(r"case\s+default",re.IGNORECASE).suppress() # todo: not sure if still needed
+fortran_end_select_case = Regex(r"end\s*select(\s+\w+)?",re.IGNORECASE).suppress() # todo: not sure if still needed
 
 ## Do/while Loop
 do_loop_start    = Regex(r"(\w+\s*:)?\s*do",re.IGNORECASE).suppress()
@@ -171,7 +171,7 @@ INTENT,IN,OUT,INOUT,DIMENSION = makeCaselessLiteral(\
 INTENT = INTENT.suppress()
 DIMENSION = DIMENSION.suppress()
 
-# TODO get rid of this too
+# todo: get rid of this too
 comment            = Combine(Literal("!") + ~(~White()+Literal("$")) + restOfLine())
 
 raw_identifier     = pyparsing_common.identifier.copy() # produces a string instead of a identifier translator tree node

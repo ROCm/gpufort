@@ -117,8 +117,8 @@ class STCufLibCall(nodes.STNode):
 class STCufKernelCall(nodes.STNode):
     """Converts CUDA Fortran kernel calls to kernel launcher call."""
 
-    # TODO add wrapper call
-    # TODO ensure use gpufort_array is added to one of the parent nodes
+    # todo: add wrapper call
+    # todo: ensure use gpufort_array is added to one of the parent nodes
     def transform(self,
                   joined_lines,
                   joined_statements,
@@ -156,7 +156,7 @@ class STCufAttributes(nodes.STNode):
     """CUDA Fortran specific intrinsic that needs to be removed/commented out
     in any case.
     """
-    def transform(self,*args,**kwargs): # TODO
+    def transform(self,*args,**kwargs): # todo:
         return "", True 
 
 class STCufMemcpy(nodes.STNode):
@@ -171,9 +171,9 @@ class STCufMemcpy(nodes.STNode):
                   joined_statements,
                   statements_fully_cover_lines,
                   index=[]): 
-        # TODO backend specific, move to cuf subpackage
-        # TODO remove completely and make subcase of assignment
-        # TODO set index vars from outside
+        # todo: backend specific, move to cuf subpackage
+        # todo: remove completely and make subcase of assignment
+        # todo: set index vars from outside
         if "cuf" in opts.source_dialects and isinstance(self.parent, nodes.STContainerBase):
             indent = self.first_line_indent()
             def repl_memcpy_(parse_result):

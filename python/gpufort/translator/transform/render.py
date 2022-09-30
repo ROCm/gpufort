@@ -12,7 +12,7 @@ def render_private_variables_decl_list(ttvalues,scope):
         var_expr = traversals.make_fstr(private_var)
         var_tag = indexer.scope.create_index_search_tag_for_var(var_expr) 
         if "%" in var_tag:
-            # TODO get rid of this limitation,  if necessary
+            # todo: get rid of this limitation,  if necessary
             raise error.LimitationError("private var must not be derived type member")
         tavar = analysis.create_analysis_var(scope, 
           indexer.scope.search_scope_for_var(scope,var_targ)
@@ -39,40 +39,3 @@ def render_private_variables_decl_list(ttvalues,scope):
             )
             # array_descr is passed as argument
     return decl_list_snippet
-
-def render_loopnest(loopnest,
-                    private_vars = [], # type: list[TTValue]
-                    reductions = {}, # type dict[str][list[TTValue]]
-                    num_collapse=0, # type: int
-                    tile_sizes=[]): # type: list[Union[TTNode,str,int]]
-    assert num_collapse <= 1 or len(tile_sizes) == 0, "cannot be specified both"
-    if len(loopnest) == num_collapse:
-        loopnest_open,\
-        loopnest_close,\
-        loopnest_resource_filter,\
-        loopnest_indent = \
-            loopnest.collapse().map_to_hip_cpp()
-    elif len(loopnest) == len(tile_sizes):
-        loopnest_open,\
-        loopnest_close,\
-        loopnest_resource_filter,\
-        loopnest_indent = \
-            loopnest.tile(tile_sizes).map_to_hip_cpp()
-    else:
-        loopnest_open,\
-        loopnest_close,\
-        loopnest_resource_filter,\
-        loopnest_indent = \
-            loopnest.map_to_hip_cpp()
-    if len(private_vars):
-        loopnest_open += textwrap.indent(
-          render_private_variables_decl_list(private_vars,
-          loopnest_indent
-        )
-    # TODO render reduction variables
-    # 1. create unique index var with value = loopnest.index()
-    # 2. 
-    return (loopnest_open,
-            loopnest_close,
-            loopnest_resource_filter,
-            loopnest_indent)

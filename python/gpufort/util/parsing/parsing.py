@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-# TODO use deque
+# todo: use deque
 
 import re
 
@@ -395,7 +395,7 @@ def next_tokens_till_open_bracket_is_closed(tokens, open_brackets=0, brackets=("
             open_brackets -= 1
         idx += 1
         criterion = idx < len(tokens) and open_brackets > 0
-    # TODO throw error if open_brackets still > 0
+    # todo: throw error if open_brackets still > 0
     if not keepend:
         result.pop()
     return result
@@ -753,7 +753,7 @@ def parse_attributes_statement(statement):
     return attributes, variables    
 
 #def parse_fortran_datatype_v1(tokens):
-#    # TODO treat len of CHARACTER explicitly
+#    # todo: treat len of CHARACTER explicitly
 #    # handle datatype
 #    tokens = pad_to_size(tokens,6)
 #    datatype = tokens[0]
@@ -1354,12 +1354,12 @@ def parse_public_or_private_statement(statement,kind):
             elif (len(expr) == 4
                and compare_ignore_case(expr[0:2],["operator","("])
                and expr[3] == ")"):
-                # TODO check if operator is valid
+                # todo: check if operator is valid
                 identifiers.append("".join(expr))
             elif (len(expr) == 4
                and compare_ignore_case(expr[0:2],["assignment","("])
                and expr[3] == ")"):
-                # TODO check if assignment is valid
+                # todo: check if assignment is valid
                 identifiers.append("".join(expr))
             else:
                 raise error.SyntaxError("expected identifier or 'operator' + '(' + operator expression + ')'")
@@ -1856,7 +1856,7 @@ def parse_allocate_statement(statement):
 #             if tokens[-1] == ")":
 #                 raise error.SyntaxError("missing ')'")
 #             result = []
-#             # TODO could be complex value
+#             # todo: could be complex value
 #             result.append(inner_(tokens[1:-1]))
 #             return
 #        elif len(top_level_operands) == 1:

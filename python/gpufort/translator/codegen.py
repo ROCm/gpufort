@@ -18,7 +18,7 @@ def _modify_array_expressions(ttnode,ttvalues,scope,**kwargs):
 
     loop_ctr = transformations.expand_all_array_expressions(ttnode, scope, fortran_style_tensor_access)
     
-    # TODO pass Fortran style access option down here too
+    # todo: pass Fortran style access option down here too
     transformations.flag_tensors(ttvalues, scope)
 
     return loop_ctr > 1
@@ -57,7 +57,7 @@ def _handle_reductions(ttcomputeconstruct,ttvalues,grid_dim):
                         el.lower() for el in reduced_vars
                 ]:
                     ttvalue._reduction_index = tidx
-    # TODO identify what operation is performed on the highest level to
+    # todo: identify what operation is performed on the highest level to
     # identify reduction op
     reduction_preamble = ""
     # 2.1. Add init preamble for reduced variables
@@ -93,7 +93,7 @@ def translate_compute_construct_to_hip_kernel_body(ttcomputeconstruct, scope, **
             and not ttnode.is_function_call()))
     #print(ttvalues)
     c_ranks = transformations.adjust_explicitly_mapped_arrays_in_rank(ttvalues,ttcomputeconstruct.all_mapped_vars())
-    #TODO Investigate what happens if such an array is mapped to flat array
+    # todo: Investigate what happens if such an array is mapped to flat array
 
     if ttcomputeconstruct.is_serial_construct():
         ttdos        = []
@@ -103,7 +103,7 @@ def translate_compute_construct_to_hip_kernel_body(ttcomputeconstruct, scope, **
     else:
         ttdos = analysis.perfectly_nested_do_loops_to_map(ttcomputeconstruct) 
         problem_size = analysis.problem_size(ttdos,**kwargs)
-        block_size = [] # TODO
+        block_size = [] # todo:
         loop_vars = analysis.loop_vars_in_compute_construct(ttdos)
 
     c_names = {}
@@ -128,8 +128,8 @@ def translate_compute_construct_to_hip_kernel_body(ttcomputeconstruct, scope, **
             reduction_preamble += "\n"
         c_snippet = "{0}if ( threadIdx.x==0 ) {{\n{1}\n}}".format(reduction_preamble,tree.make_cstr(ttcomputeconstruct))
     else:
-       # TODO work with transformation result
-       # TODO collapse CUDA Fortran loops by default
+       # todo: work with transformation result
+       # todo: collapse CUDA Fortran loops by default
        if len(reduction_preamble):
            reduction_preamble += "\n"
        preamble, indices, conditions = transformations.collapse_loopnest(ttdos)
@@ -148,7 +148,7 @@ def translate_compute_construct_to_omp(fortran_snippet, ttcomputeconstruct, inou
            we pass the original Fortran snippet here.
     """
 
-    # TODO There is only one loop or loop-like expression
+    # todo: There is only one loop or loop-like expression
     # in a parallel loop.
     # There might me multiple loops or loop-like expressions
     # in a kernels region.
@@ -156,9 +156,9 @@ def translate_compute_construct_to_omp(fortran_snippet, ttcomputeconstruct, inou
     # into multiple clauses.
     # In all cases the begin and end directives must
     # be consumed.
-    # TODO find out relevant directives
-    # TODO transform string
-    # TODO preprocess Fortran colon expressions
+    # todo: find out relevant directives
+    # todo: transform string
+    # todo: preprocess Fortran colon expressions
     reduction = ttcomputeconstruct.gang_reductions()
     depend = ttcomputeconstruct.depend()
     if isinstance(ttcomputeconstruct.parent_directive(), tree.TTCufKernelDo):

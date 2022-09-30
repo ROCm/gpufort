@@ -17,7 +17,7 @@ class CufKernelDoInfo:
 
 def _analyze_directive_action(ttnode,parents,result):
     if isinstance(ttnode,TTCufKernelDoArgNumLoops):
-        pass
+        result.num_loops = ttnode.value
     elif isinstance(ttnode,tree.TTCufKernelDoArgGrid):
         result.grid.value = ttnode.value
     elif isinstance(ttnode,tree.TTCufKernelDoArgBlock):
@@ -41,11 +41,11 @@ def _visit_directive_clause(expr,parents,lvalues,rvalues)
     """Traversal action that searches through arguments of loop clauses and discover
     rvalues expressions."""
     if isinstance(expr,(
-        tree.TTCufKernelDoArgGrid(base.TTNode):
-        tree.TTCufKernelDoArgBlock(base.TTNode):
-        tree.TTCufKernelDoArgNumLoops(base.TTNode):
-        tree.TTCufKernelDoArgSharedmem(base.TTNode):
-        tree.TTCufKernelDoArgStream(base.TTNode)):
+        tree.TTCufKernelDoArgNumLoops,
+        tree.TTCufKernelDoArgGrid,
+        tree.TTCufKernelDoArgBlock,
+        tree.TTCufKernelDoArgSharedmem,
+        tree.TTCufKernelDoArgStream)
           _find_lvalues_and_rvalues(expr,lvalues,rvalues)
 
 def find_lvalues_and_rvalues_in_directive(ttcufkerneldo):

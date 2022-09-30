@@ -57,7 +57,7 @@ function {{kernel.name}}_cpu(&
   type(c_ptr),intent(in)    :: stream{{"," if num_args > 0}}
 {{ cm.render_param_decls(kernel.global_vars+kernel.shared_and_local_array_vars+kernel.global_reduced_vars,"","_in") | indent(2,True) }}
   integer(kind(hipSuccess)) :: ierr
-{# TODO
+{# todo:
  - rename gpufort_array inputs:
    - give suffix _in
  - create local arrays

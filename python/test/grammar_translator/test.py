@@ -3,7 +3,7 @@
 from pyparsing import *
 import sys
 
-# TODO add siwtch for verbose output
+# todo: add siwtch for verbose output
 def run(expression,testdata,tag,raiseException=False):
     successfullyParsed = []
     failedToParse = []

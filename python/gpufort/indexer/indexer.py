@@ -70,7 +70,7 @@ def create_index_records_from_declaration(module_name,statement,file_path,lineno
     :param str module_name: Name of the parent module, or None if the parent is not a module.
     """
     f_type, f_len, kind, params, qualifiers, dimension_bounds, variables, f_type_full, _ = util.parsing.parse_declaration(statement.lower())
-    # TODO inconsistent, len overwrites character len but bounds do not overwrite dimension_bounds
+    # todo: inconsistent, len overwrites character len but bounds do not overwrite dimension_bounds
     context = []
     for var in variables:
         name, bounds, rhs = var
@@ -350,7 +350,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
             subroutine = create_fortran_construct_record("subroutine", name, file_path)
             subroutine["attributes"]     = modifiers + attributes 
             subroutine["interface"]      = not in_contains_section_stack[-1]
-            subroutine["interface_name"] = interface_name # TODO consider module procedure & check if multiple names can be used
+            subroutine["interface_name"] = interface_name # todo: consider module procedure & check if multiple names can be used
             subroutine["dummy_args"] = dummy_args
             if current_node._kind == "root":
                 current_node._data.append(subroutine)
@@ -388,7 +388,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
             function = create_fortran_construct_record("function", name, file_path)
             function["attributes"]     = modifiers + attributes 
             function["interface"]      = not in_contains_section_stack[-1]
-            function["interface_name"] = interface_name # TODO add name here
+            function["interface_name"] = interface_name # todo: add name here
             function["dummy_args"]     = dummy_args
             function["result_name"]    = result_name
             if result_type != None:
@@ -486,7 +486,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal root
         nonlocal current_node
         nonlocal current_statement
-        # TODO need to parse implicit statements too
+        # todo: need to parse implicit statements too
         log_detection_("dimension")
         if current_node != root:
             msg = "begin to parse dimension statement '{}'".format(
@@ -535,7 +535,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal root
         nonlocal current_node
         nonlocal current_statement
-        # TODO need to parse implicit statements too
+        # todo: need to parse implicit statements too
         log_detection_("parameter")
         if current_node != root:
             msg = "begin to parse parameter statement '{}'".format(
@@ -605,7 +605,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
         """Add attributes to previously declared variables in same scope.
         Does not modify scope of other variables.
         """
-        # TODO investigate if target of attribute must be in same scope or not!
+        # todo: investigate if target of attribute must be in same scope or not!
         nonlocal root
         nonlocal current_node
         nonlocal current_statement
@@ -614,7 +614,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
             current_statement)
         log_begin_task(current_node, msg)
         #
-        parse_result = translator.tree.grammar.acc_declare.parseString( # TODO switch to token based parser
+        parse_result = translator.tree.grammar.acc_declare.parseString( # todo: switch to token based parser
             current_statement)[0]
         for var_context in current_node._data["variables"]:
             for var_name in parse_result.map_alloc_vars():
@@ -636,7 +636,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
         """Add attributes to previously declared variables in same scope.
         Does not modify scope of other variables.
         """
-        # TODO investigate if target of attribute must be in same scope or not!
+        # todo: investigate if target of attribute must be in same scope or not!
         nonlocal root
         nonlocal current_node
         nonlocal current_statement
@@ -644,13 +644,13 @@ def _parse_statements(linemaps, file_path,**kwargs):
         if current_node != root:
             msg = "begin to parse acc routine directive '{}'".format(
                 current_statement)
-           # parse_result = translator.tree.grammar.acc_routine.parseString( # TODO switch to token based parser
+           # parse_result = translator.tree.grammar.acc_routine.parseString( # todo: switch to token based parser
            #     current_statement)[0]
             _, _, directive_args, clauses = util.parsing.parse_acc_directive(
                     current_statement)
             if len(clauses) != 1:
                 raise util.error.SyntaxError("expected one of 'gang', 'worker', 'vector', 'seq'")
-            if not len(directive_args): # TODO len(directive_args) applies to external or included routine
+            if not len(directive_args): # todo: len(directive_args) applies to external or included routine
                 parallelism = clauses[0]
                 if parallelism == "seq":
                     current_node._data["attributes"] += ["host", "device"]
@@ -696,8 +696,8 @@ def _parse_statements(linemaps, file_path,**kwargs):
                             # appears in an assignment before trying to detect
                             # another Fortran statement. Hence we first check if a statement
                             # is an assignment.
-                            # TODO could handle statement functions here 
-                            # TODO handle implicit variables here (problem: scope)
+                            # todo: could handle statement functions here 
+                            # todo: handle implicit variables here (problem: scope)
                             pass
                         else:
                             if current_tokens[0:2] == ["end","interface"]:
@@ -734,7 +734,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
                                 Parameter()
                             elif current_tokens[0] == "attributes" and "::" in current_tokens: # attributes(device) :: a
                                 Attributes() 
-                            # TODO parse functions, subroutine signatures more carefully
+                            # todo: parse functions, subroutine signatures more carefully
                             elif current_tokens[0] != "end" and "function" in current_tokens:
                                 # Functions must be checked before the 
                                 FunctionStart()

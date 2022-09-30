@@ -5,7 +5,7 @@
 {########################################################################################}
 {% macro render_derived_types(derived_types,
                               interop_suffix="_interop")  %}
-{# TODO consider extend #}
+{# todo: consider extend #}
 {% if derived_types|length %}
 
 {% for derived_type in derived_types %}

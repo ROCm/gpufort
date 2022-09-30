@@ -1,7 +1,10 @@
-#ifndef GPUFORT_TRIPLE_H
-#define GPUFORT_TRIPLE_H
+#ifndef GPUFORT_LOOP_H
+#define GPUFORT_LOOP_H
+#include <limits>
 
 namespace gpufort {
+  constexpr int acc_resource_all = std::numeric_limits<int>::max();
+
   struct acc_coords {
     int gang;
     int worker;
@@ -15,9 +18,9 @@ namespace gpufort {
         vector_lane(vector_lane) {}    
 
     __host__ __device__ bool operator< (const gpufort::acc_grid& grid) const {
-        retrn    this->vector_lane < grid.vector_lanes 
-              && this-worker < grid.workers
-              && this->gang < grid.gangs;
+        return    this->vector_lane < grid.vector_lanes 
+               && this-worker < grid.workers
+               && this->gang < grid.gangs;
     }
    
     /** \return gang member of this struct. */ 
@@ -133,4 +136,4 @@ namespace gpufort {
   }
 } // gpufort
 
-#endif # GPUFORT_TRIPLE_H
+#endif # GPUFORT_LOOP_H

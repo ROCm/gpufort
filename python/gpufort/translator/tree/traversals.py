@@ -25,7 +25,7 @@ def traverse(expr,
         enter_action(current,parents,*args,**kwargs)
         parents.append(expr)
         if isinstance(current,(pyparsing.ParseResults,list)):
-            # TODO still need to check for list?
+            # todo: still need to check for list?
             for el in current:
                 descend(el,parents)
         elif isinstance(current, base.TTNode):

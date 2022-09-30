@@ -149,7 +149,7 @@ class TTDo(base.TTContainer):
     def step_cstr(self):
         return traversals.make_cstr(self._step)
 
-    # TODO clean up
+    # todo: clean up
     def hip_thread_index_cstr(self):
         idx = self.loop_var()
         begin = traversals.make_cstr(
@@ -193,7 +193,7 @@ class TTDo(base.TTContainer):
         return "loop_len({begin},{end},{step})".format(\
             begin=converter(self._begin._rhs),end=converter(self._end),step=step)
 
-    # TODO rename
+    # todo: rename
     def hip_thread_bound_cstr(self):
         args = [
           self.loop_var(),
@@ -427,13 +427,13 @@ class TTComputeConstruct(base.TTContainer):
     def gang_firstprivate_vars(self, converter=traversals.make_fstr):
         return self.parent_directive().gang_firstprivate_vars(converter)
 
-#    # TODO move into analysis
+#    # todo: move into analysis
 #    def gang_reductions(self, converter=traversals.make_fstr):
 #        if self.__first_loop_annotation() != None:
 #            if self.__first_loop_annotation().discover_reduction_candidates():
 #                return {
 #                    "UNKNOWN": self.reduction_candidates()
-#                } # TODO default reduction type should be configurable
+#                } # todo: default reduction type should be configurable
 #            else:
 #                return self.__first_loop_annotation().reductions(converter)
 #        else:
@@ -453,7 +453,7 @@ class TTProcedureBody(base.TTContainer):
         self.scope = []
         self.result_name = ""
 
-# TODO move to different place
+# todo: move to different place
 def format_directive(directive_line, max_line_width):
     result = ""
     line = ""

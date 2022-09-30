@@ -38,7 +38,7 @@ class STAccDirective(nodes.STDirective):
                 self.first_statement().lower())
         self.clauses = util.parsing.parse_acc_clauses(unprocessed_clauses)
         util.parsing.check_acc_clauses(self.directive_kind,self.clauses)
-        # TODO add members documentation
+        # todo: add members documentation
 
     def is_directive(self,kind=[]):
         """:return if this is a directive of the given kind,

@@ -66,7 +66,7 @@ def _handle_preprocessor_directive(lines, file_path, include_dirs, macro_stack,
     handled = False
     # strip away whitespace chars
     try:
-        stripped_first_line = lines[0].lstrip("# \t").lower() # TODO tokenize
+        stripped_first_line = lines[0].lstrip("# \t").lower() # todo: tokenize
         tokens = util.parsing.tokenize(stripped_first_line)
         #single_line_statement = _convert_lines_to_statements(lines)[
         #    0] # does not make sense for define
@@ -76,7 +76,7 @@ def _handle_preprocessor_directive(lines, file_path, include_dirs, macro_stack,
                 util.logging.log_debug3(
                     opts.log_prefix, "_handle_preprocessor_directive",
                     "found define in line '{}'".format(lines[0].rstrip("\n")))
-                # TODO error handling
+                # todo: error handling
                 result = grammar.pp_dir_define.parseString(lines[0],
                                                            parseAll=True)
                 subst_lines = [
@@ -149,7 +149,7 @@ def _handle_preprocessor_directive(lines, file_path, include_dirs, macro_stack,
                 "found elif in line '{}'".format(lines[0].rstrip("\n")))
             region_stack1.pop() # rm previous if/elif-branch
             if region_stack1[-1] and not region_stack2[
-                    -1]: # TODO allow to have multiple options specified at once
+                    -1]: # todo: allow to have multiple options specified at once
                 result = grammar.pp_dir_elif.parseString(single_line_statement,
                                                          parseAll=True)
                 condition = result.condition
@@ -177,7 +177,7 @@ def _handle_preprocessor_directive(lines, file_path, include_dirs, macro_stack,
         raise
 
     if region_stack1[-1] and not handled:
-        # TODO add ignore filter
+        # todo: add ignore filter
         util.logging.log_warning(opts.log_prefix,"_handle_preprocessor_directive",\
           "preprocessor directive '{}' was ignored".format(single_line_statement))
 
@@ -522,7 +522,7 @@ def read_lines(fortran_lines, **kwargs):
     :return: The input data structure without the entries whose statements where not in active code region
              as determined by the preprocessor.
     """
-    # TODO check if order of read_file routines can be simplified using this method
+    # todo: check if order of read_file routines can be simplified using this method
 
     util.logging.log_enter_function(opts.log_prefix, "read_lines")
 
@@ -587,7 +587,7 @@ def modify_file(linemaps, **kwargs):
                                            opts.line_grouping_ifdef_macro,
                                            **kwargs)
 
-    # TODO also offer variant where linemaps are not grouped in order
+    # todo: also offer variant where linemaps are not grouped in order
     # to have direct mapping between original code lines and modified
     # lines. Relevant for compiler app in order to link compiler backend
     # errors to the lines in the original file.

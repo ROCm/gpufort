@@ -19,7 +19,7 @@ def _lookup_implicitly_declared_var(var_expr,implicit_specs):
     """
     var_expr_lower = var_expr.lower()
     if var_expr_lower.isidentifier(): 
-        # TODO support arrays
+        # todo: support arrays
         if var_expr_lower[0:2] == "_i":
             f_type,f_len,kind = "integer", None, None
             return types.create_index_var(f_type,
@@ -150,7 +150,7 @@ def _resolve_dependencies(scope,
                         "{}use all definitions from module '{}'".format(
                             indent,
                             iother["name"]))
-                    # TODO check implications of always including in context of implicit attributes
+                    # todo: check implications of always including in context of implicit attributes
                     # 1. rename particular definitions found in the other scope
                     other_variables_to_rename = set(mapping["original"] for mapping in used_module["renamings"])
                     for entry_type in types.SCOPE_ENTRY_TYPES:
@@ -359,10 +359,10 @@ def create_scope(index, tag):
                 if current_record["name"] == searched_name:
                     scope_additions = types.new_scope()
                     # 1. first include definitions from used records
-                    # TODO ambiguous definitions still possible
+                    # todo: ambiguous definitions still possible
                     _resolve_dependencies(scope_additions, current_record,
                                           index)
-                    # TODO ambiguous definitions can be detected here
+                    # todo: ambiguous definitions can be detected here
                     # 2. now include the current record's definitions
                     for entry_type in types.SCOPE_ENTRY_TYPES:
                         if entry_type in current_record:
@@ -372,7 +372,7 @@ def create_scope(index, tag):
                                 scope_entry["parent_tag"] = ":".join(tag_tokens[0:d+1])
                                 scope_additions[entry_type].append(scope_entry)
                         # remove hidden parent entries
-                        # TODO check if variable can hide type / procedure etc
+                        # todo: check if variable can hide type / procedure etc
                         for local_entry in scope_additions[entry_type]:
                             for parent_entry in copy.copy(new_scope[entry_type]):
                                 if parent_entry["name"] == local_entry["name"]:

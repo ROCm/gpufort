@@ -183,11 +183,11 @@ class TTNumber(base.TTNode):
                     else:
                         raise util.error.LookupError(\
                           "no number of bytes found for suffix '{}' in 'translator.fortran_type_2_bytes_map[\"real\"]'".format(suffix))
-                        sys.exit(2) # TODO error code
+                        sys.exit(2) # todo: error code
             else:
                 raise util.error.LookupError(\
                   "no number of bytes found for kind '{}' in 'translator.fortran_type_2_bytes_map[\"real\"]'".format(kind))
-                sys.exit(2) # TODO error code
+                sys.exit(2) # todo: error code
         else:
             return is_real
 
@@ -293,7 +293,7 @@ class TTTensorAccess(base.TTNode):
         Tries to determine if the whole expression
         is function or not if no other hints are given
         """
-        #  TODO hacky old solution, evaluate if still needed
+        # todo: hacky old solution, evaluate if still needed
         name = traversals.make_cstr(self._name).lower()
         return len(self._args) == 0 or\
           name in opts.gpufort_cpp_symbols or\
@@ -374,12 +374,12 @@ class TTValue(base.TTNode):
         """
         :note: TTTensorAccess instances must be flagged as tensor beforehand.
         """
-        #TODO check if detect all arrays in indexer/scope
+        # todo: check if detect all arrays in indexer/scope
         # so that we do not need to know function names anymore.
         if type(self._value) is TTTensorAccess:
             return not self._value.is_tensor()
         elif type(self._value) is TTDerivedTypeMember:
-            # TODO support type bounds routines
+            # todo: support type bounds routines
             return False
         else:
             return False
@@ -586,7 +586,7 @@ class TTConvertToExtractReal(base.TTNode):
 
     def cstr(self):
         c_type = conv.convert_to_c_type("real", self._kind).replace(
-            " ", "_") # TODO check if his anything else than double or float
+            " ", "_") # todo: check if his anything else than double or float
         return "make_{1}({0})".format(
             traversals.make_cstr(self._ref),
             c_type) # rely on C++ compiler to make the correct type conversion

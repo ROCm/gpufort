@@ -66,7 +66,7 @@ cuf_cudamemcpy_variant = cuf_cudamemcpy | cuf_cudamemcpy2D | cuf_cudamemcpy3D
 # cublas/analysis
 cublas_operation_type = Regex("'[NTCntc]'")#.setParseAction(lambda tokens: "hipblas_op_"+tokens[0].strip("'").upper())
 #cublas_arglist       = Group(delimitedList(cublas_operation_type | rvalue))
-# TODO: Explicitly scan for ttrvalues in cublas_arglist's arithmetic_logical_expression when transforming host code
+# todo:: Explicitly scan for ttrvalues in cublas_arglist's arithmetic_logical_expression when transforming host code
 cublas_arglist   = Group(delimitedList(cublas_operation_type | arithmetic_logical_expression)) 
 cuf_cublas_call  = CASELESS_LITERAL("cublas").suppress() + identifier + LPAR + cublas_arglist + RPAR  # emits 2 tokens
 

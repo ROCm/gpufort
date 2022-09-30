@@ -5,7 +5,7 @@
 {########################################################################################}
 {% macro render_derived_types(derived_types,
                                interop_suffix="_interop")  %}
-{# TODO consider extend #}
+{# todo: consider extend #}
 {% for derived_type in derived_types %}
 type, bind(c) :: {{derived_type.name}}{{interop_suffix}}
 {{ cm.render_param_decls(derived_type.variables) | indent(2,True) }}

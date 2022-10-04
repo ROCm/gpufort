@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+import pyparsing
 
 from gpufort import util
 
@@ -16,16 +17,18 @@ class CufKernelDoInfo:
         self.reduction = optvals.OptionalDictValue()
 
 def _analyze_directive_action(ttnode,parents,result):
-    if isinstance(ttnode,TTCufKernelDoArgNumLoops):
-        result.num_loops = ttnode.value
+    if isinstance(ttnode,tree.TTCufKernelDoArgNumLoops):
+        result.num_loops.value = ttnode.expr
     elif isinstance(ttnode,tree.TTCufKernelDoArgGrid):
-        result.grid.value = ttnode.value
+        if ttnode.expr != "*":
+            result.grid.value = ttnode.expr
     elif isinstance(ttnode,tree.TTCufKernelDoArgBlock):
-        result.block.value = ttnode.value
+        if ttnode.expr != "*":
+            result.block.value = ttnode.expr
     elif isinstance(ttnode,tree.TTCufKernelDoArgSharedmem):
-        result.sharedmem.value = ttnode.value
+        result.sharedmem.value = ttnode.expr
     elif isinstance(ttnode,tree.TTCufKernelDoArgStream):
-        result.stream.value = ttnode.value
+        result.stream.value = ttnode.expr
 
 def analyze_directive(ttcufkerneldo):
     result = CufKernelDoInfo()

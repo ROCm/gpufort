@@ -218,6 +218,60 @@ class TestAnalysisAcc(unittest.TestCase):
               ],
               results[i]
             )
+
+class TestAnalysisCuf(unittest.TestCase):
+    def setUp(self):
+        global index
+        self.started_at = time.time()
+    def tearDown(self):
+        elapsed = time.time() - self.started_at
+        print('{} ({}s)'.format(self.id(), round(elapsed, 9)))
+    def test_00_do_nothing(self):
         pass
+    def test_01_analyze_cuf_kernel_do(self):
+        testdata = [
+          "!$cuf kernel do",
+          "!$cuf kernel do(2)",
+          "!$cuf kernel do(2) <<<*,*>>>",
+          "!$cuf kernel do(2) <<<*,*,0,stream_id>>>",
+          "!$cuf kernel do(2) <<<*,*,stream=stream_id>>>",
+          "!$cuf kernel do(2) <<<(1,*),(27,20)>>>",
+          "!$cuf kernel do(2) <<<(1,*),(32,4),0,stream_id>>>",
+          "!$cuf kernel do(2) <<<(1,*),(32,4),stream=stream_id>>>",
+        ]
+        results = [
+          [False,False,False,False,False,
+          None,None,None,None,None,None],
+          [False,False,False,False,False,
+          "2",None,None,None,None,None],
+          [True,False,False,False,False,
+          "2",None,None,None,None,None],
+          [True,False,False,False,False,
+          "2",None,None,None,"0","stream_id"],
+          [True,False,False,False,False,
+          "2",None,None,None,None,"stream_id"],
+        ]
+        for i,test in enumerate(testdata):
+            parse_result = translator.tree.grammar.cuf_kernel_do.parseString(test,parseAll=True)[0]
+            cuf_loop_info = translator.analysis.cuf.analyze_directive(
+              parse_result 
+            )
+            evaluations = [
+              cuf_loop_info.num_loops.specified,
+              cuf_loop_info.grid.specified,
+              cuf_loop_info.block.specified,
+              cuf_loop_info.sharedmem.specified,
+              cuf_loop_info.stream.specified,
+              tostr(cuf_loop_info.num_loops),
+              tostr(cuf_loop_info.grid),
+              tostr(cuf_loop_info.block),
+              tostr(cuf_loop_info.sharedmem),
+              tostr(cuf_loop_info.stream),
+            ]
+            #print(evaluations)
+            #if i < len(results):
+            #    pass
+            #    #self.assertEquals(
+
 if __name__ == '__main__':
     unittest.main() 

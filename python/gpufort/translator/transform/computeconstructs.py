@@ -302,24 +302,18 @@ class __HIPKernelBodyGenerator:
           self,
           ttcomputeconstruct,
           scope,
-          device_type = None, 
-          initially_gang_partitioned = False,
-          initially_worker_partitioned = False,
-          initially_vector_partitioned = False
+          device_type = None 
         ):
         """Transform an OpenACC compute construct or routine body to HIP C++.
         :param scope: A scope object, see GPUFORT's indexer component.
-        :param str device_type: The device type (`acc_device_nvidia`, `acc_device_radeon` or None).
+        :param str device_type: The device type (`nvidia`, `radeon` or None).
         :param bool initially_gang_partitioned: Start in gang-partitioned mode.
         :param bool initially_worker_partitioned: Start in worker-partitioned mode.
         :param bool initially_vector_partitioned: Start in vector-partitioned mode.
         """
         loops.reset() # reset variable counters of loops package
         self._result = TransformationResult()
-        self._resource_filter = _create_acc_resource_filter(
-          initially_gang_partitioned,
-          initially_worker_partitioned,
-          initially_vector_partitioned)
+        self._resource_filter = loops.AccResourceFilter()
         self._indent = ""
         self._loopnest_mgr = None
         self._traverse(ttcomputeconstruct)
@@ -331,14 +325,11 @@ __instance = __HIPKernelBodyGenerator()
 def map_to_hip_cpp(
       ttcomputeconstruct,
       scope,
-      device_type = None, 
-      initially_gang_partitioned = False,
-      initially_worker_partitioned = False,
-      initially_vector_partitioned = False
+      device_type = None
     ):
     """Transform an OpenACC compute construct or routine body to HIP C++.
     :param scope: A scope object, see GPUFORT's indexer component.
-    :param str device_type: The device type (`acc_device_nvidia`, `acc_device_radeon` or None).
+    :param str device_type: The device type (`nvidia`, `radeon` or None).
     :param bool initially_gang_partitioned: Start in gang-partitioned mode.
     :param bool initially_worker_partitioned: Start in worker-partitioned mode.
     :param bool initially_vector_partitioned: Start in vector-partitioned mode.

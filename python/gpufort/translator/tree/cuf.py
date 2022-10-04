@@ -90,18 +90,21 @@ class TTCufKernelDo(base.TTNode, directives.IComputeConstruct,
 
     def _assign_fields(self, tokens):
         self._parent_directive = None
-        self._num_outer_loops_to_map = tokens[0]
-        if tokens[1] == None:
-            self._grid = None 
-            self._block = None
-            self._sharedmem = None
-            self._stream = None
-        else:
+        self._num_outer_loops_to_map = 1
+        self._grid = None 
+        self._block = None
+        self._sharedmem = None
+        self._stream = None
+        if len(tokens) > 0:
+            self._num_outer_loops_to_map = tokens[0]
             launch_params = tokens[1]
-            self._grid = launch_params[0] 
-            self._block = launch_params[1]
-            self._sharedmem = launch_params[2] # optional
-            self._stream = launch_params[3] # optional
+            if launch_params != None:
+                self._grid = launch_params[0] 
+                self._block = launch_params[1]
+                if len(launch_params) > 2:
+                    if len(launch_params) == 4:
+                        self._sharedmem = launch_params[2] # optional
+                    self._stream = launch_params[-1] # optional
 
         def child_nodes(self):
             return [self._num_outer_loops_to_map,
@@ -513,7 +516,6 @@ grammar.cuf_kernel_do_arg_num_loops.setParseAction(TTCufKernelDoArgNumLoops)
 grammar.cuf_kernel_do_arg_sharedmem.setParseAction(TTCufKernelDoArgSharedmem)
 grammar.cuf_kernel_do_arg_stream.setParseAction(TTCufKernelDoArgStream)
 grammar.cuf_kernel_do.setParseAction(TTCufKernelDo)
-#cuf_loop_kernel.setParseAction(TTCufKernelDo)
 grammar.allocated.setParseAction(TTCufAllocated)
 grammar.memcpy.setParseAction(TTCufMemcpyIntrinsic)
 grammar.non_zero_check.setParseAction(TTCufNonZeroCheck)

@@ -6,7 +6,10 @@
 ## CUDA Fortran specific
 ## CUF LoopNest loop directive
 cuf_kernel_do_auto = Literal("*")
-cuf_kernel_do_dim3 = LPAR + delimitedList(arith_logic_expr) + RPAR
+cuf_kernel_do_dim3 = LPAR + delimitedList(
+  arith_logic_expr 
+  | cuf_kernel_do_auto
+) + RPAR
 
 cuf_kernel_do_arg_grid  = (
   cuf_kernel_do_auto 
@@ -15,25 +18,34 @@ cuf_kernel_do_arg_grid  = (
 )
 cuf_kernel_do_arg_block = cuf_kernel_do_arg_grid.copy()
 cuf_kernel_do_arg_sharedmem = Group(arith_logic_expr) # group because single expression
-cuf_kernel_do_arg_stream  = (
-   Regex(r"(stream\s*=)?",re.IGNORECASE).suppress() 
-   + arith_logic_expr
+cuf_kernel_do_arg_stream = Group(arith_logic_expr)
+
+cuf_kernel_do_launch_params_ext1 = (
+  cuf_kernel_do_arg_sharedmem + COMMA
+  + cuf_kernel_do_arg_stream
+)
+
+cuf_kernel_do_launch_params_ext2 = (
+  Regex(r"stream\s*=",re.IGNORECASE).suppress() 
+  + cuf_kernel_do_arg_stream
 )
 
 cuf_kernel_do_launch_params = Group(
-  Suppress("<<<") 
+  Suppress("<<<")
   + cuf_kernel_do_arg_grid  + COMMA 
-  + cuf_kernel_do_arg_block + OPTCOMMA 
-  + Optional(cuf_kernel_do_arg_sharedmem + OPTCOMMA,default=None) 
-  + Optional(cuf_kernel_do_arg_stream + OPTCOMMA,default=None)
-  + Suppress(">>>")
-) # grid,thread_block,shmem,stream
+  + cuf_kernel_do_arg_block
+  + ( 
+    COMMA + cuf_kernel_do_launch_params_ext2 + Suppress(">>>")
+    | COMMA + cuf_kernel_do_launch_params_ext1 + Suppress(">>>")
+    | Suppress(">>>")
+  )
+)
 
 cuf_kernel_do_arg_num_loops = Optional(LPAR + arith_logic_expr + RPAR,default=None)
 
 # directives
 cuf_kernel_do =(
-  PRAGMA + Regex(r"cuf\s*kernel\s*do*",re.IGNORECASE) 
+  PRAGMA + Regex(r"cuf\s*kernel\s*do*",re.IGNORECASE).suppress() 
   + cuf_kernel_do_arg_num_loops 
   + Optional(cuf_kernel_do_launch_params,default=None)
 )

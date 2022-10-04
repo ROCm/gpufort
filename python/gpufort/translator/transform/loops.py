@@ -87,13 +87,18 @@ hip_includes = \
 
 _hip_kernel_prolog_acc =\
 """"\
-const gpufort::acc_grid _res(gridDim.x,gpufort::div_round_up(blockDim.x,warpSize),{vector_length});
-const gpufort::acc_coords _coords(blockIdx.x,threadIdx.x/warpSize,threadIdx.x%warpSize);
+const gpufort::acc_grid _res({num_gangs},{num_workers},{vector_length});
+const gpufort::acc_coords _coords({gang_id},{worker_id},{vector_lane_id});
 """
 
 def render_hip_kernel_prolog(vector_length="warpSize"):
     return _hip_kernel_prolog.format(
-        vector_length = vector_length)
+      num_gangs="gridDim.x",
+      num_workers="gpufort::div_round_up(blockDim.x,warpSize)",
+      gang_id="blockIdx.x",
+      worker_id="threadIdx.x/warpSize",
+      vector_lane_id="threadIdx.x%warpSize"
+    ) 
  
 def unique_label(label):
     """Returns a unique label for a loop variable that describes

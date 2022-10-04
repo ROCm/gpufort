@@ -7,12 +7,12 @@ class OptionalFlag:
 class OptionalSingleValue:
     def __init__(self):
         self.specified = False
-        self.value = None
+        self._value = None
     def setvalue(self,value):
         self.specified = True
-        self.value = value
+        self._value = value
     def getvalue(self):
-        return self.value
+        return self._value
     value = property(getvalue,setvalue) # Expr `obj.value` results in getter/setter call
 
 class OptionalListValue:
@@ -20,7 +20,7 @@ class OptionalListValue:
         self.value = []
     @property # fake property, expr `obj.specified` results in `obj.specified()` call
     def specified(self):
-        return len(self.value)    
+        return len(self.value) > 0
     def __len__(self):
         return len(self.value)
     def __getitem__(self,key):
@@ -33,7 +33,7 @@ class OptionalDictValue:
         self.value = {}
     @property
     def specified(self):
-        return len(self.value)    
+        return len(self.value) > 0 
     def __len__(self):
         return len(self.value)
     def __getitem__(self,key):

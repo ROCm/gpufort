@@ -82,7 +82,7 @@ def remove_unnecessary_helper_variables(code_to_modify,other_code_to_read=[]):
 
 hip_includes = \
 """
-#include "gpufort_loops.h"
+#include "gpufort_loop.h"
 """
 
 _hip_kernel_prolog_acc =\
@@ -267,9 +267,6 @@ class AccResourceFilter:
     def worker_and_vector_partitioned_mode(self):
         return (self.worker_partitioned_mode()
                 and self.vector_partitioned_mode())
-    def __str__(self):
-        return self.loop_entry_condition()
-    __repr__ = __str__ 
 
 class Loop:
 

@@ -31,7 +31,7 @@ acc_clause_reduction = REDUCTION + LPAR + ACC_REDUCTION_OP + Suppress(":") + Gro
 acc_clause_collapse  = COLLAPSE  + LPAR + integer + RPAR
 acc_clause_self      = SELF      + LPAR + arith_logic_expr + RPAR # for compute constructs; not for update
 acc_clause_bind      = BIND      + LPAR + identifier + RPAR
-acc_clause_tile      = TILE      + LPAR + Group(integer + Suppress(",") + integer) + RPAR
+acc_clause_tile      = TILE      + LPAR + Group(delimitedList(arith_expr)) + RPAR
 acc_clause_wait      = WAIT      + Optional(Group(delimitedList(arith_expr)), default=[])
 acc_clause_async     = ASYNC     + Optional(LPAR + rvalue + RPAR, default = CLAUSE_VALUE_NOT_SPECIFIED) 
 
@@ -41,10 +41,33 @@ acc_noarg_clause = Regex(r"\b(seq|auto|independent|read|write|capture|nohost|fin
 ACC_START = PRAGMA + ACC 
 ACC_END   = ACC_START.copy() + END
 
-acc_clause = acc_clause_if | acc_clause_self | acc_clause_async | acc_clause_wait | acc_clause_num_gangs | acc_clause_num_workers | acc_clause_vector_length | acc_clause_device_type |\
-    acc_clause_default | acc_clause_reduction | acc_clause_collapse | acc_clause_bind | acc_clause_tile | acc_clause_gang | acc_clause_worker | acc_clause_vector | acc_mapping_clause | acc_noarg_clause
+acc_clause = (
+  acc_clause_if
+  | acc_clause_self
+  | acc_clause_async
+  | acc_clause_wait
+  | acc_clause_num_gangs
+  | acc_clause_num_workers
+  | acc_clause_vector_length
+  | acc_clause_device_type
+  | acc_clause_default
+  | acc_clause_reduction
+  | acc_clause_collapse
+  | acc_clause_bind
+  | acc_clause_tile
+  | acc_clause_gang
+  | acc_clause_worker
+  | acc_clause_vector
+  | acc_mapping_clause
+  | acc_noarg_clause
+)
 
-acc_clause_list = Group(Optional(OneOrMore(Optional(ACC_START + Literal("&")).suppress() + acc_clause), default=[]))
+acc_clause_list = Group(
+  Optional(
+    OneOrMore(Optional(ACC_START + Literal("&")).suppress() + acc_clause),
+    default=[]
+  )
+)
 
 ##
 ## DIRECTVIES
@@ -87,8 +110,25 @@ ACC_END_PARALLEL_LOOP = ACC_END + PARALLEL + LOOP # copy() allows us to attach d
 ACC_END_KERNELS_LOOP  = ACC_END + KERNELS  + LOOP
 
 # manual grouping
-acc_simple_directive = acc_host_data | acc_data | acc_enter_data | acc_exit_data | acc_loop | acc_routine | acc_declare | ACC_END_DATA # TBC
+acc_simple_directive = (
+    acc_host_data 
+  | acc_data 
+  | acc_enter_data 
+  | acc_exit_data 
+  | acc_loop 
+  | acc_routine 
+  | acc_declare 
+  | ACC_END_DATA
+) # TBC
 
-acc_host_directive = acc_kernels_loop | acc_parallel_loop | acc_kernels | acc_parallel | acc_simple_directive | ACC_END_DATA | ACC_END_HOST_DATA
+acc_host_directive = (
+    acc_kernels_loop 
+  | acc_parallel_loop 
+  | acc_kernels 
+  | acc_parallel 
+  | acc_simple_directive 
+  | ACC_END_DATA 
+  | ACC_END_HOST_DATA
+)
 
 #acc_kernel_body_directive = acc_loop | acc_serial_region | acc_atomic_region | acc_cache

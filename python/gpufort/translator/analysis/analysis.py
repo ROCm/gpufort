@@ -11,9 +11,9 @@ import pyparsing
 from gpufort import indexer
 from gpufort import util
 
-from . import tree
-from . import conv
-from . import opts
+from .. import tree
+from .. import conv
+from .. import opts
 
 def append_c_type(tavar):
     f_type = tavar["f_type"]

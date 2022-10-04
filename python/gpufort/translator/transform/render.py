@@ -8,7 +8,7 @@ from .. import analysis
 
 def render_private_variables_decl_list(ttvalues,scope):
     decl_list_snippet = ""
-    for private_var in ttvalues
+    for private_var in ttvalues:
         var_expr = traversals.make_fstr(private_var)
         var_tag = indexer.scope.create_index_search_tag_for_var(var_expr) 
         if "%" in var_tag:

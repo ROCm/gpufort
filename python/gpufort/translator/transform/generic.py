@@ -3,13 +3,13 @@
 from gpufort import util
 from gpufort import indexer
 
-from . import tree
-from . import analysis
-from . import parser
-from . import opts
-from . import prepostprocess
+from .. import tree
+from .. import analysis
+from .. import parser
+from .. import opts
+from .. import prepostprocess
 
-from . import loop_transformations
+from . import loops
 
 def _collect_ranges(function_call_args,include_none_values=False):
     ttranges = []

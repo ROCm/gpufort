@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-def _visit_values(expr,parents,lvalues,rvalues)
+def _visit_values(expr,parents,lvalues,rvalues):
   """Traversal action that collects lvalues and rvalues, 
   excludes numbers and characters."""
   if isinstance(expr,TTValue):

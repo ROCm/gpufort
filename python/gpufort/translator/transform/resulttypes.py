@@ -10,7 +10,7 @@ class TransformationResult:
         self.max_num_gangs = None
         self.max_num_workers = None
         self.max_vector_length = None
-        self.async = None
+        self.async_arg = None
         self.loopnest_mgr_list = []
         self.private_variables = []
         self.firstprivate_variables = []
@@ -113,7 +113,7 @@ class TransformationResult:
                       _render_block_size_expr(
                         loop_mgr.worker.value,
                         None,
-                        default_num_workers
+                        default_num_workers, 
                         default_vector_length,
                         converter   
                       ))
@@ -132,7 +132,7 @@ class TransformationResult:
                       _render_block_size_expr(
                         loop_mgr.worker.value,
                         loop_mgr.vector.value,
-                        default_num_workers
+                        default_num_workers,
                         default_vector_length,
                         converter   
                       ))
@@ -143,7 +143,7 @@ class TransformationResult:
                       _render_block_size_expr(
                         loop_mgr.worker.value,
                         loop_mgr.vector.value,
-                        default_num_workers
+                        default_num_workers,
                         default_vector_length,
                         converter   
                       ))

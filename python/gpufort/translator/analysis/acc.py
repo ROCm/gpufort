@@ -7,17 +7,18 @@ if the clause is specified and what
 expressions where given as arguments.
 All expressions are provided as translator trees.
 """
-
 from gpufort import util
 
 from .. import tree
 from .. import optvals
 
 class AccConstructInfo:
-    def __init__(self,device_type,
-                      is_serial,
-                      is_parallel,
-                      is_kernels):
+    def __init__(
+        self,device_type,
+        is_serial,
+        is_parallel,
+        is_kernels
+    ):
         """
         Constructor.
         :param str device_type: Device type identifier such as `acc_device_nvidia`.
@@ -42,6 +43,7 @@ class AccConstructInfo:
         self.reduction = optvals.OptionalDictValue()
         self.if_cond = optvals.OptionalSingleValue
         self.self_cond = optvals.OptionalSingleValue
+        self.async_arg = optvals.OptionalSingleValue
 
 class AccRoutineInfo:
     def __init__(self,device_type):
@@ -80,7 +82,7 @@ class AccLoopInfo:
         self.vector = optvals.OptionalSingleValue()
         self.independent = optvals.OptionalFlag()
         self.auto = optvals.OptionalFlag()
-        self.tile = optvals.OptionalSingleValue()
+        self.tile = optvals.OptionalListValue()
         self.collapse = optvals.OptionalSingleValue()
         self.private_vars = optvals.OptionalListValue()
         self.reduction = optvals.OptionalDictValue()
@@ -107,43 +109,55 @@ class AccCombinedConstructInfo(AccConstructInfo,AccLoopInfo):
         AccLoopInfo.__init__(device_type)
 
 class _TraverseDirectiveContext:
-    def __init__(self):
-        current_device_types = [] 
-        encountered_input_device_type = False
+    def __init__(self,named_device_types):
+        self.named_device_types = named_device_types
+        # state
+        self.current_device_types = [] 
+        self.encountered_input_device_type = False
+
+def _get_named_device_types_action(
+      ttnode, # type: tree.TTNode
+      parents, # type: list[Union[tree.TTNode,pyparsing.ParseResults,list]]
+      device_types): # type: set[str]
+    if isinstance(ttnode,tree.TTAccClauseDeviceType):
+        for d in ttnode.device_types:
+            device_type = tree.traversals.make_fstr(d).lower()
+            if device_type.isidentifier():
+                device_types.add(device_type)
 
 def _analyse_directive_action(
-      ttnode, # type: tree.Node
+      ttnode, # type: tree.TTNode
       parents, # type: list[Union[tree.TTNode,pyparsing.ParseResults,list]]
       result, # type: Union[AccConstructInfo,AccRoutineInfo,AccLoopInfo]
-      ctx  # type: _TraverseDirectiveContext
-    ):
+      ctx):  # type: _TraverseDirectiveContext
     device_specific_clauses_apply_to_input_device_type = (
       not len(ctx.current_device_types) # no device_type clause encountered yet
       or result.device_type in ctx.current_device_types # 
-      or (current_device_type == "*" and not ctx.encountered_device_type)
+      or (not result.device_type in ctx.named_device_types and ctx.current_device_types[0] == "*")
     )
-    if isinstance(ttnode,TTAccMappingClause):
+    if isinstance(ttnode,tree.TTAccMappingClause):
         clause_kind = ttnode.kind
         var_list = ttnode.var_list
-        if node_kind not in ["private","firstprivate"]:
+        print(clause_kind)
+        if clause_kind not in ["private","firstprivate"]:
             result.mappings.specified = True
-            if not node_kind in result.mappings.value:
-                result.mappings[node_kind] = []
-            result.mappings.value[node_kind] += var_list
-        elif node_kind == "private":
+            if not clause_kind in result.mappings.value:
+                result.mappings[clause_kind] = []
+            result.mappings.value[clause_kind] += var_list
+        elif clause_kind == "private":
             result.private_vars.value += var_list
-        elif node_kind == "firstprivate":
+        elif clause_kind == "firstprivate":
             result.firstprivate_vars.value += var_list
-    elif isinstance(ttnode,(tree.TTAccClauseGang)):
+    elif isinstance(ttnode,tree.TTAccClauseGang):
         if device_specific_clauses_apply_to_input_device_type:
             result.gang.value = ttnode.value
-    elif isinstance(ttnode,(tree.TTAccClauseWorker)):
+    elif isinstance(ttnode,tree.TTAccClauseWorker):
         if device_specific_clauses_apply_to_input_device_type:
             result.worker.value = ttnode.value
-    elif isinstance(ttnode,(tree.TTAccClauseVector)):
+    elif isinstance(ttnode,tree.TTAccClauseVector):
         if device_specific_clauses_apply_to_input_device_type:
             result.vector.value = ttnode.value
-    elif isinstance(ttnode,(tree.TTAccNoArgumentClause)):
+    elif isinstance(ttnode,tree.TTAccNoArgumentClause):
         clause_kind = ttnode.kind.lower()
         if clause_kind == "nohost":
             result.nohost.specified = True
@@ -152,42 +166,45 @@ def _analyse_directive_action(
                 result.auto.specified = True
             if clause_kind == "independent":
                 result.independent.specified = True
-    if isinstance(ttnode,(tree.TTAccClauseNumGangs)):
+    elif isinstance(ttnode,tree.TTAccClauseNumGangs):
         if device_specific_clauses_apply_to_input_device_type:
             result.num_gangs.value = ttnode.value
-    elif isinstance(ttnode,(tree.TTAccClauseNumWorkers)):
+    elif isinstance(ttnode,tree.TTAccClauseNumWorkers):
         if device_specific_clauses_apply_to_input_device_type:
             result.num_workers.value = ttnode.value
-    elif isinstance(ttnode,(tree.TTAccClauseVectorLength)):
+    elif isinstance(ttnode,tree.TTAccClauseVectorLength):
         if device_specific_clauses_apply_to_input_device_type:
             result.vector_length.value = ttnode.value
-    elif isinstance(ttnode,(tree.TTAccClauseReduction)):
+    elif isinstance(ttnode,tree.TTAccClauseReduction):
         op = ttnode.operator
         var_list = ttnode.vars
-        if op not result.reduction:
+        if op not in result.reduction:
             result.reduction.value[op] = []
         result.reduction.value[op] += var_list
-    elif isinstance(ttnode,(tree.TTAccClauseDeviceType)):
-        ctx.current_device_types = [d.fstr().lower() for d in ttnode.device_types]
+    elif isinstance(ttnode,tree.TTAccClauseDeviceType):
+        ctx.current_device_types = [
+          tree.traversals.make_fstr(d).lower() 
+          for d in ttnode.device_types
+        ]
         ctx.encountered_input_device_type = (
           result.device_type in ctx.current_device_types
         )
-    elif isinstance(ttnode,(tree.TTAccClauseCollapse)):
+    elif isinstance(ttnode,tree.TTAccClauseCollapse):
         result.collapse.value = ttnode._value
-    elif isinstance(ttnode,(tree.TTAccClauseTile)):
+    elif isinstance(ttnode,tree.TTAccClauseTile):
         result.tile.value = ttnode.tiles_per_dim 
-    elif isinstance(ttnode,(tree.TTAccClauseDefault)):
+    elif isinstance(ttnode,tree.TTAccClauseDefault):
         result.default.value = ttnode.value
-    elif isinstance(ttnode,(tree.TTAccClauseIf)):
+    elif isinstance(ttnode,tree.TTAccClauseIf):
         result.if_cond.value = ttnode.condition
-    elif isinstance(ttnode,(tree.TTAccClauseSelf)):
+    elif isinstance(ttnode,tree.TTAccClauseSelf):
         result.self_cond.value = ttnode.condition
-    elif isinstance(ttnode,(tree.TTAccClauseBind)):
+    elif isinstance(ttnode,tree.TTAccClauseBind):
         result.bind.value = ttnode.ident
-    elif isinstance(ttnode,(tree.TTAccClauseWait)):
+    elif isinstance(ttnode,tree.TTAccClauseWait):
         result.wait.value = ttnode.expressions
-    elif isinstance(ttnode,(tree.TTAccClauseAsync)):
-        result.async.value = ttnode.expression
+    elif isinstance(ttnode,tree.TTAccClauseAsync):
+        result.async_arg.value = ttnode.expression
 
 def analyze_directive(ttaccdirective,
                       device_type):
@@ -202,51 +219,64 @@ def analyze_directive(ttaccdirective,
                                     tree.TTAccKernels)):
         result = AccConstructInfo(
                    device_type,
-                   is_serial = isinstance(ttaccdirective,TTAccSerial),
-                   is_parallel = isinstance(ttaccdirective,TTAccParallel),
-                   is_kernels = isinstance(ttaccdirective,TTAccKernels))
+                   is_serial = isinstance(ttaccdirective,tree.TTAccSerial),
+                   is_parallel = isinstance(ttaccdirective,tree.TTAccParallel),
+                   is_kernels = isinstance(ttaccdirective,tree.TTAccKernels))
     elif isinstance(ttaccdirective,(tree.TTAccParallelLoop,
                                     tree.TTAccKernelsLoop)):
         result = AccCombinedConstructInfo(
                    device_type,
-                   is_parallel = isinstance(ttaccdirective,TTAccParallel),
-                   is_kernels = isinstance(ttaccdirective,TTAccKernels))
+                   is_parallel = isinstance(ttaccdirective,tree.TTAccParallel),
+                   is_kernels = isinstance(ttaccdirective,tree.TTAccKernels))
     else:
         assert False, ("only implemented for instances of "
                       + "tree.TTAccLoop"
                       + ", tree.TTAccRoutine"
                       + ", and tree.TTAccComputeConstructBase")
+    # collect device types
+    named_device_types = set()
     tree.traversals.traverse(
-        ttaccdirective,
-        _visit_directive_action,
-        tree.traversals.no_action,
-        tree.traversals.no_crit,
-        result,
-        _TraverseDirectiveContext())
-    return result
-
-def _find_rvalues_in_directive_action(expr,parents,lvalues,rvalues)
-  """Traversal action that searches through arguments of loop clauses and discover
-  rvalues expressions."""
-  if isinstance(expr,(
-      tree.TTAccClauseGang,
-      tree.TTAccClauseTile,
-      tree.TTAccClauseVector,
-      tree.TTAccClauseWorker)):
-        _find_lvalues_and_rvalues(expr,lvalues,rvalues)
-
-def find_rvalues_in_directive(ttaccdirective):
-  """Search through arguments of loop directive clauses and discover
-  rvalues expressions.
-  :return: List of rvalues appearing in certain
-           clauses of the directive.
-  """
-  lvalues, rvalues  = [], []
-  tree.traversals.traverse(
       ttaccdirective,
-      _find_rvalues_in_directive_action,
+      _get_named_device_types_action,
       tree.traversals.no_action,
       tree.traversals.no_crit,
-      lvalues,
-      rvalues)
-  return rvalues
+      named_device_types
+    )
+    # look for clauses
+    tree.traversals.traverse(
+      ttaccdirective,
+      _analyse_directive_action,
+      tree.traversals.no_action,
+      tree.traversals.no_crit,
+      result,
+      _TraverseDirectiveContext(
+        named_device_types
+      )
+    )
+    return result
+
+def _find_rvalues_in_directive_action(expr,parents,lvalues,rvalues):
+    """Traversal action that searches through arguments of loop clauses and discover
+    rvalues expressions."""
+    if isinstance(expr,(
+        tree.TTAccClauseGang,
+        tree.TTAccClauseTile,
+        tree.TTAccClauseVector,
+        tree.TTAccClauseWorker)):
+          _find_lvalues_and_rvalues(expr,lvalues,rvalues)
+
+def find_rvalues_in_directive(ttaccdirective):
+    """Search through arguments of loop directive clauses and discover
+    rvalues expressions.
+    :return: List of rvalues appearing in certain
+             clauses of the directive.
+    """
+    lvalues, rvalues  = [], []
+    tree.traversals.traverse(
+        ttaccdirective,
+        _find_rvalues_in_directive_action,
+        tree.traversals.no_action,
+        tree.traversals.no_crit,
+        lvalues,
+        rvalues)
+    return rvalues

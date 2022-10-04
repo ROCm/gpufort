@@ -15,10 +15,10 @@ class __HIPKernelBodyGenerator:
     def __init__(self):
         self.single_level_indent = "" 
         # traversal state: 
-        self._indent
-        self._resource_filter
-        self._result
-        self._loopnest_mgr
+        self._indent = ""
+        self._resource_filter = None
+        self._result = None
+        self._loopnest_mgr = None
 
     def _push_loopnest_mgr_to_result(self):
         """Appends the current _loopnest_mgr to
@@ -30,11 +30,11 @@ class __HIPKernelBodyGenerator:
     
     def _convert_collapse_expr_to_int(self,expr):
         try:
-            return int(ast.literal_eval(expr)            
+            return int(ast.literal_eval(tree.traversal.make_cstr(expr)))
         except:
             raise util.error.LimitationError("expected expression that can be evaluated to int for 'collapse'")
 
-    def _check_loop_parallelism(resource_filter,acc_loop_info)
+    def _check_loop_parallelism(resource_filter,acc_loop_info):
         if acc_loop_info.gang.specified:
             if resource_filter.gang_partitioned_mode():
                 raise util.eror.SyntaxError("already in gang-partitioned region")
@@ -74,18 +74,18 @@ class __HIPKernelBodyGenerator:
         selection filter to contiguous groups
         of non-container statements.
         """
-        previous_self._indent = self._indent
+        previous_indent = self._indent
         self._indent += ttcontainer.indent
-        previous_self._indent2 = self._indent
+        previous_indent2 = self._indent
 
         statement_selector_is_open = False
         num_children = len(ttcontainer)
         for i,child in enumerate(ttcontainer):
             if isinstance(child,tree.TTContainer):
                 if statement_selector_is_open:
-                    self._indent = previous_self._indent2
+                    self._indent = previous_indent2
                     self._result.generated_code += self._indent+"}\n"
-                    traverse_(child)
+                traverse_(child)
             else:
                 if ( not statement_selector_is_open
                      and not self._resource_filter.worker_and_vector_partitioned_mode()
@@ -95,11 +95,11 @@ class __HIPKernelBodyGenerator:
                       self._resource_filter.statement_selection_condition()
                     )
                     statement_selector_is_open = True
-                    self._indent += opts.single_level_self._indent
-                 traverse_(child)
+                    self._indent += opts.single_level_indent
+                traverse_(child)
         if statement_selector_is_open:
             self._result.generated_code += self._indent+"}\n"
-        self._indent = previous_self._indent
+        self._indent = previous_indent
 
     def _traverse_acc_compute_construct(self,ttnode):
         acc_construct_info = analysis.acc.analyze_directive(ttnode)  
@@ -290,7 +290,7 @@ class __HIPKernelBodyGenerator:
                               tree.TTAccParallelLoop,tree.TTAccKernelsLoop)):
             self._traverse_acc_compute_construct(ttnode)
         elif isinstance(ttnode,tree.TTCufKernelDo):
-            self._traverse_cuf_kernel_do_construct(ttnode):
+            self._traverse_cuf_kernel_do_construct(ttnode)
         elif isinstance(ttnode,TTDo):
             self._traverse_do_loop(ttnode)
         elif isinstance(ttnode,TTContainer):
@@ -299,7 +299,7 @@ class __HIPKernelBodyGenerator:
             self._traverse_statement(ttnode)
 
     def map_to_hip_cpp(
-          self
+          self,
           ttcomputeconstruct,
           scope,
           device_type = None, 
@@ -323,7 +323,7 @@ class __HIPKernelBodyGenerator:
         self._indent = ""
         self._loopnest_mgr = None
         self._traverse(ttcomputeconstruct)
-        self.
+        # add the prolog
         return self._result
 
 __instance = __HIPKernelBodyGenerator()

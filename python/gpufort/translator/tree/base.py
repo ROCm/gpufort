@@ -17,8 +17,8 @@ class TTNode(object):
     def __init__(self,tokens=[]):
         self.parent = None
         self._assign_fields(tokens)
-        self._fstr = ""
-        self._cstr = ""
+        self._fstr = None 
+        self._cstr = None 
 
     def __str__(self):
         return self.__class__.__name__ + ':' + str(self.__dict__)
@@ -33,11 +33,17 @@ class TTNode(object):
                 result.append(value)
         return result
 
+    def overwrite_fstr(self,expr):
+        self._fstr = expr
+    
+    def overwrite_cstr(self,expr):
+        self._cstr = expr
+
     def fstr(self):
-        pass
+        assert False, "Must be implemented by subclass"
 
     def cstr(self):
-        pass
+        assert False, "Must be implemented by subclass"
 
     #__repr__ = __str__
 

@@ -13,8 +13,8 @@ cuf_kernel_do_arg_grid  = (
   | cuf_kernel_do_dim3 
   | rvalue
 )
-cuf_kernel_do_arg_block = grid.copy()
-cuf_kernel_do_arg_sharedmem = arith_logic_expr.copy 
+cuf_kernel_do_arg_block = cuf_kernel_do_arg_grid.copy()
+cuf_kernel_do_arg_sharedmem = Group(arith_logic_expr) # group because single expression
 cuf_kernel_do_arg_stream  = (
    Regex(r"(stream\s*=)?",re.IGNORECASE).suppress() 
    + arith_logic_expr
@@ -49,7 +49,9 @@ NOT = CASELESS_LITERAL(".NOT.").suppress()
 non_zero_check = rvalue + oneOf("/ = .ne.",caseless = CASELESS).suppress() + Suppress("0")
 pointer_assignment = rvalue + PEQ + rvalue
 
-# kernelextractor/analysis
+stream_arg = cuf_kernel_do_arg_stream
+
+# scanner/analysis
 CUDAMALLOC,CUDAMEMCPY,CUDAMEMCPYASYNC,CUDAMEMCPY2D,CUDAMEMCPY2DASYNC,CUDAMEMCPY3D,CUDAMEMCPY3DASYNC = makeCaselessLiteral(\
   "cudamalloc,cudamemcpy,cudamemcpyasync,cudamemcpy2d,cudamemcpy2dasync,cudamemcpy3d,cudamemcpy3dasync")
 # dest,count # kind is inferred from dest and src

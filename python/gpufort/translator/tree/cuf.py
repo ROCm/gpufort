@@ -85,8 +85,6 @@ class TTCufKernelDoArgStream(base.TTNode):
     def _assign_fields(self, tokens):
         self.expr = tokens[0]
 
-grammar.cuf_kernel_do.setParseAction(TTCufKernelDo)
-
 class TTCufKernelDo(base.TTNode, directives.IComputeConstruct,
                     directives.ILoopAnnotation):
 
@@ -509,11 +507,11 @@ class TTCufCublasCall(base.TTNode):
 
 
 ## Link actions
-cuf_kernel_do_arg_block.setParseAction(TTCufKernelDoArgBlock)
-cuf_kernel_do_arg_grid.setParseAction(TTCufKernelDoArgGrid)
-cuf_kernel_do_arg_num_loops.setParseAction(TTCufKernelDoArgNumLoops)
-cuf_kernel_do_arg_sharedmem.setParseAction(TTCufKernelDoArgSharedmem)
-cuf_kernel_do_arg_stream.setParseAction(TTCufKernelDoArgStream)
+grammar.cuf_kernel_do_arg_block.setParseAction(TTCufKernelDoArgBlock)
+grammar.cuf_kernel_do_arg_grid.setParseAction(TTCufKernelDoArgGrid)
+grammar.cuf_kernel_do_arg_num_loops.setParseAction(TTCufKernelDoArgNumLoops)
+grammar.cuf_kernel_do_arg_sharedmem.setParseAction(TTCufKernelDoArgSharedmem)
+grammar.cuf_kernel_do_arg_stream.setParseAction(TTCufKernelDoArgStream)
 grammar.cuf_kernel_do.setParseAction(TTCufKernelDo)
 #cuf_loop_kernel.setParseAction(TTCufKernelDo)
 grammar.allocated.setParseAction(TTCufAllocated)

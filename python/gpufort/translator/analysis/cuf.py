@@ -37,7 +37,7 @@ def analyze_directive(ttcufkerneldo):
         result)
     return result
 
-def _visit_directive_clause(expr,parents,lvalues,rvalues)
+def _visit_directive_clause(expr,parents,lvalues,rvalues):
     """Traversal action that searches through arguments of loop clauses and discover
     rvalues expressions."""
     if isinstance(expr,(
@@ -45,13 +45,13 @@ def _visit_directive_clause(expr,parents,lvalues,rvalues)
         tree.TTCufKernelDoArgGrid,
         tree.TTCufKernelDoArgBlock,
         tree.TTCufKernelDoArgSharedmem,
-        tree.TTCufKernelDoArgStream)
+        tree.TTCufKernelDoArgStream)):
           _find_lvalues_and_rvalues(expr,lvalues,rvalues)
 
 def find_lvalues_and_rvalues_in_directive(ttcufkerneldo):
     """Search through arguments of loop directive clauses and discover
     rvalues expressions."""
-    tree.traversals.traverse
+    tree.traversals.traverse(
         ttcufkerneldo,
         _visit_directive_clause,
         tree.traversals.no_action,

@@ -22,13 +22,15 @@ def flatten_arith_expr(expr, converter=traversals.make_cstr):
         parent_is_arith_expr = isinstance(parent,TTArithExpr)
         if isinstance(current, (list,pyparsing.ParseResults)):
             result = ""
-            if not parent_is_arith_expr: result += "("
+            if not parent_is_arith_expr:
+                result += "("
             for element in current:
-                result += descend_(element, depth+1)
-            if not parent_is_arith_expr: result += ")"
+                result += descend_(element, current)
+            if not parent_is_arith_expr:
+                result += ")"
             return result
         elif isinstance(current,(TTArithExpr)):
-            return descend_(current._expr,depth) 
+            return descend_(current._expr, current) 
         else:
             return converter(current)
 
@@ -348,9 +350,9 @@ class TTTensorAccess(base.TTNode):
 class TTValue(base.TTNode):
     
     def _assign_fields(self, tokens):
-        self._value           = tokens[0][0]
+        self._value = tokens[0][0]
         self._reduction_index = None
-        self._fstr           = None
+        self._fstr = None
    
     def is_identifier(self):
         return isinstance(self._value, TTIdentifier)
@@ -425,9 +427,6 @@ class TTValue(base.TTNode):
             return self._value.innermost_member_args()
         else:
             return []
-    
-    def overwrite_fstr(self,fstr):
-        self._fstr = fstr
     
     def fstr(self):
         if self._fstr != None:
@@ -802,7 +801,7 @@ class TTArithExpr(base.TTNode):
         return [self._expr]
 
     def cstr(self):
-        return flatten_arith_expr(self)
+        return flatten_arith_expr(self, traversals.make_cstr)
 
     def fstr(self):
         return flatten_arith_expr(self, traversals.make_fstr)

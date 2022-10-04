@@ -235,7 +235,7 @@ class AccResourceFilter:
           "vector_lane",self.vector_length
         )
         if len(conditions):
-            return " && ".join(conditions)
+            return "\n     && ".join(conditions)
         else:
             return "true" 
     def statement_selection_condition(self):
@@ -256,7 +256,7 @@ class AccResourceFilter:
               )
             )
         if len(conditions):
-            return " && ".join(conditions)
+            return "\n     && ".join(conditions)
         else:
             return "true" 
     def index(self):
@@ -480,9 +480,7 @@ class Loop:
         hip_loop_prolog =\
 """
 const gpufort::acc_grid {local_res}(
-  {num_gangs},
-  {num_workers},
-  {vector_length});
+  {num_gangs},{num_workers},{vector_length});
 if ( {loop_entry_condition} ) {{
 """
 
@@ -730,7 +728,7 @@ class Loopnest:
             self.append(loop)
         self._is_tiled = False
     def __len__(self):
-        return len(self.loops)
+        return len(self._loops)
     def __getitem__(self, key):
         return self._loops[key]
     def append(self,loop):

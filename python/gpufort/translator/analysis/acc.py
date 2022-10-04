@@ -12,6 +12,8 @@ from gpufort import util
 from .. import tree
 from .. import optvals
 
+from . import fortran
+
 class AccConstructInfo:
     def __init__(
         self,device_type,
@@ -114,6 +116,12 @@ class _TraverseDirectiveContext:
         # state
         self.current_device_types = [] 
         self.encountered_input_device_type = False
+    def device_specific_clauses_apply(self,device_type):
+        return (
+          not len(self.current_device_types) # no device_type clause encountered yet
+          or device_type in self.current_device_types # 
+          or (not device_type in self.named_device_types and self.current_device_types[0] == "*")
+        )
 
 def _get_named_device_types_action(
       ttnode, # type: tree.TTNode
@@ -130,11 +138,8 @@ def _analyse_directive_action(
       parents, # type: list[Union[tree.TTNode,pyparsing.ParseResults,list]]
       result, # type: Union[AccConstructInfo,AccRoutineInfo,AccLoopInfo]
       ctx):  # type: _TraverseDirectiveContext
-    device_specific_clauses_apply_to_input_device_type = (
-      not len(ctx.current_device_types) # no device_type clause encountered yet
-      or result.device_type in ctx.current_device_types # 
-      or (not result.device_type in ctx.named_device_types and ctx.current_device_types[0] == "*")
-    )
+    device_specific_clauses_apply_to_input_device_type =\
+      ctx.device_specific_clauses_apply(result.device_type)
     if isinstance(ttnode,tree.TTAccMappingClause):
         clause_kind = ttnode.kind
         var_list = ttnode.var_list
@@ -263,15 +268,14 @@ def _find_rvalues_in_directive_action(expr,parents,lvalues,rvalues):
         tree.TTAccClauseTile,
         tree.TTAccClauseVector,
         tree.TTAccClauseWorker)):
-          _find_lvalues_and_rvalues(expr,lvalues,rvalues)
+          fortran.find_lvalues_and_rvalues(expr,lvalues,rvalues)
 
-def find_rvalues_in_directive(ttaccdirective):
+def find_rvalues_in_directive(ttaccdirective,rvalues):
     """Search through arguments of loop directive clauses and discover
     rvalues expressions.
-    :return: List of rvalues appearing in certain
-             clauses of the directive.
+    :param list rvalues: List, inout argument
     """
-    lvalues, rvalues  = [], []
+    lvalues = []
     tree.traversals.traverse(
         ttaccdirective,
         _find_rvalues_in_directive_action,
@@ -279,4 +283,3 @@ def find_rvalues_in_directive(ttaccdirective):
         tree.traversals.no_crit,
         lvalues,
         rvalues)
-    return rvalues

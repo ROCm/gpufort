@@ -2,7 +2,8 @@
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
 
 class TransformationResult:
-    def __init__(self):
+    def __init__(self,device_type):
+        self.device_type = device_type
         self.grid = None
         self.block = None
         self.stream = None

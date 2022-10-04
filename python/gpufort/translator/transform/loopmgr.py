@@ -53,7 +53,7 @@ class LoopnestManager:
         self.collapse = 0
         self.tile = []
         self.private_vars = []
-        self.reductions = {}
+        self.reduction = {}
 
     def _create_loop(self,ttdo,acc_loop_info=None):
         if acc_loop_info == None:
@@ -69,9 +69,9 @@ class LoopnestManager:
               first = ttdo.first.cstr(),
               last = ttdo.last.cstr(),
               step = ttdo.step.cstr() if ttdo.has_step() else None,
-              num_gangs = acc_loop_info.gang.value,
-              num_workers = acc_loop_info.worker.value,
-              vector_length = acc_loop_info.vector.value,
+              num_gangs = tree.traversals.make_cstr(acc_loop_info.gang.value),
+              num_workers = tree.traversals.make_cstr(acc_loop_info.worker.value),
+              vector_length = tree.traversals.make_cstr(acc_loop_info.vector.value),
               gang_partitioned = acc_loop_info.gang.specified,
               worker_partitioned = acc_loop_info.worker.specified,
               vector_partitioned = acc_loop_info.vector.specified
@@ -94,8 +94,8 @@ class LoopnestManager:
         self.loopnest.append(
           self._create_loop(ttdo,acc_loop_info)
         )
-        self.loopnest_mgr_list.append(
-          self._create_loop(ttdo,acc_loop_info)
+        self.loop_mgr_list.append(
+          self._create_loop_manager(ttdo,acc_loop_info)
         )
 
     def _map_loopnest_to_hip_cpp(self,loopnest,
@@ -128,7 +128,7 @@ class LoopnestManager:
               loopnest_indent
             )
         if len(self.reduction):
-            first_loop_mgr = self.loopnest.loopnest_mgr_list[0]
+            first_loop_mgr = self.loopnest.loop_mgr_list[0]
             # todo: render reduction variables
             # 1. create unique index var with value = loopnest.index()
             #parallelism = [first_loop_mgr.gang.specified,

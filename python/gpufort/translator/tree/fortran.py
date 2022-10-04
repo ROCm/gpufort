@@ -138,6 +138,17 @@ class TTIgnore(base.TTNode):
     def cstr(self):
         return ""
 
+class TTCharacter(base.TTNode):
+
+    def _assign_fields(self, tokens):
+        self._value = tokens[0]
+
+    def cstr(self):
+        return self._value
+
+    def fstr(self):
+        return self._value
+
 
 class TTLogical(base.TTNode):
 
@@ -1128,6 +1139,7 @@ class TTDoWhile(base.TTContainer):
 #print_statement.setParseAction(TTCommentedOut)
 grammar.comment.setParseAction(TTCommentedOut)
 grammar.logical.setParseAction(TTLogical)
+grammar.character.setParseAction(TTCharacter)
 grammar.integer.setParseAction(TTNumber)
 grammar.number.setParseAction(TTNumber)
 grammar.l_arith_operator_1.setParseAction(TTOperator)

@@ -6,7 +6,7 @@ from gpufort import indexer
 
 from .. import analysis
 
-def render_private_variables_decl_list(ttvalues,scope):
+def render_private_vars_decl_list(ttvalues,scope):
     decl_list_snippet = ""
     for private_var in ttvalues:
         var_expr = traversals.make_fstr(private_var)

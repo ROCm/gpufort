@@ -13,8 +13,8 @@ class TransformationResult:
         self.max_vector_length = None
         self.async_arg = None
         self.loopnest_mgr_list = []
-        self.private_variables = []
-        self.firstprivate_variables = []
+        self.private_vars = []
+        self.firstprivate_vars = []
         self.mappings = {}
         self.lvalues = []
         self.rvalues = []
@@ -22,8 +22,8 @@ class TransformationResult:
     @property
     def loop_variables(self):
         result = []
-        for nest_info in self.loopnest_mgr_list:
-              for loop_mgr in nest_info.loop_mgr_list:
+        for loopnest_mgr in self.loopnest_mgr_list:
+              for loop_mgr in loopnest_mgr.loop_mgr_list:
                   result.append(loop_mgr.loop_var)
         return result
 
@@ -36,7 +36,7 @@ class TransformationResult:
         if num_gangs != None:
             return converter(num_gangs)
         else:
-            "{loop_len}/({num_workers})".format(
+            return "{loop_len}/({num_workers})".format(
               loop_len=loop_len,
               num_workers=converter(
                 num_workers if num_workers != None else default_num_workers
@@ -83,80 +83,93 @@ class TransformationResult:
         #
         grid_specs = []
         block_specs = []
-        for nest_info in self.loopnest_mgr_list:
-            for loop_mgr in nest_info.loop_mgr_list:
-                loop_len = loop_mgr.render_loop_len(
+        for loopnest_mgr in self.loopnest_mgr_list:
+            loop_lens = []
+            first_loop_mgr = loopnest_mgr.loop_mgr_list[0]
+            for loop_mgr in loopnest_mgr.loop_mgr_list:
+                loop_lens.append(loop_mgr.render_loop_len(
                   operator_loop_len,
                   converter
+                ))
+            if len(loop_lens) == 1:
+                loop_len = loop_lens[0]
+            else:
+                loop_len = "*".join(
+                  ["({})".format(l) for l in loop_lens]
                 )
-                if ( loop_mgr.gang.specified
-                     and not loop_mgr.worker.specified
-                     and not loop_mgr.vector.specified ):
-                    # gang
-                    grid_specs.append(
-                      _render_grid_size_expr(
-                        loop_len,loop_mgr.gang.value,
-                        None,default_num_workers,converter   
-                      ))
-                elif ( loop_mgr.gang.specified
-                       and     loop_mgr.worker.specified
-                       and not loop_mgr.vector.specified ):
-                    # gang worker
-                    grid_specs.append(
-                      _render_grid_size_expr(
-                        loop_len,
-                        loop_mgr.gang.value,
-                        loop_mgr.worker.value,
-                        default_num_workers,
-                        converter   
-                      ))
-                    block_specs.append(
-                      _render_block_size_expr(
-                        loop_mgr.worker.value,
-                        None,
-                        default_num_workers, 
-                        default_vector_length,
-                        converter   
-                      ))
-                elif ( loop_mgr.gang.specified
-                       and     loop_mgr.vector.specified ):
-                    # gang vector and gang worker vector
-                    grid_specs.append(
-                      _render_grid_size_expr(
-                        loop_len,
-                        loop_mgr.gang.value,
-                        loop_mgr.worker.value,
-                        default_num_workers,
-                        converter   
-                      ))
-                    block_specs.append(
-                      _render_block_size_expr(
-                        loop_mgr.worker.value,
-                        loop_mgr.vector.value,
-                        default_num_workers,
-                        default_vector_length,
-                        converter   
-                      ))
-                elif ( loop_mgr.worker.specified 
-                       or loop_mgr.vector.specified ):
-                    # worker, vector, and worker vector
-                    block_specs.append(
-                      _render_block_size_expr(
-                        loop_mgr.worker.value,
-                        loop_mgr.vector.value,
-                        default_num_workers,
-                        default_vector_length,
-                        converter   
-                      ))
+            if ( first_loop_mgr.gang.specified
+                 and not first_loop_mgr.worker.specified
+                 and not first_loop_mgr.vector.specified ):
+                # gang
+                grid_specs.append(
+                  self._render_grid_size_expr(
+                    loop_len,first_loop_mgr.gang.value,
+                    None,default_num_workers,converter   
+                  ))
+            elif ( first_loop_mgr.gang.specified
+                   and     first_loop_mgr.worker.specified
+                   and not first_loop_mgr.vector.specified ):
+                # gang worker
+                grid_specs.append(
+                  self._render_grid_size_expr(
+                    loop_len,
+                    first_loop_mgr.gang.value,
+                    first_loop_mgr.worker.value,
+                    default_num_workers,
+                    converter   
+                  ))
+                block_specs.append(
+                  self._render_block_size_expr(
+                    first_loop_mgr.worker.value,
+                    None,
+                    default_num_workers, 
+                    default_vector_length,
+                    converter   
+                  ))
+            elif ( first_loop_mgr.gang.specified
+                   and     first_loop_mgr.vector.specified ):
+                print("hallo")
+                # gang vector and gang worker vector
+                grid_specs.append(
+                  self._render_grid_size_expr(
+                    loop_len,
+                    first_loop_mgr.gang.value,
+                    first_loop_mgr.worker.value,
+                    default_num_workers,
+                    converter   
+                  ))
+                block_specs.append(
+                  self._render_block_size_expr(
+                    first_loop_mgr.worker.value,
+                    first_loop_mgr.vector.value,
+                    default_num_workers,
+                    default_vector_length,
+                    converter   
+                  ))
+            elif ( first_loop_mgr.worker.specified 
+                   or first_loop_mgr.vector.specified ):
+                # worker, vector, and worker vector
+                block_specs.append(
+                  self._render_block_size_expr(
+                    first_loop_mgr.worker.value,
+                    first_loop_mgr.vector.value,
+                    default_num_workers,
+                    default_vector_length,
+                    converter   
+                  ))
         if self.grid != None:
             grid = converter(self.grid)
         elif self.max_num_gangs != None:
             grid = converter(self.max_num_gangs)
-        else:
+        elif len(grid_specs) > 1:
             grid = "{op}({args})".format(
               op=operator_max, 
               args=",".join(grid_specs)
-            ) 
+            )
+        elif len(grid_specs) == 1:
+            grid = grid_specs[0]
+        else:
+            assert False, "could not derive grid expression"
         if self.block != None:
             block = converter(self.block)
         elif ( self.max_num_workers != None
@@ -169,9 +182,13 @@ class TransformationResult:
               None,
               converter
             )
-        else:
+        elif len(block_specs) > 1:
             block = "{op}({args})".format(
               op=operator_max, 
               args=",".join(block_specs)
             ) 
+        elif len(block_specs) == 1:
+            grid = grid_specs[0]
+        else:
+            assert False, "could not derive block expression"
         return (grid, block)  

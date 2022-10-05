@@ -16,9 +16,10 @@ device_type = "radeon"
 
 scope = indexer.scope.create_scope_from_declaration_list(
 """
-integer, parameter :: N = 10
+integer, parameter :: M = 10
+integer, parameter :: N = 11
 integer :: i,j
-integer :: a(N,N)
+integer :: a(32,M,N)
 """
 )
 
@@ -26,10 +27,13 @@ integer :: a(N,N)
 testdata = [
   """\
 !$acc parallel
-!$acc loop gang(2) worker(4) vector(8) collapse(2)
-do i = 1, N
+!$acc loop gang(2) worker(4) collapse(2)
+do k = 1, M
   do j = 1, N
-     a(i,j) = 1
+     !$acc loop vector(8)
+     do i = -5,10,2
+       a(i,j,k) = 1
+     end do
   end do
 end do""",
 ]
@@ -41,7 +45,7 @@ class TestTransformAcc(unittest.TestCase):
     def tearDown(self):
         elapsed = time.time() - self.started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 9)))
-    def test_00_do_nothing(self):
+    def test_01_transform(self):
         for i,test in enumerate(testdata):
             statements = test.splitlines()
             parse_result = translator.parser.parse_fortran_code(
@@ -53,6 +57,14 @@ class TestTransformAcc(unittest.TestCase):
               device_type 
             )
             print(trafo_result.generated_code)
+            print(trafo_result.hip_grid_and_block_as_str(
+              "NUM_WORKERS",
+              "warpSize",
+              "operator_max", # type: str
+              "operator_loop_len", # type: str
+              "operator_div_round_up", # type: str
+              translator.tree.traversals.make_fstr
+            ))
 
 if __name__ == '__main__':
     unittest.main() 

@@ -19,8 +19,7 @@ class AccConstructInfo:
         self,device_type,
         is_serial,
         is_parallel,
-        is_kernels
-    ):
+        is_kernels):
         """
         Constructor.
         :param str device_type: Device type identifier such as `acc_device_nvidia`.
@@ -41,7 +40,7 @@ class AccConstructInfo:
         self.default = optvals.OptionalSingleValue
         self.mappings = optvals.OptionalDictValue()
         self.private_vars = optvals.OptionalListValue()
-        self.first_private_vars = optvals.OptionalListValue()
+        self.firstprivate_vars = optvals.OptionalListValue()
         self.reduction = optvals.OptionalDictValue()
         self.if_cond = optvals.OptionalSingleValue
         self.self_cond = optvals.OptionalSingleValue

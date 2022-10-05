@@ -86,18 +86,21 @@ hip_includes = \
 """
 
 _hip_kernel_prolog_acc =\
-""""\
+"""\
 const gpufort::acc_grid _res({num_gangs},{num_workers},{vector_length});
 const gpufort::acc_coords _coords({gang_id},{worker_id},{vector_lane_id});
 """
 
-def render_hip_kernel_prolog(vector_length="warpSize"):
-    return _hip_kernel_prolog.format(
+def render_hip_kernel_prolog_acc(vector_length="warpSize"):
+    return _hip_kernel_prolog_acc.format(
       num_gangs="gridDim.x",
-      num_workers="gpufort::div_round_up(blockDim.x,warpSize)",
+      num_workers="gpufort::div_round_up(blockDim.x,{})".format(
+        vector_length
+      ),
+      vector_length = vector_length,
       gang_id="blockIdx.x",
-      worker_id="threadIdx.x/warpSize",
-      vector_lane_id="threadIdx.x%warpSize"
+      worker_id="threadIdx.x/{}".format(vector_length),
+      vector_lane_id="threadIdx.x%{}".format(vector_length)
     ) 
  
 def unique_label(label):
@@ -477,10 +480,8 @@ class Loop:
         return (tile_loop,element_loop)
 
     def _render_hip_prolog_and_epilog_acc(self,local_res_var):
-        hip_loop_prolog =\
-"""
-const gpufort::acc_grid {local_res}(
-  {num_gangs},{num_workers},{vector_length});
+        hip_loop_prolog = """\
+const gpufort::acc_grid {local_res}({num_gangs},{num_workers},{vector_length});
 if ( {loop_entry_condition} ) {{
 """
 
@@ -490,7 +491,7 @@ if ( {loop_entry_condition} ) {{
         resource_filter = AccResourceFilter()
         if self.vector_partitioned:
             if self.vector_length == None:
-                vector_length = "gpufort::acc_resource_all"  
+                vector_length = "_res.vector_lanes"  
                 resource_filter.vector_length.append(None)
             else:
                 vector_length = self.vector_length
@@ -501,7 +502,7 @@ if ( {loop_entry_condition} ) {{
             vector_length = "1"
         if self.worker_partitioned:
             if self.num_workers == None:
-                num_workers = "gpufort::acc_resource_all"  
+                num_workers = "_res.workers"  
                 resource_filter.num_workers.append(None)
             else:
                 num_workers = self.num_workers
@@ -510,7 +511,7 @@ if ( {loop_entry_condition} ) {{
                 )
         else:
             num_workers = "1"
-        num_gangs = "gpufort::acc_resource_all"
+        num_gangs = "1"
         resource_filter.num_gangs.append(None)
         if self.gang_partitioned:
             if self.num_gangs != None:
@@ -736,86 +737,89 @@ class Loopnest:
     def collapse(self):
         """Collapse all loops in the loopnest."""
         assert len(self._loops)
-        loop_lengths_vars = []
         first_loop = self._loops[0]
-        # Preamble before loop
-        prolog = ""
-        for i,loop in enumerate(self._loops):
-            if loop.prolog != None:
-                prolog += loop.prolog
-            loop_lengths_vars.append(unique_label("len"))
+        if len(self._loops) <= 1:
+            return first_loop
+        else:
+            loop_lengths_vars = []
+            # Preamble before loop
+            prolog = ""
+            for i,loop in enumerate(self._loops):
+                if loop.prolog != None:
+                    prolog += loop.prolog
+                loop_lengths_vars.append(unique_label("len"))
+                prolog += render_const_int_decl(
+                  loop_lengths_vars[-1],
+                  loop.length()
+                )
+            total_len_var = unique_label("total_len")
             prolog += render_const_int_decl(
-              loop_lengths_vars[-1],
-              loop.length()
+              total_len_var,
+              "*".join(loop_lengths_vars)
             )
-        total_len_var = unique_label("total_len")
-        prolog += render_const_int_decl(
-          total_len_var,
-          "*".join(loop_lengths_vars)
-        )
-        collapsed_index_var = unique_label("idx")
-        prolog += "int {};\n".format(collapsed_index_var)
-        # Preamble within loop body
-        body_prolog = ""
-        remainder_var = unique_label("rem");
-        denominator_var= unique_label("denom")
-        # template, idx remains as placeholder
-        # we use $idx$ and simple str.replace as the
-        # { and } of C/C++ scopes could cause issues
-        # with str.format
-        body_prolog += "int {rem} = $idx$;\n".format(rem=remainder_var)
-        body_prolog += "int {denom} = {total_len};\n".format(
-          denom=denominator_var,total_len=total_len_var
-        )
-        # index recovery
-        for i,loop in enumerate(self._loops):
-            if loop.step != None:
-                body_prolog += "{} = {};\n".format(
-                  loop.index,
-                  "gpufort::outermost_index({}/*inout*/,{}/*inout*/,{},{},{})".format(
-                    remainder_var,
-                    denominator_var,
-                    loop.first,
-                    loop_lengths_vars[i],
-                    loop.step
-                  )
-                )
-            else:
-                body_prolog += "{} = {};\n".format(
-                  loop.index,
-                  "gpufort::outermost_index({}/*inout*/,{}/*inout*/,{},{})".format(
-                    remainder_var,
-                    denominator_var,
-                    loop.first,
-                    loop_lengths_vars[i]
-                  )
-                )
-        # add body prolog & epilog of individual loops
-        body_epilog = ""
-        indent = ""
-        for loop in self._loops:
-            if loop.body_prolog != None:
-                body_prolog += textwrap.indent(loop.body_prolog,indent)
-            if loop.body_epilog != None:
-                body_epilog = textwrap.indent(loop.body_epilog,indent) + body_epilog
-            indent += loop.body_extra_indent
-        collapsed_loop = Loop(
-          index = collapsed_index_var,
-          first = "0",
-          length = total_len_var,
-          excl_ubound = total_len_var,
-          step = None,
-          gang_partitioned = first_loop.gang_partitioned,
-          worker_partitioned = first_loop.worker_partitioned,
-          vector_partitioned = first_loop.vector_partitioned,
-          num_gangs = first_loop.num_gangs,
-          num_workers = first_loop.num_workers,
-          vector_length = first_loop.vector_length,
-          prolog = prolog, 
-          body_prolog = body_prolog,
-          body_epilog = body_epilog,
-          body_extra_indent = indent)
-        return collapsed_loop
+            collapsed_index_var = unique_label("idx")
+            prolog += "int {};\n".format(collapsed_index_var)
+            # Preamble within loop body
+            body_prolog = ""
+            remainder_var = unique_label("rem");
+            denominator_var= unique_label("denom")
+            # template, idx remains as placeholder
+            # we use $idx$ and simple str.replace as the
+            # { and } of C/C++ scopes could cause issues
+            # with str.format
+            body_prolog += "int {rem} = $idx$;\n".format(rem=remainder_var)
+            body_prolog += "int {denom} = {total_len};\n".format(
+              denom=denominator_var,total_len=total_len_var
+            )
+            # index recovery
+            for i,loop in enumerate(self._loops):
+                if loop.step != None:
+                    body_prolog += "{} = {};\n".format(
+                      loop.index,
+                      "gpufort::outermost_index({}/*inout*/,{}/*inout*/,{},{},{})".format(
+                        remainder_var,
+                        denominator_var,
+                        loop.first,
+                        loop_lengths_vars[i],
+                        loop.step
+                      )
+                    )
+                else:
+                    body_prolog += "{} = {};\n".format(
+                      loop.index,
+                      "gpufort::outermost_index({}/*inout*/,{}/*inout*/,{},{})".format(
+                        remainder_var,
+                        denominator_var,
+                        loop.first,
+                        loop_lengths_vars[i]
+                      )
+                    )
+            # add body prolog & epilog of individual loops
+            body_epilog = ""
+            indent = ""
+            for loop in self._loops:
+                if loop.body_prolog != None:
+                    body_prolog += textwrap.indent(loop.body_prolog,indent)
+                if loop.body_epilog != None:
+                    body_epilog = textwrap.indent(loop.body_epilog,indent) + body_epilog
+                indent += loop.body_extra_indent
+            collapsed_loop = Loop(
+              index = collapsed_index_var,
+              first = "0",
+              length = total_len_var,
+              excl_ubound = total_len_var,
+              step = None,
+              gang_partitioned = first_loop.gang_partitioned,
+              worker_partitioned = first_loop.worker_partitioned,
+              vector_partitioned = first_loop.vector_partitioned,
+              num_gangs = first_loop.num_gangs,
+              num_workers = first_loop.num_workers,
+              vector_length = first_loop.vector_length,
+              prolog = prolog, 
+              body_prolog = body_prolog,
+              body_epilog = body_epilog,
+              body_extra_indent = indent)
+            return collapsed_loop
 
     def tile(self,tile_sizes,
              collapse_tile_loops=True,

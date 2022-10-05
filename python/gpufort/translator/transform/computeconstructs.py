@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
-import ast
 import textwrap
 
 from gpufort import util
@@ -31,12 +30,6 @@ class __HIPKernelBodyGenerator:
         """
         self._result.loopnest_mgr_list.append(self._loopnest_mgr)
         self._loopnest_mgr = None
-    
-    def _convert_collapse_expr_to_int(self,expr):
-        try:
-            return int(ast.literal_eval(tree.traversals.make_cstr(expr)))
-        except:
-            raise util.error.LimitationError("expected expression that can be evaluated to int for 'collapse'")
 
     def _check_loop_parallelism(self,
           resource_filter,
@@ -57,31 +50,17 @@ class __HIPKernelBodyGenerator:
             if resource_filter.vector_partitioned_mode():
                 raise util.eror.SyntaxError("already in vector-partitioned region")
             
-    def _create_acc_resource_filter(
-        self,
-        initially_gang_partitioned,
-        initially_worker_partitioned,
-        initially_vector_partitioned):
-        """Initialize gang, worker, vector resources with
-        None for all initially partitioned resource loopmgr.
-        This indicates that all available resources can be used
-        for that resource type. In particular, this is
-        used when translating OpenACC routines.
-        """
-        return loops.AccResourceFilter(
-          num_gangs = [None] if initially_gang_partitioned else [],
-          num_workers = [None] if initially_worker_partitioned else [],
-          vector_length = [None] if initially_vector_partitioned else []
-        )
-    
-    def _traverse_container_body(self,ttcontainer):
+    def _traverse_container_body(self,ttcontainer,indent=None):
         """Traverses a container's children and 
         applies the resource filter's statement
         selection filter to contiguous groups
         of non-container statements.
         """
         previous_indent = self._indent
-        self._indent += ttcontainer.indent
+        if indent != None:
+            self._indent += ""
+        else:
+            self._indent += ttcontainer.indent
         previous_indent2 = self._indent
 
         statement_selector_is_open = False
@@ -108,11 +87,11 @@ class __HIPKernelBodyGenerator:
         self._indent = previous_indent
 
     def _traverse_acc_compute_construct(self,ttnode):
-        acc_construct_info = analysis.acc.analyze_directive(ttnode)  
+        acc_construct_info = analysis.acc.analyze_directive(ttnode,self._result.device_type)  
         if acc_construct_info.is_serial:
             self._result.max_num_gangs = "1"    
             self._result.max_num_workers = "1"    
-            self._result.max_vector_length = "1"    
+            self._result.max_vector_length = "warpSize"    
         else:
             if acc_construct_info.num_gangs.specified:
                 self._result.max_num_gangs = acc_construct_info.num_gangs
@@ -120,40 +99,32 @@ class __HIPKernelBodyGenerator:
                 self._result.max_num_workers = acc_construct_info.num_workers
             if acc_construct_info.vector_length.specified:
                 self._result.max_vector_length = acc_construct_info.vector_length
-        if acc_construct_info.private_variables.specified: 
-            self._result.private_variables = acc_construct_info.private_variables
-            self._result.generated_code += render.render_private_variables_decl_list(
+        if acc_construct_info.private_vars.specified: 
+            self._result.private_vars = acc_construct_info.private_vars
+            self._result.generated_code += render.render_private_vars_decl_list(
               ttvalues,scope
             )
-        if acc_construct_info.firstprivate_variables.specified: 
-            self._result.firstprivate_variables = acc_construct_info.firstprivate_variables
+        if self._result.max_vector_length != None:
+            vector_length = self._result.max_vector_length
+        else:
+            vector_length = "warpSize"
+        self._result.generated_code += loops.render_hip_kernel_prolog_acc(vector_length)
+        if acc_construct_info.firstprivate_vars.specified: 
+            self._result.firstprivate_vars = acc_construct_info.firstprivate_vars
    
-    def _init_loopnest_mgr(self,acc_loop_info):
-        self._loopnest_mgr = loopmgr.LoopnestManager()
-        if acc_loop_info.private_vars.specified:
-            self._loopnest_mgr.private_vars = acc_loop_info.private_vars.value
-        if acc_loop_info.reduction.specified:
-            pass # todo: loop-wise reductions
-        if acc_loop_info.collapse.specified:
-            self._loopnest_mgr.collapse = self._convert_collapse_expr_to_int(
-              acc_loop_info.collapse.value
-            )
-        if acc_loop_info.tile.specified:
-            self._loopnest_mgr.tile = acc_loop_info.tile.value
- 
-    def _traverse_acc_loop_directive(self,ttdo):  
+    def _traverse_acc_loop_directive(self,ttnode):  
         """Create new LoopnestManager instance. Append it to the result's list.
         Render it if no collapse or tile clause is specified.
         Search certain clauses for rvalues and lvalues.
         """
         #
         acc_loop_info = analysis.acc.analyze_directive(
-          ttdo.annotation,
+          ttnode,
           self._result.device_type
         ) 
         # loop directives might contain lvalues, rvalues that need to be passed
         analysis.acc.find_rvalues_in_directive(
-          ttdo.annotation,
+          ttnode,
           self._result.rvalues
         )
         #todo: split annotation from loop, init LoopnestManager solely with acc_loop_info
@@ -162,8 +133,7 @@ class __HIPKernelBodyGenerator:
           acc_loop_info
         )
         #
-        self._init_loopnest_mgr(acc_loop_info)
-        return acc_loop_info
+        self._loopnest_mgr = loopmgr.AccLoopnestManager(acc_loop_info)
     
     def _traverse_cuf_kernel_do_construct(self,ttnode):
         cuf_construct_info = analysis.cuf.analyze_directive(ttnode)  
@@ -236,7 +206,7 @@ class __HIPKernelBodyGenerator:
         previous_indent = self._indent
         self._indent += loopnest_indent
         #
-        self._traverse_container_body(ttcontainer)
+        self._traverse_container_body(ttcontainer,indent="")
         # 
         self._resource_filter -= loopnest_resource_filter
         self._indent = previous_indent
@@ -260,28 +230,18 @@ class __HIPKernelBodyGenerator:
         acc_loop_info = None
         if self._loopnest_mgr == None:
             if isinstance(ttnode.annotation,tree.TTAccLoop):
-                acc_loop_info = self._traverse_acc_loop_directive(ttnode)
+                self._traverse_acc_loop_directive(ttnode.annotation)
             elif isinstance(ttnode.annotation,tree.TTCufKernelDo):
                 # TODO
-                self._traverse_cuf_kernel_do_loop_directive(ttnode)
+                self._traverse_cuf_kernel_do_loop_directive(ttnode.annotation)
             else:
-                self._loopnest_mgr = loopmgr.LoopnestManager()
-        else:
-            assert (self._loopnest_mgr.collapse > len(self._loopnest_mgr.loopnest)
-                    or len(self._loopnest_mgr.tile) > len(self._loopnest_mgr.loopnest))
-        #
-        if len(self._loopnest_mgr.tile) > len(self._loopnest_mgr.loopnest):
-            self._loopnest_mgr.append_do_loop(ttnode,acc_loop_info)
-            if len(self._loopnest_mgr.loopnest) == len(self._loopnest_mgr.tile):
+                self._loopnest_mgr = loopmgr.AccLoopnestManager()
+        if not self._loopnest_mgr.iscomplete():
+            self._loopnest_mgr.append_do_loop(ttnode)
+            if self._loopnest_mgr.iscomplete():
                 self._render_loopnest_and_descend(ttnode)
             else:
-                self._traverse_container_body(ttnode)
-        else:
-            self._loopnest_mgr.append_do_loop(ttnode,acc_loop_info)
-            if len(self._loopnest_mgr.loopnest) == self._loopnest_mgr.collapse:
-                self._render_loopnest_and_descend(ttnode)
-            else:
-                self._traverse_container_body(ttnode)
+                self._traverse_container_body(ttnode,"")
 
     def _traverse_statement(self,ttnode):
         analysis.fortran.find_lvalues_and_rvalues(
@@ -298,9 +258,12 @@ class __HIPKernelBodyGenerator:
     
     def _traverse(self,ttnode):
         #todo: detach loop annotation from do loop
-        if isinstance(ttnode,(tree.TTAccParallel,tree.TTAccKernels,
-                              tree.TTAccParallelLoop,tree.TTAccKernelsLoop)):
-            self._traverse_acc_compute_construct(ttnode)
+        if isinstance(ttnode,tree.TTComputeConstruct):
+           if isinstance(ttnode._parent_directive,
+                         (tree.TTAccParallel,tree.TTAccKernels,
+                         tree.TTAccParallelLoop,tree.TTAccKernelsLoop)):
+               self._traverse_acc_compute_construct(ttnode._parent_directive)
+           self._traverse_container_body(ttnode,indent="")
         elif isinstance(ttnode,tree.TTCufKernelDo):
             self._traverse_cuf_kernel_do_construct(ttnode)
         elif isinstance(ttnode,tree.TTDo):

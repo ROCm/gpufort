@@ -91,16 +91,14 @@ const gpufort::acc_grid _res({num_gangs},{num_workers},{vector_length});
 const gpufort::acc_coords _coords({gang_id},{worker_id},{vector_lane_id});
 """
 
-def render_hip_kernel_prolog_acc(vector_length="warpSize"):
+def render_hip_kernel_prolog_acc():
     return _hip_kernel_prolog_acc.format(
       num_gangs="gridDim.x",
-      num_workers="gpufort::div_round_up(blockDim.x,{})".format(
-        vector_length
-      ),
-      vector_length = vector_length,
+      num_workers="blockDim.y",
+      vector_length = "blockDim.x",
       gang_id="blockIdx.x",
-      worker_id="threadIdx.x/{}".format(vector_length),
-      vector_lane_id="threadIdx.x%{}".format(vector_length)
+      worker_id="threadIdx.y",
+      vector_lane_id="threadIdx.x"
     ) 
  
 def unique_label(label):
@@ -511,12 +509,17 @@ if ( {loop_entry_condition} ) {{
                 )
         else:
             num_workers = "1"
-        num_gangs = "1"
-        resource_filter.num_gangs.append(None)
         if self.gang_partitioned:
-            if self.num_gangs != None:
+            if self.num_gangs == None:
+                num_gangs = "_res.gangs"  
+                resource_filter.num_gangs.append(None)
+            else:
                 num_gangs = self.num_gangs
-                resource_filter.num_gangs[0] = local_res_var+".gangs"
+                resource_filter.num_gangs.append(
+                  local_res_var+".gangs"
+                )
+        else:
+            num_gangs = "1"
             
         loop_open = hip_loop_prolog.format(
           local_res=local_res_var,

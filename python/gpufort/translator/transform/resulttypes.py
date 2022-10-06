@@ -27,37 +27,68 @@ class TransformationResult:
                   result.append(loop_mgr.loop_var)
         return result
 
-    def _render_grid_size_expr(self,
+    def _render_num_gangs_expr(self,
                                loop_len,
-                               num_gangs,
-                               num_workers,
+                               gang,
+                               worker,
+                               vector,
                                default_num_workers,
+                               default_vector_length,
+                               operator_div_round_up, # type: str 
                                converter):
-        if num_gangs != None:
-            return converter(num_gangs)
+        if gang.value != None:
+            return converter(gang.value)
         else:
-            return "{loop_len}/({num_workers})".format(
-              loop_len=loop_len,
-              num_workers=converter(
-                num_workers if num_workers != None else default_num_workers
-              ),
-            )
-    
-    def _render_block_size_expr(self,
-                                num_workers,
-                                vector_length,
-                                default_num_workers,
-                                default_vector_length,
-                                converter):
-        return  "({num_workers})*({vector_length})".format(
-          num_workers=converter(
-            num_workers if num_workers != None else default_num_workers
-          ),
-          vector_length=converter(
-            vector_length if vector_length != None else default_vector_length
-          ),
-        )
+            if worker.specified and vector.specified:
+                return "{op}({loop_len},({num_workers})*({vector_length}))".format(
+                  op=operator_div_round_up,
+                  loop_len=loop_len,
+                  num_workers=converter(
+                    worker.value if worker.value != None else default_num_workers
+                  ),
+                  vector_length=converter(
+                    vector.value if vector.value != None else default_vector_length
+                  )
+                )
+            elif worker.specified:
+                return "{op}({loop_len},{num_workers})".format(
+                  op=operator_div_round_up,
+                  loop_len=loop_len,
+                  num_workers=converter(
+                    worker.value if worker.value != None else default_num_workers
+                  )                    )
+            elif vector.specified:
+                return "{op}({loop_len},({vector_length})".format(
+                  op=operator_div_round_up,
+                  loop_len=loop_len,
+                  vector_length=converter(
+                    vector.value if vector.value != None else default_vector_length
+                  )
+                )
+            else:
+                return loop_len
 
+    def _render_num_workers_expr(self,
+                                 loop_len,
+                                 worker,
+                                 default_num_workers,
+                                 converter):
+       if worker.value != None:
+           return converter(worker.value)
+       else:
+           return default_num_workers
+    
+
+    def _render_vector_length_expr(self,
+                                 loop_len,
+                                 vector,
+                                 default_vector_length,
+                                 converter):
+        if vector.value != None:
+            return converter(vector.value)
+        else:
+            return default_vector_length
+      
     def hip_grid_and_block_as_str(
         self,
         default_num_workers,
@@ -82,7 +113,8 @@ class TransformationResult:
         workers = None
         #
         grid_specs = []
-        block_specs = []
+        worker_specs = []
+        vector_specs = []
         for loopnest_mgr in self.loopnest_mgr_list:
             loop_lens = []
             first_loop_mgr = loopnest_mgr.loop_mgr_list[0]
@@ -97,66 +129,38 @@ class TransformationResult:
                 loop_len = "*".join(
                   ["({})".format(l) for l in loop_lens]
                 )
-            if ( first_loop_mgr.gang.specified
-                 and not first_loop_mgr.worker.specified
-                 and not first_loop_mgr.vector.specified ):
-                # gang
-                grid_specs.append(
-                  self._render_grid_size_expr(
-                    loop_len,first_loop_mgr.gang.value,
-                    None,default_num_workers,converter   
-                  ))
-            elif ( first_loop_mgr.gang.specified
-                   and     first_loop_mgr.worker.specified
-                   and not first_loop_mgr.vector.specified ):
-                # gang worker
-                grid_specs.append(
-                  self._render_grid_size_expr(
-                    loop_len,
-                    first_loop_mgr.gang.value,
-                    first_loop_mgr.worker.value,
-                    default_num_workers,
-                    converter   
-                  ))
-                block_specs.append(
-                  self._render_block_size_expr(
-                    first_loop_mgr.worker.value,
-                    None,
-                    default_num_workers, 
-                    default_vector_length,
-                    converter   
-                  ))
-            elif ( first_loop_mgr.gang.specified
-                   and     first_loop_mgr.vector.specified ):
-                print("hallo")
-                # gang vector and gang worker vector
-                grid_specs.append(
-                  self._render_grid_size_expr(
-                    loop_len,
-                    first_loop_mgr.gang.value,
-                    first_loop_mgr.worker.value,
-                    default_num_workers,
-                    converter   
-                  ))
-                block_specs.append(
-                  self._render_block_size_expr(
-                    first_loop_mgr.worker.value,
-                    first_loop_mgr.vector.value,
-                    default_num_workers,
-                    default_vector_length,
-                    converter   
-                  ))
-            elif ( first_loop_mgr.worker.specified 
-                   or first_loop_mgr.vector.specified ):
-                # worker, vector, and worker vector
-                block_specs.append(
-                  self._render_block_size_expr(
-                    first_loop_mgr.worker.value,
-                    first_loop_mgr.vector.value,
-                    default_num_workers,
-                    default_vector_length,
-                    converter   
-                  ))
+            if first_loop_mgr.gang.specified:
+                new = self._render_num_gangs_expr(
+                  loop_len,
+                  first_loop_mgr.gang,
+                  first_loop_mgr.worker,
+                  first_loop_mgr.vector,
+                  default_num_workers,
+                  default_vector_length,
+                  operator_div_round_up,
+                  converter
+                )
+                if new not in grid_specs:
+                    grid_specs.append(new)
+            if first_loop_mgr.worker.specified:
+                new = self._render_num_workers_expr(
+                  loop_len,
+                  first_loop_mgr.worker,
+                  default_num_workers,
+                  converter
+                )
+                if new not in worker_specs:
+                    worker_specs.append(new)
+                    
+            if first_loop_mgr.vector.specified:
+                new = self._render_vector_length_expr(
+                  loop_len,
+                  first_loop_mgr.vector,
+                  default_vector_length,
+                  converter
+                )
+                if new not in vector_specs:
+                    vector_specs.append(new)
         if self.grid != None:
             grid = converter(self.grid)
         elif self.max_num_gangs != None:
@@ -169,26 +173,45 @@ class TransformationResult:
         elif len(grid_specs) == 1:
             grid = grid_specs[0]
         else:
-            assert False, "could not derive grid expression"
+            grid = "1"
         if self.block != None:
             block = converter(self.block)
         elif ( self.max_num_workers != None
              and self.max_vector_length != None ):
-            block = self._render_block_size_expr(
-              loop_len,
-              self.max_num_workers,
-              self.max_vector_length,
-              None,
-              None,
-              converter
-            )
-        elif len(block_specs) > 1:
-            block = "{op}({args})".format(
-              op=operator_max, 
-              args=",".join(block_specs)
-            ) 
-        elif len(block_specs) == 1:
-            grid = grid_specs[0]
+            block = [
+              converter(self.max_vector_length),
+              converter(self.max_num_workers)
+            ]
         else:
-            assert False, "could not derive block expression"
+            block = []
+            if len(vector_specs) > 1:
+                block.append(
+                  "{op}({args})".format(
+                      op=operator_max, 
+                      args=",".join(vector_specs)
+                  )
+                ) 
+            elif len(vector_specs) == 1:
+                block.append(
+                  vector_specs[0] 
+                ) 
+            else:
+                block.append(
+                  converter(default_vector_length)
+                ) 
+            if len(worker_specs) > 1:
+                block.append(
+                  "{op}({args})".format(
+                      op=operator_max, 
+                      args=",".join(worker_specs)
+                  )
+                ) 
+            elif len(worker_specs) == 1:
+                block.append(
+                  worker_specs[0] 
+                ) 
+            else:
+                block.append(
+                  converter(default_num_workers)
+                ) 
         return (grid, block)  

@@ -19,6 +19,7 @@ class __HIPKernelBodyGenerator:
         self.single_level_indent = "" 
         # traversal state: 
         self._indent = ""
+        self._scope = None
         self._resource_filter = None
         self._result = None
         self._loopnest_mgr = None
@@ -70,12 +71,16 @@ class __HIPKernelBodyGenerator:
                 if statement_selector_is_open:
                     self._indent = previous_indent2
                     self._result.generated_code += self._indent+"}\n"
+                    statement_selector_is_open = False
                 self._traverse(child)
             else:
-                if ( not statement_selector_is_open
-                     and not self._resource_filter.worker_and_vector_partitioned_mode()
-                     and not i == num_children-1 ):
-                    self._result.generated_code += "{}if ({}) {{".format(
+                if ( 
+                  not statement_selector_is_open
+                  and not self._resource_filter.worker_and_vector_partitioned_mode()
+                  and not i == num_children-1
+                  and not isinstance(child,(tree.TTBlank,tree.TTCommentedOut))
+                ):
+                    self._result.generated_code += "{}if ( {} ) {{\n".format(
                       self._indent,
                       self._resource_filter.statement_selection_condition()
                     )
@@ -91,7 +96,7 @@ class __HIPKernelBodyGenerator:
         if acc_construct_info.is_serial:
             self._result.max_num_gangs = "1"    
             self._result.max_num_workers = "1"    
-            self._result.max_vector_length = "warpSize"    
+            self._result.max_vector_length = "1"    
         else:
             if acc_construct_info.num_gangs.specified:
                 self._result.max_num_gangs = acc_construct_info.num_gangs
@@ -104,11 +109,7 @@ class __HIPKernelBodyGenerator:
             self._result.generated_code += render.render_private_vars_decl_list(
               ttvalues,scope
             )
-        if self._result.max_vector_length != None:
-            vector_length = self._result.max_vector_length
-        else:
-            vector_length = "warpSize"
-        self._result.generated_code += loops.render_hip_kernel_prolog_acc(vector_length)
+        self._result.generated_code += loops.render_hip_kernel_prolog_acc()
         if acc_construct_info.firstprivate_vars.specified: 
             self._result.firstprivate_vars = acc_construct_info.firstprivate_vars
    
@@ -192,7 +193,7 @@ class __HIPKernelBodyGenerator:
         """Renders a loopnest, appends it to the result, add the generated
         code to the result's variable, descend into the body
         of the associated container""" 
-        loopnest_render_result = self._loopnest_mgr.map_loopnest_to_hip_cpp()
+        loopnest_render_result = self._loopnest_mgr.map_loopnest_to_hip_cpp(self._scope)
         self._push_loopnest_mgr_to_result()
         # 
         loopnest_open,loopnest_close,\
@@ -287,6 +288,7 @@ class __HIPKernelBodyGenerator:
         :param bool initially_vector_partitioned: Start in vector-partitioned mode.
         """
         loops.reset() # reset variable counters of loops package
+        self._scope = scope
         self._result = resulttypes.TransformationResult(device_type)
         self._resource_filter = loops.AccResourceFilter()
         self._indent = ""

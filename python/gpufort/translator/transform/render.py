@@ -5,20 +5,19 @@ import textwrap
 from gpufort import indexer
 
 from .. import analysis
+from .. import tree
 
 def render_private_vars_decl_list(ttvalues,scope):
     decl_list_snippet = ""
     for private_var in ttvalues:
-        var_expr = traversals.make_fstr(private_var)
+        var_expr = tree.traversals.make_fstr(private_var)
         var_tag = indexer.scope.create_index_search_tag_for_var(var_expr) 
         if "%" in var_tag:
             # todo: get rid of this limitation,  if necessary
             raise error.LimitationError("private var must not be derived type member")
-        tavar = analysis.create_analysis_var(scope, 
-          indexer.scope.search_scope_for_var(scope,var_targ)
-        )
-        c_prefix = "__shared__ " if "shared" in tavar.attributes else ""
-        c_type = tavar.kind if tavar.f_type=="type" else tavar.c_type
+        tavar = analysis.create_analysis_var(scope,var_expr) 
+        c_prefix = "__shared__ " if "shared" in tavar["attributes"] else ""
+        c_type = tavar["kind"] if tavar["f_type"]=="type" else tavar["c_type"]
         if tavar["rank"] == 0:
             decl_list_snippet += "{c_prefix}{c_type} {c_name};\n".format(
               c_prefix=c_prefix,

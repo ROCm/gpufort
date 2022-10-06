@@ -3,16 +3,14 @@
 #include <limits>
 
 namespace gpufort {
-  constexpr int acc_resource_all = std::numeric_limits<int>::max();
-
   struct acc_coords {
-    int gang;
-    int worker;
-    int vector_lane;
+    const int& gang;
+    const int& worker;
+    const int& vector_lane;
     __host__ __device__ __forceinline__ acc_coords(
-          int gang=1,
-          int worker=1,
-          int vector_lane=1) :
+          const int& gang,
+          const int& worker,
+          const int& vector_lane) :
         gang(gang),
         worker(worker),
         vector_lane(vector_lane) {}    
@@ -58,13 +56,13 @@ namespace gpufort {
   };
   
   struct acc_grid {
-    int gangs;   //< Total number of gangs.
-    int workers; //< Workers per gang.
-    int vector_lanes; //< Vector lanes per worker.
+    const int gangs;   //< Total number of gangs.
+    const int workers; //< Workers per gang.
+    const int vector_lanes; //< Vector lanes per worker.
     __host__ __device__ __forceinline__ acc_grid(
-          int gangs=1,
-          int workers=1,
-          int vector_lanes=1) :
+          const int gangs,
+          const int workers,
+          const int vector_lanes) :
         gangs(gangs),
         workers(workers),
         vector_lanes(vector_lanes) {}    

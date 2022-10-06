@@ -18,7 +18,8 @@ class OptionalSingleValue:
 class OptionalListValue:
     def __init__(self):
         self.value = []
-    @property # fake property, expr `obj.specified` results in `obj.specified()` call
+    # fake property, expr `obj.specified` results in `obj.specified()` call
+    @property
     def specified(self):
         return len(self.value) > 0
     def __len__(self):

@@ -24,14 +24,6 @@ class __HIPKernelBodyGenerator:
         self._result = None
         self._loopnest_mgr = None
 
-    def _push_loopnest_mgr_to_result(self):
-        """Appends the current _loopnest_mgr to
-        the _result member's list and 
-        sets the former field to None.
-        """
-        self._result.loopnest_mgr_list.append(self._loopnest_mgr)
-        self._loopnest_mgr = None
-
     def _check_loop_parallelism(self,
           resource_filter,
           acc_loop_info):
@@ -78,7 +70,11 @@ class __HIPKernelBodyGenerator:
                   not statement_selector_is_open
                   and not self._resource_filter.worker_and_vector_partitioned_mode()
                   and not i == num_children-1
-                  and not isinstance(child,(tree.TTBlank,tree.TTCommentedOut))
+                  and not isinstance(child,(
+                      tree.TTAccDirectiveBase,
+                      tree.TTCufKernelDo,
+                      tree.TTBlank,
+                      tree.TTCommentedOut))
                 ):
                     self._result.generated_code += "{}if ( {} ) {{\n".format(
                       self._indent,
@@ -91,7 +87,7 @@ class __HIPKernelBodyGenerator:
             self._result.generated_code += self._indent+"}\n"
         self._indent = previous_indent
 
-    def _traverse_acc_compute_construct(self,ttnode):
+    def _visit_acc_compute_construct(self,ttnode):
         acc_construct_info = analysis.acc.analyze_directive(ttnode,self._result.device_type)  
         if acc_construct_info.is_serial:
             self._result.max_num_gangs = "1"    
@@ -113,7 +109,7 @@ class __HIPKernelBodyGenerator:
         if acc_construct_info.firstprivate_vars.specified: 
             self._result.firstprivate_vars = acc_construct_info.firstprivate_vars
    
-    def _traverse_acc_loop_directive(self,ttnode):  
+    def _visit_acc_loop_directive(self,ttnode):  
         """Create new LoopnestManager instance. Append it to the result's list.
         Render it if no collapse or tile clause is specified.
         Search certain clauses for rvalues and lvalues.
@@ -136,7 +132,7 @@ class __HIPKernelBodyGenerator:
         #
         self._loopnest_mgr = loopmgr.AccLoopnestManager(acc_loop_info)
     
-    def _traverse_cuf_kernel_do_construct(self,ttnode):
+    def _visit_cuf_kernel_do_construct(self,ttnode):
         cuf_construct_info = analysis.cuf.analyze_directive(ttnode)  
         if cuf_construct_info.grid.specified:
             self._result.grid = cuf_construct_info.grid
@@ -149,7 +145,7 @@ class __HIPKernelBodyGenerator:
         if cuf_construct_info.reduction.specified: 
             self._result.reductions = cuf_construct_info.reduction
     
-    def _traverse_cuf_kernel_do_loop_directive(self,ttdo):  
+    def _visit_cuf_kernel_do_loop_directive(self,ttdo):  
         """Create new LoopnestManager instance. Append it to the result's list.
         Render it if no number of loops is specified. 
         Search certain clauses for rvalues and lvalues.
@@ -188,17 +184,11 @@ class __HIPKernelBodyGenerator:
           ttnode.footer_cstr(),
           self._indent
         )
- 
-    def _render_loopnest_and_descend(self,ttcontainer):
-        """Renders a loopnest, appends it to the result, add the generated
-        code to the result's variable, descend into the body
-        of the associated container""" 
-        loopnest_render_result = self._loopnest_mgr.map_loopnest_to_hip_cpp(self._scope)
-        self._push_loopnest_mgr_to_result()
-        # 
+
+    def _unpack_render_result_and_descend(self,ttdo,render_result):
         loopnest_open,loopnest_close,\
         loopnest_resource_filter,loopnest_indent =\
-          loopnest_render_result
+          render_result
         self._result.generated_code += textwrap.indent(
           loopnest_open,
           self._indent
@@ -207,7 +197,7 @@ class __HIPKernelBodyGenerator:
         previous_indent = self._indent
         self._indent += loopnest_indent
         #
-        self._traverse_container_body(ttcontainer,indent="")
+        self._traverse_container_body(ttdo,indent="")
         # 
         self._resource_filter -= loopnest_resource_filter
         self._indent = previous_indent
@@ -216,33 +206,32 @@ class __HIPKernelBodyGenerator:
           self._indent
         )
  
+    def _render_loopnest_and_descend(self,ttdo_last,save_loopnest_mgr=True):
+        """Renders a loopnest, appends it to the result, add the generated
+        code to the result's variable, descend into the body
+        of the associated container""" 
+        render_result = self._loopnest_mgr.map_loopnest_to_hip_cpp(self._scope)
+        if save_loopnest_mgr:
+            self._result.loopnest_mgr_list.append(self._loopnest_mgr)
+        self._loopnest_mgr = None
+        # 
+        self._unpack_render_result_and_descend(ttdo_last,render_result)
+ 
     def _traverse_do_loop(self,ttnode):
         # todo: when collapsing, check if we can move statement into inner loop, should be possible if 
         # a loop statement is not relying on the lvalue or inout arg from a previous statement (difficult to analyze)
         # alternative interpretation of collapse user information -> we can reorder statements without error
-        self._result.lvalues.append(ttnode.index)
-        analysis.fortran.find_lvalues_and_rvalues(
-          ttnode.first,[],self._result.rvalues)
-        analysis.fortran.find_lvalues_and_rvalues(
-          ttnode.last,[],self._result.rvalues)
-        analysis.fortran.find_lvalues_and_rvalues(
-          ttnode.step,[],self._result.rvalues)
-        # initialize loopnest manager
-        acc_loop_info = None
-        if self._loopnest_mgr == None:
-            if isinstance(ttnode.annotation,tree.TTAccLoop):
-                self._traverse_acc_loop_directive(ttnode.annotation)
-            elif isinstance(ttnode.annotation,tree.TTCufKernelDo):
-                # TODO
-                self._traverse_cuf_kernel_do_loop_directive(ttnode.annotation)
-            else:
-                self._loopnest_mgr = loopmgr.AccLoopnestManager()
-        if not self._loopnest_mgr.iscomplete():
-            self._loopnest_mgr.append_do_loop(ttnode)
-            if self._loopnest_mgr.iscomplete():
-                self._render_loopnest_and_descend(ttnode)
-            else:
-                self._traverse_container_body(ttnode,"")
+        if self._loopnest_mgr != None:
+            if not self._loopnest_mgr.iscomplete():
+                self._loopnest_mgr.append_do_loop(ttnode)
+                if self._loopnest_mgr.iscomplete():
+                    self._render_loopnest_and_descend(ttnode)
+                else:
+                    self._traverse_container_body(ttnode,"")
+        else:
+            render_result = loopmgr.create_simple_loop(
+              ttdo).map_to_hip_cpp(self._scope)
+            self._unpack_render_result_and_descend(ttdo_last,render_result)
 
     def _traverse_statement(self,ttnode):
         analysis.fortran.find_lvalues_and_rvalues(
@@ -259,14 +248,16 @@ class __HIPKernelBodyGenerator:
     
     def _traverse(self,ttnode):
         #todo: detach loop annotation from do loop
-        if isinstance(ttnode,tree.TTComputeConstruct):
-           if isinstance(ttnode._parent_directive,
-                         (tree.TTAccParallel,tree.TTAccKernels,
-                         tree.TTAccParallelLoop,tree.TTAccKernelsLoop)):
-               self._traverse_acc_compute_construct(ttnode._parent_directive)
-           self._traverse_container_body(ttnode,indent="")
+        if isinstance(ttnode,(tree.TTAccParallelLoop,tree.TTAccKernelsLoop)):
+            self._visit_acc_compute_construct(ttnode)
+            self._visit_acc_loop_directive(ttnode)
+        elif isinstance(ttnode,(tree.TTAccParallel,tree.TTAccKernels)):
+            self._visit_acc_compute_construct(ttnode)
         elif isinstance(ttnode,tree.TTCufKernelDo):
-            self._traverse_cuf_kernel_do_construct(ttnode)
+            self._visit_cuf_kernel_do_construct(ttnode)
+        elif isinstance(ttnode,tree.TTAccLoop):
+            if self._loopnest_mgr == None:
+                self._visit_acc_loop_directive(ttnode)
         elif isinstance(ttnode,tree.TTDo):
             self._traverse_do_loop(ttnode)
         elif isinstance(ttnode,tree.TTContainer):

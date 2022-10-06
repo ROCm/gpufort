@@ -17,21 +17,6 @@ def compare_ignore_case(tokens1,tokens2):
             return False
         else:
             for i,tk in enumerate(tokens1):
-                #if (tk.isidentifier() and tokens2[i]=="<ident>"
-                #   or tk=="<ident>" and tokens2[i].isidentifier): 
-                #    pass
-                #elif tokens2[i]=="<int>":
-                #    try:
-                #        int(tk)
-                #    except:
-                #        return False 
-                #elif tk=="<int>":
-                #    try:
-                #        int(tokens2[i])
-                #    except:
-                #        return False 
-                #elif tk.lower() != tokens2[i].lower():
-                #    return False
                 if tk.lower() != tokens2[i].lower():
                     return False
             return True

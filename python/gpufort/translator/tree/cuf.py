@@ -85,11 +85,9 @@ class TTCufKernelDoArgStream(base.TTNode):
     def _assign_fields(self, tokens):
         self.expr = tokens[0]
 
-class TTCufKernelDo(base.TTNode, directives.IComputeConstruct,
-                    directives.ILoopAnnotation):
+class TTCufKernelDo(base.TTNode):
 
     def _assign_fields(self, tokens):
-        self._parent_directive = None
         self._num_outer_loops_to_map = 1
         self._grid = None 
         self._block = None

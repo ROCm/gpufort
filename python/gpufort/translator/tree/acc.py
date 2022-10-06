@@ -486,7 +486,7 @@ class TTAccWait(TTAccDirectiveBase):
                 result += " depend(" + opts.depend_todo + ")"
         return self._format(result)
 
-class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
+class TTAccLoop(TTAccDirectiveBase):
     """
     possible clauses:
       collapse( n )
@@ -504,19 +504,6 @@ class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
     def _assign_fields(self, tokens):
         TTAccDirectiveBase._assign_fields(self, tokens)
         self.loop_handles_mutual_clauses = True # can be unset by TTAccParallelLoop or TTAccKernelsLoop
-
-    def reductions(self, converter=traversals.make_fstr):
-        result = {}
-        for clause in traversals.find_all(self.clauses, TTAccClauseReduction):
-            contrib = clause.reductions(converter)
-            for key, value in contrib.items():
-                if not key in result:
-                    result[key] = []
-                result[key] += value
-        return result
-
-    def private_vars(self, converter=traversals.make_fstr):
-        return self.handle_mapping_clause(["private"], converter)
 
     def omp_fstr(self, loop_type="do", parallel_region="", prefix="!$omp"):
         # todo: broken, as directive is split and some information (e.g. num_Collapse) must be obtained from device spec
@@ -554,7 +541,7 @@ class TTAccLoop(TTAccDirectiveBase,directives.ILoopAnnotation):
             return result
 
 
-class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase,directives.IComputeConstruct):
+class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase):
     """
     possible clauses (for kernels / parallel):
       async [( int-expr )]
@@ -578,12 +565,6 @@ class TTAccComputeConstructBase(TTAccDataManagementDirectiveBase,directives.ICom
       firstprivate( var-list )
       default( none | present )
     """
-    
-    def gang_private_vars(self, converter=traversals.make_fstr):
-        return self.handle_mapping_clause(["private"], converter)
-
-    def gang_firstprivate_vars(self, converter=traversals.make_fstr):
-        return self.handle_mapping_clause(["firstprivate"], converter)
 
     def omp_fstr(self,
                   arrays_in_body=[],

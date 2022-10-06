@@ -124,6 +124,17 @@ class TTGoto(base.TTNode):
     def cstr(self):
         return "goto _{};".format(self._label.rstrip("\n"))
 
+class TTBlank(base.TTNode):
+    
+    def _assign_fields(self, tokens):
+        self._text = tokens[0] 
+
+    def cstr(self):
+        return self._text 
+
+    def fstr(self):
+        return self._text 
+
 class TTCommentedOut(base.TTNode):
 
     def _assign_fields(self, tokens):
@@ -1047,6 +1058,30 @@ class TTArgumentList(base.TTNode):
                 traversals.make_fstr(el) for el in args))
         else:
             return ""
+
+class TTDo(base.TTContainer):
+
+    def _assign_fields(self, tokens):
+        self._begin, self._end, self._step, self.body = tokens
+    @property
+    def index(self):
+        return self._begin._lhs
+    @property
+    def first(self):
+        return self._begin._rhs
+    @property
+    def last(self):
+        return self._end
+    @property
+    def step(self):
+        return self._step
+
+    def has_step(self):
+        return self._step != None
+    
+    def child_nodes(self):
+        return [self.body, self._begin, self._end, self._step]
+
 
 class TTIfElseBlock(base.TTContainer):
     def _assign_fields(self, tokens):

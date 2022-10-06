@@ -71,7 +71,7 @@ class TestTransformAcc(unittest.TestCase):
               statements,result_name=None
             )
             trafo_result = translator.transform.computeconstructs.map_to_hip_cpp(
-              parse_result.body[0],
+              parse_result,
               scope,
               device_type 
             )

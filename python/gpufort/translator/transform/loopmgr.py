@@ -51,24 +51,25 @@ class LoopManager:
               first=converter(self.first),
               last=converter(self.last)
             )
+    
+def create_simple_loop(ttdo):
+    return loops.Loop(
+      index = ttdo.index.cstr(),
+      first = ttdo.first.cstr(),
+      last = ttdo.last.cstr(),
+      step = ttdo.step.cstr() if ttdo.has_step() else None
+    )
+
+def create_simple_loop_manager(ttdo):
+    loop_mgr = LoopManager()
+    loop_mgr.index = ttdo.index
+    loop_mgr.first = ttdo.first
+    loop_mgr.last = ttdo.last
+    if ttdo.has_step():
+        loop_mgr.step.value = ttdo.step
+    return loop_mgr
 
 class LoopnestManager:
-    def _create_simple_loop(self,ttdo):
-        return loops.Loop(
-          index = ttdo.index.cstr(),
-          first = ttdo.first.cstr(),
-          last = ttdo.last.cstr(),
-          step = ttdo.step.cstr() if ttdo.has_step() else None
-        )
-
-    def _create_simple_loop_manager(self,ttdo):
-        loop_mgr = LoopManager()
-        loop_mgr.index = ttdo.index
-        loop_mgr.first = ttdo.first
-        loop_mgr.last = ttdo.last
-        if ttdo.has_step():
-            loop_mgr.step.value = ttdo.step
-        return loop_mgr
     
     def _convert_collapse_expr_to_int(self,expr):
         try:
@@ -89,7 +90,7 @@ class CufLoopnestManager(LoopnestManager):
         self.num_loops
 
 #    def _create_loop(self,ttdo,cuf_loop_info):
-#        loop = self._create_simple_loop(ttdo)
+#        loop = create_simple_loop(ttdo)
 #        if cuf_loop_info != None:
 #            loop.num_gangs = tree.traversals.make_cstr(cuf_loop_info.gang.value)
 #            loop.num_workers = tree.traversals.make_cstr(cuf_loop_info.worker.value)
@@ -100,7 +101,7 @@ class CufLoopnestManager(LoopnestManager):
 #        return loop         
 # 
 #    def _create_loop_manager(self,ttdo,cuf_loop_info):
-#        loop_mgr = self._create_simple_loop_manager(ttdo)
+#        loop_mgr = create_simple_loop_manager(ttdo)
 #        if cuf_loop_info != None:
 #            loop_mgr.gang.value = cuf_loop_info.gang.value 
 #            loop_mgr.worker.value = cuf_loop_info.worker.value 
@@ -218,7 +219,7 @@ class AccLoopnestManager(LoopnestManager):
             return self.collapse == len(self.loopnest)
 
     def _create_loop(self,ttdo,acc_loop_info):
-        loop = self._create_simple_loop(ttdo)
+        loop = create_simple_loop(ttdo)
         if acc_loop_info != None:
             if acc_loop_info.gang.value != None:
                 loop.num_gangs = tree.traversals.make_cstr(acc_loop_info.gang.value)
@@ -232,7 +233,7 @@ class AccLoopnestManager(LoopnestManager):
         return loop         
  
     def _create_loop_manager(self,ttdo,acc_loop_info):
-        loop_mgr = self._create_simple_loop_manager(ttdo)
+        loop_mgr = create_simple_loop_manager(ttdo)
         if acc_loop_info != None:
             if acc_loop_info.gang.specified:
                 loop_mgr.gang.value = acc_loop_info.gang.value 

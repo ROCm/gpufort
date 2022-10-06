@@ -15,8 +15,8 @@ from .. import optvals
 from . import fortran
 
 class AccConstructInfo:
-    def __init__(
-        self,device_type,
+    def __init__(self,
+        device_type,
         is_serial,
         is_parallel,
         is_kernels):
@@ -104,10 +104,13 @@ class AccCombinedConstructInfo(AccConstructInfo,AccLoopInfo):
     def __init__(self,device_type,
                  is_parallel,
                  is_kernels):
-        AccConstructInfo.__init__(device_type,
+        AccConstructInfo.__init__(self,
+                                  device_type,
+                                  False,
                                   is_parallel,
                                   is_kernels)
-        AccLoopInfo.__init__(device_type)
+        AccLoopInfo.__init__(self,
+                             device_type)
 
 class _TraverseDirectiveContext:
     def __init__(self,named_device_types):
@@ -191,7 +194,8 @@ def _analyse_directive_action(
         var_list = ttnode.vars
         if op not in result.reduction:
             result.reduction.value[op] = []
-        result.reduction.value[op] += var_list
+        for var in var_list:
+            result.reduction.value[op].append(var)
     elif isinstance(ttnode,tree.TTAccClauseDeviceType):
         ctx.current_device_types = [
           tree.traversals.make_fstr(d).lower() 
@@ -215,12 +219,12 @@ def _analyse_directive_action(
 
 def analyze_directive(ttaccdirective,
                       device_type):
-    if isinstance(ttaccdirective,tree.TTAccLoop):
-        result = AccLoopInfo(device_type)
-    elif isinstance(ttaccdirective,tree.TTAccRoutine):
-        result = AccRoutineInfo(device_type)
-        if ttaccdirective.id != None:
-            result.name.value = ttaccdirective.id
+    if isinstance(ttaccdirective,(tree.TTAccParallelLoop,
+                                    tree.TTAccKernelsLoop)):
+        result = AccCombinedConstructInfo(
+                   device_type,
+                   is_parallel = isinstance(ttaccdirective,tree.TTAccParallel),
+                   is_kernels = isinstance(ttaccdirective,tree.TTAccKernels))
     elif isinstance(ttaccdirective,(tree.TTAccSerial,
                                     tree.TTAccParallel,
                                     tree.TTAccKernels)):
@@ -229,12 +233,12 @@ def analyze_directive(ttaccdirective,
                    is_serial = isinstance(ttaccdirective,tree.TTAccSerial),
                    is_parallel = isinstance(ttaccdirective,tree.TTAccParallel),
                    is_kernels = isinstance(ttaccdirective,tree.TTAccKernels))
-    elif isinstance(ttaccdirective,(tree.TTAccParallelLoop,
-                                    tree.TTAccKernelsLoop)):
-        result = AccCombinedConstructInfo(
-                   device_type,
-                   is_parallel = isinstance(ttaccdirective,tree.TTAccParallel),
-                   is_kernels = isinstance(ttaccdirective,tree.TTAccKernels))
+    elif isinstance(ttaccdirective,tree.TTAccLoop):
+        result = AccLoopInfo(device_type)
+    elif isinstance(ttaccdirective,tree.TTAccRoutine):
+        result = AccRoutineInfo(device_type)
+        if ttaccdirective.id != None:
+            result.name.value = ttaccdirective.id
     else:
         assert False, ("only implemented for instances of "
                       + "tree.TTAccLoop"

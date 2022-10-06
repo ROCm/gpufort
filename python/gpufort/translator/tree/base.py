@@ -102,8 +102,11 @@ class TTContainer(TTNode):
             self.footer_cstr())
 
 class TTRoot(TTContainer):
-    pass
 
+    def __init__(self):
+        self.parent = None
+        self.body   = []
+        self.indent = ""
 
 def f_keyword(keyword):
     if opts.keyword_case == "upper":

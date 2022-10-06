@@ -142,16 +142,17 @@ def _analyse_directive_action(
     if isinstance(ttnode,tree.TTAccMappingClause):
         clause_kind = ttnode.kind
         var_list = ttnode.var_list
-        print(clause_kind)
         if clause_kind not in ["private","firstprivate"]:
             result.mappings.specified = True
             if not clause_kind in result.mappings.value:
                 result.mappings[clause_kind] = []
             result.mappings.value[clause_kind] += var_list
         elif clause_kind == "private":
-            result.private_vars.value += var_list
+            for var in var_list:
+                result.private_vars.value.append(var)
         elif clause_kind == "firstprivate":
-            result.firstprivate_vars.value += var_list
+            for var in var_list:
+                result.firstprivate_vars.value.append(var)
     elif isinstance(ttnode,tree.TTAccClauseGang):
         if device_specific_clauses_apply_to_input_device_type:
             result.gang.value = ttnode.value
@@ -179,6 +180,12 @@ def _analyse_directive_action(
     elif isinstance(ttnode,tree.TTAccClauseVectorLength):
         if device_specific_clauses_apply_to_input_device_type:
             result.vector_length.value = ttnode.value
+    elif isinstance(ttnode,tree.TTAccClauseCollapse):
+        if device_specific_clauses_apply_to_input_device_type:
+            result.collapse.value = ttnode._value
+    elif isinstance(ttnode,tree.TTAccClauseTile):
+        if device_specific_clauses_apply_to_input_device_type:
+            result.tile.value = ttnode.tiles_per_dim 
     elif isinstance(ttnode,tree.TTAccClauseReduction):
         op = ttnode.operator
         var_list = ttnode.vars
@@ -193,10 +200,6 @@ def _analyse_directive_action(
         ctx.encountered_input_device_type = (
           result.device_type in ctx.current_device_types
         )
-    elif isinstance(ttnode,tree.TTAccClauseCollapse):
-        result.collapse.value = ttnode._value
-    elif isinstance(ttnode,tree.TTAccClauseTile):
-        result.tile.value = ttnode.tiles_per_dim 
     elif isinstance(ttnode,tree.TTAccClauseDefault):
         result.default.value = ttnode.value
     elif isinstance(ttnode,tree.TTAccClauseIf):

@@ -3,7 +3,6 @@
 from . import base
 from . import traversals
 from . import fortran
-from . import grammar
 from . import directives
 
 class TTCufKernelCall(base.TTNode):
@@ -55,19 +54,6 @@ class TTCufKernelCall(base.TTNode):
 
     def sharedmem_fstr(self):
         return traversals.make_fstr(self._sharedmem)
-
-# todo: keep for reference, a while
-#class CufDeviceSpec(directives.IDeviceSpec):
-#    def __init__(self,tokens):
-#        self._num_outer_loops_to_map = int(tokens[0])
-#        self._grid = tokens[1][0]
-#        self._block = tokens[1][1]
-#    
-#    def parallelism(self):
-#        return Parallelism.GANG_WORKER_VECTOR
-#
-#    def order_of_iterates(self):
-#        return IterateOrder.INDEPENDENT
 
 class TTCufKernelDoArgGrid(base.TTNode):
     def _assign_fields(self, tokens):
@@ -506,19 +492,19 @@ class TTCufCublasCall(base.TTNode):
         result = cublas_operation_type.transformString(result)
         return result
 
-
-## Link actions
-grammar.cuf_kernel_do_arg_block.setParseAction(TTCufKernelDoArgBlock)
-grammar.cuf_kernel_do_arg_grid.setParseAction(TTCufKernelDoArgGrid)
-grammar.cuf_kernel_do_arg_num_loops.setParseAction(TTCufKernelDoArgNumLoops)
-grammar.cuf_kernel_do_arg_sharedmem.setParseAction(TTCufKernelDoArgSharedmem)
-grammar.cuf_kernel_do_arg_stream.setParseAction(TTCufKernelDoArgStream)
-grammar.cuf_kernel_do.setParseAction(TTCufKernelDo)
-grammar.allocated.setParseAction(TTCufAllocated)
-grammar.memcpy.setParseAction(TTCufMemcpyIntrinsic)
-grammar.non_zero_check.setParseAction(TTCufNonZeroCheck)
-#pointer_assignment.setParseAction(TTCufPointerAssignment)
-grammar.cuf_cudamemcpy.setParseAction(TTCufCudaMemcpy)
-grammar.cuf_cudamemcpy2D.setParseAction(TTCufCudaMemcpy2D)
-grammar.cuf_cudamemcpy3D.setParseAction(TTCufCudaMemcpy3D)
-grammar.cuf_cublas_call.setParseAction(TTCufCublasCall)
+def set_cuf_parse_actions(grammar):
+    ## Link actions
+    grammar.cuf_kernel_do_arg_block.setParseAction(TTCufKernelDoArgBlock)
+    grammar.cuf_kernel_do_arg_grid.setParseAction(TTCufKernelDoArgGrid)
+    grammar.cuf_kernel_do_arg_num_loops.setParseAction(TTCufKernelDoArgNumLoops)
+    grammar.cuf_kernel_do_arg_sharedmem.setParseAction(TTCufKernelDoArgSharedmem)
+    grammar.cuf_kernel_do_arg_stream.setParseAction(TTCufKernelDoArgStream)
+    grammar.cuf_kernel_do.setParseAction(TTCufKernelDo)
+    grammar.allocated.setParseAction(TTCufAllocated)
+    grammar.memcpy.setParseAction(TTCufMemcpyIntrinsic)
+    grammar.non_zero_check.setParseAction(TTCufNonZeroCheck)
+    #pointer_assignment.setParseAction(TTCufPointerAssignment)
+    grammar.cuf_cudamemcpy.setParseAction(TTCufCudaMemcpy)
+    grammar.cuf_cudamemcpy2d.setParseAction(TTCufCudaMemcpy2d)
+    grammar.cuf_cudamemcpy3d.setParseAction(TTCufCudaMemcpy3d)
+    grammar.cuf_cublas_call.setParseAction(TTCufCublasCall)

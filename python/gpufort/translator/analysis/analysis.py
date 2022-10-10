@@ -261,8 +261,8 @@ def vars_in_subtree(ttnode, scope):
 
     def search_filter(node):
         cond1 = (isinstance(node,tree.TTValue)
-                and isinstance(node._value, (tree.TTDerivedTypeMember,tree.TTIdentifier,tree.TTTensorAccess)))
-        if cond1 and isinstance(node._value, tree.TTTensorAccess):
+                and isinstance(node._value, (tree.TTDerivedTypeMember,tree.TTIdentifier,tree.TTTensorEval)))
+        if cond1 and isinstance(node._value, tree.TTTensorEval):
             return node._value.is_tensor()
         else:
             return cond1 
@@ -273,8 +273,8 @@ def arrays_in_subtree(ttnode, scope):
 
     def search_filter(node):
         cond1 = (isinstance(node,tree.TTValue) 
-                and isinstance(node._value, tree.TTTensorAccess))
-        if cond1 and isinstance(node._value, tree.TTTensorAccess):
+                and isinstance(node._value, tree.TTTensorEval))
+        if cond1 and isinstance(node._value, tree.TTTensorEval):
             return node._value.is_tensor()
         else:
             return cond1 
@@ -286,8 +286,8 @@ def inout_arrays_in_subtree(ttnode, scope):
 
     def search_filter(node):
         cond1 = (isinstance(node,tree.TTLvalue) 
-                and isinstance(node._value, tree.TTTensorAccess))
-        if cond1 and isinstance(node._value, tree.TTTensorAccess):
+                and isinstance(node._value, tree.TTTensorEval))
+        if cond1 and isinstance(node._value, tree.TTTensorEval):
             return node._value.is_tensor()
         else:
             return cond1 

@@ -9,7 +9,7 @@ from gpufort import indexer
 
 from .. import nodes
 from .. import opts
-from .. import grammar
+from .. import translator.tree.grammar
 
 class STCufDirective(nodes.STDirective):
 
@@ -102,13 +102,13 @@ class STCufLibCall(nodes.STNode):
             snippet, translator.tree.grammar.cuf_cublas_call, repl_cublas)
         if have_cublas:
             self._has_cublas = True
-        for elem in grammar.CUDA_RUNTIME_ENUMS:
+        for elem in translator.tree.grammar.CUDA_RUNTIME_ENUMS:
             snippet = re.sub(elem,elem.replace("cuda", "hip").replace("CUDA", "HIP"), snippet, re.IGNORECASE)
-        for elem in grammar.CUDA_LIB_ENUMS:
+        for elem in translator.tree.grammar.CUDA_LIB_ENUMS:
             snippet = re.sub(elem,elem.replace("cuda", "hip").replace("CUDA", "HIP"), snippet, re.IGNORECASE)
-        for elem in grammar.ALL_HOST_ROUTINES: # runtime routines
+        for elem in translator.tree.grammar.ALL_HOST_ROUTINES: # runtime routines
             snippet = re.sub(elem,elem.replace("cuda", "hip").replace("CUDA", "HIP"), snippet, re.IGNORECASE)
-        for elem in grammar.CUDA_MATH_LIB_FUNCTIONS:
+        for elem in translator.tree.grammar.CUDA_MATH_LIB_FUNCTIONS:
             snippet = re.sub(elem,elem.replace("cuda", "hip").replace("CUDA", "HIP"), snippet, re.IGNORECASE)
         transformed = snippet.lower() != old_snippet
         return snippet, transformed

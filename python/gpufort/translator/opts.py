@@ -3,7 +3,7 @@
 # general options
 log_prefix = "translator"
 comment = r"(!|^\s*[\*cCdD])[^\$].+"
-fortran_style_tensor_access = True
+fortran_style_tensor_eval = True
         # For a Fortran tensor access, emit `a(i,j,k,...)`
         # instead of the C style `a[_idx_a(i,j,k)]`.
         # This assumes that the generated kernel code makes use

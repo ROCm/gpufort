@@ -14,9 +14,9 @@ from . import transformations
 def _modify_array_expressions(ttnode,ttvalues,scope,**kwargs):
     """:return: If any array expressions have been converted to loops.
     """
-    fortran_style_tensor_access,_ = util.kwargs.get_value("fortran_style_tensor_access",opts.fortran_style_tensor_access,**kwargs)
+    fortran_style_tensor_eval,_ = util.kwargs.get_value("fortran_style_tensor_eval",opts.fortran_style_tensor_eval,**kwargs)
 
-    loop_ctr = transformations.expand_all_array_expressions(ttnode, scope, fortran_style_tensor_access)
+    loop_ctr = transformations.expand_all_array_expressions(ttnode, scope, fortran_style_tensor_eval)
     
     # todo: pass Fortran style access option down here too
     transformations.flag_tensors(ttvalues, scope)
@@ -64,7 +64,7 @@ def _handle_reductions(ttcomputeconstruct,ttvalues,grid_dim):
     for kind, reduced_vars in ttcomputeconstruct.gang_reductions(
             tree.make_cstr).items():
         for var in reduced_vars:
-            if opts.fortran_style_tensor_access:
+            if opts.fortran_style_tensor_eval:
                 reduction_preamble += "reduce_op_{kind}::init({var}({tidx}));\n".format(
                     kind=kind, var=var, tidx=tidx)
             else:
@@ -83,7 +83,7 @@ def translate_compute_construct_to_hip_kernel_body(ttcomputeconstruct, scope, **
     """
     map_to_flat_arrays,_     = util.kwargs.get_value("map_to_flat_arrays",opts.map_to_flat_arrays,**kwargs)
     map_to_flat_scalars,_     = util.kwargs.get_value("map_to_flat_scalars",opts.map_to_flat_scalars,**kwargs)
-    fortran_style_tensor_access,_ = util.kwargs.get_value("fortran_style_tensor_access",opts.fortran_style_tensor_access,**kwargs)
+    fortran_style_tensor_eval,_ = util.kwargs.get_value("fortran_style_tensor_eval",opts.fortran_style_tensor_eval,**kwargs)
 
     ttvalues = analysis.find_all_matching_exclude_directives(ttcomputeconstruct.body,
                                                              lambda ttnode: isinstance(ttnode,tree.TTValue))

@@ -525,6 +525,7 @@ def search_index_for_var(index,
         e.args = (msg, )
         raise
 
+@util.logging.log_entry_and_exit(opts.log_prefix)
 def search_index_for_type(index, parent_tag, type_name):
     """
     :param str parent_tag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
@@ -542,6 +543,7 @@ def search_index_for_type(index, parent_tag, type_name):
         e.args = (msg, )
         raise
 
+@util.logging.log_entry_and_exit(opts.log_prefix)
 def search_index_for_procedure(index, parent_tag, procedure_name):
     """
     :param str parent_tag: tag created of colon-separated identifiers, e.g. "mymodule" or "mymodule:mysubroutine".
@@ -559,3 +561,35 @@ def search_index_for_procedure(index, parent_tag, procedure_name):
         msg = e.args[0]+" (scope tag: '{}')".format(parent_tag)
         e.args = (msg, )
         raise
+
+@util.logging.log_entry_and_exit(opts.log_prefix)
+def search_scope_for_value_expr(scope,expr):
+    """Search scope for a lrvalue or rvalue expression (str).
+    Lookup order: Explicitly-typed variables -> Functions -> Intrinsics -> Implicitly-typed variables
+    :param scope: Scope dict.
+    :param str expr: An lvalue or rvalue expression such as `a`, `a(i,j)`, `a(i)%b(:)`.  
+    :return: Tuple of value type (see indexer.types.ValueType) 
+             and index record if available. (No index record might be
+             returned if expression refers to intrinsic)
+    """
+    value_type = types.ValueType.UNKNOWN
+    index_record = None
+    try:
+       index_record = search_scope_for_var(scope, expr, 
+          consider_implicit = False)
+       value_type = types.ValueType.VARIABLE
+    except util.error.LookupError:
+        try:
+            # todo: check EXTERNAL procedures too 
+            index_record = search_scope_for_procedure(scope, expr) # just check if the procedure exists
+            value_type = types.ValueType.PROCEDURE
+        except util.error.LookupError:
+            if is_intrinsic(expr):
+                value_type = types.ValueType.INTRINSIC
+            else:
+                try:
+                    index_record = _lookup_implicitly_declared_var(var_expr,scope["implicit"])
+                    value_type = types.ValueType.VARIABLE
+                except:
+                    raise util.error.LookupError("expression '"+expr+"' could not be associated with any variable (explicitly or implicitly declared), procedure, or intrinsic")
+    return (value_type, index_record)

@@ -30,7 +30,7 @@ class TestTranslatorPower(unittest.TestCase):
         for snippet in testdata:
             criterion = True
             result = snippet
-            print(translator.prepostprocess.preprocess_fortran_statement(result))
+            #print(translator.prepostprocess.preprocess_fortran_statement(result))
             #print(translator.tree.grammar.power.parseString(result,parseAll=True))
             #while criterion:
             #    old_result = result

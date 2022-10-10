@@ -28,14 +28,14 @@ def _collect_ranges_in_ttvalue(ttvalue,include_none_values=False):
             was scalar index argument was used.
     """
     current = ttvalue._value
-    if isinstance(current,tree.TTTensorAccess):
+    if isinstance(current,tree.TTTensorEval):
         return _collect_ranges(current._args,include_none_values)
     elif isinstance(current,tree.TTDerivedTypeMember):
         result = []
         while isinstance(current,tree.TTDerivedTypeMember):
-            if isinstance(current._type,tree.TTTensorAccess):
+            if isinstance(current._type,tree.TTTensorEval):
                 result += _collect_ranges(current._type._args,include_none_values)
-            if isinstance(current._element,tree.TTTensorAccess):
+            if isinstance(current._element,tree.TTTensorEval):
                 result += _collect_ranges(current._element._args,include_none_values)
             current = current._element
         return result
@@ -272,22 +272,15 @@ def flag_tensors(ttvalues, scope):
     """
     for value in ttvalues:
         ident = value.identifier_part()
-        if isinstance(value._value, tree.TTTensorAccess):
+        if isinstance(value._value, tree.TTTensorEval):
             if ident.startswith("_"):
                 # function introduced by GPUFORT, Fortran identifiers never start with '_'
-                value._value._type = tree.TTTensorAccess.Type.FUNCTION_CALL
+                value._value._type = tree.TTTensorEval.Type.FUNCTION_CALL
             else:
-                try:
-                   _ = indexer.scope.search_scope_for_var(scope, ident, 
-                           consider_implicit = False) # just check if the var exists
-                   value._value._type = tree.TTTensorAccess.Type.ARRAY_ACCESS
-                except util.error.LookupError:
-                   try:
-                       _ = indexer.scope.search_scope_for_procedure(scope, ident) # just check if the procedure exists
-                       value._value._type = tree.TTTensorAccess.Type.FUNCTION_CALL
-                   except util.error.LookupError:
-                       if indexer.scope.is_intrinsic(ident):
-                          value._value._type = tree.TTTensorAccess.Type.INTRINSIC_CALL
-                       else:
-                           # todo: check EXTERNAL procedures too 
-                           raise util.error.LookupError("expression '"+ident+"' could not be associated with any variable, procedure, or intrinsic")
+                value_type, _ = indexer.scope.search_scope_for_value_expr(scope, ident)
+                if value_type == indexer.types.ValueType.VARIABLE:
+                    value._value._type = tree.TTTensorEval.Type.ARRAY_ACCESS
+                elif value_type == indexer.types.ValueType.PROCEDURE:
+                    value._value._type = tree.TTTensorEval.Type.FUNCTION_CALL
+                elif value_type == indexer.types.ValueType.INTRINSIC:
+                    value._value._type = tree.TTTensorEval.Type.INTRINSIC_CALL

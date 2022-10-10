@@ -5,12 +5,8 @@ import textwrap
 from gpufort import util
 
 from .. import opts
-from . import grammar
 
 import pyparsing
-
-# Ternary state
-False3, Unknown3, True3 = -1, 0, 1
 
 class TTNode(object):
 
@@ -117,4 +113,3 @@ def f_keyword(keyword):
         return keyword[0].upper() + keyword[1:].lower()
     else:
         return keyword
-

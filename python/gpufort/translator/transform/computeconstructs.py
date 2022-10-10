@@ -12,6 +12,7 @@ from .. import optvals
 from . import loops
 from . import loopmgr
 from . import resulttypes
+from . import arrayexpr
 
 class __HIPKernelBodyGenerator:
 
@@ -57,19 +58,28 @@ class __HIPKernelBodyGenerator:
         previous_indent2 = self._indent
 
         statement_selector_is_open = False
+        
+        def close_statement_selector_():
+            nonlocal statement_selector_is_open
+            nonlocal previous_indent2
+            self._indent = previous_indent2
+            self._result.generated_code += self._indent+"}\n"
+            statement_selector_is_open = False
+
         num_children = len(ttcontainer)
         for i,child in enumerate(ttcontainer):
             if isinstance(child,tree.TTContainer):
                 if statement_selector_is_open:
-                    self._indent = previous_indent2
-                    self._result.generated_code += self._indent+"}\n"
-                    statement_selector_is_open = False
+                    close_statement_selector_()
                 self._traverse(child)
             else:
-                if ( 
+                if ( statement_selector_is_open
+                     and isinstance(child,tree.TTCommentedOut)
+                   ):
+                      close_statement_selector_()
+                elif ( 
                   not statement_selector_is_open
                   and not self._resource_filter.worker_and_vector_partitioned_mode()
-                  and not i == num_children-1
                   and not isinstance(child,(
                       tree.TTAccDirectiveBase,
                       tree.TTCufKernelDo,
@@ -84,7 +94,7 @@ class __HIPKernelBodyGenerator:
                     self._indent += opts.single_level_indent
                 self._traverse(child)
         if statement_selector_is_open:
-            self._result.generated_code += self._indent+"}\n"
+            close_statement_selector_()
         self._indent = previous_indent
 
     def _visit_acc_compute_construct(self,ttnode):
@@ -217,21 +227,22 @@ class __HIPKernelBodyGenerator:
         # 
         self._unpack_render_result_and_descend(ttdo_last,render_result)
  
-    def _traverse_do_loop(self,ttnode):
+    def _traverse_do_loop(self,ttdo):
         # todo: when collapsing, check if we can move statement into inner loop, should be possible if 
         # a loop statement is not relying on the lvalue or inout arg from a previous statement (difficult to analyze)
         # alternative interpretation of collapse user information -> we can reorder statements without error
         if self._loopnest_mgr != None:
             if not self._loopnest_mgr.iscomplete():
-                self._loopnest_mgr.append_do_loop(ttnode)
+                self._loopnest_mgr.append_do_loop(ttdo)
                 if self._loopnest_mgr.iscomplete():
-                    self._render_loopnest_and_descend(ttnode)
+                    self._render_loopnest_and_descend(ttdo)
                 else:
-                    self._traverse_container_body(ttnode,"")
+                    self._traverse_container_body(ttdo,"")
         else:
             render_result = loopmgr.create_simple_loop(
               ttdo).map_to_hip_cpp(self._scope)
-            self._unpack_render_result_and_descend(ttdo_last,render_result)
+            # TODO fix statement filter
+            self._unpack_render_result_and_descend(ttdo,render_result)
 
     def _traverse_statement(self,ttnode):
         analysis.fortran.find_lvalues_and_rvalues(
@@ -240,6 +251,10 @@ class __HIPKernelBodyGenerator:
           self._result.rvalues
         )
         #todo: expand array assignment expressions
+        if isinstance(ttnode,tree.TTAssignment):
+            if arrayexpr.is_array_assignment(ttnode._lhs,self._scope):
+                print("array_assignment")
+                pass
         #todo: modify expressions
         self._result.generated_code += textwrap.indent(
           ttnode.cstr().rstrip("\n")+"\n",

@@ -5,7 +5,6 @@ from gpufort import util
 from .. import opts
 from .. import conv
 
-from . import grammar
 from . import base
 from . import traversals
 from . import directives
@@ -649,45 +648,42 @@ class TTAccEndData(TTAccDirectiveBase):
     def omp_fstr(self):
         return self._format("!$omp end target data")
 
-
-#
-# Connect actions with grammar
-#
-grammar.acc_clause_gang.setParseAction(TTAccClauseGang)
-grammar.acc_clause_worker.setParseAction(TTAccClauseWorker)
-grammar.acc_clause_vector.setParseAction(TTAccClauseVector)
-grammar.acc_clause_num_gangs.setParseAction(TTAccClauseNumGangs)
-grammar.acc_clause_num_workers.setParseAction(TTAccClauseNumWorkers)
-grammar.acc_clause_vector_length.setParseAction(TTAccClauseVectorLength)
-grammar.acc_clause_device_type.setParseAction(TTAccClauseDeviceType)
-grammar.acc_clause_if.setParseAction(TTAccClauseIf)
-grammar.acc_clause_default.setParseAction(TTAccClauseDefault)
-grammar.acc_clause_collapse.setParseAction(TTAccClauseCollapse)
-grammar.acc_clause_self.setParseAction(TTAccClauseSelf)
-grammar.acc_clause_bind.setParseAction(TTAccClauseBind)
-grammar.acc_clause_reduction.setParseAction(TTAccClauseReduction)
-grammar.acc_clause_tile.setParseAction(TTAccClauseTile)
-grammar.acc_clause_wait.setParseAction(TTAccClauseWait)
-grammar.acc_clause_async.setParseAction(TTAccClauseAsync)
-grammar.acc_mapping_clause.setParseAction(TTAccMappingClause)
-grammar.acc_noarg_clause.setParseAction(TTAccNoArgumentClause)
-# directive action
-grammar.acc_update.setParseAction(TTAccUpdate)
-grammar.acc_wait.setParseAction(TTAccWait)
-#acc_host_data # todo:
-grammar.acc_data.setParseAction(TTAccData)
-grammar.acc_enter_data.setParseAction(TTAccEnterData)
-grammar.acc_exit_data.setParseAction(TTAccExitData)
-grammar.acc_routine.setParseAction(TTAccRoutine)
-grammar.acc_declare.setParseAction(TTAccDeclare)
-#acc_atomic # todo:
-#acc_cache  # todo:
-grammar.acc_loop.setParseAction(TTAccLoop)
-# kernels / parallels
-#acc_serial # todo:
-grammar.acc_serial.setParseAction(TTAccSerial)
-grammar.acc_kernels.setParseAction(TTAccKernels)
-grammar.acc_parallel.setParseAction(TTAccParallel)
-grammar.acc_parallel_loop.setParseAction(TTAccParallelLoop)
-grammar.acc_kernels_loop.setParseAction(TTAccKernelsLoop)
-grammar.ACC_END_DATA.setParseAction(TTAccEndData)
+def set_acc_parse_actions(grammar):
+    grammar.acc_clause_gang.setParseAction(TTAccClauseGang)
+    grammar.acc_clause_worker.setParseAction(TTAccClauseWorker)
+    grammar.acc_clause_vector.setParseAction(TTAccClauseVector)
+    grammar.acc_clause_num_gangs.setParseAction(TTAccClauseNumGangs)
+    grammar.acc_clause_num_workers.setParseAction(TTAccClauseNumWorkers)
+    grammar.acc_clause_vector_length.setParseAction(TTAccClauseVectorLength)
+    grammar.acc_clause_device_type.setParseAction(TTAccClauseDeviceType)
+    grammar.acc_clause_if.setParseAction(TTAccClauseIf)
+    grammar.acc_clause_default.setParseAction(TTAccClauseDefault)
+    grammar.acc_clause_collapse.setParseAction(TTAccClauseCollapse)
+    grammar.acc_clause_self.setParseAction(TTAccClauseSelf)
+    grammar.acc_clause_bind.setParseAction(TTAccClauseBind)
+    grammar.acc_clause_reduction.setParseAction(TTAccClauseReduction)
+    grammar.acc_clause_tile.setParseAction(TTAccClauseTile)
+    grammar.acc_clause_wait.setParseAction(TTAccClauseWait)
+    grammar.acc_clause_async.setParseAction(TTAccClauseAsync)
+    grammar.acc_mapping_clause.setParseAction(TTAccMappingClause)
+    grammar.acc_noarg_clause.setParseAction(TTAccNoArgumentClause)
+    # directive action
+    grammar.acc_update.setParseAction(TTAccUpdate)
+    grammar.acc_wait.setParseAction(TTAccWait)
+    #acc_host_data # todo:
+    grammar.acc_data.setParseAction(TTAccData)
+    grammar.acc_enter_data.setParseAction(TTAccEnterData)
+    grammar.acc_exit_data.setParseAction(TTAccExitData)
+    grammar.acc_routine.setParseAction(TTAccRoutine)
+    grammar.acc_declare.setParseAction(TTAccDeclare)
+    #acc_atomic # todo:
+    #acc_cache  # todo:
+    grammar.acc_loop.setParseAction(TTAccLoop)
+    # kernels / parallels
+    #acc_serial # todo:
+    grammar.acc_serial.setParseAction(TTAccSerial)
+    grammar.acc_kernels.setParseAction(TTAccKernels)
+    grammar.acc_parallel.setParseAction(TTAccParallel)
+    grammar.acc_parallel_loop.setParseAction(TTAccParallelLoop)
+    grammar.acc_kernels_loop.setParseAction(TTAccKernelsLoop)
+    grammar.ACC_END_DATA.setParseAction(TTAccEndData)

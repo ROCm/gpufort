@@ -17,12 +17,18 @@ scope = indexer.scope.create_scope_from_declaration_list(
 integer, parameter :: M = 10
 integer, parameter :: N = 11
 integer :: i,j,k
-integer :: a(32,M,N)
+integer :: a(32,M,N), b(M,N), c(N)
+real :: x,y,z,u
 """
 )
 
 
 testdata = [
+  """\
+!$acc kernels
+a(:) = a(:)+3 
+!$acc end kernels
+""",
   """\
 !$acc parallel loop reduction(+:j)
 do i = 1, N
@@ -30,15 +36,22 @@ do i = 1, N
 end do
 !$acc end parallel
 """,
+
   """\
 !$acc parallel
-!$acc loop gang(2) worker(4) collapse(2) private(x)
-do k = 1, M
-  do j = 1, N
-     x = 1.0
+!$acc loop gang(2)
+do k = 1, N
+  c(k) = 3
+  !$acc loop worker(4)
+  do j = 1, M
+     b(j,k) = 2*c(k)
      !$acc loop vector(8) private(y)
      do i = -5,10,2
-       a(i,j,k) = 1
+       a(i,j,k) = b(j,k) + c(k)
+     end do
+
+     do i = -5,10,2
+       a(i,j,k) = b(j,k) + c(k)
      end do
     
      !$acc loop vector private(z)
@@ -65,7 +78,7 @@ class TestTransformAcc(unittest.TestCase):
         print('{} ({}s)'.format(self.id(), round(elapsed, 9)))
     def test_01_transform(self):
         device_type = "radeon"
-        for i,test in enumerate(testdata):
+        for i,test in enumerate(testdata[-1:]):
             statements = test.splitlines()
             parse_result = translator.parser.parse_fortran_code(
               statements,result_name=None

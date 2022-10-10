@@ -15,7 +15,6 @@ from gpufort import linemapper
 
 from . import opts
 from . import types
-from . import grammar
 
 considered_constructs = [
   "program", "module", "subroutine", "function",
@@ -712,8 +711,6 @@ def _parse_statements(linemaps, file_path,**kwargs):
                                     AccRoutine()
                             elif current_tokens[0] == "use":
                                 Use()
-                            #elif current_tokens[0] == "implicit":
-                            #    try_to_parse_string("implicit",grammar.IMPLICIT)
                             elif current_tokens[0] == "module" and current_tokens[1] != "procedure":
                                 ModuleStart()
                             elif current_tokens[0] == "program":

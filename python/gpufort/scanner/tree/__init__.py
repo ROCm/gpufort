@@ -4,4 +4,10 @@ from .nodes import *
 from .backends import *
 from .acc import *
 from .cuf import *
-from . import grammar
+
+# not setting any parse actions
+from gpufort import grammar as _grammar
+grammar = _grammar.Grammar(
+  ignorecase=True
+)
+del _grammar    

@@ -12,7 +12,6 @@ from gpufort import translator
 from gpufort import indexer
 
 from .. import opts
-from . import grammar
 from . import backends
 
 SCANNER_ERROR_CODE = 1000

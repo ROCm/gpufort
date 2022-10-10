@@ -1,8 +1,15 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+import enum
 import copy
 
 from gpufort import util    
+
+class ValueType(enum.Enum):
+    UNKNOWN = 0
+    PROCEDURE = 1
+    VARIABLE = 2
+    INTRINSIC = 3
 
 DEFAULT_IMPLICIT_SPEC =\
   util.parsing.parse_implicit_statement(

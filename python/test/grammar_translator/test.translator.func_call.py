@@ -38,10 +38,10 @@ class TestGrammarFunctionCall(unittest.TestCase):
         ]
         for snippet in testdata:
             try:
-                grammar.tensor_access.parseString(snippet,parseAll=True)
-                translator.tree.grammar.tensor_access.parseString(snippet,parseAll=True)[0].fstr()
-                #print(grammar.tensor_access.parseString(snippet,parseAll=True))
-                #print(translator.tree.grammar.tensor_access.parseString(snippet,parseAll=True)[0].fstr())
+                grammar.tensor_eval.parseString(snippet,parseAll=True)
+                translator.tree.grammar.tensor_eval.parseString(snippet,parseAll=True)[0].fstr()
+                #print(grammar.tensor_eval.parseString(snippet,parseAll=True))
+                #print(translator.tree.grammar.tensor_eval.parseString(snippet,parseAll=True)[0].fstr())
                 print("successfully parsed '{}'".format(snippet))
             except Exception as e:
                 self.assertTrue(False, "failed to parse '{}'".format(snippet)) 

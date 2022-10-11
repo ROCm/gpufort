@@ -259,19 +259,42 @@ def strip_array_indexing(var_expr):
         result.append(curr)
         return "%".join(result)
 
+def is_blank(text):
+    return not len(text) or text.isspace()
+
 def split_fortran_line(line,modern_fortran=True):
-    """Decomposes a Fortran line into preceding whitespace,
+    """Decomposes a Fortran line into numeric/named label and/or preceding whitespace,
      statement part, comment part, and trailing whitespace (including newline char).
      """
     tokens = tokenize(line,modern_fortran=modern_fortran,keepws=True)
-    if len(tokens) and not len(tokens[0].strip("  \r\t\n")):
+    # numeric_label
+    numeric_label_part = ""
+    if ( len(tokens) >= 2 # numeric label cannot stand alone
+         and tokens[0].isnumeric()):
+          numeric_label_part = tokens[0] 
+          tokens = tokens[1:]
+    # whitespace (can be in front of named label)
+    if len(tokens) and is_blank(tokens[0]):
         preceding_ws = tokens.pop(0)
     else: 
         preceding_ws = ""
-    if len(tokens) and not len(tokens[-1].strip("  \r\t\n")):
+    if len(tokens) and is_blank(tokens[-1]):
         trailing_ws = tokens.pop(-1)
     else: 
         trailing_ws = ""
+    # named label part, e.g.  
+    named_label_part = ""
+    if ( len(tokens) >= 3 # named label must be paired with ":"
+         and tokens[0].isidentifier()
+         and ( is_blank(tokens[1]) and tokens[2] == ":" # might be whitespace in between
+               or tokens[1] == ":" ) ):
+          if tokens[1] == ":":
+              num_consumed = 2
+          else:
+              num_consumed = 3
+          named_label_part = "".join(tokens[0:3])
+          tokens = tokens[3:]
+    # collect statement or directive tokens and comment tokens
     statement_tokens = []
     comment_tokens = []
     if len(tokens):
@@ -287,7 +310,14 @@ def split_fortran_line(line,modern_fortran=True):
             comment_tokens = tokens # what is left must be an inline comment
         else:
             statement_tokens = tokens
-    return preceding_ws, "".join(statement_tokens), "".join(comment_tokens), trailing_ws
+    return ( 
+      numeric_label_part, 
+      preceding_ws, 
+      named_label_part,
+      "".join(statement_tokens), 
+      "".join(comment_tokens),
+      trailing_ws
+    )
 
 def detect_line_starts(lines,modern_fortran=True):
     """Fortran statements can be broken into multiple lines 
@@ -296,14 +326,12 @@ def detect_line_starts(lines,modern_fortran=True):
     The difference between the line numbers of consecutive entries
     is the number of lines the first statement occupies.
     """
-    p_directive_continuation = re.compile(r"[!c\*][@\$]\w+\&")
-
     # 1. save multi-line statements (&) in buffer
     buffering = False
     line_starts = []
     for lineno, line in enumerate(lines, start=0):
         # Continue buffering if multiline CUF/ACC/OMP statement
-        _,stmt_or_dir,comment,_ = split_fortran_line(line)
+        _,_,_,stmt_or_dir,comment,_ = split_fortran_line(line)
         stmt_or_dir_tokens = tokenize(stmt_or_dir)
         # continuation at line begin
         if (len(stmt_or_dir_tokens) > 3
@@ -347,14 +375,21 @@ def relocate_inline_comments(lines,modern_fortran=True):
     comment_buffer = []
     in_multiline_statement = False
     for line in lines:
-        indent,stmt_or_dir,comment,trailing_ws = \
+        numeric_label_part,indent,named_label_part,stmt_or_dir,comment,trailing_ws = \
           split_fortran_line(line,modern_fortran)
+        # note: label_part might actually only be 
+        # a label in the first line of a multiline statement.
+        # In other lines, it can be a continuation of
+        # of an operation that puts an integer number 
+        # at column 0. 
         stmt_or_dir_tokens = tokenize(stmt_or_dir)
         if len(stmt_or_dir_tokens) and stmt_or_dir_tokens[-1] == "&":
             in_multiline_statement = True
         if in_multiline_statement and len(comment):
             if len(stmt_or_dir):
-                result.append(indent + stmt_or_dir + trailing_ws)
+                result.append(
+                  numeric_label_part + indent + named_label_part 
+                  + stmt_or_dir + trailing_ws)
             comment_buffer.append(indent + comment + trailing_ws)
         elif len(line.strip()): # only append non-empty lines
             result.append(line)
@@ -1583,21 +1618,6 @@ def parse_acc_clauses(clauses):
         else:
             raise error.SyntaxError("could not parse expression: '{}'".format(expr))
     return result
-
-def split_clauses_of_combined_acc_construct(directive_kind,combined_clauses):
-    compute_construct_clauses = []
-    loop_clauses = []
-    compute_construct_key = directive_kind[1].lower()
-    for clause in combined_clauses:
-        name_lower = tokenize(clause)[0].lower()
-        if name_lower in acc_clauses.acc_clauses[compute_construct_key]:
-            compute_construct_clauses.append(clause)
-        # most clauses like device type may belong to both of the two, while
-        # private is only handed to the compute construct
-        if ( name_lower in acc_clauses.acc_clauses["loop"]
-             and name_lower != "private" ):
-            loop_clauses.append(clause)
-    return (compute_construct_clauses,loop_clauses)
 
 def check_acc_clauses(directive_kind,clauses):
     """Check if the used acc clauses are legal for the given directive.

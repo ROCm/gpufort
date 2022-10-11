@@ -10,6 +10,7 @@ import re
 import pyparsing
 
 from gpufort import util
+from gpufort import linemapper
 
 from . import tree
 from . import opts
@@ -30,9 +31,9 @@ def _is_ignored_fortran_directive(tokens):
            or util.parsing.compare_ignore_case(tokens[1:3],["acc","routine"]))
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
-def parse_fortran_code(statements,result_name=None):
+def parse_fortran_code(code,result_name=None):
     """
-    :param list statements: list of single-line statements in lower case
+    :param code: text, list of lines, or list of linemaps, see gpufort.linemapper component.
     :param result_name: Return value to use for any return statements found
                         in the statements. If set to None, this assumes
                         that we currently parse the body of a subroutine, i.e.
@@ -53,12 +54,63 @@ def parse_fortran_code(statements,result_name=None):
     - consider comments
     - every call returns a subtree
     """
+    linemaps = None
+    if type(code) == str:
+        if len(code):
+            linemaps = linemapper.read_lines(code.splitlines(keep=True))
+        else:
+            return tree.TTRoot()
+    elif type(code) == list:
+        if len(code) > 0:
+            if type(code[0]) == str:
+                linemaps = linemapper.read_lines(code)
+            else:
+                linemaps = code
+        else:
+            return tree.TTRoot()
+    assert linemaps != None, "argument 'code' must be str, list of str, or list of linemaps, see gpufort.linemapper component" 
+
     # todo: identifier labels are case senstivive -> Catch labels via the linemapper
     # Make parser use linemaps
     modern_fortran = opts.modern_fortran 
 
+
+    # error handling
+    def raise_syntax_error_(msg):
+        nonlocal stmt_info
+        raise util.error.SyntaxError(
+            "{}: {}'".format(stmt_info.loc_str(), msg))
+
+    def error_(expr, exception=None):
+        nonlocal stmt_info
+        nonlocal stmt1
+        if exception != None:
+            debug_msg = ": " + stmt_info.loc_str() + ":" + str(exception)
+            util.logging.log_debug(opts.log_prefix,
+                                   "parse_fortran_code", debug_msg)
+        raise_syntax_error_(
+          "failed to parse {} expression '{}'".format(expr, stmt)
+        )
+
+    def warn_(expr, exception=None):
+        nonlocal stmt_info
+        nonlocal stmt1
+        util.logging.log_warning(opts.log_prefix, "parse_fortran_code",
+                              "{}: ignored {} expression '{}'".format(stmt_info.loc_str(),expr, stmt))
+        if exception != None:
+            util.logging.log_debug(opts.log_prefix,
+                                   "parse_fortran_code",
+                                   stmt_info.loc_str()+":"+str(exception))
+
+    def ignore_(expr):
+        nonlocal stmt_info
+        nonlocal stmt1
+        util.logging.log_debug3(opts.log_prefix, "parse_fortran_code",
+                                "{}: ignored {} '{}'".format(stmt_info.loc_str(),expr, stmt))
+    
     # tree creation ops
     def append_(node, kind=None):
+        nonlocal stmt_info
         nonlocal curr
         nonlocal level
         if isinstance(node, tree.TTNode):
@@ -67,67 +119,70 @@ def parse_fortran_code(statements,result_name=None):
         if kind != None:
             util.logging.log_debug2(
                 opts.log_prefix, "parse_fortran_code.append_",
-                "found {} in statement '{}'".format(kind, stmt))
+                "{}: found {} in statement '{}'".format(
+                  stmt_info.loc_str(),
+                  kind, stmt))
 
-    def descend_(node, kind, inc_level=True):
+    def descend_(container,
+                 kind,
+                 inc_level=True):
+        nonlocal stmt_info
         nonlocal curr
         nonlocal stmt
         nonlocal level
-        append_(node)
-        curr = node
+        assert isinstance(curr,tree.TTContainer)
+        append_(container)
+        curr = container
+        curr.label = label
         if inc_level:
             level += 1
         util.logging.log_debug2(
             opts.log_prefix, "parse_fortran_code.append_",
-            "enter {} in statement '{}'".format(kind, stmt))
+            "{}: enter {} in statement '{}'".format(
+              stmt_info.loc_str(),
+              kind, stmt))
 
     def ascend_(kind):
+        nonlocal stmt_info
         nonlocal curr
         nonlocal stmt
         nonlocal level
+        assert isinstance(curr.parent,tree.TTContainer)
+        if not curr.parent.compare_label(label):
+           print("labels") 
+           print(label)
+           print(curr.parent.label)
+           if curr.parent.label == None:
+               raise_syntax_error_(
+                 "did not expect label"
+               )
+           elif curr.parent.label.isidentifier():
+               raise_syntax_error_(
+                 "expected named label '{}'".format(curr.parent.label)
+               )
+           elif curr.parent.label.isnumeric():
+               raise_syntax_error_(
+                 "expected numeric label '{}'".format(curr.parent.label)
+               )
         curr = curr.parent
         level = min(level - 1, 0)
         util.logging.log_debug2(
             opts.log_prefix, "parse_fortran_code.append_",
-            "leave {} in statement '{}'".format(kind, stmt))
-
-    # error handling
-    def error_(expr, exception=None):
-        nonlocal stmt1
-        if exception != None:
-            debug_msg = ": " + str(exception)
-            util.logging.log_debug(opts.log_prefix,
-                                   "parse_fortran_code", debug_msg)
-        raise util.error.SyntaxError(
-            "failed to parse {} expression '{}'".format(expr, stmt))
-
-    def warn_(expr, exception=None):
-        nonlocal stmt1
-        util.logging.log_warning(opts.log_prefix, "parse_fortran_code",
-                              "ignored {} expression '{}'".format(expr, stmt))
-        if exception != None:
-            util.logging.log_debug(opts.log_prefix,
-                                   "parse_fortran_code",
-                                   str(exception))
-
-    def ignore_(expr):
-        nonlocal stmt1
-        util.logging.log_debug3(opts.log_prefix, "parse_fortran_code",
-                                "ignored {} '{}'".format(expr, stmt))
+            "{}: leave {} in statement '{}'".format(
+              stmt_info.loc_str(),
+              kind, stmt))
 
     # parser loop
     ttree = tree.TTRoot()
     curr = ttree
     level = 0
-    do_loop_labels = []
-    for stmt1 in statements:
+    for stmt_info in linemapper.statement_iterator(linemaps):
+        stmt1 = stmt_info.body
+        stmt_numeric_label = stmt_info.numeric_label
+        stmt_named_label = stmt_info.named_label
         tokens = util.parsing.tokenize(stmt1.lower(), padded_size=1)
-        try:
-            numeric_label = str(int(tokens[0]))
-            tokens.pop(0)
-            append_(tree.TTLabel([numeric_label]))
-        except:
-            numeric_label = None
+        if stmt_label != None:
+            append_(tree.TTLabel([stmt_label]))
         stmt = prepostprocess.preprocess_fortran_statement(tokens)
         tokens = util.parsing.tokenize(stmt,padded_size=6)
         # strip of ! from tokens.index("!")
@@ -202,20 +257,33 @@ def parse_fortran_code(statements,result_name=None):
                 append_(tree.TTCommentedOut([comment]), "comment")
         # do/while
         elif util.parsing.is_do_while(tokens):
-            # todo: parse do while with statement number ('numeric label')
+            # todo: parse do while with numeric label, do <numeric-lable> while ( <cond> ) ...
             try:
-                do_loop_labels.append(None)
                 parse_result = tree.grammar.fortran_do_while.parseString(
                     stmt, parseAll=True)
                 descend_(tree.TTDoWhile(
-                                        parse_result.asList() + [[]]),
-                         "do-while loop")
+                  parse_result.asList() + [[]]),
+                  "do-while loop",
+                  numeric_label=numeric_label,
+                  named_label=named_label)
             except pyparsing.ParseException as e:
                 error_("do-while loop", e)
         elif util.parsing.is_do(tokens):
+            # todo: parse do without arguments, do <numeric-label> ... <numeric-label> ( <cond> ) ...
             result = util.parsing.parse_do_statement(stmt)
-            label, var, lbound_str, ubound_str, stride_str = result
-            do_loop_labels.append(label)
+            numeric_do_loop_label, var, lbound_str, ubound_str, stride_str = result
+            # Legal:
+            # outer: do i = ...
+            # end do outer
+            #
+            # do <int-1> i = ...
+            # <int-1> continue
+            #
+            # <int-2> do <int-1> i = ...
+            # <int-1> continue
+            if numeric_do_loop_label != None and named_label != None and named_label.isidentifier():
+                raise raise_syntax_error_("cannot specify numeric and named label together")
+            #
             begin, end, stride = None, None, None
             try:
                 if var != None and lbound_str != None:
@@ -233,11 +301,12 @@ def parse_fortran_code(statements,result_name=None):
                 except pyparsing.ParseException as e:
                     error_("do loop: stride", e)
             do_loop = tree.TTDo([begin, end, stride, []])
+            do_loop.numeric_do_loop_label = numeric_do_loop_label
             descend_(do_loop, "do loop")
         # if-then-else
         elif util.parsing.is_if_then(tokens):
             try:
-                descend_(tree.TTIfElseBlock(), "if block", inc_level=False)
+                descend_(tree.TTIfElseBlock(), "if block", stmt_label, inc_level=False)
                 parse_result = tree.grammar.fortran_if_else_if.parseString(
                     stmt, parseAll=True)
                 descend_(
@@ -269,7 +338,9 @@ def parse_fortran_code(statements,result_name=None):
                     stmt, parseAll=True)
                 descend_(
                     tree.TTSelectCase(parse_result.asList() + [[]]),
-                    "select-case")
+                    "select-case",
+                    stmt_label
+                )
             except pyparsing.ParseException as e:
                 error_("select-case", e)
         elif util.parsing.is_case(tokens):
@@ -288,16 +359,16 @@ def parse_fortran_code(statements,result_name=None):
             descend_(tree.TTCaseDefault([[]]), "case default")
         # end
         elif util.parsing.is_end(tokens, ["do"]):
-            do_loop_labels.pop(-1)
-            ascend_(tokens[1])
+            assert isinstance(curr,tree.TTDo)
+            ascend_(tokens[1], stmt_label)
         elif tokens[0] == "continue":
             ttcontinue = tree.TTContinue([[]])
             ttcontinue._result_name = result_name
             append_(ttcontinue,"continue statement")
-            if numeric_label != None:
-                while len(do_loop_labels) and do_loop_labels[-1] == numeric_label:
-                    do_loop_labels.pop(-1)
-                    ascend_(tokens[1])
+            if stmt_label != None and stmt_label.isnumeric():
+                while ( isinstance(curr,tree.TTDo)
+                        and curr.compare_label(stmt_label) ):
+                    ascend_(tokens[1], stmt_label)
         elif tokens[0] == "cycle":
             ttcontinue = tree.TTCycle([[]])
             append_(ttcontinue,"cycle statement")
@@ -307,8 +378,8 @@ def parse_fortran_code(statements,result_name=None):
         elif tokens[0:2] == ["go","to"]:
             append_(tree.TTGoto([tokens[2]]),"goto statement")
         elif util.parsing.is_end(tokens, ["if", "select"]):
-            ascend_(tokens[1])
-            ascend_(tokens[1])
+            ascend_(tokens[1], stmt_label)
+            ascend_(tokens[1], stmt_label)
         # single statements
         elif util.parsing.is_pointer_assignment(tokens):
             error_("pointer assignment")
@@ -334,7 +405,6 @@ def parse_fortran_code(statements,result_name=None):
             error_("unknown and not ignored")
 
     return ttree
-
 
 # API
 def convert_arith_expr(fortran_snippet):

@@ -10,11 +10,11 @@ from . import traversals
 from gpufort import grammar as _grammar
 grammar = _grammar.Grammar(
   ignorecase=True,
-  #unary_op_parse_action=TTUnaryOp,   
-  #binary_op_parse_action=TTBinaryOp
+  unary_op_parse_action=TTUnaryOp,   
+  binary_op_parse_action=TTBinaryOp
 )
 del _grammar    
 
-#set_fortran_parse_actions(grammar)
-#set_acc_parse_actions(grammar)
-#set_cuf_parse_actions(grammar)
+set_fortran_parse_actions(grammar)
+set_acc_parse_actions(grammar)
+set_cuf_parse_actions(grammar)

@@ -209,15 +209,23 @@ def _convert_lines_to_statements(lines,modern_fortran):
     indent_offset = num_indent_chars * indent_char
 
     # replace line continuation by whitespace, split at ";"
+    numeric_label = None
+    named_label = None
     statement_parts = []
     comment_parts = []
-    for line in lines:
-        indent,stmt_or_dir_part,comment,_ = \
+    for i,line in enumerate(lines):
+        numeric_label_part,indent,named_label_part,\
+        stmt_or_dir_part,comment,_ = \
            util.parsing.split_fortran_line(line,modern_fortran=modern_fortran)
         if len(stmt_or_dir_part):
             statement_parts.append(stmt_or_dir_part)
         if len(comment):
             comment_parts.append(comment)
+        named_label_part = named_label_part.strip()
+        if len(named_label_part) and named_label_part[-1] == ":":
+            named_label = named_label_part[-1].strip() # remove ":" and intermediate whitespace
+        if numeric_label_part.isnumeric(): # numeric numeric_label
+            numeric_label = numeric_label_part
     single_line_statements = []
     if len(statement_parts):
         combined_statements = "".join(statement_parts)
@@ -254,7 +262,7 @@ def _convert_lines_to_statements(lines,modern_fortran):
         else:
             unrolled_statements.append(indent_offset
                                        + stmt.lstrip(indent_char))
-    return unrolled_statements
+    return numeric_label,named_label,unrolled_statements
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def _preprocess_and_normalize_fortran_file(file_path, **kwargs):
@@ -470,7 +478,9 @@ def preprocess_and_normalize(fortran_file_lines,
                 raise e
         elif region_stack1[-1]: # in_active_region
             # Convert line to statememts
-            statements1 = _convert_lines_to_statements(lines,modern_fortran)
+            numeric_label, named_label, statements1 =\
+              _convert_lines_to_statements(lines,modern_fortran)
+            
             # 2. Apply macros to statements
             statements2 = []
             for stmt1 in statements1:
@@ -479,7 +489,7 @@ def preprocess_and_normalize(fortran_file_lines,
             # Hence, convert each element of statements2 to single statements again
             statements3 = []
             for stmt2 in statements2:
-                for stmt3 in _convert_lines_to_statements([stmt2],modern_fortran):
+                for stmt3 in _convert_lines_to_statements([stmt2],modern_fortran)[-1]:
                     statement = copy.deepcopy(EMPTY_STATEMENT)
                     statement["body"] = stmt3
                     # treat statements such as "!@cuf ierr = hipStreamSynchronize(stream)
@@ -491,19 +501,21 @@ def preprocess_and_normalize(fortran_file_lines,
                     statements3.append(statement)
         #if len(included_linemaps) or (not is_preprocessor_directive and region_stack1[-1]):
         linemap = {
-            "file": file_path,
-            "lineno": line_start + 1, # key
-            "lines": lines,
-            "raw_statements": statements1,
-            "included_linemaps": included_linemaps,
-            "is_preprocessor_directive": is_preprocessor_directive,
-            "is_active": region_stack1[-1],
-            # inout
-            "statements": statements3,
-            "modified": modified,
-            # out
-            "prolog": [],
-            "epilog": []
+          "file": file_path,
+          "lineno": line_start + 1, # key
+          "numeric_label": numeric_label,
+          "named_label": named_label,
+          "lines": lines,
+          "raw_statements": statements1,
+          "included_linemaps": included_linemaps,
+          "is_preprocessor_directive": is_preprocessor_directive,
+          "is_active": region_stack1[-1],
+          # inout
+          "statements": statements3,
+          "modified": modified,
+          # out
+          "prolog": [],
+          "epilog": []
         }
         linemaps.append(linemap)
     util.logging.log_leave_function(opts.log_prefix,
@@ -512,14 +524,10 @@ def preprocess_and_normalize(fortran_file_lines,
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def read_lines(fortran_lines, **kwargs):
-    """
-    A C and Fortran preprocessor (cpp and fpp).
-
+    """C and Fortran preprocessor (cpp and fpp).
     Current limitations:
-
     * Only considers if/ifdef/ifndef/elif/else/define/undef/include 
-
-    :return: The input data structure without the entries whose statements where not in active code region
+    :return: The input data structure without the entries whose statements where not in active code regions
              as determined by the preprocessor.
     """
     # todo: check if order of read_file routines can be simplified using this method
@@ -533,12 +541,9 @@ def read_lines(fortran_lines, **kwargs):
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def read_file(fortran_file_path,**kwargs):
-    """A C and Fortran preprocessor (cpp and fpp).
-
+    """C and Fortran preprocessor (cpp and fpp).
     Current limitations:
-
     * Only considers if/ifdef/ifndef/elif/else/define/undef/include 
-
     :return: The input data structure without the entries whose statements where not in active code region
              as determined by the preprocessor.
     :throws: IOError if the specified file cannot be found/accessed.
@@ -713,6 +718,7 @@ def dump_linemaps(linemaps, file_path):
             outfile.write(orjson.dumps(linemaps))
 
 
+@util.logging.log_entry_and_exit(opts.log_prefix)
 def get_linemaps_content(linemaps,
                          key,
                          first_linemap_first_elem=0,
@@ -755,6 +761,7 @@ def get_linemaps_content(linemaps,
     return result
 
 
+@util.logging.log_entry_and_exit(opts.log_prefix)
 def get_statement_bodies(linemaps,
                          first_linemap_first_elem=0,
                          last_linemap_last_elem=-1,**kwargs):
@@ -763,3 +770,76 @@ def get_statement_bodies(linemaps,
             linemaps, "statements", first_linemap_first_elem,
             last_linemap_last_elem,**kwargs)
     ]
+
+class StatementInfo():
+    def __init__(self,linemap,statement_no):
+        self._linemap = linemap
+        self._statement_no = statement_no
+    @property
+    def numeric_label(self):
+        if self._statement_no == 0:
+            return self._linemap["numeric_label"]
+        else:
+            return None
+    @property
+    def named_label(self):
+        if self._statement_no == 0:
+            return self._linemap["named_label"]
+        else:
+            return None
+    @property
+    def lineno(self):
+        return self._linemap["lineno"]
+    @property
+    def original_lines(self):
+        return self._linemap["lines"]
+    @property
+    def all_statements(self):
+        return self._linemap["statements"]
+    @property
+    def linemap_prolog(self):
+        return self._linemap["prolog"]
+    @property
+    def linemap_epilog(self):
+        return self._linemap["epilog"]
+    @property
+    def statement(self):
+        return self._linemap["statements"][self._statement_no]
+    @property
+    def no(self):
+        return self._statement_no
+    @property
+    def body(self):
+        return self._linemap["statements"][self._statement_no]["body"]
+    @body.setter
+    def setbody(self,val):
+        self._linemap["statements"][self._statement_no]["body"] = val
+    @property
+    def prolog(self):
+        return self._linemap["statements"][self._statement_no]["prolog"]
+    @property
+    def epilog(self):
+        return self._linemap["statements"][self._statement_no]["epilog"]
+    def loc_str(self):
+        """:return: String describing the location of the statement in the input file."""
+        filepath = self._linemap["file"]
+        lineno = self._linemap["lineno"]
+        statement_no  = self._statement_no
+        return "{}:{}:{}(stmt-no):".format(filepath,lineno,statement_no+1)
+
+@util.logging.log_entry_and_exit(opts.log_prefix)
+def statement_iterator(linemaps):
+    """Python generator: Iterates over the statements in active linemaps
+    and yields StatementInfo objects.
+    :note: Recursive generation if a linemap contains an #include directive."""
+    for linemap in linemaps:
+        is_active = linemap["is_active"]
+        is_no_directive_except_include = ( 
+          len(linemap["included_linemaps"])
+          or not linemap["is_preprocessor_directive"]
+        )
+        if is_active and is_no_directive_except_include:
+            for statement_no, _ in enumerate(linemap["statements"]):
+                yield StatementInfo(linemap,statement_no)
+            for statement_info in statement_iterator(linemap["included_linemaps"]):
+                yield statement_info

@@ -86,22 +86,22 @@ class Grammar:
         flags = self._re_flags(ignorecase)
         precedence_ordered_op_list = [
           (pyp.Regex(r"\.(?!\b(false|true|[gl][te]|eq|ne|not|and|or|xor|eqv|neqv)\b)\w+\.",flags),
-            1,pyp.opAssoc.LEFT), # custom unary op (negative lookahead excludes taken tokens)
+            1,pyp.opAssoc.RIGHT), # custom unary op (negative lookahead excludes taken tokens)
           (pyp.Regex(r"\*\*"), 2, pyp.opAssoc.LEFT),
           (pyp.Regex(r"[*/]"), 2, pyp.opAssoc.LEFT),
-          (pyp.Regex(r"[+-]"), 1, pyp.opAssoc.LEFT),
+          (pyp.Regex(r"[+-]"), 1, pyp.opAssoc.RIGHT),
           (pyp.Regex(r"[+-]"), 2, pyp.opAssoc.LEFT),
           (pyp.Regex(r"<=?|=?>|[/=]=|\.(eq|ne|[gl][te])\.",flags), 
             2, pyp.opAssoc.LEFT),
-          (pyp.Regex(r"\.not\.",flags),1,pyp.opAssoc.LEFT),
+          (pyp.Regex(r"\.not\.",flags),1,pyp.opAssoc.RIGHT),
           (pyp.Regex(r"\.and\.",flags),2,pyp.opAssoc.LEFT),
           (pyp.Regex(r"\.or\.",flags),2,pyp.opAssoc.LEFT),
           (pyp.Regex(r"\.\(xor\|eqv\|neqv\)\.",flags), 
             2, pyp.opAssoc.LEFT),
           (pyp.Regex(r"\.(?!\b(false|true|[gl][te]|eq|ne|not|and|or|xor|eqv|neqv)\b)\w+\.",flags),
             2,pyp.opAssoc.LEFT), # custom binary op (negative lookahead excludes taken tokens)
-          (pyp.Regex(r"=",flags), 
-           2, pyp.opAssoc.RIGHT),
+          #(pyp.Regex(r"=",flags), 
+          # 2, pyp.opAssoc.RIGHT),
         ]
      
         arith_logic_expr_op_list = []
@@ -154,7 +154,7 @@ class Grammar:
         # self.rvalue, self.lvalue 
         self.conversion = pyp.Forward()
         self.inquiry_function = pyp.Forward()
-        self.rvalue = pyp.Group(
+        self.rvalue = (
           self.conversion 
           | self.inquiry_function 
           | self.derived_type_elem 
@@ -164,7 +164,7 @@ class Grammar:
           | self.character 
           | self.number
         )# |: ordered OR, order is import
-        self.lvalue = pyp.Group(
+        self.lvalue = (
           self.derived_type_elem 
           | self.tensor_eval 
           | self.identifier
@@ -194,7 +194,7 @@ class Grammar:
         
         self.tensor_slice = pyp.delimitedList(self.arith_logic_expr,delim=":")
         # define forward declared tokens
-        self.argument = self.tensor_slice | self.arith_logic_expr
+        self.argument = self.arith_logic_expr | self.tensor_slice
         self.tensor_eval_arg <<= self.argument | self.keyword_argument
         
         # conversion functions
@@ -281,7 +281,14 @@ class Grammar:
         #  ELSE
         #     Grade = 'a'
         #  END IF
-        self.fortran_if_else_if = pyp.Optional(literal_cls("else"),default="") + self.IF + self.LPAR + self.arith_logic_expr + self.RPAR + self.THEN
+        self.fortran_if_else_if = (
+          pyp.Optional(literal_cls("else"),default="")
+          + self.IF 
+          + self.LPAR 
+          + self.arith_logic_expr
+          + self.RPAR 
+          + self.THEN
+        )
         self.fortran_else = self.ELSE
         
         #[name:] select case (expression)

@@ -9,12 +9,23 @@ from .. import opts
 import pyparsing
 
 class TTNode(object):
+    
+    def compare_label(self,label1,label2):
+        """:return: If this bel equals argument, case is ignored.
+        """
+        if label2 == None and label1 == None:
+            return True
+        if label2 != None and label1 != None:
+            return label2.lower() == label1.lower()
+        else:
+            return False 
 
     def __init__(self,tokens=[]):
         self.parent = None
         self._assign_fields(tokens)
         self._fstr = None 
         self._cstr = None 
+        self.numeric_label = None
 
     def __str__(self):
         return self.__class__.__name__ + ':' + str(self.__dict__)
@@ -64,7 +75,8 @@ class TTContainer(TTNode):
     """
     def __init__(self, tokens=[]):
         self.parent = None
-        self.body   = []
+        self.body = []
+        self.named_label = None
         self.indent = opts.single_level_indent
         self._assign_fields(tokens)
    
@@ -103,6 +115,7 @@ class TTRoot(TTContainer):
         self.parent = None
         self.body   = []
         self.indent = ""
+        self.label = None
 
 def f_keyword(keyword):
     if opts.keyword_case == "upper":

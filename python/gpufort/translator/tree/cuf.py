@@ -410,7 +410,7 @@ class TTCufCudaMemcpy(base.TTNode, CufMemcpyBase):
         return "{api}({args})".format(api=api, args=",".join(args))
 
 
-class TTCufCudaMemcpy2D(base.TTNode, CufMemcpyBase):
+class TTCufCudaMemcpy2d(base.TTNode, CufMemcpyBase):
     # dest,dpitch(count),src,spitch(count),width(count),height(count)[,stream] # kind is inferred from dest and src
     def _assign_fields(self, tokens):
         self._api = tokens[0]
@@ -438,7 +438,7 @@ class TTCufCudaMemcpy2D(base.TTNode, CufMemcpyBase):
         return "{api}({args})".format(api=api, args=",".join(args))
 
 
-class TTCufCudaMemcpy3D(base.TTNode, CufMemcpyBase):
+class TTCufCudaMemcpy3d(base.TTNode, CufMemcpyBase):
     # dest,dpitch(count),src,spitch(count),width(count),height(count),depth(count),[,stream] # kind is inferred from dest and src
     def _assign_fields(self, tokens):
         self._api = tokens[0]

@@ -96,7 +96,8 @@ class TTExit(base.TTNode):
             return "return"
 
 class TTGoto(base.TTNode):
-
+    #todo: More complex expressions possible with jump label list
+    #todo: Target numeric label can be renamed to identifier (deleted Fortran feature)
     def _assign_fields(self, tokens):
         self._label = tokens[0]
 
@@ -350,7 +351,7 @@ class TTTensorEval(base.TTNode):
 class TTValue(base.TTNode):
     
     def _assign_fields(self, tokens):
-        self._value = tokens[0][0]
+        self._value = tokens[0]
         self._reduction_index = None
         self._fstr = None
    
@@ -805,7 +806,7 @@ class TTUnaryOp(base.TTNode):
     }
     
     def _assign_fields(self, tokens):
-        self.op, self.opd = tokens
+        self.op, self.opd = tokens[0]
         #self.type = None
         #self.kind = None
         #self.rank = None
@@ -863,7 +864,8 @@ class TTBinaryOp(base.TTNode):
     }
  
     def _assign_fields(self, tokens):
-        self.opd1, self.op, self.opd2 = tokens
+        print(tokens)
+        self.opd1, self.op, self.opd2 = tokens[0]
         #self.type = None
         #self.kind = None
         #self.rank = None
@@ -1030,11 +1032,17 @@ class TTMatrixAssignment(base.TTNode):
 class TTSlice(base.TTNode):
 
     def _assign_fields(self, tokens):
-        self._lbound, self._ubound, self._stride = tokens
-        if self._lbound == None:
-            self._lbound = base.TTNone() 
-            self._ubound = base.TTNone() 
-        self._fstr = None
+        self._lbound, self._ubound, self._stride =\
+           base.TTNone(), base.TTNone(), base.TTNone()
+        if len(tokens) == 1:
+            self._ubound = tokens[0]
+        elif len(tokens) == 2:
+            self._lbound = tokens[0]
+            self._ubound = tokens[1]
+        elif len(tokens) == 3:
+            self._lbound = tokens[0]
+            self._ubound = tokens[1]
+            self._stride = tokens[2]
 
     def set_loop_var(self, name):
         self._loop_var = name
@@ -1148,6 +1156,7 @@ class TTDo(base.TTContainer):
 
     def _assign_fields(self, tokens):
         self._begin, self._end, self._step, self.body = tokens
+        self.numeric_do_loop_label
     @property
     def index(self):
         return self._begin._lhs
@@ -1160,10 +1169,8 @@ class TTDo(base.TTContainer):
     @property
     def step(self):
         return self._step
-
     def has_step(self):
         return self._step != None
-    
     def child_nodes(self):
         return [self.body, self._begin, self._end, self._step]
 

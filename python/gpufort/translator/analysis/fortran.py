@@ -32,46 +32,46 @@ def search_index_for_value(ttvalue,scope):
 def search_scope_for_value(ttvalue,scope):
     pass
 
-#class AssignmentType(enum.Enum):
-#    UNIDENTIFIED = 0
-#    LHS_SCALAR_RHS_SCALAR = 1
-#    LHS_ARRAY_RHS_ARRAY = 2
-#    LHS_SCALAR_RHS_REDUCTION_INTRINSIC_EVAL = 3
-#
-#class ArithExprInfo:
-#    """:todo: For the time being, we ignore
-#    all operations that transform the rank of a subexpression."""
-#    def __init__(self,ttarithexpr):
-#        self._ttarithexpr = ttarithexpr
-#        self._rank = None
-#        self._top_level_op = None
-#        self._top_level_rvals = []
-#            
-#    def _traverse_main_rvals_and_ops(self,ttnode,action,depth=0):
-#        if not action(self,ttnode,depth):
-#            return
-#        if isinstance(ttnode,pyparsing.ParseResults):
-#            for child in ttnode._expr:
-#                self._traverse_main_rvals_and_ops(child,action,depth+1)                  
-#
-#    def _compute_rank_action(self,ttnode,depth):
-#        if isinstance(tree.TTRvalue):
-#            if isinstance(tree._value,TTIdentifier):
-#                       
-#        return True
-#             
-#    def _get_top_level_op(self,ttnode,depth):
-#        if isinstance(tree.TTRvalue):
-#            pass
-#        return depth == 0
-#  
-#    @property
-#    def rank:
-#        if self._rank == None:
-#            self._traverse_main_rvals_and_ops(
-#                self._ttarithexpr,
-#                self._compute_rank_action)
-#        return self._rank
+class AssignmentType(enum.Enum):
+    UNIDENTIFIED = 0
+    LHS_SCALAR_RHS_SCALAR = 1
+    LHS_ARRAY_RHS_ARRAY = 2
+    LHS_SCALAR_RHS_REDUCTION_INTRINSIC_EVAL = 3
+
+class ArithExprInfo:
+    """:todo: For the time being, we ignore
+    all operations that transform the rank of a subexpression."""
+    def __init__(self,ttarithexpr):
+        self._ttarithexpr = ttarithexpr
+        self._rank = None
+        self._top_level_op = None
+        self._top_level_rvals = []
+            
+    def _traverse_main_rvals_and_ops(self,ttnode,action,depth=0):
+        if not action(self,ttnode,depth):
+            return
+        if isinstance(ttnode,(tree.TTUnaryOp,tree.TTBinaryOp)):
+            for child in ttnode._expr:
+                self._traverse_main_rvals_and_ops(child,action,depth+1)                  
+
+    #def _compute_rank_action(self,ttnode,depth):
+    #    if isinstance(tree.TTRvalue):
+    #        if isinstance(tree._value,TTIdentifier):
+    #    return True
+             
+    def get_top_level_op(self,ttnode,depth):
+        if isinstance(self._ttarithexpr._expr,tree.TTBinaryOp):
+            return self._ttarithexpr._expr
+        else:
+            return None
+  
+    #@property
+    #def rank:
+    #    if self._rank == None:
+    #        self._traverse_main_rvals_and_ops(
+    #            self._ttarithexpr,
+    #            self._compute_rank_action)
+    #    return self._rank
             
 
 #class AssignmentInfo:
@@ -93,11 +93,11 @@ def search_scope_for_value(ttvalue,scope):
 #        if not len(self._main_rvals_and_ops):
 #            ttarithexpr = self._assignment._rhs._expr
 #            def traverse_(ttnode):
-#                if isinstance(ttnode,(tree.TTOperator,tree.TTRvalue)):
+#                if isinstance(ttnode,(tree.TTTTOperator,tree.TTRvalue)):
 #                    self._main_rvals_and_ops.append(ttnode)
 #                elif isinstance(ttnode,pyparsing.ParseResults):
 #                    for child in ttnode._expr:
-#                        if isinstance(child,(tree.TTOperator,tree.TTRvalue)):
+#                        if isinstance(child,(tree.TTTTOperator,tree.TTRvalue)):
 #                            self._main_rvals_and_ops.append(child)
 #                        elif isinstance(child,pyparsing.ParseResults)
 #                            traverse_(child)                  

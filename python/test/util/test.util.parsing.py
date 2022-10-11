@@ -15,24 +15,10 @@ util.logging.init_logging("log.log",LOG_FORMAT,"warning")
 
 PROFILING_ENABLE = False
 
-testdata1 = \
-"""
-! comment
-  ! comment
-stmt_or_dir ! comment
-!$acc stmt_or_dir
-*$acc stmt_or_dir
-c$acc stmt_or_dir
-C$acc stmt_or_dir
-!$ acc stmt_or_dir
-! $acc comment
-  !a$acc comment
-"""
-
 # whitespace at begin is important to
 # as [cC] in first column indicates a comment
 # line in Fortran 77.
-testdata2 = """\
+testdata1 = """\
     call myroutine( & ! comment 1
         arg1,&
         ! comment 2
@@ -44,7 +30,7 @@ testdata2 = """\
     !$acc& clause2(var)\
 """
 
-testdata2_result = """\
+testdata1_result = """\
     call myroutine( &
         arg1,&
         arg2)
@@ -157,9 +143,33 @@ class TestParsingUtils(unittest.TestCase):
             #print(result)
             self.assertEqual(result,results[i])
     def test_03_split_fortran_line(self):
-        for line in self.prepare(testdata1):
-            indent,stmt_or_dir,comment,trailing_ws =\
-              util.parsing.split_fortran_line(line)
+        testdata = \
+"""
+! comment
+  ! comment
+stmt_or_dir ! comment
+!$acc stmt_or_dir
+*$acc stmt_or_dir
+c$acc stmt_or_dir
+C$acc stmt_or_dir
+!$ acc stmt_or_dir
+! $acc comment
+  !a$acc comment
+
+label: stmt_or_dir
+
+  label: stmt_or_dir
+
+  label: stmt_or_dir ! comment
+
+500 stmt_or_dir
+"""
+
+        for line in self.prepare(testdata):
+            result = util.parsing.split_fortran_line(line)
+            numeric_label_part,indent,named_label_part,\
+            stmt_or_dir,comment,trailing_ws =\
+              result
             if "stmt_or_dir" in line:
                 self.assertTrue(len(stmt_or_dir))
             else:
@@ -168,9 +178,17 @@ class TestParsingUtils(unittest.TestCase):
                 self.assertTrue(len(comment))
             else:
                 self.assertFalse(len(comment))
+            if "label:" in line:
+                self.assertTrue(len(named_label_part))
+            else:
+                self.assertFalse(len(named_label_part))
+            if "500" in line:
+                self.assertTrue(len(numeric_label_part))
+            else:
+                self.assertFalse(len(numeric_label_part))
         # 
     def test_04_detect_line_starts(self):
-        input_lines = testdata2.splitlines()
+        input_lines = testdata1.splitlines()
         linenos = util.parsing.detect_line_starts(\
                    input_lines)
         #print(linenos)
@@ -178,8 +196,8 @@ class TestParsingUtils(unittest.TestCase):
         self.assertEqual(linenos,[0,6,9])
     def test_05_relocate_inline_comments(self):
         result = util.parsing.relocate_inline_comments(\
-                   testdata2.splitlines())
-        self.assertEqual(self.clean("\n".join(result)),self.clean(testdata2_result))
+                   testdata1.splitlines())
+        self.assertEqual(self.clean("\n".join(result)),self.clean(testdata1_result))
     def test_06_get_top_level_operands(self):
         statements = [
           "a,b(i,j),c(i,j,k)",  # 17 tokens
@@ -665,7 +683,7 @@ class TestParsingUtils(unittest.TestCase):
             #print(util.parsing.parse_acc_clauses(expr))
             self.assertEqual(util.parsing.parse_acc_clauses(expr),results[i])
     
-    def test_25_parse_acc_directive(self):
+    def test_24_parse_acc_directive(self):
         expressions = [
           "!$acc enter data copyin(a,b,c(:)) copyout(b(-1:))",
           "!$acc wait(i,j) async(c)",
@@ -682,25 +700,7 @@ class TestParsingUtils(unittest.TestCase):
             #print(util.parsing.parse_acc_directive(expr))
             self.assertEqual(util.parsing.parse_acc_directive(expr),results[i])
 
-    def test_26_split_clauses_of_combined_acc_construct(self):
-        expressions = [
-          "!$acc kernels loop reduction(+:x)",
-          "!$acc parallel loop collapse(3) gang vector copyin(grid%al,grid%alb,grid%pb,grid%t_1) copyin(moist(:,:,:,p_qv))",
-          "!$acc parallel loop device_type(*) collapse(3) gang vector",
-          "!$acc parallel loop device_type(*) num_gangs(4) vector_length(5)",
-        ]
-        results = [
-          ([], ['reduction(+:x)']),
-          (['copyin(grid%al,grid%alb,grid%pb,grid%t_1)', 'copyin(moist(:,:,:,p_qv))'], ['collapse(3)', 'gang', 'vector']),
-          ([], ['device_type(*)', 'collapse(3)', 'gang', 'vector']),
-          (['device_type(*)', 'num_gangs(4)', 'vector_length(5)'], []),
-        ]
-        for i,expr in enumerate(expressions):
-            _, directive_kind, _, raw_clauses = util.parsing.parse_acc_directive(expr)
-            #print(util.parsing.split_clauses_of_combined_acc_construct(directive_kind,raw_clauses))
-            self.assertEqual(util.parsing.split_clauses_of_combined_acc_construct(directive_kind,raw_clauses),results[i])
-
-    def test_27_parse_cuf_kernel_call(self):
+    def test_25_parse_cuf_kernel_call(self):
         expressions = [
           "call mykernel<<<grid,block>>>(arg1,arg2,arg3(1:n))",
           "call mykernel<<<grid,block,0,stream>>>(arg1,arg2,arg3(1:n))",
@@ -712,7 +712,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_cuf_kernel_call(expr))
             self.assertEqual(util.parsing.parse_cuf_kernel_call(expr),results[i])
-    def test_28_mangle_fortran_var_expr(self):
+    def test_26_mangle_fortran_var_expr(self):
         expressions = [
           "a(i,j)%b%arg3(1:n)",
         ]
@@ -722,7 +722,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.mangle_fortran_var_expr(expr))
             self.assertEqual(util.parsing.mangle_fortran_var_expr(expr),results[i])
-    def test_29_parse_fortran_derived_type_statement(self):
+    def test_27_parse_fortran_derived_type_statement(self):
         expressions = [
           'type mytype',
           'type :: mytype',
@@ -739,7 +739,7 @@ class TestParsingUtils(unittest.TestCase):
             #print(util.parsing.parse_derived_type_statement(expr))
             self.assertEqual(util.parsing.parse_derived_type_statement(expr),results[i])
     
-    def test_30_parse_allocate_statement(self):
+    def test_28_parse_allocate_statement(self):
         expressions = [
           'allocate(a(1:N))',
           'allocate(a(1:N),b(-1:m:2,n))',
@@ -759,7 +759,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_allocate_statement(expr))
             self.assertEqual(util.parsing.parse_allocate_statement(expr),results[i])
-    def test_31_parse_deallocate_statement(self):
+    def test_29_parse_deallocate_statement(self):
         expressions = [
           'deallocate(a)',
           'deallocate(a,b)',
@@ -775,7 +775,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_deallocate_statement(expr))
             self.assertEqual(util.parsing.parse_deallocate_statement(expr),results[i])
-    def test_32_parse_lvalue(self):
+    def test_30_parse_lvalue(self):
         expressions = [
           "a",
           "a(i,j)",
@@ -805,7 +805,7 @@ class TestParsingUtils(unittest.TestCase):
                 raise Exception("parsing '{}' should have failed".format(expr))
             except:
                 pass
-    def test_33_is_assignment(self):
+    def test_31_is_assignment(self):
         expressions = [
           "a = 1",
           "a(i,j) = 1",
@@ -831,7 +831,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             self.assertEqual(util.parsing.is_assignment(expr),results[i])
 
-    def test_34_parse_parameter_statement(self):
+    def test_32_parse_parameter_statement(self):
         expressions = [
           "PARAMETER( a = 5, b = 3)",
           "PARAMETER a = 5, b = 3", # legacy version
@@ -843,7 +843,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_parameter_statement(expr))
             self.assertEqual(util.parsing.parse_parameter_statement(expr),results[i])
-    def test_35_parse_public_statement(self):
+    def test_33_parse_public_statement(self):
         expressions = [
           "public",
           "PUBLIC a",
@@ -868,7 +868,7 @@ class TestParsingUtils(unittest.TestCase):
             result = util.parsing.parse_public_statement(expr)
             #print(result)
             self.assertEqual(result,results[i])
-    def test_36_expand_letter_range(self):
+    def test_34_expand_letter_range(self):
         expressions = [
          "a",
          "a-a",
@@ -883,7 +883,7 @@ class TestParsingUtils(unittest.TestCase):
         ]
         for i,expr in enumerate(expressions):
             self.assertEqual(util.parsing.expand_letter_range(expr),results[i])
-    def test_37_parse_implicit_statement(self):
+    def test_35_parse_implicit_statement(self):
         expressions = [
           "implicit none",
           "IMPLICIT NONE",
@@ -909,7 +909,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_implicit_statement(expr))
             self.assertEqual(util.parsing.parse_implicit_statement(expr),results[i])
-    def test_38_parse_interface_statement(self):
+    def test_36_parse_interface_statement(self):
         expressions = [
           "interface",
           "INTERFACE myInterFace",
@@ -921,7 +921,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_interface_statement(expr))
             self.assertEqual(util.parsing.parse_interface_statement(expr),results[i])
-    def test_39_parse_case_statement(self):
+    def test_37_parse_case_statement(self):
         expressions = [
           "case (0)",
           "case (0,1,2)",
@@ -935,7 +935,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_case_statement(expr))
             self.assertEqual(util.parsing.parse_case_statement(expr),results[i])
-    def test_40_parse_dimension_statement(self):
+    def test_38_parse_dimension_statement(self):
         expressions = [
           "dim a(1)",
           "DIMENSION a(2,3)",
@@ -949,7 +949,7 @@ class TestParsingUtils(unittest.TestCase):
         for i,expr in enumerate(expressions):
             #print(util.parsing.parse_dimension_statement(expr))
             self.assertEqual(util.parsing.parse_dimension_statement(expr),results[i])
-    def test_41_parse_external_statement(self):
+    def test_39_parse_external_statement(self):
         expressions = [
           "EXTERNAL a",
           "external :: a",

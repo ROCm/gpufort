@@ -50,9 +50,9 @@ do k = 1, N
        a(i,j,k) = b(j,k) + c(k)
      end do
 
-     do i = -5,10,2
+     label: do i = -5,10,2
        a(i,j,k) = b(j,k) + c(k)
-     end do
+     end do label2
     
      !$acc loop vector private(z)
      do i = -5,10,2

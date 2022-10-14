@@ -5,6 +5,8 @@ import copy
 
 from gpufort import util    
 
+statement_classifier = util.parsing.StatementClassifier()
+
 class ValueType(enum.Enum):
     UNKNOWN = 0
     PROCEDURE = 1
@@ -12,7 +14,7 @@ class ValueType(enum.Enum):
     INTRINSIC = 3
 
 DEFAULT_IMPLICIT_SPEC =\
-  util.parsing.parse_implicit_statement(
+  statement_classifier.parse_implicit_statement(
     "IMPLICIT integer (i-n), real (a-h,o-z)")
 
 EMPTY_TYPE = {

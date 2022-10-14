@@ -8,7 +8,7 @@ from gpufort import util
 
 from . import opts
 from . import indexer
-from . import types
+from . import indexertypes
 from . import intrinsics
 
 def _lookup_implicitly_declared_var(var_expr,implicit_specs):
@@ -22,14 +22,14 @@ def _lookup_implicitly_declared_var(var_expr,implicit_specs):
         # todo: support arrays
         if var_expr_lower[0:2] == "_i":
             f_type,f_len,kind = "integer", None, None
-            return types.create_index_var(f_type,
+            return indexertypes.create_index_var(f_type,
                                           f_len,
                                           kind,
                                           [],
                                           var_expr_lower)
         for spec in implicit_specs:
             if var_expr_lower[0] in spec["letters"]:
-                return types.create_index_var(spec["f_type"],
+                return indexertypes.create_index_var(spec["f_type"],
                                               spec["len"],
                                               spec["kind"],
                                               [],
@@ -111,7 +111,7 @@ def _resolve_dependencies(scope,
     :param list index: list of module/program index records
     """
     def add_to_scope_(scope,scope_additions):
-        for entry_type in types.SCOPE_ENTRY_TYPES:
+        for entry_type in indexertypes.SCOPE_ENTRY_TYPES:
             scope[entry_type] += scope_additions[entry_type]
     
     def handle_use_statements_(icurrent,depth=0):
@@ -129,7 +129,7 @@ def _resolve_dependencies(scope,
                 indent,
                 icurrent["name"]))
 
-        current_scope = types.new_scope()
+        current_scope = indexertypes.new_scope()
         for used_module in combine_use_statements(icurrent["used_modules"]):
             #print(used_module)
             # include definitions from other modules
@@ -141,7 +141,7 @@ def _resolve_dependencies(scope,
                 used_module_found = iother != None
             if used_module_found:
                 # depth first search
-                other_scope_copy = types.copy_scope(create_scope(index, iother["name"])) # recursive, deepcopy to not modify cached scopes
+                other_scope_copy = indexertypes.copy_scope(create_scope(index, iother["name"])) # recursive, deepcopy to not modify cached scopes
                 include_all_entries = not len(used_module["only"])
                 if include_all_entries: # simple include
                     util.logging.log_debug2(
@@ -153,7 +153,7 @@ def _resolve_dependencies(scope,
                     # todo: check implications of always including in context of implicit attributes
                     # 1. rename particular definitions found in the other scope
                     other_variables_to_rename = set(mapping["original"] for mapping in used_module["renamings"])
-                    for entry_type in types.SCOPE_ENTRY_TYPES:
+                    for entry_type in indexertypes.SCOPE_ENTRY_TYPES:
                         for entry in other_scope_copy[entry_type]:  # must be the scope
                             if _get_accessibility(entry,iother) == "public":
                                 if entry["name"] in other_variables_to_rename:
@@ -182,7 +182,7 @@ def _resolve_dependencies(scope,
                     other_variables_to_use = set(mapping["original"] for mapping in used_module["only"])
                     for mapping in used_module["only"]:
                         orig_name = mapping["original"]
-                        for entry_type in types.SCOPE_ENTRY_TYPES:
+                        for entry_type in indexertypes.SCOPE_ENTRY_TYPES:
                             for entry in other_scope_copy[entry_type]:
                                 if _get_accessibility(entry,iother) == "public":
                                     if entry["name"] == orig_name:
@@ -208,8 +208,8 @@ def _resolve_dependencies(scope,
                 raise util.error.LookupError(msg)
         if icurrent["kind"] == "module" and depth > 0:
             # Apply the accessibility of the current module
-            filtered_scope = types.new_scope()
-            for entry_type in types.SCOPE_ENTRY_TYPES:
+            filtered_scope = indexertypes.new_scope()
+            for entry_type in indexertypes.SCOPE_ENTRY_TYPES:
                 filtered_scope[entry_type] += [irecord for irecord in current_scope[entry_type] 
                                               if _get_accessibility(irecord,icurrent) == "public"]
             return filtered_scope
@@ -257,7 +257,7 @@ def _search_index_for_type_or_procedure(index, parent_tag, entry_name,
       {"parent_tag": parent_tag,"entry_name": entry_name,"entry_type": entry_type})
 
     if parent_tag is None:
-        scope = dict(types.EMPTY_SCOPE) # top-level subroutine/function
+        scope = dict(indexertypes.EMPTY_SCOPE) # top-level subroutine/function
         scope["procedures"] = [index_entry for index_entry in index\
           if index_entry["name"]==entry_name and index_entry["kind"] in ["subroutine","function"]]
     else:
@@ -291,7 +291,7 @@ def create_index_from_scope(scope):
        that has the scope's tag as module name (':' replaced by '_').
 ."""
     imodule = { "name": scope["tag"].replace(":","_"), "kind": "module" }
-    for entry_type in types.SCOPE_ENTRY_TYPES:
+    for entry_type in indexertypes.SCOPE_ENTRY_TYPES:
         imodule[entry_type] = copy.deepcopy(scope[entry_type])
     return [ imodule ]
 
@@ -307,7 +307,7 @@ def create_scope(index, tag):
 
     # check if already a scope exists for the tag or if
     # it can be derived from a higher-level scope
-    existing_scope = types.new_scope()
+    existing_scope = indexertypes.new_scope()
     nesting_level  = -1 # -1 implies that nothing has been found
     tag_tokens = tag.split(":")
     for s in opts.scopes:
@@ -326,7 +326,7 @@ def create_scope(index, tag):
           "variables in scope: {}".format(", ".join([var["name"] for var in existing_scope["variables"]])))
         return existing_scope
     else:
-        new_scope = types.copy_scope(existing_scope,index,tag)
+        new_scope = indexertypes.copy_scope(existing_scope,index,tag)
 
         # we already have a scope for this record
         if nesting_level >= 0:
@@ -357,14 +357,14 @@ def create_scope(index, tag):
             searched_name = tag_tokens[d]
             for current_record in current_record_list:
                 if current_record["name"] == searched_name:
-                    scope_additions = types.new_scope()
+                    scope_additions = indexertypes.new_scope()
                     # 1. first include definitions from used records
                     # todo: ambiguous definitions still possible
                     _resolve_dependencies(scope_additions, current_record,
                                           index)
                     # todo: ambiguous definitions can be detected here
                     # 2. now include the current record's definitions
-                    for entry_type in types.SCOPE_ENTRY_TYPES:
+                    for entry_type in indexertypes.SCOPE_ENTRY_TYPES:
                         if entry_type in current_record:
                             # scope entry has the parent tag as well
                             for index_entry in current_record[entry_type]:
@@ -490,7 +490,7 @@ def search_scope_for_type(scope, type_name):
     :param str type_name: lower case name of the searched type. Simple identifier such as 'mytype'.
     """
     result = _search_scope_for_type_or_procedure(
-        scope, type_name, "types", types.EMPTY_TYPE)
+        scope, type_name, "types", indexertypes.EMPTY_TYPE)
     return result
 
 
@@ -500,7 +500,7 @@ def search_scope_for_procedure(scope, procedure_name):
     :param str procedure_name: lower case name of the searched procedure. Simple identifier such as 'mysubroutine'.
     """
     result = _search_scope_for_type_or_procedure(
-        scope, procedure_name, "procedures", types.EMPTY_PROCEDURE)
+        scope, procedure_name, "procedures", indexertypes.EMPTY_PROCEDURE)
     return result
 
 
@@ -535,7 +535,7 @@ def search_index_for_type(index, parent_tag, type_name):
       {"parent_tag": parent_tag,"type_name": type_name})
     try:
         result = _search_index_for_type_or_procedure(
-            index, parent_tag, type_name, "types", types.EMPTY_TYPE)
+            index, parent_tag, type_name, "types", indexertypes.EMPTY_TYPE)
         util.logging.log_leave_function(opts.log_prefix, "search_index_for_type")
         return result
     except util.error.LookupError as e:
@@ -553,7 +553,7 @@ def search_index_for_procedure(index, parent_tag, procedure_name):
       {"parent_tag": parent_tag,"procedure_name": procedure_name})
     try:
         result = _search_index_for_type_or_procedure(
-            index, parent_tag, procedure_name, "procedures", types.EMPTY_PROCEDURE)
+            index, parent_tag, procedure_name, "procedures", indexertypes.EMPTY_PROCEDURE)
         util.logging.log_leave_function(opts.log_prefix,
                                         "search_index_for_procedure")
         return result
@@ -568,28 +568,28 @@ def search_scope_for_value_expr(scope,expr):
     Lookup order: Explicitly-typed variables -> Functions -> Intrinsics -> Implicitly-typed variables
     :param scope: Scope dict.
     :param str expr: An lvalue or rvalue expression such as `a`, `a(i,j)`, `a(i)%b(:)`.  
-    :return: Tuple of value type (see indexer.types.ValueType) 
+    :return: Tuple of value type (see indexer.indexertypes.ValueType) 
              and index record if available. (No index record might be
              returned if expression refers to intrinsic)
     """
-    value_type = types.ValueType.UNKNOWN
+    value_type = indexertypes.ValueType.UNKNOWN
     index_record = None
     try:
        index_record = search_scope_for_var(scope, expr, 
           consider_implicit = False)
-       value_type = types.ValueType.VARIABLE
+       value_type = indexertypes.ValueType.VARIABLE
     except util.error.LookupError:
         try:
             # todo: check EXTERNAL procedures too 
             index_record = search_scope_for_procedure(scope, expr) # just check if the procedure exists
-            value_type = types.ValueType.PROCEDURE
+            value_type = indexertypes.ValueType.PROCEDURE
         except util.error.LookupError:
             if is_intrinsic(expr):
-                value_type = types.ValueType.INTRINSIC
+                value_type = indexertypes.ValueType.INTRINSIC
             else:
                 try:
                     index_record = _lookup_implicitly_declared_var(var_expr,scope["implicit"])
-                    value_type = types.ValueType.VARIABLE
+                    value_type = indexertypes.ValueType.VARIABLE
                 except:
                     raise util.error.LookupError("expression '"+expr+"' could not be associated with any variable (explicitly or implicitly declared), procedure, or intrinsic")
     return (value_type, index_record)

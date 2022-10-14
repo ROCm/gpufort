@@ -42,9 +42,9 @@ class TestTraverseArithmeticExpression(unittest.TestCase):
                 #if isinstance(ttnode,pyparsing.ParseResults):
                 #    print(len([c for c in ttnode if isinstance(c,translator.tree.TTRvalue)]))
             print(test)
-            arith_logic_expr = translator.tree.grammar.arith_logic_expr.parseString(test)[0]
+            arith_expr = translator.tree.grammar.arith_expr.parseString(test)[0]
             translator.tree.traversals.traverse(
-                arith_logic_expr,
+                arith_expr,
                 visit_action_,
                 translator.tree.traversals.no_action,
                 translator.tree.traversals.no_crit)

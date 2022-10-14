@@ -17,11 +17,13 @@ from . import opts
 from . import conv
 from . import prepostprocess
 
+statement_classifier = util.parsing.StatementClassifier()
+
 def _is_ignored_statement(tokens):
     """All statements beginning with the tokens below are ignored.
     """
     return (tokens[0].lower() in ["write","print","character","use","implicit","parameter"]
-           or util.parsing.is_declaration(tokens))
+           or statement_classifier.is_declaration(tokens))
 
 def _is_ignored_fortran_directive(tokens):
     return (util.parsing.compare_ignore_case(tokens[1:4],["acc","end","serial"])
@@ -50,10 +52,11 @@ def parse_fortran_code(code,result_name=None):
   
     behavior:
     - treat do, do while, if, elseif, else, select and end statements explicitly
-    - parse other statements
+    - parse other statements via pyparsing tree.grammar
     - consider comments
     - every call returns a subtree
     """
+
     linemaps = None
     if type(code) == str:
         if len(code):
@@ -79,7 +82,7 @@ def parse_fortran_code(code,result_name=None):
     def raise_syntax_error_(msg):
         nonlocal stmt_info
         raise util.error.SyntaxError(
-            "{}: {}'".format(stmt_info.loc_str(), msg))
+            "{}: {}".format(stmt_info.loc_str(), msg))
 
     def error_(expr, exception=None):
         nonlocal stmt_info
@@ -125,15 +128,18 @@ def parse_fortran_code(code,result_name=None):
 
     def descend_(container,
                  kind,
+                 named_label=None,
                  inc_level=True):
         nonlocal stmt_info
         nonlocal curr
         nonlocal stmt
         nonlocal level
         assert isinstance(curr,tree.TTContainer)
+        if named_label != None:
+            append_(tree.TTLabel([named_label]))
         append_(container)
         curr = container
-        curr.label = label
+        curr.named_label = named_label
         if inc_level:
             level += 1
         util.logging.log_debug2(
@@ -142,29 +148,22 @@ def parse_fortran_code(code,result_name=None):
               stmt_info.loc_str(),
               kind, stmt))
 
-    def ascend_(kind):
+    def ascend_(kind,named_label=None):
         nonlocal stmt_info
         nonlocal curr
         nonlocal stmt
         nonlocal level
-        assert isinstance(curr.parent,tree.TTContainer)
-        if not curr.parent.compare_label(label):
-           print("labels") 
-           print(label)
-           print(curr.parent.label)
-           if curr.parent.label == None:
+        assert isinstance(curr,tree.TTContainer)
+        if not curr.compare_label(curr.named_label,named_label):
+           if curr.named_label == None:
                raise_syntax_error_(
-                 "did not expect label"
+                 "did not expect named label '{}'".format(named_label)
                )
-           elif curr.parent.label.isidentifier():
+           elif curr.named_label.isidentifier():
                raise_syntax_error_(
-                 "expected named label '{}'".format(curr.parent.label)
+                 "expected named label '{}'".format(curr.named_label)
                )
-           elif curr.parent.label.isnumeric():
-               raise_syntax_error_(
-                 "expected numeric label '{}'".format(curr.parent.label)
-               )
-        curr = curr.parent
+        curr = curr.parent # must happen after label check
         level = min(level - 1, 0)
         util.logging.log_debug2(
             opts.log_prefix, "parse_fortran_code.append_",
@@ -178,11 +177,9 @@ def parse_fortran_code(code,result_name=None):
     level = 0
     for stmt_info in linemapper.statement_iterator(linemaps):
         stmt1 = stmt_info.body
-        stmt_numeric_label = stmt_info.numeric_label
-        stmt_named_label = stmt_info.named_label
         tokens = util.parsing.tokenize(stmt1.lower(), padded_size=1)
-        if stmt_label != None:
-            append_(tree.TTLabel([stmt_label]))
+        if stmt_info.numeric_label != None:
+            append_(tree.TTLabel([stmt_info.numeric_label]))
         stmt = prepostprocess.preprocess_fortran_statement(tokens)
         tokens = util.parsing.tokenize(stmt,padded_size=6)
         # strip of ! from tokens.index("!")
@@ -194,12 +191,12 @@ def parse_fortran_code(code,result_name=None):
                                     "parse_fortran_code",
                                     "tokens=['{}']".format("','".join(tokens)))
         # tree construction
-        if util.parsing.is_blank_line(stmt):
+        if statement_classifier.is_blank_line(stmt):
             if type(curr) != tree.TTRoot:
                 append_(tree.TTBlank([stmt]), "blank line")
         elif _is_ignored_statement(tokens):
             ignore_("statement")
-        elif util.parsing.is_fortran_directive(stmt,modern_fortran):
+        elif statement_classifier.is_fortran_directive(stmt,modern_fortran):
             try:
                 append_(tree.TTCommentedOut([stmt]), "comment")
                 if _is_ignored_fortran_directive(tokens):
@@ -251,139 +248,169 @@ def parse_fortran_code(code,result_name=None):
             except pyparsing.ParseException as e:
                 error_("directive", e)
                 pass
-        elif util.parsing.is_fortran_comment(stmt,modern_fortran):
+        elif statement_classifier.is_fortran_comment(stmt,modern_fortran):
             if type(curr) != tree.TTRoot:
                 comment = re.split("!|^[c*]", stmt1, 1, re.IGNORECASE)[1]
                 append_(tree.TTCommentedOut([comment]), "comment")
-        # do/while
-        elif util.parsing.is_do_while(tokens):
-            # todo: parse do while with numeric label, do <numeric-lable> while ( <cond> ) ...
-            try:
-                parse_result = tree.grammar.fortran_do_while.parseString(
-                    stmt, parseAll=True)
-                descend_(tree.TTDoWhile(
-                  parse_result.asList() + [[]]),
-                  "do-while loop",
-                  numeric_label=numeric_label,
-                  named_label=named_label)
-            except pyparsing.ParseException as e:
-                error_("do-while loop", e)
-        elif util.parsing.is_do(tokens):
-            # todo: parse do without arguments, do <numeric-label> ... <numeric-label> ( <cond> ) ...
-            result = util.parsing.parse_do_statement(stmt)
-            numeric_do_loop_label, var, lbound_str, ubound_str, stride_str = result
-            # Legal:
-            # outer: do i = ...
-            # end do outer
-            #
-            # do <int-1> i = ...
-            # <int-1> continue
-            #
-            # <int-2> do <int-1> i = ...
-            # <int-1> continue
-            if numeric_do_loop_label != None and named_label != None and named_label.isidentifier():
-                raise raise_syntax_error_("cannot specify numeric and named label together")
-            #
-            begin, end, stride = None, None, None
-            try:
-                if var != None and lbound_str != None:
-                    begin = tree.grammar.assignment.parseString(var + "=" + lbound_str)[0]
-            except pyparsing.ParseException as e:
-                error_("do loop: begin", e)
-            try:
-                if ubound_str != None:
-                    end = tree.grammar.arith_logic_expr.parseString(ubound_str)[0]
-            except pyparsing.ParseException as e:
-                error_("do loop: end", e)
-            if stride_str != None and len(stride_str):
+        elif statement_classifier.is_block(tokens):
+            named_label = statement_classifier.parse_result
+            descend_(
+              tree.TTBlock([[]]),
+              "block", 
+              named_label=named_label
+            )
+        elif statement_classifier.is_do(tokens):
+            result = statement_classifier.parse_result
+            named_label, numeric_do_label,cond,\
+            var, lbound_str, ubound_str, stride_str\
+              = result
+            if cond != None:
+                do_loop = tree.TTDoWhile([
+                  tree.grammar.parse_arith_expr(cond),
+                  []
+                ])
+            elif var != None: 
                 try:
-                    stride = tree.grammar.arith_logic_expr.parseString(stride_str)[0]
+                    begin, end, stride = None, None, None
+                    if var != None and lbound_str != None:
+                        begin = tree.grammar.parse_assignment(var + "=" + lbound_str)
+                    if ubound_str != None:
+                        end = tree.grammar.parse_arith_expr(ubound_str)
+                    if stride_str != None and len(stride_str):
+                        stride = tree.grammar.parse_arith_expr(stride_str)
+                    do_loop = tree.TTDo([begin, end, stride, []])
                 except pyparsing.ParseException as e:
-                    error_("do loop: stride", e)
-            do_loop = tree.TTDo([begin, end, stride, []])
-            do_loop.numeric_do_loop_label = numeric_do_loop_label
-            descend_(do_loop, "do loop")
+                    error_("do loop", e)
+            else:
+                do_loop = tree.TTUnconditionalDo([[]])
+            do_loop.numeric_do_label = numeric_do_label
+            descend_(
+              do_loop,
+              "do loop", 
+              named_label=named_label
+            )
         # if-then-else
-        elif util.parsing.is_if_then(tokens):
+        elif statement_classifier.is_if_then(tokens):
+            named_label, cond = statement_classifier.parse_result
+            descend_(
+              tree.TTIfElseBlock(), "if block", 
+              named_label=named_label,
+              inc_level=False
+            )
             try:
-                descend_(tree.TTIfElseBlock(), "if block", stmt_label, inc_level=False)
-                parse_result = tree.grammar.fortran_if_else_if.parseString(
-                    stmt, parseAll=True)
-                descend_(
-                    tree.TTIfElseIf(
-                                    parse_result.asList() + [[]]), "if branch")
+                if_branch = tree.TTIfElseIf([
+                  None,
+                  tree.grammar.parse_arith_expr(cond),
+                  []
+                ])
             except pyparsing.ParseException as e:
                 error_("if", e)
-        elif util.parsing.is_else_if_then(tokens):
+            descend_(
+              if_branch,
+              "if branch"
+            )
+        elif statement_classifier.is_else_if_then(tokens):
             assert type(curr) is tree.TTIfElseIf
             ascend_("if")
+            cond = statement_classifier.parse_result
             try:
-                parse_result = tree.grammar.fortran_if_else_if.parseString(
-                    stmt, parseAll=True)
-                #print(parse_result)
+                else_if_branch = tree.TTIfElseIf([
+                  "else",
+                  tree.grammar.parse_arith_expr(cond),
+                  []
+                ])
                 descend_(
-                    tree.TTIfElseIf(
-                                    parse_result.asList() + [[]]),
-                    "else-if branch")
+                  else_if_branch,
+                  "else-if branch"
+                )
             except pyparsing.ParseException as e:
                 error_("else-if", e)
-        elif util.parsing.is_else(tokens):
+        elif statement_classifier.is_else(tokens):
+            cond = statement_classifier.parse_result
             assert type(curr) is tree.TTIfElseIf, type(curr)
             ascend_("if/else-if")
-            descend_(tree.TTElse([]), "else branch")
+            descend_(
+              tree.TTElse([]),
+              "else branch"
+            )
         # select-case
-        elif util.parsing.is_select_case(tokens):
+        elif statement_classifier.is_select_case(tokens):
+            named_label, argument = statement_classifier.parse_result
             try:
-                parse_result = tree.grammar.fortran_select_case.parseString(
-                    stmt, parseAll=True)
                 descend_(
-                    tree.TTSelectCase(parse_result.asList() + [[]]),
-                    "select-case",
-                    stmt_label
+                  tree.TTSelectCase([
+                    tree.grammar.parse_arith_expr(named_label),
+                    []
+                  ]),
+                  "select-case",
+                  named_label=named_label
                 )
             except pyparsing.ParseException as e:
                 error_("select-case", e)
-        elif util.parsing.is_case(tokens):
+        elif statement_classifier.is_case(tokens):
+            values = statement_classifier.parse_result
             if type(curr) is tree.TTCase:
                 ascend_("case")
             try:
-                values = util.parsing.parse_case_statement(tokens)
                 descend_(
-                    tree.TTCase(
-                                [values, []]), "case")
+                  tree.TTCase([
+                    ttvalues, 
+                    [tree.grammar.parse_arith_expr(v) for v in values]
+                  ]), "case"
+                )
             except pyparsing.ParseException as e:
                 error_("case", e)
-        elif util.parsing.is_case_default(tokens):
+        elif statement_classifier.is_case_default(tokens):
             if type(curr) is tree.TTCase:
                 ascend_("case-default")
             descend_(tree.TTCaseDefault([[]]), "case default")
         # end
-        elif util.parsing.is_end(tokens, ["do"]):
-            assert isinstance(curr,tree.TTDo)
-            ascend_(tokens[1], stmt_label)
         elif tokens[0] == "continue":
             ttcontinue = tree.TTContinue([[]])
             ttcontinue._result_name = result_name
             append_(ttcontinue,"continue statement")
             if stmt_label != None and stmt_label.isnumeric():
                 while ( isinstance(curr,tree.TTDo)
-                        and curr.compare_label(stmt_label) ):
-                    ascend_(tokens[1], stmt_label)
+                        and curr.compare_dolabel(stmt_label) ):
+                    ascend_(tokens[1], named_label=named_label)
         elif tokens[0] == "cycle":
+            # todo: might have label arg
             ttcontinue = tree.TTCycle([[]])
             append_(ttcontinue,"cycle statement")
         elif tokens[0] == "exit":
+            # todo: might have label arg
             ttexit = tree.TTExit([[]])
             append_(ttexit,"exit statement")
         elif tokens[0:2] == ["go","to"]:
+            # todo: consider assign <numeric-label> to <ident>
             append_(tree.TTGoto([tokens[2]]),"goto statement")
-        elif util.parsing.is_end(tokens, ["if", "select"]):
-            ascend_(tokens[1], stmt_label)
-            ascend_(tokens[1], stmt_label)
+        elif statement_classifier.is_end(tokens):
+            assert isinstance(curr,tree.TTContainer)
+            ascend_("structured block")
+        elif statement_classifier.is_end(tokens,"block"):
+            assert isinstance(curr,tree.TTBlock)
+            named_label = statement_classifier.parse_result
+            ascend_("executable block", named_label=named_label)
+        elif statement_classifier.is_end(tokens,"do"):
+            assert isinstance(curr,tree.TTDo)
+            named_label = statement_classifier.parse_result
+            ascend_("do", named_label=named_label)
+        elif statement_classifier.is_end(tokens, "if"):
+            named_label = statement_classifier.parse_result
+            assert isinstance(curr,(tree.TTElse,tree.TTIfElseIf))
+            ascend_("if/else-if/else branch") # branch
+            assert isinstance(curr,tree.TTIfElseIfBlock)
+            ascend_("if-else block", named_label=named_label) # block
+        elif statement_classifier.is_end(tokens, "select"):
+            named_label = statement_classifier.parse_result
+            assert isinstance(curr,(tree.TTCaseDefault,tree.TTCase))
+            ascend_("case/case default") # case
+            assert isinstance(curr,tree.TTSelectCase)
+            ascend_("select case", named_label=named_label) # block
         # single statements
-        elif util.parsing.is_pointer_assignment(tokens):
+        elif statement_classifier.is_pointer_assignment(tokens):
             error_("pointer assignment")
-        elif util.parsing.is_assignment(tokens):
+        elif statement_classifier.is_assignment(tokens):
             try:
                 assignment_variant = tree.grammar.fortran_assignment.parseString(
                     stmt, parseAll=True)[0]
@@ -394,7 +421,7 @@ def parse_fortran_code(code,result_name=None):
             ttreturn = tree.TTReturn([])
             ttreturn._result_name = result_name
             append_(ttreturn,"return statement")
-        elif util.parsing.is_subroutine_call(tokens):
+        elif statement_classifier.is_subroutine_call(tokens):
             try:
                 parse_result = tree.grammar.fortran_subroutine_call.parseString(
                     stmt, parseAll=True)
@@ -409,7 +436,7 @@ def parse_fortran_code(code,result_name=None):
 # API
 def convert_arith_expr(fortran_snippet):
     return (matrix_arith_expr | complex_arith_expr
-            | arith_logic_expr).parseString(fortran_snippet)[0].cstr()
+            | arith_expr).parseString(fortran_snippet)[0].cstr()
 
 
 def parse_attributes(ttattributes):

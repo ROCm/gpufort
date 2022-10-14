@@ -52,7 +52,7 @@ do k = 1, N
 
      label: do i = -5,10,2
        a(i,j,k) = b(j,k) + c(k)
-     end do label2
+     end do label
     
      !$acc loop vector private(z)
      do i = -5,10,2
@@ -64,7 +64,7 @@ end do
 !$acc loop gang worker vector dtype(radeon) tile(64) device_type(nvidia) tile(32) private(u)
 do k = 1, M
   a(0,0,k) = 3
-end do\
+end do
 !$acc end parallel
 """,
 ]

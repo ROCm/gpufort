@@ -58,7 +58,15 @@ class __HIPKernelBodyGenerator:
         previous_indent2 = self._indent
 
         statement_selector_is_open = False
-        
+    
+        def do_not_mask_(ttnode):
+            return isinstance(ttnode,
+                    (tree.FlowStatementMarker,
+                    tree.TTBlank,
+                    tree.TTAccDirectiveBase,
+                    tree.TTCufKernelDo,
+                    tree.TTCommentedOut))
+    
         def close_statement_selector_():
             nonlocal statement_selector_is_open
             nonlocal previous_indent2
@@ -74,21 +82,19 @@ class __HIPKernelBodyGenerator:
                 self._traverse(child)
             else:
                 if ( statement_selector_is_open
-                     and isinstance(child,tree.TTCommentedOut)
+                     and do_not_mask_(child) 
                    ):
                       close_statement_selector_()
                 elif ( 
                   not statement_selector_is_open
                   and not self._resource_filter.worker_and_vector_partitioned_mode()
-                  and not isinstance(child,(
-                      tree.TTAccDirectiveBase,
-                      tree.TTCufKernelDo,
-                      tree.TTBlank,
-                      tree.TTCommentedOut))
+                  and not do_not_mask_(child) 
                 ):
-                    self._result.generated_code += "{}if ( {} ) {{\n".format(
-                      self._indent,
-                      self._resource_filter.statement_selection_condition()
+                    self._result.generated_code += textwrap.indent(
+                      "if ( {} ) {{\n".format(
+                        self._resource_filter.statement_selection_condition()
+                      ),
+                      self._indent
                     )
                     statement_selector_is_open = True
                     self._indent += opts.single_level_indent
@@ -120,7 +126,7 @@ class __HIPKernelBodyGenerator:
             self._result.firstprivate_vars = acc_construct_info.firstprivate_vars
    
     def _visit_acc_loop_directive(self,ttnode):  
-        """Create new LoopnestManager instance. Append it to the result's list.
+        """Create new AccLoopnestManager instance. Append it to the result's list.
         Render it if no collapse or tile clause is specified.
         Search certain clauses for rvalues and lvalues.
         """
@@ -134,7 +140,7 @@ class __HIPKernelBodyGenerator:
           ttnode,
           self._result.rvalues
         )
-        #todo: split annotation from loop, init LoopnestManager solely with acc_loop_info
+        #todo: split annotation from loop, init AccLoopnestManager solely with acc_loop_info
         self._check_loop_parallelism(
           self._resource_filter,
           acc_loop_info
@@ -156,11 +162,11 @@ class __HIPKernelBodyGenerator:
             self._result.reductions = cuf_construct_info.reduction
     
     def _visit_cuf_kernel_do_loop_directive(self,ttdo):  
-        """Create new LoopnestManager instance. Append it to the result's list.
+        """Create new AccLoopnestManager instance. Append it to the result's list.
         Render it if no number of loops is specified. 
         Search certain clauses for rvalues and lvalues.
         """
-        #todo: split annotation from loop, init LoopnestManager solely with acc_loop_info
+        #todo: split annotation from loop, init AccLoopnestManager solely with acc_loop_info
         cuf_loop_info = analysis.cuf.analyze_directive(
           ttdo.annotation
         ) 

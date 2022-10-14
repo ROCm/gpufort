@@ -70,11 +70,11 @@ def is_array_reduction_intrinsic_call(ttassignment,scope):
     """
     reduction_ops = {}
     #value_type, index_record = indexer.scope.search_scope_for_value_expr(scope, ident)
-    #if value_type == indexer.types.ValueType.VARIABLE:
+    #if value_type == indexer.indexertypes.ValueType.VARIABLE:
     #    value._value._type = tree.TTTensorEval.Type.ARRAY_ACCESS
-    #elif value_type == indexer.types.ValueType.PROCEDURE:
+    #elif value_type == indexer.indexertypes.ValueType.PROCEDURE:
     #    value._value._type = tree.TTTensorEval.Type.FUNCTION_CALL
-    #elif value_type == indexer.types.ValueType.INTRINSIC:
+    #elif value_type == indexer.indexertypes.ValueType.INTRINSIC:
     #    value._value._type = tree.TTTensorEval.Type.INTRINSIC_CALL
      
     return False    

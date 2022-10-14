@@ -15,6 +15,8 @@ _ERR_LINEMAPPER_MACRO_DEFINITION_NOT_FOUND = 11001
 
 EMPTY_STATEMENT = {"epilog": [], "prolog": [], "body": ""}
 
+statement_classifier = util.parsing.StatementClassifier()
+
 def _linearize_statements(linemap):
     result = []
     for stmt in linemap["statements"]:
@@ -210,20 +212,16 @@ def _convert_lines_to_statements(lines,modern_fortran):
 
     # replace line continuation by whitespace, split at ";"
     numeric_label = None
-    named_label = None
     statement_parts = []
     comment_parts = []
     for i,line in enumerate(lines):
-        numeric_label_part,indent,named_label_part,\
+        numeric_label_part,indent,\
         stmt_or_dir_part,comment,_ = \
            util.parsing.split_fortran_line(line,modern_fortran=modern_fortran)
         if len(stmt_or_dir_part):
             statement_parts.append(stmt_or_dir_part)
         if len(comment):
             comment_parts.append(comment)
-        named_label_part = named_label_part.strip()
-        if len(named_label_part) and named_label_part[-1] == ":":
-            named_label = named_label_part[-1].strip() # remove ":" and intermediate whitespace
         if numeric_label_part.isnumeric(): # numeric numeric_label
             numeric_label = numeric_label_part
     single_line_statements = []
@@ -262,7 +260,7 @@ def _convert_lines_to_statements(lines,modern_fortran):
         else:
             unrolled_statements.append(indent_offset
                                        + stmt.lstrip(indent_char))
-    return numeric_label,named_label,unrolled_statements
+    return numeric_label,unrolled_statements
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def _preprocess_and_normalize_fortran_file(file_path, **kwargs):
@@ -478,7 +476,7 @@ def preprocess_and_normalize(fortran_file_lines,
                 raise e
         elif region_stack1[-1]: # in_active_region
             # Convert line to statememts
-            numeric_label, named_label, statements1 =\
+            numeric_label, statements1 =\
               _convert_lines_to_statements(lines,modern_fortran)
             
             # 2. Apply macros to statements
@@ -494,7 +492,7 @@ def preprocess_and_normalize(fortran_file_lines,
                     statement["body"] = stmt3
                     # treat statements such as "!@cuf ierr = hipStreamSynchronize(stream)
                     stmt4 = re.sub(r"[!*c]@gpufort\s*","",stmt3)
-                    if cuda_fortran and util.parsing.is_cuda_fortran_conditional_code(stmt3,modern_fortran):
+                    if cuda_fortran and statement_classifier.is_cuda_fortran_conditional_code(stmt3,modern_fortran):
                         stmt4 = re.sub(r"[!*c]@cuf\s*","",stmt4)
                     modified = len(stmt4) < len(stmt3)
                     statement["body"] = stmt4 
@@ -504,7 +502,6 @@ def preprocess_and_normalize(fortran_file_lines,
           "file": file_path,
           "lineno": line_start + 1, # key
           "numeric_label": numeric_label,
-          "named_label": named_label,
           "lines": lines,
           "raw_statements": statements1,
           "included_linemaps": included_linemaps,
@@ -772,7 +769,8 @@ def get_statement_bodies(linemaps,
     ]
 
 class StatementInfo():
-    def __init__(self,linemap,statement_no):
+    def __init__(self,linemap_no,linemap,statement_no):
+        self._linemap_no = linemap_no
         self._linemap = linemap
         self._statement_no = statement_no
     @property
@@ -782,11 +780,14 @@ class StatementInfo():
         else:
             return None
     @property
-    def named_label(self):
-        if self._statement_no == 0:
-            return self._linemap["named_label"]
-        else:
-            return None
+    def linemap_no(self):
+        return self._linemap_no
+    @property
+    def linemap(self):
+        return self._linemap
+    @property
+    def file (self):
+        return self._linemap["file"]
     @property
     def lineno(self):
         return self._linemap["lineno"]
@@ -803,11 +804,11 @@ class StatementInfo():
     def linemap_epilog(self):
         return self._linemap["epilog"]
     @property
-    def statement(self):
-        return self._linemap["statements"][self._statement_no]
-    @property
     def no(self):
         return self._statement_no
+    @property
+    def statement(self):
+        return self._linemap["statements"][self._statement_no]
     @property
     def body(self):
         return self._linemap["statements"][self._statement_no]["body"]
@@ -832,7 +833,7 @@ def statement_iterator(linemaps):
     """Python generator: Iterates over the statements in active linemaps
     and yields StatementInfo objects.
     :note: Recursive generation if a linemap contains an #include directive."""
-    for linemap in linemaps:
+    for linemap_no,linemap in enumerate(linemaps):
         is_active = linemap["is_active"]
         is_no_directive_except_include = ( 
           len(linemap["included_linemaps"])
@@ -840,6 +841,6 @@ def statement_iterator(linemaps):
         )
         if is_active and is_no_directive_except_include:
             for statement_no, _ in enumerate(linemap["statements"]):
-                yield StatementInfo(linemap,statement_no)
+                yield StatementInfo(linemap_no,linemap,statement_no)
             for statement_info in statement_iterator(linemap["included_linemaps"]):
                 yield statement_info

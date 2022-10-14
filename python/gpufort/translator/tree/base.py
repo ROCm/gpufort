@@ -21,17 +21,21 @@ class TTNode(object):
             return False 
 
     def __init__(self,tokens=[]):
-        self.parent = None
+        self._init()
         self._assign_fields(tokens)
+
+    def _init(self):
+        self.parent = None
+        self.numeric_label = None
         self._fstr = None 
         self._cstr = None 
-        self.numeric_label = None
+    
+    def _assign_fields(self, tokens):
+        pass
 
     def __str__(self):
         return self.__class__.__name__ + ':' + str(self.__dict__)
 
-    def _assign_fields(self, tokens):
-        pass
 
     def child_nodes(self):
         result = []
@@ -70,16 +74,22 @@ class TTNone(TTNode):
     def fstr(self):
         return ""
 
-class TTContainer(TTNode):
+class FlowStatementMarker:
+    pass
+
+class TTContainer(TTNode,FlowStatementMarker):
     """Container node for manual parser construction.
     """
     def __init__(self, tokens=[]):
-        self.parent = None
-        self.body = []
-        self.named_label = None
-        self.indent = opts.single_level_indent
+        self._init(opts.single_level_indent)
         self._assign_fields(tokens)
    
+    def _init(self,indent=""):
+        TTNode._init(self)
+        self.body = []
+        self.named_label = None
+        self.indent = indent 
+
     def __len__(self):
         return len(self.body)
 
@@ -112,10 +122,7 @@ class TTContainer(TTNode):
 class TTRoot(TTContainer):
 
     def __init__(self):
-        self.parent = None
-        self.body   = []
-        self.indent = ""
-        self.label = None
+        TTContainer._init(self)
 
 def f_keyword(keyword):
     if opts.keyword_case == "upper":

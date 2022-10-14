@@ -5,7 +5,7 @@ import os,sys
 import time
 import unittest
 import addtoplevelpath
-from gpufort import grammar
+from gpufort import translator
 
 print("Running test '{}'".format(os.path.basename(__file__)),end="",file=sys.stderr)
 
@@ -18,6 +18,7 @@ class TestGrammarArithmeticExpression(unittest.TestCase):
         print('{} ({}s)'.format(self.id(), round(elapsed, 9)))
     def test_0(self):
         testdata = [
+          "-a",
           "- ( +a - b*(-b +c ))",
           "- ( max ( m , n ) )",
           "MIN( jte )",
@@ -25,10 +26,7 @@ class TestGrammarArithmeticExpression(unittest.TestCase):
           "MIN(jte,jde-1,spec_bdy_width)",
         ]
         for snippet in testdata:
-            try:
-                grammar.arith_expr.parseString(snippet,parseAll=True)
-            except Exception as e:
-                self.assertTrue(False, "failed to parse '{}'".format(snippet)) 
+            translator.tree.grammar.arith_expr.parseString(snippet,parseAll=True)
 
 if __name__ == '__main__':
     unittest.main() 

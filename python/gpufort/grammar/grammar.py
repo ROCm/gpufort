@@ -79,13 +79,13 @@ class Grammar:
         self.logical = pyp.Regex(r"\.(true|false)\.", flags)
         self.character  = pyp.QuotedString('"', escQuote='\\') | pyp.QuotedString("'", escQuote="\\")
 
-    def _init_arith_logic_expr(self,
+    def _init_arith_expr(self,
           ignorecase,
           unary_op_parse_action,
           binary_op_parse_action):
         flags = self._re_flags(ignorecase)
         precedence_ordered_op_list = [
-          (pyp.Regex(r"\.(?!\b(false|true|[gl][te]|eq|ne|not|and|or|xor|eqv|neqv)\b)\w+\.",flags),
+          (pyp.Regex(r"\.(?!\b(false|true|[gl][te]|eq|ne|not|and|or|xor|eqv|neqv)\b)[a-zA-Z]+\.",flags),
             1,pyp.opAssoc.RIGHT), # custom unary op (negative lookahead excludes taken tokens)
           (pyp.Regex(r"\*\*"), 2, pyp.opAssoc.LEFT),
           (pyp.Regex(r"[*/]"), 2, pyp.opAssoc.LEFT),
@@ -98,32 +98,32 @@ class Grammar:
           (pyp.Regex(r"\.or\.",flags),2,pyp.opAssoc.LEFT),
           (pyp.Regex(r"\.\(xor\|eqv\|neqv\)\.",flags), 
             2, pyp.opAssoc.LEFT),
-          (pyp.Regex(r"\.(?!\b(false|true|[gl][te]|eq|ne|not|and|or|xor|eqv|neqv)\b)\w+\.",flags),
+          (pyp.Regex(r"\.(?!\b(false|true|[gl][te]|eq|ne|not|and|or|xor|eqv|neqv)\b)[a-zA-Z]+\.",flags),
             2,pyp.opAssoc.LEFT), # custom binary op (negative lookahead excludes taken tokens)
           #(pyp.Regex(r"=",flags), 
           # 2, pyp.opAssoc.RIGHT),
         ]
      
-        arith_logic_expr_op_list = []
+        arith_expr_op_list = []
         for tup in precedence_ordered_op_list:
             expr, num_ops, opassoc = tup
             if num_ops == 1:
                 if unary_op_parse_action != None:
-                    arith_logic_expr_op_list.append(
+                    arith_expr_op_list.append(
                       (expr, num_ops, opassoc, unary_op_parse_action)
                     )
                 else:
-                    arith_logic_expr_op_list.append(tup)
+                    arith_expr_op_list.append(tup)
             if num_ops == 2:
                 if binary_op_parse_action != None:
-                    arith_logic_expr_op_list.append(
+                    arith_expr_op_list.append(
                       (expr, num_ops, opassoc, binary_op_parse_action)
                     )
                 else:
-                    arith_logic_expr_op_list.append(tup)
-        self.arith_logic_expr <<= pyp.infixNotation( # note: forward declared
+                    arith_expr_op_list.append(tup)
+        self.arith_expr <<= pyp.infixNotation( # note: forward declared
           ( self.rvalue | self.complex_arith_expr ),
-          arith_logic_expr_op_list
+          arith_expr_op_list
         )
 
     def _init_arithmetic_expressions(self,
@@ -133,7 +133,7 @@ class Grammar:
         ):
         # arithmetic logical expressions and assignments
         self.complex_arith_expr = pyp.Forward()
-        self.arith_logic_expr = pyp.Forward()
+        self.arith_expr = pyp.Forward()
         
         self.tensor_eval_arg = pyp.Forward()
         self.tensor_eval_args = pyp.Optional(
@@ -170,20 +170,20 @@ class Grammar:
           | self.identifier
         )
        
-        self._init_arith_logic_expr(
+        self._init_arith_expr(
           ignorecase,
           unary_op_parse_action,
           binary_op_parse_action
         )
         
         self.assignment_begin = self.lvalue + self.EQ
-        self.assignment = self.lvalue + self.EQ + self.arith_logic_expr # ! emits 2 tokens: *,*
-        self.keyword_argument = self.identifier + self.EQ + self.arith_logic_expr
+        self.assignment = self.lvalue + self.EQ + self.arith_expr # ! emits 2 tokens: *,*
+        self.keyword_argument = self.identifier + self.EQ + self.arith_expr
         
-        self.matrix_arith_logic_expr = self.MATLPAR + pyp.Group(pyp.delimitedList(self.arith_logic_expr)) + self.MATRPAR
-        self.matrix_assignment = self.lvalue + self.EQ + self.matrix_arith_logic_expr
+        self.matrix_arith_expr = self.MATLPAR + pyp.Group(pyp.delimitedList(self.arith_expr)) + self.MATRPAR
+        self.matrix_assignment = self.lvalue + self.EQ + self.matrix_arith_expr
         
-        self.complex_arith_expr <<= self.LPAR + pyp.Group(self.arith_logic_expr + self.COMMA + self.arith_logic_expr) + self.RPAR 
+        self.complex_arith_expr <<= self.LPAR + pyp.Group(self.arith_expr + self.COMMA + self.arith_expr) + self.RPAR 
         self.complex_assignment = self.lvalue + self.EQ + self.complex_arith_expr
         
         self.fortran_assignment = ( 
@@ -192,9 +192,9 @@ class Grammar:
           | self.assignment
         )
         
-        self.tensor_slice = pyp.delimitedList(self.arith_logic_expr,delim=":")
+        self.tensor_slice = pyp.delimitedList(self.arith_expr,delim=":")
         # define forward declared tokens
-        self.argument = self.arith_logic_expr | self.tensor_slice
+        self.argument = self.arith_expr | self.tensor_slice
         self.tensor_eval_arg <<= self.argument | self.keyword_argument
         
         # conversion functions
@@ -205,19 +205,19 @@ class Grammar:
         # todo: better support for intrinsics in indexer
         func_kind = (
           self.COMMA 
-          + ( self.KIND + self.EQ + self.arith_logic_expr )
+          + ( self.KIND + self.EQ + self.arith_expr )
         ) # emits one token # todo: generalize to keyword argument
         single_arg_plus_kind = (
           self.LPAR 
-          + (~func_kind+self.arith_logic_expr) 
+          + (~func_kind+self.arith_expr) 
           + pyp.Optional(func_kind,default=None) 
           + self.RPAR
         ) # emits 2 tokens: *,*,*
         double_arg_plus_kind = (
           self.LPAR 
-          + (~func_kind+self.arith_logic_expr) 
+          + (~func_kind+self.arith_expr) 
           + pyp.Optional(self.COMMA 
-          + (~func_kind+self.arith_logic_expr),default="0") 
+          + (~func_kind+self.arith_expr),default="0") 
           + pyp.Optional(func_kind,default=None)
           + self.RPAR 
         ) # emits 2 tokens: *,*
@@ -245,12 +245,12 @@ class Grammar:
           + pyp.Optional(
               self.COMMA
               + pyp.Optional(self.DIM + self.EQ) 
-              + self.arith_logic_expr,default=None
+              + self.arith_expr,default=None
           ) 
           + pyp.Optional(
               self.COMMA
               + pyp.Optional(self.KIND + self.EQ)
-              + self.arith_logic_expr,default=None
+              + self.arith_expr,default=None
           )
         )
         self.size_inquiry = self.SIZE   + self.LPAR + inquiry_function_arg + self.RPAR  
@@ -285,7 +285,7 @@ class Grammar:
           pyp.Optional(literal_cls("else"),default="")
           + self.IF 
           + self.LPAR 
-          + self.arith_logic_expr
+          + self.arith_expr
           + self.RPAR 
           + self.THEN
         )
@@ -301,8 +301,8 @@ class Grammar:
         #   ! more statements
         #   ...
         #end select [name]
-        self.fortran_select_case = pyp.Regex(r"(\w+\s*:)?\s*select\s+case\s*\(",flags).suppress() + self.arith_logic_expr + self.RPAR
-        self.fortran_case = pyp.Regex(r"case\s*\(",flags).suppress() + self.arith_logic_expr + self.RPAR
+        self.fortran_select_case = pyp.Regex(r"(\w+\s*:)?\s*select\s+case\s*\(",flags).suppress() + self.arith_expr + self.RPAR
+        self.fortran_case = pyp.Regex(r"case\s*\(",flags).suppress() + self.arith_expr + self.RPAR
         self.fortran_case_default = pyp.Regex(r"case\s+default",flags).suppress() # todo: not sure if still needed
         self.fortran_end_select_case = pyp.Regex(r"end\s*select(\s+\w+)?",flags).suppress() # todo: not sure if still needed
         
@@ -312,17 +312,17 @@ class Grammar:
           do_loop_start
           + self.assignment
           + self.COMMA
-          + self.arith_logic_expr
+          + self.arith_expr
           + pyp.Optional(
               self.COMMA
-              + self.arith_logic_expr,default=None
+              + self.arith_expr,default=None
           )
         )
         self.fortran_do_while = (
           do_loop_start
           + self.WHILE
           + self.LPAR
-          + self.arith_logic_expr
+          + self.arith_expr
           + self.RPAR 
         )
         self.fortran_comment = pyp.Combine(pyp.Literal("!") + ~(~pyp.White()+pyp.Literal("$")) + pyp.restOfLine())
@@ -352,7 +352,7 @@ class Grammar:
         self.cuf_kernel_do_dim3 = (
           self.LPAR 
           + pyp.delimitedList(
-              self.arith_logic_expr 
+              self.arith_expr 
               | self.cuf_kernel_do_auto
             )
           + self.RPAR
@@ -364,8 +364,8 @@ class Grammar:
           | self.rvalue
         )
         self.cuf_kernel_do_arg_block = self.cuf_kernel_do_arg_grid.copy()
-        self.cuf_kernel_do_arg_sharedmem = pyp.Group(self.arith_logic_expr) # group because single expression
-        self.cuf_kernel_do_arg_stream = pyp.Group(self.arith_logic_expr)
+        self.cuf_kernel_do_arg_sharedmem = pyp.Group(self.arith_expr) # group because single expression
+        self.cuf_kernel_do_arg_stream = pyp.Group(self.arith_expr)
         
         self.cuf_kernel_do_launch_params_ext1 = (
           self.cuf_kernel_do_arg_sharedmem + self.COMMA
@@ -388,7 +388,7 @@ class Grammar:
           )
         )
         self.cuf_kernel_do_arg_num_loops = pyp.Optional(
-          self.LPAR + self.arith_logic_expr + self.RPAR,
+          self.LPAR + self.arith_expr + self.RPAR,
           default=None
         )
         
@@ -421,7 +421,7 @@ class Grammar:
           + self.LPAR 
           + self.identifier 
           + self.COMMA 
-          + self.arith_logic_expr 
+          + self.arith_expr 
           + self.RPAR
         )
         # dest,src,count,[,stream] # kind is inferred from dest and src
@@ -438,7 +438,7 @@ class Grammar:
           + self.COMMA
           + self.rvalue
           + self.COMMA
-          + self.arith_logic_expr 
+          + self.arith_expr 
           + cuda_memcpy_args_ext
         )
         self.cuf_cudamemcpy = (
@@ -451,15 +451,15 @@ class Grammar:
         cuf_cudamemcpy2d_args = (
           self.rvalue
           + self.COMMA
-          + self.arith_logic_expr
+          + self.arith_expr
           + self.COMMA
           + self.rvalue
           + self.COMMA
-          + self.arith_logic_expr
+          + self.arith_expr
           + self.COMMA
-          + self.arith_logic_expr
+          + self.arith_expr
           + self.COMMA
-          + self.arith_logic_expr
+          + self.arith_expr
           + cuda_memcpy_args_ext
         )
         self.cuf_cudamemcpy2d = (
@@ -472,17 +472,17 @@ class Grammar:
         cuf_cudamemcpy3d_args = (
           self.rvalue
           + self.COMMA
-          + self.arith_logic_expr
+          + self.arith_expr
           + self.COMMA
           + self.rvalue
           + self.COMMA
-          + self.arith_logic_expr
+          + self.arith_expr
           + self.COMMA
-          + self.arith_logic_expr
+          + self.arith_expr
           + self.COMMA
-          + self.arith_logic_expr
+          + self.arith_expr
           + self.COMMA
-          + self.arith_logic_expr 
+          + self.arith_expr 
           + cuda_memcpy_args_ext
         )
         self.cuf_cudamemcpy3d = (
@@ -499,9 +499,9 @@ class Grammar:
         # cublas/analysis
         self.CUBLAS_OPERATION_TYPE = pyp.Regex(r"'[ntc]'",flags)#.setParseAction(lambda tokens: "hipblas_op_"+tokens[0].strip("'").upper())
         #cublas_arglist       = pyp.Group(pyp.delimitedList(cublas_operation_type | self.rvalue))
-        # todo: Explicitly scan for ttrvalues in cublas_arglist's self.arith_logic_expr when transforming host code
+        # todo: Explicitly scan for ttrvalues in cublas_arglist's self.arith_expr when transforming host code
         cublas_arglist = pyp.Group(
-          pyp.delimitedList(self.CUBLAS_OPERATION_TYPE | self.arith_logic_expr)
+          pyp.delimitedList(self.CUBLAS_OPERATION_TYPE | self.arith_expr)
         ) 
         self.cuf_cublas_call = (
           self.CUBLAS.suppress()
@@ -596,26 +596,26 @@ class Grammar:
         self.acc_var_list = self.LPAR + pyp.Group(pyp.delimitedList(self.rvalue)) + self.RPAR
         
         # clauses
-        self.acc_clause_gang = self.GANG + pyp.Optional(self.LPAR + self.arith_logic_expr + self.RPAR,default = None)
-        self.acc_clause_worker = self.WORKER + pyp.Optional(self.LPAR + self.arith_logic_expr + self.RPAR,default = None)
-        self.acc_clause_vector = self.VECTOR + pyp.Optional(self.LPAR + self.arith_logic_expr + self.RPAR,default = None)
-        self.acc_clause_num_gangs = self.NUM_GANGS + self.LPAR + self.arith_logic_expr + self.RPAR 
-        self.acc_clause_num_workers = self.NUM_WORKERS + self.LPAR + self.arith_logic_expr + self.RPAR 
-        self.acc_clause_vector_length = self.VECTOR_LENGTH + self.LPAR + self.arith_logic_expr + self.RPAR
+        self.acc_clause_gang = self.GANG + pyp.Optional(self.LPAR + self.arith_expr + self.RPAR,default = None)
+        self.acc_clause_worker = self.WORKER + pyp.Optional(self.LPAR + self.arith_expr + self.RPAR,default = None)
+        self.acc_clause_vector = self.VECTOR + pyp.Optional(self.LPAR + self.arith_expr + self.RPAR,default = None)
+        self.acc_clause_num_gangs = self.NUM_GANGS + self.LPAR + self.arith_expr + self.RPAR 
+        self.acc_clause_num_workers = self.NUM_WORKERS + self.LPAR + self.arith_expr + self.RPAR 
+        self.acc_clause_vector_length = self.VECTOR_LENGTH + self.LPAR + self.arith_expr + self.RPAR
         
         self.acc_clause_device_type = self.DEVICE_TYPE + self.LPAR + pyp.Group(pyp.delimitedList(self.identifier) | pyp.Literal("*")) + self.RPAR
-        self.acc_clause_if = self.IF + self.LPAR + self.arith_logic_expr + self.RPAR
+        self.acc_clause_if = self.IF + self.LPAR + self.arith_expr + self.RPAR
         
         # copy, copyin, copyout, create, no_create, present, deviceptr, attach, detach, use_device, delete, private, first_private, host, device_resident, link
         self.acc_mapping_clause = self.identifier.copy() + self.acc_var_list
         
         self.acc_clause_default = self.DEFAULT + self.LPAR + pyp.Regex(r"none|present",flags) + self.RPAR # do not suppress
         self.acc_clause_reduction = self.REDUCTION + self.LPAR + self.ACC_REDUCTION_OP + pyp.Suppress(":") + pyp.Group(pyp.delimitedList(self.rvalue)) + self.RPAR
-        self.acc_clause_collapse = self.COLLAPSE + self.LPAR + self.arith_logic_expr + self.RPAR
-        self.acc_clause_self = self.SELF + self.LPAR + self.arith_logic_expr + self.RPAR # for compute constructs; not for update
+        self.acc_clause_collapse = self.COLLAPSE + self.LPAR + self.arith_expr + self.RPAR
+        self.acc_clause_self = self.SELF + self.LPAR + self.arith_expr + self.RPAR # for compute constructs; not for update
         self.acc_clause_bind = self.BIND + self.LPAR + self.identifier + self.RPAR
-        self.acc_clause_tile = self.TILE + self.LPAR + pyp.Group(pyp.delimitedList(self.arith_logic_expr)) + self.RPAR
-        self.acc_clause_wait = self.WAIT + pyp.Optional(pyp.Group(pyp.delimitedList(self.arith_logic_expr)), default = [])
+        self.acc_clause_tile = self.TILE + self.LPAR + pyp.Group(pyp.delimitedList(self.arith_expr)) + self.RPAR
+        self.acc_clause_wait = self.WAIT + pyp.Optional(pyp.Group(pyp.delimitedList(self.arith_expr)), default = [])
         self.acc_clause_async = self.ASYNC + pyp.Optional(self.LPAR + self.rvalue + self.RPAR, default = self.CLAUSE_VALUE_NOT_SPECIFIED) 
         
         # self.ACC LoopNest directive
@@ -741,3 +741,14 @@ class Grammar:
         #
         self._init_openacc_keywords(ignorecase)
         self._init_openacc_directives(ignorecase)
+
+    # API
+    def parse_arith_expr(self,expr,parse_all=True):
+        return self.arith_expr.parseString(
+          expr,parseAll=parse_all
+        )[0]
+    
+    def parse_assignment(self,expr,parse_all=True):
+        return self.assignment.parseString(
+          expr,parseAll=parse_all
+        )[0]

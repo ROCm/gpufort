@@ -219,7 +219,7 @@ class Acc2HipGpufortRT(accbackends.AccBackendBase):
                 if ivar["f_type"]=="type":
                     raise util.error.LimitationError("host_data use_device: argument '"+var_expr+"' must have basic datatype")
                 rank = ivar["rank"]
-                datatype = indexer.types.render_datatype(ivar) 
+                datatype = indexer.indexertypes.render_datatype(ivar) 
                 pointer_name = "_".join(["gpufortrt_use_device_tmpvar",str(host_data_region_num),str(mapping_num)])
                 pointer_decl = indent + datatype+",pointer :: " + pointer_name
                 args = [pointer_name,var_expr]

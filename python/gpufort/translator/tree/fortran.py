@@ -26,7 +26,7 @@ class TTSimpleToken(base.TTNode):
     def fstr(self):
         return str(self._text)
 
-class TTReturn(base.TTNode):
+class TTReturn(base.TTNode,base.FlowStatementMarker):
 
     def _assign_fields(self, tokens):
         self._result_name = ""
@@ -40,7 +40,7 @@ class TTReturn(base.TTNode):
     def fstr(self):
         return "return"
 
-class TTLabel(base.TTNode):
+class TTLabel(base.TTNode,base.FlowStatementMarker):
 
     def _assign_fields(self, tokens):
         self._label = tokens[0]
@@ -48,14 +48,14 @@ class TTLabel(base.TTNode):
     def cstr(self):
         return "_{}:".format(self._label)
 
-class TTContinue(base.TTNode):
+class TTContinue(base.TTNode,base.FlowStatementMarker):
     def cstr(self):
         return "return;"
 
     def fstr(self):
         return "continue"
 
-class TTCycle(base.TTNode):
+class TTCycle(base.TTNode,base.FlowStatementMarker):
 
     def _assign_fields(self, tokens):
         self._result_name = ""
@@ -75,7 +75,7 @@ class TTCycle(base.TTNode):
         else:
             return "return"
 
-class TTExit(base.TTNode):
+class TTExit(base.TTNode,base.FlowStatementMarker):
 
     def _assign_fields(self, tokens):
         self._result_name = ""
@@ -95,7 +95,7 @@ class TTExit(base.TTNode):
         else:
             return "return"
 
-class TTGoto(base.TTNode):
+class TTGoto(base.TTNode,base.FlowStatementMarker):
     #todo: More complex expressions possible with jump label list
     #todo: Target numeric label can be renamed to identifier (deleted Fortran feature)
     def _assign_fields(self, tokens):
@@ -1156,7 +1156,7 @@ class TTDo(base.TTContainer):
 
     def _assign_fields(self, tokens):
         self._begin, self._end, self._step, self.body = tokens
-        self.numeric_do_loop_label
+        self.numeric_do_label = None
     @property
     def index(self):
         return self._begin._lhs
@@ -1173,6 +1173,26 @@ class TTDo(base.TTContainer):
         return self._step != None
     def child_nodes(self):
         return [self.body, self._begin, self._end, self._step]
+
+class TTUnconditionalDo(base.TTContainer):
+
+    def _assign_fields(self, tokens):
+        self.body = tokens[0]
+        self.numeric_do_label = None
+    def child_nodes(self):
+        return []
+    def header_cstr(self):
+        return "while (true) {{\n"
+    def footer_cstr(self):
+        return "}\n" 
+
+class TTBlock(base.TTContainer):
+    def _assign_fields(self, tokens):
+        self.indent = "" # container of if/elseif/else branches, so no indent
+    def header_cstr(self):
+        return "{{\n"
+    def footer_cstr(self):
+        return "}\n" 
 
 class TTIfElseBlock(base.TTContainer):
     def _assign_fields(self, tokens):
@@ -1248,6 +1268,7 @@ class TTDoWhile(base.TTContainer):
 
     def _assign_fields(self, tokens):
         self._condition, self.body = tokens
+        self.numeric_do_label = None
 
     def child_nodes(self):
         return [self._condition, self.body]
@@ -1283,7 +1304,7 @@ def set_fortran_parse_actions(grammar):
     grammar.ubound_inquiry.setParseAction(TTUboundInquiry)
     grammar.tensor_slice.setParseAction(TTSlice)
     grammar.tensor_eval_args.setParseAction(TTArgumentList)
-    grammar.arith_logic_expr.setParseAction(TTArithExpr)
+    grammar.arith_expr.setParseAction(TTArithExpr)
     grammar.complex_arith_expr.setParseAction(
         TTComplexArithExpr)
     #grammar.power.setParseAction(TTPower)

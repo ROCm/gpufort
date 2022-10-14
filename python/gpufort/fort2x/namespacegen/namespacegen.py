@@ -92,7 +92,7 @@ class NamespaceGenerator():
                 if self.comment_body:
                     tokens.append("// ")
                 tokens += ["constexpr ",ivar["c_type"]]
-                rhs_expr = translator.tree.grammar.arith_logic_expr.parseString(
+                rhs_expr = translator.tree.grammar.arith_expr.parseString(
                             ivar["rhs"],parseAll=True)[0].cstr()
                 tokens += [" ",ivar["name"]," = ",rhs_expr,";"]
                 body.append("".join(tokens))
@@ -164,7 +164,7 @@ class NamespaceGenerator():
                 if condv and condt:
                     if context["variables"][iv]["lineno"] < context["types"][it]["lineno"]:
                         ivar = context["variables"][iv]
-                        context["declarations"].append(indexer.types.render_declaration(ivar))
+                        context["declarations"].append(indexer.indexertypes.render_declaration(ivar))
                         iv += 1
                     else:
                         # todo: render types too
@@ -174,7 +174,7 @@ class NamespaceGenerator():
                         it += 1
                 elif condv:
                     ivar = context["variables"][iv]
-                    context["declarations"].append(indexer.types.render_declaration(ivar))
+                    context["declarations"].append(indexer.indexertypes.render_declaration(ivar))
                     iv += 1
                 elif condt:
                     # todo: render types too
@@ -262,7 +262,7 @@ class NamespaceGenerator():
                 result.append(cleaned)
             #print(result)
             name, f_type, f_len, kind, bpe, rank, sizes, lbounds, rhs_expr = result
-            ivar = indexer.types.create_index_var(f_type,f_len,kind,[],name,[],[],rhs_expr)
+            ivar = indexer.indexertypes.create_index_var(f_type,f_len,kind,[],name,[],[],rhs_expr)
             translator.analysis.append_c_type(ivar)
             tokens = [" "*2,"constexpr ",ivar["c_type"]]
             tokens += [" ",ivar["name"]," = ",rhs_expr]

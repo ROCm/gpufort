@@ -4,23 +4,17 @@ import os, sys, subprocess
 import copy
 import re
 import concurrent.futures
-
 import json
-
 import pyparsing
-
 from gpufort import util
 from gpufort import translator
 from gpufort import linemapper
-
 from . import opts
-from . import types
-
+from . import indexertypes
 considered_constructs = [
   "program", "module", "subroutine", "function",
   "type", "interface"
 ]
-
 ignored_constructs = [
   "associate",
   "block",
@@ -35,20 +29,15 @@ ignored_constructs = [
   
   #"interface",
 ]
-
-
 class Node():
-
     def __init__(self, kind, name, data, parent=None):
         self._kind = kind
         self._name = name
         self._parent = parent
         self._data = data
         self._begin = (-1, -1) # first linemap no, first statement no
-
     def __str__(self):
         return "{}: {}".format(self._name, self._data)
-
     def statements(self, linemaps, end):
         assert self._begin[0] > -1
         assert self._begin[1] > -1
@@ -60,15 +49,16 @@ class Node():
             stmt["body"] for stmt in linemapper.get_linemaps_content(
                 linemaps_of_node, "statements", self._begin[1], end[1])
         ]
-
     __repr__ = __str__
-
+statement_classifier = util.parsing.StatementClassifier()
 def create_index_records_from_declaration(module_name,statement,file_path,lineno):
     """:raise util.errorSyntaxError: If the syntax of the declaration statement is not
                                      as expected.
     :param str module_name: Name of the parent module, or None if the parent is not a module.
     """
-    f_type, f_len, kind, params, qualifiers, dimension_bounds, variables, f_type_full, _ = util.parsing.parse_declaration(statement.lower())
+    f_type, f_len, kind, params, qualifiers,\
+    dimension_bounds, variables, f_type_full, _\
+       = statement_classifier.parse_declaration(statement.lower())
     # todo: inconsistent, len overwrites character len but bounds do not overwrite dimension_bounds
     context = []
     for var in variables:
@@ -77,7 +67,7 @@ def create_index_records_from_declaration(module_name,statement,file_path,lineno
            and (rhs == None or not len(rhs))):
             raise util.error.SyntaxError("parameter must have right-hand side expression")
         bounds_to_pass = bounds if len(bounds) else dimension_bounds 
-        ivar = types.create_index_var(f_type,
+        ivar = indexertypes.create_index_var(f_type,
                                       f_len,
                                       kind,
                                       params,
@@ -90,9 +80,8 @@ def create_index_records_from_declaration(module_name,statement,file_path,lineno
                                       lineno)
         context.append(ivar)
     return context
-
 def create_index_record_from_use_statement(statement):
-    module, qualifiers, renamings, only = util.parsing.parse_use_statement(statement)
+    module, qualifiers, renamings, only = statement_classifier.parse_use_statement(statement)
     
     used_module = {}
     used_module["name"] = module 
@@ -137,10 +126,9 @@ def _parse_statements(linemaps, file_path,**kwargs):
     current_statement = None
     accessibility_statement_stack = []
     implicit_spec_stack = []
-    in_interface        = False
-    interface_name      = None
+    in_interface = False
+    interface_name = None
     in_contains_section_stack   = [True] # file root can contain subroutines but not interfaces
-
     def log_enter_node_():
         nonlocal current_node
         nonlocal current_statement
@@ -148,14 +136,12 @@ def _parse_statements(linemaps, file_path,**kwargs):
           current_node._parent._kind,current_node._parent._name,
           current_node._kind,current_node._name,\
           current_statement))
-
     def log_leave_node_():
         nonlocal current_node
         nonlocal current_statement
         util.logging.log_debug(opts.log_prefix,"_parse_statements","[current-node={0}:{1}] leave {0} '{1}' in statement: '{2}'".format(\
           current_node._data["kind"],current_node._data["name"],\
           current_statement))
-
     def log_detection_(kind):
         nonlocal current_node
         nonlocal current_statement
@@ -165,25 +151,21 @@ def _parse_statements(linemaps, file_path,**kwargs):
     def log_begin_task(parent_node, msg):
         util.logging.log_debug3(opts.log_prefix,"_parse_statements","[parent-node={0}:{1}] {2}".format(
               parent_node._kind, parent_node._name, msg))
-
     def log_end_task(parent_node, msg):
         util.logging.log_debug2(opts.log_prefix,"_parse_statements","[parent-node={0}:{1}] {2}".format(
               parent_node._kind, parent_node._name, msg))
-
     def get_current_implicit_rules_():
         if not len(implicit_spec_stack[-1]):
-            return types.DEFAULT_IMPLICIT_SPEC
+            return indexertypes.DEFAULT_IMPLICIT_SPEC
         else:
             return implicit_spec_stack[-1]
-
     # Parser events
     # direct parsing
     def End():
         nonlocal root
         nonlocal current_node
         nonlocal linemaps
-        nonlocal current_linemap_no
-        nonlocal current_statement_no
+        nonlocal stmt_info
         nonlocal current_statement
         nonlocal current_tokens
         nonlocal accessibility_statement_stack
@@ -198,7 +180,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
                     if q == "global" or "device" in q:
                         accelerator_routine = True
             if current_node._kind == "type" or accelerator_routine:
-                end = (current_linemap_no, current_statement_no)
+                end = (stmt_info.linemap_no, stmt_info.no)
                 current_node._data["statements"] = current_node.statements(
                     linemaps, end)
             # implicit rules: 
@@ -228,7 +210,6 @@ def _parse_statements(linemaps, file_path,**kwargs):
                 current_node._data["public"] = explicitly_set_accessibility["public"] 
                 current_node._data["private"] = explicitly_set_accessibility["private"]
             current_node = current_node._parent
-
     def ModuleStart():
         nonlocal root
         nonlocal current_node
@@ -249,7 +230,6 @@ def _parse_statements(linemaps, file_path,**kwargs):
         current_node._data.append(module)
         current_node = Node("module", name, data=module, parent=current_node)
         log_enter_node_()
-
     def ProgramStart():
         nonlocal root
         nonlocal current_node
@@ -265,13 +245,11 @@ def _parse_statements(linemaps, file_path,**kwargs):
         current_node._data.append(program)
         current_node = Node("program", name, data=program, parent=current_node)
         log_enter_node_()
-
-
     def PublicOrPrivate():
         nonlocal current_node
         nonlocal current_tokens
         if current_node._kind in ["module","type"]:
-            kind, identifiers = util.parsing.parse_public_or_private_statement(
+            kind, identifiers = statement_classifier.parse_public_or_private_statement(
               current_statement,current_tokens[0])
             for entry in accessibility_statement_stack[-1]:
                 other_kind, other_identifiers = entry
@@ -296,7 +274,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
         if in_interface:
             raise util.error.SyntaxError("interface statement within interface construct")
         in_interface = True
-        name = util.parsing.parse_interface_statement(current_statement)
+        name = statement_classifier.parse_interface_statement(current_statement)
         interface_name = name
     
     def InterfaceEnd():
@@ -318,7 +296,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
         nonlocal current_statement
         log_detection_("implicit")
         if current_node._kind in ["module","program","subroutine","function"]:
-            new_specs = util.parsing.parse_implicit_statement(current_statement)
+            new_specs = statement_classifier.parse_implicit_statement(current_statement)
             for _,_,_,letters in new_specs:
                 for _,_,_,other_letters in implicit_spec_stack[-1]:
                     first_mutual_letter = next((l for l in letters if l in other_letters),None)
@@ -328,7 +306,6 @@ def _parse_statements(linemaps, file_path,**kwargs):
         else:
             raise util.error.SyntaxError("unexpected 'implicit' statement")
         pass
-
     #host|device,name,[args]
     def SubroutineStart():
         nonlocal current_node
@@ -343,7 +320,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
                 "root", "module", "program", "subroutine", "function"
         ]:
             kind, name, dummy_args, modifiers, attributes,\
-            result_triple, bind_tuple = util.parsing.parse_function_statement(current_statement)
+            result_triple, bind_tuple = statement_classifier.parse_function_statement(current_statement)
             result_type, result_type_kind, result_name = result_triple
             bind_c, bind_c_name = bind_tuple
             subroutine = create_fortran_construct_record("subroutine", name, file_path)
@@ -359,18 +336,16 @@ def _parse_statements(linemaps, file_path,**kwargs):
                                 name,
                                 data=subroutine,
                                 parent=current_node)
-            current_node._begin = (current_linemap_no, current_statement_no)
+            current_node._begin = (stmt_info.linemap_no, stmt_info.no)
             log_enter_node_()
             in_contains_section_stack.append(False)
         else:
             util.logging.log_warning(opts.log_prefix,"_parse_statements","found subroutine in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
               format(current_statement,current_node._kind))
-
     #host|device,name,[args],result
     def FunctionStart():
         nonlocal current_statement
         nonlocal current_node
-        nonlocal current_linemap
         nonlocal implicit_spec_stack
         nonlocal in_contains_section_stack
         nonlocal interface_name
@@ -381,7 +356,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
                 "root", "module", "program", "subroutine", "function"
         ]:
             kind, name, dummy_args, modifiers, attributes,\
-            result_triple, bind_tuple = util.parsing.parse_function_statement(current_statement)
+            result_triple, bind_tuple = statement_classifier.parse_function_statement(current_statement)
             result_type, result_type_kind, result_name = result_triple
             bind_c, bind_c_name = bind_tuple
             function = create_fortran_construct_record("function", name, file_path)
@@ -395,10 +370,12 @@ def _parse_statements(linemaps, file_path,**kwargs):
                 if result_type_kind != None:
                     result_var_decl += "(" + result_type_kind + ")"
                 result_var_decl += " "+result_name
-                function["variables"] += create_index_records_from_declaration(None,
-                                                                               result_var_decl,
-                                                                               current_linemap["file"],
-                                                                               current_linemap["lineno"])
+                function["variables"] += create_index_records_from_declaration(
+                  None,
+                  result_var_decl,
+                  stmt_info.file,
+                  stmt_info.lineno
+                )
             if current_node._kind == "root":
                 current_node._data.append(function)
             else:
@@ -407,47 +384,43 @@ def _parse_statements(linemaps, file_path,**kwargs):
                                 name,
                                 data=function,
                                 parent=current_node)
-            current_node._begin = (current_linemap_no, current_statement_no)
+            current_node._begin = (stmt_info.linemap_no, stmt_info.no)
             log_enter_node_()
             in_contains_section_stack.append(False)
         else:
             util.logging.log_warning(opts.log_prefix,"_parse_statements","found function in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
               format(current_statement,current_node._kind))
-
     def TypeStart():
-        nonlocal current_linemap
-        nonlocal current_linemap_no
+        nonlocal stmt_info
         nonlocal current_statement
-        nonlocal current_statement_no
         nonlocal current_node
         nonlocal accessibility_statement_stack
         log_detection_("start of type")
         if current_node._kind in [
                 "module", "program", "subroutine", "function"
         ]:
-            name,attributes,params = util.parsing.parse_type_statement(
+            name,attributes,params = statement_classifier.parse_type_statement(
                     current_statement)
-            derived_type = copy.deepcopy(types.EMPTY_TYPE)
+            derived_type = copy.deepcopy(indexertypes.EMPTY_TYPE)
             derived_type["name"] = name
             derived_type["kind"] = "type"
             derived_type["attributes"] = attributes
             derived_type["accessibility"] = opts.default_type_accessibility
             derived_type["params"] = params
             derived_type["module"] = current_node._data["name"] if current_node._data["kind"] == "module" else None
-            derived_type["file"] = current_linemap["file"]
-            derived_type["lineno"] = current_linemap["lineno"]
+            derived_type["file"] = stmt_info.file
+            derived_type["lineno"] = stmt_info.lineno
             current_node._data["types"].append(derived_type)
             current_node = Node("type",
                                 name,
                                 data=derived_type,
                                 parent=current_node)
-            current_node._begin = (current_linemap_no, current_statement_no)
+            current_node._begin = (stmt_info.linemap_no, stmt_info.no)
             accessibility_statement_stack.append([])
             log_enter_node_()
         else:
             util.logging.log_warning(opts.log_prefix,"_parse_statements","found derived type in '{}' but parent is {}; expected program/module/subroutine/function parent.".\
                     format(current_statement,current_node._kind))
-
     def Use():
         nonlocal current_node
         nonlocal current_statement
@@ -456,14 +429,12 @@ def _parse_statements(linemaps, file_path,**kwargs):
         if current_node._kind != "root":
             current_node._data["used_modules"].append(
                 create_index_record_from_use_statement(current_statement))
-
     # delayed parsing
     def Declaration():
         nonlocal root
         nonlocal current_node
-        nonlocal current_linemap
         nonlocal current_statement
-        nonlocal current_statement_no
+        nonlocal stmt_info
         #print(current_statement)
         log_detection_("declaration")
         if current_node != root:
@@ -472,8 +443,8 @@ def _parse_statements(linemaps, file_path,**kwargs):
             log_begin_task(current_node, msg)
             variables = create_index_records_from_declaration(current_node._data["name"] if current_node._data["kind"] == "module" else None,                
                                                               current_statement,
-                                                              current_linemap["file"],
-                                                              current_linemap["lineno"])
+                                                              stmt_info.file,
+                                                              stmt_info.lineno)
             current_node._data["variables"] += variables
             msg = "finished to parse declaration '{}'".format(current_statement)
             log_end_task(current_node, msg)
@@ -492,7 +463,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
                 current_statement)
             log_begin_task(current_node, msg)
             #
-            array_specs = util.parsing.parse_dimension_statement(current_statement)
+            array_specs = statement_classifier.parse_dimension_statement(current_statement)
             for pair in array_specs:
                 var_name, var_bounds = pair 
                 found_decl = False
@@ -508,7 +479,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
                     for f_type,f_len,kind,letters in get_current_implicit_rules_():
                         if var_name[0] in letters:
                             found_decl = True
-                            ivar = types.create_index_var(f_type,
+                            ivar = indexertypes.create_index_var(f_type,
                                                           f_len,
                                                           kind,
                                                           [],
@@ -517,8 +488,8 @@ def _parse_statements(linemaps, file_path,**kwargs):
                                                           var_bounds,
                                                           None,
                                                           module_name,
-                                                          current_linemap["file"],
-                                                          current_linemap["lineno"])
+                                                          stmt_info.file,
+                                                          stmt_info.lineno)
                             current_node._data["variables"].append(ivar)
                             break
                 if not found_decl:
@@ -541,7 +512,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
                 current_statement)
             log_begin_task(current_node, msg)
             #
-            parameters = util.parsing.parse_parameter_statement(current_statement)
+            parameters = statement_classifier.parse_parameter_statement(current_statement)
             for pair in parameters:
                 var_name, rhs = pair 
                 found_decl = False
@@ -559,7 +530,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
                     for f_type,f_len,kind,letters in get_current_implicit_rules_():
                         if var_name[0] in letters:
                             found_decl = True
-                            ivar = types.create_index_var(f_type,
+                            ivar = indexertypes.create_index_var(f_type,
                                                           f_len,
                                                           kind,
                                                           [],
@@ -568,8 +539,8 @@ def _parse_statements(linemaps, file_path,**kwargs):
                                                           [],
                                                           rhs,
                                                           module_name,
-                                                          current_linemap["file"],
-                                                          current_linemap["lineno"])
+                                                          stmt_info.file,
+                                                          stmt_info.lineno)
                             current_node._data["variables"].append(ivar)
                             break
                 if not found_decl:
@@ -577,7 +548,6 @@ def _parse_statements(linemaps, file_path,**kwargs):
             #
             msg = "finished to parse parameter statement '{}'".format(current_statement)
             log_end_task(current_node, msg)
-
     def Attributes():
         """Add attributes to previously declared variables in same scope/declaration list.
         Does not modify variables in other scopes.
@@ -592,14 +562,13 @@ def _parse_statements(linemaps, file_path,**kwargs):
                 current_statement)
             log_begin_task(current_node, msg)
             #
-            attributes, modified_vars = util.parsing.parse_attributes_statement(current_statement)
+            attributes, modified_vars = statement_classifier.parse_attributes_statement(current_statement)
             for var_context in current_node._data["variables"]:
                 if var_context["name"] in modified_vars:
                     var_context["attributes"] += attributes
             #
             msg = "finished to parse attributes statement '{}'".format(current_statement)
             log_end_task(current_node, msg)
-
     def AccDeclare():
         """Add attributes to previously declared variables in same scope.
         Does not modify scope of other variables.
@@ -630,7 +599,6 @@ def _parse_statements(linemaps, file_path,**kwargs):
                     var_context["declare_on_target"] = "tofrom"
         msg = "finished to parse acc declare directive '{}'".format(current_statement)
         log_end_task(current_node, msg)
-
     def AccRoutine():
         """Add attributes to previously declared variables in same scope.
         Does not modify scope of other variables.
@@ -645,7 +613,7 @@ def _parse_statements(linemaps, file_path,**kwargs):
                 current_statement)
            # parse_result = translator.tree.grammar.acc_routine.parseString( # todo: switch to token based parser
            #     current_statement)[0]
-            _, _, directive_args, clauses = util.parsing.parse_acc_directive(
+            _, _, directive_args, clauses = statement_classifier.parse_acc_directive(
                     current_statement)
             if len(clauses) != 1:
                 raise util.error.SyntaxError("expected one of 'gang', 'worker', 'vector', 'seq'")
@@ -663,96 +631,85 @@ def _parse_statements(linemaps, file_path,**kwargs):
                     raise util.error.SyntaxError("expected one of 'gang', 'worker', 'vector', 'seq'")
             msg = "finished to parse acc routine directive '{}'".format(current_statement)
             log_end_task(current_node, msg)
-
     # parser loop
     try:
-        for current_linemap_no, current_linemap in enumerate(linemaps):
-            if current_linemap["is_active"]:
-                for current_statement_no, stmt in enumerate(
-                        current_linemap["statements"]):
-                    original_statement_lower = stmt["body"].lower()
-                    current_tokens = util.parsing.tokenize(original_statement_lower,padded_size=6)
-                    try:
-                        numeric_label = str(int(current_tokens[0]))
-                        current_tokens.pop(0)
-                    except:
-                        numeric_label = None
-                    current_statement = " ".join([tk for tk in current_tokens if len(tk)])
-                    util.logging.log_debug3(
-                        opts.log_prefix, "_parse_statements",
-                        "process statement '{}'".format(current_statement))
-                    if openacc and util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
+        for stmt_info in linemapper.statement_iterator(linemaps):
+            original_statement_lower = stmt_info.body.lower()
+            current_tokens = util.parsing.tokenize(original_statement_lower,padded_size=6)
+            current_statement = " ".join([tk for tk in current_tokens if len(tk)])
+            util.logging.log_debug3(
+                opts.log_prefix, "_parse_statements",
+                "process statement '{}'".format(current_statement))
+            if openacc and statement_classifier.is_fortran_directive(original_statement_lower,modern_fortran):
+                if current_tokens[1:3] == ["acc","declare"]:
+                    AccDeclare()
+                elif current_tokens[1:3] == ["acc","routine"]:
+                    AccRoutine()
+            elif statement_classifier.is_fortran_comment(original_statement_lower,modern_fortran):
+                pass
+            else: # fortran statements
+                if statement_classifier.is_assignment(current_tokens):
+                    # Fortran allows that variables can be named after keywords, e.g. 'function', 'real'.
+                    # We must exclude that a keyword-named variable
+                    # appears in an assignment before trying to detect
+                    # another Fortran statement. Hence we first check if a statement
+                    # is an assignment.
+                    # todo: could handle statement functions here 
+                    # todo: handle implicit variables here (problem: scope)
+                    pass
+                else:
+                    if current_tokens[0:2] == ["end","interface"]:
+                        InterfaceEnd() 
+                    elif (current_tokens[0]=="end" and
+                       current_tokens[1] not in ignored_constructs):
+                        End()
+                    elif openacc and statement_classifier.is_fortran_directive(original_statement_lower,modern_fortran):
                         if current_tokens[1:3] == ["acc","declare"]:
                             AccDeclare()
                         elif current_tokens[1:3] == ["acc","routine"]:
                             AccRoutine()
-                    elif util.parsing.is_fortran_comment(original_statement_lower,modern_fortran):
-                        pass
-                    else: # fortran statements
-                        if util.parsing.is_assignment(current_tokens):
-                            # Fortran allows that variables can be named after keywords, e.g. 'function', 'real'.
-                            # We must exclude that a keyword-named variable
-                            # appears in an assignment before trying to detect
-                            # another Fortran statement. Hence we first check if a statement
-                            # is an assignment.
-                            # todo: could handle statement functions here 
-                            # todo: handle implicit variables here (problem: scope)
-                            pass
-                        else:
-                            if current_tokens[0:2] == ["end","interface"]:
-                                InterfaceEnd() 
-                            elif (current_tokens[0]=="end" and
-                               current_tokens[1] not in ignored_constructs):
-                                End()
-                            elif openacc and util.parsing.is_fortran_directive(original_statement_lower,modern_fortran):
-                                if current_tokens[1:3] == ["acc","declare"]:
-                                    AccDeclare()
-                                elif current_tokens[1:3] == ["acc","routine"]:
-                                    AccRoutine()
-                            elif current_tokens[0] == "use":
-                                Use()
-                            elif current_tokens[0] == "module" and current_tokens[1] != "procedure":
-                                ModuleStart()
-                            elif current_tokens[0] == "program":
-                                ProgramStart()
-                            elif current_tokens[0] == "type" and current_tokens[1] != "(": # type a ; type, bind(c) :: a
-                                TypeStart()
-                            elif current_tokens[0] in ["public","private"]:
-                                PublicOrPrivate()
-                            elif current_tokens[0] == "implicit":
-                                Implicit()
-                            elif current_tokens[0] == "interface":
-                                Interface()
-                            elif current_tokens[0] == "contains":
-                                Contains()
-                            elif current_tokens[0] in ["dimension","dim"]:
-                                Dimension()
-                            elif current_tokens[0] == "parameter":
-                                Parameter()
-                            elif current_tokens[0] == "attributes" and "::" in current_tokens: # attributes(device) :: a
-                                Attributes() 
-                            # todo: parse functions, subroutine signatures more carefully
-                            elif current_tokens[0] != "end" and "function" in current_tokens:
-                                # Functions must be checked before the 
-                                FunctionStart()
-                            elif current_tokens[0] != "end" and "subroutine" in current_tokens:
-                                SubroutineStart()
-                            elif current_tokens[0] in [
-                                 "character", "integer", "logical", "real",
-                                 "complex", "double"
-                               ]:
-                                Declaration()
-                            elif current_tokens[0:2] == ["type","("]: # type(dim3) :: a
-                                Declaration()
+                    elif current_tokens[0] == "use":
+                        Use()
+                    elif current_tokens[0] == "module" and current_tokens[1] != "procedure":
+                        ModuleStart()
+                    elif current_tokens[0] == "program":
+                        ProgramStart()
+                    elif current_tokens[0] == "type" and current_tokens[1] != "(": # type a ; type, bind(c) :: a
+                        TypeStart()
+                    elif current_tokens[0] in ["public","private"]:
+                        PublicOrPrivate()
+                    elif current_tokens[0] == "implicit":
+                        Implicit()
+                    elif current_tokens[0] == "interface":
+                        Interface()
+                    elif current_tokens[0] == "contains":
+                        Contains()
+                    elif current_tokens[0] in ["dimension","dim"]:
+                        Dimension()
+                    elif current_tokens[0] == "parameter":
+                        Parameter()
+                    elif current_tokens[0] == "attributes" and "::" in current_tokens: # attributes(device) :: a
+                        Attributes() 
+                    # todo: parse functions, subroutine signatures more carefully
+                    elif current_tokens[0] != "end" and "function" in current_tokens:
+                        # Functions must be checked before the 
+                        FunctionStart()
+                    elif current_tokens[0] != "end" and "subroutine" in current_tokens:
+                        SubroutineStart()
+                    elif current_tokens[0] in [
+                         "character", "integer", "logical", "real",
+                         "complex", "double"
+                       ]:
+                        Declaration()
+                    elif current_tokens[0:2] == ["type","("]: # type(dim3) :: a
+                        Declaration()
     except util.error.SyntaxError as e:
-        file_path = current_linemap["file"]
-        lineno = current_linemap["lineno"]
-        msg = "{}:{}:{}(stmt-no):{}".format(file_path,lineno,current_statement_no+1,e.args[0])
+        file_path = stmt_info.file
+        lineno = stmt_info.lineno
+        msg = "{}:{}:{}(stmt-no):{}".format(file_path,lineno,stmt_info.no+1,e.args[0])
         e.args = (msg,)
         raise
-
     return index
-
 
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def _write_json_file(index, file_path):
@@ -765,7 +722,6 @@ def _read_json_file(file_path):
     #print(file_path,file=sys.stderr)
     with open(file_path, "r") as infile:
         return json.load(infile)
-
 # API
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def update_index_from_linemaps(linemaps, index,**kwargs):
@@ -774,33 +730,26 @@ def update_index_from_linemaps(linemaps, index,**kwargs):
         index += _parse_statements(linemaps,
                                    file_path=linemaps[0]["file"],
                                    **kwargs)
-
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def update_index_from_snippet(index, snippet, **kwargs):
     linemaps = linemapper.preprocess_and_normalize(snippet.splitlines(),
                                                    file_path="dummy.f90", **kwargs)
     update_index_from_linemaps(linemaps, index, **kwargs)
-
-
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def create_index_from_snippet(snippet, **kwargs):
     index = []
     update_index_from_snippet(index, snippet, **kwargs)
     return index
-
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def search_derived_types(imodule, search_procedures=True):
     """Search through a module (or program)
     and return derived type definition index entries.
     """
-
     util.logging.log_enter_function(opts.log_prefix,"_search_derived_types",\
       {"modulename": imodule.get("name",""),\
        "search_procedures": str(search_procedures)})
-
     itypes = {}
     prefix = ""
-
     def collect_types_(irecord):
         nonlocal itypes
         nonlocal prefix
@@ -811,16 +760,11 @@ def search_derived_types(imodule, search_procedures=True):
         if search_procedures:
             for iprocedure in irecord["procedures"]:
                 collect_types_(iprocedure)
-
     collect_types_(imodule)
-
     util.logging.log_leave_function(
         opts.log_prefix, "_search_derived_types",
         {"typenames": str([itype["name"] for itype in itypes.values()])})
-
     return itypes
-
-
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def write_gpufort_module_files(index, output_dir):
     """
@@ -832,13 +776,10 @@ def write_gpufort_module_files(index, output_dir):
     for mod in index:
         file_path = output_dir + "/" + mod["name"] + opts.gpufort_module_file_suffix
         _write_json_file(mod, file_path)
-
-
 @util.logging.log_entry_and_exit(opts.log_prefix)
 def load_gpufort_module_files(input_dirs, index):
     """
     Load gpufort module files and append to the index.
-
     :param list input_dirs: [in] List of input directories (as strings).
     :param list index:     [inout] Empty or non-empty list. Loaded data structure is appended.
     """
@@ -854,7 +795,6 @@ def load_gpufort_module_files(input_dirs, index):
                     mod_index = _read_json_file(
                         os.path.join(input_dir, child))
                     index.append(mod_index)
-
 def search_index_for_top_level_entry(index, name, kinds=[]):
     """Search the index for module, program, subroutine,
     or function entity that do not have a parent themselves.
@@ -874,7 +814,6 @@ def search_index_for_top_level_entry(index, name, kinds=[]):
     else:
         raise util.error.LookupError(
           "no index record found with name '{}'".format(name))
-
 def search_index_for_procedure_or_program(index, tag):
     """Search the index for program, subroutine, or function entity.
     :param str tag: lower case tag of the searched entry."""

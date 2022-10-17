@@ -3,8 +3,14 @@
 import re
 
 # third-party modules
+#import cPyparsing as pyp, todo: unfortunately, evhub/cpyparsing seems to generate different parse tree
+# underlying pyparsing implementation might be too oudated (is from "python2.4 times").
+# Substantial performance gains might make it worth it to investigate this further.
+
 import pyparsing as pyp
 
+import functools 
+    
 pyp.ParserElement.setDefaultWhitespaceChars("\r\n\t &;")
 pyp.ParserElement.enablePackrat()
 
@@ -136,10 +142,7 @@ class Grammar:
         self.arith_expr = pyp.Forward()
         
         self.tensor_eval_arg = pyp.Forward()
-        self.tensor_eval_args = pyp.Optional(
-          pyp.Group(pyp.delimitedList(self.tensor_eval_arg)),
-          default=None
-        )
+        self.tensor_eval_args = pyp.Optional(pyp.delimitedList(self.tensor_eval_arg))
         self.tensor_eval = self.identifier + self.LPAR + self.tensor_eval_args + self.RPAR # emits 2 tokens
         
         # derived_types
@@ -191,10 +194,14 @@ class Grammar:
           | self.complex_assignment
           | self.assignment
         )
-        
-        self.tensor_slice = pyp.delimitedList(self.arith_expr,delim=":")
+        COLON = pyp.Literal(":").suppress()
+        opt_arith_expr = pyp.Optional(self.arith_expr,default=None)
+        self.tensor_slice = pyp.Group(
+          ( opt_arith_expr + COLON + opt_arith_expr + COLON + opt_arith_expr )
+          | ( opt_arith_expr + COLON + opt_arith_expr )
+        ) 
         # define forward declared tokens
-        self.argument = self.arith_expr | self.tensor_slice
+        self.argument = self.tensor_slice | self.arith_expr
         self.tensor_eval_arg <<= self.argument | self.keyword_argument
         
         # conversion functions
@@ -263,69 +270,7 @@ class Grammar:
         )
 
     def _init_fortran_statements(self,ignorecase):
-        flags = self._re_flags(ignorecase)
-        # todo: remove many of these expressions in the future
-        literal_cls = self._literal_cls(ignorecase)
         self.fortran_subroutine_call = self.CALL + self.tensor_eval
-        ### If statement
-        # Example:
-        #
-        #  IF (x < 50) THEN
-        #     Grade = 'f'
-        #  ELSE IF (x < 60) THEN
-        #     Grade = 'd'
-        #  ELSEIF (x < 70) THEN
-        #     Grade = 'c'
-        #  ELSE IF (x < 80) THEN
-        #     Grade = 'b'
-        #  ELSE
-        #     Grade = 'a'
-        #  END IF
-        self.fortran_if_else_if = (
-          pyp.Optional(literal_cls("else"),default="")
-          + self.IF 
-          + self.LPAR 
-          + self.arith_expr
-          + self.RPAR 
-          + self.THEN
-        )
-        self.fortran_else = self.ELSE
-        
-        #[name:] select case (expression)
-        #   case (selector1)
-        #   ! some statements
-        #   ... case (selector2)
-        #   ! other statements
-        #   ...
-        #   case default
-        #   ! more statements
-        #   ...
-        #end select [name]
-        self.fortran_select_case = pyp.Regex(r"(\w+\s*:)?\s*select\s+case\s*\(",flags).suppress() + self.arith_expr + self.RPAR
-        self.fortran_case = pyp.Regex(r"case\s*\(",flags).suppress() + self.arith_expr + self.RPAR
-        self.fortran_case_default = pyp.Regex(r"case\s+default",flags).suppress() # todo: not sure if still needed
-        self.fortran_end_select_case = pyp.Regex(r"end\s*select(\s+\w+)?",flags).suppress() # todo: not sure if still needed
-        
-        ## Do/while Loop
-        do_loop_start = pyp.Regex(r"(\w+\s*:)?\s*do",flags).suppress()
-        self.fortran_do = (
-          do_loop_start
-          + self.assignment
-          + self.COMMA
-          + self.arith_expr
-          + pyp.Optional(
-              self.COMMA
-              + self.arith_expr,default=None
-          )
-        )
-        self.fortran_do_while = (
-          do_loop_start
-          + self.WHILE
-          + self.LPAR
-          + self.arith_expr
-          + self.RPAR 
-        )
-        self.fortran_comment = pyp.Combine(pyp.Literal("!") + ~(~pyp.White()+pyp.Literal("$")) + pyp.restOfLine())
 
     def _init_cuda_fortran_keywords(self,ignorecase):
         literal_cls = self._literal_cls(ignorecase)

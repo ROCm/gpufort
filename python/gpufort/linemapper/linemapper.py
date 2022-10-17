@@ -466,6 +466,7 @@ def preprocess_and_normalize(fortran_file_lines,
         is_preprocessor_directive = lines[0].startswith("#")
         modified = False
         if is_preprocessor_directive and not only_apply_user_defined_macros:
+            numeric_label = None
             try:
                 included_linemaps = _handle_preprocessor_directive(
                     lines, file_path, include_dirs, macro_stack, region_stack1,

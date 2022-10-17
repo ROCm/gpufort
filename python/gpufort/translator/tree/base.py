@@ -36,7 +36,6 @@ class TTNode(object):
     def __str__(self):
         return self.__class__.__name__ + ':' + str(self.__dict__)
 
-
     def child_nodes(self):
         result = []
         for key, value in self.__dict__.items():

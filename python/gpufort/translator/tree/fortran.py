@@ -44,13 +44,20 @@ class TTLabel(base.TTNode,base.FlowStatementMarker):
 
     def _assign_fields(self, tokens):
         self._label = tokens[0]
+        self.is_exit_marker = False
+        self.is_standalone = False
 
     def cstr(self):
-        return "_{}:".format(self._label)
+        result = "_"+self._label+":"
+        if self.is_exit_marker:
+            result = "_" + result
+        if self.is_standalone:
+            result += " ;"
+        return result
 
 class TTContinue(base.TTNode,base.FlowStatementMarker):
     def cstr(self):
-        return "return;"
+        return ";"
 
     def fstr(self):
         return "continue"
@@ -62,40 +69,43 @@ class TTCycle(base.TTNode,base.FlowStatementMarker):
         self._in_loop = True
 
     def cstr(self):
-        if self._in_loop:
-            return "continue;"
-        elif self._result_name != None and len(self._result_name):
-            return "return " + self._result_name + ";"
+        if self._label != None:
+            # cycle label in loop is prefixed by single "_"
+            return "goto _{};".format(self._label)    
         else:
-            return "return;"
+            if self._in_loop:
+                return "continue;"
+            elif self._result_name != None and len(self._result_name):
+                return "return " + self._result_name + ";"
+            else:
+                return "return;"
 
     def fstr(self):
-        if self._in_loop:
-            return "cycle"
-        else:
-            return "return"
+        return "cycle {}".format(self.label)
 
 class TTExit(base.TTNode,base.FlowStatementMarker):
 
     def _assign_fields(self, tokens):
+        self._label = tokens[0]
         self._result_name = ""
         self._in_loop = True
 
     def cstr(self):
-        if self._in_loop:
-            return "break;"
-        elif self._result_name != None and len(self._result_name):
-            return "return " + self._result_name + ";"
+        if self._label != None:
+            # exit label after loop is prefixed by "__"
+            return "goto __{};".format(self._label)    
         else:
-            return "return;"
+            if self._in_loop:
+                return "break;"
+            elif self._result_name != None and len(self._result_name):
+                return "return " + self._result_name + ";"
+            else:
+                return "return;"
 
     def fstr(self):
-        if self._in_loop:
-            return "break;"
-        else:
-            return "return"
+        return "exit {}".format(self.label)
 
-class TTGoto(base.TTNode,base.FlowStatementMarker):
+class TTUnconditionalGoTo(base.TTNode,base.FlowStatementMarker):
     #todo: More complex expressions possible with jump label list
     #todo: Target numeric label can be renamed to identifier (deleted Fortran feature)
     def _assign_fields(self, tokens):
@@ -264,8 +274,9 @@ class TTTensorEval(base.TTNode):
 
     def _assign_fields(self, tokens):
         self._name = tokens[0]
-        self._args = tokens[1]
-        if self._args == None:
+        if len(tokens) > 1:
+            self._args = tokens[1]
+        else:
             self._args = base.TTNone
         self._type = TTTensorEval.Type.UNKNOWN
 
@@ -864,7 +875,6 @@ class TTBinaryOp(base.TTNode):
     }
  
     def _assign_fields(self, tokens):
-        print(tokens)
         self.opd1, self.op, self.opd2 = tokens[0]
         #self.type = None
         #self.kind = None
@@ -1033,7 +1043,7 @@ class TTSlice(base.TTNode):
 
     def _assign_fields(self, tokens):
         self._lbound, self._ubound, self._stride =\
-           base.TTNone(), base.TTNone(), base.TTNone()
+          None, None, None 
         if len(tokens) == 1:
             self._ubound = tokens[0]
         elif len(tokens) == 2:
@@ -1104,15 +1114,8 @@ class TTArgumentList(base.TTNode):
     def _assign_fields(self, tokens):
         self.items = []
         self.max_rank = -1
-        if tokens != None:
-            try:
-                self.items = tokens[0].asList()
-            except AttributeError:
-                if isinstance(tokens[0],list):
-                    self.items = tokens[0]
-                else:
-                    raise
-            self.max_rank = len(self.items)
+        self.items = tokens.asList()
+        self.max_rank = len(self.items)
         self.__next_idx = 0
     def __len__(self):
         return len(self.items)
@@ -1207,7 +1210,7 @@ class TTIfElseIf(base.TTContainer):
         return [self._condition, self.body]
     
     def header_cstr(self):
-        prefix = self._else+" " if self._else.lower() == "else" else ""
+        prefix = self._else+" " if self._else != None else ""
         return "{}if ({}) {{\n".format(prefix,traversals.make_cstr(self._condition))
     def footer_cstr(self):
         return "}\n" 
@@ -1281,8 +1284,6 @@ class TTDoWhile(base.TTContainer):
         return "  break;\n" 
 
 def set_fortran_parse_actions(grammar):
-    #print_statement.setParseAction(TTCommentedOut)
-    grammar.fortran_comment.setParseAction(TTCommentedOut)
     grammar.logical.setParseAction(TTLogical)
     grammar.character.setParseAction(TTCharacter)
     grammar.integer.setParseAction(TTNumber)

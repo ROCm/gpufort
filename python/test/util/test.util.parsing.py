@@ -99,11 +99,11 @@ class TestParsingUtils(unittest.TestCase):
           ['call', 'debug', '(', '1', ',', '"my literal string with ; and \\"; use something "', ')'],
           ['call', 'debug', '(', '1', ',', "'my literal string with ; and \\'; use something '", ')'],
           ['end', 'do'],
-          ['end', 'do'],
+          ['enddo'],
           ['end', 'if'],
-          ['end', 'if'],
+          ['endif'],
           ['else', 'if'],
-          ['else', 'if'],
+          ['elseif'],
           ['!$', 'acc', 'enter', 'data', 'copyin', '(', 'a', ')', 'copyout', '(', 'b', '(', '-', '1', ':', ')', ')'],
         ]
         for i,stmt in enumerate(statements):

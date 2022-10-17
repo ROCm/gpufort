@@ -135,9 +135,12 @@ def parse_fortran_code(code,result_name=None):
         nonlocal stmt
         nonlocal level
         assert isinstance(curr,tree.TTContainer)
-        if named_label != None:
-            append_(tree.TTLabel([named_label]))
         append_(container)
+        if named_label != None: # append exit label behind construct
+            exit_label = tree.TTLabel([named_label])
+            exit_label.is_exit_marker = True
+            exit_label.is_standalone = True
+            append_(exit_label)
         curr = container
         curr.named_label = named_label
         if inc_level:
@@ -289,6 +292,10 @@ def parse_fortran_code(code,result_name=None):
               "do loop", 
               named_label=named_label
             )
+            if named_label: # put into body of do loop
+                do_loop_body_label = tree.TTLabel([named_label])
+                do_loop_body_label.is_standalone = True
+                append_(do_loop_body_label)
         # if-then-else
         elif statement_classifier.is_if_then(tokens):
             named_label, cond = statement_classifier.parse_result
@@ -363,7 +370,7 @@ def parse_fortran_code(code,result_name=None):
         elif statement_classifier.is_case_default(tokens):
             if type(curr) is tree.TTCase:
                 ascend_("case-default")
-            descend_(tree.TTCaseDefault([[]]), "case default")
+            descend_(tree.TTCaseDefault([]), "case default")
         # end
         elif tokens[0] == "continue":
             ttcontinue = tree.TTContinue([[]])
@@ -373,17 +380,22 @@ def parse_fortran_code(code,result_name=None):
                 while ( isinstance(curr,tree.TTDo)
                         and curr.compare_dolabel(stmt_label) ):
                     ascend_(tokens[1], named_label=named_label)
-        elif tokens[0] == "cycle":
+        elif statement_classifier.is_cycle(tokens):
             # todo: might have label arg
-            ttcontinue = tree.TTCycle([[]])
-            append_(ttcontinue,"cycle statement")
-        elif tokens[0] == "exit":
+            ttcycle = tree.TTCycle([statement_classifier.parse_result])
+            append_(ttcycle,"cycle statement")
+        elif statement_classifier.is_exit(tokens):
             # todo: might have label arg
-            ttexit = tree.TTExit([[]])
+            ttexit = tree.TTExit([statement_classifier.parse_result])
             append_(ttexit,"exit statement")
-        elif tokens[0:2] == ["go","to"]:
+        elif statement_classifier.is_unconditional_goto(tokens):
             # todo: consider assign <numeric-label> to <ident>
-            append_(tree.TTGoto([tokens[2]]),"goto statement")
+            append_(tree.TTUnconditionalGoTo([statement_classifier.parse_result]),"goto statement")
+        elif statement_classifier.is_assigned_goto(tokens):
+            # todo: consider assign <numeric-label> to <ident>
+            raise util.error.LimitationError("assigned goto statement not supported yet")
+        elif statement_classifier.is_computed_goto(tokens):
+            raise util.error.LimitationError("computed goto statement not supported yet")
         elif statement_classifier.is_end(tokens):
             assert isinstance(curr,tree.TTContainer)
             ascend_("structured block")
@@ -399,7 +411,7 @@ def parse_fortran_code(code,result_name=None):
             named_label = statement_classifier.parse_result
             assert isinstance(curr,(tree.TTElse,tree.TTIfElseIf))
             ascend_("if/else-if/else branch") # branch
-            assert isinstance(curr,tree.TTIfElseIfBlock)
+            assert isinstance(curr,tree.TTIfElseBlock)
             ascend_("if-else block", named_label=named_label) # block
         elif statement_classifier.is_end(tokens, "select"):
             named_label = statement_classifier.parse_result

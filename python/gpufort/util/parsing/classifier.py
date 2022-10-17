@@ -29,6 +29,18 @@ class StatementClassifier:
         self.__parse_result = None
         self.__result_avail = False
     
+    def _raise_unclassified_error(self,tokens,msg):
+        """Raise error when the statement has not been classified yet."""
+        #todo: Parametrize error object to tell exception catching
+        # caller that this statement has not been classified yet.
+        raise error.SyntaxError(msg)
+
+    def _raise_classified_error(self,tokens,msg):
+        """Raise error when the statement has been classified."""
+        #todo: Parametrize error object to tell exception catching
+        # caller that this statement has been classified already.
+        raise error.SyntaxError(msg)
+    
     @property
     def parse_result_is_available(self):
         return self.__result_avail        
@@ -1139,6 +1151,9 @@ class StatementClassifier:
         return named_label
     
     def _parse_single_argument(self,stream):
+        """Parses expressions of the form <tokens>+')'.
+        :see: base.next_tokens_till_open_bracket_is_closed
+        """
         cond_tokens = base.next_tokens_till_open_bracket_is_closed(
           stream,
           open_brackets = 1,
@@ -1169,12 +1184,13 @@ class StatementClassifier:
     
     def parse_else_if_statement(self,statement):
         tokens = ts.TokenStream(statement)
-        if tokens.pop_front_equals_ignore_case("else","if","("):
+        self._parse_combined_keyword(tokens,"else","if")
+        if tokens.pop_front_equals_ignore_case("("):
             cond = self._parse_single_argument(tokens)
             if not tokens.pop_front_equals_ignore_case("then"):
                 raise error.SyntaxError("expected 'then'")
         else:
-            raise error.SyntaxError("expected 'else' + 'if' + '('")
+            raise error.SyntaxError("expected '('")
         tokens.check_if_remaining_tokens_are_blank()
         return cond
     
@@ -1184,13 +1200,6 @@ class StatementClassifier:
             raise error.SyntaxError("expected 'else'")
         tokens.check_if_remaining_tokens_are_blank()
         return None
-    
-    def parse_else_statement(self,statement):
-        tokens = ts.TokenStream(statement)
-        if not tokens.pop_front_equals_ignore_case("else","if"):
-            raise error.SyntaxError("expected 'else'")
-        tokens.check_if_remaining_tokens_are_blank()
-        return named_label
     
     def parse_where_statement(self,statement):
         """:returns: A named label or None and a mask expression."""
@@ -1209,14 +1218,10 @@ class StatementClassifier:
     def parse_else_where_statement(self,statement):
         """:returns: A mask expr or None."""
         tokens = ts.TokenStream(statement)
-        if tokens.pop_front_equals_ignore_case("else","where"):
-            try:
-                if tokens.pop_front_equals_ignore_case("("):
-                    mask = self._parse_single_argument(tokens)
-            except error.SyntaxError:
-                mask = None
-        else:
-            raise error.SyntaxError("expected 'else' + 'where'")
+        self._parse_combined_keyword(tokens,"else","where")
+        if len(tokens) and tokens[0] == "(":
+            tokens.pop_front() 
+            mask = self._parse_single_argument(tokens)
         tokens.check_if_remaining_tokens_are_blank()
         return mask
     
@@ -1230,10 +1235,11 @@ class StatementClassifier:
             named_label = None
         #
         argument = None
-        if tokens.pop_front_equals_ignore_case("select","case","("):
+        self._parse_combined_keyword(tokens,"select","case")
+        if tokens.pop_front_equals_ignore_case("("):
             argument = self._parse_single_argument(tokens)
         else:
-            raise error.SyntaxError("expected 'select' + 'case' + '('")
+            raise error.SyntaxError("expected '('")
         return (named_label, argument)
     
     def parse_case_statement(self,statement):
@@ -1248,27 +1254,152 @@ class StatementClassifier:
             raise error.SyntaxError("expected 'case' + '('")
         tokens.check_if_remaining_tokens_are_blank()
         return values
+
+    def parse_case_default_statement(self,statement):
+        tokens = ts.TokenStream(statement)
+        if not tokens.pop_front_equals_ignore_case("case","default"):
+            self._raise_unclassified_error(tokens,"expected 'case' + 'default'")
     
     def parse_end_statement(self,statement,kind):
         """Parses statements in the form:
         END
         END kind [label]
+        ENDkind [label]
         :return: label or None.
         """
         tokens = ts.TokenStream(statement)
-        if not tokens.pop_front_equals_ignore_case("end"):
-            raise error.SyntaxError("expected 'end'")
-        named_label = None        
-        if kind != None:
-            if tokens.pop_front_equals_ignore_case(kind):
-                if not tokens.empty():
-                    named_label = tokens.pop_front()
-                    if not named_label.isidentifier():
-                        raise error.SyntaxError("expected identifier")
+        if kind == None:
+            if not tokens.pop_front_equals_ignore_case("end"):
+                raise error.SyntaxError("expected 'end'")
+            named_label = None
+        else:
+            self._parse_combined_keyword(tokens,"end",kind)
+            if tokens.empty():
+                named_label = None
             else:
-                raise error.SyntaxError("expected '{}'".format(kind))
+                named_label = tokens.pop_front()
+                if not named_label.isidentifier():
+                    raise error.SyntaxError("expected identifier")
         tokens.check_if_remaining_tokens_are_blank()
         return named_label
+
+
+    def _parse_combined_keyword(self,tokens,first,second):
+        if base.compare_ignore_case(tokens[0],first+second):
+            tokens.pop_front()
+        elif not tokens.pop_front_equals_ignore_case(first,second):
+            raise self._raise_unclassified_error(tokens,"expected '{}' + '{}'".format(
+              first,second
+            ))
+
+    def parse_unconditional_goto_statement(self,statement):
+        """Parses unconditional GO TO statements:
+        GO TO numeric-label|loop-labe|ASSIGN-label
+        """
+        tokens = ts.TokenStream(statement)
+        self._parse_combined_keyword(tokens,"go","to")
+        unconditional_goto_label = tokens.pop_front()
+        if (not unconditional_goto_label.isidentifier()
+            and not unconditional_goto_label.isnumeric()):
+             self._raise_classified_error(tokens,"expected identifier")
+        tokens.check_if_remaining_tokens_are_blank()
+        return unconditional_goto_label
+
+    def parse_assigned_goto_statement(self,statement):
+        """Parses assigned GO TO statements:
+        GO TO <ASSIGN-label> [[,](numeric-label1[, numeric-label2])]"""
+        tokens = ts.TokenStream(statement)
+        self._parse_combined_keyword(tokens,"go","to")
+        assigned_goto_label = tokens.pop_front()
+        if not assigned_goto_label.isidentifier():
+            raise self._raise_classified_error(tokens,"'{}' is no identifier".format(
+              assigned_goto_label)
+            )
+        if tokens[0] == ",":
+            tokens.pop_front()
+            if not tokens.pop_front_equals_ignore_case("("):
+                raise self._raise_classified_error(tokens,"expected '('")
+        elif not tokens.pop_front_equals("("):
+            raise self._raise_classified_error(tokens,"expected '(' or ','")
+        assigned_goto_numeric_labels, num_consumed =  base.get_top_level_operands(tokens)
+        for label in assigned_goto_numeric_labels:
+              if not label.isnumeric():
+                  raise self._raise_classified_error(tokens,"'{}' is no numeric statement label".format(label))
+        tokens.pop_front(num_consumed)
+        if not tokens.pop_front_equals( ")"):
+            raise self._raise_classified_error(tokens,"expected ')'")
+        tokens.check_if_remaining_tokens_are_blank()
+        return (assigned_goto_label, assigned_goto_numeric_labels)
+
+    def parse_computed_goto_statement(self,statement):
+        """Parses computed GO TO statements:
+        GO TO (numeric-label1[, numeric-label2, ...]) [,] <integer or real expr>
+        """
+        tokens = ts.TokenStream(statement)
+        self._parse_combined_keyword(tokens,"go","to")
+        if not tokens.pop_front_equals("("):
+            self._raise_unclassified_error(tokens,"expected '('")
+        computed_goto_numeric_labels, num_consumed = base.get_top_level_operands(tokens)
+        if len(computed_goto_numeric_labels):
+            for label in computed_goto_numeric_labels:
+                  if not label.isnumeric():
+                      raise self._raise_classified_error(tokens,"'{}' is no numeric statement label".format(label))
+            tokens.pop_front(num_consumed)
+        else:
+            raise self._raise_classified_error(tokens,"expected at least one numeric label")
+        if not tokens.pop_front_equals( ")"):
+            raise self._raise_classified_error(tokens,"expected ')'")
+        if not len(tokens):
+            raise self._raise_classified_error(tokens,"expected ',' and/or integer/real expression")
+        if tokens[0] == ",":
+            tokens.pop_front()
+        computed_goto_expr = "".join(tokens.pop_front(len(tokens)))
+        if not len(computed_goto_expr):
+            raise self._raise_classified_error(tokens,"expected integer/real expression")
+        return (computed_goto_numeric_labels, computed_goto_expr)
+    
+
+    def _parse_cycle_or_exit_statement(self,statement,kind):
+        """Parses expression of the form:
+        {kind} [named-do-label]
+        :return: Identifier or None.
+        """
+        tokens = ts.TokenStream(statement)
+        if not tokens.pop_front_equals_ignore_case(kind):
+            raise self._raise_classified_error(tokens,"expected '{}'".format(kind))
+        if len(tokens):
+            named_do_label = tokens.pop_front()
+            if not named_do_label.isidentifier():
+                raise self._raise_classified_error(tokens,"expected identifier")
+            return named_do_label
+        else:
+            return None
+
+    def parse_cycle_statement(self,statement):
+        """Parses expression of the form:
+        CYCLE [named-do-label]
+        :return: Identifier or None.
+        """
+        return self._parse_cycle_or_exit_statement(statement,"cycle") 
+
+    def parse_exit_statement(self,statement):
+        """Parses expression of the form:
+        EXIT [named-do-label]
+        :return: Identifier or None.
+        """
+        return self._parse_cycle_or_exit_statement(statement,"exit") 
+
+    def parse_return_statement(self,statement):
+        """Parse return statement:
+        RETURN [alternate_return_ordinal_number_expression]
+        :return: Expression as string or None.
+        """
+        if not tokens.pop_front_equals_ignore_case("return"):
+            raise error.SyntaxError("expected 'return'")
+        if len(tokens):
+            return tokens.pop_front()
+        else:
+            return None
 
     def parse_do_statement(self,statement):
         """ High-level parser for 
@@ -1665,13 +1796,21 @@ class StatementClassifier:
         except (error.SyntaxError):
             return False
     
-    @__no_parse_result
+    @__produces_parse_result
     def is_case(self,tokens):
-        return base.compare_ignore_case(tokens[0:2],["case", "("])
+        try:
+            self.__parse_result = self.parse_case_statement(tokens)
+            return True
+        except (error.SyntaxError):
+            return False
     
     @__no_parse_result
     def is_case_default(self,tokens):
-        return base.compare_ignore_case(tokens[0:2],["case", "default"])
+        try:
+            self.parse_case_default_statement(tokens)
+            return True
+        except (error.SyntaxError):
+            return False
     
     @__produces_parse_result
     def is_block(self,tokens):
@@ -1709,14 +1848,6 @@ class StatementClassifier:
         except (error.SyntaxError):
             return False
     
-    @__produces_parse_result
-    def is_do(self,tokens):
-        try:
-            self.__parse_result = self.parse_do_statement(tokens)
-            return True
-        except (error.SyntaxError):
-            return False
-    
     @__no_parse_result
     def is_continue(self,tokens):
         if tokens[0].lower() == "continue":
@@ -1728,12 +1859,69 @@ class StatementClassifier:
             except:
                 return False 
     
-    @__no_parse_result
+    @__produces_parse_result
+    def is_cycle(self,tokens):
+        try:
+            self.__parse_result = self.parse_cycle_statement(tokens)
+            return True
+        except (error.SyntaxError):
+            return False
+    
+    @__produces_parse_result
+    def is_exit(self,tokens):
+        try:
+            self.__parse_result = self.parse_exit_statement(tokens)
+            return True
+        except (error.SyntaxError):
+            return False
+    
+    @__produces_parse_result
+    def is_unconditional_goto(self,tokens):
+        try:
+            self.__parse_result = self.parse_unconditional_goto_statement(tokens)
+            return True
+        except (error.SyntaxError):
+            return False
+    
+    @__produces_parse_result
+    def is_computed_goto(self,tokens):
+        try:
+            self.__parse_result = self.parse_computed_goto_statement(tokens)
+            return True
+        except (error.SyntaxError):
+            return False
+   
+    @__produces_parse_result
+    def is_assigned_goto(self,tokens):
+        try:
+            self.__parse_result = self.parse_assigned_goto_statement(tokens)
+            return True
+        except (error.SyntaxError):
+            return False
+    
+    @__produces_parse_result
+    def is_do(self,tokens):
+        try:
+            self.__parse_result = self.parse_do_statement(tokens)
+            return True
+        except (error.SyntaxError):
+            return False
+    
+    @__produces_parse_result
     def is_where(self,tokens):
-        cond1 = tokens[0].lower() == "where"
-        cond2 = tokens[0].isidentifier() and tokens[1] == ":" and\
-                tokens[2].lower() == "where"
-        return cond1 or cond2
+        try:
+            self.__parse_result = self.parse_where_statement(tokens)
+            return True
+        except (error.SyntaxError):
+            return False
+    
+    @__produces_parse_result
+    def is_else_where(self,tokens):
+        try:
+            self.__parse_result = self.parse_else_where_statement(tokens)
+            return True
+        except (error.SyntaxError):
+            return False
     
     @__produces_parse_result
     def is_end(self,tokens,kind=None):

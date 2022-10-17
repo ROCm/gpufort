@@ -64,45 +64,34 @@ def tokenize(statement, padded_size=0, modern_fortran=True,keepws=False):
     """
     if isinstance(statement,str):
         TOKENS_KEEP = [
-            r"[\"](?:\\.|[^\"\\])*[\"]",
-            r"[\'](?:\\.|[^\'\\])*[\']",
-            r"\bend(?:if|do|where)?\b",
-            r"\belse(?:if|where)?\b",
-            r"[();,%]",
-            r"::?",
-            r"<<<",
-            r">>>",
-            r"[<>]=?",
-            r"[\/=]=",
-            r"=>?",
-            r"\+",
-            r"-",
-            r"\*\*?",
-            r"\/",
-            r"\&",
-            r"\.(?:eq|ne|gt|lt|ge|le|and|or|not|eqv|neqv)\.",
-            r"[\s\t\r\n]+",
+          r"[\"](?:\\.|[^\"\\])*[\"]",
+          r"[\'](?:\\.|[^\'\\])*[\']",
+          r"::?",
+          r"<<<",
+          r">>>",
+          r"[<>]=?",
+          r"[\/=]=",
+          r"=>?",
+          r"\*\*?",
+          r"\.(?:[a-zA-Z]+)\.", # operators cannot have "_"
+          r"[();,%+-/&]",
+          r"[\s\t\r\n]+",
         ]
         if modern_fortran:
             TOKENS_KEEP.append(r"![@\$]?")
         else:
-            TOKENS_KEEP.append(r"^[c\*][@\$]?")
+            TOKENS_KEEP.append(r"^[cC\*dD][@\$]?")
         # IMPORTANT: Use non-capturing groups (?:<expr>) to ensure that an inner group in TOKENS_KEEP
         # is not captured.
         keep_pattern = "(" + "|".join(TOKENS_KEEP) + ")"
-       
-        tokens = re.split(keep_pattern, statement, 0, re.IGNORECASE)
-        result = []
-        for tk in tokens:
-            if tk.lower() in ["endif", "elseif", "enddo", "goto"]:
-                result.append(tk[:-2])
-                result.append(tk[-2:])
-            elif tk.lower() in ["endwhere","elsewhere"]:
-                result.append(tk[:-5])
-                result.append(tk[-5:])
-            elif len(tk) and (keepws or len(tk.strip())):
-                result.append(tk)
-        return pad_to_size(result,padded_size)
+        tokens = re.split(keep_pattern, statement, 0) # re.IGNORECASE
+        # IMPORTANT: Use non-capturing groups (?:<expr>) to ensure that an inner group in TOKENS_KEEP
+        # is not captured.
+        if keepws: 
+            # we need to remove zero-length tokens, todo: not sure why they appear
+            return pad_to_size([tk for tk in tokens if len(tk)],padded_size)
+        else:
+            return pad_to_size([tk for tk in tokens if len(tk) and not tk.isspace()],padded_size)
     elif isinstance(statement,list):
         if keepws:
             return pad_to_size(statement,padded_size)
@@ -256,9 +245,9 @@ def detect_line_starts(lines,modern_fortran=True):
             buffering = buffering or stmt_or_dir_tokens[2] == "&" 
         if not buffering:
             line_starts.append(lineno)
-        if len(stmt_or_dir) and stmt_or_dir_tokens[-1] in ['&', '\\']:
+        if len(stmt_or_dir_tokens) and stmt_or_dir_tokens[-1] in ['&', '\\']:
             buffering = True
-        elif len(stmt_or_dir):
+        elif len(stmt_or_dir_tokens):
             buffering = False
     line_starts.append(len(lines))
     return line_starts

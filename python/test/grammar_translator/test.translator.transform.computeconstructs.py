@@ -6,6 +6,9 @@ import time
 import unittest
 import addtoplevelpath
 import inspect
+import cProfile,pstats,io
+
+PROFILING_ENABLE = False
 
 from gpufort import translator
 from gpufort import indexer
@@ -52,6 +55,9 @@ do k = 1, N
 
      label: do i = -5,10,2
        a(i,j,k) = b(j,k) + c(k)
+       if ( i == 3 ) then 
+          exit label
+       endif
      end do label
     
      !$acc loop vector private(z)
@@ -71,11 +77,22 @@ end do
 
 class TestTransformAcc(unittest.TestCase):
     def setUp(self):
-        global index
+        global PROFILING_ENABLE
         self.started_at = time.time()
+        if PROFILING_ENABLE:
+            self.profiler = cProfile.Profile()
+            self.profiler.enable()
     def tearDown(self):
         elapsed = time.time() - self.started_at
         print('{} ({}s)'.format(self.id(), round(elapsed, 9)))
+        global PROFILING_ENABLE
+        if PROFILING_ENABLE:
+            self.profiler.disable() 
+            s = io.StringIO()
+            sortby = 'cumulative'
+            stats = pstats.Stats(self.profiler, stream=s).sort_stats(sortby)
+            stats.print_stats(10)
+            print(s.getvalue())
     def test_01_transform(self):
         device_type = "radeon"
         for i,test in enumerate(testdata[-1:]):

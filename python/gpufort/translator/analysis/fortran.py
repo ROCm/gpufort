@@ -32,12 +32,6 @@ def search_index_for_value(ttvalue,scope):
 def search_scope_for_value(ttvalue,scope):
     pass
 
-class AssignmentType(enum.Enum):
-    UNIDENTIFIED = 0
-    LHS_SCALAR_RHS_SCALAR = 1
-    LHS_ARRAY_RHS_ARRAY = 2
-    LHS_SCALAR_RHS_REDUCTION_INTRINSIC_EVAL = 3
-
 class ArithExprInfo:
     """:todo: For the time being, we ignore
     all operations that transform the rank of a subexpression."""
@@ -59,7 +53,7 @@ class ArithExprInfo:
     #        if isinstance(tree._value,TTIdentifier):
     #    return True
              
-    def get_top_level_op(self,ttnode,depth):
+    def get_top_level_binary_op(self,ttnode,depth):
         if isinstance(self._ttarithexpr._expr,tree.TTBinaryOp):
             return self._ttarithexpr._expr
         else:
@@ -71,16 +65,121 @@ class ArithExprInfo:
     #        self._traverse_main_rvals_and_ops(
     #            self._ttarithexpr,
     #            self._compute_rank_action)
-    #    return self._rank
-            
 
-#class AssignmentInfo:
-#
-#    def __init__(self,ttassignment):
-#        self._type = AssignmentType.UNIDENTIFIED
-#        self._assignment = ttassignment
-#        self._main_rvals_and_ops = []
-#        self._slices = []
+
+class AssignmentType(enum.Enum):
+    UNIDENTIFIED = 0
+    LHS_ARRAY = 1
+    LHS_SCALAR_RHS_REDUCTION_INTRINSIC_EVAL = 2
+
+class AssignmentInfo:
+
+    def __init__(self,ttassignment,scope):
+        self._type = AssignmentType.UNIDENTIFIED
+        self._assignment = ttassignment
+        self._main_rvals_and_ops = []
+        #
+        self._lvalue_ivar = None
+        self._lvalue_rank = 0
+        self._lookup_lvalue(scope)
+        self._determine_lvalue_rank(scope) 
+        self._identify_assignment_type(scope)
+
+    def _lookup_lvalue(self,scope):
+        lvalue_fstr = self._assignment._lhs.fstr()
+        self._lvalue_ivar = indexer.scope.search_scope_for_var(scope,lvalue_fstr)
+
+    def _determine_lvalue_rank(self,scope):
+        """:return: If the LHS expression is an identifier and the associated variable
+                 is an array or if the LHS expression is an array colon expression 
+                 such as `A(:,1:n)`.
+        """
+        loop_indices = [] 
+        if self._lvalue_ivar["rank"] > 0:
+            lvalue_ranges_or_none = self._collect_ranges_in_ttvalue(ttlvalue,include_none_values=True)
+            lvalue_ranges = [r for r in lvalue_ranges_or_none if r != None]
+            if len(lvalue_ranges_or_none):
+                num_implicit_loops = len(lvalue_ranges)
+            else:
+                num_implicit_loops = livar["rank"]
+        self_lvalue_rank = num_implicit_loops
+
+    def _identify_assignment_type(self,scope):
+        if self._is_array_assignment(self._assignment.lhs,scope):
+            self._type = AssignmentType.LHS_ARRAY   
+        elif self._is_array_reduction_intrinsic_call(self._assignment.lhs,scope):
+            if self._lvalue_ivar
+
+    def _collect_ranges(self,function_call_args,include_none_values=False):
+        ttranges = []
+        for i,ttnode in enumerate(function_call_args):
+            if isinstance(ttnode, tree.TTSlice):
+                ttranges.append(ttnode)
+            elif include_none_values:
+                ttranges.append(None)
+        return ttranges
+    
+    def _collect_ranges_in_ttvalue(self,ttvalue,include_none_values=False):
+        """
+        :return A list of range objects. If the list is empty, no function call
+                or tensor access has been found. If the list contains a None element
+                this implies that a function call or tensor access has been found 
+                but a scalar index argument was used.
+        """
+        current = ttvalue._value
+        if isinstance(current,tree.TTTensorEval):
+            return self._collect_ranges(current._args,include_none_values)
+        elif isinstance(current,tree.TTDerivedTypeMember):
+            result = []
+            while isinstance(current,tree.TTDerivedTypeMember):
+                if isinstance(current._type,tree.TTTensorEval):
+                    result += self._collect_ranges(current._type._args,include_none_values)
+                if isinstance(current._element,tree.TTTensorEval):
+                    result += self._collect_ranges(current._element._args,include_none_values)
+                current = current._element
+            return result
+        else:
+            return []
+    
+    def _is_array_assignment(self,ttlvalue,scope):
+        """
+        :return: If the LHS expression is an identifier and the associated variable
+                 is an array or if the LHS expression is an array colon expression 
+                 such as `A(:,1:n)`.
+        """
+        loop_indices = [] 
+        if self._lvalue_ivar["rank"] > 0:
+            lvalue_ranges_or_none = self._collect_ranges_in_ttvalue(ttlvalue,include_none_values=True)
+            lvalue_ranges = [r for r in lvalue_ranges_or_none if r != None]
+            if len(lvalue_ranges_or_none):
+                num_implicit_loops = len(lvalue_ranges)
+            else:
+                num_implicit_loops = livar["rank"]
+        return num_implicit_loops > 0
+    
+    def _is_array_reduction_intrinsic_call(self,ttassignment,scope):
+        """
+        x = OP(ARRAY,args)
+        where OP is one of
+        SUM(SOURCE[,DIM][,MASK]) -- sum of array elements (in an optionally specified dimension under an optional mask).
+        MAXVAL(SOURCE[,DIM][,MASK]) -- maximum Value in an array (in an optionally specified dimension
+                                       under an optional mask);
+        MINVAL(SOURCE[,DIM][,MASK]) -- minimum value in an array (in an optionally specified dimension
+                                      under an optional mask); 
+        ALL(MASK[,DIM]) -- .TRUE. if all values are .TRUE., (in an optionally specified dimension);
+        ANY(MASK[,DIM]) -- .TRUE. if any values are .TRUE., (in an optionally specified dimension);
+        COUNT(MASK[,DIM]) -- number of .TRUE. elements in an array, (in an optionally specified dimension);
+        """
+        reduction_ops = {}
+        #value_type, index_record = indexer.scope.search_scope_for_value_expr(scope, ident)
+        #if value_type == indexer.indexertypes.ValueType.VARIABLE:
+        #    value._value._type = tree.TTTensorEval.Type.ARRAY_ACCESS
+        #elif value_type == indexer.indexertypes.ValueType.PROCEDURE:
+        #    value._value._type = tree.TTTensorEval.Type.FUNCTION_CALL
+        #elif value_type == indexer.indexertypes.ValueType.INTRINSIC:
+        #    value._value._type = tree.TTTensorEval.Type.INTRINSIC_CALL
+        return False    
+
 #    @property
 #    def lvalue(self):
 #        return self._assignment._lhs

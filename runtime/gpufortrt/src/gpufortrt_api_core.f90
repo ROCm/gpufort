@@ -71,23 +71,23 @@ contains
           bind(c,name="gpufortrt_wait_all")
         use iso_c_binding
         implicit none
-        logical(c_bool) :: condition 
+        logical(c_bool),value,intent(in):: condition 
       end subroutine
       subroutine gpufortrt_wait_all_async_c_impl(async_arg,num_async_args,condition) &
           bind(c,name="gpufortrt_wait_all_async")
         use iso_c_binding
         implicit none
-        type(c_ptr) :: async_arg
-        integer(c_int) :: num_async_args
-        logical(c_bool) :: condition 
+        type(c_ptr),value,intent(in) :: async_arg
+        integer(c_int),value,intent(in) :: num_async_args
+        logical(c_bool),value,intent(in) :: condition 
       end subroutine
       subroutine gpufortrt_wait_c_impl(wait_arg,num_wait_args,condition) &
           bind(c,name="gpufortrt_wait_async")
         use iso_c_binding
         implicit none
-        type(c_ptr) :: wait_arg
-        integer(c_int) :: num_wait_args
-        logical(c_bool) :: condition 
+        type(c_ptr),value,intent(in) :: wait_arg
+        integer(c_int),value,intent(in) :: num_wait_args
+        logical(c_bool),value,intent(in) :: condition 
       end subroutine
       subroutine gpufortrt_wait_async_c_impl(wait_arg,num_wait_args,&
                                              async_arg,num_async_args,&
@@ -95,9 +95,9 @@ contains
           bind(c,name="gpufortrt_wait_async")
         use iso_c_binding
         implicit none
-        type(c_ptr) :: wait_arg, async_arg
-        integer(c_int) :: num_wait_args, num_async_args
-        logical(c_bool) :: condition 
+        type(c_ptr),value,intent(in) :: wait_arg, async_arg
+        integer(c_int),value,intent(in) :: num_wait_args, num_async_args
+        logical(c_bool),value,intent(in) :: condition 
       end subroutine
     end interface
     !

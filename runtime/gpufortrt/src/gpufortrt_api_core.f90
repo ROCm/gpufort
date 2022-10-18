@@ -82,7 +82,7 @@ contains
         logical(c_bool),value,intent(in) :: condition 
       end subroutine
       subroutine gpufortrt_wait_c_impl(wait_arg,num_wait_args,condition) &
-          bind(c,name="gpufortrt_wait_async")
+          bind(c,name="gpufortrt_wait")
         use iso_c_binding
         implicit none
         type(c_ptr),value,intent(in) :: wait_arg

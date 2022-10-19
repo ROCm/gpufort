@@ -311,7 +311,7 @@ class TTFunctionCallOrTensorAccess(base.TTNode):
               "min",
               ]:
                 num_args = len(self._args)
-                return "max" + str(num_args)
+                return name + str(num_args)
             else:
                 return name
         else:

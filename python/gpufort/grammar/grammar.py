@@ -93,7 +93,7 @@ class Grammar:
         precedence_ordered_op_list = [
           (pyp.Regex(r"\.(?!\b(false|true|[gl][te]|eq|ne|not|and|or|xor|eqv|neqv)\b)[a-zA-Z]+\.",flags),
             1,pyp.opAssoc.RIGHT), # custom unary op (negative lookahead excludes taken tokens)
-          (pyp.Regex(r"\*\*"), 2, pyp.opAssoc.LEFT),
+          (pyp.Regex(r"\*\*"), 2, pyp.opAssoc.RIGHT), # weirdly enough, -2**2**3 in Fortran is -pow(2,pow(2,3)) in C
           (pyp.Regex(r"[*/]"), 2, pyp.opAssoc.LEFT),
           (pyp.Regex(r"[+-]"), 1, pyp.opAssoc.RIGHT),
           (pyp.Regex(r"[+-]"), 2, pyp.opAssoc.LEFT),

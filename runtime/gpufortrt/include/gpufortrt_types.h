@@ -11,6 +11,15 @@ extern "C" {
   extern int gpufortrt_async_noval;
   extern int gpufortrt_async_sync;
   extern int gpufortrt_async_default;
+  
+  enum gpufortrt_property_t {
+    gpufortrt_property_memory = 0,//>integer,  size of device memory in bytes
+    gpufortrt_property_free_memory,//>integer,  free device memory in bytes
+    gpufortrt_property_shared_memory_support,//>integer,  nonzero if the specified device supports sharing memory with the local thread
+    gpufortrt_property_name,//>string, device name*/
+    gpufortrt_property_vendor,//>string, device vendor*/
+    gpufortrt_property_driver,//>string, device driver version*/
+  };
 
   /**
    * \note: Enum values must match those of Fortran enumeration!

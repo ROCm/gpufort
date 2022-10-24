@@ -5,6 +5,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+  int gpufortrt_get_num_devices();
+  
+  void gpufortrt_set_device_num(int dev_num);
+  int gpufortrt_get_device_num();
+  
+  size_t gpufortrt_get_property(int dev_num,
+                                gpufortrt_device_property_t property);
+  const 
+  char* gpufortrt_get_property_string(int dev_num,
+                                      gpufortrt_device_property_t property);
+  
   void gpufortrt_init();
   void gpufortrt_shutdown();
 
@@ -129,6 +140,11 @@ extern "C" {
                             bool if_arg);
   void gpufortrt_wait_all_async(int* async_arg,int num_async,
                                 bool if_arg);
+  
+  int gpufortrt_async_test(int wait_arg);
+  int gpufortrt_async_test_device(int wait_arg, int dev_num);
+  int gpufortrt_async_test_all(void);
+  int gpufortrt_async_test_all_device(int dev_num);
 
   gpufortrt_queue_t gpufortrt_get_stream(int async_arg);
  

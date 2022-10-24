@@ -18,6 +18,65 @@ void gpufortrt_set_default_async(int async_arg) {
   gpufortrt::internal::default_async_arg = async_arg;
 }
 
+void gpufortrt_set_device_num(int dev_num, gpufortrt_device_t dev_type) {
+  HIP_CHECK(hipSetDevice(dev_num)) // TODO backend specific, externalize
+}
+
+int gpufortrt_get_device_num(gpufortrt_device_t dev_type) {
+  int dev_num;
+  HIP_CHECK(hipGetDevice(&dev_num))
+  return dev_num;
+}
+
+size_t gpufortrt_get_property(int dev_num,
+                              gpufortrt_device_property_t property) {
+  switch ( property ) {
+    case gpufortrt_property_memory:
+      size_t free;
+      size_t total;
+      HIP_CHECK(hipMemGetInfo(&free, &total))
+      return total;
+      break;
+    case gpufortrt_free_memory:
+      size_t free;
+      size_t total;
+      HIP_CHECK(hipMemGetInfo(&free, &total))
+      return free;
+      break;
+    case gpufortrt_property_shared_memory_support:
+      int result;
+      HIP_CHECK(hipDeviceGetAttribute(&result,hipDeviceAttributeManagedMemory,dev_num))
+      return result;
+      break;
+    default:
+      throw std::invalid_argument("gpufortrt_get_property: property type must be 'gpufortrt_property_memory', 'gpufortrt_free_memory', or 'gpufortrt_property_shared_memory_support'");
+      break;
+  }
+}
+
+const 
+char* gpufortrt_get_property_string(int dev_num,
+                                    gpufortrt_device_property_t property) {
+      throw std::invalid_argument("gpufortrt_get_property_string: not implemented"); // TODO implement
+}
+
+// Explicit Fortran interfaces that assume device number starts from 1
+void gpufortrt_set_device_num_f(int dev_num, gpufortrt_device_t dev_type) {
+  gpufortrt_set_device_num(dev_num-1,dev_type);
+}
+int gpufortrt_get_device_num_f(gpufortrt_device_t dev_type) {
+  return gpufortrt_get_device_num(dev_type)+1;
+}
+size_t gpufortrt_get_property_f(int dev_num,
+                                gpufortrt_device_property_t property) {
+  return gpufortrt_get_property(dev_num-1,property);
+}
+const 
+char* gpufortrt_get_property_string_f(int dev_num,
+                                      gpufortrt_device_property_t property) {
+  return gpufortrt_get_property_string(dev_num-1,property);
+}
+
 void gpufortrt_mapping_init(
     gpufortrt_mapping_t* mapping,
     void* hostptr,
@@ -574,6 +633,31 @@ void gpufortrt_wait_all_async(int* async_arg,int num_async,
       HIP_CHECK(hipStreamWaitEvent(queue_async,event,0)) // TODO backend specific, externalize
     }
   }
+}
+  
+int gpufortrt_async_test(int wait_arg) {
+  gpufortrt::internal::queue_record_list.synchronize(wait_arg);
+}
+
+int gpufortrt_async_test_device(int wait_arg, int dev_num) {
+  const int current_device_num = gpufortrt_get_device_num();
+  gpufortrt_set_device_num(dev_num);
+  gpufortrt_async_test(wait_arg);
+  gpufortrt_set_device_num(current_device_num);
+}
+
+int gpufortrt_async_test_all() {
+  for (size_t i = 0; i < queue_record_list.size(); i++) {
+    auto& queue = gpufortrt::internal::queue_record_list[i].queue;
+    HIP_CHECK(hipStreamQuery(queue))// TODO backend specific, externalize
+  } 
+}
+
+int gpufortrt_async_test_all_device(int dev_num) {
+  gpufortrt_set_device_num(dev_num);
+  int result = gpufortrt_async_test(dev_num);
+  gpufortrt_set_device_num(current_device_num);
+  return result;
 }
   
 void* gpufortrt_deviceptr(void* hostptr) {

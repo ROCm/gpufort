@@ -331,8 +331,15 @@ namespace gpufortrt {
       /** Destroy this queue record,
        * set the `id` to negative value. */
       void destroy();
-      /** If this queue is initialized or destroyed. */
+      /** \return If this queue is initialized or destroyed. */
       bool is_initialized() const;
+
+      /** \return If all operations in this queue
+       * have been completed.*/
+      bool test();
+
+      /** Synchronize the queue. */
+      void synchronize();
     };
 
     struct queue_record_list_t {
@@ -358,6 +365,20 @@ namespace gpufortrt {
        * \return a queue if `id` is greater than 0, or `nullptr`.
        */
       gpufortrt_queue_t use_create_queue(const int id);
+      
+      /** \return If all operations in the queue with identifier `id` 
+       * have been completed.*/
+      bool test(const int id);
+
+      /** Synchronize queue with identifier `id`. */
+      void synchronize(const int id);
+      
+      /** \return If all operations in all queues
+       * have been completed.*/
+      bool test_all();
+
+      /** Synchronize all queues. */
+      void synchronize_all();
     };
 
     // global parameters, influenced by environment variables
